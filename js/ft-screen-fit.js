@@ -37,8 +37,9 @@ function fitPage(){
   const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ft-s")) || 1;
   const pad = (parseFloat(getComputedStyle(m).paddingTop) || 0) + (parseFloat(getComputedStyle(m).paddingBottom) || 0);
   const room = m.clientHeight - pad, need = m.scrollHeight - pad;
-  // 🛠 the Practice Lab and 🏅 My Performance are made to fit one screen (down to 0.66); other pages only when a little taller (down to 0.8)
-  const lab = m.classList.contains("main-sims") || !!m.querySelector(".ftmp-focus");   // the Lab and 🏅 My Performance
+  // 🏅 My Performance is made to fit one screen (down to 0.66); other pages only when a little taller (down to 0.8)
+  // (the Practice Lab goes by the day now and scrolls like any page: it is no longer squeezed onto one screen)
+  const lab = !!m.querySelector(".ftmp-focus");   // 🏅 My Performance
   if(need <= room + 1 || (!lab && need > room * 1.35)) return;
   m.style.setProperty("--ft-page-s", Math.max(lab ? 0.66 : 0.8, s * room / need * 0.99).toFixed(3));
 }

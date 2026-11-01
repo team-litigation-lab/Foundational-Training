@@ -98,6 +98,19 @@ async function ticketFor(payloadObj, secret) {
     const again = await call(env, '/api/auth/portal', { ticket: aTicket });
     if (again.status !== 401 || !again.body || again.body.code !== 'used') fail(`an administrator's ticket should work only once, got ${JSON.stringify(again)}`);
 
+    // 6. …and that trainer opens the Portal's simulators signed in too: a Portal ticket with their name { r: 'a', n } (the Portal
+    // signs them in to their own admin account). A trainer signed in here with this program's password gets none.
+    if (adminTicket.body && adminTicket.body.token) {
+        const pt = await call(env, '/api/auth/tool-ticket', { tool: 'portal' }, { Authorization: 'Bearer ' + adminTicket.body.token });
+        const body = pt.body && pt.body.ticket ? JSON.parse(Buffer.from(pt.body.ticket.split('.')[0].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')) : null;
+        if (pt.status !== 200 || !body || body.r !== 'a' || body.n !== 'Coach Ana') fail(`a trainer from the main Hub should get the Portal's admin ticket with their name, got ${JSON.stringify(pt)} ${JSON.stringify(body)}`);
+    }
+    const pw = await call(env, '/api/auth/admin', { passphrase: 'ci-pass' });
+    if (pw.body && pw.body.token) {
+        const none = await call(env, '/api/auth/tool-ticket', { tool: 'portal' }, { Authorization: 'Bearer ' + pw.body.token });
+        if (none.status !== 403) fail(`a trainer signed in with this program's password should get no Portal ticket, got ${JSON.stringify(none)}`);
+    } else fail(`the admin password should sign a trainer in here: ${JSON.stringify(pw)}`);
+
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });

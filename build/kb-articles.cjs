@@ -21,7 +21,7 @@ const ROLES = [
 // a Foundational Training lesson's topics go to its role
 const LESSON = {1: "va", 2: "va", 3: "va", 4: "reception", 5: "calendar", 6: "intake", 7: "claims", 8: "records"};
 // a bundled document's collection → its role ("" leaves it off the card: the course doesn't teach it)
-const COLLECTION = {intake: "intake", insurance: "claims", provider: "records", "case-management": "", lien: "", demands: "", litigation: ""};
+const COLLECTION = {foundational: "va", reception: "reception", calendar: "calendar", intake: "intake", insurance: "claims", provider: "records", "case-management": "", lien: "", demands: "", litigation: ""};
 // the Tettra pages, one by one (their categories don't follow the roles: "Administrative" holds intake, records and calendar pages)
 const TETTRA = {
   829734: "intake", 829735: "intake", 829736: "intake", 829738: "intake", 918345: "intake",

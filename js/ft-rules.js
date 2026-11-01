@@ -34,7 +34,7 @@ const CAMERA = [
     "No sleepwear, sleeveless tops, tank tops, caps, or clothes with large prints, logos or slogans."]},
   {h:"🖼 Framing", rows:["Your camera at eye level, your head and shoulders in the middle of the frame.",
     "Light in front of you, not behind you, so your face is clearly seen.",
-    "A plain, tidy background, or a professional virtual background."]}
+    "Your LSH standard backdrop, sent through Discord by your trainer."]}
 ];
 
 // Auxes: where and what to type in Discord.
@@ -261,16 +261,15 @@ const MON_PARTS = [
     "Upload it to your Google Drive.",
     "You link it in Part 5."]},
   {h:"Update It", steps:[
-    "Update your Monitoring Sheet after each discussion or activity.",
+    "Update your Monitoring Sheet and Task Tracker after each discussion or activity.",
     "Finish before your shift ends.",
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
 ];
-// ⬇ the Monitoring Sheet's own file (Drive: its download, and the file to look at first)
+// ⬇ the Monitoring Sheet's own file (its Drive download)
 function monGet(){
   const d = window.FT_MONITOR_DOC, m = d && String(d.view || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/); if(!m) return "";
-  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a>
-    <a class="btn btn-ghost btn-sm" href="${esc(d.view)}" target="_blank" rel="noopener noreferrer">Open it ↗</a></div>`;
+  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a></div>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -383,14 +382,14 @@ const SLIDES = [
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
       <p>Training is your chance to show what you can do, so give it your best every day. Your progress is reviewed each week, and those reviews help decide whether you continue on to your project.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
-    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
+    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure, how well you manage your time, the quality of your output and your progression.")}
 `],
-  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
+  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
     ${rule("🙋 Take Initiative", "Knowing every role lets you take on other work when your tasks run low or what you’re assigned is limited.")}
     ${rule("🛡 Stay Placed", "When a firm restructures, you can move into a different role instead of being laid off.")}
-    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}`],
+    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}</div>`],
   ["work", "Rules: Your Work and the Use of AI", ()=>
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Don’t Rely on AI to Draft or Complete Your Work", "As Legal VAs, you’re trained to draft legal documents from actual case information, instructions and established legal processes. Training develops your own legal reasoning, attention to detail, writing skills and understanding of the case lifecycle. If AI drafts for you, you may produce something that looks correct without understanding why it’s correct, or fail to spot its errors. You may use AI to improve your grammar, spelling and sentence structure.") +
@@ -402,8 +401,8 @@ const SLIDES = [
     ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
-      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends.",
+      {h:"Name It", steps:["Naming Conventions are provided by trainers.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder. Link your outputs on the platform so trainers can monitor them.", "Do it the same day, before your shift ends.",
         ["Your daily output is automatically monitored and scored on:", ["Naming Convention", "Timely Submission", "Accuracy and Attention to Detail", "Quality of Output"]]]},
       {h:"It Is Checked", steps:["You are expected to consistently follow this workflow all throughout your training."]},
     ].map((p,i)=>`<div class="ftr-part">
@@ -412,8 +411,9 @@ const SLIDES = [
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
-  ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. Your EOD email, your tracker and your Monitoring Sheet each have their own slides next, in that order; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
+  // (the shift wrap-up, deliverables to the filled-in entry: one heading on every slide of it)
+  ["deliverables", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
+    <p class="ftr-sub">Submit all 4 daily deliverables—EOD email, tracker, monitoring sheet, and test files—to your Assessment and Activities Folder daily using the standard naming convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
@@ -421,9 +421,9 @@ const SLIDES = [
       ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
-  ["eod", "Your EOD Email: The Template", ()=>`
+  ["eod", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <div class="ftr-part ftr-eod">
       <div class="ftr-part-h">📧 Your EOD Email</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
@@ -433,22 +433,22 @@ const SLIDES = [
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
   // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
   // Sheet (before its own)
-  ["habits-trackers", "Your Daily Task Tracker: Update It Every Day", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+  ["habits-trackers", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
-  ["tracker", "Your Daily Task Tracker", ()=>`
+  ["tracker", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   // (the tracker's Other Tabs slide is off the orientation; its Daily Check is read with the Monitoring Sheet slide next)
-  ["habits-monitoring", "Your Daily Monitoring Sheet: Update It After Each Activity", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+  ["habits-monitoring", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   // the Monitoring Sheet: a drawn preview of a filled-in entry (where to get it, and how it is kept, are on the last slide:
   // MON_PARTS)
   // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+  ["monitoring-entry", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
@@ -628,7 +628,7 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
    (::before, ::after, the ribbon from data-title set by fitPages in ft-slides.js), so they keep their size when the
    content is scaled; the progress line is a background layer, its length from --ftr-prog. */
 body.ft-orient #lessonSlideWrap{position:relative;container-type:inline-size;
-  background-color:rgba(30,35,64,.92) !important;
+  background-color:rgba(30,35,64,.72) !important;   /* .72, not .92: lets the page photo show through the frame */
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='rotate(180 48 48)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='translate(0 0)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='matrix(-1 0 0 1 96 0)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(#E8913A,#E8913A),linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)) !important;
   background-position:right top,left bottom,right bottom,24px 60px,24px 60px !important;
   background-size:96px 96px,96px 96px,96px 96px,calc((100% - 144px) * var(--ftr-prog, 0)) 5px,calc(100% - 144px) 5px !important;
@@ -762,6 +762,12 @@ body.ft-orient #lessonSlideWrap .ftr-sub{color:#1E2340 !important;font-weight:60
 body.ft-orient #lessonSlideWrap .ftr-why{border:1.5px solid #E8590C;border-left:5px solid #E8590C;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left:5px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
+/* You're a General VA: these are benefits, not warnings, so they read calm: soft white cards, navy text, one gentle accent each */
+.ftr-calm .ftr-goal, body.ft-orient #lessonSlideWrap .ftr-calm .ftr-goal{background:#F2F5FA !important;background-image:none !important;border:1px solid #D5DCEA !important;border-left:5px solid #34508C !important;}
+.ftr-calm .ftr-goal b{color:#1E2340 !important;} .ftr-calm .ftr-goal p{color:#2B2F45 !important;}
+.ftr-calm .ftr-rule, body.ft-orient #lessonSlideWrap .ftr-calm .ftr-rule{--c:#2E8A6A;background:#FFFFFF !important;background-image:none !important;border:1px solid #E1E4EE !important;border-left:5px solid var(--c) !important;box-shadow:0 1px 4px rgba(30,35,64,.05);}
+.ftr-calm .ftr-rule:nth-of-type(3){--c:#3A78B8;} .ftr-calm .ftr-rule:nth-of-type(4){--c:#7A62B0;}
+.ftr-calm .ftr-rule b{color:#1E2340 !important;} .ftr-calm .ftr-rule span{color:#2B2F45 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */

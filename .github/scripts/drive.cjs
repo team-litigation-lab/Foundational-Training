@@ -127,8 +127,17 @@ const failures = []; const fail = (m) => failures.push(m);
     const shA = await call('/api/drive/shots', { ids: [id, 'nobody--b9'] }, admin);
     const rs = (shA.body || {}).results || [];
     if (rs.length !== 2 || rs[0].shots !== 1 || rs[1].error !== 'no-folder') fail(`the trainer's check of a batch: ${JSON.stringify(shA.body)}`);
+    // ✅ the day's compliance (dailyCompliance): the AM typing and the spelling taken on the platform, the day's EOD pasted, the
+    // output link submitted; no PM typing
+    store.set('ft:skills:' + id, JSON.stringify({ typing: [{ date: D, slot: 'AM', wpm: 40 }], spelling: [{ date: D, score: 18 }] }));
+    const dr = JSON.parse(store.get('ft:drive:' + id)); dr.days[D] = Object.assign({}, dr.days[D], { eod: { text: 'Subject: EOD Report – today – Dee Drive. Tasks completed today: the Reception lesson.', at: new Date().toISOString() } });
+    store.set('ft:drive:' + id, JSON.stringify(dr));
     const nightly = await call('/api/tracker/check', { id }, admin);
     if (!((nightly.body || {}).results || []).some(r => r.tests && r.shots === 1)) fail(`the nightly check didn't look for the test screenshots: ${JSON.stringify(nightly.body)}`);
+    const comp = ((JSON.parse(store.get('ft:trackerreview:' + id)).compliance) || {})[D];
+    if (!comp || comp.parts.tests !== 67 || !comp.tests.AM || comp.tests.PM || !comp.tests.SP || comp.parts.eod !== 100 || comp.parts.outputs !== 100
+      || typeof comp.parts.tracker !== 'number' || typeof comp.parts.monitor !== 'number' || typeof comp.pct !== 'number') fail(`the day's compliance: ${JSON.stringify(comp)}`);
+    if (!((nightly.body || {}).results || []).some(r => r.id === id && typeof r.compliance === 'number')) fail('the nightly check didn\'t record the day\'s compliance');
     // a folder that can't be read keeps the screenshots already found, and says so
     folderGone = true;
     const shB = await call('/api/drive/shots', { id }, admin), kept2 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
@@ -142,5 +151,5 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');
+    console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });

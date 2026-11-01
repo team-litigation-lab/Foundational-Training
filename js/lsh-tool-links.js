@@ -15,6 +15,8 @@
        preview, not an admin, and is left alone — except on the Knowledge Base: there a trainer (an admin, or the
        Trainee view) gets a one-use admin ticket, as the Portal's launcher gives one, so its links open signed in
        instead of on the KB's sign-in screen.
+     • A trainer who came from the main Hub opens the Portal's simulators signed in as their own admin account there, from a
+       one-use ticket with their name (single sign-on); signed in here any other way, the Portal asks for their password.
      • A ticket is asked for only when a tool is opened (one request; reused for 3 minutes).
      • No secret on the Worker, or the request fails: the link opens as it is (the CMS's own
        sign-in), so nothing is ever blocked.
@@ -37,7 +39,8 @@ const isKB = (url)=>{ try{ return KB_HOSTS.some(re=>re.test(new URL(url, locatio
 // A trainer on the Knowledge Base (an admin, or the 👁 Trainee view preview, which holds the admin token): signed in there
 // as an admin from a one-use admin ticket, as the Portal does, instead of the KB's sign-in screen.
 const signedTrainer = ()=> typeof state === "object" && (!!state.isAdmin || !!state.adminPreview) && !!state.adminToken;
-const handled = (url)=> isTool(url) && (signedTrainee() || signedAdmin() || (isKB(url) && signedTrainer()));
+const isPortal = (url)=>{ try{ return PORTAL_HOSTS.some(re=>re.test(new URL(url, location.href).hostname)); }catch(e){ return false; } };
+const handled = (url)=> isTool(url) && (signedTrainee() || signedAdmin() || ((isKB(url) || isPortal(url)) && signedTrainer()));
 const withAdmin = (url)=>{ try{ const u = new URL(url, location.href); if(!CMS_HOSTS.some(re=>re.test(u.hostname)) && !KB_HOSTS.some(re=>re.test(u.hostname))) return url; u.searchParams.set("admin", "1"); return u.toString(); }catch(e){ return url; } };
 
 let cached = null, cachedAt = 0, pending = null;
@@ -55,12 +58,15 @@ function withTicket(url, t){
 }
 // The address with a fresh ticket (a CMS link, for a trainee); anything else comes back as it is.
 // (an admin ticket works once on the KB, so it is never cached: one request per link opened)
-function adminTicket(){
-  return fetch("/api/auth/tool-ticket", {method:"POST", headers: authHeaders(), body: JSON.stringify({tool:"kb"})})
+function adminTicket(tool){
+  return fetch("/api/auth/tool-ticket", {method:"POST", headers: authHeaders(), body: JSON.stringify({tool: tool || "kb"})})
     .then(r=>r.ok ? r.json() : {}).then(j=>(j && j.ticket) || "").catch(()=>"");
 }
 function ticketed(url){
-  if(isKB(url) && signedTrainer()) return adminTicket().then(t=> t ? withTicket(url, t) : signedAdmin() ? withAdmin(url) : url);
+  if(isKB(url) && signedTrainer()) return adminTicket("kb").then(t=> t ? withTicket(url, t) : signedAdmin() ? withAdmin(url) : url);
+  // (a trainer on a Portal simulator who came from the main Hub: signed in there as their own admin account, single sign-on;
+  // a trainer signed in here some other way gets no ticket, and the Portal asks for their password)
+  if(isPortal(url) && signedTrainer()) return adminTicket("portal").then(t=> t ? withTicket(url, t) : url);
   if(isTool(url) && signedAdmin()) return Promise.resolve(withAdmin(url));
   if(!isTool(url) || !signedTrainee()) return Promise.resolve(url);
   return ticket().then(t=>withTicket(url, t));

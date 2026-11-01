@@ -32,8 +32,7 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
   // (Day 5's Monitoring Sheet slide too: items #10–11 close Reception Part 2, Day 4's s2m, js/ft-day-decks.js LESSON_CARDS[3])
   5: ["s1", "s2"], 13: ["s2"],
-  // (Day 11's Shadowing is off the deck, and its card row with it)
-  11: ["s2"],
+  // (Day 11's Shadowing is off the training: its section is the ✉️ Insurance Email Simulator's slide instead, EDIT[11].s2)
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
   8: ["s2", "s3b"],
@@ -49,7 +48,9 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   3: {s1: "Frontline Management: Operations, Logistics, and Escalations Protocols", s2: "CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"}, 5: {s1: "Update Your Monitoring Sheet"},
   7: {insurance: "AM: Common Insurance Providers"},
-  8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
+  8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
+  // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
+  11: {s2: "PM: Insurance Email Simulator"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -782,7 +783,7 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
-  "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with Ctrl / Cmd + K; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
+  "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
@@ -815,9 +816,26 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
      • each fragment drops a divider left at its edges (the stars rule, a "-----" line). */
 // (Day 10's sample-documents line, where its opening-claims slide is cut: ROWS[10].s1)
 const SAMPLE_DOCS_10 = "<p>Sample Insurance Communication-Related Documents and VA Recordings</p>";
+// 📄 the folder's sample documents, a tile each (rows of 4, 4 and 3): each opens /ft/day10/docs/ on its document in a tab of its own,
+// read page by page with a dropdown of all of them (ft/day10/docs/index.html; the pages are images, the people's names blacked out)
+const DOCS_10 = [["sample-lor", "Sample LOR", 2], ["sample-ack-lor", "Sample Acknowledgment of LOR", 1], ["pip-lor", "PIP Letter of Representation", 2],
+  ["bi-lor", "BI Letter of Representation (blank)", 2], ["lor-preservation", "LOR & Preservation (Company) Template", 2], ["lop-agreement", "LOP Agreement 2020 (blank)", 1],
+  ["dec-um-selection-state-farm", "Dec Page with UM Selection Form: State Farm", 4], ["dec-um-rejection-uaic", "Dec Page with UM Rejection Form: UAIC", 2],
+  ["dec-no-bi", "Dec Page with No BI Coverage", 3], ["commercial-policy", "Commercial Policy", 5], ["ccop", "CCOP: Certified Copy of the Policy", 4]];
+const DOC_TILES_10 = '<div class="ftdd-doctiles">' + DOCS_10.map(([slug, t, n]) => `<a class="ftdd-doctile" href="/ft/day10/docs/?doc=${slug}" target="_blank" rel="noopener noreferrer">` +
+  `<span class="ftdd-doctile-ic">📄</span><b>${t.replace(/&/g, "&amp;")}</b><small>${n} page${n === 1 ? "" : "s"} · opens in a new tab ↗</small></a>`).join("") + "</div>\n";
 const SLOT = (n, k) => `<div class="trainer-slot" data-slot="${n}:${k}"></div>`;
 const UPSKILL = "<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>";
 // a shadowing slide's own line on how the session runs on the platform
+// Day 11's afternoon, in place of its shadowing: the ✉️ Insurance Email Simulator (js/ft-claims-email.js), graded. Its
+// recorded shadowing session (Astred, 09/20/2023) moves to Day 12's deck, a slide of its own (EDIT[12].s1, ROWS[12].s1)
+const SHADOW_VID_11 = ["<p><b>SHADOWING ASTRED 09/20/2023", "<p><b><i>*** Free Communication Upskill"];
+const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writing: the emails a claims specialist sends to the insurance companies to open a claim and get what the case needs.</p>\n" +
+  '<div class="ftdd-cards2">' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ For each of the 3 cases</p><ol><li><b>Send the LOR</b>, the right file attached, named by the convention</li><li><b>Request the Dec Pages</b> and the policy limits</li><li><b>Request the claim information</b>: claim number, adjuster, coverage, status</li></ol></div>' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
+  "</div>\n<p>All 12 emails are graded: each out of 5 for the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone. 📝 Submit for Grading when you’re done; your score is on 🏅 My Performance.</p>\n" +
+  '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Simulator.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Simulator →</button></div></div>\n';
 const SHADOW_HOWTO = "<p>Join your shadow buddy at the time your trainer posts in the training GC, and log the session with 👥 Shadowing log on this slide.</p>\n";
 // an exact edit: `from` must occur `count` times (the build stops if the guide has changed under it)
 function rep(html, from, to, count = 1, where = ""){
@@ -865,6 +883,10 @@ const LOR_GUIDE = () => {
   return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' +
     cards.map((c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`).join("") + "</div>\n";
 };
+// 📘 the Sample SOP, How to Open a 3P Auto Insurance Claim & Send the LOR (the guide's Tettra PDF, build/days/sample-3p-sop.html):
+// written on Day 10's deck as a slide of its own, after the Claims Specialist discussion and before the Digital Handouts, in
+// place of the PDF on the afternoon's videos slide
+const SAMPLE_SOP = () => fs.readFileSync(path.join(R, "build/days/sample-3p-sop.html"), "utf8").trim() + "\n";
 // the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
 const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
 // Day 10's What to Share, in cards on one page: Do NOT share, What you CAN share (with what the 3P check may also take), and
@@ -912,8 +934,8 @@ function D12_CARDS(x){
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
-  // slide; the 3P Zurich sample and the VLF SOP stay documents
-  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample and VLF's SOP embedded down the
+  // slide; the 3P Zurich sample stays a document (the SOP is written on its own slide: SAMPLE_SOP)
+  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample embedded down the
   // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
   // divider go
   10: {s2: h => {
@@ -928,11 +950,18 @@ const EDIT = {
     const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
     const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
     return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
-      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + col(embed(sop), "ftdd-three-side") + "</div>\n");
+      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + "</div>\n");
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
+  12: {s1: h => h.replace(/\s*$/, "\n") + "<!--cut:shadow-->\n<p>A recorded shadowing session to watch in your idle time: a claims specialist at work, from intake support to opening and following up on PI claims.</p>\n" +
+    borrow(11, "s2", ...SHADOW_VID_11)},
   11: {
+    // the shadowing is off: the trainer's slot stays, the rest is the Email Simulator (the recording is Day 12's, above)
+    s2: h => {
+      if(!SHADOW_VID_11.every(x => h.includes(x))) throw new Error("Day 11 s2: its recorded shadowing session is no longer where the build looks for it");
+      return rep(h, h.slice(h.indexOf("</div>") + 7), "", 1, "Day 11 s2") + CLAIMS_EMAIL_11;
+    },
     s1: h => {
       // the guidelines' text in place of their link, and the templates' addresses without the guide's doubled-up query
       const out = rep(h, '<p>LOR Drafting Activity (Guidelines and Instructions):</p>\n<p><a class="viewer-link" data-kind="doc" data-title="LOR Drafting Activity (Guidelines and Instructions): https://drive.google.com/file/d/11N15" href="https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing">https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing</a> </p>\n', LOR_GUIDE(), 1, "Day 11 s1");
@@ -1112,12 +1141,23 @@ const ROWS = {
   },
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
+      {id: "sop", h: "AM: Sample SOP: How to Open a 3P Auto Insurance Claim & Send the LOR", parts: [], pre: SAMPLE_SOP()},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
-      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
-        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
+      // (one block, one page: the two recording folders and the documents' tiles)
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", pre: KEEP[0], post: KEEP[1], parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"],
+          // (the documents, a tile each, in place of the Drive folder: DOC_TILES_10)
+          h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
+          // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
+          ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
+          // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2)
+          h => h.replace(/(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/,
+            (m, two) => '<div class="ftdd-keep ftdd-fold2">\n' + two + '</div>\n')]}]
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
@@ -1127,6 +1167,9 @@ const ROWS = {
     s1: [{id: "s1", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, SLOT(11, "s1-3")]],
         fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
           ['<hr class="stars">\n', ""],
+          // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure"; the folder
+          // still holds the Dec Pages its Part I is answered from)
+          ['<p>Thank you.</p>\n<p>Assessment Activities</p>\n', '<div class="ftdd-pq">✍️ <b>Answer the evaluation in Knowledge Check</b>: Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.next()">📄 Open the evaluation →</button></div></div>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
           ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
       // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
       // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)
@@ -1144,7 +1187,9 @@ const ROWS = {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
       // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
       {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
-      {id: "s1d", parts: [[SLOT(12, "s1-1"), null]]}]
+      {id: "s1d", parts: [[SLOT(12, "s1-1"), "<!--cut:shadow-->"]]},
+      // (Day 11's recorded shadowing session, moved here: EDIT[12].s1)
+      {id: "s1v", h: "Recorded Shadowing: Intake Support & PI Claims Specialist Roles", parts: [["<!--cut:shadow-->", null]], fix: [["<!--cut:shadow-->\n", ""]]}]
   },
   13: {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)

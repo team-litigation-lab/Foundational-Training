@@ -13,6 +13,10 @@
        js/ft-calendar.js) that opens this platform's own 📅 Calendaring Simulators on the activity (goto('calsim','attorney-activity')),
        where it is checked, submitted and graded.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
+     • 📅 By the day: every card is filed under the first training day it is worked on (Day 3, Day 4 …), each day a
+       section that folds away once all its work is ✓ Done. A card is ✓ Done when its work is in (a session or activity
+       submitted, the trainer's Passed, every recording logged, a letter uploaded and checked at 70%+, a drill round at 70%+), and its button becomes
+       👁 Review: the same page, on what was handed in. Filters: All · To do · ✓ Done; the day chips jump to a day.
      • The main landing page (the dashboard) has no Simulators or Blueprint card: 🛠 Practice Lab is in the top bar.
    ============================================================ */
 (function(){
@@ -85,25 +89,153 @@ window.ftsReached = reached;
 // (and 🔓 once the trainer has opened one of the tool's days: js/ft-day-locks.js)
 const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; return reached(days) && (!window.FTDayLocks || FTDayLocks.labOpen(days)); };
 window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
+/* ---------- ✓ Done: what the trainee has finished, read once a visit ----------
+   The records each tool already keeps for 🏅 My Performance, read together: a card is ✓ Done once its work is in
+   (submitted, graded, every recording logged), and its button becomes 👁 Review: it opens the same page, on what was
+   handed in. The Practice Sessions and the trainer's results come with their own cards (js/ft-sessions.js). */
+const DONE = {who: null, at: 0, loading: null, rec: {}, calweek: null};
+const GUIDE_IDS = () => ((window.FTGuide && FTGuide.list) || []).map(g => g.id);
+function loadDone(force){
+  if(!isTrainee() || DONE.loading) return DONE.loading;
+  if(!force && DONE.who === state.traineeId && Date.now() - DONE.at < 60000) return null;
+  const id = state.traineeId, keys = ["calcheck:", "calrules:", "drills:", "listening:", "transcribe:", "simresults:", "calsim:"].map(k => k + id)
+    .concat(GUIDE_IDS().map(g => `guide:${id}:${g}`));
+  DONE.who = id; DONE.at = Date.now();
+  const week = window.FTCalWeek && FTCalWeek.api ? FTCalWeek.api("get").then(j => j && j.record).catch(() => null) : Promise.resolve(null);
+  // (the Call Listening sets as the trainer set them: how many recordings make a set ✓ Done)
+  const sets = window.FTListen && FTListen.loadSets ? Promise.resolve(FTListen.loadSets()).catch(() => null) : null;
+  DONE.loading = Promise.all([sharedGetMany(keys).catch(() => []), week, sets]).then(([vals, rec]) => {
+    DONE.rec = {}; keys.forEach((k, i) => { DONE.rec[k.slice(0, k.indexOf(":") + 1) + (k.startsWith("guide:") ? k.split(":")[2] : "")] = (vals || [])[i] || null; });
+    DONE.calweek = rec || null; DONE.loading = null;
+    if(state.view === "simulators") render();
+  }).catch(() => { DONE.loading = null; });
+  return DONE.loading;
+}
+window.addEventListener("focus", () => { if(state.view === "simulators" && Date.now() - DONE.at > 60000) loadDone(true); });
+const R = k => DONE.rec[k] || null;
+const st = (done, live) => done ? "done" : live ? "live" : "todo";
+// ✓ Done needs a passing result, not just an attempt: 70%, the platform's pass mark (a booking: 80%, the Booking Rule Check's own green)
+const PASS_PCT = 70;
+const prov = () => ((R("simresults:") || {}).results || []).filter(x => x && x.simulator === "Drafting — Medical Provider");
+// each tool's state (todo / live / done) from its record
+const TOOL_STATUS = {
+  calactivity: () => { const b = (R("simresults:") || {}).best || {}, c = R("calsim:") || {};
+    return st(!!b["Calendaring Activity"] || (c.submissions || []).some(x => /attorney/.test(String(x.scn || ""))), (c.autos || []).some(x => /attorney/.test(String(x.scn || "")))); },
+  calcheck: () => { const c = R("calcheck:") || {}; return st(Array.isArray(c.submits) && c.submits.length > 0, c.entries && Object.keys(c.entries).length > 0); },
+  calweek: () => { const w = DONE.calweek; return st(!!(w && w.submittedAt), !!(w && Array.isArray(w.events) && w.events.length)); },
+  calrules: () => { const b = (R("calrules:") || {}).bookings; return st(Array.isArray(b) && b.some(x => (x.pct || 0) >= 80), Array.isArray(b) && b.length > 0); },
+  transcribe: () => { const r = ((R("transcribe:") || {}).r) || {}; return st(!!((r[1] || {}).submittedAt && (r[2] || {}).submittedAt), !!((r[1] || {}).startedAt || (r[2] || {}).startedAt)); },
+  lor: () => { const b = ((R("simresults:") || {}).best || {})["Drafting — LOR"]; return st(!!b && Number(b.score) >= PASS_PCT, !!b); },
+  medlor: () => { const r = prov().filter(x => !/Lien Balance/i.test(String(x.scenario || ""))); return st(r.some(x => Number(x.score) >= PASS_PCT), r.length > 0); },
+  lienbv: () => { const r = prov().filter(x => /Lien Balance/i.test(String(x.scenario || ""))); return st(r.some(x => Number(x.score) >= PASS_PCT), r.length > 0); }
+};
+const guideStatus = gid => { const g = R("guide:" + gid) || {}; return st(!!g.submittedAt, !!g.html); };
+const drillStatus = sid => { const runs = (((R("drills:") || {}).runs) || []).filter(r => r.set === sid);
+  return st(runs.some(r => r.total && r.score / r.total * 100 >= PASS_PCT), runs.length > 0); };
+
+/* ---------- the cards, filed by training day ---------- */
+const typeTag = {session: "🟢 Practice Session", trainer: "🧑‍🏫 With your trainer", tool: "🧰 Activity", listening: "🎧 Call Listening", calendar: "📅 Calendar", drafting: "🧰 Drafting Tools", any: "📚 Any day"};
+// a card's root gets its days, its type and its state: ✓ Done relabels its first button 👁 Review (the same page, on the work handed in)
+function mark(html, meta){
+  if(!html) return [];
+  const t = document.createElement("template"); t.innerHTML = html;
+  return [...t.content.children].filter(el => el.classList.contains("fts-card")).map(el => {
+    const days = meta && meta.days ? meta.days : String(el.dataset.days || "").split(",").map(Number).filter(Boolean);
+    const status = el.classList.contains("fts-locked") ? "locked" : (meta && meta.status) || el.dataset.status || "todo";
+    const type = (meta && meta.type) || el.dataset.type || "tool";
+    el.dataset.days = days.join(","); el.dataset.status = status; el.dataset.type = type;
+    el.classList.add("fts-st-" + status);
+    const k = el.querySelector(".fts-kicker");
+    if(k && meta && meta.kicker) k.textContent = meta.kicker;
+    // the card's top line: what it is, and where the trainee is with it
+    const top = document.createElement("div"); top.className = "fts-card-top";
+    const tag = document.createElement("span"); tag.className = "fts-type"; tag.textContent = typeTag[type] || ""; top.appendChild(tag);
+    const chip = document.createElement("span"); chip.className = "fts-chip fts-chip-" + status;
+    // (a trainer-led activity isn't the trainee's to start: it waits for the session with the trainer, who records the result)
+    chip.textContent = {done: "✓ Done", live: "🟢 In progress", redo: "🔁 Redo", locked: "🔒 Locked", todo: !isTrainee() ? "" : type === "trainer" ? "⏳ With your trainer" : "Not started"}[status] || "";
+    if(chip.textContent) top.appendChild(chip);
+    el.insertBefore(top, el.firstChild);
+    if(status === "done"){
+      const b = el.querySelector(".fts-tool-act .btn-navy");
+      if(b && !/Review/.test(b.textContent)){ b.textContent = "👁 Review"; b.classList.remove("btn-navy"); b.classList.add("btn-ghost"); b.title = "Done: open it again to look over what you handed in"; }
+    }
+    return {days, status, type, html: el.outerHTML};
+  });
+}
+// a small card of our own (a day's Process Guide, drill set, MedLOR, Lien BV)
+const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-card"><div class="fts-kicker">${esc(kicker)}</div><h3>${title}</h3>
+    <p class="fts-note">${note}</p><div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="${onclick}">${btn}</button></div></div>`;
+const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
+function labItems(){
+  const out = [], push = (html, meta) => out.push(...mark(html, meta));
+  const tool = (fn, id, type) => typeof window[fn] === "function" && toolOn(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type}) : 0;
+  if(window.FTSessions){ push(FTSessions.cards()); push(FTSessions.trainerCards()); }
+  tool("ftCalActivityCard", "calactivity", "calendar"); tool("ftCalCheckCard", "calcheck", "calendar");
+  tool("ftCalWeekCard", "calweek", "calendar"); tool("ftCalRulesCard", "calrules", "calendar");
+  tool("ftTranscribeCard", "transcribe", "drafting"); tool("ftLorCard", "lor", "drafting");
+  const DAYMAX = window.FTDays ? FTDays.COUNT : 16;
+  // the MedLOR + HIPAA packet (Day 14) and the Lien Balance Verification (Day 16): the same Portal tool, on their own day
+  [["medlor", "🩺 MedLOR + HIPAA Drafting", "Draft the MedLOR with Unsworn COR and merge it with the client’s signed HIPAA into one PDF, on the Training Portal. Checked when you upload it.", "Open the MedLOR"],
+   ["lienbv", "🧾 Lien Balance Verification Drafting", "Draft the Lien Balance Verification request letter on the Training Portal, in the firm’s own template. Checked when you upload it.", "Open the Lien BV"]].forEach(([id, t, n, b]) => {
+    const days = window.FTDays ? FTDays.forTool(id) : [];
+    if(typeof window.lshOpenPortalDrafting === "function" && toolOn(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
+  });
+  // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
+  if(window.FTGuide && toolOn("guide")) FTGuide.list.filter(g => g.day <= DAYMAX && dayOpen(g.day) && (seesAll() || typeof dayUnlocked !== "function" || dayUnlocked(g.lesson))).forEach(g =>
+    push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready.", "Open the guide", `FTGuide.open('${g.id}')`),
+      {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting"}));
+  if(window.FTDrills && toolOn("drills")) FTDrills.sets.filter(x => x.day <= DAYMAX && dayOpen(x.day)).forEach(x =>
+    push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions.", "Open the drills", `goto('drills')`),
+      {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting"}));
+  if(typeof window.ftListenCards === "function" && toolOn("listening")) push(ftListenCards(isTrainee() ? R("listening:") : null));
+  return out;
+}
 function renderSimulators(){
-  const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
-  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalRulesCard", "calrules") : "";
-  const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
-  const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
+  if(isTrainee()) loadDone();
+  const items = labItems();
+  const any = [];
   // (only scored work is on the Practice Lab: no 🧪 Calendar Practice (VA Practice Only) and no 📚 Knowledge Base card)
+  // by the first day a card is worked on (Reception's Days 4–5 is under Day 4); a card the trainer can't place goes to Any day
+  const byDay = {};
+  items.forEach(x => { const d = x.days.length ? Math.min(...x.days) : 0; if(!d){ any.push(x); return; } (byDay[d] = byDay[d] || []).push(x); });
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  const order = {session: 0, calendar: 1, drafting: 2, listening: 3, tool: 4, trainer: 5};
+  const flt = (isTrainee() && state.ftsFilter) || "all", counted = x => x.status !== "locked" && x.type !== "any";
+  const pass = x => flt === "all" || (flt === "done" ? x.status === "done" : x.status !== "done");
+  const all = items.filter(counted), doneN = all.filter(x => x.status === "done").length;
+  const last = days.length ? days[days.length - 1] : 0;
+  state.ftsDayOpen = state.ftsDayOpen || {};
+  const section = d => {
+    const list = byDay[d].slice().sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9)), shown = list.filter(pass);
+    if(!shown.length) return "";
+    const c = list.filter(counted), dn = c.filter(x => x.status === "done").length, complete = c.length && dn === c.length;
+    const info = window.FTDays ? FTDays.of(d) : null;
+    // a day fully done folds away (its cards stay one click off, for review); the trainer's choice of open/closed is kept
+    const open = flt !== "all" || (d in state.ftsDayOpen ? state.ftsDayOpen[d] : !complete || d === last);
+    return `<details class="fts-group fts-day ${complete ? "fts-day-done" : ""}" id="fts-day-${d}" ${open ? "open" : ""} ontoggle="ftsDayToggle(${d}, this.open)">
+      <summary><span class="fts-day-n">Day ${d}</span><span class="fts-day-role">${info ? esc(info.role) : ""}</span>
+        ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : `<span class="fts-day-count">${list.length} item${list.length === 1 ? "" : "s"}</span>`}</summary>
+      <div class="fts-grid">${shown.map(x => x.html).join("")}</div></details>`;
+  };
+  const chips = days.map(d => { const c = byDay[d].filter(counted), dn = c.filter(x => x.status === "done").length;
+    return `<a class="fts-jump ${isTrainee() && c.length && dn === c.length ? "ok" : ""}" onclick="ftsJump(${d})">Day ${d}${isTrainee() && c.length ? ` <small>${dn === c.length ? "✓" : dn + "/" + c.length}</small>` : ""}</a>`; }).join("");
+  const anyShown = any.filter(pass);
   const more = !seesAll() ? `<p class="fts-sub fts-more">📅 More of the Practice Lab opens as your training goes on, day by day.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
-      <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
-    ${window.FTSessions ? `${sessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
-      <div class="fts-grid">${sessions}</div></section>` : ""}
-    ${drafting ? `<section class="fts-group"><h2>🧰 Drafting Tools</h2><p class="fts-sub">Tools you draft in here, on this platform. You fill in the firm’s own template on the page and download the finished document as a PDF, named by the trainers’ convention — yours to edit before you download. Nothing you draft here becomes a case file in the CMS.</p>
-      <div class="fts-grid">${drafting}</div></section>` : ""}
-    ${trainer ? `<section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
-      <div class="fts-grid">${trainer}</div></section>` : ""}` : ""}
-
-    ${window.ftCasesSection ? ftCasesSection() : ""}
-    ${tool("ftListenSection", "listening")}${more}`;
+      <p>Your live practice, day by day. Each training day lists its Practice Sessions, activities, drafting tools, Call Listening and the work you do with your trainer. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
+    <div class="fts-bar card">
+      ${isTrainee() && all.length ? `<div class="fts-prog"><b>${doneN} of ${all.length} done</b><span class="fts-prog-bar"><i style="width:${Math.round(doneN / all.length * 100)}%"></i></span></div>` : ""}
+      ${isTrainee() ? `<div class="fts-filter" role="group" aria-label="Show">${[["all", "All"], ["todo", "To do"], ["done", "✓ Done"]].map(([k, l]) => `<button type="button" class="btn btn-sm ${flt === k ? "btn-navy" : "btn-ghost"}" onclick="ftsFilter('${k}')">${l}</button>`).join("")}</div>` : ""}
+      ${days.length ? `<nav class="fts-jumps" aria-label="Jump to a day">${chips}${anyShown.length ? `<a class="fts-jump" onclick="ftsJump(0)">Any day</a>` : ""}</nav>` : ""}
+    </div>
+    ${days.map(section).join("") || (flt !== "all" ? `<p class="fts-sub">${flt === "done" ? "Nothing marked done yet." : "Everything open so far is done. 🎉"}</p>` : "")}
+    ${anyShown.length ? `<details class="fts-group fts-day" id="fts-day-0" open><summary><span class="fts-day-n">Any day</span><span class="fts-day-role">Practice and reference, whenever you like</span></summary>
+      <div class="fts-grid">${anyShown.map(x => x.html).join("")}</div></details>` : ""}
+    ${more}`;
 }
+window.ftsDayToggle = (d, open) => { state.ftsDayOpen = state.ftsDayOpen || {}; state.ftsDayOpen[d] = !!open; };
+window.ftsFilter = k => { state.ftsFilter = k; render(); };
+window.ftsJump = d => { const el = document.getElementById("fts-day-" + d); if(!el) return; el.open = true; el.scrollIntoView({behavior: "smooth", block: "start"}); };
 
 // Open here: the tool fills the window in its own panel, outside the page, so the page
 // re-rendering underneath (menu, lessons opening) never reloads a simulator mid-call.
@@ -123,6 +255,7 @@ function ftsPanel(){
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsShowTool = (url, name)=>ftsShow(url, name);
 // (the Calendaring Activity opens straight on its own calendar, gcal.html?track=activity, not the Calendaring Simulators' list)
+// (opened signed in: a trainee's link carries their ticket, and a trainer's who came from the main Hub, theirs, js/lsh-tool-links.js)
 window.ftsCalsim = function(track, scores){ window.open(track === "activity" && !scores ? portalHref("gcal.html") + "&track=activity"
   : portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
 // Trainee Evaluations (trainers: the submissions with their AI review and feedback, and the trainees' calendars) and My Evaluations (a trainee's own calendars and the reports their trainer sent) are on the Portal.
@@ -218,30 +351,41 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-sub a{color:var(--orange-deep);font-weight:700;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
-/* 🛠 the Practice Lab on one screen: small cards, more in a row, a slim side margin (the page shrinks the rest of the
-   way to fit: js/ft-screen-fit.js) */
-main.main-sims{max-width:none;padding:12px 18px 20px;}
-main.main-sims .fts-hero{margin-bottom:10px;} main.main-sims .fts-hero .page-hero{padding:10px 18px !important;margin:0 !important;}
-main.main-sims .fts-hero h1{font-size:20px !important;margin:0 0 2px !important;} main.main-sims .fts-hero .eyebrow{display:none;}
-main.main-sims .fts-hero p{margin:0 !important;font-size:12.5px !important;max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-main.main-sims .fts-group{margin-bottom:8px;} main.main-sims .fts-group h2{font-size:17px;margin:0 0 2px;}
-main.main-sims .fts-sub{margin:0 0 6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-main.main-sims .fts-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
-@media(min-width:1500px){ main.main-sims .fts-grid{grid-template-columns:repeat(7,minmax(0,1fr));} }
-@media(max-width:1300px){ main.main-sims .fts-grid{grid-template-columns:repeat(4,minmax(0,1fr));} }
-@media(max-width:1000px){ main.main-sims .fts-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
-@media(max-width:560px){ main.main-sims .fts-grid{grid-template-columns:minmax(0,1fr);} }
+/* 🛠 the Practice Lab by the day: readable cards, a few to a row, each day its own section */
+main.main-sims{max-width:1320px;padding:16px 20px 40px;}
+main.main-sims .fts-hero{margin-bottom:10px;} main.main-sims .fts-hero h1{font-size:24px;margin:0 0 4px;}
+main.main-sims .fts-hero p{margin:0;font-size:14px;max-width:900px;}
+.fts-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;margin:0 0 14px;position:sticky;top:var(--fts-bar-top,0px);z-index:5;}
+.fts-prog{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--navy);}
+.fts-prog-bar{display:inline-block;width:140px;height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;} .fts-prog-bar i{display:block;height:100%;background:#16a34a;border-radius:99px;}
+.fts-filter{display:flex;gap:6px;}
+.fts-jumps{display:flex;flex-wrap:wrap;gap:6px;flex:1;justify-content:flex-end;}
+.fts-jump{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--navy);background:#f1f5f9;border:1px solid #e2e8f0;border-radius:99px;padding:3px 10px;text-decoration:none;white-space:nowrap;}
+.fts-jump small{font-weight:600;color:var(--ink-soft);} .fts-jump.ok{background:#dcfce7;border-color:#86efac;} .fts-jump.ok small{color:#166534;}
+.fts-day{margin:0 0 14px;border:1px solid var(--line,#e5e7eb);border-radius:14px;background:rgba(255,255,255,.55);padding:0 14px;scroll-margin-top:120px;}
+.fts-day > summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer;list-style:none;padding:12px 0;}
+.fts-day > summary::-webkit-details-marker{display:none;}
+.fts-day > summary::before{content:"▸";color:var(--ink-soft);font-size:14px;transition:transform .15s;} .fts-day[open] > summary::before{transform:rotate(90deg);}
+.fts-day-n{font-size:18px;font-weight:800;color:var(--navy);} .fts-day-role{font-size:14px;color:var(--ink-soft);font-weight:600;}
+.fts-day-count{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--ink-soft);background:#f1f5f9;border-radius:99px;padding:3px 10px;}
+.fts-day-count.ok{background:#dcfce7;color:#166534;}
+.fts-day[open] > .fts-grid{padding:0 0 14px;}
+main.main-sims .fts-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:12px;}
+main.main-sims .fts-card{position:relative;padding:14px 16px;gap:8px;}
+main.main-sims .fts-card h3{font-size:15.5px;}
+.fts-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px;}
+main.main-sims .fts-note{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+main.main-sims .fts-tool-act{margin-top:auto;padding-top:4px;}
+.fts-type{font-size:11px;font-weight:700;color:var(--navy);opacity:.75;letter-spacing:.02em;}
+.fts-chip{margin-left:auto;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;background:#f1f5f9;color:var(--ink-soft);white-space:nowrap;}
+.fts-chip-done{background:#16a34a;color:#fff;} .fts-chip-live{background:#dbeafe;color:#1e40af;} .fts-chip-redo{background:#fef3c7;color:#92400e;}
+main.main-sims .fts-card.fts-st-done{border-color:#86efac;box-shadow:inset 4px 0 0 #16a34a;}
 /* a card says what it is and opens it: its long lists (templates, guides, recordings) and samples are inside the tool */
 main.main-sims .fts-card ul, main.main-sims .fts-card ol, main.main-sims .fts-label, main.main-sims .fts-sample, main.main-sims .fts-file{display:none !important;}
-main.main-sims .fts-card{padding:8px 10px;gap:4px;}
-main.main-sims .fts-card h3{font-size:14.5px;}
-main.main-sims .fts-kicker{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-main.main-sims .fts-note{font-size:12.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
-main.main-sims .fts-graded{font-size:12px;padding:4px 8px;}
-main.main-sims .fts-card .btn{padding:5px 10px;font-size:12.5px;}
-main.main-sims .fts-tool-act{margin-top:auto;}
+main.main-sims .fts-card details.ti-rub-card ul{display:block !important;}
 /* the same line on every trainer card (the section says it once): hidden here; the trainer's own comment still shows */
 main.main-sims .fts-note-std{display:none !important;}
+@media(max-width:640px){ .fts-jumps{justify-content:flex-start;} .fts-bar{position:static;} main.main-sims{padding:12px 16px 32px;} }
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
 /* The panel starts below the top bar: a tool fills the rest of the window, and 📚 Dashboard and the
    other tabs stay clickable while it is open (ftsTop() keeps --fts-top on the bar's real height). */

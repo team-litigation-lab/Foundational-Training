@@ -48,9 +48,9 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => goto('transcribe')); await page.waitForTimeout(1500);
   let txt = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/Atty\. Magdalena/.test(txt) || !/Transcription - Recording 1 \(Tara\)/.test(txt)) fail('the attorney\'s request doesn\'t name the task and the file name');
-  if (await page.$('.tr-player iframe')) fail('the recording plays before the trainee starts');
+  if (await page.$('.tr-player audio')) fail('the recording plays before the trainee starts');
   await page.click('text=Open the recording and start'); await page.waitForTimeout(800);
-  if (!(await page.$('.tr-player iframe'))) fail('▶ start didn\'t open the recording');
+  if (!(await page.$('.tr-player audio[src="/ft/day9/audio/interview-recording-1.mp3"]'))) fail('▶ start didn\'t open the recording (the PI interview, played on the platform)');
 
   // the minutes: a timestamp from the stopwatch (Alt+T), then the rest
   await page.click('#tr-discussion'); await page.keyboard.press('Alt+t');

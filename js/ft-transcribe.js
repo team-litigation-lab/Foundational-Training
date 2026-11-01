@@ -22,9 +22,12 @@ const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId
 const saves = () => isTrainee();
 const ATTY = "Atty. Magdalena";
 const DRIVE = id => `https://drive.google.com/file/d/${id}/view?usp=sharing`;
+// the two interviews: fictional personal injury consultations with Atty. Magdalena, in the sample guide's style and her voice,
+// played here (build/audio/interviews.json → build/audio/make_interviews.py → ft/day9/audio; the guide's Drive recordings were
+// not PI cases)
 const RECS = {
-  1: {id: "1N_cSvNZRWaamyBOwtOijyH-MnmOgRaIi", title: "Interview Recording 1"},
-  2: {id: "1lCC6wYca8Pxgqdw2sos-Bo95JdKtUsT5", title: "Interview Recording 2"}
+  1: {src: "/ft/day9/audio/interview-recording-1.mp3", title: "Interview Recording 1", dur: "5:37"},
+  2: {src: "/ft/day9/audio/interview-recording-2.mp3", title: "Interview Recording 2", dur: "4:42"}
 };
 const SAMPLE = "1CAGSbA5_REY8UqvCAfn2khyDEL4QMR0m";
 // the minutes, in the order the document runs
@@ -45,6 +48,10 @@ const isDriveLink = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u 
 
 /* ---------- the record ---------- */
 const T = {id: null, rec: null, loading: null, saving: null, savedOk: true, n: 1, busy: false, sw: {acc: 0, at: 0, on: false}, tick: null, admin: null};
+// the way back to the deck (FTTranscribe.fromDeck), kept for the tab as the Knowledge Check keeps its own (ftKCBack): a reload
+// of the activity still goes back to where the trainee left off
+const RET = "ftTrBack";
+try{ T.ret = JSON.parse(sessionStorage.getItem(RET) || "null"); }catch(err){ T.ret = null; }
 const blank = () => ({v: 1, r: {}});
 function run(n){ const r = T.rec.r; return r[n] || (r[n] = {f: {}, file: "", link: "", report: "", startedAt: "", updatedAt: ""}); }
 function load(){
@@ -124,19 +131,28 @@ function docHtml(n){
     <p style="margin-top:18pt;font-size:11pt">Prepared by: ${e(state.certName || state.traineeName || "")}</p></body></html>`;
 }
 
-/* ---------- 📘 the PI equivalent sample guide and the metrics (js/ft-intake.js fills .ftis-consult) ---------- */
+/* ---------- 📋 the metrics (the sample guide, its transcript and the firm's sample minutes are on Day 9's deck, its Sample
+   Transcription Guide slide: not repeated here) ---------- */
 function guide(){
   const rb = window.FT_RUBRICS && FT_RUBRICS.forAct({id: "transcription-" + T.n});
-  return `<details class="card tr-guide"><summary>📘 Sample guide first: a PI consultation with ${ATTY} (A = Attorney, C = Client), its transcript and the sample minutes</summary>
-      <p class="tr-muted">Listen, read the A / C transcript, then compare the sample minutes with what you would have written. Your own minutes are scored the same way.</p>
-      ${window.FTIntake ? `<div class="ftis-consult"></div>` : ""}
-      <details class="tr-sample" open><summary>📄 The firm’s Sample Minutes of the Meeting, the format to follow</summary>
-        <div class="tr-sample-f"><iframe src="https://drive.google.com/file/d/${SAMPLE}/preview" title="Sample Minutes of the Meeting" loading="lazy"></iframe></div></details>
-      ${rb ? `<div class="tr-metrics"><b>📋 How your minutes are scored</b> <span class="tr-muted">each criterion 0–5 · accuracy and completeness count double · the weighted average is your score</span>
-        <ol>${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>${rb.time ? `<p class="tr-muted">⏱ ${e(rb.time)}</p>` : ""}</div>` : ""}</details>`;
+  return rb ? `<details class="card tr-guide"><summary>📋 How your minutes are scored</summary>
+      <div class="tr-metrics"><span class="tr-muted">each criterion 0–5 · accuracy and completeness count double · the weighted average is your score</span>
+        <ol>${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>${rb.time ? `<p class="tr-muted">⏱ ${e(rb.time)}</p>` : ""}</div></details>` : "";
 }
 
 /* ---------- the page ---------- */
+// (as the Knowledge Check's, under Submit: "Back to <the deck's next activity> →", when opened from a deck)
+const backToDeck = () => T.ret ? `<div class="tr-back"><button class="btn btn-primary" type="button" onclick="FTTranscribe.toDeck()">Back to ${T.ret.h ? e(T.ret.h) : "the deck"} →</button></div>` : "";
+// 🖥 one screen: the request, listening and scoring on the left, the minutes in the middle, filing, reporting and Submit on the
+// right, each column as tall as the screen leaves under the steps and scrolling on its own when it holds more
+function fitDesk(){
+  const d = document.querySelector("main.main-tr .tr-desk"); if(!d) return;
+  d.style.height = "";
+  if(innerWidth <= 1100) return;
+  const foot = document.querySelector("footer, .site-footer, .ft-footer"), fh = foot ? foot.getBoundingClientRect().height : 0;
+  d.style.height = Math.max(420, Math.floor(innerHeight - d.getBoundingClientRect().top - fh - 14)) + "px";
+}
+addEventListener("resize", () => { if(state.view === "transcribe") fitDesk(); });
 const STEPS = [["📨", "The request"], ["🎧", "Listen"], ["📝", "Draft the minutes"], ["🏷", "Name & file it"], ["💬", "Report back"], ["📤", "Submit"]];
 function stepper(n){
   const r = run(n), f = r.f || {}, cs = checks(n);
@@ -161,17 +177,16 @@ function renderTrainee(){
       <p>A generalist VA’s everyday assignment, done the way it happens on the job: the attorney asks, you listen, you write the minutes, you name and file them, and you report back.</p>
       <div class="tr-tabs">${tabs}</div></div>
     ${stepper(n)}
+    <div class="tr-desk"><div class="tr-col tr-col-l">
     <div class="tr-mail card"><div class="tr-mail-h"><span class="tr-av">M</span><div><b>${ATTY}</b><small>to you · Minutes for my client interview (Recording ${n})</small></div><span class="tr-due">Today</span></div>
       <p>Hi ${e(first)},</p>
       <p>Please prepare the <b>minutes of my meeting with the client</b> from the attached recording (<b>${e(RECS[n].title)}</b>). Capture the discussion as thoroughly as you can — what the client told me, their concerns, what I advised, and the next steps — so I can rely on them without listening again.</p>
       <p>Save the minutes as a Word document named <b>${e(fileWant(n))}</b> in your <b>Assessments/Activities</b> folder, and let me know once they are there.</p>
       <p>Thank you!<br>${ATTY}</p>
-      <div class="tr-attach"><span>📎</span><b>${e(RECS[n].title)}</b><small>Recording · Google Drive</small></div></div>
+      <div class="tr-attach"><span>📎</span><b>${e(RECS[n].title)}</b><small>Recording · ${RECS[n].dur}</small></div></div>
     ${guide()}
-    <div class="tr-work">
       <aside class="card tr-side"><h3>🎧 Listen</h3>
-        ${r.startedAt ? `<div class="tr-player"><iframe src="https://drive.google.com/file/d/${RECS[n].id}/preview" allow="autoplay" title="${e(RECS[n].title)}"></iframe></div>
-          <a class="tr-open" href="${DRIVE(RECS[n].id)}" target="_blank" rel="noopener noreferrer">Open the recording in a new tab ↗</a>
+        ${r.startedAt ? `<div class="tr-player"><audio controls preload="metadata" src="${RECS[n].src}" title="${e(RECS[n].title)}"></audio><small>${e(RECS[n].title)} · ${RECS[n].dur}</small></div>
           <div class="tr-sw"><span class="tr-sw-l">⏱ Your stopwatch, kept with the recording</span><b id="trSw">${fmt(swMs())}</b>
             <div class="tr-sw-b"><button type="button" class="btn btn-navy btn-sm" id="trSwGo" onclick="FTTranscribe.sw()">${T.sw.on ? "⏸ Pause" : "▶ Start"}</button>
               <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.swReset()">↺ Reset</button>
@@ -182,11 +197,11 @@ function renderTrainee(){
         <h3>📄 Reference</h3>
         <a class="viewer-link tr-ref" data-kind="doc" data-title="Sample Minutes of the Meeting" href="${DRIVE(SAMPLE)}">📄 Sample Minutes of the Meeting</a>
         <ul class="tr-tips"><li>Listen once through first, then again to type.</li><li>Names, dates, amounts and places exactly as said — replay to be sure.</li><li>Write it so the attorney never has to listen again.</li></ul></aside>
+    </div>
       <section class="card tr-doc"><div class="tr-page"><p class="tr-page-h">MINUTES OF THE MEETING</p><p class="tr-page-sub">Client-to-Attorney Interview · ${e(RECS[n].title)}</p>
         <div class="tr-grid">${FIELDS.map(x => field(x, f, ro || !r.startedAt)).join("")}</div>
         <p class="tr-prep">Prepared by: <b>${e(state.certName || state.traineeName || "you")}</b></p></div></section>
-    </div>
-    <div class="tr-finish">
+    <div class="tr-col tr-col-r">
       <section class="card tr-box"><h3>🏷 Name &amp; file it</h3>
         <label class="tr-f"><span>File name</span><input id="tr-file" value="${e(r.file || "")}" placeholder="${e(fileWant(n))}" ${ro ? "disabled" : ""} oninput="FTTranscribe.setRun('file', this.value)"></label>
         <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.download()">⬇ Download as Word</button>
@@ -200,7 +215,8 @@ function renderTrainee(){
             <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.redo()">🔁 Revise and resubmit</button>`
           : `<button type="button" class="btn btn-navy" id="trSubmit" ${r.startedAt ? "" : "disabled"} onclick="FTTranscribe.submit()">📤 Submit to your trainer</button>`}
         <p class="tr-muted" id="trSave">${saves() ? (r.updatedAt ? "All changes saved" : "") : "Test copy — nothing here is saved."}</p></section>
-    </div>`;
+      ${backToDeck()}
+    </div></div>`;
 }
 
 /* ---------- 🧑‍🏫 the trainer: every trainee's minutes ---------- */
@@ -243,9 +259,10 @@ window.FTTranscribe = {
     const d = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state();
     const i = (Number(d && d.i) || 0) + 1, nx = d && d.day != null && FTDayDecks.list ? (FTDayDecks.list(d.day) || [])[i] : null;
     T.ret = d && d.day != null && state.view === "daydeck" ? {day: d.day, i, h: nx ? String(nx.h || "").replace(/^(AM|PM|Entire Day):\s*/, "") : ""} : null;
+    try{ if(T.ret) sessionStorage.setItem(RET, JSON.stringify(T.ret)); else sessionStorage.removeItem(RET); }catch(err){}
     goto("transcribe");
   },
-  toDeck(){ const r = T.ret; T.ret = null; if(r && window.FTDayDecks) FTDayDecks.open(r.day, r.i); else goto("simulators"); },
+  toDeck(){ const r = T.ret; T.ret = null; try{ sessionStorage.removeItem(RET); }catch(err){} if(r && window.FTDayDecks) FTDayDecks.open(r.day, r.i); else goto("simulators"); },
   start(){ const r = run(T.n); if(!r.startedAt){ r.startedAt = new Date().toISOString(); save(); } render(); },
   set(k, v){ const r = run(T.n); if(r.submittedAt) return; r.f[k] = v; r.updatedAt = new Date().toISOString(); save();
     if(k === "discussion"){ const c = document.querySelector("#tr-discussion + .tr-count"); if(c) c.textContent = `${words(v)} words · ${stamps(v)} timestamps`; }
@@ -316,15 +333,19 @@ window.render = function(){
   if(state.view !== "transcribe") return __render.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   // (opened from a deck, FTTranscribe.fromDeck: back to that deck, on the slide after the one it was opened from)
-  const back = T.ret ? `<a class="back-link" onclick="FTTranscribe.toDeck()">&larr; Back to the deck${T.ret.h ? ": " + e(T.ret.h) : ""}</a>`
-    : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
+  // (opened from a deck: its way back is under Submit, backToDeck, and nothing at the top)
+  const back = T.ret ? "" : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-tr">${back}${adminOn() ? renderAdmin() : ""}${renderTrainee()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
+  fitDesk();
   clearInterval(T.tick); T.tick = setInterval(() => { if(state.view !== "transcribe"){ clearInterval(T.tick); T.tick = null; return; } if(T.sw.on) paintSw(); }, 500);
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-transcribe"; s.textContent = `
+.tr-back{display:flex;justify-content:flex-end;}
+/* (orange as the platform's other way-on buttons, with a white ring and a shadow: it reads on the backdrop photo) */
+.tr-back .btn{padding:12px 22px;font-size:15.5px;font-weight:800;box-shadow:0 0 0 2px #fff, 0 8px 22px rgba(15,18,36,.45);}
 main.main-tr{max-width:1240px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:14px;}
 .tr-copy{padding:10px 14px;background:#FFF8EF;border:1px dashed #DB8437;font-size:14px;}
 .tr-hero{background:#262B45;color:#fff;border-radius:18px;padding:18px 24px;position:relative;overflow:hidden;}
@@ -335,6 +356,17 @@ main.main-tr{max-width:1240px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tr-hero p{margin:0;color:#DDE2EE;max-width:80ch;}
 .tr-tabs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 .tr-tab{display:flex;flex-direction:column;align-items:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:12px;padding:8px 16px;cursor:pointer;font:700 14.5px 'Inter',sans-serif;}
+/* 🖥 on a wide screen the page is one screen (the desk, fitDesk): the header is one line, its title beside the Recording tabs
+   (no description), and the page takes more of the width */
+@media(min-width:1101px){
+  main.main-tr:has(.tr-desk){max-width:1680px;padding-top:12px;padding-bottom:12px;gap:10px;}
+  .tr-hero{display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:18px;padding:10px 22px;}
+  .tr-hero .tr-eyebrow{grid-column:1 / -1;margin:0;}
+  .tr-hero h1{margin:0;font-size:22px;} .tr-hero > p:not(.tr-eyebrow){display:none;}
+  .tr-hero .tr-tabs{margin:0;grid-column:3;} .tr-tab{padding:5px 14px;}
+  .tr-steps li{padding:5px 10px;} .tr-step-ic{width:26px;height:26px;}
+}
+.tr-due{white-space:nowrap;}
 .tr-tab small{font-weight:500;font-size:12px;color:#C9CFDD;}
 .tr-tab.on{background:#DB8437;border-color:#DB8437;} .tr-tab.on small{color:#fff;}
 .tr-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
@@ -349,12 +381,17 @@ main.main-tr{max-width:1240px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tr-mail p{margin:6px 0;font-size:15px;line-height:1.55;}
 .tr-attach{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#F6F7FB;}
 .tr-attach small{color:var(--ink-soft);}
-.tr-work{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:14px;align-items:start;}
-.tr-side{padding:14px 16px;position:sticky;top:12px;}
+.tr-desk{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr) minmax(0,330px);gap:14px;align-items:stretch;min-height:0;}
+.tr-col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;padding:2px;}
+.tr-desk > .tr-doc{overflow:auto;min-height:0;}
+.tr-side{padding:14px 16px;}
+/* (the request, read in the left column: smaller) */
+.tr-col-l .tr-mail{padding:12px 14px;} .tr-col-l .tr-mail p{font-size:13.5px;line-height:1.45;margin:4px 0;}
+.tr-col-l .tr-attach{display:flex;flex-wrap:wrap;}
 .tr-side h3, .tr-box h3{margin:0 0 8px;color:#262B45;font-size:16px;display:flex;align-items:center;gap:8px;}
 .tr-side h3 + *{margin-top:0;} .tr-side h3:not(:first-child){margin-top:14px;}
-.tr-player{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#161829;}
-.tr-player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.tr-player{border-radius:10px;background:#1E2340;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.tr-player audio{width:100%;} .tr-player small{color:#E6E9F5;font-weight:700;font-size:12.5px;}
 .tr-open{display:inline-block;margin:6px 0 0;font-size:12.5px;color:#B5651F;}
 .tr-sw{margin-top:10px;padding:10px 12px;border-radius:12px;background:#F6F7FB;display:flex;flex-direction:column;gap:6px;}
 .tr-sw-l{font-size:12px;font-weight:700;color:var(--ink-soft);}
@@ -377,7 +414,6 @@ a.tr-ref{display:block;padding:10px 12px;border-radius:10px;background:#EAF1FF;c
 .tr-f input:focus, .tr-f textarea:focus, .tr-box textarea:focus{outline:2px solid #F4B77A;border-color:#DB8437;}
 .tr-count{font-weight:600;color:var(--ink-soft);}
 .tr-prep{margin:16px 0 0;font-size:13.5px;color:var(--ink-soft);}
-.tr-finish{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;}
 .tr-box{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
 .tr-muted{color:var(--ink-soft);font-size:12.5px;margin:0;}
 .tr-checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;}
@@ -390,11 +426,10 @@ a.tr-ref{display:block;padding:10px 12px;border-radius:10px;background:#EAF1FF;c
 .tr-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;} .tr-tbl th, .tr-tbl td{border-bottom:1px solid var(--line,#e5e7eb);padding:8px;text-align:left;vertical-align:top;}
 .tr-read{max-height:320px;overflow:auto;background:#F6F7FB;border-radius:8px;padding:8px 10px;margin-top:6px;} .tr-read p{margin:0 0 8px;}
 .tr-copy-h{margin:8px 0 0;color:#262B45;font-size:18px;}
-.tr-guide{padding:12px 18px;} .tr-sample{margin-top:10px;} .tr-sample > summary{cursor:pointer;font-weight:700;color:#262B45;font-size:14px;}
-.tr-sample-f{height:min(70vh,640px);margin-top:6px;border:1px solid #CBD2DF;border-radius:10px;overflow:hidden;background:#F6F7FB;} .tr-sample-f iframe{width:100%;height:100%;border:0;background:#fff;} .tr-guide > summary{cursor:pointer;font-weight:800;color:#262B45;font-size:15px;} .tr-guide[open] > summary{margin-bottom:8px;}
-.tr-metrics{margin-top:10px;padding:10px 14px;background:#F6F7FB;border-radius:10px;font-size:14px;} .tr-metrics ol{margin:6px 0 0;padding-left:20px;columns:2;column-gap:28px;}
-@media(max-width:700px){.tr-metrics ol{columns:1;}}
-@media(max-width:1000px){.tr-work, .tr-finish{grid-template-columns:minmax(0,1fr);} .tr-side{position:static;} .tr-steps{grid-template-columns:repeat(3,minmax(0,1fr));}}
+.tr-guide{padding:12px 18px;} .tr-guide > summary{cursor:pointer;font-weight:700;color:#262B45;}
+.tr-metrics{margin-top:10px;padding:10px 14px;background:#F6F7FB;border-radius:10px;font-size:13.5px;} .tr-metrics ol{margin:6px 0 0;padding-left:20px;}
+@media(max-width:1100px){.tr-desk{grid-template-columns:minmax(0,1fr);} .tr-col{overflow:visible;} .tr-desk > .tr-doc{overflow:visible;}}
+@media(max-width:1000px){.tr-steps{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @media(max-width:600px){.tr-grid{grid-template-columns:minmax(0,1fr);} .tr-page{padding:18px;} .tr-steps{grid-template-columns:repeat(2,minmax(0,1fr));}}
 `; document.head.appendChild(s); })();
 })();

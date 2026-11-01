@@ -63,6 +63,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     const tv = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { cases: el.querySelectorAll('.ftis-mc-t').length, html: el.innerHTML,
       tag: [...el.querySelectorAll('.ftis-mc-t')].map(d => (d.querySelector('.ftis-mc-n') || {}).textContent || '') } : null; });
     if (!tv) fail('Day 9\'s Intake Mock Calls slide has no mock call case section for the trainer');
+    if (await page.evaluate(() => document.querySelectorAll('.ftdd-sheet .ftis-mockcall').length) !== 1) fail('the trainer\'s Intake Mock Calls slide doesn\'t list the cases exactly once');
     else {
       if (tv.cases !== 3) fail(`the trainer's slide lists ${tv.cases} cases, not the CMS's 3 intake calls`);
       if (!/Scenario Picker/.test(tv.html) || !/SCRIPT-ft_in_nicole/.test(tv.html) || !/CASEFILE-MC-13/.test(tv.html)) fail('the trainer\'s case doesn\'t say where to pick it on Ring Channel, or lacks the script or the CMS file');

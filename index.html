@@ -2582,9 +2582,10 @@ body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--or
   --surface-blur:saturate(118%) blur(10px);
 }
 /* The photo was at .20, which the opaque cards then covered almost entirely.
-   At .40 it reads through the glass without the text on top of it losing
-   contrast — the page's own measurement, not a guess. */
-body::before{opacity:.40;}
+   At .40 it read through the glass without the text on top of it losing
+   contrast; raised to .50 so it shows a little more (the text sits on the
+   glass cards, which keep it readable). */
+body::before{opacity:.50;}
 .module-card,
 .card{
   background:var(--surface-glass);
@@ -18917,17 +18918,19 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.30-lien-optional"></script>
 <script src="/js/ft-process.js?v=ft-2026.10.30-pi-recep-kc"></script>
-<script src="/js/ft-assess.js?v=ft-2026.10.29-assess"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.30-trainer"></script>
+<script src="/js/ft-assess.js?v=ft-2026.10.30-claims-email"></script>
+<script src="/js/ft-claims-email.js?v=ft-2026.10.30-claims-email"></script>
+<script src="/js/ft-rules.js?v=ft-2026.11.01-wrapup"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.30-guest-names"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.30-merge450"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
-<script src="/js/ft-firms.js?v=ft-2026.10.31-nofirmstab"></script>
-<script src="/js/ft-day-activities.js?v=ft-2026.10.31-transcription-day9"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.10.31-scored-only"></script>
+<script src="/js/ft-firms.js?v=ft-2026.11.01-merge475"></script>
+<script src="/js/ft-day-activities.js?v=ft-2026.11.01-merge475"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.11.01-merge475"></script>
 <script src="/js/ft-rubrics.js?v=ft-2026.10.29-intake"></script>
-<script src="/js/ft-sessions.js?v=ft-2026.10.30-merge450"></script>
-<script src="/js/ft-ranking.js?v=ft-2026.10.30-fill-week"></script>
+<script src="/js/ft-sessions.js?v=ft-2026.11.01-merge470"></script>
+<script src="/js/ft-ranking.js?v=ft-2026.11.01-merge470"></script>
+<script src="/js/ft-overall.js?v=ft-2026.11.01-overall"></script>
 <script src="/js/ft-skilltests.js?v=ft-2026.10.30-trainer-merge"></script>
 <script src="/js/ft-drills.js?v=ft-2026.10.19-hint"></script>
 <script src="/js/ft-kcbank.js?v=ft-2026.10.16-kcgames"></script>
@@ -18936,17 +18939,17 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-calweek-core.js?v=ft-2026.10.29-calweek"></script>
 <script src="/js/ft-calweek.js?v=ft-2026.10.31-calweek-score"></script>
 <script src="/js/ft-calcheck.js?v=ft-2026.10.30-guest-names"></script>
-<script src="/js/ft-listening.js?v=ft-2026.10.30-day13-audio"></script>
+<script src="/js/ft-listening.js?v=ft-2026.11.01-lab-by-day"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.29-calcheck-calact"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.30-merge455"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.30-claims-email-m"></script>
 <script src="/js/ft-checkin.js?v=ft-2026.10.30-timein"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.29-audio"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.30-deck-return"></script>
 <script src="/js/ft-intake.js?v=ft-2026.10.30-tr-return-no-preview"></script>
 <script src="/js/ft-process-guide.js?v=ft-2026.10.16-feedback"></script>
-<script src="/js/ft-lor.js?v=ft-2026.10.30-trainer-merge"></script>
+<script src="/js/ft-lor.js?v=ft-2026.11.01-lab-by-day"></script>
 <script src="/js/ft-trainer-feedback.js?v=ft-2026.10.30-trainer-merge"></script>
 <script src="/js/ft-drive.js?v=ft-2026.10.30-fill-week"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
@@ -18970,12 +18973,12 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-day-locks.js?v=ft-2026.10.30-contrast"></script>
 <script src="/js/ft-kb-articles.js?v=ft-2026.10.30-kb-course"></script>
 <script src="/js/ft-kb-card.js?v=ft-2026.10.30-kb-color"></script>
-<script src="/js/lsh-tool-links.js?v=ft-2026.10.30-intake4"></script>
+<script src="/js/lsh-tool-links.js?v=ft-2026.10.31-trainer-sso"></script>
 <script src="/js/ft-theme.js?v=ft-2026.10.09-grad"></script>
 <script src="/js/ft-presenter-cues.js?v=ft-2026.10.30-trainer"></script>
 <script src="/js/lsh-one-screen.js?v=1"></script>
-<script src="/js/ft-screen-fit.js?v=ft-2026.10.26-onescreen"></script>
-<script src="/js/ft-buffer.js?v=ft-2026.10.30-merge455"></script>
+<script src="/js/ft-screen-fit.js?v=ft-2026.11.01-lab-by-day"></script>
+<script src="/js/ft-buffer.js?v=ft-2026.10.30-one-case-list"></script>
 <script src="/js/ft-admin-tidy.js?v=ft-2026.10.31-tidy"></script>
 </body>
 </html>

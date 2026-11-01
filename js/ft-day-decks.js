@@ -185,6 +185,8 @@ function kindOf(s, html){
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   // (Day 3's Frontline Management: its decision trees and SOP are to listen and do by, not a discussion)
   if(/^Frontline Management/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
+  // (Day 10's sample recordings of opening claims are listened to, with the documents beside them)
+  if(/^(AM: |PM: )?Sample Recordings/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video|ftdd-inline is-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
@@ -1440,18 +1442,22 @@ const LESSON_CARDS = {
       // opening-claims slide in three (what to share, the sample recordings, the sample documents: build/day-decks.cjs
       // ROWS[10]) and the afternoon's videos; the day's deck closes on ✅ End of Part 1 (PART_END)
       {t: "Claims Specialist Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
+      {t: "Sample SOP: Opening a 3P Claim & Sending the LOR", sub: "Before the call, the call, the LOR, sending it and following up", k: "read", d: 10, s: "sop"},
       {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
       {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
       {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
       {t: "Sample Recordings & Documents: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims · the sample documents", k: "listen", d: 10, s: "s1e"},
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
-      // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
+      // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
+      // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"}],
+      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"},
+      {t: "Recorded Shadowing", sub: "Intake support & PI claims specialist roles · idle time", k: "watch", d: 12, s: "s1v"}],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
     // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
@@ -1498,7 +1504,9 @@ const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}}};
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
+  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure")
+  11: {s1: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -1754,7 +1762,7 @@ function dayCard(n, ex){
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
-        ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
+        ${""/* (no Activity instructions & tools on a day card: the slides carry them) */}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul class="ftlc-tk">${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
@@ -1963,7 +1971,7 @@ const TOOLS = [
       "Blueprint and My Evaluations in its top bar"]},
   {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
-    feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
+    feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
@@ -1979,7 +1987,7 @@ const TOOLS = [
       "✍️ Email Replies: one email at a time, answered in the sender’s style",
       "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
       "One submission grades filing, security, triage and your replies"]},
-  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
+  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulators", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
       "Eastern Time on a 15-minute grid, with 15 minutes between events",
@@ -2316,7 +2324,7 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
 @media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
 .ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:end;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it; a row's cards line up along the bottom, so a name over two lines
-   reaches up instead of pushing its card down: Day 10's VLF SOP) */
+   reaches up instead of pushing its card down) */
 .ftdd-three > *{margin:0;}
 .ftdd-three .ftdd-three-h{grid-column:1 / -1;}
 .ftdd-three .ftdd-three-side{grid-column:3;}
@@ -2538,6 +2546,27 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 10's sample documents: a tile each, four to a row, white on navy with an orange edge; each opens in a new tab) */
+.ft-body .ftdd-doctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin:8px 0 4px;}
+.ft-body a.ftdd-doctile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#1E2340;border-left:5px solid #E8590C;color:#fff !important;text-decoration:none !important;box-shadow:0 3px 10px rgba(30,35,64,.2);}
+.ft-body a.ftdd-doctile:hover, .ft-body a.ftdd-doctile:focus-visible{background:#2C335C;outline:3px solid #FFB27A;}
+.ft-body .ftdd-doctile-ic{grid-row:1 / span 2;font-size:22px;}
+.ftdd-sheet a.ftdd-doctile b{font:800 15px/1.25 'Poppins','Inter',sans-serif;color:#fff !important;}
+.ftdd-sheet a.ftdd-doctile small{font:700 12.5px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;}
+@media(max-width:900px){ .ft-body .ftdd-doctiles{grid-template-columns:repeat(2,minmax(0,1fr));} }
+/* (Day 10's two recording folders side by side, the first with its six recordings wider: one page with the documents) */
+.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
+.ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
+.ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
+/* (Day 10's Sample SOP, written on the deck: its steps in cards, four to a row, in bold; the questions in three columns) */
+.ft-body .ftdd-sop-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;margin:0 0 12px;}
+.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
+.ftdd-sheet .ftdd-sop .ftdd-card4 p:not(.ftdd-card4-h), .ftdd-sheet .ftdd-sop .ftdd-card4 li{font-size:17px !important;line-height:1.4 !important;font-weight:700 !important;color:#1B1E2E;}
+.ftdd-sheet .ftdd-sop .ftdd-card4 ul{margin:0;padding-left:20px;} .ftdd-sheet .ftdd-sop .ftdd-card4 li{margin:0 0 4px;}
+.ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:3;column-gap:28px;} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols li{break-inside:avoid;}
+.ftdd-sheet .ftdd-sop .ftdd-sop-wide{margin:0 0 8px;}
+.ftdd-sheet .ftdd-sop p.ftdd-sop-note{padding:8px 14px;border-left:4px solid #E8590C;background:#FFF7ED;border-radius:8px;font-weight:700;}
+@media(max-width:1100px){ .ft-body .ftdd-sop-cards, .ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:1;} }
 /* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
 .ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
