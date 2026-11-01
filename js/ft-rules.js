@@ -34,7 +34,7 @@ const CAMERA = [
     "No sleepwear, sleeveless tops, tank tops, caps, or clothes with large prints, logos or slogans."]},
   {h:"🖼 Framing", rows:["Your camera at eye level, your head and shoulders in the middle of the frame.",
     "Light in front of you, not behind you, so your face is clearly seen.",
-    "A plain, tidy background, or a professional virtual background."]}
+    "Your LSH standard backdrop, sent through Discord by your trainer."]}
 ];
 
 // Auxes: where and what to type in Discord.
