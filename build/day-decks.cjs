@@ -875,6 +875,10 @@ const LOR_GUIDE = () => {
   return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' +
     cards.map((c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`).join("") + "</div>\n";
 };
+// 📘 the Sample SOP, How to Open a 3P Auto Insurance Claim & Send the LOR (the guide's Tettra PDF, build/days/sample-3p-sop.html):
+// written on Day 10's deck as a slide of its own, after the Claims Specialist discussion and before the Digital Handouts, in
+// place of the PDF on the afternoon's videos slide
+const SAMPLE_SOP = () => fs.readFileSync(path.join(R, "build/days/sample-3p-sop.html"), "utf8").trim() + "\n";
 // the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
 const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
 // Day 10's What to Share, in cards on one page: Do NOT share, What you CAN share (with what the 3P check may also take), and
@@ -922,8 +926,8 @@ function D12_CARDS(x){
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
-  // slide; the 3P Zurich sample and the VLF SOP stay documents
-  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample and VLF's SOP embedded down the
+  // slide; the 3P Zurich sample stays a document (the SOP is written on its own slide: SAMPLE_SOP)
+  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample embedded down the
   // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
   // divider go
   10: {s2: h => {
@@ -938,7 +942,7 @@ const EDIT = {
     const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
     const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
     return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
-      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + col(embed(sop), "ftdd-three-side") + "</div>\n");
+      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + "</div>\n");
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
@@ -1129,6 +1133,7 @@ const ROWS = {
   },
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
+      {id: "sop", h: "AM: Sample SOP: How to Open a 3P Auto Insurance Claim & Send the LOR", parts: [], pre: SAMPLE_SOP()},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])

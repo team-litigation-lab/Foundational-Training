@@ -1442,6 +1442,7 @@ const LESSON_CARDS = {
       // opening-claims slide in three (what to share, the sample recordings, the sample documents: build/day-decks.cjs
       // ROWS[10]) and the afternoon's videos; the day's deck closes on ✅ End of Part 1 (PART_END)
       {t: "Claims Specialist Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
+      {t: "Sample SOP: Opening a 3P Claim & Sending the LOR", sub: "Before the call, the call, the LOR, sending it and following up", k: "read", d: 10, s: "sop"},
       {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
       {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
       {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
@@ -2323,7 +2324,7 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
 @media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
 .ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:end;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it; a row's cards line up along the bottom, so a name over two lines
-   reaches up instead of pushing its card down: Day 10's VLF SOP) */
+   reaches up instead of pushing its card down) */
 .ftdd-three > *{margin:0;}
 .ftdd-three .ftdd-three-h{grid-column:1 / -1;}
 .ftdd-three .ftdd-three-side{grid-column:3;}
@@ -2549,6 +2550,15 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
 .ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
 .ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
+/* (Day 10's Sample SOP, written on the deck: its steps in cards, four to a row, in bold; the questions in three columns) */
+.ft-body .ftdd-sop-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;margin:0 0 12px;}
+.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
+.ftdd-sheet .ftdd-sop .ftdd-card4 p:not(.ftdd-card4-h), .ftdd-sheet .ftdd-sop .ftdd-card4 li{font-size:17px !important;line-height:1.4 !important;font-weight:700 !important;color:#1B1E2E;}
+.ftdd-sheet .ftdd-sop .ftdd-card4 ul{margin:0;padding-left:20px;} .ftdd-sheet .ftdd-sop .ftdd-card4 li{margin:0 0 4px;}
+.ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:3;column-gap:28px;} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols li{break-inside:avoid;}
+.ftdd-sheet .ftdd-sop .ftdd-sop-wide{margin:0 0 8px;}
+.ftdd-sheet .ftdd-sop p.ftdd-sop-note{padding:8px 14px;border-left:4px solid #E8590C;background:#FFF7ED;border-radius:8px;font-weight:700;}
+@media(max-width:1100px){ .ft-body .ftdd-sop-cards, .ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:1;} }
 /* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
 .ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
