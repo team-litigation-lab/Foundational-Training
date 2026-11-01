@@ -26,8 +26,8 @@ const DRIVE = id => `https://drive.google.com/file/d/${id}/view?usp=sharing`;
 // played here (build/audio/interviews.json → build/audio/make_interviews.py → ft/day9/audio; the guide's Drive recordings were
 // not PI cases)
 const RECS = {
-  1: {src: "/ft/day9/audio/interview-recording-1.mp3", title: "Interview Recording 1", dur: "5:44"},
-  2: {src: "/ft/day9/audio/interview-recording-2.mp3", title: "Interview Recording 2", dur: "4:15"}
+  1: {src: "/ft/day9/audio/interview-recording-1.mp3", title: "Interview Recording 1", dur: "5:37"},
+  2: {src: "/ft/day9/audio/interview-recording-2.mp3", title: "Interview Recording 2", dur: "4:42"}
 };
 const SAMPLE = "1CAGSbA5_REY8UqvCAfn2khyDEL4QMR0m";
 // the minutes, in the order the document runs
