@@ -224,7 +224,7 @@ async function loadBackups(){
   try{ const keys = await sharedList("batchbackup:"); BB.list = (await sharedGetMany(keys)).filter(Boolean).sort((a, b) => String(b.at).localeCompare(String(a.at))); }
   catch(err){ BB.list = BB.list || []; }
   BB.loading = false;
-  if(state.view === "admin" && state.adminTab === "batches" && !state.batchFolder && !isTyping()) render();
+  if(state.view === "admin" && ["batches", "audit"].includes(state.adminTab) && !state.batchFolder && !isTyping()) render();
 }
 const csv = rows => rows.map(r => r.map(v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
 const pct = v => v == null ? "" : v;

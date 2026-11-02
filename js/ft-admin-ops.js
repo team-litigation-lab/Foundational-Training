@@ -50,7 +50,7 @@ const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
      `Set the certificate signatories once: ${SEC.sc} → ${go("audit","Trainee Audit")}.`,
-     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${SEC.sc} → ${go("batches","📁 Batch Folders")}.`,
+     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${SEC.sc} → ${go("audit","👥 Trainees & Batches")}.`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
    steps:[`Approve each new registration: ${SEC.sc} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
@@ -83,7 +83,7 @@ const MAP = [
      `Read what trainees say about the program in ${SEC.sc} → ${go("tfeedback","💬 Trainee Feedback")} and adjust the next sessions.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
    steps:[`Check names and the trainer on the certificate in Trainee Audit → View Detail → Certificate details.`,
-     `Download the batch's records in ${SEC.sc} → ${go("batches","📁 Batch Folders")}: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
+     `Download the batch's records in ${SEC.sc} → ${go("audit","👥 Trainees & Batches")}: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
      `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
