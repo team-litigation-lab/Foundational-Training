@@ -383,11 +383,12 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // (the count and status are the sheet on screen's — Day 1 shows one of its two sheets at a time — not the whole lesson's)
   const onScreen = shownSets(qs), sq = qs.filter(x => onScreen.includes(x.set));
   const done = sq.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
-  // (the Knowledge Check's score is the whole module's: shown once the module's questions are open, and named as such)
-  const best = studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
-  const st = prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
+  // (the Knowledge Check's score is the module's own sheet's; on the 📖 Reading Task's page, the Reading Task's own score)
+  const readOn = isReadPage(qs, onScreen), rr = readRec(lesson);
+  const best = readOn ? (rr && rr.attempts ? rr.best : null) : studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
+  const st = readOn ? (rr && rr.attempts ? {k:"done", t:"Graded"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"}) : prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<div class="card fp-set">
-    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Knowledge Check best ${best}%</span>` : ""}</div>
+    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">${readOn ? "📖 Reading Task best" : "Knowledge Check best"} ${best}%</span>` : ""}</div>
     <div class="fp-body">
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
@@ -752,6 +753,12 @@ function reviewBlock(id){
 }
 window.EXTRA_ROUTE_VIEWS = window.EXTRA_ROUTE_VIEWS.concat(["kc"]);
 const kcRec = id => ((FP.data && FP.data.kc) || {})[id] || null;
+/* 📖 a lesson's Reading Task (an open sheet, Day 1's PI Overview, shown on a page of its own) is scored separately from the
+   lesson's own sheet: its attempts in process:<id>.kcRead[lesson] ({attempts, best, last}), its best in the lesson's progress
+   as readScore (the Scorecard's own line). The lesson's Knowledge Check score, and its pass, are its own sheet's alone. */
+const readRec = id => ((FP.data && FP.data.kcRead) || {})[id] || null;
+const isReadPage = (all, onScreen) => onScreen.length > 0 && onScreen.every(st => !!st.open) && new Set(all.map(x => x.set)).size > onScreen.length;
+const shownKey = (id, read) => read ? id + ":read" : id;
 const kcTone = sc => sc >= 7 ? "ok" : sc >= 5 ? "mid" : "low";
 function kcReport(id, r){
   const tier = gradeTierFor(r.pct), color = GRADE_TIER_COLOR[tier] || "var(--ink-soft)", qs = kcQuestionsFor(id);
@@ -783,7 +790,22 @@ function renderKc(){
   if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
   loadReview();
-  const rec = kcRec(id), shown = KC.shown[id] || (rec && rec.last), prog = state.progress[id] || {};
+  const read = isReadPage(qs, shownSets(qs)), rec = read ? readRec(id) : kcRec(id), shown = KC.shown[shownKey(id, read)] || (rec && rec.last), prog = state.progress[id] || {};
+  if(read) return `${back}
+    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
+      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · best score <b>${rec.best}%</b> · ${rec.attempts} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
+    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
+    <div class="card kc-card">
+      ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
+        return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
+          <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
+          ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}</li>`; })}
+      <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
+        <span class="fp-save" id="fpSave"></span></div>
+      <p class="fp-muted">Your answers save as you type.</p>
+      ${pdfBox(id)}
+    </div>
+    ${kcSave(qs)}`;
   return `${back}
     <div class="kc-hero">${intro}
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${rec.best}%` : `Best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
@@ -812,12 +834,17 @@ function kcSave(qs){
   return "";
 }
 window.FTKc = {
-  open(id){ state.dayId = Number(id); KC.shown[id] = null; goto("kc"); window.scrollTo(0, 0); },
+  open(id){ state.dayId = Number(id); KC.shown[id] = null; KC.shown[shownKey(id, true)] = null; goto("kc"); window.scrollTo(0, 0); },
   async submit(id){
     if(KC.grading) return;
     if(!state.traineeId || (state.isAdmin && !state.adminPreview)){ toast("Trainees take the Knowledge Check."); return; }
-    const d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
+    const d = DAYS.find(x=>x.id===id), all = kcQuestionsFor(id);
     const ans = x => String((sheet(x.set.id).answers||[])[x.i] || "").trim();
+    // the sheet on screen is the one graded (Day 1 shows one of its two at a time: the Reading Task's, or the lesson's own),
+    // each scored on its own (a trainee on the Virtual Assistant Essentials sheet was blocked by the Reading Task's six
+    // questions, which that page doesn't show)
+    const onScreen = shownSets(all), read = isReadPage(all, onScreen), sk = shownKey(id, read);
+    const qs = all.filter(x => onScreen.includes(x.set));
     // (a lesson graded from two answer sheets, Day 1's Reading Task and its Process Questions: the message names the sheet
     // that still has short answers, so a trainee on the other sheet's page knows where to go)
     const shortQs = qs.filter(x=>ans(x).split(/\s+/).filter(Boolean).length < 5);
@@ -825,9 +852,9 @@ window.FTKc = {
       const bySet = [...new Set(shortQs.map(x=>x.set))].map(st => `${st.title}: ${shortQs.filter(x=>x.set===st).map(x=>"Q"+(x.i+1)).join(", ")}`);
       toast(`Answer every question in complete sentences (5 words or more) before you submit. Still to answer: ${bySet.join(" · ")}.`, 9000); return; }
     // (the same answers as the last graded attempt: its result stands, no new attempt)
-    const sig = kcSig(qs), last = (kcRec(id) || {}).last;
+    const sig = kcSig(qs), last = ((read ? readRec(id) : kcRec(id)) || {}).last;
     if(last && last.sig === sig){
-      KC.shown[id] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
+      KC.shown[sk] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
       toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands. Change an answer to grade it again.`, 8000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
@@ -857,6 +884,20 @@ Return ONLY a JSON object, no other text:
       if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
       const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
       const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna", sig};
+      // 📖 the Reading Task: its own score, kept apart; the lesson's score and its pass stay its own sheet's
+      if(read){
+        FP.data.kcRead = FP.data.kcRead || {};
+        const rr = FP.data.kcRead[id] = FP.data.kcRead[id] || {attempts:0, best:0, last:null};
+        rr.attempts++; rr.best = Math.max(rr.best||0, pct); rr.last = r;
+        onScreen.forEach(set=>{ const x = sheet(set.id); if(answered(set, x) === set.questions.length) x.submittedAt = r.at; });
+        queueSave();
+        state.progress[id] = Object.assign({}, state.progress[id] || {}, {readScore:rr.best, readAttempts:rr.attempts});
+        await storeSet("day-progress", state.progress);
+        try{ syncToLedger(); }catch(err){}
+        KC.shown[sk] = r;
+        toast(`📖 Reading Task: ${pct}% (best ${rr.best}%). It is scored on its own.`);
+        return;
+      }
       FP.data.kc = FP.data.kc || {};
       const rec = FP.data.kc[id] = FP.data.kc[id] || {attempts:0, best:0, last:null};
       rec.attempts++; rec.best = Math.max(rec.best||0, pct); rec.last = r;
@@ -868,7 +909,7 @@ Return ONLY a JSON object, no other text:
       state.progress[id] = Object.assign({}, prev, {score:tScore != null ? tScore : rec.best, kcAttempts:rec.attempts}, tScore != null ? {gradedScore:rec.best} : {}, (tScore != null ? tScore : pct) >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});
       await storeSet("day-progress", state.progress);
       try{ syncToLedger(); }catch(err){}
-      KC.shown[id] = r;
+      KC.shown[sk] = r;
       if(pct >= KC_PASS){ toast(`✓ ${pct}% · ${ftName(id)} finished.`); if(pct >= 85) burstConfetti(); }
       else toast(`${pct}%: not yet. Read the feedback under each answer, improve them and submit again.`);
     }catch(err){

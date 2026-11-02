@@ -69,6 +69,12 @@ window.LSH_PROGRAM = {
         const sc = p.trainerScore != null && "gradedScore" in p ? p.gradedScore : p.score;
         if(typeof sc !== "number") return {name:d.title, pct:null, note:"Not taken yet"};
         return {name:d.title, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`};
+      }).flatMap((it, k, arr) => {
+        // 📖 a lesson's Reading Task (Day 1's PI Overview), scored on its own (js/ft-process.js): its own line after the lesson's
+        const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
+        const rs = [...new Set(window.ftKcQuestions(d.id).map(x => x.set))].find(st => st.open);
+        if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
+        return [it, typeof p.readScore === "number" ? {name:`📖 ${rs.title}`, pct:p.readScore, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Your best graded call on each mock-call line of the CMS Call Simulator.",
