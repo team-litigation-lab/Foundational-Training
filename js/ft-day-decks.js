@@ -1609,25 +1609,45 @@ function nextKC(){
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
 // (here: opened from a slide's own link, Day 3's PI Reception Activity worksheet: the way back is the slide after this one)
 function toKC(l, here){
-  const d0 = decks() && decks()[DD.day];
-  if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
+  // (only from the deck on screen does its current slide say where the sheet was opened from: a day card's row, ✍️
+  // Process Questions: Submit, runs this off the deck, where DD.i is just the slide last open, often the reading's last
+  // part, which sent Lesson 1's own Knowledge Check to the Reading Task's sheet. Off the deck: the lesson's own sheet,
+  // and the way back is the slide after its Process Questions stop, on the deck that has it)
+  const onDeck = state.view === "daydeck", stopRe = new RegExp(`toKC\\(${Number(l)}\\)`);
+  const hasStop = n => { const x = decks() && decks()[n]; return !!x && slidesOf(x).some(y => y.launch && stopRe.test(y.launch.run || "")); };
+  let day = DD.day;
+  if(!onDeck && !hasStop(day)){ const n = Object.keys(decks() || {}).find(hasStop); if(n != null) day = Number(n); }
+  const cur = onDeck ? DD.i : -1;
+  const d0 = decks() && decks()[day];
+  if(cur >= 0 && unread(kcOf(d0 ? slidesOf(d0)[cur] : null)).length) return;   // the reading comes first
   // the way back is to the day's next activity: the slide after the reading it was opened from, else the slide after the
   // day's ✍️ Process Questions stop (that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
-  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
-  const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
-  let from = here || (list[DD.i] && list[DD.i].launch) ? DD.i : stop >= 0 ? stop : DD.i;
+  const d = d0, list = d ? slidesOf(d) : [];
+  const stop = list.findIndex(x => x.launch && stopRe.test(x.launch.run || ""));
+  let from = cur >= 0 && (here || (list[cur] && list[cur].launch)) ? cur : stop >= 0 ? stop : cur;
   // (from a stop whose Next is this Knowledge Check, kc: past the Process Questions stop that follows it, answered now)
-  if(from === DD.i && stop === DD.i + 1) from = stop;
+  if(cur >= 0 && from === cur && stop === cur + 1) from = stop;
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
-  const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => isPart(k, list[DD.i].id));
-  if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
+  const rk = cur >= 0 && list[cur] && Object.values(KC_NEXT[day] || {}).find(k => isPart(k, list[cur].id));
+  if(rk){ from = cur; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
   // (from a slide whose Next is the Knowledge Check: back to the slide after it)
-  else if(list[DD.i] && (KC_NEXT[DD.day] || {})[list[DD.i].id]) from = DD.i;
-  const s = list[from + 1] || null;
+  else if(cur >= 0 && list[cur] && (KC_NEXT[day] || {})[list[cur].id]) from = cur;
+  const s = from >= 0 ? list[from + 1] || null : null;
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // (and which answer sheet: the reading's, from the reading; the lesson's own, from its Process Questions stop)
-  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
-  if(root.FTProcess) FTProcess.openLesson(l);
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
+  // (the lesson's own Process Questions are answered now: the lesson counts as studied, as 📋 Classroom Activity on its
+  // last slide records it. Day 1's discussion is the trainer's, so a trainee may never press that, and until then the
+  // sheet held only the Reading Task's questions: this stop sent them to the Personal Injury sheet)
+  if(!rk) markStudied(Number(l)).then(() => { if(root.FTProcess) FTProcess.openLesson(l); });
+  else if(root.FTProcess) FTProcess.openLesson(l);
+}
+async function markStudied(l){
+  if(!state.traineeId || state.isAdmin || state.adminPreview || !hasPQ(l)) return;
+  const prev = (state.progress || {})[l] || {}; if(prev.studied || prev.done) return;
+  state.progress = state.progress || {};
+  state.progress[l] = Object.assign({}, prev, {studied: true, studiedAt: new Date().toISOString()});
+  try{ await storeSet("day-progress", state.progress); }catch(err){}
 }
 // a card row's stop on its day's deck, by the action it carries (FTDayDecks.stop)
 function openStop(n, run){

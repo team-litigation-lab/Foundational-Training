@@ -414,7 +414,7 @@ function moduleRow(lesson){
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
   const best = studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
-  return `<button type="button" class="card fp-row" onclick="FTProcess.openLesson(${lesson})">
+  return `<button type="button" class="card fp-row" onclick="FTProcess.openLesson(${lesson}, true)">
     <span class="fp-row-main"><b>${e(title)}</b><span class="fp-muted">${done} of ${qs.length} answered</span></span>
     <span class="fp-row-pills"><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</span>
   </button>`;
@@ -507,9 +507,12 @@ window.FTProcess = {
     try{ sessionStorage.setItem("ftKCBack", JSON.stringify({l: Number(lesson), sheet: "pq", assess: String(doc), only: true})); }catch(err){}
     goto("process", Number(lesson));
   },
-  openLesson(lesson){
+  // (fresh: opened from the ✍️ Knowledge Check index, not a deck: a route left from an earlier deck visit, the Reading
+  // Task's, must not pick the sheet; the lesson opens on its newest open sheet)
+  openLesson(lesson, fresh){
     const l = Number(lesson);
     if(!kcQuestionsFor(l).length) return;
+    if(fresh){ try{ sessionStorage.removeItem("ftKCBack"); }catch(err){} }
     goto("process", l);
   },
   set(sid, i, v){
