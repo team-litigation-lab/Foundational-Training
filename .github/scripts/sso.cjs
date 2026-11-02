@@ -111,6 +111,36 @@ async function ticketFor(payloadObj, secret) {
         if (none.status !== 403) fail(`a trainer signed in with this program's password should get no Portal ticket, got ${JSON.stringify(none)}`);
     } else fail(`the admin password should sign a trainer in here: ${JSON.stringify(pw)}`);
 
+    // 7. a trainee whose Batch ID was changed on the Portal keeps their one account (movedBatch): the same ID, its progress,
+    // the record moved to the new batch; a duplicate already made under the new ID (newer) is archived, merged into it
+    {
+        const e2 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), st = e2.__store;
+        const t1 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B03101', exp: Date.now() + 60000 }, SECRET) });
+        const oldId = t1.body && t1.body.id;
+        st.set('ft:progress:' + oldId, JSON.stringify({ 1: { done: true } }));
+        const t2 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        if (!t2.body || t2.body.id !== oldId) fail(`a changed Batch ID should keep the trainee's account ${oldId}, got ${JSON.stringify(t2.body && t2.body.id)}`);
+        const moved = JSON.parse(st.get('ft:trainee:' + oldId) || 'null');
+        // (and renews their session with the new batch and the kept ID)
+        const rn = await call(e2, '/api/auth/trainee', { name: 'Valeria Sarti', batch: 'B103026', id: oldId }, { Authorization: 'Bearer ' + (t2.body && t2.body.token) });
+        if (rn.status !== 200 || !rn.body || rn.body.id !== oldId) fail(`a kept account should renew with its new batch: ${JSON.stringify(rn)}`);
+        if (!moved || moved.batch !== 'B103026' || moved.batchFrom !== 'B03101') fail(`the account should move to the new batch: ${JSON.stringify(moved)}`);
+        if (st.has('ft:trainee:valeria-sarti--b103026')) fail('a second account was made for the new batch');
+        // (the duplicate the old behaviour made: newer, under the new ID; the next sign-in merges it)
+        const e3 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s3 = e3.__store;
+        s3.set('ft:trainee:valeria-sarti--b03101', JSON.stringify({ id: 'valeria-sarti--b03101', name: 'Valeria Sarti', batch: 'B03101', approved: true, registeredAt: '2026-10-30T08:00:00Z' }));
+        s3.set('ft:trainee:valeria-sarti--b103026', JSON.stringify({ id: 'valeria-sarti--b103026', name: 'Valeria Sarti', batch: 'B103026', approved: true, registeredAt: '2026-11-02T11:21:00Z' }));
+        const t3 = await call(e3, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        const dup = JSON.parse(s3.get('ft:trainee:valeria-sarti--b103026'));
+        if (!t3.body || t3.body.id !== 'valeria-sarti--b03101' || !dup.archived || dup.mergedInto !== 'valeria-sarti--b03101') fail(`an existing duplicate should be merged into the older account: ${JSON.stringify(t3.body && t3.body.id)} ${JSON.stringify(dup)}`);
+        // (two people with the same name in two batches, each with their own account from the start: nothing moves)
+        const e4 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s4 = e4.__store;
+        s4.set('ft:trainee:ana-cruz--b100926', JSON.stringify({ id: 'ana-cruz--b100926', name: 'Ana Cruz', batch: 'B100926', approved: true, registeredAt: '2026-11-01T08:00:00Z' }));
+        s4.set('ft:trainee:ana-cruz--b103026', JSON.stringify({ id: 'ana-cruz--b103026', name: 'Ana Cruz', batch: 'B103026', approved: true, registeredAt: '2026-10-01T08:00:00Z' }));
+        const t4 = await call(e4, '/api/auth/portal', { ticket: await ticketFor({ first: 'Ana', last: 'Cruz', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        if (!t4.body || t4.body.id !== 'ana-cruz--b103026' || JSON.parse(s4.get('ft:trainee:ana-cruz--b100926')).batch !== 'B100926') fail(`an account older than the other must stay as it is: ${JSON.stringify(t4.body && t4.body.id)}`);
+    }
+
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });

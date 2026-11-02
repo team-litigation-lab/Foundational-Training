@@ -175,6 +175,35 @@ async function readTraineeTokenGrace(env, request) {
   return { role, id: decodeURIComponent(subj) };
 }
 
+/* ---------- 🔁 a trainee whose Batch ID was changed on the Portal ----------
+   Their ID is name + batch (candidateIds), so a sign-in with the new batch would find no record and start a new, empty
+   account beside the old one. movedBatch finds the old one: the trainee's single other active, approved record by the
+   same name (same name slug, another batch), and keeps it, its batch set to the new one (batchFrom, batchMovedAt). A
+   record under the new ID that is newer than it (an empty account made by an earlier sign-in) is archived, mergedInto
+   the old one, so neither the Trainee Audit nor attendance lists the trainee twice. Two other same-name records, or
+   none, change nothing: the sign-in goes on as before. */
+async function movedBatch(kv, name, batch) {
+  const { newId } = candidateIds(name, batch), slug = newId.split("--")[0];
+  if (!slug || !newId.includes("--")) return null;
+  const list = await kv.list({ prefix: `trainee:${slug}--` }).catch(() => null);
+  const keys = ((list && list.keys) || []).map((k) => k.name).filter((k) => k !== `trainee:${newId}`);
+  if (!keys.length || keys.length > 20) return null;
+  const want = slugPart(name);
+  const recs = (await Promise.all(keys.map((k) => kv.get(k)))).map((v, i) => { try { return { key: keys[i], rec: JSON.parse(v) }; } catch (e) { return null; } })
+    .filter((x) => x && x.rec && x.rec.approved === true && !x.rec.archived && !x.rec.rejected && slugPart(x.rec.name || "") === want
+      && batchKey(x.rec.batch || "") !== batchKey(batch));
+  if (recs.length !== 1) return null;
+  const old = recs[0], id = old.key.slice("trainee:".length);
+  const curRaw = await kv.get(`trainee:${newId}`), cur = curRaw ? JSON.parse(curRaw) : null;
+  // (a record under the new ID older than the other: it is the trainee's own account in this batch; nothing moves)
+  if (cur && !cur.archived && Date.parse(cur.registeredAt || 0) <= Date.parse(old.rec.registeredAt || 0)) return null;
+  const at = new Date().toISOString();
+  const rec = Object.assign({}, old.rec, { batch: canonicalBatch(batch) || String(batch).trim(), batchFrom: old.rec.batch || "", batchMovedAt: at });
+  await kv.put(old.key, JSON.stringify(rec));
+  if (cur && !cur.archived) await kv.put(`trainee:${newId}`, JSON.stringify(Object.assign({}, cur, { archived: true, archivedAt: at, mergedInto: id })));
+  return { id, rec };
+}
+
 /* ---------- trainee IDs (must match the portal's generateTraineeId) ---------- */
 function slugPart(t) {
   return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -1199,8 +1228,15 @@ export default {
           const lrec = legacy ? JSON.parse(legacy) : null;
           if (lrec && (!lrec.batch || batchKey(lrec.batch) === batchKey(batch))) { chosen = legacyId; existing = legacy; }
         }
-        if (id && id !== chosen && id !== newId && id !== rawId && id !== legacyId) return json({ error: "Name/batch don't match this session" }, 403);
-        if (id && (id === newId || id === rawId || id === legacyId)) chosen = id;
+        // (an account kept through a Batch ID change, movedBatch: its ID carries the old batch, its record the new one)
+        let kept = null;
+        if (id && id !== chosen && id !== newId && id !== rawId && id !== legacyId) {
+          const r = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+          if (r && r.batchFrom !== undefined && slugPart(r.name || "") === slugPart(name) && batchKey(r.batch || "") === batchKey(batch)) { kept = id; existing = JSON.stringify(r); }
+          else return json({ error: "Name/batch don't match this session" }, 403);
+        }
+        if (kept) chosen = kept;
+        else if (id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
         if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, 24 * 30), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
@@ -1214,7 +1250,8 @@ export default {
           // Trainees come in through the LSH Training Portal (/api/auth/portal). A name + batch typed here is
           // accepted only to renew the session of a trainee who is already signed in on this device.
           const own = await readTraineeTokenGrace(env, request);
-          if (!own || (own.id !== newId && own.id !== rawId && own.id !== legacyId)) return json({ error: "portal-required" }, 403);
+          // (or their own account kept through a Batch ID change: its token's ID, checked against its record in traineeSession)
+          if (!own || (own.id !== newId && own.id !== rawId && own.id !== legacyId && own.id !== id)) return json({ error: "portal-required" }, 403);
         }
         // A new registration has to give the Batch ID in its one form: B + the date the batch started (MMDDYY).
         // Someone whose records are already here keeps signing in with the Batch ID they registered under.
@@ -1245,6 +1282,16 @@ export default {
           // (the token keeps the trainer's name, hub:<name>: a trainer who came from the main Hub gets the Portal's simulators
           // signed in too, /api/auth/tool-ticket)
           return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), 12) });
+        }
+        // 🔁 a Batch ID changed on the Portal: the trainee's ID is their name + batch, so the new batch would be a second,
+        // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
+        // to the new batch, with all its progress; a duplicate made since (newer than it) is archived, merged into it.
+        const moved = await movedBatch(kv, who.name, who.batch);
+        if (moved) {
+          const blockedM = (await blockedIds(env))[moved.id];
+          if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
+          return json({ id: moved.id, token: await makeToken(env, "t", moved.id, 24 * 30), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
+            name: who.name, first: who.first, last: who.last });
         }
         const res = await traineeSession(who.name, who.batch, "");
         if (!res.ok) return res;   // (offboarded, or their batch archived and cleared)
