@@ -298,12 +298,33 @@ function archiveDialog(batch){
     <p class="fba-hint">The folder has to be shared with the program’s Google service account as <b>Editor</b> (Content manager on a Shared Drive).</p>
     <label class="fba-c"><input type="checkbox" id="fbaPurge" checked> Then clear the batch’s records from this platform. The VAs’ scorecard stays recorded for the Main Portal, and their access closes.</label>
     <div class="fba-log" id="fbaLog" aria-live="polite"></div>
-    <div class="fba-btns"><button class="btn btn-ghost btn-sm" data-cancel>Cancel</button><button class="btn btn-navy btn-sm" data-go>☁ Save to Drive &amp; archive</button></div></div>`;
+    <div class="fba-btns"><button class="btn btn-ghost btn-sm fba-del" data-del title="Delete the batch's VAs and every record of theirs, with no backup">🗑 Delete the batch</button><button class="btn btn-ghost btn-sm" data-cancel>Cancel</button><button class="btn btn-navy btn-sm" data-go>☁ Save to Drive &amp; archive</button></div></div>`;
   document.body.appendChild(ov);
   const log = (m, cls) => { const l = ov.querySelector("#fbaLog"); l.insertAdjacentHTML("beforeend", `<div class="${cls || ""}">${m}</div>`); l.scrollTop = l.scrollHeight; };
   ov.querySelector("[data-cancel]").onclick = () => { if(!ov.dataset.busy) ov.remove(); };
   ov.addEventListener("click", ev => { if(ev.target === ov && !ov.dataset.busy) ov.remove(); });
   ov.querySelector("#fbaFolder").focus();
+  // 🗑 Delete the batch: no Drive backup; every VA's records go (POST /api/batch/purge), then their trainee record too, and their
+  // access closes. Asked twice: the Batch ID typed back, since nothing can be restored after it.
+  ov.querySelector("[data-del]").onclick = async () => {
+    const id = labelOf(batch), typed = prompt(`Delete Batch ${id} and its ${members.length} VA${members.length === 1 ? "" : "s"} for good? Every record of theirs is removed from this platform, with no backup, and their access closes. This can't be undone.\n\nType the Batch ID (${id}) to delete it:`);
+    if(typed == null) return;
+    if(String(typed).trim().toUpperCase() !== String(id).trim().toUpperCase()){ toast("The Batch ID didn’t match: nothing was deleted."); return; }
+    ov.dataset.busy = "1"; ov.querySelectorAll("button, input").forEach(x => { x.disabled = true; });
+    try{
+      for(const r of members){
+        await api("/api/batch/purge", {id:r.id});
+        await sharedDelete("trainee:" + r.id);
+        log(`✓ Deleted: ${e(r.name || r.id)}`, "ok");
+      }
+      await sharedDelete("batchbackup:" + batch).catch(() => {});
+      toast(`Batch ${id} deleted.`); ov.remove();
+      state.adminData = null; if(typeof loadAdminLedger === "function") loadAdminLedger(); render();
+    }catch(err){
+      log(`✗ ${e(err.message)}: some VAs may already be deleted. Try again to delete the rest.`, "bad");
+      delete ov.dataset.busy; ov.querySelectorAll("button, input").forEach(x => { x.disabled = false; });
+    }
+  };
   ov.querySelector("[data-go]").onclick = async () => {
     const folder = String(ov.querySelector("#fbaFolder").value || "").trim(), purge = ov.querySelector("#fbaPurge").checked;
     if(!/drive\.google\.com\/.*(folders\/|[?&]id=)[A-Za-z0-9_-]{10,}/.test(folder)){ toast("Paste the Google Drive folder’s link (…/drive/folders/…)."); return; }
@@ -416,7 +437,7 @@ window.FTBatchAdmin = {archive:archiveDialog, gather, buildFiles, startOf, activ
 .fba-c input{flex:0 0 auto;width:auto;margin:3px 0 0;}
 .fba-log{max-height:180px;overflow:auto;font-size:12.5px;margin:10px 0 0;} .fba-log:empty{display:none;}
 .fba-log div{padding:2px 0;} .fba-log .ok{color:#1E7F4F;} .fba-log .bad{color:var(--danger,#B42318);font-weight:700;}
-.fba-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;}
+.fba-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;} .fba-btns .fba-del{margin-right:auto;color:#B42318;border-color:#E6A5A0;font-weight:800;}
 .fba-list{display:grid;gap:6px;} .fba-item{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;}
 `; document.head.appendChild(s); })();
 })();
