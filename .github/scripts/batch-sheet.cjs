@@ -127,11 +127,38 @@ const failures = []; const fail = m => failures.push(m);
   if ((await get('trainee:' + dee)).batch !== BATCH) fail('the trainee\'s open tab wrote the old batch back');
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
 
+  // 🔒 the trainee's side: Ada's 📋 My Progress is her own row and nothing about anyone else
+  await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Ada Active'; state.view = 'modules'; render(); }, ids.Ada);
+  await page.waitForTimeout(400);
+  const bar = await page.evaluate(() => [...document.querySelectorAll('.topbar .nav > *')].map(x => x.innerText.trim()).join(' | '));
+  if (!/My Progress/.test(bar)) fail(`a trainee's top bar has no 📋 My Progress: ${bar}`);
+  await page.evaluate(() => goto('mysheet'));
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('My Progress never finished loading'));
+  await page.waitForTimeout(400);
+  const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
+  if (MT[0].title !== '👤 Me') fail(`the trainee's first table is ${MT[0].title}`);
+  for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
+  if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
+  const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
+  if (/Ben Blank|Cy Waiting|Dee Glitch/.test(text)) fail('another trainee\'s name is on the trainee\'s page');
+  if (await page.$('.bs-mine .gs-batch select, .bs-mine .bs-fix, .bs-mine .bs-back')) fail('a trainee has the batch picker or a trainer\'s tool');
+  if (/Fix the batch name|Bring them back/.test(text)) fail('a trainee sees a trainer\'s tool');
+  if (!(await page.evaluate(() => document.body.classList.contains('bs-wide')))) fail('My Progress is not full width');
+  // a trainer's actions do nothing for a trainee
+  await page.evaluate(() => { FTBatchSheet.fixOpen(); FTBatchSheet.batch('B03101'); });
+  if (await page.$('.bs-fix')) fail('a trainee opened ✏️ Fix the batch name');
+  // and #/mysheet is a trainee's only: a trainer is sent to the Dashboard
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; goto('mysheet'); });
+  await page.waitForTimeout(400);
+  if (await page.evaluate(() => state.view) === 'mysheet') fail('a trainer stays on a trainee\'s My Progress');
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
+  await page.waitForTimeout(600);
+
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in four tables; lessons, scores and recent progress from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in four tables; lessons, scores and recent progress from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });

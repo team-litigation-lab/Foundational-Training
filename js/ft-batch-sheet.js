@@ -13,6 +13,11 @@
    Nothing is stored here and nothing has to be started, typed or filled in: the page only reads what the platform already
    keeps (trainee:<id>, progress:<id> — the trainee's own saved progress, the Scorecard's sources, skills:<id>,
    simresults:<id>). ⬇ Download gives the whole page as a .csv file (it opens in Google Sheets or Excel).
+   🔒 THE TRAINEE'S SIDE (role-based): 📋 My Progress in a trainee's top bar (#/mysheet) is the same sheet with only their
+   own row — 👤 Me, 📚 Lessons, 🏅 Scores (no rank: that is the batch's) and 🕒 Recent progress — and nothing about anyone
+   else: no batch picker, no other trainee, no ✏️ Fix the batch name or ↩ Bring them back. It reads only the trainee's own
+   records (never the list of trainees), which is also all the Worker lets a trainee read; the trainer's actions refuse to
+   run for anyone but an admin.
    ============================================================ */
 (function(){
 "use strict";
@@ -32,12 +37,17 @@ const ago = v => { const d = t(v); if(!d) return ""; const m = Math.round((Date.
 const pct = n => typeof n === "number" && isFinite(n) ? Math.round(n) + "%" : "";
 const tone = v => typeof v !== "number" ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
 const letter = i => { let s = ""; i++; while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
-const on = () => state.view === "admin" && state.adminTab === TAB;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
+const isTrainee = () => !!state.traineeId && !state.isAdmin;
+const ME = "mysheet";
+const meOn = () => state.view === ME && isTrainee();
+const on = () => (state.view === "admin" && state.adminTab === TAB && adminOn()) || meOn();
 const rerender = () => { if(on()) render(); };
 
 /* ---------- who is in the batch: everyone who registered, approved or not ---------- */
 const statusOf = r => r.rejected ? "" : r.offboarded ? "Offboarded" : r.approved === true ? "Approved" : "Waiting for approval";
 async function loadPeople(){
+  if(!adminOn()){ B.people = []; return; }   // 🔒 the list of trainees is a trainer's only
   B.loading = true;
   try{
     let list = state.adminData;
@@ -58,7 +68,7 @@ async function loadPeople(){
   B.loading = false; rerender();
 }
 const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).concat((B.auto || []).map(p => p.batch)).filter(Boolean))].sort();
-const people = () => (B.people || []).filter(p => bLabel(p.batch) === B.batch);
+const people = () => meOn() ? (B.me ? [B.me] : []) : (B.people || []).filter(p => bLabel(p.batch) === B.batch);
 
 /* ---------- what the platform already keeps about each of them ---------- */
 async function loadData(){
@@ -102,7 +112,7 @@ function deckOf(p, d){
 /* ---------- the four tables: {title, note, head, rows:[[{v, f, cls}]]} ---------- */
 function traineesTable(){
   const ppl = people(), L = lessons();
-  return {id: "trainees", title: "👥 Trainees", note: "Everyone who registered in this batch, from the moment they register — before they have done anything.",
+  return {id: "trainees", title: meOn() ? "👤 Me" : "👥 Trainees", note: meOn() ? "Your account and how far you are." : "Everyone who registered in this batch, from the moment they register — before they have done anything.",
     head: ["Trainee", "Status", "Registered", "Last on the platform", "Lesson decks finished", "Knowledge Checks passed", "Last thing they opened"],
     rows: ppl.map(p => {
       const r = (B.data.rec[p.id] || {}).data || {}, decks = L.filter(d => deckOf(p, d).finished).length;
@@ -146,12 +156,13 @@ function scoresTable(){
   const rows = ppl.map(p => ({p, sc: (B.data.rec[p.id] || {}).score}));
   const order = rows.filter(r => r.sc && r.sc.overall != null).sort((a, b) => b.sc.overall - a.sc.overall);
   order.forEach((r, i) => { r.rank = i && order[i - 1].sc.overall === r.sc.overall ? order[i - 1].rank : i + 1; });
-  return {id: "scores", title: "🏅 Scores", note: "Every grade the platform gives, averaged per grading system (the same as 🏅 Scorecards). Overall is their average; rank is by the Overall. A blank cell: nothing graded there yet.",
-    head: ["Trainee"].concat(S.map(s => `${s.icon || ""} ${s.label}`.trim()), ["Overall", "Rank"]),
+  return {id: "scores", title: "🏅 Scores", note: meOn() ? "Every grade the platform gives you, averaged per grading system (the same as 🏅 My Performance). Overall is their average. A blank cell: nothing graded there yet."
+      : "Every grade the platform gives, averaged per grading system (the same as 🏅 Scorecards). Overall is their average; rank is by the Overall. A blank cell: nothing graded there yet.",
+    head: ["Trainee"].concat(S.map(s => `${s.icon || ""} ${s.label}`.trim()), meOn() ? ["Overall"] : ["Overall", "Rank"]),
     rows: rows.map(r => [{v: r.p.name, f: r.p.name, cls: "gs-name"}].concat(S.map((s, i) => { const x = r.sc && r.sc.rows ? r.sc.rows.find(y => y.s === s) || r.sc.rows[i] : null, a = x ? x.avg : null;
         return {v: pct(a), f: a == null ? `${s.label}: nothing graded yet` : `${s.label}: average of ${x.graded} grade${x.graded === 1 ? "" : "s"} = ${a}%`, cls: "gs-num " + tone(a)}; }),
       [{v: pct(r.sc && r.sc.overall), f: r.sc && r.sc.overall != null ? `Overall = the average of the grading systems = ${r.sc.overall}%` : "Nothing graded yet", cls: "gs-num gs-calc gs-bold " + tone(r.sc && r.sc.overall)},
-       {v: r.rank || "", f: r.rank ? `Rank ${r.rank} of ${order.length} in ${B.batch}` : "Not ranked: nothing graded yet", cls: "gs-num gs-rank"}]))};
+       {v: r.rank || "", f: r.rank ? `Rank ${r.rank} of ${order.length} in ${B.batch}` : "Not ranked: nothing graded yet", cls: "gs-num gs-rank"}].slice(0, meOn() ? 1 : 2)))};
 }
 /* Everything each trainee did, from what the platform keeps, newest first. */
 function events(){
@@ -181,7 +192,7 @@ function events(){
 function recentTable(){
   const since = B.recent ? Date.now() - B.recent * 86400000 : 0;
   const list = events().filter(x => !since || +x.at >= since).slice(0, 400);
-  return {id: "recent", title: "🕒 Recent progress", note: `Everything they did${B.recent ? ` in the last ${B.recent} days` : ""}, newest first: lesson decks, Knowledge Checks, practice in the tools, tests and simulators.`,
+  return {id: "recent", title: "🕒 Recent progress", note: `Everything ${meOn() ? "you" : "they"} did${B.recent ? ` in the last ${B.recent} days` : ""}, newest first: lesson decks, Knowledge Checks, practice in the tools, tests and simulators.`,
     head: ["When", "Trainee", "What", "Detail", "Score"],
     rows: list.map(x => [
       {v: when(x.at), f: x.at.toLocaleString(), cls: ""},
@@ -243,13 +254,13 @@ function renderSheet(){
 }
 
 window.FTBatchSheet = {
-  batch(b){ B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
+  batch(b){ if(!adminOn()) return; B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   period(v){ B.recent = Number(v) || 0; render(); },
   // ↩ the batch's trainees the tidy-up archived on its own come back to the active list; the batch is marked restored in
   // settings:autoarchive (done), so the tidy-up doesn't archive it again — as 📁 Batch Folders → ↩ Restore batch does
   async bringBack(){
-    if(B.backBusy) return;
+    if(B.backBusy || !adminOn()) return;
     const back = (B.auto || []).filter(p => p.batch === B.batch); if(!back.length) return;
     B.backBusy = true; render();
     let n = 0;
@@ -264,12 +275,12 @@ window.FTBatchSheet = {
     if(typeof state === "object") state.adminData = null;
     B.people = null; B.data = null; B.dataKey = ""; render();
   },
-  fixOpen(){ B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
+  fixOpen(){ if(!adminOn()) return; B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
   fixClose(){ B.fix = null; render(); },
   fixPick(id, on){ if(B.fix) B.fix.skip[id] = !on; },
   fixTo(v){ if(B.fix) B.fix.to = v; },
   async fixSave(){
-    const F = B.fix; if(!F || F.busy) return;
+    const F = B.fix; if(!F || F.busy || !adminOn()) return;
     const to = canon(F.to), ids = people().filter(p => !F.skip[p.id]).map(p => p.id), from = B.batch;
     if(!to){ F.err = "That isn't a Batch ID: B and the date the batch started (MMDDYY), e.g. B103026."; render(); return; }
     if(to === from){ F.err = "They are already in that batch."; render(); return; }
@@ -303,7 +314,7 @@ window.FTBatchSheet = {
     const lines = [];
     tables().forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.v)).join(","))); lines.push(""); });
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv"}));
-    a.download = `Batch Sheet ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = meOn() ? `My Progress ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Batch Sheet ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   },
   // for the checks
@@ -312,6 +323,59 @@ window.FTBatchSheet = {
 };
 
 ftAdminTab(TAB, "📋 Batch Sheet", renderSheet);
+
+/* ---------- 🔒 the trainee's own sheet: 📋 My Progress ---------- */
+async function loadMe(){
+  B.meLoading = true;
+  try{
+    const id = state.traineeId, r = (await sharedGet("trainee:" + id)) || {};   // their own record: the only trainee: key read
+    B.me = {id, name: r.name || state.traineeName || id, batch: r.batch || state.traineeBatch || "", status: statusOf(r), registeredAt: r.registeredAt || "",
+      lastActive: r.lastActive || "", progress: state.progress || r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)};
+    B.batch = bLabel(B.me.batch);
+  }catch(err){ B.me = {id: state.traineeId, name: state.traineeName || "", batch: state.traineeBatch || "", status: "", progress: state.progress || {}, since: ""}; }
+  B.meLoading = false; B.meFor = state.traineeId; rerender();
+}
+function renderMine(){
+  if(!B.me || B.meFor !== state.traineeId){ if(!B.meLoading){ B.me = null; B.data = null; B.dataKey = ""; loadMe(); } return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading your progress…</div>`; }
+  loadData();
+  const D = B.data, ready = D && !B.dataLoading && !D.error, T = ready ? tables() : null;
+  return `<div class="card gs-card bs-card bs-mine">
+    <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
+      <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button></span></div>
+      ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
+    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-trainees" onclick="return FTBatchSheet.go('trainees')">👤 Me</a> · <a href="#bs-lessons" onclick="return FTBatchSheet.go('lessons')">📚 Lessons</a> · <a href="#bs-scores" onclick="return FTBatchSheet.go('scores')">🏅 Scores</a> · <a href="#bs-recent" onclick="return FTBatchSheet.go('recent')">🕒 Recent progress</a></span>
+      ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
+    <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
+    ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
+      : T.map((x, i) => i === 3 ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+    <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
+}
+FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };
+FTBatchSheet.openMine = function(){ goto(ME); };
+
+// #/mysheet: a trainee's own page; anyone else is sent to the 📚 Dashboard
+const __routeRender = window.render;
+window.render = function(){
+  if(state.view !== ME) return __routeRender.apply(this, arguments);
+  if(!isTrainee()){ state.view = "modules"; return __routeRender.apply(this, arguments); }
+  const app = document.getElementById("app");
+  app.innerHTML = renderTopbar() + `<main class="main-dash">${renderMine()}</main>` + renderFooter();
+  try{ afterRender(); }catch(err){}
+};
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {[ME]: "My Progress"});
+// 📋 My Progress in a trainee's top bar (never an admin's), beside 🏅 My Performance
+const __top = window.renderTopbar;
+window.renderTopbar = function(){
+  const html = __top.apply(this, arguments);
+  if(!isTrainee()) return html;
+  const t = document.createElement("template"); t.innerHTML = html;
+  const nav = t.content.querySelector(".topbar .nav"); if(!nav || nav.querySelector(".bs-mybtn")) return html;
+  const btn = `<button type="button" class="lp-sec bs-mybtn${state.view === ME ? " active" : ""}" onclick="goto('${ME}')" title="Your progress on one sheet: lessons, Knowledge Checks, practice and scores">📋 My Progress</button>`;
+  const portal = nav.querySelector(".lp-portal");
+  if(portal) portal.insertAdjacentHTML("beforebegin", btn); else nav.insertAdjacentHTML("beforeend", btn);
+  if(state.view === ME) [...nav.children].forEach(b => { if(/goto\('modules'\)/.test(b.getAttribute("onclick") || "") && !b.classList.contains("bs-mybtn")) b.classList.remove("active"); });
+  return t.innerHTML;
+};
 
 // the page is wide while the Batch Sheet is open: more room for the tables
 const __render = window.render;
