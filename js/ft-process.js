@@ -280,6 +280,8 @@ function qtext(set, i){
 const FP = {id:null, data:null, loading:false, err:"", timer:null, saving:false, savedAt:null};
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["process"]);
 async function load(id){
+  // (an admin with no trainee signed in — 🛡 or 👁 Trainee view: an empty sheet to look at, not a read of "process:" + nothing)
+  if(!id){ FP.id = id; FP.err = ""; FP.data = {v:1, sets:{}}; FP.driveFolder = ""; return; }
   FP.loading = true; FP.err = ""; FP.id = id;
   try{ FP.data = (await sharedGet("process:"+id)) || {v:1, sets:{}}; if(!FP.data.sets) FP.data.sets = {};
     const dv = await sharedGet("drive:"+id).catch(() => null); FP.driveFolder = (dv && dv.folder) || ""; }
@@ -296,6 +298,11 @@ function queueSave(){
   clearTimeout(FP.timer); FP.saving = true; paintSave();
   FP.timer = setTimeout(async ()=>{ const ok = await sharedSet("process:"+FP.id, FP.data); FP.saving = false; FP.savedAt = ok === false ? null : new Date(); paintSave(ok); }, 1000);
 }
+// (a platform update reloads the page: an answer typed in the last second is saved first, not left on the timer)
+(window.LSH_FLUSH_BEFORE_UPDATE = window.LSH_FLUSH_BEFORE_UPDATE || []).push(async () => {
+  if(!FP.timer || !FP.saving || !state.traineeId || !FP.data) return;
+  clearTimeout(FP.timer); FP.timer = null; await sharedSet("process:" + FP.id, FP.data); FP.saving = false;
+});
 function paintSave(ok){ const el = document.getElementById("fpSave"); if(el) el.textContent = FP.saving ? "Saving…" : (ok===false ? "⚠ Not saved. Check your connection." : (FP.savedAt ? "All changes saved" : "")); }
 const answered = (set, x) => set.questions.filter((q,i)=>has(((x||{}).answers||[])[i])).length;
 function statusOf(set, x){
@@ -336,13 +343,19 @@ function shownSheet(sets){
   const open = sets.map((st, i) => i).filter(i => !locked(sets[i]));
   return sets[routed >= 0 ? routed : open.length ? open[open.length - 1] : 0];
 }
+// the sheets on screen: one alone, every sheet that shares one file (Day 3), else the one shownSheet picks (Day 1)
+function shownSets(qs){
+  const sets = [...new Set(qs.map(x => x.set))];
+  return sets.length < 2 || new Set(sets.map(st => st.file)).size === 1 ? sets : [shownSheet(sets)];
+}
 function bySheet(qs, each){
   const sets = [...new Set(qs.map(x => x.set))];
   // (Day 1 in order, js/ft-day1-flow.js: the Virtual Assistant Essentials sheet waits for its Process Questions step)
   const locked = set => !!(window.FTDay1 && FTDay1.sheetLocked(set));
   const one = set => locked(set) ? `<p class="fp-muted fp-sheet-lock">🔒 This answer sheet opens with ${e(FTDay1.label(6))}, when your trainer unlocks it.</p>`
     : `<ol class="fp-qs">${qs.filter(x => x.set === set).map(each).join("")}</ol>`;
-  if(sets.length < 2) return sets.map(one).join("");
+  // (one sheet: still its heading, so the Reading Task never sits under the lesson's own title as if it were that sheet)
+  if(sets.length < 2) return sets.map(set => `<h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${qs.filter(x => x.set === set).length} questions</span></h3>${one(set)}`).join("");
   // sheets that share one file are one Knowledge Check (Day 3: Personal Injury Process Flow's three and Receptionist
   // Training's seven): all of them on one page, numbered on through, 1–10
   if(new Set(sets.map(st => st.file)).size === 1){
@@ -367,11 +380,14 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
     return lockedCard(title).replace(/<\/div>$/, `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" disabled title="Opens when you finish this module">📝 Submit for Grading</button></div></div>
       <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(st))}</code></p>`).join("")}
       <button class="btn btn-ghost btn-sm" type="button" disabled title="Opens when you finish this module">📄 Save PDF to my Folder</button></div>`); }
-  const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
-  const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
-  const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
+  // (the count and status are the sheet on screen's — Day 1 shows one of its two sheets at a time — not the whole lesson's)
+  const onScreen = shownSets(qs), sq = qs.filter(x => onScreen.includes(x.set));
+  const done = sq.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
+  // (the Knowledge Check's score is the whole module's: shown once the module's questions are open, and named as such)
+  const best = studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
+  const st = prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<div class="card fp-set">
-    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${qs.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</div>
+    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Knowledge Check best ${best}%</span>` : ""}</div>
     <div class="fp-body">
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
@@ -384,7 +400,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Submit these answers now and 📄 Save PDF to my Folder under the naming convention below; they are graded with the module's other questions then.</p>`}
     </div></div>
-    ${pdfBox(lesson, sets.length > 1 && new Set(sets.map(st => st.file)).size > 1 ? shownSheet(sets) : null)}
+    ${pdfBox(lesson, onScreen.length === 1 && sets.length > 1 ? onScreen[0] : null)}
     ${kcSave(qs)}`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
@@ -392,11 +408,11 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
 function moduleRow(lesson){
   const all = kcQuestionsFor(lesson);
   if(!all.length) return "";
-  const qs = moduleStudied(lesson) ? all : all.filter(x => x.set.open);
+  const studied = moduleStudied(lesson), qs = studied ? all : all.filter(x => x.set.open);
   const title = ftName(lesson);
   if(!qs.length) return lockedCard(title);
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
-  const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
+  const best = studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<button type="button" class="card fp-row" onclick="FTProcess.openLesson(${lesson})">
     <span class="fp-row-main"><b>${e(title)}</b><span class="fp-muted">${done} of ${qs.length} answered</span></span>

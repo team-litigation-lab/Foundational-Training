@@ -5783,8 +5783,34 @@ async function storeSet(key,val){
 }
 
 /* ---------- shared storage (the "admin ledger" — visible across all trainees) ---------- */
+/* Nothing a trainee writes is lost to a failed save or a reload (a platform update reloads the page on its own):
+   while a write is on its way it is counted (sharedInFlight: the update waits for it), and a trainee's write that
+   doesn't reach the server is kept on this device (localStorage "lsh_unsent:<key>"), read back in its place by
+   sharedGet, and sent again on the next load, every 30 s and when the connection returns. */
+let sharedInFlight = 0;
+const UNSENT = "lsh_unsent:";
+function keepUnsent(key, val, at){ try{ localStorage.setItem(UNSENT+key, JSON.stringify({at, val})); }catch(e){} }
+function readUnsent(key){ try{ const r = localStorage.getItem(UNSENT+key); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function clearUnsent(key, at){ try{ const u = readUnsent(key); if(u && u.at <= at) localStorage.removeItem(UNSENT+key); }catch(e){} }
+let resendBusy = false;
+async function resendUnsent(){
+  if(resendBusy || state.isAdmin || !state.traineeId) return;
+  resendBusy = true;
+  try{
+    const keys = []; for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.indexOf(UNSENT) === 0) keys.push(k.slice(UNSENT.length)); }
+    for(const k of keys){ const u = readUnsent(k); if(u) await sharedSet(k, u.val); }
+  }catch(e){}finally{ resendBusy = false; }
+}
+setInterval(resendUnsent, 30000);
+window.addEventListener("online", resendUnsent);
+window.lshSavesPending = () => sharedInFlight > 0;
 async function sharedSet(key,val){
-  let savedAnywhere = false;
+  sharedInFlight++;
+  try{ return await sharedSetNow(key, val); }finally{ sharedInFlight--; }
+}
+async function sharedSetNow(key,val){
+  const at = Date.now();
+  let savedAnywhere = false, toServer = false, refused = false;
   try{
     if(window.storage){ await window.storage.set(key, JSON.stringify(val), true); savedAnywhere = true; }
   }catch(e){ /* window.storage unavailable or failed, fall through */ }
@@ -5794,11 +5820,18 @@ async function sharedSet(key,val){
   // is a separate store and must never be treated as a substitute for it.
   try{
     const response = await authFetch("/api/storage/set", { key, value: JSON.stringify(val) });
-    if(response.ok) savedAnywhere = true;
+    if(response.ok){ savedAnywhere = true; toServer = true; }
+    else if(response.status < 500) refused = true;   // (the server said no, e.g. not this trainee's record: not kept to send again)
   }catch(e){ console.warn("shared storage set failed",e); }
+  // (a trainee's own work only: an admin's failed write is reported to them, never replayed later over a trainee's record)
+  if(toServer) clearUnsent(key, at);
+  else if(refused) clearUnsent(key, at);
+  else if(state.traineeId && !state.isAdmin){ keepUnsent(key, val, at); savedAnywhere = true; }
   return savedAnywhere;
 }
 async function sharedGet(key){
+  // (a write of this trainee's that hasn't reached the server yet is newer than the server's copy: it is what's read)
+  if(state.traineeId && !state.isAdmin){ const u = readUnsent(key); if(u){ setTimeout(resendUnsent, 0); return u.val; } }
   let fromWindowStorage;
   try{
     if(window.storage){ const r = await window.storage.get(key,true); fromWindowStorage = r ? JSON.parse(r.value) : undefined; }
@@ -9003,13 +9036,17 @@ function updateIsSafe(){
   if(state.loginBusy || state.studioBusy) return false;
   if(document.querySelector('[data-busy="1"]')) return false;
   if(state.presenting) return false;   // reloading would close Presenter view mid-session: the banner's Update now is there instead
+  if(sharedInFlight > 0) return false;   // a save on its way: the update waits for it
   return true;
 }
+// Pages with a save waiting on a timer (✍️ Knowledge Check answers: js/ft-process.js) add a function here that saves it now.
+window.LSH_FLUSH_BEFORE_UPDATE = window.LSH_FLUSH_BEFORE_UPDATE || [];
 async function applyUpdate(){
+  try{ for(const f of window.LSH_FLUSH_BEFORE_UPDATE) await f(); }catch(e){}
   try{
     if(state.view==="tool" && typeof saveLabNow==="function" && state.labDrafts){ await storeSet("lab-drafts", state.labDrafts); }
     if(state.traineeId && !state.isAdmin) await cloudSaveNow();
-    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, lessonSlide:state.lessonSlide, toolId:state.toolId, wizardIndex:(state.view==="tool" && toolState && toolState.wizardIndex) || 0, adminTab:state.adminTab, cuesDay:state.cuesDay, sopDay:state.sopDay, studioDay:state.studioDay, orientIdx:state.orientIdx, scroll:window.scrollY}));
+    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, pqLesson:state.pqLesson, lessonSlide:state.lessonSlide, toolId:state.toolId, wizardIndex:(state.view==="tool" && toolState && toolState.wizardIndex) || 0, adminTab:state.adminTab, cuesDay:state.cuesDay, sopDay:state.sopDay, studioDay:state.studioDay, orientIdx:state.orientIdx, scroll:window.scrollY}));
   }catch(e){}
   location.reload();
 }
@@ -9019,6 +9056,9 @@ function tryAutoUpdate(){
   if(updateIsSafe()){ noteAutoReload(updatePendingBuild); applyUpdate(); }
 }
 function showUpdateBanner(){
+  // No banner: a new version is applied on its own, quietly, once the page has been left alone (tryAutoUpdate), with the
+  // work saved first and the same page reopened. Only Presenter view, which a reload would close mid-session, gets one.
+  if(!state.presenting) return;
   if(document.getElementById("updateBanner")) return;
   const b = document.createElement("div"); b.id = "updateBanner"; b.className = "update-banner";
   b.innerHTML = state.presenting
@@ -9032,8 +9072,10 @@ function restoreAfterUpdate(){
   ["adminTab","cuesDay","sopDay","studioDay","orientIdx"].forEach(k=>{ if(st[k]!=null) state[k] = st[k]; });
   if(st.view==="day" && st.dayId){ goto("day", st.dayId); if(typeof st.lessonSlide==="number"){ state.lessonSlide = Math.min(st.lessonSlide, Math.max(state.maxSlideReached||0, st.lessonSlide)); render(); } }
   else if(st.view==="tool" && st.toolId){ state.labWizard = {toolId:st.toolId, idx:st.wizardIndex||0}; goto("tool", st.toolId); }
-  else goto(st.view);
-  setTimeout(()=>{ window.scrollTo(0, st.scroll||0); toast("✨ Updated to the latest version."); }, 300);
+  // (✍️ Knowledge Check: the same module's page, and the graded view's lesson)
+  else if(st.view==="process" && st.pqLesson) goto("process", st.pqLesson);
+  else { if(st.view==="kc" && st.dayId) state.dayId = st.dayId; goto(st.view); }
+  setTimeout(()=>{ window.scrollTo(0, st.scroll||0); }, 300);   // (quietly: no "updated" toast)
   return true;
 }
 setInterval(()=>{ if(state.isAdmin && document.visibilityState==="visible" && !isTyping()) autoPublishBlueprint(); }, 10*60*1000);
@@ -9074,6 +9116,7 @@ window.applyUpdate = applyUpdate;
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
+  setTimeout(resendUnsent, 1500);   // anything saved on this device that didn't reach the server last time
   // (the routes below need every page script run first: js/lsh-program.js adds #/modules to the routes, js/ft-day-decks.js
   // FTDayDecks. On a slow device the awaits above can finish while the scripts after this one still load, and a reload of
   // #/modules then resumed the last deck instead)
@@ -18917,7 +18960,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=ft-2026.11.01-day2-lfc"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.30-lien-optional"></script>
-<script src="/js/ft-process.js?v=ft-2026.11.02-lor-tool"></script>
+<script src="/js/ft-process.js?v=ft-2026.11.02-quiet-lor"></script>
 <script src="/js/ft-assess.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-claims-email.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-rules.js?v=ft-2026.11.01-day2-lfc"></script>
