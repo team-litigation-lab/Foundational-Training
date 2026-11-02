@@ -42,7 +42,9 @@ window.LSH_PROGRAM = {
   shared: ["settings:trainer-acts", "settings:listening"],   // the trainer-led activities' names; the Call Listening sets as the trainer set them (how many recordings each)
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   // the Admin screen's sections renamed for this program
-  adminGroupLabels: {modules:"🔓 Unlock Segments"},
+  adminGroupLabels: {modules:"🔓 Open Lessons"},
+  // 🔓 Open Lessons in an admin's top bar: unlocking the day cards is one click from any page
+  adminTopOpenLessons: true,
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
