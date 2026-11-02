@@ -1970,7 +1970,10 @@ function mapHtml(){
     const slides = list.map((x, i) => {
       const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Activity card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
       const on = n === here && i === hereI, ok = open && !slideLocked(n, i);
-      return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${ok ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}${ok ? "" : " (opens when your trainer unlocks it)"}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span>${ok ? "" : `<span class="ftmap-lock">🔒</span>`}</button></li>`;
+      const row = `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${ok ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}${ok ? "" : " (opens when your trainer unlocks it)"}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span>${ok ? "" : `<span class="ftmap-lock">🔒</span>`}</button></li>`;
+      // the stop this slide's Next leads to off the deck (its assessment, the reading's questions), right after it
+      const off = mapDetour(n, list, i);
+      return row + (off ? `<li><button type="button" class="ftmap-slide ftmap-off" ${ok ? `onclick="FTDayDecks.mapStop(${n}, ${i})"` : "disabled"} title="${e(off.t)} · opens in ✍️ Knowledge Check"><span class="ftmap-sn">↳</span><span class="ftmap-st">${e(off.t)}</span>${ok ? "" : `<span class="ftmap-lock">🔒</span>`}</button></li>` : "");
     }).join("");
     return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
       <button type="button" class="ftmap-dayh" ${open ? `onclick="FTDayDecks.mapGo(${n}, 0)"` : "disabled"}><span class="ftmap-dn">${state_ === "done" ? "✓" : n}</span><span class="ftmap-dt"><b>Day ${n}</b> · ${e(title)}</span>${n === here ? `<span class="ftmap-you">You are here</span>` : ""}${open ? "" : `<span class="ftmap-lock">🔒</span>`}</button>
@@ -1993,6 +1996,29 @@ function mapHtml(){
       <p class="ftmap-sub">${onDeck || hereI >= 0 ? `You are on <b>Day ${e(here)}</b>, slide ${hereI + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
       <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (here - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
     <div class="ftmap-body">${groups}${restHtml}</div></div>`;
+}
+// 🗺 a slide's Next that leaves the deck for ✍️ Knowledge Check, as the deck routes it (nextKC): Day 2's videos to their
+// assessments (ASSESS_NEXT), Day 1's reading to its questions (KC_NEXT), a stop whose Next is its lesson's Knowledge Check
+// (kc) unless the deck's own ✍️ Knowledge Check stop is the very next slide (the map lists that one already)
+function mapDetour(n, list, i){
+  const s = list[i]; if(!s || !root.FTProcess) return null;
+  const a = (ASSESS_NEXT[n] || {})[s.id]; if(a) return {t: "📄 " + a.t};
+  const k = (KC_NEXT[n] || {})[s.id]; if(k) return {t: k.parts ? "✍️ Reading Task: Process Questions" : "✍️ Process Questions: " + lessonTitle(k.l)};
+  const l = s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? Number(s.launch.kc) : null, nx = list[i + 1];
+  if(l != null && !(nx && nx.launch && new RegExp(`toKC\\(${l}\\)`).test(nx.launch.run || ""))) return {t: "✍️ Process Questions: " + lessonTitle(l)};
+  return null;
+}
+// opening that stop from the map: the deck stands on its slide, then goes on exactly as that slide's Next does
+function mapStop(n, i){
+  mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto();
+  loadDecks().then(() => {
+    const d = decks() && decks()[n], list = d ? slidesOf(d) : [], s = list[i]; if(!s) return;
+    DD.day = Number(n); DD.i = i; DD.page = 0; DD.pages = 1; setLastAt(n, i);
+    const a = (ASSESS_NEXT[n] || {})[s.id], k = kcOf(s);
+    // (the reading's questions wait until every part is read, as on the deck: the reading opens instead)
+    if(k && unread(k).length){ open(n, i); return; }
+    if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else open(n, i);
+  });
 }
 function mapKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); mapClose(); } }
 function mapClose(){ const o = document.getElementById("ftMap"); if(o) o.remove(); document.removeEventListener("keydown", mapKey, true); }
@@ -2119,7 +2145,7 @@ root.FTDayDecks = {open, go, next: nextKC,
   state: () => DD,
   // 🗺 Map: the training roadmap
   // (the deck already showing moves to the slide; from anywhere else, the dashboard or a lesson, the deck opens on it)
-  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
+  map: mapOpen, mapClose, mapStop, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
@@ -2805,6 +2831,8 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftmap-sn{font:600 11px 'IBM Plex Mono',monospace;color:#8A90A6;flex:0 0 34px;}
 .ftmap-st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .ftmap-lock{margin-left:auto;padding-left:6px;font-size:11px;opacity:.7;}
+.ftmap-slide.ftmap-off{color:#343C66;font-weight:600;}
+.ftmap-off .ftmap-sn{color:#C46A1E;}
 @media(max-width:760px){ .ftmap-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-prev:disabled{opacity:.45;}
 .ftdd-next{background:linear-gradient(135deg,#E8913A,#C9742B);border:1px solid #C9742B;color:#fff;}

@@ -430,7 +430,10 @@ const ASSESSMENTS = {2: [
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
-  const xs = (ASSESSMENTS[lesson] || []).filter(x => !(back && back.assess && Number(back.l) === Number(lesson)) || x.id === back.assess); if(!xs.length) return "";
+  // (not on the lesson's Knowledge Check page itself: each assessment is a stop of its own on the deck, its video's Next,
+  // and on the 🗺 Map; the card shows only the one a slide's own link opened)
+  if(!(back && back.assess && Number(back.l) === Number(lesson))) return "";
+  const xs = (ASSESSMENTS[lesson] || []).filter(x => x.id === back.assess); if(!xs.length) return "";
   // (one answered on the platform, js/ft-assess.js: a button to its own page, FTProcess.openAssess)
   const here = x => window.FTAssess && FTAssess.has(x.id);
   return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">${xs.every(here) ? "Answer each on its own page, then 📝 Submit for Grading" : "Answer each in its document, then upload it to your Assessments/Activities subfolder"}</span></div>
