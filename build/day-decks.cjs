@@ -846,6 +846,21 @@ const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writi
   '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
   "</div>\n<p>All 12 emails are graded: each out of 5 for the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone. 📝 Submit for Grading when you’re done; your score is on 🏅 My Performance.</p>\n" +
   '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Simulator.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Simulator →</button></div></div>\n';
+// Day 15: the rules for a scheduled demonstration, in three cards (the trainers' wording)
+const DEMO_GUIDELINES = '<p><b>Guidelines for Scheduled Trainee Demonstrations</b></p>\n' +
+  '<p>To ensure your scheduled demonstration runs smoothly and on time, follow these instructions and policies:</p>\n' +
+  '<div class="ftdd-cards3">' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">🛠 1. Pre-Demo Setup &amp; Tool Verification</p><ul>' +
+    '<li><b>Install and verify required tools in advance:</b> Complete all software installations, account logins, and tool configurations prior to your demo session.</li>' +
+    '<li><b>Do not troubleshoot during the session:</b> Resolving setup errors or installing software during your allotted presentation window will reduce your available time and lead to score deductions.</li></ul></div>' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">⏰ 2. Punctuality &amp; Preparedness Policy</p><ul>' +
+    '<li><b>Be ready to present at your designated time:</b> All trainees are expected to begin immediately when called upon.</li>' +
+    '<li><b>Missed demonstrations:</b> Demonstrations missed or delayed due to a lack of trainee preparation will be marked as a missed performance and will not be rescheduled.</li></ul></div>' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">📅 3. Rescheduling Exceptions</p><p>Rescheduling is granted only for delays caused directly by the Training Team, specifically:</p><ul>' +
+    '<li>Session time running out before your turn.</li>' +
+    '<li>Unexpected schedule changes initiated by the Training Team.</li>' +
+    '<li>Technical outages or platform limitations on the Training Team’s side.</li></ul></div>' +
+  '</div>\n';
 const SHADOW_HOWTO = "<p>Join your shadow buddy at the time your trainer posts in the training GC, and log the session with 👥 Shadowing log on this slide.</p>\n";
 // an exact edit: `from` must occur `count` times (the build stops if the guide has changed under it)
 function rep(html, from, to, count = 1, where = ""){
@@ -977,7 +992,7 @@ const EDIT = {
   // (no "Watch This Video" bar: the slide's name says it; the videos two to a page, ftdd-vpair, as large as the page
   // allows, then the 3P Zurich sample on a page of its own) Formerly: the four videos two by two, with the 3P Zurich sample embedded down the
   // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
-  // divider go
+  // divider go; the tools video is titled TOOLS OVERVIEW, without the presenter's name
   10: {s2: h => {
     const x = ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
       .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h);
@@ -990,13 +1005,14 @@ const EDIT = {
     const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
     const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
     return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
-      .replace("\u0000", '<div class="ftdd-keep ftdd-vpair">' + col(oc) + col(to) + "</div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-vpair">' + col(fa) + col(co) + "</div>\n" +
+      .replace("\u0000", '<div class="ftdd-keep ftdd-vpair">' + col(oc) + col(to.replace(/TOOLS OVERVIEW BY CYREL ALEGADO/g, "TOOLS OVERVIEW")) + "</div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-vpair">' + col(fa) + col(co) + "</div>\n" +
         PGBREAK + '<div class="ftdd-keep ftdd-vone">' + col(embed(zu)) + "</div>\n");
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   12: {s1: h => h.replace(/\s*$/, "\n") + "<!--cut:shadow-->\n<p>A recorded shadowing session to watch in your idle time: a claims specialist at work, from intake support to opening and following up on PI claims.</p>\n" +
-    borrow(11, "s2", ...SHADOW_VID_11)},
+    // (the video with no name bar over it, data-bare: the slide's ribbon names it)
+    borrow(11, "s2", ...SHADOW_VID_11).replace('<a class="viewer-link" data-embed data-kind="video"', '<a class="viewer-link" data-embed data-bare data-kind="video"')},
   11: {
     // the shadowing is off: the trainer's slot stays, the rest is the Email Simulator (the recording is Day 12's, above)
     s2: h => {
@@ -1016,11 +1032,14 @@ const EDIT = {
     // the demonstration day opens on what Day 14 set for it: the tutorial video, the gentle reminders and the rules
     // (all of it the trainee's own Day 14 text), then the metrics
     s1: h => {
-      const tut = borrow(14, "s1", "<p>Tutorial Video:</p>", "<p>NOTE:  While watching");
-      const gentle = edges(borrow(14, "s1", "<p><b>Gentle Reminders:</b></p>", "<p>@everyone</p>"));
-      const rules = edges(rep(borrow(14, "s1", "<h3>6. All trainees must be fully prepared", null), "<h3>6. ", "<h3>", 1, "Day 15 s1"));
-      return "<p>Today is your recorded demonstration of sending the MedLOR and requesting medical bills &amp; records. Go over the tutorial video and your process guide before you record.</p>\n" +
-        tut + gentle + rules + rep(h, "<h3>Demo Metrics</h3>", "<h3>Demo Metrics</h3>", 1, "Day 15 s1");
+      // (the tutorial played on the slide, as large as the page allows, under its own name; no line before it)
+      const tut = rep(borrow(14, "s1", "<p>Tutorial Video:</p>", "<p>NOTE:  While watching"),
+        '<p>Tutorial Video:</p>\n<p><a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"',
+        '<p><a class="viewer-link" data-embed data-kind="video" data-title="Tutorial Video: Sending the MedLOR and Requesting Medical Bills &amp; Records"', 1, "Day 15 s1");
+      // the reminders' three points, then the demonstration rules as the trainers' three cards (in place of the guide's
+      // "Please resolve…" lines and its two rules)
+      const gentle = borrow(14, "s1", "<p><b>Gentle Reminders:</b></p>", "<p><b>Please resolve any tool-related issues");
+      return tut + gentle + DEMO_GUIDELINES + rep(h, "<h3>Demo Metrics</h3>", "<h3>Demo Metrics</h3>", 1, "Day 15 s1");
     },
     // (its only line, the facilitator's timing note, is not shown: the shadowing slide had nothing on it)
     s2: h => borrow(14, "s2", "<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>", null).split("\n")[0] + "\n" + SHADOW_HOWTO + h},
@@ -1152,7 +1171,7 @@ const ROWS = {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
         // (the Other Intake-Related Documents folder: its documents read on the slide, with no link to the Drive folder)
-        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
+        return x.replace(two, () => INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]}]
   },
   8: {
@@ -1201,12 +1220,13 @@ const ROWS = {
           h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
           // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
-          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
+          // (Opening Claims drawn three recordings to a row, two rows: data-cols / data-rows, js/ft-day-decks.js fitFolders)
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-cols="3" data-rows="2" data-title="Opening Claims"'],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
-          // (and a page each: the folder's files drawn as large as the slide's width allows, js/ft-day-decks.js fitCrops)
-          h => { const re = /(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n)(<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/;
+          // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2; Opening Claims three to a row)
+          h => { const re = /(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/;
             if(!re.test(h)) throw new Error("Day 10's two recording folders are no longer where the build looks for them");
-            return h.replace(re, (m, one, two) => one + PGBREAK + two + PGBREAK); }]}]
+            return h.replace(re, (m, two) => '<div class="ftdd-keep ftdd-fold2">\n' + two + '</div>\n'); }]}]
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
@@ -1281,7 +1301,9 @@ const ROWS = {
             return h.replace(re, (m, met, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep ftdd-imgside ftdd-imgside-r"><div class="ftdd-imgside-txt"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div><div class="ftdd-imgside-img">' + met + '</div></div>\n'); }]}]
   },
   15: {
-    s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<h3>Demo Metrics</h3>"]]},
+    // the tutorial video alone, then the Gentle Reminders and the rules on a slide of their own
+    s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<p><b>Gentle Reminders:</b></p>"]]},
+      {id: "s1g", h: "AM: Gentle Reminders", parts: [["<p><b>Gentle Reminders:</b></p>", "<h3>Demo Metrics</h3>"]]},
       {id: "s1b", parts: [["<h3>Demo Metrics</h3>", null]]}]
   },
   16: {

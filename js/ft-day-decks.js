@@ -321,7 +321,9 @@ function visual(html){
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       // 📁 a Drive folder (Day 10's VA call recordings): the slide's full width, Drive's grid laid out wide enough for a row
       // of seven files and scaled down to the box (fitCrops)
-      if(/\/folders\//.test(href) && !(crop > 0)){ box.querySelector(".ftdd-embed").classList.add("ftdd-embed-row"); box.classList.add("is-row"); }
+      if(/\/folders\//.test(href) && !(crop > 0)){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-row"); box.classList.add("is-row");
+        // (a folder drawn as a grid, data-cols files to a row and data-rows rows: Day 10's Opening Claims, three by two)
+        if(a.dataset.cols){ em.dataset.cols = a.dataset.cols; em.dataset.rows = a.dataset.rows || "1"; box.classList.add("is-grid"); } }
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
       if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
@@ -352,7 +354,8 @@ function visual(html){
     // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
     const M = window.FTMetrics;
     // (data-nohead: the slide is the metrics alone and its title names them, Day 9's Intake Mock Calls Metrics)
-    box.innerHTML = `${p.hasAttribute("data-nohead") ? "" : `<p class="ftdd-score-h"><b>${e(txt)}</b></p>`}${M ? (M.view || M.table)(rb.key) : ""}` +
+    // (no "… Metrics" bar over it: the table's own green header names the scorecard)
+    box.innerHTML = `${M ? (M.view || M.table)(rb.key) : ""}` +
       (isAdminView() && M && M.view ? M.table(rb.key) : "");
     if(shots) shots.remove();
     p.replaceWith(box);
@@ -731,7 +734,7 @@ function scoreBox(s, info, body){
   if(!rb) return "";
   const M = root.FTMetrics;
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
+  return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -1038,7 +1041,15 @@ function fitCrops(sheet){
   // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
   // the box, and the box is one row of files tall. Folders side by side (Day 10's Opening Claims and Checking for Existing
   // Claims) share the widest one's scale, so their files are drawn the same size and the boxes the same height
-  const rows = [...sheet.querySelectorAll(".ftdd-embed-row")], [fw] = FOLDER_ROW;
+  const grids = [...sheet.querySelectorAll(".ftdd-embed-row[data-cols]")];
+  const rows = [...sheet.querySelectorAll(".ftdd-embed-row:not([data-cols])")], [fw] = FOLDER_ROW;
+  // (a grid: Drive's folder laid out just wide enough for data-cols files, data-rows rows tall, scaled to its box)
+  grids.forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth; if(!f || !w) return;
+    const gw = 65 + Number(em.dataset.cols) * 231 + 40, gh = FOLDER_ROW[1] + (Number(em.dataset.rows) - 1) * 235, k = Math.min(1, w / gw);
+    em.style.setProperty("height", Math.round(gh * k) + "px", "important");
+    Object.assign(f.style, {width: Math.round(w / k) + "px", height: gh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
+  });
   const top = em => Math.round(em.getBoundingClientRect().top), kOf = em => Math.min(1, em.clientWidth / fw);
   const shared = em => Math.max(...rows.filter(o => o.clientWidth && Math.abs(top(o) - top(em)) < 4).map(kOf), kOf(em));
   rows.forEach(em => {
@@ -1060,6 +1071,8 @@ function fitSheets(){
     if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
     // (a block dealt out by its own rows, all of them on other pages, is hidden too: its margins would push this page over)
     if(pages.length > 1) [...sheet.children].forEach(k => { if(k.children.length && [...k.children].every(c => c.style.display === "none")) k.style.display = "none"; });
+    // (a reading page that is one block alone, Day 11's Additional Reminders for Drafting Your LOR, sits in the middle of the sheet)
+    sheet.classList.toggle("ftdd-read-one", sheet.matches(".ftdd-read") && [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none").length === 1);
     sheet.scrollTop = 0;
     fitCrops(sheet);
     // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
@@ -1448,11 +1461,12 @@ const LESSON_CARDS = {
       // ROWS[10]) and the afternoon's videos; the day's deck closes on ✅ End of Part 1 (PART_END)
       {t: "Claims Specialist Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
       {t: "Sample SOP: Opening a 3P Claim & Sending the LOR", sub: "Before the call, the call, the LOR, sending it and following up", k: "read", d: 10, s: "sop"},
-      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
       {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
       {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
       {t: "Sample Recordings & Documents: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims · the sample documents", k: "listen", d: 10, s: "s1e"},
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
+      // (the breakout's digital handouts close Part 1, just before ✅ End of Part 1)
+      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", d: 10, run: "ftVideoOrAsk(7)"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
@@ -1480,9 +1494,10 @@ const LESSON_CARDS = {
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
       // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
-      {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
+      {t: "Before Your Demo: the Tutorial Video", time: "AM", sub: "Watch it again before you record", k: "watch", d: 15, s: "s1"},
+      {t: "Gentle Reminders", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1g"},
       {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
-      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 15, s: "s1b"},
+      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · scored by your trainer", k: "demo", d: 15, s: "s1b"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 15, s: "s2"},
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
@@ -2571,12 +2586,12 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet a.ftdd-doctile small{font:700 12.5px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;}
 @media(max-width:900px){ .ft-body .ftdd-doctiles{grid-template-columns:repeat(2,minmax(0,1fr));} }
 /* (Day 10's two recording folders side by side, the first with its six recordings wider: one page with the documents) */
-.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
+.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
 .ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
 .ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
 /* (Day 10's Sample SOP, written on the deck: its steps in cards, four to a row, in bold; the questions in three columns) */
 .ft-body .ftdd-sop-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;margin:0 0 12px;}
-.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
+.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);}   /* (stacked: what you may give out, then the call) */
 .ftdd-sheet .ftdd-sop .ftdd-card4 p:not(.ftdd-card4-h), .ftdd-sheet .ftdd-sop .ftdd-card4 li{font-size:17px !important;line-height:1.4 !important;font-weight:700 !important;color:#1B1E2E;}
 .ftdd-sheet .ftdd-sop .ftdd-card4 ul{margin:0;padding-left:20px;} .ftdd-sheet .ftdd-sop .ftdd-card4 li{margin:0 0 4px;}
 .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:3;column-gap:28px;} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols li{break-inside:avoid;}
@@ -2647,7 +2662,9 @@ main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
 /* (a scorecard's rows at the text's own height, not the slide's line spacing: a long one, Day 9's 17 Intake criteria, then
    fits at the size of a short one, Day 12's, rather than zoomed down to fit) */
-main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.2 !important;padding-top:3px;padding-bottom:3px;}
+main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.25 !important;padding-top:6px;padding-bottom:6px;}
+/* the metrics table on a slide: larger, the slide's main content now that it has no title bar over it */
+main.main-ftdd .ftdd-sheet .ftdd-score .ftms-tbl{font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 /* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
@@ -2844,6 +2861,7 @@ main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{
 main.main-ftdd .ftdd-sheet.ftdd-read h3, main.main-ftdd .ftdd-sheet.ftdd-read h2.ftdd-pi-h{font-size:20px !important;}
 /* and its pages start at the top of the sheet (the cards right under the slide's bar), not in the middle */
 main.main-ftdd .ftdd-sheet.ftdd-read:not(.ftdd-sheet-edit){justify-content:flex-start;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-read-one:not(.ftdd-sheet-edit){justify-content:center;}
 /* a line of space between one step (or section) and the next */
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
@@ -3224,6 +3242,10 @@ html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:
 main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}
 main.main-ftdd .ftdd-sheet > .ftdd-keep:has(.ftdd-evl){align-self:stretch;width:100%;}
 .ftdd-sheet .ftdd-evl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin:10px 0 6px;text-align:left;}
+/* (the checklist's own title over the cards: Accident or Injury Claim Documents & Evidence, CHECKLIST in orange) */
+main.main-ftdd .ftdd-sheet .ftdd-evl-title{width:100%;text-align:center;margin:2px 0 4px;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-title b{display:block;font:800 26px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-title span{display:block;font:800 22px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;color:#E8590C;}
 @media(max-width:900px){ .ftdd-sheet .ftdd-evl{grid-template-columns:minmax(0,1fr);} }
 .ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 17px/1.3 'Poppins','Inter',sans-serif;}
