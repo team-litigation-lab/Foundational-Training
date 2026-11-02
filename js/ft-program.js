@@ -48,8 +48,8 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
-      // no "attendance": it is the Training Portal's /attendance.html, per program per batch
+    admin: ["audit", "batches", "attendance", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
+      // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
     scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
