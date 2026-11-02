@@ -419,7 +419,9 @@ function groupTabs(out){
   const tabs = [...t.content.querySelectorAll(".admin-tab-btn")].map(x => ({id:((x.getAttribute("onclick") || "").match(/setAdminTab\('([^']+)'\)/) || [])[1], html:x.outerHTML})).filter(x => x.id);
   if(!tabs.length) return out;
   const cur = groupOf(state.adminTab || "audit");
-  const secs = GROUPS.map(g => ({g, tabs:tabs.filter(x => groupOf(x.id) === g.id)})).filter(x => x.tabs.length);
+  // a section's lead tab (LSH_PROGRAM.adminLead, e.g. {scorecard: "batchsheet"}) comes first, so the section's button opens on it
+  const lead = CFG.adminLead || {};
+  const secs = GROUPS.map(g => ({g, tabs:tabs.filter(x => groupOf(x.id) === g.id).sort((a, b) => (b.id === lead[g.id]) - (a.id === lead[g.id]))})).filter(x => x.tabs.length);
   const bar = `<div class="admin-tabs lp-admin-tabs"><div class="lp-admin-secs">${secs.map(x => `<button type="button" class="lp-admin-sec${x.g.id === cur ? " active" : ""}" onclick="setAdminTab('${x.tabs[0].id}')">${x.g.label}<span>${x.tabs.length}</span></button>`).join("")}</div>
     <div class="lp-admin-row">${(secs.find(x => x.g.id === cur) || secs[0]).tabs.map(x => x.html).join("")}</div></div>`;
   return out.slice(0, a) + bar + out.slice(b);
