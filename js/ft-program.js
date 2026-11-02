@@ -48,11 +48,11 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["audit", "batches", "attendance", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
+    admin: ["audit", "attendance", "sops", "dbmaint", "orientation"],   // (📁 Batch Folders and 💬 Trainee Feedback are in 🏅 Scorecard)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
-    scorecard: ["batchsheet", "scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
+    scorecard: ["batchsheet", "batches", "tfeedback", "scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
   },
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet"},

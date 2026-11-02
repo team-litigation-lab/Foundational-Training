@@ -309,7 +309,7 @@ function slimTrainee(rec) {
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
 //   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`, `daycheck:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {

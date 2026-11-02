@@ -49,13 +49,25 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
+  // 📁 Batch Folders and 💬 Trainee Feedback sit in 🏅 Scorecard now (no longer in 🛡 Admin Master Control), and the feedback stays
+  if (!/Batch Folders/.test(row.join(' ')) || !/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 📁 Batch Folders / 💬 Trainee Feedback: ${row.join(' | ')}`);
+  await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
+  await page.evaluate(() => { state.adminTab = 'tfeedback'; state.tfbAdmin = null; render(); }); await page.waitForTimeout(1500);
+  const fbText = await page.evaluate(() => document.querySelector('main').innerText);
+  if (!/Kept after the move/.test(fbText)) fail('💬 Trainee Feedback no longer shows the saved feedback');
+  const secOn = await page.evaluate(() => (document.querySelector('.lp-admin-sec.active') || {}).innerText || '');
+  if (!/Scorecard/.test(secOn)) fail(`💬 Trainee Feedback opens under "${secOn}", not 🏅 Scorecard`);
+  await page.evaluate(() => { state.adminTab = 'audit'; render(); }); await page.waitForTimeout(400);
+  const adm = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
+  if (/Batch Folders|Trainee Feedback/.test(adm)) fail(`🛡 Admin Master Control still lists them: ${adm}`);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(400);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'lessons', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec')).length !== 5) fail('the five tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec')).length !== 6) fail('the six tables are not all on the one page');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -70,6 +82,22 @@ const failures = []; const fail = m => failures.push(m);
   if (!ls || ls[1] !== 'Deck ✓ · Check 90%') fail(`📚 Lessons for Ada: ${ls && ls.slice(0, 2)}`);
   const lb = by('lessons').rows.find(r => /Ben/.test(r[0]));
   if (!lb || lb.slice(1).some(Boolean)) fail(`📚 Ben has done nothing, yet his row has: ${lb}`);
+
+  // 📅 Day by Day: a column per training day; Ada's Day 1 has the Knowledge Check ticked by itself; a trainer ticks a classroom activity
+  const dd = by('days');
+  if (dd.head.length !== 2 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[2] !== 'Day 1') fail(`📅 Day by Day's columns: ${dd.head.slice(0, 4)}`);
+  const autoKC = await page.evaluate(() => { const d1 = FTDays.of(1), it = d1.items.find(i => i.at === 'tool' && i.id === 'process'); return it ? it.t : ''; });
+  if (autoKC && !(await page.evaluate(t => [...document.querySelectorAll('.bs-day')][0].innerText.includes(t), autoKC))) fail('Day 1\'s checklist misses its Knowledge Check');
+  if (autoKC && !(await page.evaluate(t => { const l = [...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item'); const x = [...l].find(n => n.innerText.includes(t)); return x && x.querySelector('input').checked && /auto/.test(x.innerText); }, autoKC))) fail('Ada\'s passed Day 1 Knowledge Check is not ticked by itself');
+  if (!(await page.$('.bs-ck-who select'))) fail('the trainer can\'t pick whose checklist to open');
+  await page.selectOption('.bs-ck-who select', ids.Ada); await page.waitForTimeout(400);
+  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'room') || {}).t);
+  const box = await page.evaluateHandle(t => [...[...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item')].find(n => n.innerText.includes(t)).querySelector('input'), roomT);
+  await box.evaluate(b => b.click()); await page.waitForTimeout(1500);   // (the page redraws on the tick)
+  const dc = await get('daycheck:' + ids.Ada);
+  if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
+  const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[2].v;
+  if (!/^[2-9]\d*\//.test(d1.replace('✓ ', ''))) fail(`Ada's Day 1 count doesn't include the ticks: ${d1}`);
 
   // 🛠 Practice Lab: Ada practised in a tool (82%) and took a typing test; Ben hasn't practised
   const pl = by('practice'), pa = pl.rows.find(r => /Ada/.test(r[0])), pb = pl.rows.find(r => /Ben/.test(r[0]));
@@ -158,6 +186,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(400);
   const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
   if (MT[0].title !== '👤 Me') fail(`the trainee's first table is ${MT[0].title}`);
+  // her own checklist, read only, with the trainer's tick on it
+  if (!(await page.$('.bs-mine .bs-ck h4')) || await page.$('.bs-mine .bs-ck-who')) fail('the trainee doesn\'t get her own checklist, or gets the trainer\'s picker');
+  if (await page.$('.bs-mine .bs-item input:not([disabled])')) fail('a trainee can tick her own checklist');
+  if (!(await page.evaluate(() => [...document.querySelectorAll('.bs-mine .bs-item.is-done')].some(n => /trainer/.test(n.innerText))))) fail('the trainee doesn\'t see the trainer\'s tick');
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
   if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
@@ -181,5 +213,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in five tables; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in six tables; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });

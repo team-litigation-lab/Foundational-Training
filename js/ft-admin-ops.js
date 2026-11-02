@@ -50,7 +50,7 @@ const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
      `Set the certificate signatories once: ${SEC.adm} → ${go("audit","Trainee Audit")}.`,
-     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${go("batches","📁 Batch Folders")}.`,
+     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${SEC.sc} → ${go("batches","📁 Batch Folders")}.`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
    steps:[`Approve each new registration: ${SEC.adm} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
@@ -80,10 +80,10 @@ const MAP = [
   {stage:"9 · Weekly review", trainee:"Gets their weekly average and rank.",
    steps:[`Build and share the week's results in ${SEC.sc} → ${go("ranking","📊 Weekly Ranking")}.`,
      `See every grade in one table in ${go("scorecards","🏅 Scorecards")}. It shows the current batch only. Coach anyone in the red before the next week.`,
-     `Read what trainees say about the program in ${go("tfeedback","Trainee Feedback")} and adjust the next sessions.`]},
+     `Read what trainees say about the program in ${SEC.sc} → ${go("tfeedback","💬 Trainee Feedback")} and adjust the next sessions.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
    steps:[`Check names and the trainer on the certificate in Trainee Audit → View Detail → Certificate details.`,
-     `Download the batch's records in ${go("batches","📁 Batch Folders")}: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
+     `Download the batch's records in ${SEC.sc} → ${go("batches","📁 Batch Folders")}: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
      `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
