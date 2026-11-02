@@ -236,7 +236,20 @@ async function submitWorksheet(file, input){
 function pdfBox(lesson, only){
   const sets = lessonFiles(lesson).filter(set => !only || set.file === only.file); if(!sets.length) return "";
   return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
-    <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>${sets.map(worksheetBox).join("")}`;
+    <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button>
+    <button class="btn btn-ghost btn-sm fp-dl" type="button" onclick="FTProcess.downloadPdf(${Number(lesson)})" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div>${sets.map(worksheetBox).join("")}`;
+}
+// ⬇ Download PDF: the same answer sheet, as the same PDF under the same name, downloaded here (for when saving to the folder
+// doesn't work: the trainee uploads it to their Assessment and Activities Folder themselves). Each file of the lesson's page.
+async function downloadPdf(lesson){
+  const sets = lessonFiles(lesson).filter(set => sameFile(set).some(st => (sheet(st.id).answers || []).some(has)));
+  if(!sets.length){ toast("Answer the questions first, then ⬇ Download PDF."); return; }
+  for(const set of sets){
+    const doc = await sheetPdf(set);
+    if(!doc){ toast("Couldn't load the PDF tools — try again."); return; }
+    doc.save(pdfName(set));
+  }
+  toast(`⬇ Downloaded: ${sets.map(pdfName).join(", ")}. Upload it to your Assessment and Activities Folder.`);
 }
 async function savePdf(lesson){
   if(!isTraineeHere()){ toast("👁 Trainee view — a trainee saves their own answer sheet to their folder."); return; }
@@ -542,7 +555,7 @@ window.FTProcess = {
     toast(`✓ ${set.title} submitted. Now 📄 Save PDF to my Folder, named ${fileName(set)}.`); render();
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
-  savePdf, submitWorksheet,
+  savePdf, downloadPdf, submitWorksheet,
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
