@@ -6006,6 +6006,10 @@ async function syncToLedger(allowCreate){
   // Take a pending trainer reset first, so this save never writes the old count back over it.
   if(existing && await applyLabAttemptReset(existing)) showLabAttemptReset();
   if(existing) await applyAdminUnlocks(existing);
+  // 📋 a trainer moved this trainee to another batch (Batch Sheet → ✏️ Fix the batch name): the record's batch wins over this device's
+  if(existing && existing.batchMovedBy==="trainer" && cleanBatch(existing.batch) && cleanBatch(existing.batch)!==cleanBatch(state.traineeBatch)){
+    state.traineeBatch = cleanBatch(existing.batch); await storeSet("trainee-batch", state.traineeBatch);
+  }
   // A missing record after registration means an admin revoked/deleted it —
   // don't silently re-create it from this device. Only login may create one.
   if(!existing && !allowCreate) return;
@@ -18974,6 +18978,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-sessions.js?v=ft-2026.11.01-merge470"></script>
 <script src="/js/ft-ranking.js?v=ft-2026.11.01-merge470"></script>
 <script src="/js/ft-overall.js?v=ft-2026.11.01-overall"></script>
+<script src="/js/ft-batch-sheet.js?v=ft-2026.11.02-batch-sheet"></script>
 <script src="/js/ft-skilltests.js?v=ft-2026.10.30-trainer-merge"></script>
 <script src="/js/ft-drills.js?v=ft-2026.10.19-hint"></script>
 <script src="/js/ft-calrules.js?v=ft-2026.10.16-calrules"></script>
