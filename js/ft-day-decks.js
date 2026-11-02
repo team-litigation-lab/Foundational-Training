@@ -2584,6 +2584,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 @media(max-width:1100px){ .ft-body .ftdd-sop-cards, .ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:1;} }
 /* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
 .ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
+/* (the cards' page starts at the top of the slide: its heading bar with no room above it, so the cards take the height) */
+main.main-ftdd .ftdd-sheet:has(> .ftdd-lor-set){justify-content:flex-start !important;} main.main-ftdd .ftdd-sheet .ftdd-lor-set > h3:first-of-type{margin-top:0 !important;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4 > p.ftdd-card4-h{font-size:20px !important;margin-bottom:8px !important;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4 ul{margin:0;padding-left:20px;}
@@ -2972,7 +2974,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-sheet > .ftdd-inline.is-video:only-child:not(.is-bare):not(.is-fit) .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 110px) * 16 / 9));}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
 /* a video with no name bar over it (data-bare): the page's full height */
-.ft-body .ftdd-inline.is-bare{margin:0;}
+.ft-body .ftdd-inline.is-bare{margin:0;align-self:stretch;width:100%;}   /* (the slide's width to size its player in: a bare video's box has no name bar to give it one) */
 .ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
 /* sized to the page (data-fit): the slide's lines and the embed on one page */
 .ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}
@@ -3335,5 +3337,17 @@ main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:13.5px;color:#3A4060;}
 main.main-ftdd .ftdd-sheet .ftdd-topic{font-size:15.5px;}
 main.main-ftdd .ftdd-sheet a.ftdd-doctile small{font-size:14.5px !important;}
 main.main-ftdd .ftdd-sheet a.ftdd-tile.k-file .ftdd-tile-t small{color:#9A4A0C !important;}
+/* (Day 12's SA steps, tools and naming convention, two pages of cards: each row's cards one height, the type large and bold) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-d12{align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 > p{font-size:20px !important;font-weight:700 !important;margin:0 0 12px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 :is(.ftdd-cards2, .ftdd-cards3){align-items:stretch;gap:18px;margin:0;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 > p.ftdd-card4-h{font-size:21px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 :is(p:not(.ftdd-card4-h):not(.ftdd-hbar), li){font-size:19px !important;line-height:1.4 !important;font-weight:700 !important;color:#11131F !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 ul{margin:0 0 8px;padding-left:22px;} main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 li{margin:0 0 6px;}
+/* (Day 10's afternoon videos, two to a page, each as large as the page allows; the 3P Zurich sample alone on its page) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep:is(.ftdd-vpair, .ftdd-vone){align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-vpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
+main.main-ftdd .ftdd-sheet :is(.ftdd-vpair, .ftdd-vone) .ftdd-embed{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));height:auto !important;aspect-ratio:16 / 9;margin:4px auto 0;}
+@media(max-width:800px){ main.main-ftdd .ftdd-sheet .ftdd-vpair{grid-template-columns:minmax(0,1fr);} }
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

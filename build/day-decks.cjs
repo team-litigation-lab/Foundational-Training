@@ -52,7 +52,9 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   7: {insurance: "AM: Common Insurance Providers"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
-  11: {s2: "PM: Insurance Email Simulator"}};
+  11: {s2: "PM: Insurance Email Simulator"},
+  // (Day 10's afternoon: its videos, named for what the trainee does)
+  10: {s2: "PM: Watch Insurance Communication Videos"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -866,6 +868,7 @@ const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 // (without its Objective, which only restates the slide's title, and with Activities 1 (1P) and 2 (3P) as one set of
 // instructions, a card each, four to a row (ftdd-lor-cards): the two lists are the same but for 1P's Claims to be Opened
 // and the file names, which the cards mark 1P / 3P)
+const LOR_HALF = "<!--lor:half-->\n";
 const LOR_GUIDE = () => {
   const src = fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8");
   const lists = [...src.matchAll(/<ol>\n([^]*?)<\/ol>/g)].map(m => [...m[1].matchAll(/<li><b>([^<]+?):?<\/b><ul>([^]*?)<\/ul><\/li>/g)].map(x => ({h: x[1], lis: x[2].match(/<li>[^]*?<\/li>/g)})));
@@ -882,8 +885,10 @@ const LOR_GUIDE = () => {
   if(!use || use.lis.join("") !== "<li>Open the LOR template provided in the training GC.</li>") throw new Error("The LOR guidelines' Use the Template step has changed: point it at the LOR Drafting tool anew");
   use.lis = ["<li>Open the 1P or 3P LOR template in the platform’s LOR Drafting tool.</li>"];
   use.post = `<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div>`;
-  return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' +
-    cards.map((c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`).join("") + "</div>\n";
+  // (four cards to a page, so they read at full size: LOR_HALF, where the slide turns its page, build ROWS[11])
+  const card = (c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`;
+  return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' + cards.slice(0, 4).map(card).join("") + "</div>\n" + LOR_HALF +
+    '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs (continued)</h3>\n<div class="ftdd-lor-cards">\n' + cards.slice(4).map((c, k) => card(c, k + 4)).join("") + "</div>\n";
 };
 // 📘 the Sample SOP, How to Open a 3P Auto Insurance Claim & Send the LOR (the guide's Tettra PDF, build/days/sample-3p-sop.html):
 // written on Day 10's deck as a slide of its own, after the Claims Specialist discussion and before the Digital Handouts, in
@@ -919,15 +924,16 @@ function D12_CARDS(x){
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
   const noAdj = "If no adjuster has been assigned yet, indicate: <b><i>“No adjuster assigned yet.”</i></b>";
-  // (one block, ftdd-one: one page, scaled to fit)
-  return '<div class="ftdd-one">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
+  // (two pages, so the cards read large: the steps in SA, then the tools and the naming convention; each a block of its own,
+  // ftdd-d12, its cards one height to a row)
+  return '<div class="ftdd-keep ftdd-d12">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
     '<div class="ftdd-cards3">' +
     card("🔢", "Both 1P and 3P entries", "<p>Make sure to complete the following fields:</p>" + ul(["Policy Number", "Claim Number"])) +
     card("🟦", "Adding the 1P insurance information", "<p>In the <b>Plaintiff Insurance Owner Field</b>, select: <b>Plaintiff&#x27;s Training Acct</b></p><p><b>In the Comments section, include:</b></p>" +
       ul(["Actual insurance name of the owner", "Assigned adjuster details", noAdj, "Still add all other available insurance information even if no adjuster has been assigned."])) +
     card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
       ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
-    "</div>\n" + '<div class="ftdd-cards2">' +
+    "</div></div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-d12"><div class="ftdd-cards2">' +
     card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
     card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
       "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
@@ -937,7 +943,8 @@ function D12_CARDS(x){
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
   // slide; the 3P Zurich sample stays a document (the SOP is written on its own slide: SAMPLE_SOP)
-  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample embedded down the
+  // (no "Watch This Video" bar: the slide's name says it; the videos two to a page, ftdd-vpair, as large as the page
+  // allows, then the 3P Zurich sample on a page of its own) Formerly: the four videos two by two, with the 3P Zurich sample embedded down the
   // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
   // divider go
   10: {s2: h => {
@@ -952,7 +959,8 @@ const EDIT = {
     const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
     const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
     return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
-      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + "</div>\n");
+      .replace("\u0000", '<div class="ftdd-keep ftdd-vpair">' + col(oc) + col(to) + "</div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-vpair">' + col(fa) + col(co) + "</div>\n" +
+        PGBREAK + '<div class="ftdd-keep ftdd-vone">' + col(embed(zu)) + "</div>\n");
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
@@ -1187,12 +1195,16 @@ const ROWS = {
           k = h.indexOf("<p> <b>Before saving your LOR in your Assessments folder:</b></p>"), end = h.indexOf(SLOT(11, "s1-5"));
         if(i < 0 || j < i || k < j || end < k) throw new Error("Day 11's LOR templates and reminders are no longer where the build looks for them");
         // (the instructions, with the trainer's slot before them, are one block: the slot never makes a page of its own)
-        return '<div class="ftdd-lor-set">\n' + h.slice(0, i) + '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-card4 ftdd-lor-rem"><p class="ftdd-card4-h">📝 Additional Reminders for Drafting Your LOR</p>\n' +
+        // (the cards in two pages of four: LOR_GUIDE)
+        if(h.slice(0, i).split(LOR_HALF).length !== 2) throw new Error("Day 11's LOR cards are no longer split where the build looks for it");
+        return '<div class="ftdd-lor-set">\n' + h.slice(0, i).replace(LOR_HALF, '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-lor-set">\n') + '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-card4 ftdd-lor-rem"><p class="ftdd-card4-h">📝 Additional Reminders for Drafting Your LOR</p>\n' +
           h.slice(j, k).replace("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n", "") + "</div>\n" + h.slice(end);
       }]}]
   },
   12: {
-    s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
+    // (the tutorial with no name bar over it, the slide's ribbon names it, played as large as the page allows: data-bare)
+    s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']],
+        fix: [['<a class="viewer-link" data-kind="video" data-title="Tutorial Demo Recording on Saving LORs', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Demo Recording on Saving LORs']]},
       // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
       {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
       {id: "s1d", parts: [[SLOT(12, "s1-1"), "<!--cut:shadow-->"]]},
