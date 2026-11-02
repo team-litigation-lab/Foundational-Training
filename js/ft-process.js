@@ -233,8 +233,8 @@ async function submitWorksheet(file, input){
   render();
 }
 // beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder, then its worksheet, if any
-function pdfBox(lesson){
-  const sets = lessonFiles(lesson); if(!sets.length) return "";
+function pdfBox(lesson, only){
+  const sets = lessonFiles(lesson).filter(set => !only || set.file === only.file); if(!sets.length) return "";
   return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
     <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>${sets.map(worksheetBox).join("")}`;
 }
@@ -327,6 +327,15 @@ function lockedCard(title){
 const sheetIcon = set => /^Reading Task/i.test(set.title || "") ? "📖" : "✍️";
 // Two sheets are two pages: a tab for each (its questions answered so far), one sheet shown at a time, and a button to the
 // next sheet at its foot. (The answers save as they're typed, so moving between the sheets loses nothing.)
+// the one sheet shown when a lesson's sheets are separate files: the route's (Day 1's Reading Task from the deck's reading,
+// the lesson's own from the Process Questions stop), else the newest one open
+function shownSheet(sets){
+  const locked = set => !!(window.FTDay1 && FTDay1.sheetLocked(set));
+  let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
+  const routed = back && back.sheet && Number(back.l) === Number(sets[0].lesson) ? sets.findIndex(st => back.sheet === "read" ? !!st.open : !st.open) : -1;
+  const open = sets.map((st, i) => i).filter(i => !locked(sets[i]));
+  return sets[routed >= 0 ? routed : open.length ? open[open.length - 1] : 0];
+}
 function bySheet(qs, each){
   const sets = [...new Set(qs.map(x => x.set))];
   // (Day 1 in order, js/ft-day1-flow.js: the Virtual Assistant Essentials sheet waits for its Process Questions step)
@@ -344,10 +353,7 @@ function bySheet(qs, each){
   // one sheet at a time, and no tabs or buttons to switch: the route decides which. Opened from the deck's reading
   // (Day 1's Reading Task) it is the reading's sheet; from the Process Questions stop, the lesson's own; otherwise the
   // newest one open (the lesson's own, unless it is still locked)
-  let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
-  const routed = back && back.sheet && Number(back.l) === Number(sets[0].lesson) ? sets.findIndex(st => back.sheet === "read" ? !!st.open : !st.open) : -1;
-  const open = sets.map((st, i) => i).filter(i => !locked(sets[i]));
-  const set = sets[routed >= 0 ? routed : open.length ? open[open.length - 1] : 0];
+  const set = shownSheet(sets);
   return `<h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${qs.filter(x => x.set === set).length} questions</span></h3>${one(set)}`;
 }
 function moduleCard(lesson, after){   // after: a button beside 📝 Submit for Grading (the way back to the classroom)
@@ -356,7 +362,11 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // before the module is finished, only its open sets (Day 1's Reading Task) can be answered; they're graded with the rest
   const studied = moduleStudied(lesson), qs = studied ? all : all.filter(x => x.set.open);
   const title = ftName(lesson), sets = [...new Set(qs.map(x => x.set))];
-  if(!qs.length) return lockedCard(title);
+  // (a module not finished yet: its locked note, and still its Submit — not yet pressable — and each sheet's naming convention)
+  if(!qs.length){ const seen = new Set(), files = [...new Set(all.map(x => x.set))].filter(st => !seen.has(st.file) && seen.add(st.file));
+    return lockedCard(title).replace(/<\/div>$/, `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" disabled title="Opens when you finish this module">📝 Submit for Grading</button></div></div>
+      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(st))}</code></p>`).join("")}
+      <button class="btn btn-ghost btn-sm" type="button" disabled title="Opens when you finish this module">📄 Save PDF to my Folder</button></div>`); }
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
   const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
@@ -374,7 +384,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Submit these answers now and 📄 Save PDF to my Folder under the naming convention below; they are graded with the module's other questions then.</p>`}
     </div></div>
-    ${pdfBox(lesson)}
+    ${pdfBox(lesson, sets.length > 1 && new Set(sets.map(st => st.file)).size > 1 ? shownSheet(sets) : null)}
     ${kcSave(qs)}`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
@@ -778,8 +788,12 @@ window.FTKc = {
     if(!state.traineeId || (state.isAdmin && !state.adminPreview)){ toast("Trainees take the Knowledge Check."); return; }
     const d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
     const ans = x => String((sheet(x.set.id).answers||[])[x.i] || "").trim();
-    const short = qs.filter(x=>ans(x).split(/\s+/).filter(Boolean).length < 5).map(x=>"Q"+(x.i+1));
-    if(short.length){ toast(`Answer every question in complete sentences first (${short.join(", ")}).`); return; }
+    // (a lesson graded from two answer sheets, Day 1's Reading Task and its Process Questions: the message names the sheet
+    // that still has short answers, so a trainee on the other sheet's page knows where to go)
+    const shortQs = qs.filter(x=>ans(x).split(/\s+/).filter(Boolean).length < 5);
+    if(shortQs.length){
+      const bySet = [...new Set(shortQs.map(x=>x.set))].map(st => `${st.title}: ${shortQs.filter(x=>x.set===st).map(x=>"Q"+(x.i+1)).join(", ")}`);
+      toast(`Answer every question in complete sentences (5 words or more) before you submit. Still to answer: ${bySet.join(" · ")}.`, 9000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
     const prompt = `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
