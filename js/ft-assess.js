@@ -195,7 +195,8 @@ root.FTAssess = {
       <div class="fa-foot">${g ? `<p class="fa-done">✓ Graded ${e(g.when || "")}${g.pending ? " · your trainer grades the essays" : ""}. Your score is on 🏅 My Performance. You can correct your answers and submit again.</p>` : `<p class="fa-muted">Your answers save as you type.</p>`}
         <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>
       <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc))}</code></p>
-        <button class="btn btn-ghost btn-sm fa-drive" type="button" onclick="FTAssess.savePdf('${doc}')"${A.saving ? " disabled" : ""}>${A.saving ? "Saving the PDF…" : "📄 Save PDF to my Folder"}</button></div></div>`;
+        <button class="btn btn-ghost btn-sm fa-drive" type="button" onclick="FTAssess.savePdf('${doc}')"${A.saving ? " disabled" : ""}>${A.saving ? "Saving the PDF…" : "📄 Save PDF to my Folder"}</button>
+        <button class="btn btn-ghost btn-sm fa-dl" type="button" onclick="FTAssess.downloadPdf('${doc}')" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div></div>`;
   },
   set(doc, id, v){
     if(!state.traineeId) return;
@@ -216,6 +217,14 @@ root.FTAssess = {
       toast("✓ Submitted for grading. Your score is on 🏅 My Performance.");
     }catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
     A.sending = false; render();
+  },
+  // ⬇ Download PDF: the same PDF under the same name, downloaded here (for when saving to the folder doesn't work)
+  async downloadPdf(doc){
+    if(!FORMS[doc]) return;
+    if(!Object.values(answers(doc)).some(x => String(x).trim())){ toast("Answer the assessment first, then ⬇ Download PDF."); return; }
+    const pdf = await answersPdf(doc), name = fileName(doc) + ".pdf";
+    if(!pdf){ toast("Couldn't load the PDF tools — try again."); return; }
+    pdf.save(name); toast(`⬇ Downloaded: ${name}. Upload it to your Assessment and Activities Folder.`);
   },
   async savePdf(doc){
     if(!FORMS[doc] || A.saving) return;
