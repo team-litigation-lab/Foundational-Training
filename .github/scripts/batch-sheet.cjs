@@ -38,6 +38,9 @@ const failures = []; const fail = m => failures.push(m);
     'work-log': [{ at: iso(now - 3600e3), kind: 'lab', label: 'Intake Practice', score: 82 }],
     'last-view': { view: 'day', dayId: lesson, at: now - 600e3 } } });
   await put('skills:' + ids.Ada, { typing: [{ id: 't1', at: iso(now - 5 * 3600e3), date: iso(now).slice(0, 10), slot: 'AM', net: 48, gross: 52, acc: 96 }], spelling: [] });
+  // her three Drive links; the Monitoring Sheet's last check couldn't open it
+  await put('drive:' + ids.Ada, { folder: 'https://drive.google.com/drive/folders/abcdefghijklmn', tracker: 'https://docs.google.com/spreadsheets/d/abcdefghijklmn/edit', monitor: 'https://docs.google.com/document/d/abcdefghijklmn/edit', days: {} });
+  await put('trackerreview:' + ids.Ada, { days: {}, monitor: { pct: 0, found: 0, total: 0, entries: [], error: 'The system can\'t open this file.', checkedAt: iso(now - 7200e3) } });
   await put('simresults:' + ids.Ada, { traineeId: ids.Ada, results: [{ simulator: 'Calendaring Activity', scenario: 'Week 1', score: 75, at: iso(now - 30 * 60e3) }] });
 
   // the trainer presses 🏅 Scorecard: it opens on the Batch Sheet
@@ -66,8 +69,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec')).length !== 6) fail('the six tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec')).length !== 7) fail('the seven tables are not all on the one page');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -76,6 +79,11 @@ const failures = []; const fail = m => failures.push(m);
   if (!cy || cy[1] !== 'Waiting for approval') fail(`a trainee waiting for approval isn't listed as such: ${cy}`);
   if (!ben || ben[1] !== 'Approved' || !ben[2]) fail(`a trainee with no progress isn't listed with their registration: ${ben}`);
   if (!ada || !/^1 \//.test(ada[4]) || !/^1 \//.test(ada[5]) || !/Lesson deck/.test(ada[6])) fail(`Ada's decks / Knowledge Checks / last opened: ${ada}`);
+
+  // 📁 Drive links: Ada 3 / 3 with the Monitoring Sheet flagged; Ben none
+  const dlinks = by('drive'), da = dlinks.rows.find(r => /Ada/.test(r[0])), db = dlinks.rows.find(r => /Ben/.test(r[0]));
+  if (!da || da[1] !== '3 / 3' || da[2] !== '✓' || da[3] !== '✓' || !/can't open/.test(da[4]) || /Not yet/.test(da[5])) fail(`📁 Drive links for Ada: ${da}`);
+  if (!db || db[1] !== '0 / 3' || db.slice(2, 5).some(x => x !== '—')) fail(`📁 Drive links for Ben, who linked nothing: ${db}`);
 
   // 📚 Ada's first lesson: deck finished, Knowledge Check 90%
   const ls = by('lessons').rows.find(r => /Ada/.test(r[0]));
@@ -213,5 +221,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in six tables; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in seven tables; their three Drive links, linked and readable; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });
