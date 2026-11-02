@@ -903,7 +903,8 @@ function zoomToFit(box, min){
   return box.scrollHeight <= box.clientHeight + 2;
 }
 function sheetPages(sheet){
-  const kids = [...sheet.children];
+  // (a card pinned over the slide, js/ft-buffer.js ftbf-float, is on every page and never makes one of its own)
+  const kids = [...sheet.children].filter(k => !k.classList.contains("ftbf-float"));
   kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
   // (a block dealt out by its own rows had them hidden page by page: they are shown again before the slide is dealt anew)
   sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
@@ -1354,7 +1355,7 @@ const LESSON_CARDS = {
     rows: [
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · take each one's assessment", k: "watch", d: 2, s: "s2", lead: true},
-      // (the readings open once the Common Terms tasks' 📤 Submit, on their slide, is in: js/ft-buffer.js ACTS["2:s2b"])
+      // (the Monitoring Sheet's items #5–7 and their 📤 Submit sit at the lower right of the Auto Liability Insurance slide: js/ft-buffer.js ACTS["2:s2l"])
       {t: "Personal Injury Readings", sub: "Update items #5–7 on your Monitoring Sheet and hit 📤 Submit · then read both while your batch finishes", k: "read", d: 2, s: "s2b", lead: true},
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; no AI discussion video on the deck.
       // Then ✍️ Process Questions: the Classroom Activity slide
@@ -1478,8 +1479,7 @@ const LESSON_CARDS = {
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
-      {t: "Recorded Demo: MedLOR & Records Request", time: "PM", sub: "Record & submit · then Done", k: "demo", d: 14, s: "s1e"},
-      {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded videos", k: "shadow", d: 14, s: "s2"},
+      // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
       {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
       {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 15, s: "s1b"},
@@ -1510,7 +1510,7 @@ const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}},
   // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
 };
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
@@ -3352,5 +3352,36 @@ main.main-ftdd .ftdd-sheet > .ftdd-keep:is(.ftdd-vpair, .ftdd-vone){align-self:s
 main.main-ftdd .ftdd-sheet .ftdd-vpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
 main.main-ftdd .ftdd-sheet :is(.ftdd-vpair, .ftdd-vone) .ftdd-embed{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));height:auto !important;aspect-ratio:16 / 9;margin:4px auto 0;}
 @media(max-width:800px){ main.main-ftdd .ftdd-sheet .ftdd-vpair{grid-template-columns:minmax(0,1fr);} }
+/* (a corner card pinned over the slide's lower right, beside its video: Day 2's Monitoring Sheet items #5–7, js/ft-buffer.js float) */
+main.main-ftdd .ftdd-sheet:has(> .ftbf-float){position:relative;}
+main.main-ftdd .ftdd-sheet > .ftbf-slot.ftbf-float{position:absolute;right:16px;bottom:120px;width:min(340px, calc((100% - 820px) / 2 - 24px));min-width:260px;margin:0 !important;z-index:3;}
+@media(max-width:1300px){ main.main-ftdd .ftdd-sheet > .ftbf-slot.ftbf-float{position:static;width:auto;min-width:0;} }
+/* (Day 14's notes, second page: the screenshots as large as the card allows, the NPIM doctors in two columns) */
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4 .shots a{height:auto !important;max-height:calc(var(--ftdd-room, 70vh) - 260px);}
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4 .shots img{max-height:calc(var(--ftdd-room, 70vh) - 260px);width:100%;object-fit:contain;}
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4:last-child ul{columns:2;column-gap:18px;}
+/* (a screenshot on the left, as large as the page allows, its step on the right: Day 14's How to find the DOL/DOI/DOA) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:20px;align-items:center;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots{display:block !important;margin:0 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots a{height:auto !important;display:block;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots img{width:100%;height:auto;max-height:calc(var(--ftdd-room, 70vh) - 60px);object-fit:contain;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots figure{margin:0 !important;padding:0 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p{font-size:20px !important;font-weight:700 !important;text-align:left !important;}
+@media(max-width:900px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside{grid-template-columns:minmax(0,1fr);} }
+/* (text on the left, the picture on the right: Day 14's demo rules and its Demo Metrics) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
+/* (the metrics on a deck slide, read only: in two columns, so they read large, a header over each half) */
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){display:block;max-width:1400px;margin:0 auto;font-size:18px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead{display:block;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{display:grid;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr) 80px;column-gap:0;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::before{content:"";order:3;background:#6AA84F;border-left:16px solid #fff;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{content:"Score";order:4;background:#6AA84F;color:#fff;font-weight:800;text-align:center;padding:7px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{display:block;width:auto !important;padding:7px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody{display:block;columns:2;column-gap:16px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

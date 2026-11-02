@@ -42,7 +42,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   9: ["s1"],
   // (Day 12's Recorded Shadowing video is off the deck; so is its Recorded Demonstration panel, PREP_OFF: the day ends on
   // its Demo Preparation, with the demo's metrics and facilitator's notes)
-  12: ["s1v"]};
+  12: ["s1v"],
+  // (Day 14's Shadowing Session is off the deck: the day ends on its Demo Preparation)
+  14: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
@@ -919,6 +921,31 @@ function D10_SHARE(x){
     card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>") +
     "</div>\n";
 }
+// Day 14's notes for the work guide, in cards on two pages, as Day 12's (ftdd-d12: one height to a row, large and bold):
+// the tools, the naming conventions and the subject line, then the HIPAA form and the MedLOR with their screenshots and
+// the NPIM doctors. The guide's wording; the build stops if the guide's text changes under it
+function D14_CARDS(x){
+  const shot = n => { const m = x.match(new RegExp(`<div class="shots"><figure><a href="/ft/day14/img/${n}\\.png"[^\\n]*?</figure></div>`)); if(!m) throw new Error(`Day 14's notes: the ${n} screenshot is missing`); return m[0]; };
+  for(const t of ["1. CMS: Smart Advocate", "MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)", "Relationship to Patient – Self",
+    "tick the appropriate box (for bills &amp; records)", "MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
+    "Jane Doe - JML(Fabito Anesthesia Pain Center Dr. Fabito) - Request for Medical Bills and Records", "- Dr. Brian Le</p>", "- Dr. Ruben Alexander</p>"])
+    if(!x.includes(t)) throw new Error(`Day 14's notes for the work guide changed: "${t}" is missing`);
+  const docs = [...x.matchAll(/<p>- (Dr\. [^<]+)<\/p>/g)].map(m => m[1]);
+  if(docs.length < 10) throw new Error("Day 14's list of NPIM doctors is no longer where the build looks for it");
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  return '<div class="ftdd-keep ftdd-d12"><p>Please take note and include these reminders &amp; updates in your notes/work guide.</p>\n<div class="ftdd-cards2">' +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🏷", "Complete Naming Convention", "<p>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (va’s first name)</p><p><b>Example:</b> MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
+    card("🩺", "Naming convention for NPIM doctors", ul(["Indicate the name of the doctor.", "The lien holder (here, JML) still comes first; the NPIM doctor&#x27;s name goes after the medical provider, inside the brackets."]) +
+      "<p><b>Example:</b> MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
+    card("✉️", "Sending request: E-mail/E-filing", "<p><b>Subject Line:</b> Name of the client - Name of the lien holder(medical provider) - Type of Request</p><p><b>Example:</b> Jane Doe - JML(Fabito Anesthesia Pain Center Dr. Fabito) - Request for Medical Bills and Records</p>") +
+    "</div></div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-d12 ftdd-d14b"><div class="ftdd-cards3">' +
+    card("📝", "1. HIPAA Form", ul(["<b>Validity of Authorization Form:</b> enter the date when the client signed the form, as indicated below the document.", "<b>Relationship to Patient:</b> Self"]) + shot("image25")) +
+    card("📄", "2. In MedLOR", ul(["Tick the appropriate box (for bills &amp; records) as indicated in your request."]) + shot("image46")) +
+    card("👩‍⚕️", "Provider: Nevada Personal Injury Management (NPIM)", "<p><b>List of doctors under NPIM</b></p>" + ul(docs)) +
+    "</div></div>\n";
+}
 // Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
 // wording, each heading a card; the build stops if the guide's text changes under it
 function D12_CARDS(x){
@@ -1227,15 +1254,31 @@ const ROWS = {
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
   14: {
-    s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]]},
-      {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]]},
-      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]]},
-      {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""]]},
+    // (the tutorial with no topic line or "Tutorial Video" bar over it, played as large as the page allows: data-bare)
+    s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]], fix: [
+        ["<p><b>Topic: Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</b></p>\n<p>Tutorial Video:</p>\n", ""],
+        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
+      // (the reminders in cards, two pages: D14_CARDS)
+      {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]], fix: [D14_CARDS]},
+      // (step 5 and its screenshot side by side, one page: the picture on the left, as large as the page allows, the step and
+      // "How to find the DOL/DOI/DOA" on the right, ftdd-imgside)
+      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]], fix: [h => {
+        const re = /<p>5\. Kindly also obtain the  DOL of the client in the summary page\.<\/p>\n<p><b>How to find the DOL\/DOI\/DOA<\/b><\/p>\n(<div class="shots"><figure><a href="\/ft\/day14\/img\/image51\.png"[^\n]*?<\/figure><\/div>)\n?/;
+        if(!re.test(h)) throw new Error("Day 14's step 5 and its DOL/DOI/DOA screenshot are no longer where the build looks for them");
+        return h.replace(re, (m, shot) => PGBREAK + '<div class="ftdd-keep ftdd-imgside"><div class="ftdd-imgside-img">' + shot + '</div><div class="ftdd-imgside-txt"><p><b>How to find the DOL/DOI/DOA</b></p>\n<p>5. Kindly also obtain the DOL of the client in the summary page.</p></div></div>\n');
+      }]},
+      {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""],
+        // (no "FYI – Current SmartAdvocate (SA) Updates" line: the bar under it names the updates)
+        ["<p>FYI – Current SmartAdvocate (SA) Updates</p>\n", ""]]},
       {id: "s1e", h: "PM: Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills & Records",
         parts: [['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>', null]], fix: [
           ['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b><b><i>Demo and Shadowing</i></b></span></p>\n', ""],
           ["<p><b><i>Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</i></b></p>\n", ""],
-          ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"]]}]
+          ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"],
+          // (the two rules on the left and the Demo Metrics on the right, as large as the page allows: ftdd-imgside)
+          h => { const re = /(<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>)\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
+            if(!re.test(h)) throw new Error("Day 14's Demo Metrics and its two rules are no longer where the build looks for them");
+            return h.replace(re, (m, met, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep ftdd-imgside ftdd-imgside-r"><div class="ftdd-imgside-txt"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div><div class="ftdd-imgside-img">' + met + '</div></div>\n'); }]}]
   },
   15: {
     s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<h3>Demo Metrics</h3>"]]},
@@ -1353,7 +1396,7 @@ const EX_RENAME = {
 // Day 8's slides or Day 9's metrics slide
 const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
 // a demo whose activity slide (its Demos Ongoing panel) is off the deck: only its preparation slide stays (Days 12 and 16)
-const PREP_OFF = {12: ["s1d"], 16: ["s2"]};
+const PREP_OFF = {12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
