@@ -352,7 +352,8 @@ function visual(html){
     // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
     const M = window.FTMetrics;
     // (data-nohead: the slide is the metrics alone and its title names them, Day 9's Intake Mock Calls Metrics)
-    box.innerHTML = `${p.hasAttribute("data-nohead") ? "" : `<p class="ftdd-score-h"><b>${e(txt)}</b></p>`}${M ? (M.view || M.table)(rb.key) : ""}` +
+    // (no "… Metrics" bar over it: the table's own green header names the scorecard)
+    box.innerHTML = `${M ? (M.view || M.table)(rb.key) : ""}` +
       (isAdminView() && M && M.view ? M.table(rb.key) : "");
     if(shots) shots.remove();
     p.replaceWith(box);
@@ -731,7 +732,7 @@ function scoreBox(s, info, body){
   if(!rb) return "";
   const M = root.FTMetrics;
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
+  return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -1480,9 +1481,10 @@ const LESSON_CARDS = {
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
       {t: "Recorded Demo: MedLOR & Records Request", time: "PM", sub: "Record & submit · then Done", k: "demo", d: 14, s: "s1e"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded videos", k: "shadow", d: 14, s: "s2"},
-      {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
+      {t: "Before Your Demo: the Tutorial Video", time: "AM", sub: "Watch it again before you record", k: "watch", d: 15, s: "s1"},
+      {t: "Gentle Reminders", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1g"},
       {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
-      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 15, s: "s1b"},
+      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · scored by your trainer", k: "demo", d: 15, s: "s1b"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 15, s: "s2"},
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
@@ -2644,7 +2646,9 @@ main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
 /* (a scorecard's rows at the text's own height, not the slide's line spacing: a long one, Day 9's 17 Intake criteria, then
    fits at the size of a short one, Day 12's, rather than zoomed down to fit) */
-main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.2 !important;padding-top:3px;padding-bottom:3px;}
+main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.25 !important;padding-top:6px;padding-bottom:6px;}
+/* the metrics table on a slide: larger, the slide's main content now that it has no title bar over it */
+main.main-ftdd .ftdd-sheet .ftdd-score .ftms-tbl{font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 /* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
@@ -2972,7 +2976,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-sheet > .ftdd-inline.is-video:only-child:not(.is-bare):not(.is-fit) .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 110px) * 16 / 9));}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
 /* a video with no name bar over it (data-bare): the page's full height */
-.ft-body .ftdd-inline.is-bare{margin:0;}
+.ft-body .ftdd-inline.is-bare{margin:0;width:100%;}   /* (the box spans the slide: with no name bar it has nothing else to size it by) */
 .ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
 /* sized to the page (data-fit): the slide's lines and the embed on one page */
 .ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}

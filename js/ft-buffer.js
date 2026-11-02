@@ -46,7 +46,9 @@ const ACTS = {
   "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo", simple: true},
   "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1", simple: true},
   "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1", simple: true},
-  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1", simple: true},
+  // (Day 15's recorded demo: no Demos Ongoing box and no Done: the trainer's saved scoresheet makes it done, as a mock call's)
+  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1", simple: true, noTracker: true,
+    plain: "Record your demonstration when your trainer calls you. Your trainer scores it, and it shows as done on your card."},
   "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo", simple: true}
 };
 const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?";
@@ -106,6 +108,7 @@ function traineePanel(h){
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
   // (a mock call: its heading only, no Done: the trainer's saved scoresheet makes it done, above)
+  if(a.plain) return `<p class="ftbf-plain">${e(a.plain)}</p>`;
   if(a.simple && a.noTracker) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : "Mock Calls Ongoing"}</p>
     ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
@@ -271,6 +274,7 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-only .ftbf{background:#EEF0F4;border:3px solid #E8590C;border-radius:18px;padding:34px 40px;text-align:center;box-shadow:0 6px 18px rgba(30,35,64,.12);}
 .ftbf-only .ftbf .ftbf-h{font-size:24px !important;margin-bottom:18px !important;}
 .ftbf-only .ftbf p{font-size:20px;}
+.ftbf-plain{margin:18px auto;max-width:900px;text-align:center;font:700 20px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
 .ftbf .ftbf-h{display:inline-block;margin:0 0 12px !important;padding:9px 16px !important;background:#1E2340;color:#fff !important;border-left:5px solid #E8590C;border-radius:8px;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;}
 .ftbf p{font:700 18px/1.45 'Inter',sans-serif;color:#1E2340;margin:0 0 10px;}
 .ftbf .ftbf-lead{font-size:19px;}
