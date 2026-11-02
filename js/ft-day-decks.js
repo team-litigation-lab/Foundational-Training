@@ -1434,7 +1434,7 @@ const LESSON_CARDS = {
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
       // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
       {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 9, s: "s2"},
-      {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
+      // (Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on the metrics slide, s2)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
@@ -3383,5 +3383,12 @@ main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3)))
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
+/* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:19px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links{flex-direction:column;align-items:stretch;margin:0 0 12px;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:17px;padding:12px 16px;}
+@media(max-width:1100px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{grid-template-columns:minmax(0,1fr);} }
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -11,7 +11,7 @@ const DAY9 = {
     {
       "id": "s2",
       "h": "AM: Intake Mock Calls Metrics",
-      "html": "<p data-nohead><b>Intake Mock Calls Metrics</b></p>"
+      "html": "<div class=\"ftdd-keep ftdd-mcside\"><div class=\"ftdd-mcside-l\">\n<p data-nohead><b>Intake Mock Calls Metrics</b></p>\n</div><div class=\"ftdd-mcside-r\">\n<p><b>☎ Before your turn</b></p>\n<div class=\"ftdd-practice ftdd-mcside-links\"><a class=\"btn btn-navy\" href=\"https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake\" target=\"_blank\" rel=\"noopener noreferrer\">☎ Call Simulator: Intake Line</a><a class=\"btn btn-navy\" href=\"https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard\" target=\"_blank\" rel=\"noopener noreferrer\">🗂 CMS: Intake</a></div>\n<div class=\"ftis-mockcall\"></div>\n</div></div>"
     },
     {
       "id": "guide",

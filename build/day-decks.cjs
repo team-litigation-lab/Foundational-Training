@@ -1395,8 +1395,9 @@ const EX_RENAME = {
 // (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
 // Day 8's slides or Day 9's metrics slide
 const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
-// a demo whose activity slide (its Demos Ongoing panel) is off the deck: only its preparation slide stays (Days 12 and 16)
-const PREP_OFF = {12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
+// a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 12, 14
+// and 16; Day 9's Intake Mock Calls, whose case and practice links are on its metrics slide, s2, build/days/day09.js)
+const PREP_OFF = {9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
