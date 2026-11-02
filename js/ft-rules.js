@@ -119,9 +119,9 @@ const TESTS = [
 ];
 
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
+// The trainer's list, word for word: Virtual Assistant Essentials - Day 2 through the Allesa shadowing To-Do (16 in all).
 const TODOS = [
-  "Classroom Discussion: Virtual Assistant Essentials - Day 1",
-  "Classroom Discussion: Law Firm Communication",
+  "Classroom Discussion: Virtual Assistant Essentials - Day 2",
   "Classroom Discussion: Reception Training Day 1",
   "Classroom Discussion: Reception Training Day 2",
   "Classroom Discussion: Reception Training Day 3",
@@ -135,7 +135,8 @@ const TODOS = [
   "Classroom Discussion: Provider Communication Training Day 1",
   "Classroom Discussion: Provider Communication Training Day 2",
   "Classroom Discussion: Provider Communication Training Day 3",
-  "Classroom Discussion: Provider Communication Training Day 4"
+  "Classroom Discussion: Provider Communication Training Day 4",
+  "Shadowing Provider Communication Role (Allesa)"
 ];
 // Day 0 → Onboarding Orientation: LSH VA Guide | "Create a to-do" task list.
 const TODO_GUIDE = "https://docs.google.com/spreadsheets/d/1Yfeuw9xGb2H68qF9nHf94whXVKmoL1PP8QocP_FN1Ys/edit#gid=0";
@@ -325,7 +326,7 @@ const SLIDES = [
       <p class="ftr-tip">💡 More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div>
     <div class="ftr-part ftr-todos">
       <div class="ftr-part-h ftr-todos-h"><div class="ftr-todos-t"><span>Part 2</span>Your ${TODOS.length} Hubstaff To-Dos</div><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
-      <p class="ftr-todos-pre">Each one starts with <b>${esc(PRE.trim())}</b> — 📋 Copy copies the whole name.</p>
+      <p class="ftr-todos-pre">The Classroom Discussions start with <b>${esc(PRE.trim())}</b> — 📋 Copy copies the whole name.</p>
       <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>
     ${fig(FIGS.todo())}</div>`; }],
   // the steps on the left, the picture (Part 2) big on the right
