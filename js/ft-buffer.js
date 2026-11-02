@@ -21,8 +21,10 @@ const ACTS = {
   // first, /api/monitor/items: Timely Completion, the context of the progress, red flags and things to improve. gate: the
   // trainee sees only the panel until then, and reads the slide's own content, the readings, while the batch finishes.
   // opens: a slide that stays shut for a trainee until this Done is in, the Softphones and PPTs)
-  "2:s2b": {kind: "buffer", task: true, gate: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
-    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s4"},
+  // (now a corner card, as Day 4's: at the lower right of the Auto Liability Insurance video slide, s2l, under the key it was
+  // saved under (2:s2); no gate on the readings and no lock on the Softphones and PPTs)
+  "2:s2l": {kind: "buffer", task: true, corner: true, float: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}},
   // Day 4's Monitoring Sheet update (items #10–11): no slide of its own any more. Its card and 📤 Submit sit at the lower right of
   // the mock calls' metrics page, the preparation slide's last (s2b), under the key it was saved under (4:s2m). corner: a small
   // card after the slide's content, nothing on the trainer's slide, and the slide stays readable
@@ -193,7 +195,8 @@ function paint(){
   const box = document.createElement("div"); box.className = "ftbf-slot";
   // (a gate's panel heads the slide: its content, below, is read once the Done is in)
   // (a corner card: small, at the lower right, after the slide's content)
-  if(h.a.corner){ box.classList.add("ftbf-corner"); box.innerHTML = traineePanel(h); sheet.appendChild(box);
+  // (float: pinned over the slide's lower right, beside a video, on its first page, never a page of its own: Day 2's)
+  if(h.a.corner){ box.classList.add("ftbf-corner"); if(h.a.float) box.classList.add("ftbf-float"); box.innerHTML = traineePanel(h); sheet.appendChild(box);
     if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => { const n = here(); if(n && n.k === h.k && mine(h.k)) render(); });
     return; }
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);

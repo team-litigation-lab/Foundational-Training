@@ -40,8 +40,9 @@ if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'mon
 // copied), and without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
 const crm = D[3] && D[3].slides.find(s => s.id === 's2');
 if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || !/Choose one video/.test(crm.html) || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards with the choose-one line, a link is followed by a comma, or the slide still has its 'Please watch' line");
-// Day 10's two VA-recording folders and the Astred 09/20 shadowing recording (Day 11's, now on Day 12): one link each, whole, played in the slide
-for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1], [12, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 1], [11, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 0]]) {
+// Day 10's two VA-recording folders: one link each, whole, played in the slide; the Astred 09/20 shadowing recording is off the
+// training (Day 11's, then Day 12's, now on neither)
+for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1], [12, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 0], [11, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 0]]) {
   const all = D[n] ? D[n].slides.map(s => s.html).join('\n') : '';
   if ((all.match(new RegExp(`<a class="viewer-link" data-embed [^>]*href="[^"]*${id}`, 'g')) || []).length !== k || /usp=dri<|>ve_link<|usp=drive_link,/.test(all)) fail(`Day ${n}: the ${id} link isn't one whole embedded link`);
 }
@@ -440,13 +441,13 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
-  // Day 9's Intake Mock Calls Metrics: the metrics alone, with no heading over the table, and no metrics bar on the mock calls' slide
+  // Day 9's Intake Mock Calls Metrics: the metrics with no heading over the table, the Call Simulator and CMS Intake links and
+  // the trainee's case beside them; the mock calls' own slide is off the deck
   await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
   if (!/Intake Mock Calls Metrics/.test(d9.h)) fail(`Day 9's metrics slide is "${d9.h}"`);
-  if (d9.score < 10 || /Call Simulator|debrief/i.test(d9.text) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics alone: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
-  await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(1500);
-  if (await page.$('.ftdd-sheet .ftdd-score')) fail("Day 9's Intake Mock Calls slide still has a metrics bar");
+  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Simulator: Intake Line/.test(d9.text) || !(await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
 
   // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are removed:

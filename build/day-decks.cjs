@@ -39,7 +39,12 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
   8: ["s2", "s3b"],
   // (Day 9's Buffer Time for the Intake demo is off the deck: Part 3 opens on the Intake Mock Calls)
-  9: ["s1"]};
+  9: ["s1"],
+  // (Day 12's Recorded Shadowing video is off the deck; so is its Recorded Demonstration panel, PREP_OFF: the day ends on
+  // its Demo Preparation, with the demo's metrics and facilitator's notes)
+  12: ["s1v"],
+  // (Day 14's Shadowing Session is off the deck: the day ends on its Demo Preparation)
+  14: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
@@ -52,7 +57,9 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   7: {insurance: "AM: Common Insurance Providers"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
-  11: {s2: "PM: Insurance Email Simulator"}};
+  11: {s2: "PM: Insurance Email Simulator"},
+  // (Day 10's afternoon: its videos, named for what the trainee does)
+  10: {s2: "PM: Watch Insurance Communication Videos"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -454,12 +461,13 @@ s3: html => {
     '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
     '<div class="ftdd-ev-line">🎥 <span class="ftdd-ev-link">Join with Google Meet</span> <small>meet.google.com/dyt-voan-kta</small></div>' +
     '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">meet.google.com/dyt-voan-kta</span></div>' +
-    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Notification ▾</span><span class="ftdd-ev-f">15</span><span class="ftdd-ev-f">minutes ▾</span></div>' +
-    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Velarde ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot"></span> Client Meetings ▾</span></div>' +
+    // (marked as the title is: the notification, the calendar and its colour, the notes and the guests, each with its label)
+    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-mark ftdd-ev-markin"><span class="ftdd-ev-f">Notification ▾</span><span class="ftdd-ev-f">15</span><span class="ftdd-ev-f">minutes ▾</span></span><span class="ftdd-ev-note">◀ Notification</span></div>' +
+    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-mark ftdd-ev-markin"><span class="ftdd-ev-f">Michelle Velarde ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot"></span> Client Meetings ▾</span></span><span class="ftdd-ev-note">◀ Calendar &amp; color</span></div>' +
     '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
-    '<div class="ftdd-ev-desc"><ol><li>Review contract documents prior to the consultation.</li><li>Review the client’s observations, concerns, and instructions regarding the contract.</li><li>Be prepared to discuss the contract and address the client’s questions or concerns during the GMeet consultation.</li></ol></div></div>' +
-    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
-    '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
+    '<p class="ftdd-ev-note ftdd-ev-noteup">▼ Notes</p><div class="ftdd-ev-desc ftdd-ev-mark"><ol><li>Review contract documents prior to the consultation.</li><li>Review the client’s observations, concerns, and instructions regarding the contract.</li><li>Be prepared to discuss the contract and address the client’s questions or concerns during the GMeet consultation.</li></ol></div></div>' +
+    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><p class="ftdd-ev-note ftdd-ev-noteup">▼ Add guests</p><div class="ftdd-ev-mark ftdd-ev-markin"><div class="ftdd-ev-f wide">Add guests</div>' +
+    '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
   // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
   // (the three links are buttons in one row, ftdd-linkbtns: a new tab each; the six steps two to a row, ftdd-steps2, so the
@@ -866,6 +874,7 @@ const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 // (without its Objective, which only restates the slide's title, and with Activities 1 (1P) and 2 (3P) as one set of
 // instructions, a card each, four to a row (ftdd-lor-cards): the two lists are the same but for 1P's Claims to be Opened
 // and the file names, which the cards mark 1P / 3P)
+const LOR_HALF = "<!--lor:half-->\n";
 const LOR_GUIDE = () => {
   const src = fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8");
   const lists = [...src.matchAll(/<ol>\n([^]*?)<\/ol>/g)].map(m => [...m[1].matchAll(/<li><b>([^<]+?):?<\/b><ul>([^]*?)<\/ul><\/li>/g)].map(x => ({h: x[1], lis: x[2].match(/<li>[^]*?<\/li>/g)})));
@@ -882,8 +891,10 @@ const LOR_GUIDE = () => {
   if(!use || use.lis.join("") !== "<li>Open the LOR template provided in the training GC.</li>") throw new Error("The LOR guidelines' Use the Template step has changed: point it at the LOR Drafting tool anew");
   use.lis = ["<li>Open the 1P or 3P LOR template in the platform’s LOR Drafting tool.</li>"];
   use.post = `<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div>`;
-  return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' +
-    cards.map((c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`).join("") + "</div>\n";
+  // (four cards to a page, so they read at full size: LOR_HALF, where the slide turns its page, build ROWS[11])
+  const card = (c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`;
+  return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' + cards.slice(0, 4).map(card).join("") + "</div>\n" + LOR_HALF +
+    '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs (continued)</h3>\n<div class="ftdd-lor-cards">\n' + cards.slice(4).map((c, k) => card(c, k + 4)).join("") + "</div>\n";
 };
 // 📘 the Sample SOP, How to Open a 3P Auto Insurance Claim & Send the LOR (the guide's Tettra PDF, build/days/sample-3p-sop.html):
 // written on Day 10's deck as a slide of its own, after the Claims Specialist discussion and before the Digital Handouts, in
@@ -910,6 +921,31 @@ function D10_SHARE(x){
     card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>") +
     "</div>\n";
 }
+// Day 14's notes for the work guide, in cards on two pages, as Day 12's (ftdd-d12: one height to a row, large and bold):
+// the tools, the naming conventions and the subject line, then the HIPAA form and the MedLOR with their screenshots and
+// the NPIM doctors. The guide's wording; the build stops if the guide's text changes under it
+function D14_CARDS(x){
+  const shot = n => { const m = x.match(new RegExp(`<div class="shots"><figure><a href="/ft/day14/img/${n}\\.png"[^\\n]*?</figure></div>`)); if(!m) throw new Error(`Day 14's notes: the ${n} screenshot is missing`); return m[0]; };
+  for(const t of ["1. CMS: Smart Advocate", "MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)", "Relationship to Patient – Self",
+    "tick the appropriate box (for bills &amp; records)", "MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
+    "Jane Doe - JML(Fabito Anesthesia Pain Center Dr. Fabito) - Request for Medical Bills and Records", "- Dr. Brian Le</p>", "- Dr. Ruben Alexander</p>"])
+    if(!x.includes(t)) throw new Error(`Day 14's notes for the work guide changed: "${t}" is missing`);
+  const docs = [...x.matchAll(/<p>- (Dr\. [^<]+)<\/p>/g)].map(m => m[1]);
+  if(docs.length < 10) throw new Error("Day 14's list of NPIM doctors is no longer where the build looks for it");
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  return '<div class="ftdd-keep ftdd-d12"><p>Please take note and include these reminders &amp; updates in your notes/work guide.</p>\n<div class="ftdd-cards2">' +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🏷", "Complete Naming Convention", "<p>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (va’s first name)</p><p><b>Example:</b> MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
+    card("🩺", "Naming convention for NPIM doctors", ul(["Indicate the name of the doctor.", "The lien holder (here, JML) still comes first; the NPIM doctor&#x27;s name goes after the medical provider, inside the brackets."]) +
+      "<p><b>Example:</b> MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
+    card("✉️", "Sending request: E-mail/E-filing", "<p><b>Subject Line:</b> Name of the client - Name of the lien holder(medical provider) - Type of Request</p><p><b>Example:</b> Jane Doe - JML(Fabito Anesthesia Pain Center Dr. Fabito) - Request for Medical Bills and Records</p>") +
+    "</div></div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-d12 ftdd-d14b"><div class="ftdd-cards3">' +
+    card("📝", "1. HIPAA Form", ul(["<b>Validity of Authorization Form:</b> enter the date when the client signed the form, as indicated below the document.", "<b>Relationship to Patient:</b> Self"]) + shot("image25")) +
+    card("📄", "2. In MedLOR", ul(["Tick the appropriate box (for bills &amp; records) as indicated in your request."]) + shot("image46")) +
+    card("👩‍⚕️", "Provider: Nevada Personal Injury Management (NPIM)", "<p><b>List of doctors under NPIM</b></p>" + ul(docs)) +
+    "</div></div>\n";
+}
 // Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
 // wording, each heading a card; the build stops if the guide's text changes under it
 function D12_CARDS(x){
@@ -919,15 +955,16 @@ function D12_CARDS(x){
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
   const noAdj = "If no adjuster has been assigned yet, indicate: <b><i>“No adjuster assigned yet.”</i></b>";
-  // (one block, ftdd-one: one page, scaled to fit)
-  return '<div class="ftdd-one">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
+  // (two pages, so the cards read large: the steps in SA, then the tools and the naming convention; each a block of its own,
+  // ftdd-d12, its cards one height to a row)
+  return '<div class="ftdd-keep ftdd-d12">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
     '<div class="ftdd-cards3">' +
     card("🔢", "Both 1P and 3P entries", "<p>Make sure to complete the following fields:</p>" + ul(["Policy Number", "Claim Number"])) +
     card("🟦", "Adding the 1P insurance information", "<p>In the <b>Plaintiff Insurance Owner Field</b>, select: <b>Plaintiff&#x27;s Training Acct</b></p><p><b>In the Comments section, include:</b></p>" +
       ul(["Actual insurance name of the owner", "Assigned adjuster details", noAdj, "Still add all other available insurance information even if no adjuster has been assigned."])) +
     card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
       ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
-    "</div>\n" + '<div class="ftdd-cards2">' +
+    "</div></div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-d12"><div class="ftdd-cards2">' +
     card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
     card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
       "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
@@ -937,7 +974,8 @@ function D12_CARDS(x){
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
   // slide; the 3P Zurich sample stays a document (the SOP is written on its own slide: SAMPLE_SOP)
-  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample embedded down the
+  // (no "Watch This Video" bar: the slide's name says it; the videos two to a page, ftdd-vpair, as large as the page
+  // allows, then the 3P Zurich sample on a page of its own) Formerly: the four videos two by two, with the 3P Zurich sample embedded down the
   // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
   // divider go
   10: {s2: h => {
@@ -952,7 +990,8 @@ const EDIT = {
     const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
     const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
     return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
-      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + "</div>\n");
+      .replace("\u0000", '<div class="ftdd-keep ftdd-vpair">' + col(oc) + col(to) + "</div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-vpair">' + col(fa) + col(co) + "</div>\n" +
+        PGBREAK + '<div class="ftdd-keep ftdd-vone">' + col(embed(zu)) + "</div>\n");
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
@@ -988,7 +1027,8 @@ const EDIT = {
   // (the recorded demos are SmartAdvocate's only: the Training Guide's Filevine demos are not on the platform)
   // (the topic and the video's label as one heading, as Day 12's tutorial; no note-taking reminder)
   16: {s1: h => rep(rep(rep(h, "<p><b>Topic: Lien Balance Verification Request</b></p>\n<p>Tutorial Video: </p>", "<p><b><i>Tutorial Video: Lien Balance Verification Request</i></b></p>", 1, "Day 16 s1"),
-      'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
+      // (and no name bar over the video, played as large as the page allows: data-bare)
+      'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-embed data-bare data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
       "<p>NOTE: Please don&#x27;t forget to take down notes for your guide later.</p>\n", "", 1, "Day 16 s1"),
     // (the demo's preparation: the recorded demo only, none of the chat reminders around it, and no ⏳ While you wait box: data-nowait)
     s2: h => ["<p>Please be reminded to type &#x27;done&#x27; here as soon as you are done watching the video and have finalized your process guide. Thank you.</p>\n",
@@ -996,7 +1036,7 @@ const EDIT = {
       "<p>Sending Lien Balance Verification request using SA.     </p>\n",
       // (and the 45-minute notice to @everyone after the Demo Metrics)
       "<p>@everyone</p>\n<p>Please be informed that for the last metric of your LV Demo, Time Management &amp; Efficiency, the ideal completion time is 45 minutes. Going beyond the allotted time will result in a significant deduction under this metric. Please be guided and manage your time accordingly.</p>\n"]
-      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-kind="video"', 1, "Day 16 s2"))}
+      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-embed data-bare data-kind="video"', 1, "Day 16 s2"))}
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
@@ -1154,8 +1194,8 @@ const ROWS = {
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
-      // (one block, one page: the two recording folders and the documents' tiles)
-      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", pre: KEEP[0], post: KEEP[1], parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+      // (three pages, so each reads large: a recording folder to a page at the slide's full width, then the documents' tiles)
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
         fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"],
           // (the documents, a tile each, in place of the Drive folder: DOC_TILES_10)
           h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
@@ -1163,9 +1203,10 @@ const ROWS = {
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
-          // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2)
-          h => h.replace(/(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/,
-            (m, two) => '<div class="ftdd-keep ftdd-fold2">\n' + two + '</div>\n')]}]
+          // (and a page each: the folder's files drawn as large as the slide's width allows, js/ft-day-decks.js fitCrops)
+          h => { const re = /(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n)(<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/;
+            if(!re.test(h)) throw new Error("Day 10's two recording folders are no longer where the build looks for them");
+            return h.replace(re, (m, one, two) => one + PGBREAK + two + PGBREAK); }]}]
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
@@ -1187,12 +1228,16 @@ const ROWS = {
           k = h.indexOf("<p> <b>Before saving your LOR in your Assessments folder:</b></p>"), end = h.indexOf(SLOT(11, "s1-5"));
         if(i < 0 || j < i || k < j || end < k) throw new Error("Day 11's LOR templates and reminders are no longer where the build looks for them");
         // (the instructions, with the trainer's slot before them, are one block: the slot never makes a page of its own)
-        return '<div class="ftdd-lor-set">\n' + h.slice(0, i) + '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-card4 ftdd-lor-rem"><p class="ftdd-card4-h">📝 Additional Reminders for Drafting Your LOR</p>\n' +
+        // (the cards in two pages of four: LOR_GUIDE)
+        if(h.slice(0, i).split(LOR_HALF).length !== 2) throw new Error("Day 11's LOR cards are no longer split where the build looks for it");
+        return '<div class="ftdd-lor-set">\n' + h.slice(0, i).replace(LOR_HALF, '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-lor-set">\n') + '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-card4 ftdd-lor-rem"><p class="ftdd-card4-h">📝 Additional Reminders for Drafting Your LOR</p>\n' +
           h.slice(j, k).replace("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n", "") + "</div>\n" + h.slice(end);
       }]}]
   },
   12: {
-    s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
+    // (the tutorial with no name bar over it, the slide's ribbon names it, played as large as the page allows: data-bare)
+    s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']],
+        fix: [['<a class="viewer-link" data-kind="video" data-title="Tutorial Demo Recording on Saving LORs', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Demo Recording on Saving LORs']]},
       // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
       {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
       {id: "s1d", parts: [[SLOT(12, "s1-1"), "<!--cut:shadow-->"]]},
@@ -1209,15 +1254,31 @@ const ROWS = {
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
   14: {
-    s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]]},
-      {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]]},
-      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]]},
-      {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""]]},
+    // (the tutorial with no topic line or "Tutorial Video" bar over it, played as large as the page allows: data-bare)
+    s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]], fix: [
+        ["<p><b>Topic: Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</b></p>\n<p>Tutorial Video:</p>\n", ""],
+        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
+      // (the reminders in cards, two pages: D14_CARDS)
+      {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]], fix: [D14_CARDS]},
+      // (step 5 and its screenshot side by side, one page: the picture on the left, as large as the page allows, the step and
+      // "How to find the DOL/DOI/DOA" on the right, ftdd-imgside)
+      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]], fix: [h => {
+        const re = /<p>5\. Kindly also obtain the  DOL of the client in the summary page\.<\/p>\n<p><b>How to find the DOL\/DOI\/DOA<\/b><\/p>\n(<div class="shots"><figure><a href="\/ft\/day14\/img\/image51\.png"[^\n]*?<\/figure><\/div>)\n?/;
+        if(!re.test(h)) throw new Error("Day 14's step 5 and its DOL/DOI/DOA screenshot are no longer where the build looks for them");
+        return h.replace(re, (m, shot) => PGBREAK + '<div class="ftdd-keep ftdd-imgside"><div class="ftdd-imgside-img">' + shot + '</div><div class="ftdd-imgside-txt"><p><b>How to find the DOL/DOI/DOA</b></p>\n<p>5. Kindly also obtain the DOL of the client in the summary page.</p></div></div>\n');
+      }]},
+      {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""],
+        // (no "FYI – Current SmartAdvocate (SA) Updates" line: the bar under it names the updates)
+        ["<p>FYI – Current SmartAdvocate (SA) Updates</p>\n", ""]]},
       {id: "s1e", h: "PM: Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills & Records",
         parts: [['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>', null]], fix: [
           ['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b><b><i>Demo and Shadowing</i></b></span></p>\n', ""],
           ["<p><b><i>Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</i></b></p>\n", ""],
-          ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"]]}]
+          ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"],
+          // (the two rules on the left and the Demo Metrics on the right, as large as the page allows: ftdd-imgside)
+          h => { const re = /(<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>)\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
+            if(!re.test(h)) throw new Error("Day 14's Demo Metrics and its two rules are no longer where the build looks for them");
+            return h.replace(re, (m, met, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep ftdd-imgside ftdd-imgside-r"><div class="ftdd-imgside-txt"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div><div class="ftdd-imgside-img">' + met + '</div></div>\n'); }]}]
   },
   15: {
     s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<h3>Demo Metrics</h3>"]]},
@@ -1334,6 +1395,9 @@ const EX_RENAME = {
 // (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
 // Day 8's slides or Day 9's metrics slide
 const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
+// a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 12, 14
+// and 16; Day 9's Intake Mock Calls, whose case and practice links are on its metrics slide, s2, build/days/day09.js)
+const PREP_OFF = {9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
@@ -1410,7 +1474,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), ...((PREP_OFF[n] || []).includes(id) ? [] : [{id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""}]));
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];

@@ -61,7 +61,7 @@ async function workerChecks() {
     if (locks) {
       stepsWas = await get(t, 'settings:daysteps');
       await t.evaluate(() => FTDayDecks.open(9, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 9's steps are known)
-      const s9 = await t.evaluate(() => { const i = FTDayDecks.at(9, 's3b'); const x = FTDayLocks.steps(9).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      const s9 = await t.evaluate(() => { const i = FTDayDecks.at(9, 's2'); const x = FTDayLocks.steps(9).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
       if (!s9) fail('Day 9\'s mock call step isn\'t among its Activity Locks steps');
       // (its records keep 9:s3)
       const all = Object.assign({}, (stepsWas || {}).all || {}, { 9: s9 });
@@ -122,31 +122,17 @@ async function workerChecks() {
     if (!/✅ Done/.test(w8) || !/Go to the next activity/.test(w8) || /Waiting for/.test(w8)) fail(`Day 8's Done reads: ${w8.slice(0, 200)}`);
     if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['8:s3']) fail('the trainee\'s Done wasn\'t saved');
 
-    // ☎ Day 9's Intake mock calls: only "Mock Calls Ongoing", no Done (the trainer's scoresheet makes it done, below); the
-    // metrics on the Intake Mock Calls Metrics slide before it, a card row and step of its own
-    await open(t, 9, 's3b'); await toPanel(t);
-    const m9 = await panel(t);
-    if (!/Mock Calls Ongoing/.test(m9) || /Hit Done/.test(m9) || (await t.$('.ftbf .ftbf-done')) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't the no-Done panel: ${m9.slice(0, 120)}`);
-    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's2' && l[i - 1].row === l[i].row - 1; })))
-      fail("Day 9's mock calls have no Intake Mock Calls Metrics slide, a row of its own, before them");
-
-    // ☎ a mock call is done once the trainer has saved the trainee's scoresheet (labreview), which turns their panel to ✅ done;
-    // a Done saved before (the old tracker's, or the trainee's own) no longer counts
-    const tiaBuf = (await get(t, 'buffer:' + tia)) || { acts: {}, released: {} };
-    await put(t, 'buffer:' + tia, { acts: Object.assign({}, tiaBuf.acts, { '9:s3': { done: '2026-10-29T12:00:00.000Z', by: 'trainee' } }), released: tiaBuf.released || {} });
-    await t.reload({ waitUntil: 'load' }); await t.waitForTimeout(1500);
-    await open(t, 9, 's3b'); await toPanel(t);
-    if (!/Mock Calls Ongoing/.test(await panel(t))) fail('a mock call Done saved before still counts');
-    await put(t, 'labreview:' + tia, { acts: { 'intake-live': { status: 'Passed', score: 84, at: '2026-10-30T12:00:00.000Z', comment: 'Good.' } } });
-    await t.reload({ waitUntil: 'load' }); await t.waitForTimeout(1500);
-    await open(t, 9, 's3b'); await t.waitForTimeout(1500); await open(t, 9, 's3b'); await toPanel(t);
-    const s9 = await panel(t);
-    if (!/✅ Your mock call is done/.test(s9) || !/scored it: Passed/.test(s9)) fail(`a scored trainee's mock call panel reads: ${s9.slice(0, 200)}`);
-    await put(t, 'buffer:' + tia, tiaBuf);
+    // ☎ Day 9's Intake mock calls: no slide of their own (build/day-decks.cjs PREP_OFF): the trainee's case and the Call
+    // Simulator and CMS Intake links sit beside the metrics on the Intake Mock Calls Metrics slide, s2; no panel, no Done
+    if (await t.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
+    await open(t, 9, 's2');
+    const m9 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), metrics: !!s.querySelector('.ftdd-score .ftms-tbl'), cas: !!s.querySelector('.ftis-mockcall'),
+      sim: !!s.querySelector('a[href*="call.html"][href*="track=intake"]'), cms: !!s.querySelector('a[href*="program=intake"]') }; });
+    if (m9.panel || !m9.metrics || !m9.cas || !m9.sim || !m9.cms) fail(`Day 9's metrics slide isn't the metrics with the case and the two practice links beside them: ${JSON.stringify(m9)}`);
 
     // 🧑‍🏫 the trainer's slides: no panel, no live tracker, no preview of what trainees see (a mock call and a demo)
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
-    for (const [d, sl] of [[9, 's3b'], [8, 's3']]) {
+    for (const [d, sl] of [[8, 's3']]) {
       await open(a, d, sl); await a.waitForTimeout(1500);
       if (await a.evaluate(() => !!document.querySelector('.ftbf, .ftbf-tr, .ftbf-pv'))) fail(`the trainer's Day ${d} ${sl} slide still has a panel, a tracker or what trainees see`);
     }
@@ -154,5 +140,5 @@ async function workerChecks() {
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own; the buffer, demo and mock call screens; Day 8\'s demo Done, its confirmation and the way on; Day 9\'s Intake mock calls with no Done, done once the trainer has scored them; no panel or tracker on the trainer\'s slides).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own; the buffer, demo and mock call screens; Day 8\'s demo Done, its confirmation and the way on; Day 9\'s Intake mock calls on their metrics slide, with the case and the practice links; no panel or tracker on the trainer\'s slides).');
 })();

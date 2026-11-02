@@ -903,7 +903,8 @@ function zoomToFit(box, min){
   return box.scrollHeight <= box.clientHeight + 2;
 }
 function sheetPages(sheet){
-  const kids = [...sheet.children];
+  // (a card pinned over the slide, js/ft-buffer.js ftbf-float, is on every page and never makes one of its own)
+  const kids = [...sheet.children].filter(k => !k.classList.contains("ftbf-float"));
   kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
   // (a block dealt out by its own rows had them hidden page by page: they are shown again before the slide is dealt anew)
   sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
@@ -1354,7 +1355,7 @@ const LESSON_CARDS = {
     rows: [
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · take each one's assessment", k: "watch", d: 2, s: "s2", lead: true},
-      // (the readings open once the Common Terms tasks' 📤 Submit, on their slide, is in: js/ft-buffer.js ACTS["2:s2b"])
+      // (the Monitoring Sheet's items #5–7 and their 📤 Submit sit at the lower right of the Auto Liability Insurance slide: js/ft-buffer.js ACTS["2:s2l"])
       {t: "Personal Injury Readings", sub: "Update items #5–7 on your Monitoring Sheet and hit 📤 Submit · then read both while your batch finishes", k: "read", d: 2, s: "s2b", lead: true},
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; no AI discussion video on the deck.
       // Then ✍️ Process Questions: the Classroom Activity slide
@@ -1433,7 +1434,7 @@ const LESSON_CARDS = {
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
       // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
       {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 9, s: "s2"},
-      {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
+      // (Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on the metrics slide, s2)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
@@ -1461,8 +1462,8 @@ const LESSON_CARDS = {
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"},
-      {t: "Recorded Shadowing", sub: "Intake support & PI claims specialist roles · idle time", k: "watch", d: 12, s: "s1v"}],
+      // (Day 12's Recorded Demonstration panel and Recorded Shadowing video are off the deck: build/day-decks.cjs SKIP[12])
+      ],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
     // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
@@ -1478,8 +1479,7 @@ const LESSON_CARDS = {
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
-      {t: "Recorded Demo: MedLOR & Records Request", time: "PM", sub: "Record & submit · then Done", k: "demo", d: 14, s: "s1e"},
-      {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded videos", k: "shadow", d: 14, s: "s2"},
+      // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
       {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
       {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 15, s: "s1b"},
@@ -1488,7 +1488,8 @@ const LESSON_CARDS = {
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
       {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
-      {t: "Demo and Shadowing", time: "PM", sub: "Your one-on-one demo · hit Done when it is over", k: "demo", d: 16, s: "s2"}],
+      // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
+      ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
@@ -1509,7 +1510,7 @@ const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}},
   // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
 };
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
@@ -2584,6 +2585,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 @media(max-width:1100px){ .ft-body .ftdd-sop-cards, .ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:1;} }
 /* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
 .ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
+/* (the cards' page starts at the top of the slide: its heading bar with no room above it, so the cards take the height) */
+main.main-ftdd .ftdd-sheet:has(> .ftdd-lor-set){justify-content:flex-start !important;} main.main-ftdd .ftdd-sheet .ftdd-lor-set > h3:first-of-type{margin-top:0 !important;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4 > p.ftdd-card4-h{font-size:20px !important;margin-bottom:8px !important;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4 ul{margin:0;padding-left:20px;}
@@ -2943,6 +2946,8 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h b{color:#fff !important;}
 .ft-body .ftdd-ev-title{font:500 22px/1.25 'Inter',system-ui,sans-serif;border-bottom:1px solid #747775;padding-bottom:3px;}
 .ft-body .ftdd-ev-mark{outline:2.5px solid #D93025;outline-offset:2px;}
 .ft-body .ftdd-ev-note{color:#1A56DB;font:700 14px/1 'IBM Plex Mono',monospace;}
+.ft-body .ftdd-ev-markin{display:inline-flex;gap:6px;align-items:center;border-radius:4px;} .ft-body .ftdd-ev-side div.ftdd-ev-markin{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:4px;text-align:left;} .ft-body .ftdd-ev-side div.ftdd-ev-markin .ftdd-ev-guest{justify-content:flex-start;} .ft-body .ftdd-ev-line .ftdd-ev-note{margin-left:8px;}
+main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700 14px/1 'IBM Plex Mono',monospace !important;color:#1A56DB !important;}
 .ft-body .ftdd-ev-save{margin-left:auto;background:#0B57D0;color:#fff;border-radius:999px;padding:6px 18px;font-weight:700;}
 .ft-body .ftdd-ev-when{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px;padding:7px;outline:2.5px solid #D93025;}
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
@@ -2972,7 +2977,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-sheet > .ftdd-inline.is-video:only-child:not(.is-bare):not(.is-fit) .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 110px) * 16 / 9));}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
 /* a video with no name bar over it (data-bare): the page's full height */
-.ft-body .ftdd-inline.is-bare{margin:0;}
+.ft-body .ftdd-inline.is-bare{margin:0;align-self:stretch;width:100%;}   /* (the slide's width to size its player in: a bare video's box has no name bar to give it one) */
 .ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
 /* sized to the page (data-fit): the slide's lines and the embed on one page */
 .ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}
@@ -3335,5 +3340,55 @@ main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:13.5px;color:#3A4060;}
 main.main-ftdd .ftdd-sheet .ftdd-topic{font-size:15.5px;}
 main.main-ftdd .ftdd-sheet a.ftdd-doctile small{font-size:14.5px !important;}
 main.main-ftdd .ftdd-sheet a.ftdd-tile.k-file .ftdd-tile-t small{color:#9A4A0C !important;}
+/* (Day 12's SA steps, tools and naming convention, two pages of cards: each row's cards one height, the type large and bold) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-d12{align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 > p{font-size:20px !important;font-weight:700 !important;margin:0 0 12px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 :is(.ftdd-cards2, .ftdd-cards3){align-items:stretch;gap:18px;margin:0;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 > p.ftdd-card4-h{font-size:21px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 :is(p:not(.ftdd-card4-h):not(.ftdd-hbar), li){font-size:19px !important;line-height:1.4 !important;font-weight:700 !important;color:#11131F !important;}
+main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 ul{margin:0 0 8px;padding-left:22px;} main.main-ftdd .ftdd-sheet .ftdd-d12 .ftdd-card4 li{margin:0 0 6px;}
+/* (Day 10's afternoon videos, two to a page, each as large as the page allows; the 3P Zurich sample alone on its page) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep:is(.ftdd-vpair, .ftdd-vone){align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-vpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
+main.main-ftdd .ftdd-sheet :is(.ftdd-vpair, .ftdd-vone) .ftdd-embed{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));height:auto !important;aspect-ratio:16 / 9;margin:4px auto 0;}
+@media(max-width:800px){ main.main-ftdd .ftdd-sheet .ftdd-vpair{grid-template-columns:minmax(0,1fr);} }
+/* (a corner card pinned over the slide's lower right, beside its video: Day 2's Monitoring Sheet items #5–7, js/ft-buffer.js float) */
+main.main-ftdd .ftdd-sheet:has(> .ftbf-float){position:relative;}
+main.main-ftdd .ftdd-sheet > .ftbf-slot.ftbf-float{position:absolute;right:16px;bottom:120px;width:min(340px, calc((100% - 820px) / 2 - 24px));min-width:260px;margin:0 !important;z-index:3;}
+@media(max-width:1300px){ main.main-ftdd .ftdd-sheet > .ftbf-slot.ftbf-float{position:static;width:auto;min-width:0;} }
+/* (Day 14's notes, second page: the screenshots as large as the card allows, the NPIM doctors in two columns) */
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4 .shots a{height:auto !important;max-height:calc(var(--ftdd-room, 70vh) - 260px);}
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4 .shots img{max-height:calc(var(--ftdd-room, 70vh) - 260px);width:100%;object-fit:contain;}
+main.main-ftdd .ftdd-sheet .ftdd-d14b .ftdd-card4:last-child ul{columns:2;column-gap:18px;}
+/* (a screenshot on the left, as large as the page allows, its step on the right: Day 14's How to find the DOL/DOI/DOA) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:20px;align-items:center;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots{display:block !important;margin:0 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots a{height:auto !important;display:block;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots img{width:100%;height:auto;max-height:calc(var(--ftdd-room, 70vh) - 60px);object-fit:contain;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside .shots figure{margin:0 !important;padding:0 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p{font-size:20px !important;font-weight:700 !important;text-align:left !important;}
+@media(max-width:900px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside{grid-template-columns:minmax(0,1fr);} }
+/* (text on the left, the picture on the right: Day 14's demo rules and its Demo Metrics) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
+/* (the metrics on a deck slide, read only: in two columns, so they read large, a header over each half) */
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){display:block;max-width:1400px;margin:0 auto;font-size:18px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead{display:block;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{display:grid;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr) 80px;column-gap:0;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::before{content:"";order:3;background:#6AA84F;border-left:16px solid #fff;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{content:"Score";order:4;background:#6AA84F;color:#fff;font-weight:800;text-align:center;padding:7px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{display:block;width:auto !important;padding:7px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody{display:block;columns:2;column-gap:16px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
+/* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
+main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:19px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links{flex-direction:column;align-items:stretch;margin:0 0 12px;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:17px;padding:12px 16px;}
+@media(max-width:1100px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{grid-template-columns:minmax(0,1fr);} }
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);
