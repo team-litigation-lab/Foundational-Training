@@ -52,8 +52,10 @@ window.LSH_PROGRAM = {
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
-    scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
+    scorecard: ["batchsheet", "scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
   },
+  // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
+  adminLead: {scorecard: "batchsheet"},
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
       about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
