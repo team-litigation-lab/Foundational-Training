@@ -231,11 +231,12 @@ const failures = []; const fail = (m) => failures.push(m);
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
     // the trainee's bar, as the platform spec names it (no Client Profile, no Scorecards, no Admin, no search, no full screen)
-    ['Dashboard', 'Practice Lab', 'Knowledge Check', 'Main Portal'].forEach(n => {
+    ['Dashboard', 'Main Portal'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
-    // (🎯 Focus is a signed-in trainee's own: not in an admin's Trainee view)
-    ['Client Profile', 'Scorecards', 'Process Questions', 'My Dashboard', 'Focus'].forEach(n => {
+    // (🎯 Focus is a signed-in trainee's own: not in an admin's Trainee view; 🛠 Practice Lab and ✍️ Knowledge Check
+    //  are a trainer's buttons only — the trainee view still reaches both pages, below)
+    ['Client Profile', 'Scorecards', 'Process Questions', 'My Dashboard', 'Focus', 'Practice Lab', 'Knowledge Check'].forEach(n => {
         if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
     });
     // My Firm (js/ft-firms.js) is still reachable, just not from its own top bar button any more

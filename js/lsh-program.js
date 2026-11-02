@@ -27,8 +27,8 @@
      🛡 Admin                  the Admin screen (admins only, never in the trainee view)
      🏠 Main Portal            the LSH Training Portal: it signs everyone in, and it holds the log out
 
-   So a trainee's bar is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check · 🎯 Focus ·
-   🏠 Main Portal, and a trainer's is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
+   So a trainee's bar is 📚 Dashboard · 📁 Client Profile · 🎯 Focus · 🏠 Main Portal (🛠 Practice Lab and
+   ✍️ Knowledge Check are hidden in the trainee view), and a trainer's is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
    🏅 Scorecards · 👁 Switch View · 🛡 Admin · 🏠 Main Portal. Nothing else belongs in the bar: no search box,
    no full screen, no log out.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
@@ -128,8 +128,9 @@ window.renderTopbar = function(){
   const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
   const secs = btn("modules", "📚 Dashboard", "goto('modules')", "The Standard Foundational Training: its modules")
     + (CASE ? btn("case", "📁 Client Profile", `goto('${CASE.view}')`, CASE.title || "") : "")
-    + btn("lab", "🛠 Practice Lab", "goto('simulators')")
-    + btn("process", "✍️ Knowledge Check", processGo, adminOn() ? "Every trainee's answer sheets" : "Each module's answer sheet, graded out of 100")
+    // 🛠 Practice Lab and ✍️ Knowledge Check: a trainer's bar only — the trainee view (a trainee, or an admin's 👁 Switch View) hides them
+    + (adminOn() ? btn("lab", "🛠 Practice Lab", "goto('simulators')")
+      + btn("process", "✍️ Knowledge Check", processGo, "Every trainee's answer sheets") : "")
     + pagesMenu()
     // 🔓 Open Lessons, one click from every page for a trainer (a program that lists it: LSH_PROGRAM.adminTopOpenLessons)
     + (adminOn() && CFG.adminTopOpenLessons ? btn("opendays", "🔓 Open Lessons", "state.adminTab='opendays'; goto('admin')", "Open a lesson for a batch, or for one trainee") : "")
