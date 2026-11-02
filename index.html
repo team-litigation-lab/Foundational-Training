@@ -14768,7 +14768,7 @@ function renderAdminRankings(onlyBatch){
         <div class="admin-rank-grid" style="display:grid;grid-template-columns:${cols};gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);">
           <div style="font-size:${i<3?'20px':'14px'};font-weight:700;color:${i<3?'inherit':'var(--ink-soft)'};">${medals[i] || `#${i+1}`}</div>
           <div>
-            <b class="admin-name" title="${esc(String(rec.name||"Unnamed").slice(0,200))}" style="color:var(--navy);font-size:13.5px;">${esc(String(rec.name||"Unnamed").slice(0,60))}${String(rec.name||"").length>60?"…":""}</b>
+            <b class="admin-name" title="${esc(String(rec.fullName||rec.name||"Unnamed").slice(0,200))}" style="color:var(--navy);font-size:13.5px;">${esc(String(rec.fullName||rec.name||"Unnamed").slice(0,60))}${String(rec.fullName||rec.name||"").length>60?"…":""}</b>
           </div>
           <div style="font-size:14px;font-weight:700;color:var(--navy);">${overall}%</div>
           <div style="font-size:13px;">${day.done}/${day.total}</div>
@@ -14892,9 +14892,9 @@ function renderAdminRow(rec, day, practice){
   const expanded = state.adminExpandedId===rec.id;
   return `
     <div class="audit-row ${expanded?"expanded":""}">
-      <div class="admin-row-grid" style="display:grid;grid-template-columns:minmax(0,1fr) 110px 110px 110px 140px auto;gap:12px;align-items:center;padding:14px 18px;">
+      <div class="admin-row-grid" style="display:grid;grid-template-columns:minmax(180px,1.3fr) 100px 100px 90px 120px minmax(0,1.6fr);gap:12px;align-items:center;padding:14px 18px;">
         <div style="min-width:0;overflow:hidden;">
-          <b class="admin-name" title="${esc(String(rec.name||"Unnamed").slice(0,200))}" style="color:var(--navy);font-size:13.5px;">${esc(String(rec.name||"Unnamed").slice(0,60))}${String(rec.name||"").length>60?"…":""}</b>${rec.archived?' <span style="font-size:10px;color:var(--ink-soft);">(archived)</span>':''}${rec.flaggedInvalidInput?' <span style="font-size:10px;color:var(--danger);font-weight:700;">⚠ invalid input removed</span>':''}
+          <b class="admin-name" title="${esc(String(rec.fullName||rec.name||"Unnamed").slice(0,200))}" style="color:var(--navy);font-size:13.5px;">${esc(String(rec.fullName||rec.name||"Unnamed").slice(0,60))}${String(rec.fullName||rec.name||"").length>60?"…":""}</b>${rec.archived?' <span style="font-size:10px;color:var(--ink-soft);">(archived)</span>':''}${rec.flaggedInvalidInput?' <span style="font-size:10px;color:var(--danger);font-weight:700;">⚠ invalid input removed</span>':''}
           <div class="admin-id" style="font-size:10.5px;color:var(--ink-soft);font-family:'IBM Plex Mono';">${esc(String(rec.id).slice(0,48))}${rec.batch?` · ${esc(cleanBatch(rec.batch))}`:''}</div>
         </div>
         <div style="font-size:13px;">${day.done} / ${day.total} days</div>
@@ -18959,7 +18959,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.29-gemini"></script>
-<script src="/js/ft-updates.js?v=ft-2026.11.02-open-lessons"></script>
+<script src="/js/ft-updates.js?v=ft-2026.11.02-viewer-fullscreen"></script>
 <script src="/js/ft-slides.js?v=ft-2026.10.29-endmod-nodays"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.11.01-day2-lfc"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
@@ -18989,7 +18989,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.11.01-lab-by-day"></script>
 <script src="/js/ft-todo.js?v=ft-2026.11.01-day2-lfc"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.29-calcheck-calact"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.11.02-lor-tool"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.11.02-no-trainer-rail"></script>
 <script src="/js/ft-deck-motion.js?v=1"></script>
 <script src="/js/ft-checkin.js?v=ft-2026.10.30-timein"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.29-audio"></script>
@@ -19003,8 +19003,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-admin-ops.js?v=ft-2026.11.02-open-lessons"></script>
-<script src="/js/ft-attendance.js?v=ft-2026.11.02-attendance"></script>
-<script src="/js/ft-batch-admin.js?v=ft-2026.10.30-batch-admin"></script>
+<script src="/js/ft-attendance.js?v=ft-2026.11.02-fullname"></script>
+<script src="/js/ft-batch-admin.js?v=ft-2026.11.02-delete-batch"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
 <!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
@@ -19028,6 +19028,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-one-screen.js?v=1"></script>
 <script src="/js/ft-screen-fit.js?v=ft-2026.11.01-lab-by-day"></script>
 <script src="/js/ft-buffer.js?v=ft-2026.11.02-day15-nodone"></script>
-<script src="/js/ft-admin-tidy.js?v=ft-2026.10.31-tidy"></script>
+<script src="/js/ft-admin-tidy.js?v=ft-2026.11.02-recent-batches"></script>
 </body>
 </html>

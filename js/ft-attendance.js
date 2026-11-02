@@ -40,7 +40,7 @@ async function load(){
 function rows(){
   const ins = A.ins[A.day] || {}, by = {};
   (A.people || []).forEach(r => { const b = keyOf(r) || "—"; (by[b] = by[b] || []).push(r); });
-  return Object.keys(by).sort().reverse().map(b => ({b, list: by[b].sort((x, y) => String(x.name).localeCompare(String(y.name))).map(r => ({r, c: ins[r.id] || null}))}));
+  return Object.keys(by).sort().reverse().map(b => ({b, list: by[b].sort((x, y) => String(x.fullName || x.name).localeCompare(String(y.fullName || y.name))).map(r => ({r, c: ins[r.id] || null}))}));
 }
 function render_(){
   if(!A.day) A.day = etToday();
@@ -58,7 +58,7 @@ function render_(){
     ${A.err ? `<p class="fat-err">${e(A.err)}</p>` : ""}
     ${groups.length ? groups.map(g => `<div class="fat-batch"><h3>📁 Batch ${e(labelOf(g.b))} <span>${g.list.filter(x => x.c).length} of ${g.list.length} in</span></h3>
       <table class="fat-tbl"><thead><tr><th>#</th><th>Name</th><th>Time In (EST)</th><th>Training</th></tr></thead><tbody>
-      ${g.list.map((x, i) => `<tr class="${x.c ? "in" : "out"}"><td>${i + 1}</td><td><b>${e(x.r.name || x.r.id)}</b>${x.r.batchFrom ? `<span class="fat-moved"> · moved from ${e(x.r.batchFrom)}</span>` : ""}</td>
+      ${g.list.map((x, i) => `<tr class="${x.c ? "in" : "out"}"><td>${i + 1}</td><td><b>${e(x.r.fullName || x.r.name || x.r.id)}</b>${x.r.batchFrom ? `<span class="fat-moved"> · moved from ${e(x.r.batchFrom)}</span>` : ""}</td>
         <td>${x.c ? `✅ ${e(t12(x.c.timeIn))}` : `⏳ Not in yet`}</td><td>${e((x.c && x.c.training) || "")}</td></tr>`).join("")}</tbody></table></div>`).join("")
       : `<p class="fat-sub">No active trainees.</p>`}
   </div>`;
@@ -70,7 +70,7 @@ window.FTAttendance = {
   csv(){
     const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
     const lines = [["Date", "Batch", "Name", "Time In (EST)", "Training"].map(q).join(",")];
-    rows().forEach(g => g.list.forEach(x => lines.push([A.day, labelOf(g.b), x.r.name || x.r.id, x.c ? t12(x.c.timeIn) : "Not in", (x.c && x.c.training) || ""].map(q).join(","))));
+    rows().forEach(g => g.list.forEach(x => lines.push([A.day, labelOf(g.b), x.r.fullName || x.r.name || x.r.id, x.c ? t12(x.c.timeIn) : "Not in", (x.c && x.c.training) || ""].map(q).join(","))));
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\n")], {type: "text/csv"})); a.download = `Attendance ${A.day}.csv`; a.click();
   },
   state: () => A

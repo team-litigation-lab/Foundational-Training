@@ -141,6 +141,14 @@ async function ticketFor(payloadObj, secret) {
         if (!t4.body || t4.body.id !== 'ana-cruz--b103026' || JSON.parse(s4.get('ft:trainee:ana-cruz--b100926')).batch !== 'B100926') fail(`an account older than the other must stay as it is: ${JSON.stringify(t4.body && t4.body.id)}`);
     }
 
+    // 8. a middle name or initial from the Portal (m) is kept as the name shown (fullName); the ID stays first + last
+    {
+        const e5 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s5 = e5.__store;
+        const m1 = await call(e5, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', m: 'S.', last: 'Sarti', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        const r5 = JSON.parse(s5.get('ft:trainee:valeria-sarti--b103026') || 'null');
+        if (!m1.body || m1.body.id !== 'valeria-sarti--b103026' || !r5 || r5.fullName !== 'Valeria S. Sarti') fail(`a middle initial should be kept as fullName with the same ID: ${JSON.stringify(m1.body && m1.body.id)} ${JSON.stringify(r5 && r5.fullName)}`);
+    }
+
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });
