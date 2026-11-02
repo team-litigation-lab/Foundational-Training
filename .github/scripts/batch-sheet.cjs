@@ -54,8 +54,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'lessons', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec')).length !== 4) fail('the four tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'lessons', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec')).length !== 5) fail('the five tables are not all on the one page');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -70,6 +70,15 @@ const failures = []; const fail = m => failures.push(m);
   if (!ls || ls[1] !== 'Deck ✓ · Check 90%') fail(`📚 Lessons for Ada: ${ls && ls.slice(0, 2)}`);
   const lb = by('lessons').rows.find(r => /Ben/.test(r[0]));
   if (!lb || lb.slice(1).some(Boolean)) fail(`📚 Ben has done nothing, yet his row has: ${lb}`);
+
+  // 🛠 Practice Lab: Ada practised in a tool (82%) and took a typing test; Ben hasn't practised
+  const pl = by('practice'), pa = pl.rows.find(r => /Ada/.test(r[0])), pb = pl.rows.find(r => /Ben/.test(r[0]));
+  if (JSON.stringify(pl.head.slice(0, 4)) !== JSON.stringify(['Trainee', 'Tools used', 'Attempts', 'Last practice'])) fail(`🛠 Practice Lab's columns: ${pl.head.slice(0, 4)}`);
+  const aiCol = pl.head.findIndex(h => /AI-graded/.test(h));
+  if (!pa || !/^[1-9]\d* \//.test(pa[1]) || !(Number(pa[2]) >= 2) || /Not yet/.test(pa[3]) || pa[aiCol] !== '1 · 82%') fail(`🛠 Practice Lab for Ada: ${pa}`);
+  if (!pb || !/^0 \//.test(pb[1]) || pb[3] !== 'Not yet') fail(`🛠 Practice Lab for Ben, who hasn't practised: ${pb}`);
+  // a time, not "just now"
+  if (/ago|just now/.test(tr.map(r => r[3]).join(' ')) || !/\d{1,2}:\d{2}/.test(ada[3])) fail(`"Last on the platform" isn't a date and time: ${tr.map(r => r[3])}`);
 
   // 🏅 the Scorecard's grading systems, Overall and Rank
   const sh = by('scores').head;
@@ -94,7 +103,7 @@ const failures = []; const fail = m => failures.push(m);
   // ⬇ Download: one file with all four tables
   const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTBatchSheet.csv())]);
   const csv = fs.readFileSync(await dl.path(), 'utf8');
-  for (const h of ['"Trainees"', '"Lessons"', '"Scores"', '"Recent progress"', 'Waiting for approval']) if (!csv.includes(h)) fail(`the download has no ${h}`);
+  for (const h of ['"Trainees"', '"Lessons"', '"Practice Lab"', '"Scores"', '"Recent progress"', 'Waiting for approval']) if (!csv.includes(h)) fail(`the download has no ${h}`);
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: true });
 
   // ✏️ Fix the batch name: Dee registered under a mistyped batch ("B03101"); the trainer moves her into the right one
@@ -122,10 +131,49 @@ const failures = []; const fail = m => failures.push(m);
   const after = await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'trainees').rows.map(r => r[0].v));
   if (await page.evaluate(() => document.querySelector('.gs-batch select').value) !== BATCH || !after.some(n => /Dee/.test(n)) || after.length !== 4) fail(`after the move the sheet shows ${after}`);
   // her open tab still holds the old batch: its next save keeps the trainer's batch
-  await page.evaluate(async id => { state.isAdmin = false; state.traineeId = id; state.traineeBatch = 'B03101'; await syncToLedger(); }, dee);
+  await page.evaluate(async id => { state.isAdmin = false; state.traineeId = id; state.traineeName = 'Dee Glitch'; state.traineeBatch = 'B03101'; await syncToLedger(); }, dee);
   await page.waitForTimeout(500);
   if ((await get('trainee:' + dee)).batch !== BATCH) fail('the trainee\'s open tab wrote the old batch back');
+  if ((await get('trainee:' + dee)).name !== 'Dee Glitch') fail('the open tab\'s save changed the trainee\'s name');
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
+
+  // ✎ Fix a date: Ben's registration was recorded wrong; the trainer sets it, and the sheet marks it
+  await page.evaluate(() => FTBatchSheet.dateOpen()); await page.waitForTimeout(200);
+  await page.selectOption('#bsDateWho', ids.Ben); await page.waitForTimeout(200);
+  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave());
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
+  const benRec = await get('trainee:' + ids.Ben);
+  if (!benRec.registeredAt || new Date(benRec.registeredAt).getDate() !== 30 || !benRec.registeredAtFixedAt || !benRec.registeredAtWas) fail(`✎ Fix a date: ${JSON.stringify({ at: benRec.registeredAt, fixed: benRec.registeredAtFixedAt, was: benRec.registeredAtWas })}`);
+  const benRow = await page.evaluate(id => FTBatchSheet.tables().find(t => t.id === 'trainees').rows.find(r => /Ben/.test(r[0].v)), ids.Ben);
+  if (!benRow || !/Oct 30, 2026/.test(benRow[2].v) || !/✎/.test(benRow[2].v) || !/fixed by a trainer/.test(benRow[2].f)) fail(`the fixed date isn't shown and marked: ${benRow && JSON.stringify(benRow[2])}`);
+  await page.fill('#bsDateAt', '').catch(() => {});
+
+  // 🔒 the trainee's side: Ada's 📋 My Progress is her own row and nothing about anyone else
+  await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Ada Active'; state.view = 'modules'; render(); }, ids.Ada);
+  await page.waitForTimeout(400);
+  const bar = await page.evaluate(() => [...document.querySelectorAll('.topbar .nav > *')].map(x => x.innerText.trim()).join(' | '));
+  if (!/My Progress/.test(bar)) fail(`a trainee's top bar has no 📋 My Progress: ${bar}`);
+  await page.evaluate(() => goto('mysheet'));
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('My Progress never finished loading'));
+  await page.waitForTimeout(400);
+  const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
+  if (MT[0].title !== '👤 Me') fail(`the trainee's first table is ${MT[0].title}`);
+  for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
+  if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
+  const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
+  if (/Ben Blank|Cy Waiting|Dee Glitch/.test(text)) fail('another trainee\'s name is on the trainee\'s page');
+  if (await page.$('.bs-mine .gs-batch select, .bs-mine .bs-fix, .bs-mine .bs-back')) fail('a trainee has the batch picker or a trainer\'s tool');
+  if (/Fix the batch name|Bring them back/.test(text)) fail('a trainee sees a trainer\'s tool');
+  if (!(await page.evaluate(() => document.body.classList.contains('bs-wide')))) fail('My Progress is not full width');
+  // a trainer's actions do nothing for a trainee
+  await page.evaluate(() => { FTBatchSheet.fixOpen(); FTBatchSheet.batch('B03101'); });
+  if (await page.$('.bs-fix')) fail('a trainee opened ✏️ Fix the batch name');
+  // and #/mysheet is a trainee's only: a trainer is sent to the Dashboard
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; goto('mysheet'); });
+  await page.waitForTimeout(400);
+  if (await page.evaluate(() => state.view) === 'mysheet') fail('a trainer stays on a trainee\'s My Progress');
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
+  await page.waitForTimeout(600);
 
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); });
@@ -133,5 +181,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in four tables; lessons, scores and recent progress from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in five tables; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });
