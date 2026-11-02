@@ -61,13 +61,14 @@ const FORMS = {
         "This is an auto policy option that covers the cost of a car rental if your vehicle is being repaired as part of a claim.",
         "What type of policy limit is referred to when auto companies such as Uber, Grab, and Lyft are involved?"]},
     {kind: "essay", h: "Part II. Short Essay", id: "e", lead: "Provide the best answer for the following situations and give the rationale/reason of your answer. Each is worth 5 points.",
-      // (the two Declaration Pages the questions refer to are pictures in the assessment's document: shown from it, on Drive)
+      // (the two Declaration Pages the questions refer to, the pictures in the assessment's document, shown above their
+      // questions so nobody switches tabs: ft/day2/img)
       groups: [
-        {note: "For questions no. 1–3, refer to the first Declaration Page in the assessment’s document.", qs: [
+        {note: "For questions no. 1–3, refer to this Declaration Page.", img: "/ft/day2/img/auto-liability-dec-page-1.png", qs: [
           "Assuming that the above Declaration Page is of the 3P in a case you are handling. Looking at the coverage available, explain what the Bodily Injury Liability coverage limit of $25,000 each person/$50,000 each accident mean?",
           "Examining the UM/UIM of this coverage, what is the implication that the insured rejected this option? Explain your answer and give an example.",
           "Assuming that in the 1P vehicle, the driver’s wife and daughter were with him. Explain how the coverage will be in effect for the case of three people involved in one accident."]},
-        {note: "For questions no. 4–6, refer to the second Declaration Page in the assessment’s document.", qs: [
+        {note: "For questions no. 4–6, refer to this Declaration Page.", img: "/ft/day2/img/auto-liability-dec-page-2.webp", qs: [
           "The above image is the insurance coverage of Mr. John Doe who was involved in an accident on July 17, 2019. He decided to use his collision coverage in paying the repair costs of his car but the insurance company said they cannot grant Mr. Doe his coverage for now since he has not shown evidence that he already reached the deductible required in his insurance. How would you explain this to Mr. Doe?",
           "Let’s say that the image above shows the 1P insurance, and the 3P has 25-50 policy limit. When computing the total medical expenses so far, you noticed that necessary treatment costs has already reached $27,000 and immediately informed the case manager. Anticipate the CM’s next instructions and explain why you think the CM would have you do those steps.",
           "Assume that the Dec Page above is of the 3P coverage. Our client is the primary in this case with two secondaries involved with the following medical treatment billed: Primary – $55,000; First Secondary – $25,000; Second Secondary – $31,000. Would the above expenses suit the 3P insurance coverage? Explain your answer."]}]}]},
@@ -179,7 +180,8 @@ function partHtml(doc, p){
     <ol class="fa-qs">${p.qs.map((q, i) => `<li><p>${e(q)}</p>${field(doc, p.id + (i + 1), (p.long || []).includes(i + 1) ? "essay" : "short")}</li>`).join("")}</ol></section>`;
   let n = 0;
   return `<section class="fa-part"><h3>${e(p.h)}</h3><p class="fa-lead">${e(p.lead)}</p>
-    ${p.groups.map(g => `<div class="fa-grp"><p class="fa-scn">${e(g.note)} <a href="https://docs.google.com/document/d/${doc}/preview" target="_blank" rel="noopener noreferrer">Open the document ↗</a></p>
+    ${p.groups.map(g => `<div class="fa-grp"><p class="fa-scn">${e(g.note)}${g.img ? "" : ` <a href="https://docs.google.com/document/d/${doc}/preview" target="_blank" rel="noopener noreferrer">Open the document ↗</a>`}</p>
+      ${g.img ? `<figure class="fa-dec"><img src="${e(g.img)}" alt="The Declaration Page for these questions" loading="lazy"></figure>` : ""}
       <ol class="fa-qs" start="${n + 1}">${g.qs.map(q => { n++; return `<li><p>${e(q)}</p>${field(doc, p.id + n, "essay")}</li>`; }).join("")}</ol></div>`).join("")}</section>`;
 }
 root.FTAssess = {
@@ -244,6 +246,7 @@ root.FTAssess = {
 .fa-intro{padding:14px 16px;background:#F4F6FB;border:1px solid #DCE0EA;border-left:5px solid #1E2340;border-radius:10px;} .fa-intro p,.fa-intro li{margin:0 0 8px;color:var(--ink);font-size:16px;font-weight:700;line-height:1.5;} .fa-intro ol{margin:0 0 8px 22px;padding:0;} .fa-intro p:last-child{margin-bottom:0;}
 .fa-intro .fa-intro-note{padding:8px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
 .fa-lead{margin:0 0 10px;color:var(--ink);font-size:15px;line-height:1.5;} .fa-scn{margin:0 0 10px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;font-size:15px;line-height:1.5;}
+.fa-dec{margin:0 0 14px;padding:10px;background:#fff;border:2px solid #343C66;border-radius:10px;text-align:center;} .fa-dec img{display:block;max-width:100%;height:auto;margin:0 auto;}
 .fa-match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;align-items:start;}
 @media(max-width:900px){ .fa-match{grid-template-columns:minmax(0,1fr);} }
 .fa-tbl{width:100%;border-collapse:collapse;font-size:14.5px;} .fa-tbl th{background:#1E2340;color:#fff;text-align:left;padding:8px 10px;font-size:13.5px;}
