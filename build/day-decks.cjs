@@ -39,7 +39,10 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
   8: ["s2", "s3b"],
   // (Day 9's Buffer Time for the Intake demo is off the deck: Part 3 opens on the Intake Mock Calls)
-  9: ["s1"]};
+  9: ["s1"],
+  // (Day 12's Recorded Shadowing video is off the deck; so is its Recorded Demonstration panel, PREP_OFF: the day ends on
+  // its Demo Preparation, with the demo's metrics and facilitator's notes)
+  12: ["s1v"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
@@ -996,7 +999,8 @@ const EDIT = {
   // (the recorded demos are SmartAdvocate's only: the Training Guide's Filevine demos are not on the platform)
   // (the topic and the video's label as one heading, as Day 12's tutorial; no note-taking reminder)
   16: {s1: h => rep(rep(rep(h, "<p><b>Topic: Lien Balance Verification Request</b></p>\n<p>Tutorial Video: </p>", "<p><b><i>Tutorial Video: Lien Balance Verification Request</i></b></p>", 1, "Day 16 s1"),
-      'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
+      // (and no name bar over the video, played as large as the page allows: data-bare)
+      'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-embed data-bare data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
       "<p>NOTE: Please don&#x27;t forget to take down notes for your guide later.</p>\n", "", 1, "Day 16 s1"),
     // (the demo's preparation: the recorded demo only, none of the chat reminders around it, and no ⏳ While you wait box: data-nowait)
     s2: h => ["<p>Please be reminded to type &#x27;done&#x27; here as soon as you are done watching the video and have finalized your process guide. Thank you.</p>\n",
@@ -1004,7 +1008,7 @@ const EDIT = {
       "<p>Sending Lien Balance Verification request using SA.     </p>\n",
       // (and the 45-minute notice to @everyone after the Demo Metrics)
       "<p>@everyone</p>\n<p>Please be informed that for the last metric of your LV Demo, Time Management &amp; Efficiency, the ideal completion time is 45 minutes. Going beyond the allotted time will result in a significant deduction under this metric. Please be guided and manage your time accordingly.</p>\n"]
-      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-kind="video"', 1, "Day 16 s2"))}
+      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-embed data-bare data-kind="video"', 1, "Day 16 s2"))}
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
@@ -1162,8 +1166,8 @@ const ROWS = {
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
-      // (one block, one page: the two recording folders and the documents' tiles)
-      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", pre: KEEP[0], post: KEEP[1], parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+      // (three pages, so each reads large: a recording folder to a page at the slide's full width, then the documents' tiles)
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
         fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"],
           // (the documents, a tile each, in place of the Drive folder: DOC_TILES_10)
           h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
@@ -1171,9 +1175,10 @@ const ROWS = {
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
-          // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2)
-          h => h.replace(/(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/,
-            (m, two) => '<div class="ftdd-keep ftdd-fold2">\n' + two + '</div>\n')]}]
+          // (and a page each: the folder's files drawn as large as the slide's width allows, js/ft-day-decks.js fitCrops)
+          h => { const re = /(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n)(<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/;
+            if(!re.test(h)) throw new Error("Day 10's two recording folders are no longer where the build looks for them");
+            return h.replace(re, (m, one, two) => one + PGBREAK + two + PGBREAK); }]}]
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
@@ -1346,6 +1351,8 @@ const EX_RENAME = {
 // (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
 // Day 8's slides or Day 9's metrics slide
 const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
+// a demo whose activity slide (its Demos Ongoing panel) is off the deck: only its preparation slide stays (Days 12 and 16)
+const PREP_OFF = {12: ["s1d"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
@@ -1422,7 +1429,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), ...((PREP_OFF[n] || []).includes(id) ? [] : [{id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""}]));
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];

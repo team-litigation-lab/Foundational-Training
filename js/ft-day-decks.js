@@ -1461,8 +1461,8 @@ const LESSON_CARDS = {
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"},
-      {t: "Recorded Shadowing", sub: "Intake support & PI claims specialist roles · idle time", k: "watch", d: 12, s: "s1v"}],
+      // (Day 12's Recorded Demonstration panel and Recorded Shadowing video are off the deck: build/day-decks.cjs SKIP[12])
+      ],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
     // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
@@ -1488,7 +1488,8 @@ const LESSON_CARDS = {
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
       {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
-      {t: "Demo and Shadowing", time: "PM", sub: "Your one-on-one demo · hit Done when it is over", k: "demo", d: 16, s: "s2"}],
+      // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
+      ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
