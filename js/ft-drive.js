@@ -40,7 +40,10 @@ function load(force){
   D.loading = sharedGetMany(["drive:" + id, "trackerreview:" + id]).then(v => {
     D.id = id; D.drive = v[0] && typeof v[0] === "object" ? v[0] : {days:{}}; if(!D.drive.days) D.drive.days = {};
     D.review = v[1] && typeof v[1] === "object" ? v[1] : {days:{}}; if(!D.review.days) D.review.days = {};
-  }).catch(() => {}).then(() => { D.loading = null; if(["tracker", "monitoring", "dashboard", "modules"].includes(state.view)) render(); });
+  }).catch(() => {}).then(() => { D.loading = null;
+    // 🔁 once a session, quietly: the system's address to share with, and any link not yet checked as it is saved now
+    if(isTrainee() && D.drive && !D.autoV){ D.autoV = true; if(!D.share || VERIFIED.some(k => D.drive[k] && !vOf(k))) setTimeout(() => FTDrive.verify("auto"), 0); }
+    if(["tracker", "monitoring", "dashboard", "modules"].includes(state.view)) render(); });
   return D.loading;
 }
 window.addEventListener("focus", () => { if(isTrainee() && D.id && ["tracker", "monitoring"].includes(state.view)) load(); });
@@ -57,12 +60,30 @@ function stepsHtml(auto = true){
       <li>Paste each link below, then save.</li></ol>
     ${auto ? `<div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.</div>` : ""}`;
 }
+// 🔗 a link's state from the last 🔁 check (trackerreview:<id>.verify, worker.js verifyLinks), for the link saved now
+const vOf = k => { const v = ((D.review || {}).verify || {})[k], u = String((D.drive || {})[k] || "").trim(); return v && u && String(v.url || "").trim() === u ? v : null; };
+const VERIFIED = ["folder", "tracker", "monitor"];
+const linksOk = () => VERIFIED.every(k => (D.drive || {})[k] && (vOf(k) || {}).ok);
+function verifyBox(){
+  if(preview() || D.look) return "";
+  const x = D.drive || {}, bad = VERIFIED.filter(k => x[k] && vOf(k) && !vOf(k).ok), missing = VERIFIED.filter(k => !x[k]);
+  const sa = D.share || "";
+  const tip = sa ? `<div class="fdr-share">Share each file and the folder with <code id="fdrSa">${e(sa)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTDrive.copySa()">📋 Copy</button> as <b>Editor</b> (Share → paste the address → Editor → Send).</div>` : "";
+  if(!VERIFIED.some(k => x[k])) return tip;
+  const head = bad.length ? `<div class="fdr-vbad">✗ ${bad.length} link${bad.length === 1 ? "" : "s"} can’t be opened by the system yet: fix ${bad.length === 1 ? "it" : "them"} below, then 🔁 Check again.</div>`
+    : missing.length ? `<div class="fdr-vmid">Paste the ${missing.length === 1 ? "missing link" : missing.length + " missing links"} below.</div>`
+    : linksOk() ? `<div class="fdr-vok">✓ All three links open. Your tracker, Monitoring Sheet and folder are checked automatically from now on.</div>` : "";
+  return `${head}${tip}<div class="fp-actions"><button class="btn btn-ghost btn-sm" type="button" ${D.verifying ? "disabled" : ""} onclick="FTDrive.verify()">${D.verifying ? "Checking…" : "🔁 Check again"}</button></div>`;
+}
 function linksCard(auto = true){
-  const x = D.drive, row = (k, label, ph, hint) => `<label class="fdr-l"><span>${label}</span>
+  const x = D.drive, row = (k, label, ph, hint) => { const v = VERIFIED.includes(k) && x[k] ? vOf(k) : null;
+    return `<label class="fdr-l"><span>${label}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
-      ${hint ? `<small>${hint}</small>` : ""}</label>`;
+      ${v ? (v.ok ? `<small class="fdr-v ok">✓ Opens${v.name ? ": " + e(v.name) : ""}</small>` : `<small class="fdr-v bad">✗ ${e(v.error || "The system can’t open it.")}</small>`) : ""}
+      ${hint ? `<small>${hint}</small>` : ""}</label>`; };
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
     ${stepsHtml(auto)}
+    ${verifyBox()}
     ${row("folder", "📁 Assessment and Activities Folder (your daily outputs)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "")}
@@ -141,6 +162,17 @@ function paintLinkModal(){
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
 }
 
+// 📁 on the trainee's 📚 Dashboard until their three links are saved and open for the system: what's missing, and the way in
+(window.LSH_HOME_NOTICES = window.LSH_HOME_NOTICES || []).push(function(){
+  if(!isTrainee()) return "";
+  if(D.id !== state.traineeId || !D.drive){ load(); return ""; }
+  if(linksOk()) return "";
+  const x = D.drive, missing = VERIFIED.filter(k => !x[k]).length, bad = VERIFIED.filter(k => x[k] && vOf(k) && !vOf(k).ok).length;
+  if(!missing && !bad) return "";
+  return `<div class="card fdr-notice"><b>📁 ${missing ? `Link your Drive files (${missing} of 3 missing)` : `${bad} Drive link${bad === 1 ? "" : "s"} can’t be opened by the system`}</b>
+    <span>Your folder, Task Tracker and Monitoring Sheet are checked automatically once they’re linked and shared.</span>
+    <button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Fix my links</button></div>`;
+});
 window.FTDrive = {
   async linkMine(){
     // a trainer, or someone not signed in as a trainee, sees the window as a trainee does (the steps), but saves nothing
@@ -185,8 +217,23 @@ window.FTDrive = {
     if(v("tracker") && TR.googleFile(v("tracker")).kind !== "sheet"){ toast("The Task Tracker link must be a Google Sheets link."); return; }
     ["folder", "tracker", "monitor", "tam"].forEach(k => { D.drive[k] = v(k); });
     if(!D.drive.startDate) D.drive.startDate = today();
-    toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ Links saved. They’re checked automatically at the end of every shift from now on."); render(); paintLinkModal();
+    if(await save() === false){ toast("Couldn’t save. Check your connection."); return; }
+    toast("✓ Links saved. Checking that the system can open them…"); render(); paintLinkModal();
+    await FTDrive.verify(true);
   },
+  // 🔁 the three links, opened now by the system (worker.js /api/drive/verify): ✓ or why not, under each one
+  async verify(quiet){
+    if(D.verifying || (quiet === "auto" ? !isTrainee() : previewOnly())) return;
+    D.verifying = true; render(); paintLinkModal();
+    let j = {};
+    try{ const r = await authFetch("/api/drive/verify", {}); j = await r.json().catch(() => ({})); if(!r.ok && !j.error) j.error = "send"; }catch(err){ j = {error: "offline"}; }
+    D.verifying = false;
+    if(j.ok){ D.review = D.review || {days:{}}; D.review.verify = j.verify || {}; D.share = j.share || D.share;
+      if(quiet !== "auto") toast(linksOk() ? "✓ All three links open. They’re checked automatically from now on." : "Some links can’t be opened yet: see the ✗ under each one.", 7000); }
+    else if(quiet !== "auto" && (!quiet || j.code !== "wait")) toast(j.error === "no-sa" ? "Link checking isn’t set up on this program yet: tell your trainer." : j.error && j.code === "wait" ? j.error : "Couldn’t check the links. Try again in a minute.");
+    render(); paintLinkModal();
+  },
+  copySa(){ const sa = D.share || ""; if(!sa) return; (navigator.clipboard ? navigator.clipboard.writeText(sa) : Promise.reject()).then(() => toast("📋 Copied: " + sa), () => toast("Couldn’t copy. Select the address instead.")); },
   addLink(){ const box = document.getElementById("fdrLinks"); box.insertAdjacentHTML("beforeend", linkRow({}, box.children.length)); },
   async saveDay(){
     if(previewOnly()) return;
@@ -402,6 +449,10 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-steps{margin:10px 0 8px;padding-left:22px;font-size:14px;line-height:1.5;color:var(--ink);} .fdr-steps li{margin-bottom:8px;} .fdr-steps li::marker{font-weight:800;color:var(--orange-deep);}
 .fdr-tpls{display:flex;flex-direction:column;gap:6px;margin-top:6px;} .fdr-tpl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600;color:var(--navy);}
 .fdr-tpl .btn{text-decoration:none;} .fdr-tpl .btn-navy{margin-left:auto;}
+.fdr-v{display:block;margin-top:4px;font-weight:700;} .fdr-v.ok{color:#15703A;} .fdr-v.bad{color:#B42318;}
+.fdr-vok,.fdr-vbad,.fdr-vmid{margin:4px 0 8px;padding:9px 12px;border-radius:10px;font-weight:700;font-size:14px;} .fdr-vok{background:#E8F6EE;color:#15703A;} .fdr-vbad{background:#FDECEA;color:#B42318;} .fdr-vmid{background:#FFF4E5;color:#8A4A00;}
+.fdr-share{margin:0 0 8px;font-size:14px;line-height:1.6;} .fdr-share code{background:#EEF0F6;padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all;}
+.fdr-notice{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 16px;margin:0 0 12px;border-left:5px solid var(--orange);} .fdr-notice span{flex:1 1 260px;color:var(--ink);font-size:13.5px;}
 .fdr-linked{margin:8px 0 0 !important;font-size:13.5px;} .fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}

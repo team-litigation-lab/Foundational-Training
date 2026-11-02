@@ -32,6 +32,10 @@ const failures = []; const fail = (m) => failures.push(m);
         const bearer = String((init.headers || {}).Authorization || '');
         if (/\/files\/abcFolderId01\/permissions/.test(u)) { if (bearer !== 'Bearer ci-token') return new Response('{}', { status: 403 });
             const pm = JSON.parse(init.body); subShared = pm.role === 'writer' && pm.emailAddress === env.GDRIVE_SA_SUBJECT; return new Response(JSON.stringify({ id: 'perm1' })); }
+        { const m = u.match(/googleapis\.com\/drive\/v3\/files\/([A-Za-z0-9_-]+)\?fields=id,name,mimeType/);
+          if (m) { if (bearer !== 'Bearer sub-token') return new Response('{"error":{"code":404}}', { status: 404 });
+            const mt = m[1] === 'abcFolderId01' ? 'application/vnd.google-apps.folder' : m[1].startsWith('1Tracker') ? 'application/vnd.google-apps.spreadsheet' : 'application/vnd.google-apps.document';
+            return new Response(JSON.stringify({ id: m[1], name: 'File ' + m[1].slice(0, 8), mimeType: mt })); } }
         if (bearer === 'Bearer sub-token' && !subShared && /googleapis\.com\/(upload\/)?drive\/v3\/files/.test(u)) return new Response('{"error":{"code":404}}', { status: 404 });
         if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
             if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
@@ -131,7 +135,15 @@ const failures = []; const fail = (m) => failures.push(m);
     env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
     const n0 = uploads.length, s6 = await call('/api/drive/save', doc, trainee);
     if (!s6.body || !s6.body.ok || !subShared || uploads.length !== n0 + 1) fail(`a save as GDRIVE_SA_SUBJECT on a folder shared only with the service account should add that user and save: ${JSON.stringify(s6.body)} (added: ${subShared})`);
+    // 🔗 the trainee's three links, checked now: read AS GDRIVE_SA_SUBJECT (the trainer, an Editor on every trainee's Drive),
+    // so files never shared with the service account itself still open; without the subject, the account alone can't
+    const v1 = await call('/api/drive/verify', {}, trainee), vv = (v1.body || {}).verify || {};
+    if (!v1.body || !v1.body.ok || !vv.folder || !vv.folder.ok || !vv.tracker || !vv.tracker.ok || !vv.monitor || !vv.monitor.ok || v1.body.share !== 'saver@lsh.example') fail(`the links should open as GDRIVE_SA_SUBJECT: ${JSON.stringify(v1.body)}`);
+    if (!(JSON.parse(store.get('ft:trackerreview:' + id)).verify || {}).folder) fail('the link check wasn\'t kept in trackerreview (the Batch Sheet reads it)');
     delete env.GDRIVE_SA_SUBJECT;
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait)
+    const v2 = await call('/api/drive/verify', {}, trainee), vv2 = (v2.body || {}).verify || {};
+    if (!v2.body || !v2.body.ok || (vv2.folder || {}).ok !== false || !/Share it with ci@lsh\.iam\.gserviceaccount\.com as Editor/.test((vv2.folder || {}).error || '')) fail(`without GDRIVE_SA_SUBJECT, a file the account can't open should say whom to share it with: ${JSON.stringify(v2.body)}`);
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
     const s4 = await call('/api/drive/save', doc, trainee);
     if (!s4.body || s4.body.error !== 'no-sa') fail(`without the service account, saving should say it isn't set up: ${JSON.stringify(s4.body)}`);

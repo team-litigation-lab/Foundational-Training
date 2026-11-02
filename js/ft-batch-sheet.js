@@ -378,11 +378,14 @@ function linkState(p){
     const link = dv[k], c = chk[k], o = ov[k];
     if(!link){ out[k] = {st: "none", label}; return; }
     if(o && o.ok && sameLink(o.url, link)){ out[k] = {st: "trainer", label, link, o, c}; return; }
+    // 🔁 the trainee's own check of this very link (📁 My Drive links, worker.js verifyLinks), when it is the newest
+    const v = (rv.verify || {})[k];
+    if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", at: v.at}}; return; }
     if(!c || !c.err){ out[k] = {st: "ok", label, link, c}; return; }
     const ofThis = c.url ? sameLink(c.url, link) : !(t(dv.updatedAt) && t(c.at) && t(dv.updatedAt) > t(c.at));
     out[k] = {st: ofThis ? "bad" : "relinked", label, link, c};
   });
-  const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
+  const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt, rv.verifyAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
   return {L: out, dv, checked};
 }
 function linkCell(x){
