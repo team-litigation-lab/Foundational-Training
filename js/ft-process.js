@@ -433,7 +433,7 @@ function assessPage(b){
       <p>${here ? "Answer every item here: your answers save as you type. Then hit <b>📝 Submit for Grading</b>." : "Answer it in its document, then upload it to your Assessments/Activities subfolder."}</p></div>
     ${here ? FTAssess.html(x.id) : `<div class="card fp-set fp-assess"><div class="fp-body">
       <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>`}
-    ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>`  : `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">← Back to ✍️ Knowledge Check: ${e(ftName(b.l))}</button></div>`}`;
+    ${b.day && window.FTDayDecks ? `<div class="fp-assess-back">${b.tool && typeof window.lshOpenPortalDrafting === "function" ? `<button class="btn btn-navy" type="button" onclick="FTProcess.toTool()">Next: ${e(b.h || "the Drafting Tool")} · open the Drafting Tool ↗</button>` : `<button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button>`}</div>`  : `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">← Back to ✍️ Knowledge Check: ${e(ftName(b.l))}</button></div>`}`;
 }
 
 function renderPage(){
@@ -476,6 +476,11 @@ window.FTProcess = {
   // ✍️ Process Questions, at one lesson's own answer-sheet page: where a lesson's ✓ Finish lesson sends the
   // trainee, and what tapping a module's row on the index opens.
   // Back to the classroom: the deck's next activity after the slide the sheet was opened from (see FTDayDecks.toKC)
+  // the evaluation's Next straight into its drafting tool on the Training Portal (Day 11: the LOR Drafting Activity)
+  toTool(){
+    let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
+    const t = b && b.tool; window.lshOpenPortalDrafting(t && t !== "lor" ? t : undefined);
+  },
   backToClass(){
     let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
     // (an assessment opened from its lesson's Knowledge Check, FTProcess.openAssess: back to that lesson's page)
