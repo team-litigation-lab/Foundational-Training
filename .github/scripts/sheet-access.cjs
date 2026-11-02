@@ -21,7 +21,7 @@ const failures = []; const fail = (m) => failures.push(m);
   const ann = await signIn('Ann Own'), bob = await signIn('Bob Other');
   const admin = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
   // their records, as the platform keeps them (written by the trainer)
-  const KEYS = id => ['trainee:', 'progress:', 'skills:', 'simresults:', 'kcreview:', 'labreview:', 'callsim:', 'calsim:', 'calweek:', 'trackerreview:', 'trainerfb:', 'rankshare:'].map(k => k + id);
+  const KEYS = id => ['trainee:', 'progress:', 'skills:', 'simresults:', 'kcreview:', 'labreview:', 'callsim:', 'calsim:', 'calweek:', 'trackerreview:', 'trainerfb:', 'rankshare:', 'daycheck:'].map(k => k + id);
   for (const t of [ann, bob]) for (const k of KEYS(t.id)) await call('/api/storage/set', { key: k, value: JSON.stringify(k.startsWith('trainee:') ? { id: t.id, name: k, batch: 'B103026', approved: true } : { mine: k }) }, admin);
 
   // a trainee: their own sheet's records, all of them
@@ -60,6 +60,11 @@ const failures = []; const fail = (m) => failures.push(m);
   await call('/api/storage/set', { key: 'trainee:' + bob.id, value: JSON.stringify(Object.assign({}, before, { registeredAt: '2020-01-01T00:00:00Z', registeredAtFixedAt: 'x', registeredAtWas: 'y' })) }, bob.token);
   const after = JSON.parse((await call('/api/storage/get', { key: 'trainee:' + bob.id }, admin)).body.value);
   if (after.registeredAt !== before.registeredAt || after.registeredAtFixedAt || after.registeredAtWas) fail('a trainee changed their own registration date or faked a trainer\'s fix');
+
+  // ✅ the Day by Day ticks: a trainee reads them and can't tick her own
+  await call('/api/storage/set', { key: 'daycheck:' + ann.id, value: JSON.stringify({ items: { '1|x': { done: true } } }) }, ann.token);
+  const dcA = JSON.parse((await call('/api/storage/get', { key: 'daycheck:' + ann.id }, admin)).body.value || '{}');
+  if (dcA.items && dcA.items['1|x']) fail('a trainee ticked her own Day by Day checklist');
 
   if (failures.length) { console.error('Sheet access test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
   console.log('Sheet access test passed (a trainee reads all of their own sheet and nothing of another trainee\'s, gets no list of trainees, moves nobody\'s batch and cannot undo or forge a trainer\'s move or change a registration date; the trainer reads and moves them all).');

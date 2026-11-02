@@ -48,14 +48,16 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["audit", "batches", "attendance", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
+    admin: ["attendance", "sops", "dbmaint", "orientation"],   // (Trainee Audit, 📁 Batch Folders and 💬 Trainee Feedback are in 🏅 Scorecard)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
-    scorecard: ["batchsheet", "scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
+    scorecard: ["batchsheet", "audit", "batches", "tfeedback", "ranking", "sendfeedback", "skilltests"]
   },
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet"},
+  // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
+  adminScorecardsTab: "batchsheet",
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
       about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",

@@ -14357,6 +14357,7 @@ function renderAdminTraineeFeedback(){
   if(f.day) items = items.filter(x=>String(x.dayId||"overall")===f.day);
   if(f.area) items = items.filter(x=>x.ratings && x.ratings[f.area]);
   if(f.status) items = items.filter(x=>(x.status||"new")===f.status);
+  if(f.batch) items = items.filter(x=>(f.batch==="_anon" ? x.anonymous || !x.batch : String(x.batch||"")===f.batch));
   const avg = (area, list)=>{ const v = list.map(x=>x.ratings&&x.ratings[area]).filter(Boolean); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null; };
   const all = state.tfbAdmin.items;
   const stars = (v)=> v===null ? "—" : `${v.toFixed(1)} ★`;
@@ -14372,6 +14373,7 @@ function renderAdminTraineeFeedback(){
       <select onchange="state.tfbFilter=Object.assign(state.tfbFilter||{},{day:this.value});render()"><option value="">All days</option><option value="overall" ${f.day==="overall"?"selected":""}>Program overall</option>${DAYS.map(d=>`<option value="${d.id}" ${f.day===String(d.id)?"selected":""}>${ftName(d.id)}</option>`).join("")}</select>
       <select onchange="state.tfbFilter=Object.assign(state.tfbFilter||{},{area:this.value});render()"><option value="">All areas</option>${TFB_AREAS.map(a=>`<option value="${a.id}" ${f.area===a.id?"selected":""}>${esc(a.label)}</option>`).join("")}</select>
       <select onchange="state.tfbFilter=Object.assign(state.tfbFilter||{},{status:this.value});render()"><option value="">Any status</option>${["new","acknowledged","actioned"].map(s=>`<option ${f.status===s?"selected":""}>${s}</option>`).join("")}</select>
+      <select onchange="state.tfbFilter=Object.assign(state.tfbFilter||{},{batch:this.value});render()" aria-label="Batch"><option value="">All batches</option>${[...new Set(all.map(x=>x.batch).filter(Boolean))].sort().reverse().map(b=>`<option value="${esc(b)}" ${f.batch===b?"selected":""}>Batch ${esc(batchLabel(b))}</option>`).join("")}<option value="_anon" ${f.batch==="_anon"?"selected":""}>Anonymous / no batch</option></select>
       <button class="btn btn-ghost btn-sm" onclick="loadTraineeFeedbackAdmin()">↻ Refresh</button>
       <button class="btn btn-navy btn-sm" onclick="tfbExportCsv()" ${all.length?"":"disabled"}>⬇ Export CSV</button>
     </div>
@@ -14613,9 +14615,10 @@ function renderAdminBatchFolders(){
     </button>`; }).join("")}</div>`;
 }
 function renderBatchFolder(k){
+  if(["feedback","activities"].includes(state.batchSub)) state.batchSub = "registry";   // (those two moved: 💬 Trainee Feedback and 📋 Batch Sheet)
   const sub = state.batchSub || "registry";
   const members = batchMembers(k);
-  const tabs = [["registry","🗂 Registry"],["rankings","🏆 Rankings"],["feedback","💬 Feedback"],["activities","📈 Activities"]];
+  const tabs = [["registry","🗂 Registry"],["rankings","🏆 Rankings"]];   // (its trainees' feedback: 💬 Trainee Feedback, filtered to the batch; their progress: 📋 Batch Sheet)
   return `
     <div class="bf-crumb"><button type="button" class="btn btn-ghost btn-sm" onclick="closeBatchFolder()">← All batch folders</button></div>
     <p class="eyebrow">Batch Folder</p>
@@ -18977,8 +18980,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-rubrics.js?v=ft-2026.11.01-writing"></script>
 <script src="/js/ft-sessions.js?v=ft-2026.11.01-merge470"></script>
 <script src="/js/ft-ranking.js?v=ft-2026.11.01-merge470"></script>
-<script src="/js/ft-overall.js?v=ft-2026.11.01-overall"></script>
-<script src="/js/ft-batch-sheet.js?v=ft-2026.11.02-batch-sheet"></script>
+<script src="/js/ft-overall.js?v=ft-2026.11.02-into-batch-sheet"></script>
+<script src="/js/ft-batch-sheet.js?v=ft-2026.11.02-one-sheet"></script>
 <script src="/js/ft-skilltests.js?v=ft-2026.10.30-trainer-merge"></script>
 <script src="/js/ft-drills.js?v=ft-2026.10.19-hint"></script>
 <script src="/js/ft-calrules.js?v=ft-2026.10.16-calrules"></script>
@@ -19002,7 +19005,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.30-fill-week"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-admin-ops.js?v=ft-2026.11.02-no-todo-tab"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.11.02-one-sheet"></script>
 <script src="/js/ft-attendance.js?v=ft-2026.11.02-override"></script>
 <script src="/js/ft-batch-admin.js?v=ft-2026.11.02-delete-batch"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
@@ -19015,8 +19018,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-card-grid.js?v=ft-2026.10.30-color"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.30-contrast"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
-<script src="/js/ft-program.js?v=ft-2026.11.02-no-todo-tab"></script>
-<script src="/js/lsh-program.js?v=ft-2026.11.02-open-lessons"></script>
+<script src="/js/ft-program.js?v=ft-2026.11.02-one-sheet"></script>
+<script src="/js/lsh-program.js?v=ft-2026.11.02-one-sheet"></script>
 <script src="/js/ft-my-pages.js?v=ft-2026.11.01-merge479"></script>
 <script src="/js/ft-day1-flow.js?v=ft-2026.10.30-no-segment-locks"></script>
 <script src="/js/ft-day-locks.js?v=ft-2026.10.30-contrast"></script>
