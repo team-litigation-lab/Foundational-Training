@@ -14457,8 +14457,7 @@ function renderAdmin(){
   const tab = state.adminTab || "audit";
   const tabBar = `
     <div class="admin-tabs" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
-      <button class="admin-tab-btn ${tab==='audit'?'active':''}" onclick="setAdminTab('audit')">Trainee Audit</button>
-      <button class="admin-tab-btn ${tab==='batches'?'active':''}" onclick="setAdminTab('batches')">📁 Batch Folders</button>
+      <button class="admin-tab-btn ${tab==='audit'?'active':''}" onclick="setAdminTab('audit')">👥 Trainees &amp; Batches</button>
       <button class="admin-tab-btn ${tab==='rankings'?'active':''}" onclick="setAdminTab('rankings')">Rankings</button>
       <button class="admin-tab-btn ${tab==='sop'?'active':''}" onclick="setAdminTab('sop')">SOP Reference</button>
       <button class="admin-tab-btn ${tab==='studio'?'active':''}" onclick="setAdminTab('studio')">Content Studio</button>
@@ -19032,5 +19031,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-screen-fit.js?v=ft-2026.11.01-lab-by-day"></script>
 <script src="/js/ft-buffer.js?v=ft-2026.11.02-day15-nodone"></script>
 <script src="/js/ft-admin-tidy.js?v=ft-2026.11.02-recent-batches"></script>
+<script src="/js/ft-trainees-tab.js?v=ft-2026.11.02-merge"></script>
 </body>
 </html>

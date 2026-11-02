@@ -48,11 +48,11 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["attendance", "sops", "dbmaint", "orientation"],   // (Trainee Audit, 📁 Batch Folders and 💬 Trainee Feedback are in 🏅 Scorecard)   // (no 🏛 Law Firms tab)
+    admin: ["attendance", "sops", "dbmaint", "orientation"],   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders in one tab, js/ft-trainees-tab.js — and 💬 Trainee Feedback are in 🏅 Scorecard)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
-    scorecard: ["batchsheet", "audit", "batches", "tfeedback", "ranking", "sendfeedback", "skilltests"]
+    scorecard: ["batchsheet", "audit", "tfeedback", "ranking", "sendfeedback", "skilltests"]
   },
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet"},
@@ -69,6 +69,16 @@ window.LSH_PROGRAM = {
         const sc = p.trainerScore != null && "gradedScore" in p ? p.gradedScore : p.score;
         if(typeof sc !== "number") return {name:d.title, pct:null, note:"Not taken yet"};
         return {name:d.title, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`};
+      }).flatMap((it, k, arr) => {
+        // 📖 a lesson's Reading Task (Day 1's PI Overview), scored on its own (js/ft-process.js): its own line after the lesson's
+        const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
+        const rs = [...new Set(window.ftKcQuestions(d.id).map(x => x.set))].find(st => st.open);
+        if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
+        // (the trainer's final score for it, kcreview:<id>.read[lesson], straight from their review, as the lesson's is)
+        const rv = (((ctx.rec["kcreview:"] || {}).read) || {})[d.id], t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
+        if(t != null) return [it, {name:`📖 ${rs.title}`, pct:t, note:"Reading Task · trainer’s final score"}];
+        const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
+        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Your best graded call on each mock-call line of the CMS Call Simulator.",

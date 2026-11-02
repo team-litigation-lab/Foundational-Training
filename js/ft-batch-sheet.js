@@ -78,7 +78,7 @@ async function loadData(){
   B.dataKey = key; B.dataLoading = true; rerender();
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
-    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:"];
+    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:"];
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
@@ -92,7 +92,7 @@ async function loadData(){
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
-      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), src: sc, score};
+      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), src: sc, score};
     });
     // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
     let reps = [];
@@ -167,19 +167,31 @@ function weekMark(rep, id){
 }
 function compOf(p){ const c = (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const days = Object.values(c).filter(x => x && typeof x.pct === "number"); return {pct: avgOf(days.map(x => x.pct)), n: days.length}; }
+/* 💬 the day-by-day feedback a trainer sends (👥 Trainees & Batches → ✍ Feedback; feedback:<id>.days[lesson]): how many
+   lessons have it, the latest one's rating, and in the bar every sent one's rating and summary. Drafts are the trainer's
+   own (a trainee never sees one), so only sent feedback counts here, for the trainer and the trainee alike. */
+function fbCell(p){
+  const days = (((B.data.rec[p.id] || {}).feedback || {}).days) || {};
+  const sent = Object.entries(days).filter(([, v]) => v && v.status === "sent").sort((a, b) => String(b[1].sentAt || "").localeCompare(String(a[1].sentAt || "")));
+  const drafts = meOn() ? 0 : Object.values(days).filter(v => v && v.status === "draft").length;
+  if(!sent.length) return {v: drafts ? `${drafts} draft${drafts === 1 ? "" : "s"}` : "", f: drafts ? `No feedback sent yet · ${drafts} draft${drafts === 1 ? "" : "s"} waiting to be sent (✍ Feedback)` : "No day-by-day feedback sent yet", cls: drafts ? "gs-txt gs-lo" : "gs-txt"};
+  const [l0, f0] = sent[0], tone_ = r => /Strong/i.test(r || "") ? "gs-hi" : /Needs/i.test(r || "") ? "gs-lo" : "gs-mid";
+  return {v: `${sent.length} sent · ${f0.rating || "—"}`, cls: "gs-txt " + tone_(f0.rating),
+    f: sent.map(([l, v]) => `${lessonName(Number(l))}: ${v.rating || "—"}${v.sentAt ? " (" + day(v.sentAt) + ")" : ""}${v.summary ? " — " + String(v.summary).replace(/\s+/g, " ").slice(0, 220) : ""}`).join("  ·  ") + (drafts ? `  ·  ${drafts} draft${drafts === 1 ? "" : "s"} not sent yet` : "")};
+}
 function scoresTable(){
   const ppl = people(), S = B.data.sources, reps = B.data.reps || [], weeks = reps.map((r, i) => r ? i + 1 : null).filter(Boolean), me = meOn();
   const rows = ppl.map(p => { const sc = (B.data.rec[p.id] || {}).score, comp = compOf(p), ws = weeks.map(w => weekMark(reps[w - 1], p.id)), wavg = avgOf(ws);
     const overall = avgOf([sc && sc.overall, comp.pct, wavg == null ? null : wavg / 5 * 100]); return {p, sc, comp, ws, wavg, overall}; });
   const order = rows.filter(r => r.overall != null).sort((a, b) => b.overall - a.overall);
   order.forEach((r, i) => { r.rank = i && Math.round(order[i - 1].overall) === Math.round(r.overall) ? order[i - 1].rank : i + 1; });
-  const extra = ["Scorecard overall", "Daily compliance"].concat(me ? [] : ["Weeks average (/5)"], ["Overall %"], me ? [] : ["Rank"]);
-  return {id: "scores", title: "🏅 Scores", note: me ? "Every grade the platform gives you, averaged per grading system, your Daily compliance (the end-of-shift check) and your Overall %. Your grades in detail are under the table."
-      : "Every grade, averaged per grading system (blank: nothing graded yet), then the Daily compliance (the end-of-shift check), the weeks' average from 📊 Weekly Ranking, and the Overall % (the average of the three), ranked. Pick a trainee under the table for their grades in detail.",
+  const extra = ["💬 Trainer feedback (day by day)", "Scorecard overall", "Daily compliance"].concat(me ? [] : ["Weeks average (/5)"], ["Overall %"], me ? [] : ["Rank"]);
+  return {id: "scores", title: "🏅 Scores", note: me ? "Every grade the platform gives you, averaged per grading system, your trainer’s day-by-day feedback (💬: how many sent, the latest rating), your Daily compliance (the end-of-shift check) and your Overall %. Your grades in detail are under the table."
+      : "Every grade, averaged per grading system (blank: nothing graded yet), the 💬 day-by-day feedback sent (how many, the latest rating; click it for each one), then the Daily compliance (the end-of-shift check), the weeks' average from 📊 Weekly Ranking, and the Overall % (the average of the three), ranked. Pick a trainee under the table for their grades in detail.",
     head: ["Trainee"].concat(S.map(s => `${s.icon || ""} ${s.label}`.trim()), extra),
     rows: rows.map(r => [{v: r.p.name, f: r.p.name, cls: "gs-name"}].concat(S.map((s, i) => { const x = r.sc && r.sc.rows ? r.sc.rows.find(y => y.s === s) || r.sc.rows[i] : null, a = x ? x.avg : null;
         return {v: pct(a), f: a == null ? `${s.label}: nothing graded yet` : `${s.label}: average of ${x.graded} grade${x.graded === 1 ? "" : "s"} = ${a}%`, cls: "gs-num " + tone(a)}; }),
-      [{v: pct(r.sc && r.sc.overall), f: r.sc && r.sc.overall != null ? `Scorecard overall = the average of the grading systems = ${r.sc.overall}%` : "Nothing graded yet", cls: "gs-num " + tone(r.sc && r.sc.overall)},
+      [fbCell(r.p), {v: pct(r.sc && r.sc.overall), f: r.sc && r.sc.overall != null ? `Scorecard overall = the average of the grading systems = ${r.sc.overall}%` : "Nothing graded yet", cls: "gs-num " + tone(r.sc && r.sc.overall)},
        {v: pct(r.comp.pct), f: r.comp.pct == null ? "No day checked yet (the check runs at the end of every shift)" : `The average of ${r.comp.n} day${r.comp.n === 1 ? "" : "s"}' compliance = ${Math.round(r.comp.pct)}% (each day in 📤 Daily outputs)`, cls: "gs-num " + tone(r.comp.pct)}]
       .concat(me ? [] : [{v: r.wavg == null ? "" : r.wavg.toFixed(2), f: r.wavg == null ? "No week reported yet (📊 Weekly Ranking)" : `The weeks' final averages (${weeks.map((w, i) => `W${w} ${r.ws[i] == null ? "–" : r.ws[i].toFixed(2)}`).join(", ")}) = ${r.wavg.toFixed(2)}/5`, cls: "gs-num " + tone(r.wavg == null ? null : r.wavg / 5 * 100)}],
         [{v: pct(r.overall), f: r.overall == null ? "Nothing to average yet" : `Overall % = the average of the Scorecard ${pct(r.sc && r.sc.overall) || "–"}, the Daily compliance ${pct(r.comp.pct) || "–"}${me ? "" : ` and the weeks ${r.wavg == null ? "–" : Math.round(r.wavg / 5 * 100) + "%"}`} = ${Math.round(r.overall)}%`, cls: "gs-num gs-calc gs-bold " + tone(r.overall)}],

@@ -53,9 +53,10 @@ const failures = []; const fail = m => failures.push(m);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
   // 📁 Batch Folders and 💬 Trainee Feedback sit in 🏅 Scorecard now (no longer in 🛡 Admin Master Control), and the feedback stays
-  if (!/Trainee Audit/.test(row.join(' '))) fail(`🏅 Scorecard has no Trainee Audit: ${row.join(' | ')}`);
+  // (Trainee Audit and 📁 Batch Folders are one tab, 👥 Trainees & Batches: js/ft-trainees-tab.js)
+  if (!/Trainees & Batches/.test(row.join(' ')) || /Trainee Audit|Batch Folders/.test(row.join(' '))) fail(`🏅 Scorecard should have one 👥 Trainees & Batches tab (no Trainee Audit or 📁 Batch Folders of their own): ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
-  if (!/Batch Folders/.test(row.join(' ')) || !/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 📁 Batch Folders / 💬 Trainee Feedback: ${row.join(' | ')}`);
+  if (!/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 💬 Trainee Feedback: ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
   await page.evaluate(() => { state.adminTab = 'tfeedback'; state.tfbAdmin = null; render(); }); await page.waitForTimeout(1500);
   const fbText = await page.evaluate(() => document.querySelector('main').innerText);

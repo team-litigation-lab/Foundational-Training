@@ -121,6 +121,10 @@ const failures = []; const fail = (m) => failures.push(m);
     saveError = 'storageQuotaExceeded';
     const s3 = await call('/api/drive/save', doc, trainee);
     if (!s3.body || s3.body.error !== 'quota') fail(`a folder the account can't create files in should say so: ${JSON.stringify(s3.body)}`);
+    // a folder not shared with the service account: the answer names the address to share it with
+    saveError = 'insufficientFilePermissions';
+    const s7 = await call('/api/drive/save', doc, trainee);
+    if (!s7.body || s7.body.error !== 'no-access' || s7.body.share !== env.GDRIVE_SA_EMAIL) fail(`a folder the account can't write should name the address to share it with: ${JSON.stringify(s7.body)}`);
     saveError = null;
     // saving as GDRIVE_SA_SUBJECT, a user the trainee never shared the folder with: the service account (an Editor of the
     // folder) adds that user to it, then the save goes through

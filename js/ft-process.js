@@ -251,12 +251,12 @@ async function savePdf(lesson){
     let j = {};
     try{ const r = await authFetch("/api/drive/save", {name, pdf: b64}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
     if(j.ok){ sameFile(set).forEach(st => { const x = sheet(st.id); assignedOn(st); x.drive = {at: new Date().toISOString(), link: (j.file || {}).link || ""}; }); saved.push(name); }
-    else { doc.save(name); failed.push({name, error: j.error || "drive"}); }
+    else { doc.save(name); failed.push({name, error: j.error || "drive", share: j.share || ""}); }
   }
   if(saved.length){ queueSave(); checkFolder(true); toast(`✓ Saved to your Assessment and Activities Folder: ${saved.join(", ")}`); }
   if(failed.length){
     if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
-    toast(`${DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
+    toast(`${failed[0].share ? `The platform can’t write to your folder yet: share your Assessment and Activities Folder with ${failed[0].share} as Editor, then save again.` : DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
   }
   render();
 }
@@ -383,11 +383,12 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // (the count and status are the sheet on screen's — Day 1 shows one of its two sheets at a time — not the whole lesson's)
   const onScreen = shownSets(qs), sq = qs.filter(x => onScreen.includes(x.set));
   const done = sq.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
-  // (the Knowledge Check's score is the whole module's: shown once the module's questions are open, and named as such)
-  const best = studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
-  const st = prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
+  // (the Knowledge Check's score is the module's own sheet's; on the 📖 Reading Task's page, the Reading Task's own score)
+  const readOn = isReadPage(qs, onScreen), rr = readRec(lesson);
+  const best = readOn ? (trainerScore(readReview(lesson)) != null ? trainerScore(readReview(lesson)) : rr && rr.attempts ? rr.best : null) : studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
+  const st = readOn ? (rr && rr.attempts ? {k:"done", t:"Graded"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"}) : prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<div class="card fp-set">
-    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Knowledge Check best ${best}%</span>` : ""}</div>
+    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">${readOn ? "📖 Reading Task best" : "Knowledge Check best"} ${best}%</span>` : ""}</div>
     <div class="fp-body">
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
@@ -609,30 +610,36 @@ function renderAdminProcess(){
 }
 // The trainer's review of each Knowledge Check the trainee took: the graded attempt (score and the AI's feedback in the
 // facilitator's DNA, per answer), and the trainer's own comment per answer, overall comment and final score.
+// (a lesson with a 📖 Reading Task, Day 1: two entries, the lesson's own sheet and the Reading Task, each with its own review:
+// the Reading Task's in kcreview:<id>.read[lesson], its final score the Reading Task's own, apart from the lesson's)
+const readSetOf = l => { const sets = [...new Set(kcQuestionsFor(l).map(q => q.set))]; return sets.length > 1 ? sets.find(st => !!st.open) || null : null; };
 function kcAdmin(x){
   const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b).filter(l=>DAYS.find(d=>d.id===l));
-  const kc = (x.p && x.p.kc) || {};
+  const kc = (x.p && x.p.kc) || {}, kr = (x.p && x.p.kcRead) || {};
+  const entries = lessons.flatMap(l => { const rs = readSetOf(l), qs = kcQuestionsFor(l);
+    const own = {l, read:false, title:ftName(l), qs:rs ? qs.filter(q => q.set !== rs) : qs, rec:kc[l], rv:x.rv.lessons[l] || {}};
+    return rs ? [own, {l, read:true, title:"📖 " + rs.title, qs:qs.filter(q => q.set === rs), rec:kr[l], rv:(x.rv.read || {})[l] || {}}] : [own]; });
   return `<div class="fp-kcadmin"><b class="fp-kcadmin-h">📝 Knowledge Checks: graded, then your review</b>
-    ${lessons.map(l=>{ const rec = kc[l], rv = x.rv.lessons[l] || {}, k = x.id + "|" + l, open = !!FPA.kcOpen[k], last = rec && rec.last;
+    ${entries.map(({l, read, title, qs, rec, rv})=>{ const k = x.id + "|" + l + (read ? "|read" : ""), open = !!FPA.kcOpen[k], last = rec && rec.last;
       const t = trainerScore(rv);
-      return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.kc('${x.id}', ${l})">${open ? "▾" : "▸"} ${e(ftName(l))}
+      return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.kc('${x.id}', ${l}, ${read})">${open ? "▾" : "▸"} ${e(title)}
           ${rec && rec.attempts ? `<span class="fp-pill ${rec.best >= KC_PASS ? "ok" : "mid"}">graded best ${rec.best}% · ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"}</span>` : `<span class="fp-pill bad">not taken</span>`}
           ${t != null ? `<span class="fp-pill ${t >= KC_PASS ? "ok" : "mid"}">🧑‍🏫 final ${t}%</span>` : rv.comment ? `<span class="fp-pill">🧑‍🏫 commented</span>` : ""}</div>
         ${open ? `<div class="fp-kcform">
           ${last && last.summary ? `<p class="fp-muted"><b>Graded ${e(new Date(last.at).toLocaleString())}:</b> ${e(last.summary)}</p>` : ""}
-          <ol class="fp-aans">${kcQuestionsFor(l).map(q=>{ const g = last && (last.items || []).find(it=>it.sid === q.set.id && it.i === q.i), a = (((x.p.sets || {})[q.set.id] || {}).answers || [])[q.i];
+          <ol class="fp-aans">${qs.map(q=>{ const g = last && (last.items || []).find(it=>it.sid === q.set.id && it.i === q.i), a = (((x.p.sets || {})[q.set.id] || {}).answers || [])[q.i];
             return `<li value="${q.i+1}"><b>${e(q.q)}</b><div>${has(a) ? e(a).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div>
               ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}
               <textarea rows="2" data-note="${e(q.set.id + "|" + q.i)}" placeholder="Your comment on this answer (optional)">${e((rv.notes || {})[q.set.id + "|" + q.i] || "")}</textarea></li>`; }).join("")}</ol>
           <label class="fp-kclabel">Overall comment<textarea rows="3" data-comment placeholder="Your overall review, added to the graded feedback">${e(rv.comment || "")}</textarea></label>
           <div class="fp-kcrow"><label>Final score <input type="number" min="0" max="100" data-score value="${t != null ? t : ""}" placeholder="${rec && rec.attempts ? rec.best : "—"}"> %</label>
-            <span class="fp-muted">Empty keeps the graded score. Yours replaces it; ${KC_PASS}% or more finishes the lesson.</span>
-            <button class="btn btn-navy btn-sm" type="button" onclick="FTProcessAdmin.saveKc('${x.id}', ${l}, this)">Save my review</button></div>
+            <span class="fp-muted">Empty keeps the graded score. ${read ? "Yours replaces it as the Reading Task’s own score; the lesson’s score is its own sheet’s." : `Yours replaces it; ${KC_PASS}% or more finishes the lesson.`}</span>
+            <button class="btn btn-navy btn-sm" type="button" onclick="FTProcessAdmin.saveKc('${x.id}', ${l}, this, ${read})">Save my review</button></div>
         </div>` : ""}</div>`; }).join("")}</div>`;
 }
 window.FTProcessAdmin = {
-  kc(id, l){ const k = id + "|" + l; FPA.kcOpen[k] = !FPA.kcOpen[k]; render(); },
-  async saveKc(id, l, btn){
+  kc(id, l, read){ const k = id + "|" + l + (read ? "|read" : ""); FPA.kcOpen[k] = !FPA.kcOpen[k]; render(); },
+  async saveKc(id, l, btn, read){
     const x = FPA.rows.find(r=>r.id===id); if(!x) return;
     const box = btn.closest(".fp-kcform"), notes = {};
     box.querySelectorAll("textarea[data-note]").forEach(t=>{ if(has(t.value)) notes[t.getAttribute("data-note")] = t.value.trim().slice(0, 2000); });
@@ -641,7 +648,8 @@ window.FTProcessAdmin = {
     btn.disabled = true;
     try{
       const cur = (await sharedGet("kcreview:" + id)) || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
-      cur.lessons[l] = {score:sv === "" ? null : Math.round(Number(sv)), comment:String(box.querySelector("textarea[data-comment]").value || "").trim().slice(0, 4000), notes, at:new Date().toISOString(), by:"trainer"};
+      const review = {score:sv === "" ? null : Math.round(Number(sv)), comment:String(box.querySelector("textarea[data-comment]").value || "").trim().slice(0, 4000), notes, at:new Date().toISOString(), by:"trainer"};
+      if(read){ cur.read = cur.read || {}; cur.read[l] = review; } else cur.lessons[l] = review;
       if(await sharedSet("kcreview:" + id, cur) === false) throw new Error("save");
       x.rv = cur; toast("✓ Review saved. The trainee sees it on their Knowledge Check.");
     }catch(err){ toast("Couldn’t save the review. Check your connection."); }
@@ -713,6 +721,7 @@ function loadReview(force){
   return KR.loading;
 }
 const kcReview = id => (KR.id === state.traineeId && KR.data && KR.data.lessons[id]) || null;
+const readReview = id => (KR.id === state.traineeId && KR.data && (KR.data.read || {})[id]) || null;
 const trainerScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.max(0, Math.min(100, Math.round(Number(r.score)))) : null;
 // The lesson's Knowledge Check score: the trainer's when they gave one, else the best graded attempt.
 function kcBest(id){ const t = trainerScore(kcReview(id)); if(t != null) return t; const r = kcRec(id); return r && r.attempts ? r.best : null; }
@@ -741,10 +750,19 @@ function applyReviews(){
     if(prev.trainerScore >= KC_PASS && !(best >= KC_PASS)) next.done = false;
     state.progress[id] = next; changed = true;
   });
+  // 📖 a Reading Task's final score from the trainer: its own score (readScore), the graded best kept as readGraded; cleared,
+  // the graded best again
+  Object.keys(state.progress || {}).forEach(k=>{
+    const id = Number(k), prev = state.progress[k] || {}, rv = ((KR.data && KR.data.read) || {})[k], t = trainerScore(rv);
+    const rr = ((FP.data && FP.data.kcRead) || {})[k], graded = rr && rr.attempts ? rr.best : (typeof prev.readGraded === "number" ? prev.readGraded : null);
+    if(t != null && prev.readTrainer !== t){ state.progress[id] = Object.assign({}, prev, {readScore:t, readTrainer:t}, graded != null ? {readGraded:graded} : {}); changed = true; }
+    else if(t == null && prev.readTrainer != null && KR.read && rv){ const next = Object.assign({}, prev); delete next.readTrainer; delete next.readGraded;
+      if(graded != null) next.readScore = graded; else delete next.readScore; state.progress[id] = next; changed = true; }
+  });
   if(changed){ storeSet("day-progress", state.progress); try{ syncToLedger(); }catch(err){} }
 }
-function reviewBlock(id){
-  const r = kcReview(id); if(!r || (!r.comment && trainerScore(r) == null && !Object.values(r.notes || {}).some(has))) return "";
+function reviewBlock(id, rr){
+  const r = rr || kcReview(id); if(!r || (!r.comment && trainerScore(r) == null && !Object.values(r.notes || {}).some(has))) return "";
   const t = trainerScore(r);
   return `<div class="card kc-trainer"><div class="kc-trainer-h">🧑‍🏫 <b>Your trainer’s review</b>${t != null ? `<span class="fp-pill ${t >= KC_PASS ? "ok" : "mid"}">Final score ${t}%</span>` : ""}</div>
     ${r.comment ? `<p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}
@@ -752,6 +770,12 @@ function reviewBlock(id){
 }
 window.EXTRA_ROUTE_VIEWS = window.EXTRA_ROUTE_VIEWS.concat(["kc"]);
 const kcRec = id => ((FP.data && FP.data.kc) || {})[id] || null;
+/* 📖 a lesson's Reading Task (an open sheet, Day 1's PI Overview, shown on a page of its own) is scored separately from the
+   lesson's own sheet: its attempts in process:<id>.kcRead[lesson] ({attempts, best, last}), its best in the lesson's progress
+   as readScore (the Scorecard's own line). The lesson's Knowledge Check score, and its pass, are its own sheet's alone. */
+const readRec = id => ((FP.data && FP.data.kcRead) || {})[id] || null;
+const isReadPage = (all, onScreen) => onScreen.length > 0 && onScreen.every(st => !!st.open) && new Set(all.map(x => x.set)).size > onScreen.length;
+const shownKey = (id, read) => read ? id + ":read" : id;
 const kcTone = sc => sc >= 7 ? "ok" : sc >= 5 ? "mid" : "low";
 function kcReport(id, r){
   const tier = gradeTierFor(r.pct), color = GRADE_TIER_COLOR[tier] || "var(--ink-soft)", qs = kcQuestionsFor(id);
@@ -783,7 +807,24 @@ function renderKc(){
   if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
   loadReview();
-  const rec = kcRec(id), shown = KC.shown[id] || (rec && rec.last), prog = state.progress[id] || {};
+  const read = isReadPage(qs, shownSets(qs)), rec = read ? readRec(id) : kcRec(id), shown = KC.shown[shownKey(id, read)] || (rec && rec.last), prog = state.progress[id] || {};
+  if(read) return `${back}
+    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
+      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${rec.best}%` : `best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
+    ${readReview(id) ? reviewBlock(id, readReview(id)).replace("this Knowledge Check’s final score", "the Reading Task’s final score") : ""}
+    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
+    <div class="card kc-card">
+      ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
+        return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
+          <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
+          ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}
+          ${(()=>{ const n = ((readReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
+      <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
+        <span class="fp-save" id="fpSave"></span></div>
+      <p class="fp-muted">Your answers save as you type.</p>
+      ${pdfBox(id)}
+    </div>
+    ${kcSave(qs)}`;
   return `${back}
     <div class="kc-hero">${intro}
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${rec.best}%` : `Best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
@@ -812,12 +853,17 @@ function kcSave(qs){
   return "";
 }
 window.FTKc = {
-  open(id){ state.dayId = Number(id); KC.shown[id] = null; goto("kc"); window.scrollTo(0, 0); },
+  open(id){ state.dayId = Number(id); KC.shown[id] = null; KC.shown[shownKey(id, true)] = null; goto("kc"); window.scrollTo(0, 0); },
   async submit(id){
     if(KC.grading) return;
     if(!state.traineeId || (state.isAdmin && !state.adminPreview)){ toast("Trainees take the Knowledge Check."); return; }
-    const d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
+    const d = DAYS.find(x=>x.id===id), all = kcQuestionsFor(id);
     const ans = x => String((sheet(x.set.id).answers||[])[x.i] || "").trim();
+    // the sheet on screen is the one graded (Day 1 shows one of its two at a time: the Reading Task's, or the lesson's own),
+    // each scored on its own (a trainee on the Virtual Assistant Essentials sheet was blocked by the Reading Task's six
+    // questions, which that page doesn't show)
+    const onScreen = shownSets(all), read = isReadPage(all, onScreen), sk = shownKey(id, read);
+    const qs = all.filter(x => onScreen.includes(x.set));
     // (a lesson graded from two answer sheets, Day 1's Reading Task and its Process Questions: the message names the sheet
     // that still has short answers, so a trainee on the other sheet's page knows where to go)
     const shortQs = qs.filter(x=>ans(x).split(/\s+/).filter(Boolean).length < 5);
@@ -825,9 +871,9 @@ window.FTKc = {
       const bySet = [...new Set(shortQs.map(x=>x.set))].map(st => `${st.title}: ${shortQs.filter(x=>x.set===st).map(x=>"Q"+(x.i+1)).join(", ")}`);
       toast(`Answer every question in complete sentences (5 words or more) before you submit. Still to answer: ${bySet.join(" · ")}.`, 9000); return; }
     // (the same answers as the last graded attempt: its result stands, no new attempt)
-    const sig = kcSig(qs), last = (kcRec(id) || {}).last;
+    const sig = kcSig(qs), last = ((read ? readRec(id) : kcRec(id)) || {}).last;
     if(last && last.sig === sig){
-      KC.shown[id] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
+      KC.shown[sk] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
       toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands. Change an answer to grade it again.`, 8000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
@@ -857,6 +903,21 @@ Return ONLY a JSON object, no other text:
       if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
       const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
       const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna", sig};
+      // 📖 the Reading Task: its own score, kept apart; the lesson's score and its pass stay its own sheet's
+      if(read){
+        FP.data.kcRead = FP.data.kcRead || {};
+        const rr = FP.data.kcRead[id] = FP.data.kcRead[id] || {attempts:0, best:0, last:null};
+        rr.attempts++; rr.best = Math.max(rr.best||0, pct); rr.last = r;
+        onScreen.forEach(set=>{ const x = sheet(set.id); if(answered(set, x) === set.questions.length) x.submittedAt = r.at; });
+        queueSave();
+        const tRead = trainerScore(readReview(id));
+        state.progress[id] = Object.assign({}, state.progress[id] || {}, {readScore:tRead != null ? tRead : rr.best, readAttempts:rr.attempts}, tRead != null ? {readGraded:rr.best} : {});
+        await storeSet("day-progress", state.progress);
+        try{ syncToLedger(); }catch(err){}
+        KC.shown[sk] = r;
+        toast(`📖 Reading Task: ${pct}% (best ${rr.best}%). It is scored on its own.`);
+        return;
+      }
       FP.data.kc = FP.data.kc || {};
       const rec = FP.data.kc[id] = FP.data.kc[id] || {attempts:0, best:0, last:null};
       rec.attempts++; rec.best = Math.max(rec.best||0, pct); rec.last = r;
@@ -868,7 +929,7 @@ Return ONLY a JSON object, no other text:
       state.progress[id] = Object.assign({}, prev, {score:tScore != null ? tScore : rec.best, kcAttempts:rec.attempts}, tScore != null ? {gradedScore:rec.best} : {}, (tScore != null ? tScore : pct) >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});
       await storeSet("day-progress", state.progress);
       try{ syncToLedger(); }catch(err){}
-      KC.shown[id] = r;
+      KC.shown[sk] = r;
       if(pct >= KC_PASS){ toast(`✓ ${pct}% · ${ftName(id)} finished.`); if(pct >= 85) burstConfetti(); }
       else toast(`${pct}%: not yet. Read the feedback under each answer, improve them and submit again.`);
     }catch(err){

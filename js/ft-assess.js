@@ -228,7 +228,7 @@ root.FTAssess = {
     try{ const r = await authFetch("/api/drive/save", {name, pdf: pdf.output("datauristring").split(",")[1]}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
     if(j.ok) toast(`✓ Saved to your Assessment and Activities Folder: ${name}`);
     else { pdf.save(name); const f = await folderUrl(); if(f) window.open(f, "_blank", "noopener");
-      toast(`${DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${name}”: upload it to your Assessment and Activities Folder${f ? " (it just opened)" : ""}.`); }
+      toast(`${j.share ? `The platform can’t write to your folder yet: share your Assessment and Activities Folder with ${j.share} as Editor, then save again.` : DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${name}”: upload it to your Assessment and Activities Folder${f ? " (it just opened)" : ""}.`); }
     A.saving = false; render();
   },
   // another page's graded activity kept in the same record (js/ft-claims-email.js): one copy of assess:<id> on the page,
