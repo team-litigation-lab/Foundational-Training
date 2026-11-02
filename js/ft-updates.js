@@ -124,6 +124,8 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-od-day{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:#fff;cursor:pointer;}
 .ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
 .ft-od-day.nocontent{opacity:.55;}
+.ft-od-one{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;}
+.ft-od-one h4{margin:0 0 4px;font-size:15px;}
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 /* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
 .dash-layout > .dash-side{order:1;}
@@ -524,7 +526,19 @@ window.afterRender = function(){ const r = __ftAfterRender2.apply(this, argument
 /* ---------- 3. days open when the trainer opens them ----------
    settings:opendays = {all:[day ids], batches:{"<batch key>":[day ids]}} */
 state.ftOpenDays = null;
-function ftBatchKey(b){ return String(b||"").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+/* A batch is keyed in its one form (canonicalBatch, index.html): B102826, B10282026 and B10282026-LSHTRAINEE-004 are
+   one batch, so a lesson the trainer opens for B102826 opens for every trainee of it, whichever form their record carries.
+   (Keyed by the text as typed before, a trainee whose record held an older form never saw the lessons opened for the batch.) */
+function ftBatchKey(b){
+  const c = typeof canonicalBatch === "function" ? canonicalBatch(b) : "";
+  return String(c || b || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+// a saved {"<batch key>": [ids]} with keys saved in older forms merged into the batch's one key
+function ftMergeBatchKeys(m){
+  const out = {};
+  Object.keys(m || {}).forEach(k => { const c = ftBatchKey(k) || k; out[c] = [...new Set([].concat(out[c] || [], m[k] || []).map(Number))].sort((a, b) => a - b); });
+  return out;
+}
 function ftOpenFor(batch){
   const o = state.ftOpenDays || {};
   return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(batch)] || []).map(Number));
@@ -551,7 +565,7 @@ async function ftLoadOpenDays(){
     state.ftVideoReq = req; state.ftVideoAccess = acc;
     if(was !== JSON.stringify([req, acc]) && (v != null || vv != null)) state.ftVideosChanged = true;
   }
-  const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
+  const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: ftMergeBatchKeys(x.batches)} : {all: [], batches: {}};
   const next = shape(v), nextV = shape(vv);
   const changed = d1changed || dschanged || JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos) || !!state.ftVideosChanged;
   state.ftVideosChanged = false;
@@ -568,11 +582,14 @@ function ftVideoUnlocked(id){
   return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(state.traineeBatch)] || []).map(Number)).has(Number(id));
 }
 window.dayUnlocked = function(id){
+  id = Number(id);
   const d = DAYS.find(x=>x.id===id); if(!d) return false;
   if(state.isAdmin || state.adminPreview) return true;
   if(!d.sections.length) return false;
   const own = state.progress && state.progress[id];
   if(own && own.done) return true;
+  // opened for this one trainee (Admin → 📅 Open Lessons → 👤 Open for one trainee: unlockedDays on their record)
+  if((state.adminUnlockedDays || []).map(Number).includes(id)) return true;
   return ftOpenFor(state.traineeBatch).has(id);
 };
 // A lesson address in a new or duplicated tab (#/day/3): the open lessons load a moment after start-up,
@@ -622,8 +639,8 @@ async function ftGetMany(keys, per){
 /* Admin → 📅 Open Days */
 function ftKnownBatches(){
   const set = new Map();
-  (state.adminData || []).forEach(r=>{ const b = String(r.batch||"").trim(); if(b && !set.has(ftBatchKey(b))) set.set(ftBatchKey(b), b); });
-  Object.keys((state.ftOpenDays||{}).batches || {}).forEach(k=>{ if(!set.has(k)) set.set(k, k); });
+  (state.adminData || []).forEach(r=>{ const b = String(r.batch||"").trim(); const c = (typeof canonicalBatch === "function" && canonicalBatch(b)) || b; if(b && !set.has(ftBatchKey(b))) set.set(ftBatchKey(b), c); });
+  Object.keys((state.ftOpenDays||{}).batches || {}).forEach(k=>{ if(!set.has(k)) set.set(k, (typeof canonicalBatch === "function" && canonicalBatch(k)) || k); });
   return [...set.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
 }
 function renderFtOpenDays(){
@@ -653,8 +670,52 @@ function renderFtOpenDays(){
           </label>`;
         }).join("")}
       </div>
+      ${renderFtOpenForOne(sel, open, everyone)}
     </div>`;
 }
+/* 👤 Open for one trainee: a trainee who was absent, or is ahead or behind the batch. The lessons go on the trainee's
+   record as unlockedDays (worker.js keeps trainees from writing it); their open page picks it up at its next sync
+   (applyAdminUnlocks in index.html) and dayUnlocked() above opens the lesson's day cards. */
+function renderFtOpenForOne(sel, open, everyone){
+  const people = (state.adminData || []).filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected)
+    .filter(r => sel === "__all" || ftBatchKey(r.batch) === sel)
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  const who = people.find(r => r.id === state.ftOdTrainee) || null;
+  const mine = new Set(((who && who.unlockedDays) || []).map(Number));
+  return `<div class="ft-od-one">
+      <h4>👤 Open for one trainee</h4>
+      <p style="margin:0 0 8px;color:var(--ink-soft);font-size:13.5px;">For a trainee who was absent, or who is ahead of or behind ${sel === "__all" ? "their batch" : "the batch"}: the lessons ticked here open for that trainee only, on top of what is open for the batch.</p>
+      <div class="ft-od-row">
+        <label for="ftOdTrainee"><b>Trainee</b></label>
+        <select id="ftOdTrainee" onchange="ftSetOdTrainee(this.value)">
+          <option value="">${state.adminData ? (people.length ? "Choose a trainee…" : "No approved trainees" + (sel === "__all" ? "" : " in this batch")) : "Loading trainees…"}</option>
+          ${people.map(r => `<option value="${esc(r.id)}" ${who && who.id === r.id ? "selected" : ""}>${esc(r.name || r.id)}${r.batch ? " · " + esc((typeof canonicalBatch === "function" && canonicalBatch(r.batch)) || r.batch) : ""}</option>`).join("")}
+        </select>
+      </div>
+      ${who ? `<div class="ft-od-days">
+        ${DAYS.filter(d => d.sections.length).map(d => {
+          const viaBatch = open.has(d.id) || everyone.has(d.id) || ftOpenFor(who.batch).has(d.id);
+          const on = mine.has(d.id);
+          return `<label class="ft-od-day ${on || viaBatch ? "on" : ""}">
+            <input type="checkbox" ${on || viaBatch ? "checked" : ""} ${viaBatch && !on ? "disabled" : ""} onchange="ftToggleTraineeDay('${esc(who.id)}', ${d.id}, this.checked)">
+            <span><b>${esc(d.title)}</b>${viaBatch && !on ? `<br><i>open for the batch</i>` : on ? `<br><i>open for ${esc(who.name || "this trainee")}</i>` : ""}</span>
+          </label>`;
+        }).join("")}
+      </div>` : ""}
+    </div>`;
+}
+window.ftSetOdTrainee = function(v){ state.ftOdTrainee = v; render(); };
+window.ftToggleTraineeDay = async function(tid, id, on){
+  const rec = await sharedGet("trainee:" + tid);
+  if(!rec){ toast("Couldn't read that trainee's record. Check your connection and try again."); render(); return; }
+  const list = new Set((Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number));
+  on ? list.add(Number(id)) : list.delete(Number(id));
+  rec.unlockedDays = [...list].sort((a, b) => a - b);
+  const ok = await sharedSet("trainee:" + tid, rec);
+  if(ok && state.adminData){ const i = state.adminData.findIndex(x => x.id === tid); if(i !== -1) state.adminData[i] = rec; }
+  toast(ok ? `${ftName(id)} ${on ? "opened" : "closed"} for ${rec.name || "the trainee"}. Their open page updates within a minute.` : "Couldn't save — check your connection and try again.");
+  render();
+};
 /* 🎬 A lesson's AI discussion video: the trainee asks for access (🔒 Request Video on the lesson card: videoreq:<id>,
    their own record), and the trainer approves it for them in Admin → 📅 Open Lessons → 🎬 Unlock Videos
    (videoaccess:<id>, which only admins write). Unlocking a video for a whole batch still works as before. */
