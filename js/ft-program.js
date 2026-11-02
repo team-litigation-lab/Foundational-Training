@@ -74,7 +74,11 @@ window.LSH_PROGRAM = {
         const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
         const rs = [...new Set(window.ftKcQuestions(d.id).map(x => x.set))].find(st => st.open);
         if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
-        return [it, typeof p.readScore === "number" ? {name:`📖 ${rs.title}`, pct:p.readScore, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
+        // (the trainer's final score for it, kcreview:<id>.read[lesson], straight from their review, as the lesson's is)
+        const rv = (((ctx.rec["kcreview:"] || {}).read) || {})[d.id], t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
+        if(t != null) return [it, {name:`📖 ${rs.title}`, pct:t, note:"Reading Task · trainer’s final score"}];
+        const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
+        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Your best graded call on each mock-call line of the CMS Call Simulator.",
