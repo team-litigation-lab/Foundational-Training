@@ -1470,7 +1470,7 @@ const LESSON_CARDS = {
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
-      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages · in ✍️ Knowledge Check", k: "assessment", run: "FTDayDecks.assessDoc(11, 7, 'policy-disclosure', 's1')", day: 11},
+      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages · in ✍️ Knowledge Check", k: "assessment", run: "FTDayDecks.assessDoc(11, 7, 'policy-disclosure', 's1', 'lor')", day: 11},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
       {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
@@ -1644,11 +1644,12 @@ function openStop(n, run){
 // its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), named `h`
 // 📄 an assessment opened straight from a day card's row (Day 11's evaluation, js/ft-assess.js): its own Knowledge Check
 // page, the assessment alone, whose way back is the deck's slide `back`
-function assessDoc(day, l, doc, back){
+// (tool: the evaluation's Next opens that drafting tool on the Training Portal instead of the deck: Day 11's LOR Drafting)
+function assessDoc(day, l, doc, back, tool){
   loadDecks().then(() => {
     const d = decks() && decks()[day], s = d ? slidesOf(d).find(x => x.id === back) : null;
     const h = String((s && s.h) || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
-    try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: Number(day), id: back || "", h, l: Number(l), sheet: "pq", assess: doc, only: true})); }catch(err){}
+    try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: Number(day), id: back || "", h, l: Number(l), sheet: "pq", assess: doc, only: true, tool: tool || ""})); }catch(err){}
     if(root.FTProcess) FTProcess.openLesson(l);
   });
 }
