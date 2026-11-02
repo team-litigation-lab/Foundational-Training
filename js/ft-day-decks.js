@@ -1522,7 +1522,8 @@ const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.k
 /* 📄 a slide whose Next is its assessment (Day 2's videos): Next opens that assessment alone, on a Knowledge Check page
    of its own (js/ft-process.js), whose button goes back to the deck, on to `back` (else the slide after this one) */
 const ASSESS_NEXT = {2: {
-  s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
+  // (the Common Terms video, then its reference sheet, then the assessment: the sheet comes before it)
+  s2r: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
   s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}},

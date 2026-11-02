@@ -595,8 +595,8 @@ s2: html => {
   if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
   out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<!--cut:al-->\n' + m);
   // the assessments are not on the slides: each video's Next opens its own, on a Knowledge Check page of its own
-  // (js/ft-day-decks.js ASSESS_NEXT), whose way back goes on: Common Terms video → its assessment → the reference sheet
-  // → the Auto Liability video → its assessment → the Assessments slide (s2b), which keeps the homework line and the
+  // (js/ft-day-decks.js ASSESS_NEXT), whose way back goes on: Common Terms video → the reference sheet → the Common Terms
+  // assessment → the Auto Liability video → its assessment → the Assessments slide (s2b), which keeps the homework line and the
   // readings (its upload and next-day checking lines go). ROWS[2].s2 cuts the three slides at <!--cut:ref--> and
   // <!--cut:al-->: the Common Terms video, the reference sheet, the Auto Liability video
   const doc = (label, id) => { const re = new RegExp(`<p>${label}</p>\\n<p><a class="viewer-link" data-kind="doc" data-title="AS YOUR HOMEWORK"(?=[^>]*${id})[^]*?</p>\\n`);
