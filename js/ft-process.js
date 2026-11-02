@@ -256,7 +256,7 @@ async function savePdf(lesson){
   if(saved.length){ queueSave(); checkFolder(true); toast(`✓ Saved to your Assessment and Activities Folder: ${saved.join(", ")}`); }
   if(failed.length){
     if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
-    toast(`${DRIVE_WHY[failed[0].error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
+    toast(`${DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
   }
   render();
 }
