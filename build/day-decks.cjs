@@ -1180,7 +1180,8 @@ const ROWS = {
           h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
           // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
-          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
+          // (Opening Claims drawn three recordings to a row, two rows: data-cols / data-rows, js/ft-day-decks.js fitFolders)
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-cols="3" data-rows="2" data-title="Opening Claims"'],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
           // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2)
           h => h.replace(/(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/,

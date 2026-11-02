@@ -321,7 +321,9 @@ function visual(html){
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       // 📁 a Drive folder (Day 10's VA call recordings): the slide's full width, Drive's grid laid out wide enough for a row
       // of seven files and scaled down to the box (fitCrops)
-      if(/\/folders\//.test(href) && !(crop > 0)){ box.querySelector(".ftdd-embed").classList.add("ftdd-embed-row"); box.classList.add("is-row"); }
+      if(/\/folders\//.test(href) && !(crop > 0)){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-row"); box.classList.add("is-row");
+        // (a folder drawn as a grid, data-cols files to a row and data-rows rows: Day 10's Opening Claims, three by two)
+        if(a.dataset.cols){ em.dataset.cols = a.dataset.cols; em.dataset.rows = a.dataset.rows || "1"; box.classList.add("is-grid"); } }
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
       if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
@@ -1038,7 +1040,15 @@ function fitCrops(sheet){
   // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
   // the box, and the box is one row of files tall. Folders side by side (Day 10's Opening Claims and Checking for Existing
   // Claims) share the widest one's scale, so their files are drawn the same size and the boxes the same height
-  const rows = [...sheet.querySelectorAll(".ftdd-embed-row")], [fw] = FOLDER_ROW;
+  const grids = [...sheet.querySelectorAll(".ftdd-embed-row[data-cols]")];
+  const rows = [...sheet.querySelectorAll(".ftdd-embed-row:not([data-cols])")], [fw] = FOLDER_ROW;
+  // (a grid: Drive's folder laid out just wide enough for data-cols files, data-rows rows tall, scaled to its box)
+  grids.forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth; if(!f || !w) return;
+    const gw = 65 + Number(em.dataset.cols) * 231 + 40, gh = FOLDER_ROW[1] + (Number(em.dataset.rows) - 1) * 235, k = Math.min(1, w / gw);
+    em.style.setProperty("height", Math.round(gh * k) + "px", "important");
+    Object.assign(f.style, {width: Math.round(w / k) + "px", height: gh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
+  });
   const top = em => Math.round(em.getBoundingClientRect().top), kOf = em => Math.min(1, em.clientWidth / fw);
   const shared = em => Math.max(...rows.filter(o => o.clientWidth && Math.abs(top(o) - top(em)) < 4).map(kOf), kOf(em));
   rows.forEach(em => {
@@ -1448,11 +1458,12 @@ const LESSON_CARDS = {
       // ROWS[10]) and the afternoon's videos; the day's deck closes on ✅ End of Part 1 (PART_END)
       {t: "Claims Specialist Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
       {t: "Sample SOP: Opening a 3P Claim & Sending the LOR", sub: "Before the call, the call, the LOR, sending it and following up", k: "read", d: 10, s: "sop"},
-      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
       {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
       {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
       {t: "Sample Recordings & Documents: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims · the sample documents", k: "listen", d: 10, s: "s1e"},
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
+      // (the breakout's digital handouts close Part 1, just before ✅ End of Part 1)
+      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", d: 10, run: "ftVideoOrAsk(7)"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
@@ -2572,7 +2583,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet a.ftdd-doctile small{font:700 12.5px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;}
 @media(max-width:900px){ .ft-body .ftdd-doctiles{grid-template-columns:repeat(2,minmax(0,1fr));} }
 /* (Day 10's two recording folders side by side, the first with its six recordings wider: one page with the documents) */
-.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
+.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
 .ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
 .ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
 /* (Day 10's Sample SOP, written on the deck: its steps in cards, four to a row, in bold; the questions in three columns) */
