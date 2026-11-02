@@ -266,10 +266,12 @@ const MON_PARTS = [
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
 ];
-// ⬇ the Monitoring Sheet's own file (its Drive download)
+// ⬇ the Monitoring Sheet's own file, on the platform (ft/monitoring/): the Word file downloads straight from here, with no
+// Google sign-in or Drive access asked, and the sheet is shown on the slide (its PDF copy) so the trainee sees what they get
+const MON_FILE = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.docx", MON_VIEW = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.pdf";
 function monGet(){
-  const d = window.FT_MONITOR_DOC, m = d && String(d.view || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/); if(!m) return "";
-  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a></div>`;
+  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet.docx">⬇ Download the Monitoring Sheet (Word)</a></div>
+    <div class="ftr-mon-view"><iframe src="${MON_VIEW}#view=FitH&toolbar=0" title="LSH VA Training Monitoring Sheet" loading="lazy"></iframe></div>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -600,6 +602,9 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-slide a.btn-ghost, .ft-body .ftr-slide a.btn-ghost{color:var(--navy);} .ftr-slide a.btn-ghost:hover{color:var(--navy);}
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
 .ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
+/* the Monitoring Sheet shown under its download (its PDF copy, the browser's own viewer) */
+.ftr-mon-view{margin:10px 0 0;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
+.ftr-mon-view iframe{display:block;width:100%;height:min(34vh,360px);border:0;}
 .ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
 .ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
