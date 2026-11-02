@@ -217,7 +217,7 @@ function candidateIds(name, batch) {
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo|intake)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
-const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup"];
+const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup", "unlockedDays"];
 
 /* ---------- 🚫 trainees whose access is closed (js/ft-batch-admin.js) ----------
    access:blocked = {ids: {"<trainee id>": {why: "offboarded" | "archived", name, batch, at}}}, admins only.

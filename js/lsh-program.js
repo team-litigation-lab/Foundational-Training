@@ -131,6 +131,8 @@ window.renderTopbar = function(){
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
     + btn("process", "✍️ Knowledge Check", processGo, adminOn() ? "Every trainee's answer sheets" : "Each module's answer sheet, graded out of 100")
     + pagesMenu()
+    // 🔓 Open Lessons, one click from every page for a trainer (a program that lists it: LSH_PROGRAM.adminTopOpenLessons)
+    + (adminOn() && CFG.adminTopOpenLessons ? btn("opendays", "🔓 Open Lessons", "state.adminTab='opendays'; goto('admin')", "Open a lesson for a batch, or for one trainee") : "")
     + (adminOn() ? (CFG.adminTopScorecards === false ? "" : btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard")) : state.traineeId && !state.isAdmin ? focusBtn() : "");   // 🎯 Focus: a signed-in trainee only, never an admin (nor an admin's 👁 Switch View)
   const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal — it holds the log out">🏠 Main Portal</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");

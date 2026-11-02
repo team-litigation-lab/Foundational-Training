@@ -45,7 +45,7 @@ function sopDraft(){ return SOP.draft || (SOP.draft = {id:"", title:"", area:SOP
    journey, what the trainee does, what the trainer does, and where (section → tab) on the Admin screen.
    A "go" link opens that tab. Update it here when a tab is renamed or moved. */
 const go = (tab, label) => `<a class="ops-go" onclick="setAdminTab('${tab}')">${label}</a>`;
-const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Unlock Segments", lab:"🛠 Practice Lab", sc:"🏅 Scorecard"};
+const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Open Lessons", lab:"🛠 Practice Lab", sc:"🏅 Scorecard"};
 const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
@@ -56,8 +56,8 @@ const MAP = [
    steps:[`Approve each new registration: ${SEC.adm} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
      `Fix the spelling of the name now: the certificate uses the registered name exactly.`]},
   {stage:"3 · Opening each segment", trainee:"Sees only the lessons a trainer has opened.",
-   steps:[`Open the day's segment before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
-     `Is one trainee behind or absent? Open days for that one trainee in Trainee Audit → View Detail → 🔓 Unlock days.`]},
+   steps:[`Open the day's lesson before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
+     `Is one trainee behind or absent? Open the lesson for that one trainee: ${go("opendays","📅 Open Lessons")} → 👤 Open for one trainee.`]},
   {stage:"4 · Live session", trainee:"Follows the slides, answers Quick Checks and handles random tasks.",
    steps:[`Teach from the lesson's 🖥 Presenter view, which shows the speaker notes slide by slide. The day plan is in ${go("sop","SOP Reference")}.`,
      `Keep to the order in ${go("curriculum","📘 Curriculum")}, so every trainer teaches the same way.`]},
@@ -88,7 +88,7 @@ const MAP = [
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
 const HELP = [
-  ["“I can’t see today’s lesson.”", `Check it is open in ${go("opendays","📅 Open Lessons")}, or unlock it for that trainee (Trainee Audit → View Detail).`],
+  ["“I can’t see today’s lesson.”", `Check it is open in ${go("opendays","📅 Open Lessons")}, or open it for that trainee only (📅 Open Lessons → 👤 Open for one trainee).`],
   ["“My registration is still pending.”", `Approve them in ${go("audit","Trainee Audit")}.`],
   ["“I’m out of attempts.”", `If it was a technical problem, use Trainee Audit → ↺ Reset Attempts. If not, coach them first.`],
   ["“My score didn’t update.”", `Click ↻ Refresh in ${go("scorecards","🏅 Scorecards")}. A Knowledge Check uses your final score once you have given one.`],
@@ -134,7 +134,7 @@ function renderAdminSOPs(){
   return `
     <div class="ops-hero">
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>📋 SOPs</h1>
-      <p>How trainers run this program and support each trainee, all in one place, so every trainer teaches, grades and follows up the same way. The <b>🧭 Trainer Assistance Map</b> below covers the whole platform. Under it are the procedures your trainers wrote. The minute-by-minute run-book for each session is in <b>🔓 Unlock Segments → 📘 Curriculum</b>. The rules trainees read are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
+      <p>How trainers run this program and support each trainee, all in one place, so every trainer teaches, grades and follows up the same way. The <b>🧭 Trainer Assistance Map</b> below covers the whole platform. Under it are the procedures your trainers wrote. The minute-by-minute run-book for each session is in <b>🔓 Open Lessons → 📘 Curriculum</b>. The rules trainees read are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
       ${SOP.err ? `<p class="ops-err">${e(SOP.err)}</p>` : ""}
       <div class="ops-row">
         <button class="btn btn-navy btn-sm" onclick="FTOps.sopNew()">＋ New SOP</button>

@@ -5937,18 +5937,18 @@ async function applyLabAttemptReset(rec){
   await setLabAttemptsByDay(rec.labAttemptsByDay && typeof rec.labAttemptsByDay==="object" ? rec.labAttemptsByDay : {});
   return !first;
 }
-// A trainer can open days for a trainee (Admin → Trainee Audit → 🔓 Unlock days), e.g. after an
+// A trainer can open lessons for one trainee (Admin → 📅 Open Lessons → 👤 Open for one trainee), e.g. after an
 // absence. The list lives on the trainee record as unlockedDays (the server keeps trainees from
 // changing it). Apply it as soon as this device sees a change, and redraw so the day opens.
 async function applyAdminUnlocks(rec){
   if(!rec) return;
-  const next = (Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number).filter(n=>n>1).sort((a,b)=>a-b);
+  const next = (Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number).filter(n=>n>=1).sort((a,b)=>a-b);
   const prev = state.adminUnlockedDays || [];
   if(JSON.stringify(next)===JSON.stringify(prev)) return;
   state.adminUnlockedDays = next;
   await storeSet("admin-unlocked-days", next);
   const added = next.filter(n=>!prev.includes(n));
-  if(added.length) toast(`🔓 Your trainer unlocked Day${added.length>1?"s":""} ${added.join(", ")} for you.`);
+  if(added.length) toast(`🔓 Your trainer opened ${added.map(n=>typeof ftName==="function"?ftName(n):"Lesson "+n).join(", ")} for you.`);
   state.labResetRenderPending = true;
   await renderLabResetIfSafe();
 }
@@ -8651,7 +8651,7 @@ async function submitLoginInner(){
         state.labAttemptsGlobal = 0;
       }
       state.labAttemptsByDay = (existing.labAttemptsByDay && typeof existing.labAttemptsByDay === "object") ? existing.labAttemptsByDay : {};
-      state.adminUnlockedDays = Array.isArray(existing.unlockedDays) ? existing.unlockedDays.map(Number).filter(n=>n>1) : [];
+      state.adminUnlockedDays = Array.isArray(existing.unlockedDays) ? existing.unlockedDays.map(Number).filter(n=>n>=1) : [];
       await storeSet("admin-unlocked-days", state.adminUnlockedDays);
       state.labAttemptsGlobal = labAttemptsTotal(state.labAttemptsByDay);
       await storeSet("lab-attempts-by-day", state.labAttemptsByDay);
@@ -18912,7 +18912,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.29-gemini"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.30-noprompt"></script>
+<script src="/js/ft-updates.js?v=ft-2026.11.02-open-lessons"></script>
 <script src="/js/ft-slides.js?v=ft-2026.10.29-endmod-nodays"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.11.01-day2-lfc"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
@@ -18954,7 +18954,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.30-fill-week"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-admin-ops.js?v=ft-2026.11.01-merge479"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.11.02-open-lessons"></script>
 <script src="/js/ft-batch-admin.js?v=ft-2026.10.30-batch-admin"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
@@ -18966,8 +18966,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-card-grid.js?v=ft-2026.10.30-color"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.30-contrast"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
-<script src="/js/ft-program.js?v=ft-2026.11.01-merge479"></script>
-<script src="/js/lsh-program.js?v=ft-2026.10.31-focus-trainee"></script>
+<script src="/js/ft-program.js?v=ft-2026.11.02-open-lessons"></script>
+<script src="/js/lsh-program.js?v=ft-2026.11.02-open-lessons"></script>
 <script src="/js/ft-my-pages.js?v=ft-2026.11.01-merge479"></script>
 <script src="/js/ft-day1-flow.js?v=ft-2026.10.30-no-segment-locks"></script>
 <script src="/js/ft-day-locks.js?v=ft-2026.10.30-contrast"></script>
