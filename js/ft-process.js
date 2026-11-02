@@ -251,12 +251,12 @@ async function savePdf(lesson){
     let j = {};
     try{ const r = await authFetch("/api/drive/save", {name, pdf: b64}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
     if(j.ok){ sameFile(set).forEach(st => { const x = sheet(st.id); assignedOn(st); x.drive = {at: new Date().toISOString(), link: (j.file || {}).link || ""}; }); saved.push(name); }
-    else { doc.save(name); failed.push({name, error: j.error || "drive"}); }
+    else { doc.save(name); failed.push({name, error: j.error || "drive", share: j.share || ""}); }
   }
   if(saved.length){ queueSave(); checkFolder(true); toast(`✓ Saved to your Assessment and Activities Folder: ${saved.join(", ")}`); }
   if(failed.length){
     if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
-    toast(`${DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
+    toast(`${failed[0].share ? `The platform can’t write to your folder yet: share your Assessment and Activities Folder with ${failed[0].share} as Editor, then save again.` : DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
   }
   render();
 }

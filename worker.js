@@ -1686,7 +1686,9 @@ export default {
         const magic = String.fromCharCode(...bytes.slice(0, 5));
         if (word ? magic.slice(0, 4) !== "PK\u0003\u0004" : magic !== "%PDF-") return json({ error: word ? "Not a Word file" : "Not a PDF" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
-        try { return json(await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "")); } catch (e) { return json({ error: "drive" }); }
+        // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
+        try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
+          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
