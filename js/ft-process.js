@@ -298,6 +298,11 @@ function queueSave(){
   clearTimeout(FP.timer); FP.saving = true; paintSave();
   FP.timer = setTimeout(async ()=>{ const ok = await sharedSet("process:"+FP.id, FP.data); FP.saving = false; FP.savedAt = ok === false ? null : new Date(); paintSave(ok); }, 1000);
 }
+// (a platform update reloads the page: an answer typed in the last second is saved first, not left on the timer)
+(window.LSH_FLUSH_BEFORE_UPDATE = window.LSH_FLUSH_BEFORE_UPDATE || []).push(async () => {
+  if(!FP.timer || !FP.saving || !state.traineeId || !FP.data) return;
+  clearTimeout(FP.timer); FP.timer = null; await sharedSet("process:" + FP.id, FP.data); FP.saving = false;
+});
 function paintSave(ok){ const el = document.getElementById("fpSave"); if(el) el.textContent = FP.saving ? "Saving…" : (ok===false ? "⚠ Not saved. Check your connection." : (FP.savedAt ? "All changes saved" : "")); }
 const answered = (set, x) => set.questions.filter((q,i)=>has(((x||{}).answers||[])[i])).length;
 function statusOf(set, x){
