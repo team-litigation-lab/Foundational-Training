@@ -246,7 +246,7 @@ function candidateIds(name, batch) {
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo|intake)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
-const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup", "unlockedDays"];
+const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup", "unlockedDays", "batchMovedBy"];
 
 /* ---------- 🚫 trainees whose access is closed (js/ft-batch-admin.js) ----------
    access:blocked = {ids: {"<trainee id>": {why: "offboarded" | "archived", name, batch, at}}}, admins only.
@@ -327,6 +327,8 @@ async function traineeWrite(env, tok, key, value) {
     // Trainees keep their own record current, but can never change approval, attempts resets, etc.
     const merged = Object.assign({}, incoming);
     PROTECTED_TRAINEE_FIELDS.forEach((f) => { if (existing && f in existing) merged[f] = existing[f]; else delete merged[f]; });
+    // 📋 a trainer moved them to another batch (js/ft-batch-sheet.js, ✏️ Fix the batch name): that batch stays, whatever an open tab still holds
+    if (existing && existing.batchMovedBy === "trainer" && existing.batch) { merged.batch = existing.batch; merged.batchFrom = existing.batchFrom; merged.batchMovedAt = existing.batchMovedAt; }
     if (!existing) { merged.approved = false; merged.registeredAt = new Date().toISOString(); }
     merged.id = id;
     await kv.put(key, JSON.stringify(merged)); return null;

@@ -19,7 +19,8 @@
 if(typeof window.ftAdminTab !== "function") return;
 const TAB = "batchsheet";
 const e = v => esc(String(v == null ? "" : v));
-const B = {people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", sel: null, recent: 14};
+const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", sel: null, recent: 14, fix: null};
+const canon = v => typeof canonicalBatch === "function" ? canonicalBatch(v) : "";
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const lessons = () => (typeof DAYS !== "undefined" && Array.isArray(DAYS) ? DAYS : []);
 const lessonName = id => typeof ftName === "function" ? ftName(id) : "Lesson " + id;
@@ -41,6 +42,9 @@ async function loadPeople(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
+    // trainees the tidy-up archived on its own (js/ft-admin-tidy.js), not a trainer: offered back with ↩ Bring them back
+    B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
+      .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
     B.people = list.filter(r => r && r.id && !r.archived && !r.rejected && !r.purgedAt && (r.batch || r.registeredAt))
       .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", lastActive: r.lastActive || "",
         progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
@@ -53,7 +57,7 @@ async function loadPeople(){
   }catch(err){ B.people = []; }
   B.loading = false; rerender();
 }
-const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).filter(Boolean))].sort();
+const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).concat((B.auto || []).map(p => p.batch)).filter(Boolean))].sort();
 const people = () => (B.people || []).filter(p => bLabel(p.batch) === B.batch);
 
 /* ---------- what the platform already keeps about each of them ---------- */
@@ -198,6 +202,22 @@ function sheetHtml(T, ti){
       <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">${T.id === "recent" ? "Nothing yet in this period." : "No trainee in this batch yet."}</td></tr>` : ""}</tbody></table></div></section>`;
 }
+/* ---------- ✏️ Fix the batch name: a manual override for trainees registered under the wrong batch ----------
+   The trainer ticks the trainees (all of the batch by default) and types the right Batch ID; each one's trainee:<id> gets
+   batch = that ID, batchFrom (the old one), batchMovedAt and batchMovedBy: "trainer". worker.js keeps that batch on every
+   save the trainee makes afterwards (an open tab can't write the old one back), and index.html takes it on their next save. */
+function fixHtml(ppl){
+  const F = B.fix; if(!F) return "";
+  const others = batches().filter(b => b !== B.batch);
+  return `<div class="bs-fix"><h4>✏️ Fix the batch name</h4>
+    <p>Trainees registered under the wrong batch? Tick them, type the right Batch ID and press <b>Move them</b>. Their progress moves with them.</p>
+    <div class="bs-fix-list">${ppl.map(p => `<label><input type="checkbox" ${F.skip[p.id] ? "" : "checked"} onchange="FTBatchSheet.fixPick('${e(p.id)}', this.checked)"> ${e(p.name)}</label>`).join("")}</div>
+    <div class="bs-fix-row"><label>Move them to batch <input id="bsFixTo" list="bsFixList" value="${e(F.to)}" placeholder="e.g. B103026" oninput="FTBatchSheet.fixTo(this.value)" autocomplete="off"></label>
+      <datalist id="bsFixList">${others.map(b => `<option value="${e(b)}">`).join("")}</datalist>
+      <button class="btn btn-navy btn-sm" ${F.busy ? "disabled" : ""} onclick="FTBatchSheet.fixSave()">${F.busy ? "Moving…" : "Move them"}</button>
+      <button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fixClose()">Cancel</button></div>
+    ${F.err ? `<p class="bs-fix-err">${e(F.err)}</p>` : ""}</div>`;
+}
 function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
@@ -208,11 +228,14 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button></span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button></span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum"><span><b>${ppl.length}</b> registered</span><span><b>${approved}</b> approved</span>${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-trainees" onclick="return FTBatchSheet.go('trainees')">👥 Trainees</a> · <a href="#bs-lessons" onclick="return FTBatchSheet.go('lessons')">📚 Lessons</a> · <a href="#bs-scores" onclick="return FTBatchSheet.go('scores')">🏅 Scores</a> · <a href="#bs-recent" onclick="return FTBatchSheet.go('recent')">🕒 Recent progress</a></span>
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
+    ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
+    ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
+    ${fixHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : T.map((x, i) => i === 3 ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
@@ -223,6 +246,48 @@ window.FTBatchSheet = {
   batch(b){ B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   period(v){ B.recent = Number(v) || 0; render(); },
+  // ↩ the batch's trainees the tidy-up archived on its own come back to the active list; the batch is marked restored in
+  // settings:autoarchive (done), so the tidy-up doesn't archive it again — as 📁 Batch Folders → ↩ Restore batch does
+  async bringBack(){
+    if(B.backBusy) return;
+    const back = (B.auto || []).filter(p => p.batch === B.batch); if(!back.length) return;
+    B.backBusy = true; render();
+    let n = 0;
+    for(const p of back){
+      try{ const rec = await sharedGet("trainee:" + p.id); if(!rec || !rec.archived) continue;
+        const next = Object.assign({}, rec, {archived: false, restoredAt: new Date().toISOString()}); delete next.archivedAt; delete next.autoArchived;
+        if(await sharedSet("trainee:" + p.id, next) !== false) n++; }catch(err){ /* the next trainee */ }
+    }
+    try{ const k = "settings:autoarchive", cur = (await sharedGet(k)) || {}; cur.done = Object.assign({}, cur.done || {}, {[B.batch]: cur.done && cur.done[B.batch] || new Date().toISOString()}); cur.updatedAt = new Date().toISOString(); await sharedSet(k, cur); }catch(err){}
+    B.backBusy = false;
+    toast(`✓ ${n} trainee${n === 1 ? " is" : "s are"} back in ${B.batch}.`);
+    if(typeof state === "object") state.adminData = null;
+    B.people = null; B.data = null; B.dataKey = ""; render();
+  },
+  fixOpen(){ B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
+  fixClose(){ B.fix = null; render(); },
+  fixPick(id, on){ if(B.fix) B.fix.skip[id] = !on; },
+  fixTo(v){ if(B.fix) B.fix.to = v; },
+  async fixSave(){
+    const F = B.fix; if(!F || F.busy) return;
+    const to = canon(F.to), ids = people().filter(p => !F.skip[p.id]).map(p => p.id), from = B.batch;
+    if(!to){ F.err = "That isn't a Batch ID: B and the date the batch started (MMDDYY), e.g. B103026."; render(); return; }
+    if(to === from){ F.err = "They are already in that batch."; render(); return; }
+    if(!ids.length){ F.err = "Tick at least one trainee."; render(); return; }
+    F.busy = true; F.err = ""; render();
+    let moved = 0; const at = new Date().toISOString();
+    for(const id of ids){
+      try{
+        const rec = await sharedGet("trainee:" + id); if(!rec) continue;
+        const next = Object.assign({}, rec, {batch: to, batchFrom: rec.batch || from, batchMovedAt: at, batchMovedBy: "trainer"});
+        if(await sharedSet("trainee:" + id, next) !== false) moved++;
+      }catch(err){ /* the next trainee */ }
+    }
+    B.fix = null;
+    toast(moved === ids.length ? `✓ Moved ${moved} trainee${moved === 1 ? "" : "s"} to ${to}.` : `Moved ${moved} of ${ids.length}. Press ✏️ Fix the batch name again for the rest.`);
+    if(typeof state === "object") state.adminData = null;
+    B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
+  },
   open(){ state.adminTab = TAB; goto("admin"); },
   go(id){ const el = document.getElementById("bs-" + id); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); return false; },
   pick(td){
@@ -275,6 +340,13 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-txt{min-width:260px;max-width:520px;}
 .bs-none{color:#5F6368;font-style:italic;text-align:left !important;}
 .bs-how{font-size:13.5px;}
+.bs-back button{margin-left:8px;}
+.bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
+.bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
+.bs-fix-list{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;} .bs-fix-list label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+.bs-fix-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;} .bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
+.bs-fix-err{color:#C5221F;margin:8px 0 0 !important;}
 @media print{ .bs-card .gs-menu,.bs-card .gs-fbar,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
 `; document.head.appendChild(s); })();
 })();

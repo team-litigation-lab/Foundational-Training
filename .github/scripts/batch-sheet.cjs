@@ -97,11 +97,41 @@ const failures = []; const fail = m => failures.push(m);
   for (const h of ['"Trainees"', '"Lessons"', '"Scores"', '"Recent progress"', 'Waiting for approval']) if (!csv.includes(h)) fail(`the download has no ${h}`);
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: true });
 
+  // ✏️ Fix the batch name: Dee registered under a mistyped batch ("B03101"); the trainer moves her into the right one
+  // (registration refuses a batch like that; one reaches the platform from elsewhere, e.g. the Portal's ticket: put here as it is kept)
+  const dee = 'dee-glitch--b03101';
+  await put('trainee:' + dee, { id: dee, name: 'Dee Glitch', firstName: 'Dee', lastName: 'Glitch', batch: 'B03101', approved: true, registeredAt: iso(now - 864e5), lastActive: iso(now - 3600e3), dayProgress: {} });
+  if ((await get('trainee:' + dee)).batch !== 'B03101') fail('the test could not register a trainee under a mistyped batch');
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; FTBatchSheet.refresh(); });
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => FTBatchSheet.batch('B03101')); await page.waitForTimeout(1500);
+  if (!(await page.$('.bs-warn'))) fail('a batch name that isn\'t a Batch ID gets no warning');
+  await page.evaluate(() => FTBatchSheet.fixOpen()); await page.waitForTimeout(200);
+  if ((await page.$$('.bs-fix-list input:checked')).length !== 1) fail('✏️ Fix the batch name doesn\'t tick the batch\'s trainees');
+  await page.fill('#bsFixTo', 'not a batch'); await page.evaluate(() => FTBatchSheet.fixSave()); await page.waitForTimeout(300);
+  if (!(await page.$('.bs-fix-err'))) fail('a wrong Batch ID is not refused');
+  if ((await get('trainee:' + dee)).batch !== 'B03101') fail('a refused move still moved the trainee');
+  await page.fill('#bsFixTo', BATCH.toLowerCase()); await page.evaluate(() => FTBatchSheet.fixSave());
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
+  const moved = await get('trainee:' + dee);
+  if (moved.batch !== BATCH || moved.batchFrom !== 'B03101' || moved.batchMovedBy !== 'trainer') fail(`the move: ${JSON.stringify({ batch: moved.batch, from: moved.batchFrom, by: moved.batchMovedBy })}`);
+  // (the tidy-up took B03101 for the newest batch and archived this one: the sheet offers them back)
+  if (await page.$('.bs-back')) { await page.evaluate(() => FTBatchSheet.bringBack()); await page.waitForTimeout(400);
+    await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800); }
+  if (await page.$('.bs-back')) fail('↩ Bring them back left trainees archived');
+  const after = await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'trainees').rows.map(r => r[0].v));
+  if (await page.evaluate(() => document.querySelector('.gs-batch select').value) !== BATCH || !after.some(n => /Dee/.test(n)) || after.length !== 4) fail(`after the move the sheet shows ${after}`);
+  // her open tab still holds the old batch: its next save keeps the trainer's batch
+  await page.evaluate(async id => { state.isAdmin = false; state.traineeId = id; state.traineeBatch = 'B03101'; await syncToLedger(); }, dee);
+  await page.waitForTimeout(500);
+  if ((await get('trainee:' + dee)).batch !== BATCH) fail('the trainee\'s open tab wrote the old batch back');
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
+
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in four tables; lessons, scores and recent progress from what the platform keeps; wide; one download).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in four tables; lessons, scores and recent progress from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back).');
 })().catch(e => { console.error(e); process.exit(1); });
