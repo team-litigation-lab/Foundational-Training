@@ -1498,7 +1498,7 @@ const LESSON_CARDS = {
       {t: "Gentle Reminders", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1g"},
       {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
       {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · scored by your trainer", k: "demo", d: 15, s: "s1b"},
-      {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 15, s: "s2"},
+      // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},

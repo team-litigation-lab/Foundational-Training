@@ -57,7 +57,6 @@ const DAYS = [
   {day:1, role:"VA Essentials", lessons:[1], items:[
     {t:"Setting of Expectations (8:00–9:00 AM)", kind:"Discussion", at:"room"},
     {t:"Typing & Spelling Activity (8:00–8:10 AM): the tests set up and named", kind:"Skill test", at:"tool", id:"skills"},
-    {t:"Shadowing activities, added to the Hubstaff To-Do", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Client Identification Exercise", kind:"Exercise", at:"gc"}
@@ -132,7 +131,6 @@ const DAYS = [
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"🎧 Call Listening on the insurance communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
-    {t:"Shadowing: Insurance Communication Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Claim and Liability Evaluation: Assessment Activities 1 & 2", kind:"Assessment", at:"drive"},
     {t:"Policy Disclosure activity (the Dec Page for each claim)", kind:"Activity", at:"gc"},
     {t:"LOR Drafting Activity: the 1P and 3P letters", kind:"Activity", at:"tool", id:"lor"}
@@ -152,7 +150,6 @@ const DAYS = [
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Drafting: the MedLOR with Unsworn COR and the client’s signed HIPAA, merged into one PDF (practice before the demo)", kind:"Activity", at:"tool", id:"medlor"},
     {t:"🏷 Naming & Reporting Drill: MedLOR (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
@@ -161,12 +158,10 @@ const DAYS = [
   ]},
   {day:15, role:"Provider Communication Training", lessons:[8], items:[
     {t:"Recorded Demonstration — Sending MedLOR and Requesting Medical Bills & Records (entire day)", kind:"Demo", at:"trainer", id:"medlor-demo"},
-    {t:"Shadowing Session (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:16, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: The Lien Balance Verification request (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Drafting: the Lien Balance Verification request letter (practice before the demo)", kind:"Activity", at:"tool", id:"lienbv"},
     {t:"🏷 Naming & Reporting Drill: Lien Balance Verification (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
