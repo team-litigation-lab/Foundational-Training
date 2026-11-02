@@ -1998,12 +1998,7 @@ function mapOpen(){
    (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Ring Channel's (its tests' pictures). */
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
-  {ic: "🎓", name: "LSH Training Directory", short: "Training Directory", img: "training-directory", href: "https://cm-training-activity.pages.dev/programs.html", where: "🏠 Main Portal → 🎓 Training Directory (where you log in once)",
-    what: "Every LSH training program in one place: you log in once there, then open your program and the training tools from it, already signed in.",
-    feats: ["Your programs, with each one’s access: ✅ Approved opens with Enter Program →",
-      "🛠 Simulators, 📚 Knowledge Base, ☎ LSH Ring Channel and 🗂 the Case Management System, one click each from the top",
-      "Request access to another program when your trainer tells you to",
-      "Blueprint and My Evaluations in its top bar"]},
+  // (no 🎓 LSH Training Directory tab: taken off Know Your Tools)
   {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",
