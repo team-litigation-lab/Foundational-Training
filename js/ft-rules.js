@@ -119,7 +119,7 @@ const TESTS = [
 ];
 
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
-// The trainer's list, word for word: Virtual Assistant Essentials - Day 2 through the Allesa shadowing To-Do (16 in all).
+// The trainer's list, word for word: Virtual Assistant Essentials - Day 2 through Provider Communication Training Day 4 (15 in all).
 const TODOS = [
   "Classroom Discussion: Virtual Assistant Essentials - Day 2",
   "Classroom Discussion: Reception Training Day 1",
@@ -135,8 +135,7 @@ const TODOS = [
   "Classroom Discussion: Provider Communication Training Day 1",
   "Classroom Discussion: Provider Communication Training Day 2",
   "Classroom Discussion: Provider Communication Training Day 3",
-  "Classroom Discussion: Provider Communication Training Day 4",
-  "Shadowing Provider Communication Role (Allesa)"
+  "Classroom Discussion: Provider Communication Training Day 4"
 ];
 // Day 0 → Onboarding Orientation: LSH VA Guide | "Create a to-do" task list.
 const TODO_GUIDE = "https://docs.google.com/spreadsheets/d/1Yfeuw9xGb2H68qF9nHf94whXVKmoL1PP8QocP_FN1Ys/edit#gid=0";
@@ -305,7 +304,7 @@ const SLIDES = [
   ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>`<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
     <div class="ftr-remind"><b>🛡 A reminder: Integrity is a must.</b>
       <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, don’t access or open sites that aren’t related to your training while you’re tracking, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
-  // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 16 To-Dos to copy)
+  // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 15 To-Dos to copy)
   // on the left, the Hubstaff picture big on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
     // each row is the whole To-Do as the trainer writes it ("To-Do: Classroom Discussion: …"), and 📋 Copy / Copy All
@@ -700,7 +699,7 @@ body.ft-orient #lessonSlideWrap .ftr-cam > .ftr-part{min-height:27vh;}
 /* a step's own lettered list (a. b. c. …) */
 body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol{list-style:lower-alpha;margin:4px 0 0;padding-left:26px;}
 body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol li{margin:2px 0;}
-/* the 16 To-Dos stay smaller, one line each */
+/* the 15 To-Dos stay smaller, one line each */
 body.ft-orient #lessonSlideWrap .ftr-todo-parts .ftr-todo-tx{font-size:14.5px !important;line-height:1.3 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ftr-lesson b, .ftr-part-h, .ftr-chan-h){font-size:21px !important;}
 /* the content takes the sheet's whole width (no narrow column in the middle of it) */

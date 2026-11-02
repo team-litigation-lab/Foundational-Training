@@ -1522,7 +1522,8 @@ const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.k
 /* 📄 a slide whose Next is its assessment (Day 2's videos): Next opens that assessment alone, on a Knowledge Check page
    of its own (js/ft-process.js), whose button goes back to the deck, on to `back` (else the slide after this one) */
 const ASSESS_NEXT = {2: {
-  s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
+  // (the Common Terms video, then its reference sheet, then the assessment: the sheet comes before it)
+  s2r: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
   s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}},
@@ -1752,10 +1753,12 @@ function standardRows(n, c, lid, first, title, rows){
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
   const out = [...lead, ...mid, ...body, ...pqRows, ...tail];
-  // ✍️ Process Questions come straight after the Classroom Discussion (the last ▶ lesson stop), ahead of the Digital Handouts
-  // and the day's other activities
+  // ✍️ Process Questions come straight after the Classroom Discussion (the last ▶ lesson stop) and its Digital Handouts,
+  // ahead of the day's other activities: the handouts come before the Knowledge Check
   const pq = out.findIndex(r => /toKC\(/.test(String(r.run || ""))), cd = out.map(r => r.go === "lesson").lastIndexOf(true);
   if(pq > cd + 1 && cd >= 0) out.splice(cd + 1, 0, ...out.splice(pq, 1));
+  const kc = out.findIndex(r => /toKC\(/.test(String(r.run || ""))), ho = out.findIndex(r => /ftVideoOrAsk/.test(String(r.run || "")));
+  if(kc >= 0 && ho > kc) out.splice(kc, 0, ...out.splice(ho, 1));
   return out;
 }
 // Lesson 1's ▶ Start Training (on its Dashboard card and on Day 1's card) goes to the Reading Task first, the way Know
