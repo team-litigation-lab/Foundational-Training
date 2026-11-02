@@ -362,7 +362,11 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // before the module is finished, only its open sets (Day 1's Reading Task) can be answered; they're graded with the rest
   const studied = moduleStudied(lesson), qs = studied ? all : all.filter(x => x.set.open);
   const title = ftName(lesson), sets = [...new Set(qs.map(x => x.set))];
-  if(!qs.length) return lockedCard(title);
+  // (a module not finished yet: its locked note, and still its Submit — not yet pressable — and each sheet's naming convention)
+  if(!qs.length){ const seen = new Set(), files = [...new Set(all.map(x => x.set))].filter(st => !seen.has(st.file) && seen.add(st.file));
+    return lockedCard(title).replace(/<\/div>$/, `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" disabled title="Opens when you finish this module">📝 Submit for Grading</button></div></div>
+      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(st))}</code></p>`).join("")}
+      <button class="btn btn-ghost btn-sm" type="button" disabled title="Opens when you finish this module">📄 Save PDF to my Folder</button></div>`); }
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
   const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
@@ -372,12 +376,15 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
-        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
+        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>`
+          // (before the module is finished: the open sheet — Day 1's Reading Task — is submitted on its own; it is graded with the module's others later)
+          : sets.map(st => { const sub = (FP.data.sets[st.id] || {}).submittedAt;
+              return `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.submitOpen('${st.id}')">${sub ? "🔁 Submit again" : "📝 Submit"} · ${e(st.title)}</button>${sub ? `<span class="fp-st st-done">✓ Submitted ${e(new Date(sub).toLocaleDateString())}</span>` : ""}`; }).join("")}
         ${after || ""}
       </div>
-      ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
+      ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Submit these answers now and 📄 Save PDF to my Folder under the naming convention below; they are graded with the module's other questions then.</p>`}
     </div></div>
-    ${studied ? pdfBox(lesson, sets.length > 1 && new Set(sets.map(st => st.file)).size > 1 ? shownSheet(sets) : null) : ""}
+    ${pdfBox(lesson, sets.length > 1 && new Set(sets.map(st => st.file)).size > 1 ? shownSheet(sets) : null)}
     ${kcSave(qs)}`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
@@ -495,6 +502,16 @@ window.FTProcess = {
     if(n < set.questions.length && !confirm(`You’ve answered ${n} of ${set.questions.length} questions. Submit anyway?`)) return;
     x.submittedAt = new Date().toISOString(); queueSave();
     toast(`✓ ${set.title} Process Questions submitted.`); render();
+  },
+  // 📝 Submit on an open sheet before its module is finished (Day 1's Reading Task): every answer in complete sentences, then
+  // the sheet is marked submitted (the trainer sees it); it is graded with the module's Knowledge Check once the module is finished
+  submitOpen(sid){
+    if(!isTraineeHere()){ toast("👁 Trainee view — a trainee submits their own answers."); return; }
+    const set = PROCESS_SETS.find(s=>s.id===sid); if(!set) return;
+    const x = sheet(sid), short = set.questions.map((q,i)=>i).filter(i=>String((x.answers||[])[i] || "").trim().split(/\s+/).filter(Boolean).length < 5).map(i=>"Q"+(i+1));
+    if(short.length){ toast(`Answer every question in complete sentences first (${short.join(", ")}).`); return; }
+    x.submittedAt = new Date().toISOString(); queueSave();
+    toast(`✓ ${set.title} submitted. Now 📄 Save PDF to my Folder, named ${fileName(set)}.`); render();
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   savePdf, submitWorksheet,
