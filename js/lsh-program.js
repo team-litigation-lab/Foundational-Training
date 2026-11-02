@@ -428,7 +428,9 @@ function groupTabs(out){
 }
 const __admin = window.renderAdmin;
 window.renderAdmin = function(){
-  const tab = `<button class="admin-tab-btn ${state.adminTab === "scorecards" ? "active" : ""}" onclick="setAdminTab('scorecards')">🏅 Scorecards</button>`;
+  // a program can fold the 🏅 Scorecards tab into a page of its own (LSH_PROGRAM.adminScorecardsTab: the tab to open instead)
+  if(CFG.adminScorecardsTab && state.adminTab === "scorecards") state.adminTab = CFG.adminScorecardsTab;
+  const tab = CFG.adminScorecardsTab ? "" : `<button class="admin-tab-btn ${state.adminTab === "scorecards" ? "active" : ""}" onclick="setAdminTab('scorecards')">🏅 Scorecards</button>`;
   if(state.isAdmin && state.adminTab === "scorecards"){
     state.adminTab = "opendays";                   // borrow the tab bar…
     const out = __admin.apply(this, arguments);
@@ -443,7 +445,7 @@ window.renderAdmin = function(){
 
 window.lshProgram = {
   compute, section, mine:() => compute(mineCtx()),
-  scorecard(){ if(adminOn()){ state.adminTab = "scorecards"; goto("admin"); } else goto("scorecard"); },
+  scorecard(){ if(adminOn()){ state.adminTab = CFG.adminScorecardsTab || "scorecards"; goto("admin"); } else goto("scorecard"); },
   batch(b){ AS.batch = b; render(); },
   refresh(){ AS.rows = null; AS.fresh = true; render(); },
   toggle(id){ AS.open[id] = !AS.open[id]; render(); }

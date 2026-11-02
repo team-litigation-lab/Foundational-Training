@@ -49,11 +49,11 @@ const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Open Lessons", lab:"🛠
 const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
-     `Set the certificate signatories once: ${SEC.adm} → ${go("audit","Trainee Audit")}.`,
+     `Set the certificate signatories once: ${SEC.sc} → ${go("audit","Trainee Audit")}.`,
      `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${SEC.sc} → ${go("batches","📁 Batch Folders")}.`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
-   steps:[`Approve each new registration: ${SEC.adm} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
+   steps:[`Approve each new registration: ${SEC.sc} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
      `Fix the spelling of the name now: the certificate uses the registered name exactly.`]},
   {stage:"3 · Opening each segment", trainee:"Sees only the lessons a trainer has opened.",
    steps:[`Open the day's lesson before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
@@ -74,12 +74,12 @@ const MAP = [
    steps:[`Check them every day: ${SEC.seg} → ${go("trackers","📋 Task Trackers")}, ${go("monitor","📒 Monitoring Sheets")} and ${go("drivetrackers","📁 Drive Trackers")}.`,
      `Typing and spelling compliance: ${SEC.sc} → ${go("skilltests","🧪 Typing & Spelling")}.`]},
   {stage:"8 · Feedback, the same day", trainee:"Sees only the feedback a trainer has sent.",
-   steps:[`Write and send the Day-by-Day Feedback: ${go("audit","Trainee Audit")} → View Detail → ✍ Write feedback → Send to trainee.`,
+   steps:[`Write and send the Day-by-Day Feedback: ${SEC.sc} → ${go("audit","Trainee Audit")} → View Detail → ✍ Write feedback → Send to trainee.`,
      `Score transcriptions, video notes, process guides and letters in ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")}. Write it in the house voice set in ${go("fbstyle","🗣 Feedback Style")}.`,
      `Give one clear next step as a 🎯 Focus item. The trainee works on it and you see when they have acted on it.`]},
   {stage:"9 · Weekly review", trainee:"Gets their weekly average and rank.",
    steps:[`Build and share the week's results in ${SEC.sc} → ${go("ranking","📊 Weekly Ranking")}.`,
-     `See every grade in one table in ${go("scorecards","🏅 Scorecards")}. It shows the current batch only. Coach anyone in the red before the next week.`,
+     `See every grade in one table in ${go("batchsheet","📋 Batch Sheet")} → 🏅 Scores. Coach anyone in the red before the next week.`,
      `Read what trainees say about the program in ${SEC.sc} → ${go("tfeedback","💬 Trainee Feedback")} and adjust the next sessions.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
    steps:[`Check names and the trainer on the certificate in Trainee Audit → View Detail → Certificate details.`,
@@ -89,9 +89,9 @@ const MAP = [
 ];
 const HELP = [
   ["“I can’t see today’s lesson.”", `Check it is open in ${go("opendays","📅 Open Lessons")}, or open it for that trainee only (📅 Open Lessons → 👤 Open for one trainee).`],
-  ["“My registration is still pending.”", `Approve them in ${go("audit","Trainee Audit")}.`],
+  ["“My registration is still pending.”", `Approve them in ${SEC.sc} → ${go("audit","Trainee Audit")}.`],
   ["“I’m out of attempts.”", `If it was a technical problem, use Trainee Audit → ↺ Reset Attempts. If not, coach them first.`],
-  ["“My score didn’t update.”", `Click ↻ Refresh in ${go("scorecards","🏅 Scorecards")}. A Knowledge Check uses your final score once you have given one.`],
+  ["“My score didn’t update.”", `Click ↻ Refresh in ${go("batchsheet","📋 Batch Sheet")}. A Knowledge Check uses your final score once you have given one.`],
   ["“I don’t know what to work on.”", `Add a 🎯 Focus item in Trainee Audit → View Detail.`],
   ["“Something looks wrong on my screen.”", `Use 👁 Switch View to see their view, then compare.`]
 ];

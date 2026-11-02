@@ -53,24 +53,37 @@ const failures = []; const fail = m => failures.push(m);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
   // 📁 Batch Folders and 💬 Trainee Feedback sit in 🏅 Scorecard now (no longer in 🛡 Admin Master Control), and the feedback stays
+  if (!/Trainee Audit/.test(row.join(' '))) fail(`🏅 Scorecard has no Trainee Audit: ${row.join(' | ')}`);
+  if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
   if (!/Batch Folders/.test(row.join(' ')) || !/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 📁 Batch Folders / 💬 Trainee Feedback: ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
   await page.evaluate(() => { state.adminTab = 'tfeedback'; state.tfbAdmin = null; render(); }); await page.waitForTimeout(1500);
   const fbText = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/Kept after the move/.test(fbText)) fail('💬 Trainee Feedback no longer shows the saved feedback');
+  // one place for feedback, with a batch filter
+  await page.evaluate(b => { state.tfbFilter = { batch: b }; render(); }, BATCH); await page.waitForTimeout(400);
+  if (!/Kept after the move/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('💬 Trainee Feedback\'s batch filter hides the batch\'s feedback');
+  await page.evaluate(() => { state.tfbFilter = { batch: 'B999999' }; render(); }); await page.waitForTimeout(400);
+  if (/Kept after the move/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('💬 Trainee Feedback\'s batch filter shows another batch\'s feedback');
+  await page.evaluate(() => { state.tfbFilter = {}; render(); });
+  // 📁 Batch Folders: Registry and Rankings only (its Feedback and Activities are 💬 Trainee Feedback and the Batch Sheet)
+  await page.evaluate(b => { state.adminTab = 'batches'; render(); if (typeof openBatchFolder === 'function') openBatchFolder(b.toLowerCase ? b : b, 'feedback'); }, BATCH); await page.waitForTimeout(800);
+  const bft = await page.evaluate(() => [...document.querySelectorAll('.bf-tabs button')].map(x => x.innerText.trim()).join(' | '));
+  if (bft && (/Feedback|Activities/.test(bft) || !/Registry/.test(bft))) fail(`📁 Batch Folders' tabs: ${bft}`);
+  await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); }); await page.waitForTimeout(400);
   const secOn = await page.evaluate(() => (document.querySelector('.lp-admin-sec.active') || {}).innerText || '');
   if (!/Scorecard/.test(secOn)) fail(`💬 Trainee Feedback opens under "${secOn}", not 🏅 Scorecard`);
-  await page.evaluate(() => { state.adminTab = 'audit'; render(); }); await page.waitForTimeout(400);
+  await page.evaluate(() => { state.adminTab = 'attendance'; render(); }); await page.waitForTimeout(1200);
   const adm = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
-  if (/Batch Folders|Trainee Feedback/.test(adm)) fail(`🛡 Admin Master Control still lists them: ${adm}`);
+  if (/Trainee Audit|Batch Folders|Trainee Feedback/.test(adm)) fail(`🛡 Admin Master Control still lists them: ${adm}`);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(400);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec')).length !== 7) fail('the seven tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec')).length !== 8) fail('the eight tables are not all on the one page');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -93,7 +106,9 @@ const failures = []; const fail = m => failures.push(m);
 
   // 📅 Day by Day: a column per training day; Ada's Day 1 has the Knowledge Check ticked by itself; a trainer ticks a classroom activity
   const dd = by('days');
-  if (dd.head.length !== 2 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[2] !== 'Day 1') fail(`📅 Day by Day's columns: ${dd.head.slice(0, 4)}`);
+  if (dd.head.length !== 6 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[6] !== 'Day 1' || JSON.stringify(dd.head.slice(2, 6)) !== JSON.stringify(['✍️ Knowledge Checks', '🛠 Practice', '🎙 Mock Calls & Demos', '🏫 Classroom & outputs'])) fail(`📅 Day by Day's columns: ${dd.head.slice(0, 7)}`);
+  const adaKinds = dd.rows.find(r => /Ada/.test(r[0]));
+  if (!adaKinds || !/^1 \/ \d+$/.test(adaKinds[2]) || !/^0 \/ \d+$/.test(adaKinds[4])) fail(`Ada's Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(2, 6)}`);
   const autoKC = await page.evaluate(() => { const d1 = FTDays.of(1), it = d1.items.find(i => i.at === 'tool' && i.id === 'process'); return it ? it.t : ''; });
   if (autoKC && !(await page.evaluate(t => [...document.querySelectorAll('.bs-day')][0].innerText.includes(t), autoKC))) fail('Day 1\'s checklist misses its Knowledge Check');
   if (autoKC && !(await page.evaluate(t => { const l = [...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item'); const x = [...l].find(n => n.innerText.includes(t)); return x && x.querySelector('input').checked && /auto/.test(x.innerText); }, autoKC))) fail('Ada\'s passed Day 1 Knowledge Check is not ticked by itself');
@@ -104,7 +119,7 @@ const failures = []; const fail = m => failures.push(m);
   await box.evaluate(b => b.click()); await page.waitForTimeout(1500);   // (the page redraws on the tick)
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
-  const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[2].v;
+  const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[6].v;
   if (!/^[2-9]\d*\//.test(d1.replace('✓ ', ''))) fail(`Ada's Day 1 count doesn't include the ticks: ${d1}`);
 
   // 🛠 Practice Lab: Ada practised in a tool (82%) and took a typing test; Ben hasn't practised
@@ -118,7 +133,9 @@ const failures = []; const fail = m => failures.push(m);
 
   // 🏅 the Scorecard's grading systems, Overall and Rank
   const sh = by('scores').head;
-  if (sh[sh.length - 2] !== 'Overall' || sh[sh.length - 1] !== 'Rank' || sh.length < 5) fail(`🏅 Scores' columns: ${sh}`);
+  if (sh[sh.length - 2] !== 'Overall %' || sh[sh.length - 1] !== 'Rank' || !sh.includes('Daily compliance') || !sh.includes('Weeks average (/5)') || !sh.includes('Scorecard overall')) fail(`🏅 Scores' columns: ${sh}`);
+  // 🔎 a trainee's grades in detail (what 🏅 Scorecards showed): Ada's Knowledge Check 90%
+  if (!(await page.evaluate(() => /Grades in detail/.test(document.getElementById('bs-scores').innerText)))) fail('🏅 Scores has no grades in detail');
 
   // 🕒 Recent progress: newest first, every kind
   const rc = by('recent').rows, kinds = rc.map(r => r[2]);
@@ -221,5 +238,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in seven tables; their three Drive links, linked and readable; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in eight tables; their three Drive links, linked and readable; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -42,7 +42,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(2500);
   if (!(await page.$('.rk'))) fail('Admin has no 📊 Weekly Ranking tab');
   const tabs = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
-  if (!/Scorecards/.test(tabs) || !/Weekly Ranking/.test(tabs)) fail(`📊 Weekly Ranking is not beside 🏅 Scorecards: ${tabs}`);
+  if (!/Batch Sheet/.test(tabs) || !/Weekly Ranking/.test(tabs)) fail(`📊 Weekly Ranking is not in 🏅 Scorecard beside the 📋 Batch Sheet: ${tabs}`);
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
   if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
@@ -189,17 +189,23 @@ const failures = []; const fail = m => failures.push(m);
   if ((((await get('rankshare:' + una)) || {}).weeks || {})[`${PAST}|1`]) fail('a draft was shared before the trainer approved it');
   await page.evaluate(() => FTRanking.approve()); await page.waitForTimeout(1200);
   if (!((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto.approved) fail('✓ Approve didn\'t approve the draft');
-  // 📈 Overall Performance: Una's daily compliance, Week 1's average and the overall, on the Google-Sheets-like sheet
-  await page.evaluate(b => { FTOverall.open(); FTOverall.refresh(); }, PAST); await page.waitForTimeout(1500);
-  await page.evaluate(b => FTOverall.batch(b), PAST); await page.waitForTimeout(2500);
-  const ov = await page.evaluate(() => { const s = FTOverall.sheet(); return s && { head: s.head, row: (s.rows[0] || []).map(c => c.v) }; });
-  if (!ov || ov.row[0] !== 'Una Auto' || ov.row[1] !== '70%' || ov.row[2] !== 2 || !ov.head.includes('Week 1 average (/5)') || ov.row[ov.head.indexOf('Week 1 average (/5)')] !== '3.50' || ov.row[ov.head.length - 1] !== 1)
-    fail(`📈 Overall Performance reads: ${JSON.stringify(ov)}`);
-  await page.click('.gs td.gs-num >> nth=0'); await page.waitForTimeout(200);
-  if (!/AVERAGE\(the 2 days' compliance\) = 70%/.test(await page.inputValue('#gsBar'))) fail(`the bar doesn't say where the daily compliance comes from: ${await page.inputValue('#gsBar')}`);
-  if (!(await page.$('.gs-letters')) || (await page.$$('.gs-tabs button')).length !== 8) fail('the sheet has no column letters or its tabs (Overall, Daily Compliance, Week 1–6)');
+  // 📈 what Overall Performance showed is on the 📋 Batch Sheet now: Una's daily compliance, Week 1's average, the Overall % and the rank
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; goto('admin'); FTBatchSheet.refresh(); }); await page.waitForTimeout(1500);
+  await page.evaluate(b => FTBatchSheet.batch(b), PAST);
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the Batch Sheet never finished loading'));
+  await page.waitForTimeout(500);
+  const ov = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'scores'); const r = t.rows.find(x => /Una/.test(x[0].v)); return { head: t.head, row: r && r.map(c => c.v) }; });
+  const col = h => ov.head.indexOf(h);
+  if (!ov.row || ov.row[col('Daily compliance')] !== '70%' || ov.row[col('Weeks average (/5)')] !== '3.50' || !/%$/.test(ov.row[col('Overall %')]) || String(ov.row[col('Rank')]) !== '1')
+    fail(`📋 Batch Sheet → 🏅 Scores reads: ${JSON.stringify(ov)}`);
+  const out = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'outputs'); const r = t.rows.find(x => /Una/.test(x[0].v)); return r && r.map(c => c.v); });
+  if (!out || out[1] !== '70%' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
+  const tabsNow = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
+  if (/Overall Performance|🏅 Scorecards/.test(tabsNow)) fail(`📈 Overall Performance / 🏅 Scorecards still have tabs: ${tabsNow}`);
+  await page.evaluate(() => { state.adminTab = 'overall'; render(); }); await page.waitForTimeout(300);
+  if (await page.evaluate(() => state.adminTab) !== 'batchsheet') fail('an old link to 📈 Overall Performance does not open the Batch Sheet');
   await page.evaluate(() => goto('dashboard')); await page.waitForTimeout(1000);
-  if (!(await page.$('.gs-dash'))) fail('a trainer\'s dashboard has no 📈 Overall Performance card');
+  if (!(await page.$('.gs-dash'))) fail('a trainer\'s dashboard has no 📋 Batch Sheet card');
   await put(`ranking:${PAST}:w1`, null); await put('trackerreview:' + una, null); await put('rankshare:' + una, null);
   { const r = await get('trainee:' + una); if (r) { r.archived = true; await put('trainee:' + una, r); } }
 
@@ -208,5 +214,5 @@ const failures = []; const fail = m => failures.push(m);
   for (const id of Object.values(ids)) { const r = await get('trainee:' + id); if (r) { r.archived = true; await put('trainee:' + id, r); } }
   await browser.close();
   if (failures.length) { console.error('Weekly Ranking test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Weekly Ranking test passed (a week that is over drafts its report, with the Daily Compliance, and is shared only once approved; 📈 Overall Performance with each trainee\'s compliance, weeks and rank, the formula bar and its sheet tabs, and its card on a trainer\'s dashboard; the tab beside 🏅 Scorecards; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; 📤 each trainee gets only their own row; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
+  console.log('Weekly Ranking test passed (a week that is over drafts its report, with the Daily Compliance, and is shared only once approved; 📋 the Batch Sheet with each trainee\'s compliance, weeks, Overall % and rank (📈 Overall Performance folded in), and its card on a trainer\'s dashboard; the tab in 🏅 Scorecard beside the 📋 Batch Sheet; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; 📤 each trainee gets only their own row; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
 })().catch(e => { console.error(e); process.exit(1); });
