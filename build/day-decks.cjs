@@ -647,7 +647,8 @@ s4: html => {
   return out.replace(pin, "").replace(soft, (m, video) => `<div class="ftdd-soft ftdd-keep">\n` + video + `<div class="ftdd-soft-side">\n` +
       `<p><b>Action: Log your takeaways on your</b> <a class="btn btn-navy ftdd-mon-btn" href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a></p>\n` +
       "<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n</div>\n</div>\n")
-    .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
+    // (its "Update items #8–9" line is the 📒 card with 📤 Submit at the slide's lower right instead: js/ft-buffer.js ACTS["2:s4"])
+    .replace(mon, "");
 }}};
 // 🎧 Reception Listening Activity, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
 // Harbor & Pine Injury Law, each with a challenge on the line (road noise, a line that breaks up and drops, a Spanish-speaking

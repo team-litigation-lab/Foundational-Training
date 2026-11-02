@@ -765,22 +765,24 @@ function facilitatorVoice(saved) {
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
 // (one token per scope: reading is drive.readonly; 💾 Save to Drive writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
 const SA_TOKENS = {};
-async function driveToken(env, write) {
+// (self: the drive scope as the service account itself, never as GDRIVE_SA_SUBJECT: for sharing a folder with that user)
+async function driveToken(env, write, self) {
   const scope = write ? "https://www.googleapis.com/auth/drive" : "https://www.googleapis.com/auth/drive.readonly";
-  const SA_TOKEN = SA_TOKENS[scope] || { token: "", exp: 0 };
+  const asSub = !!(write && !self && env.GDRIVE_SA_SUBJECT), slot = scope + (asSub ? "|sub" : "");
+  const SA_TOKEN = SA_TOKENS[slot] || { token: "", exp: 0 };
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
   const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
   const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
   const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const now = Math.floor(Date.now() / 1000);
-  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, write && env.GDRIVE_SA_SUBJECT ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
+  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
   const j = await res.json().catch(() => ({}));
   if (!res.ok || !j.access_token) throw new Error("drive-auth");
-  SA_TOKENS[scope] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
+  SA_TOKENS[slot] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
   return j.access_token;
 }
 async function fetchGoogle(url, env) {
@@ -821,10 +823,26 @@ async function folderFiles(env, folderUrl) {
    personal My Drive also needs GDRIVE_SA_SUBJECT (a Workspace user the account acts as, by domain-wide delegation), since
    a service account has no storage of its own to own a new file in. */
 const folderId = u => (String(u || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+/* Trainees share their folder with the service account (GDRIVE_SA_EMAIL), the account every read uses. A save writes as
+   GDRIVE_SA_SUBJECT when it is set (a file the service account made itself would need storage it doesn't have), and that
+   user isn't on the trainee's folder: the write came back "no-access" for every trainee. So on "no-access", the service
+   account (an Editor of the folder) adds GDRIVE_SA_SUBJECT to the folder as an Editor, without an email, and the save
+   runs again: once per folder, after that the user is on it. */
 async function saveToFolder(env, folderUrl, name, bytes, mime) {
   const fid = folderId(folderUrl);
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return { error: "no-sa" };
+  const first = await saveToFolderOnce(env, fid, name, bytes, mime);
+  if (first.error !== "no-access" || !env.GDRIVE_SA_SUBJECT) return first;
+  try {
+    const auth = { Authorization: "Bearer " + await driveToken(env, true, true) };
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}/permissions?sendNotificationEmail=false&supportsAllDrives=true`, { method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, auth), body: JSON.stringify({ role: "writer", type: "user", emailAddress: env.GDRIVE_SA_SUBJECT }) });
+    if (!res.ok) return first;
+  } catch (e) { return first; }
+  return saveToFolderOnce(env, fid, name, bytes, mime);
+}
+async function saveToFolderOnce(env, fid, name, bytes, mime) {
   let token;
   try { token = await driveToken(env, true); } catch (e) { return { error: "drive-auth" }; }
   const auth = { Authorization: "Bearer " + token }, PDF = mime || "application/pdf";
@@ -948,7 +966,7 @@ async function checkDrive(env, id, D, o = {}) {
     }
     if (!res.na) {
       const prev = cur.days[D] || {};
-      cur.days[D] = Object.assign({}, res, { source: "drive", review: review || prev.review || "", checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+      cur.days[D] = Object.assign({}, res, { source: "drive", url: String(drive.tracker).slice(0, 500), review: review || prev.review || "", checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
       out.tracker = cur.days[D].pct;
     }
   }
@@ -969,7 +987,7 @@ async function checkDrive(env, id, D, o = {}) {
         } catch (e) { review = ""; }
       }
     } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The Monitoring Sheet link must be a Google Docs or Google Sheets link."; }
-    cur.monitor = Object.assign({}, g || { pct: 0, found: 0, total: 0, entries: [] }, { error, review: review || (error ? "" : prev.review || ""), checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+    cur.monitor = Object.assign({}, g || { pct: 0, found: 0, total: 0, entries: [] }, { error, url: String(drive.monitor).slice(0, 500), review: review || (error ? "" : prev.review || ""), checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
     out.monitor = cur.monitor.pct;
   }
   cur.updatedAt = at;
@@ -992,7 +1010,8 @@ async function checkShots(env, id) {
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
   // a folder that can't be read this time keeps the screenshots already found
-  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, checkedAt: new Date().toISOString() }) : { files, checkedAt: new Date().toISOString(), error: "" };
+  // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
+  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString() }) : { files, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString(), error: "" };
   await kv.put(rk, JSON.stringify(cur));
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
 }

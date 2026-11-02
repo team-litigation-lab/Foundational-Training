@@ -256,7 +256,7 @@ async function savePdf(lesson){
   if(saved.length){ queueSave(); checkFolder(true); toast(`✓ Saved to your Assessment and Activities Folder: ${saved.join(", ")}`); }
   if(failed.length){
     if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
-    toast(`${DRIVE_WHY[failed[0].error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
+    toast(`${DRIVE_WHY[failed[0].error] || `Couldn’t save to Google Drive (${String(failed[0].error).slice(0, 80)}).`} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
   }
   render();
 }
@@ -392,7 +392,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
-        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>`
+        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">${best != null ? `🔁 Retake: Submit for Grading · best ${best}%` : "📝 Submit for Grading"}</button>`
           // (before the module is finished: the open sheet — Day 1's Reading Task — is submitted on its own; it is graded with the module's others later)
           : sets.map(st => { const sub = (FP.data.sets[st.id] || {}).submittedAt;
               return `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.submitOpen('${st.id}')">${sub ? "🔁 Submit again" : "📝 Submit"} · ${e(st.title)}</button>${sub ? `<span class="fp-st st-done">✓ Submitted ${e(new Date(sub).toLocaleDateString())}</span>` : ""}`; }).join("")}
@@ -430,7 +430,10 @@ const ASSESSMENTS = {2: [
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
-  const xs = (ASSESSMENTS[lesson] || []).filter(x => !(back && back.assess && Number(back.l) === Number(lesson)) || x.id === back.assess); if(!xs.length) return "";
+  // (not on the lesson's Knowledge Check page itself: each assessment is a stop of its own on the deck, its video's Next,
+  // and on the 🗺 Map; the card shows only the one a slide's own link opened)
+  if(!(back && back.assess && Number(back.l) === Number(lesson))) return "";
+  const xs = (ASSESSMENTS[lesson] || []).filter(x => x.id === back.assess); if(!xs.length) return "";
   // (one answered on the platform, js/ft-assess.js: a button to its own page, FTProcess.openAssess)
   const here = x => window.FTAssess && FTAssess.has(x.id);
   return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">${xs.every(here) ? "Answer each on its own page, then 📝 Submit for Grading" : "Answer each in its document, then upload it to your Assessments/Activities subfolder"}</span></div>
@@ -691,6 +694,9 @@ window.render = function(){
    record like EA/PA's Knowledge Check scores). Lessons without process questions finish as before. */
 const KC_PASS = 70;
 const KC = {grading:false, shown:{}};
+// the answers a grading was given, as one string: grading the very same answers again only makes a new attempt whose score
+// can differ (a trainee pressing Submit for Grading again after 📄 Save PDF to my Folder saw their score change), so it isn't run
+const kcSig = qs => qs.map(x => String((sheet(x.set.id).answers || [])[x.i] || "").trim().replace(/\s+/g, " ")).join("\u241E");
 /* The trainer's review of a Knowledge Check: kcreview:<id> = {lessons: {<lesson id>: {score (0–100 or null), comment,
    notes: {"<set id>|<question>": comment}, at, by}}}. Admins write it (Admin → ✍️ Process Questions); the trainee reads it.
    A trainer's score is the lesson's final Knowledge Check score: it replaces the graded best (higher or lower), and a
@@ -818,6 +824,11 @@ window.FTKc = {
     if(shortQs.length){
       const bySet = [...new Set(shortQs.map(x=>x.set))].map(st => `${st.title}: ${shortQs.filter(x=>x.set===st).map(x=>"Q"+(x.i+1)).join(", ")}`);
       toast(`Answer every question in complete sentences (5 words or more) before you submit. Still to answer: ${bySet.join(" · ")}.`, 9000); return; }
+    // (the same answers as the last graded attempt: its result stands, no new attempt)
+    const sig = kcSig(qs), last = (kcRec(id) || {}).last;
+    if(last && last.sig === sig){
+      KC.shown[id] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
+      toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands. Change an answer to grade it again.`, 8000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
     const prompt = `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
@@ -845,7 +856,7 @@ Return ONLY a JSON object, no other text:
         return {sid:x.set.id, i:x.i, score:Math.max(0, Math.min(10, Math.round(Number(it.score)||0))), feedback:String(it.feedback||"").slice(0, 900)}; });
       if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
       const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
-      const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna"};
+      const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna", sig};
       FP.data.kc = FP.data.kc || {};
       const rec = FP.data.kc[id] = FP.data.kc[id] || {attempts:0, best:0, last:null};
       rec.attempts++; rec.best = Math.max(rec.best||0, pct); rec.last = r;

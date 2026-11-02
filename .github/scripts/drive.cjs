@@ -24,8 +24,15 @@ const failures = []; const fail = (m) => failures.push(m);
     let shared = true, folderGone = false;
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
+    let subShared = false;   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
+        // (GDRIVE_SA_SUBJECT's token: the trainee shared their folder with the service account only, so that user can't see it
+        // until the service account adds them, POST …/permissions)
+        const bearer = String((init.headers || {}).Authorization || '');
+        if (/\/files\/abcFolderId01\/permissions/.test(u)) { if (bearer !== 'Bearer ci-token') return new Response('{}', { status: 403 });
+            const pm = JSON.parse(init.body); subShared = pm.role === 'writer' && pm.emailAddress === env.GDRIVE_SA_SUBJECT; return new Response(JSON.stringify({ id: 'perm1' })); }
+        if (bearer === 'Bearer sub-token' && !subShared && /googleapis\.com\/(upload\/)?drive\/v3\/files/.test(u)) return new Response('{"error":{"code":404}}', { status: 404 });
         if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
             if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
             const body = init.body && init.body.text ? await init.body.text() : String(init.body || ''); uploads.push({ url: u, method: init.method, body });
@@ -44,7 +51,9 @@ const failures = []; const fail = (m) => failures.push(m);
             'Virtual Assistant Essentials - Day 1\nDate: 10/01/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney with case tasks.\n2. Federal courts hear cases between parties in different states.\n3. Solo attorneys gain the most from a VA handling intake.\n4. Clear written updates build the client’s trust.\n5. Deadlines are tracked in the firm’s calendar every day.\n3 Questions That You Still Have\n1. How are court deadlines counted?\nRate Your Understanding\n[x] I am confident that I can do this on my own.\n');
         if (u.startsWith('https://drive.google.com/embeddedfolderview?id=abcFolderId01')) return new Response('<div class="flip-entries"><div class="flip-entry" id="entry-f1"><a href="https://docs.google.com/document/d/f1/edit"><div class="flip-entry-title">PI Overview_Answers (Dee)</div><div class="flip-entry-last-modified"><div>Oct 26</div></div></a></div><div class="flip-entry" id="entry-sub1"><a href="https://drive.google.com/drive/folders/sub1"><div class="flip-entry-title">Week 1</div></a></div></div>');
         if (u.startsWith('https://drive.google.com/embeddedfolderview?id=sub1')) return new Response('<div class="flip-entry" id="entry-f2"><a href="https://drive.google.com/file/d/f2/view"><div class="flip-entry-title">Typing Test 10.26.26AM</div><div class="flip-entry-last-modified"><div>10:41 AM</div></div></a></div>');
-        if (u === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'ci-token' }));
+        if (u === 'https://oauth2.googleapis.com/token') { const jwt = decodeURIComponent(String(init.body || '').split('assertion=')[1] || '');
+            const claims = JSON.parse(Buffer.from((jwt.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString() || '{}');
+            return new Response(JSON.stringify({ access_token: claims.sub ? 'sub-token' : 'ci-token' })); }
         if (u.startsWith('https://www.googleapis.com/drive/v3/files?')) {
             const parent = decodeURIComponent(u).match(/'([^']+)' in parents/)[1];
             const files = parent === 'abcFolderId01' ? [{ id: 'sub1', name: 'Week 1', mimeType: 'application/vnd.google-apps.folder' }, { id: 'f1', name: 'PI Overview_Answers (Dee)', mimeType: 'application/vnd.google-apps.document', createdTime: '2026-10-26T15:00:00Z', webViewLink: 'https://docs.google.com/document/d/f1/edit' }]
@@ -113,6 +122,12 @@ const failures = []; const fail = (m) => failures.push(m);
     const s3 = await call('/api/drive/save', doc, trainee);
     if (!s3.body || s3.body.error !== 'quota') fail(`a folder the account can't create files in should say so: ${JSON.stringify(s3.body)}`);
     saveError = null;
+    // saving as GDRIVE_SA_SUBJECT, a user the trainee never shared the folder with: the service account (an Editor of the
+    // folder) adds that user to it, then the save goes through
+    env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
+    const n0 = uploads.length, s6 = await call('/api/drive/save', doc, trainee);
+    if (!s6.body || !s6.body.ok || !subShared || uploads.length !== n0 + 1) fail(`a save as GDRIVE_SA_SUBJECT on a folder shared only with the service account should add that user and save: ${JSON.stringify(s6.body)} (added: ${subShared})`);
+    delete env.GDRIVE_SA_SUBJECT;
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
     const s4 = await call('/api/drive/save', doc, trainee);
     if (!s4.body || s4.body.error !== 'no-sa') fail(`without the service account, saving should say it isn't set up: ${JSON.stringify(s4.body)}`);
