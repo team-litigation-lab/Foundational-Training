@@ -171,6 +171,18 @@ async function workerChecks() {
     if ([...await page.$$eval('.batch-folder', xs => xs.map(x => x.innerText))].some(t => /B103026/.test(t))) fail('the cleared batch is still in Batch Folders');
     if (!/Saved to Google Drive \(1\)[\s\S]*B103026[\s\S]*3 VAs/.test(shelf)) fail('the batch isn\'t under ☁ Saved to Google Drive');
     if (!/B090126/.test(shelf)) fail('the other batch left Batch Folders');
+    // 🗑 Delete the batch (in the 📦 Archive dialog): a wrong Batch ID typed back deletes nothing; the right one removes every
+    // VA's records and their trainee record, with no Drive backup
+    await page.evaluate(() => confirmArchiveBatch('B090126')); await page.waitForTimeout(400);
+    if (!(await page.$('.fba-ov [data-del]'))) fail('📦 Archive has no 🗑 Delete the batch');
+    page.once('dialog', d => d.accept('B000000'));
+    await page.click('.fba-ov [data-del]'); await page.waitForTimeout(800);
+    if (!(await get('trainee:old-one--b090126'))) fail('a wrong Batch ID deleted the batch');
+    page.once('dialog', d => d.accept('B090126'));
+    await page.click('.fba-ov [data-del]');
+    await page.waitForFunction(() => !document.querySelector('.fba-ov'), null, { timeout: 20000 }).catch(() => {});
+    if (await get('trainee:old-one--b090126')) fail('🗑 Delete the batch left the VA\'s trainee record');
+    if (await get('progress:old-one--b090126')) fail('🗑 Delete the batch left the VA\'s records');
   } catch (err) { fail(`threw: ${err.stack || err}`); }
   await browser.close();
   if (failures.length) { console.log('✗ ' + failures.join('\n✗ ')); process.exit(1); }

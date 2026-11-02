@@ -255,7 +255,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (pins.length !== 2 || !/Setting of Training Expectations/.test(pins[0]) || pins[1] !== 'Know Your Tools') fail(`the pinned cards are ${JSON.stringify(pins)}`);
   await page.click('.ftkt-card .module-start-btn'); await page.waitForTimeout(1200);
   const kt = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-dtitle') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
-  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 8) fail(`the Know Your Tools card didn't open its page with eight tools: ${JSON.stringify(kt)}`);
+  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 7) fail(`the Know Your Tools card didn't open its page with seven tools (no Training Directory): ${JSON.stringify(kt)}`);
   const TOOLS_N = kt.tabs;
   for (let t = 0; t < TOOLS_N; t++) {
     await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);

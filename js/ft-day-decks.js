@@ -824,8 +824,6 @@ function renderDeck(){
   const sheetKey = tr && root.FTMetrics && FTMetrics.open ? ((/class="ftms-launch" data-ms="([^"]+)"/.exec(cards) || [])[1] || "") : "";
   return `<div class="ftdd-stage${DD.split ? " ftdd-stage-split" : ""}">
     <div class="ftdd-mid">${back}
-      ${tr && DD.railOff ? `<div class="ftdd-rail-open-row"><button type="button" class="btn btn-sm ftdd-rail-open" onclick="FTDayDecks.rail()" title="Show the trainer panel: segment locks, notes, slide edits">🧑‍🏫 Trainer panel${nNotes ? ` · 📝 ${nNotes}` : ""}</button>
-        ${nNotes ? `<button type="button" class="btn btn-sm ftdd-rail-open ftdd-rail-notes${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 Notes</button>` : ""}</div>` : ""}
       ${nNotes ? `<div class="ftdd-notes${notesL ? " ftdd-notes-l" : ""}" id="ftddNotes" role="complementary" aria-label="Facilitator notes" ${DD.notes ? "" : "hidden"}>
         <div class="ftdd-notes-h"><b>🧑‍🏫 Facilitator notes</b><span>Only you see these. They aren’t on the trainees’ slide.</span>
           <button type="button" class="ftdd-notes-x" title="Close the notes (Esc)" onclick="FTDayDecks.notes()">✕</button></div>
@@ -841,12 +839,10 @@ function renderDeck(){
           : `<button type="button" class="btn ftdd-next ft-endmod" onclick="goto('modules')" title="The end of today's deck: back to the 📚 Dashboard">✅ End of Module</button>`)}
       </div>
     </div>
-    <aside class="ftdd-rail ftdd-rail-r">${tr && DD.railOff ? "" : `
-      ${tr ? `<button type="button" class="ftdd-rail-hide" onclick="FTDayDecks.rail()" title="Hide the trainer panel: the slide takes the full width, as the trainees see it">Hide panel ⇥</button>` : ""}
-      ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}
-      ${nNotes ? `<p class="ftdd-rail-h">🧑‍🏫 Facilitator notes</p>
-        <button type="button" class="btn btn-ghost btn-sm ftdd-ctl ftdd-notes-btn${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 ${DD.notes ? "Hide" : "Show"} the notes for this slide (${nNotes})</button>` : ""}
-      `}
+    <aside class="ftdd-rail ftdd-rail-r">${tr ? "" : `
+      ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}`}
+    <!-- (no trainer side panel: its Hide panel, segment locks and facilitator notes are gone from the deck, which a
+         trainer sees full width and scaled as the trainees do) -->
     </aside>
   </div>`;
 }
@@ -1998,12 +1994,7 @@ function mapOpen(){
    (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Ring Channel's (its tests' pictures). */
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
-  {ic: "🎓", name: "LSH Training Directory", short: "Training Directory", img: "training-directory", href: "https://cm-training-activity.pages.dev/programs.html", where: "🏠 Main Portal → 🎓 Training Directory (where you log in once)",
-    what: "Every LSH training program in one place: you log in once there, then open your program and the training tools from it, already signed in.",
-    feats: ["Your programs, with each one’s access: ✅ Approved opens with Enter Program →",
-      "🛠 Simulators, 📚 Knowledge Base, ☎ LSH Ring Channel and 🗂 the Case Management System, one click each from the top",
-      "Request access to another program when your trainer tells you to",
-      "Blueprint and My Evaluations in its top bar"]},
+  // (no 🎓 LSH Training Directory tab: taken off Know Your Tools)
   {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",

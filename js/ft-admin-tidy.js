@@ -1,10 +1,12 @@
 /* ============================================================
    🛡 Admin screen tidy-up (loaded last):
-     • Only the current batch stays active. When a newer batch has approved trainees, each older active
-       batch is archived automatically, once. A batch a trainer restores (📁 Batch Folders → ↩ Restore
-       batch) is not archived again. settings:autoarchive = {done:{<batch>:<ISO date>}}.
-       The current batch is the active one that started last: a Batch ID is B + MMDDYY, else the latest
-       registration in it. Archiving deletes nothing: the records stay in the 📦 Archive shelf.
+     • An older batch is archived automatically, once, when a newer batch has approved trainees — but only once
+       it is no longer recent: a batch with a registration in the last RECENT_DAYS days (a trainee who just
+       registered, in any batch) is a recent batch and stays active until a trainer archives it. A batch a
+       trainer restores (📁 Batch Folders → ↩ Restore batch) is not archived again.
+       settings:autoarchive = {done:{<batch>:<ISO date>}}. The current batch is the active one that started last: a
+       Batch ID is B + MMDDYY, else the latest registration in it. Archiving deletes nothing: the records stay in
+       the 📦 Archive shelf. (Standard Foundational Training only: this file is this program's.)
      • No 🎲 Tasks button in the top bar (taken off for trainees and in 👁 Switch View).
      • The Admin screen sits on a solid panel with darker, bolder text, so it reads over the background photo.
    ============================================================ */
@@ -15,7 +17,17 @@ const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId
 const keyOf = r => typeof batchKey === "function" ? batchKey(r) : (r.batch || "");
 const startOf = b => { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(String(b || "")); return m ? Date.UTC(2000 + Number(m[3]), Number(m[1]) - 1, Number(m[2])) : 0; };
 let running = false;
+const RECENT_DAYS = 30;   // (the 18-day programme with room to spare: a batch registered within it is still training)
 
+// a recent batch archived by this rule before it knew recent batches (not by a trainer: autoArchived) comes back active
+async function restoreRecent(){
+  if(!adminOn() || !Array.isArray(state.adminData)) return 0;
+  const recent = Date.now() - RECENT_DAYS * 864e5, latest = {};
+  state.adminData.forEach(r => { if(!r || r.rejected) return; const k = keyOf(r), t = Date.parse(r.registeredAt || "") || 0; if(k) latest[k] = Math.max(latest[k] || 0, t); });
+  const back = state.adminData.filter(r => r && r.archived && r.autoArchived && !r.rejected && !r.offboarded && !r.purgedAt && latest[keyOf(r)] > recent);
+  for(const r of back){ r.archived = false; delete r.archivedAt; delete r.autoArchived; await sharedSet("trainee:" + r.id, r); }
+  return back.length;
+}
 async function autoArchive(){
   if(running || !adminOn() || !Array.isArray(state.adminData)) return;
   const live = state.adminData.filter(r => r && r.approved === true && !r.archived && !r.rejected && keyOf(r) && (typeof NO_BATCH === "undefined" || keyOf(r) !== NO_BATCH));
@@ -27,7 +39,8 @@ async function autoArchive(){
   try{
     const rec = (await sharedGet(KEY).catch(() => null)) || {};
     const done = rec.done || {};
-    const old = order.slice(1).filter(b => !done[b]);
+    const recent = Date.now() - RECENT_DAYS * 864e5;
+    const old = order.slice(1).filter(b => !done[b] && !(batches[b] > recent));
     if(!old.length) return;
     const at = new Date().toISOString();
     for(const b of old){
@@ -35,7 +48,7 @@ async function autoArchive(){
       done[b] = at;
     }
     await sharedSet(KEY, {done, current:order[0], updatedAt:at});
-    if(typeof toast === "function") toast(`Only the current batch (${order[0]}) is kept active: ${old.join(", ")} moved to the 📦 Archive shelf.`);
+    if(typeof toast === "function") toast(`${old.join(", ")}: no registration in ${RECENT_DAYS} days, moved to the 📦 Archive shelf (the current batch is ${order[0]}).`);
     if(state.view === "admin") render();
   }catch(err){ /* best effort: tried again on the next load */ }
   finally{ running = false; }
@@ -43,6 +56,8 @@ async function autoArchive(){
 const __ledger = window.loadAdminLedger;
 if(typeof __ledger === "function") window.loadAdminLedger = async function(){
   await __ledger.apply(this, arguments);
+  const n = await restoreRecent().catch(() => 0);
+  if(n){ if(typeof toast === "function") toast(`${n} trainee${n === 1 ? "" : "s"} of a recent batch back on the active list (archived automatically before).`); if(state.view === "admin") render(); }
   autoArchive();
 };
 
