@@ -85,7 +85,7 @@ A grading system's score is the average of its graded items; the overall score i
 
 **📋 The day's Hubstaff To-Do** (`js/ft-todo.js`, `#/shadowing`): each day's exact To-Do text, with 📋 Copy. Shadowing is off the training: no day has a shadowing To-Do, session or log (the log's code stays in `js/ft-todo.js` with no shadowing days, `SHADOW = {}`).
 - **The To-Do:** each day's exact text in the guide's wording (`To-Do: Classroom Discussion: Intake Training Day 1`), with 📋 Copy — today's in the Practice Lab, and any of the 18 days on the page.
-- **The trainer** (Admin → 🛠 Practice Lab → 📋 Hubstaff To-Do): any change to a day's To-Do wording and a note for the day.
+- **The trainer:** no Admin tab (taken off in Nov 2026); the To-Do lines are the guide's wording.
 
 **🎧 Call Listening Log** (`js/ft-listening.js`, `#/listening`, a 🎧 Call Listening section in 🛠 Practice Lab, and the Call Listening step on Days 3, 7, 11 and 13): the guide's Call Listening sessions — the ten sample reception recordings, then the intake, insurance communication and provider communication recordings. Trainees listened and nothing was recorded; now each recording gets a short log: who called, what they wanted, how the VA handled it step by step, one phrase worth reusing in the VA's own words, and what the trainee would do differently.
 - **Checked for completeness, never for a right answer:** a recording counts as logged once all five lines are filled in (each has its own minimum length), and the card says what is still missing. Only the next recording to log is open; the rest stay collapsed.
@@ -374,6 +374,10 @@ What this course still does for attendance:
   their own key, so a room signing in at once never overwrites one another; the same values are in the
   key's KV metadata for the portal; kept 40 days. The portal's page shows it marked "auto" until a
   trainer sets a Time In.
+- **✍ Manual override** (Admin → 🛡 Admin Master Control → 🕘 Attendance, `js/ft-attendance.js`): a trainer can
+  set a trainee's Time In for a day by hand, or clear it back to the automatic one. The Worker's
+  `/api/attendance/time-in` (`setTimeIn`) writes it into the day's `attendance:` record below, so it shows on the
+  portal's page and in the Google Sheet too; it is marked ✍ Manual on the tab.
 - **The records live in this course's KV**, under the Worker's `ft:` prefix: `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for
   no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut,
   status, note, at, by}}}`. The portal reads and writes them directly, and keeps the attendance

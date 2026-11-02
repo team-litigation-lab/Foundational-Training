@@ -51,7 +51,7 @@ window.LSH_PROGRAM = {
     admin: ["audit", "batches", "attendance", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
-    lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
+    lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
     scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
   },
   sources: [
