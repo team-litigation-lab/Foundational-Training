@@ -25,7 +25,8 @@ const DAYS = () => (window.FTDays && FTDays.DAYS) || [];
 
 // the guide's shadowing sessions: the day, and the role as its To-Do names it
 // (Day 7 has no shadowing session: its Scheduled Shadowing and Maria's intake shadowing videos are off the training)
-const SHADOW = {11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication"};
+// (none now: shadowing is off the training, so no day has a shadowing To-Do or a shadowing log)
+const SHADOW = {};
 // the guide's daily To-Do templates, as "[Session Type + Schedule Day]: [Program Name] — [Module Day]"
 const PROGRAM = {"VA Essentials": "Virtual Assistant Essentials"};
 // a day whose To-Do keeps the guide's wording although its lesson is titled otherwise
@@ -115,7 +116,7 @@ async function saveLog(day){
 function todoCard(day, compact){
   const lines = linesFor(day), note = noteFor(day);
   return `<div class="card td-card ${compact ? "td-compact" : ""}"><div class="td-head"><b>📋 ${compact ? `Day ${day}: your Hubstaff To-Do` : "Your Hubstaff To-Do for this day"}</b>
-      ${compact ? `<button class="btn btn-navy btn-sm" onclick="FTShadow.open(${day})">${isShadowDay(day) ? "Open the shadowing log" : `All ${DAYS().length} days & the shadowing log`}</button>` : ""}</div>
+      ${compact ? `<button class="btn btn-navy btn-sm" onclick="FTShadow.open(${day})">All ${DAYS().length} days</button>` : ""}</div>
     ${lines.map((l, i) => `<div class="td-line"><code id="td_${day}_${i}">To-Do: ${e(l)}</code><button class="btn btn-ghost btn-sm" onclick="FTShadow.copy('td_${day}_${i}')">📋 Copy</button></div>`).join("")}
     ${note ? `<p class="td-note">${e(note)}</p>` : ""}
     ${!compact && isShadowDay(day) && videosFor(day).length ? `<div class="td-vids"><b>🎬 No buddy free? Watch these instead</b>
@@ -159,17 +160,16 @@ function renderPage(){
   const days = DAYS(), day = R.day && days.some(d => d.day === R.day) ? R.day : today();
   R.day = day;
   const d = days.find(x => x.day === day) || {role: ""};
-  const k = countDone(R.rec), n = Object.keys(SHADOW).length;
-  return `<div class="td-hero"><p class="lp-eyebrow">Daily routine · shadowing on Days ${Object.keys(SHADOW).join(", ")}</p><h1>👥 Shadowing &amp; the day’s To-Do</h1>
-      <p>Your Hubstaff To-Do for each day, in the guide’s exact wording, and your log of each shadowing session. ${k} of ${n} sessions logged.</p>
+  return `<div class="td-hero"><p class="lp-eyebrow">Daily routine</p><h1>📋 The day’s Hubstaff To-Do</h1>
+      <p>Your Hubstaff To-Do for each day, in the guide’s exact wording.</p>
       <div class="td-days">${days.map(x => `<button class="td-day ${x.day === day ? "on" : ""} ${isShadowDay(x.day) ? "sh" : ""}" title="${e(x.role)}" onclick="FTShadow.day(${x.day})">${x.day}${done(logOf(x.day)) ? " ✓" : ""}</button>`).join("")}</div></div>
     <p class="td-which">Day ${day} · ${e(d.role)}${isShadowDay(day) ? ` · 👥 ${e(SHADOW[day])} Role shadowing` : ""}</p>
     ${todoCard(day)}
     ${workCard(day)}
-    ${isShadowDay(day) ? logForm(day) : `<div class="card td-none">No shadowing session on this day. The sessions are on Days ${Object.keys(SHADOW).join(", ")} — pick one above to write up.</div>`}`;
+    ${isShadowDay(day) ? logForm(day) : ""}`;
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["shadowing"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {shadowing: "Shadowing & To-Do"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {shadowing: "Hubstaff To-Do"});
 const __render = window.render;
 window.render = function(){
   if(state.view !== "shadowing") return __render.apply(this, arguments);
@@ -198,7 +198,7 @@ function fallback(text, ok){
   }catch(err){ toast("Couldn’t copy on this browser — select the line and copy it."); }
 }
 // 🏅 My Performance: the shadowing sessions logged
-window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.logs) return [];
+window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.logs || !Object.keys(SHADOW).length) return [];
   const days = Object.keys(SHADOW).map(Number).filter(d => Object.keys(((rec.logs || {})[d]) || {}).length);
   if(!days.length) return [];
   const k = countDone(rec), n = Object.keys(SHADOW).length;
@@ -224,7 +224,7 @@ function adminHtml(){
   if(!AD.rows || !X.data){ if(!AD.loading) loadAdmin(); loadTodo(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const sd = Object.keys(SHADOW).map(Number), day = AD.day, own = (X.data.days || {})[day] || {}, d = DAYS().find(x => x.day === day) || {role: ""};
-  return `<div class="card td-admin"><div class="ff-bar"><div><h3>👥 Shadowing &amp; To-Do</h3><p class="fss-muted">The trainees’ shadowing write-ups, in place of the TAM screenshot, and the exact To-Do text they copy each day. Set the buddy’s name for a shadowing day here rather than only in the GC; trainees see it within two minutes.</p></div>
+  return `<div class="card td-admin"><div class="ff-bar"><div><h3>📋 Hubstaff To-Do</h3><p class="fss-muted">The exact To-Do text the trainees copy each day; trainees see a change within two minutes.</p></div>
       <span><select onchange="FTShadowAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
     <div class="td-aedit"><label>Day <select onchange="FTShadowAdmin.day(this.value)">${DAYS().map(x => `<option value="${x.day}" ${x.day === day ? "selected" : ""}>Day ${x.day}${isShadowDay(x.day) ? " · shadowing" : ""} — ${e(x.role)}</option>`).join("")}</select></label>
       <label>The day’s To-Do line <input id="tdaTodo" value="${e(own.todo || "")}" placeholder="${e(discussionLine(d))}"></label>
@@ -235,7 +235,7 @@ function adminHtml(){
         <textarea id="tdaVideos" rows="3" placeholder="${e((VIDEOS[day] || []).map(([t, u]) => `${t} | ${u}`).join("\n"))}">${e(own.videos || "")}</textarea></label>` : ""}
       <div class="w"><button class="btn btn-navy btn-sm" onclick="FTShadowAdmin.save()">💾 Save Day ${day}</button>
         <span class="fss-muted">Trainees copy: <code>To-Do: ${e(linesFor(day).join("</code>, <code>To-Do: "))}</code></span></div></div>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl td-atbl"><thead><tr><th>Trainee</th>${sd.map(x => `<th>Day ${x}</th>`).join("")}<th>Read</th></tr></thead><tbody>
+    ${!sd.length ? "" : rows.length ? `<div class="ff-scroll"><table class="ff-tbl td-atbl"><thead><tr><th>Trainee</th>${sd.map(x => `<th>Day ${x}</th>`).join("")}<th>Read</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         ${sd.map(x => { const g = (r.rec.logs || {})[x]; return `<td class="${done(g) ? "ok" : g && Object.keys(g).length ? "mid" : ""}">${done(g) ? "✓" : g && Object.keys(g).length ? "part" : "—"}</td>`; }).join("")}
         <td><button class="btn btn-ghost btn-sm" onclick="FTShadowAdmin.open('${e(r.id)}')">${AD.open[r.id] ? "Hide ▾" : "Read ▸"}</button></td></tr>
@@ -257,7 +257,7 @@ window.FTShadowAdmin = {
     X.at = Date.now(); render();
   }
 };
-ftAdminTab("shadowing", "👥 Shadowing & To-Do", adminHtml);
+ftAdminTab("shadowing", "📋 Hubstaff To-Do", adminHtml);
 
 (function(){ const st = document.createElement("style"); st.id = "ft-todo"; st.textContent = `
 main.main-td{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}

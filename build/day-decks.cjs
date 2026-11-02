@@ -44,7 +44,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // its Demo Preparation, with the demo's metrics and facilitator's notes)
   12: ["s1v"],
   // (Day 14's Shadowing Session is off the deck: the day ends on its Demo Preparation)
-  14: ["s2"]};
+  14: ["s2"],
+  // (Day 15's Shadowing Session too: no shadowing in the training)
+  15: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
