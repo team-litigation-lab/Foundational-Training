@@ -1636,7 +1636,18 @@ function toKC(l, here){
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // (and which answer sheet: the reading's, from the reading; the lesson's own, from its Process Questions stop)
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
-  if(root.FTProcess) FTProcess.openLesson(l);
+  // (the lesson's own Process Questions are answered now: the lesson counts as studied, as 📋 Classroom Activity on its
+  // last slide records it. Day 1's discussion is the trainer's, so a trainee may never press that, and until then the
+  // sheet held only the Reading Task's questions: this stop sent them to the Personal Injury sheet)
+  if(!rk) markStudied(Number(l)).then(() => { if(root.FTProcess) FTProcess.openLesson(l); });
+  else if(root.FTProcess) FTProcess.openLesson(l);
+}
+async function markStudied(l){
+  if(!state.traineeId || state.isAdmin || state.adminPreview || !hasPQ(l)) return;
+  const prev = (state.progress || {})[l] || {}; if(prev.studied || prev.done) return;
+  state.progress = state.progress || {};
+  state.progress[l] = Object.assign({}, prev, {studied: true, studiedAt: new Date().toISOString()});
+  try{ await storeSet("day-progress", state.progress); }catch(err){}
 }
 // a card row's stop on its day's deck, by the action it carries (FTDayDecks.stop)
 function openStop(n, run){
