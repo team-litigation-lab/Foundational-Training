@@ -239,7 +239,7 @@
   // One entry per classroom discussion, in the order the Training Guide runs them: all 18 days of
   // the Revised 18-Day Foundational Training Program (js/ft-day-activities.js maps the days).
   // The Lien Negotiator days close the programme, so their discussions are monitored like the rest.
-  const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Law Firm Communication",
+  const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Virtual Assistant Essentials - Day 2",
     "Reception Training Day 1", "Reception Training Day 2", "Reception Training Day 3", "Calendar Management Training",
     "Intake Training Day 1", "Intake Training Day 2", "Intake Training Day 3",
     "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
@@ -250,8 +250,8 @@
   const OPTIONAL_MONITOR_TOPICS = ["Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
   const optionalTopic = (t) => !!(t && t.optional) || OPTIONAL_MONITOR_TOPICS.includes(String((t && t.title) || t));
   const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
-  // a discussion's earlier title, still found on the sheets written under it (Day 2 was "Virtual Assistant Essentials - Day 2")
-  const TOPIC_ALIASES = {"Law Firm Communication": ["Virtual Assistant Essentials - Day 2"]};
+  // a discussion's other title, also found on sheets (Day 2's To-Do is "Virtual Assistant Essentials - Day 2"; its lesson is Law Firm Communication)
+  const TOPIC_ALIASES = {"Virtual Assistant Essentials - Day 2": ["Law Firm Communication"]};
   function gradeMonitorText(text, topics){
     const lines = String(text || "").split(/\r?\n/).map((l) => l.replace(/^[\s,]+|[\s,]+$/g, "")).filter(Boolean);
     const low = lines.map((l) => l.toLowerCase());

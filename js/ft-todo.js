@@ -28,7 +28,11 @@ const DAYS = () => (window.FTDays && FTDays.DAYS) || [];
 const SHADOW = {11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication"};
 // the guide's daily To-Do templates, as "[Session Type + Schedule Day]: [Program Name] — [Module Day]"
 const PROGRAM = {"VA Essentials": "Virtual Assistant Essentials"};
+// a day whose To-Do keeps the guide's wording although its lesson is titled otherwise
+// (Day 2 is the Law Firm Communication lesson; the guide's To-Do still reads Virtual Assistant Essentials - Day 2)
+const TODO_NAME = {2: "Classroom Discussion: Virtual Assistant Essentials - Day 2"};
 function discussionLine(d){
+  if(TODO_NAME[d.day]) return TODO_NAME[d.day];
   const days = DAYS().filter(x => x.role === d.role), n = days.findIndex(x => x.day === d.day) + 1;
   const name = PROGRAM[d.role] || d.role;
   if(days.length < 2 && !PROGRAM[d.role]) return `Classroom Discussion: ${name}`;   // (VA Essentials keeps "- Day 1", as its To-Do always read)
