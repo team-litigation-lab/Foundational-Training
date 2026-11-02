@@ -2577,7 +2577,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
 /* (Day 10's Sample SOP, written on the deck: its steps in cards, four to a row, in bold; the questions in three columns) */
 .ft-body .ftdd-sop-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;margin:0 0 12px;}
-.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
+.ft-body .ftdd-sop-cards.ftdd-sop-two{grid-template-columns:minmax(0,1fr);}   /* (stacked: what you may give out, then the call) */
 .ftdd-sheet .ftdd-sop .ftdd-card4 p:not(.ftdd-card4-h), .ftdd-sheet .ftdd-sop .ftdd-card4 li{font-size:17px !important;line-height:1.4 !important;font-weight:700 !important;color:#1B1E2E;}
 .ftdd-sheet .ftdd-sop .ftdd-card4 ul{margin:0;padding-left:20px;} .ftdd-sheet .ftdd-sop .ftdd-card4 li{margin:0 0 4px;}
 .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols{columns:3;column-gap:28px;} .ftdd-sheet .ftdd-sop ul.ftdd-sop-cols li{break-inside:avoid;}
