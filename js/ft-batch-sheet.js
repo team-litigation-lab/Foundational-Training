@@ -57,7 +57,7 @@ async function loadPeople(){
     B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
       .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
     B.people = list.filter(r => r && r.id && !r.archived && !r.rejected && !r.purgedAt && (r.batch || r.registeredAt))
-      .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", lastActive: r.lastActive || "",
+      .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", registeredAtWas: r.registeredAtFixedAt ? r.registeredAtWas || "" : null, lastActive: r.lastActive || "",
         progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!B.batch){
@@ -124,7 +124,7 @@ function traineesTable(){
       return [
         {v: p.name, f: `${p.name} · ${B.batch}`, cls: "gs-name"},
         {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 🛡 Admin Master Control → Trainee Audit" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
-        {v: when(p.registeredAt) || day(p.registeredAt), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}` : "", cls: ""},
+        {v: (when(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? when(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
         {v: `${kc} / ${L.length}`, f: `${kc} of the ${L.length} Knowledge Checks passed (70% passes)`, cls: "gs-num"},
@@ -260,6 +260,19 @@ function fixHtml(ppl){
       <button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fixClose()">Cancel</button></div>
     ${F.err ? `<p class="bs-fix-err">${e(F.err)}</p>` : ""}</div>`;
 }
+/* ✎ Fix a date: a trainee's Registered date and time, when it was recorded wrong. registeredAt is a field only a trainer
+   writes (worker.js PROTECTED_TRAINEE_FIELDS); the old value is kept in registeredAtWas, with registeredAtFixedAt. */
+const localInput = v => { const d = t(v); if(!d) return ""; const z = new Date(d - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 16); };
+function dateHtml(ppl){
+  const F = B.dfix; if(!F) return "";
+  const p = ppl.find(x => x.id === F.id) || ppl[0];
+  return `<div class="bs-fix"><h4>✎ Fix a date</h4><p>A trainee's <b>Registered</b> date or time is wrong? Pick them, set the right date and time and press <b>Save</b>. (A wrong Time In is fixed in 🛡 Admin Master Control → 🕘 Attendance.)</p>
+    <div class="bs-fix-row"><label>Trainee <select id="bsDateWho" onchange="FTBatchSheet.dateWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${p && x.id === p.id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>
+      <label>Registered <input type="datetime-local" id="bsDateAt" value="${e(p ? localInput(p.registeredAt) : "")}"></label>
+      <button class="btn btn-navy btn-sm" ${F.busy ? "disabled" : ""} onclick="FTBatchSheet.dateSave()">${F.busy ? "Saving…" : "Save"}</button>
+      <button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.dateClose()">Cancel</button></div>
+    ${F.err ? `<p class="bs-fix-err">${e(F.err)}</p>` : ""}</div>`;
+}
 function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
@@ -270,7 +283,7 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button></span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button></span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum"><span><b>${ppl.length}</b> registered</span><span><b>${approved}</b> approved</span>${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-trainees" onclick="return FTBatchSheet.go('trainees')">👥 Trainees</a> · <a href="#bs-lessons" onclick="return FTBatchSheet.go('lessons')">📚 Lessons</a> · <a href="#bs-practice" onclick="return FTBatchSheet.go('practice')">🛠 Practice Lab</a> · <a href="#bs-scores" onclick="return FTBatchSheet.go('scores')">🏅 Scores</a> · <a href="#bs-recent" onclick="return FTBatchSheet.go('recent')">🕒 Recent progress</a></span>
@@ -278,6 +291,7 @@ function renderSheet(){
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
     ${fixHtml(ppl)}
+    ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : T.map((x, i) => x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
@@ -305,6 +319,24 @@ window.FTBatchSheet = {
     toast(`✓ ${n} trainee${n === 1 ? " is" : "s are"} back in ${B.batch}.`);
     if(typeof state === "object") state.adminData = null;
     B.people = null; B.data = null; B.dataKey = ""; render();
+  },
+  dateOpen(){ if(!adminOn()) return; const p = people()[0]; B.dfix = {id: p ? p.id : "", busy: false, err: ""}; render(); },
+  dateClose(){ B.dfix = null; render(); },
+  dateWho(id){ if(B.dfix){ B.dfix.id = id; render(); } },
+  async dateSave(){
+    const F = B.dfix; if(!F || F.busy || !adminOn()) return;
+    const id = (document.getElementById("bsDateWho") || {}).value || F.id, v = (document.getElementById("bsDateAt") || {}).value || "", d = v ? new Date(v) : null;
+    if(!d || !isFinite(d)){ F.err = "Set the date and the time."; render(); return; }
+    if(d > new Date()){ F.err = "That date is in the future."; render(); return; }
+    F.busy = true; F.err = ""; render();
+    try{
+      const rec = await sharedGet("trainee:" + id); if(!rec) throw new Error("gone");
+      const next = Object.assign({}, rec, {registeredAt: d.toISOString(), registeredAtWas: rec.registeredAtWas || rec.registeredAt || "", registeredAtFixedAt: new Date().toISOString()});
+      if(await sharedSet("trainee:" + id, next) === false) throw new Error("save");
+      B.dfix = null; toast(`✓ ${rec.name || "The trainee"}'s registration is now ${d.toLocaleString()}.`);
+      if(typeof state === "object") state.adminData = null;
+      B.people = null; B.data = null; B.dataKey = ""; render();
+    }catch(err){ F.busy = false; F.err = "Couldn't save the date. Try again."; render(); }
   },
   fixOpen(){ if(!adminOn()) return; B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
   fixClose(){ B.fix = null; render(); },
@@ -440,7 +472,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
 .bs-fix-list{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;} .bs-fix-list label{display:flex;align-items:center;gap:6px;cursor:pointer;}
-.bs-fix-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;} .bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
+.bs-fix-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;} .bs-fix-row select{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;margin-left:6px;}
+.bs-fix-row input[type=datetime-local]{width:auto;}
+.bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
 .bs-fix-err{color:#C5221F;margin:8px 0 0 !important;}
 @media print{ .bs-card .gs-menu,.bs-card .gs-fbar,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
 `; document.head.appendChild(s); })();

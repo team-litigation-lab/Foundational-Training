@@ -55,6 +55,12 @@ const failures = []; const fail = (m) => failures.push(m);
   const bobAfter = JSON.parse((await call('/api/storage/get', { key: 'trainee:' + bob.id }, admin)).body.value);
   if (bobAfter.batchMovedBy) fail('a trainee marked their own record as moved by the trainer');
 
+  // ✎ Fix a date: a trainee can't change or fake a registration fix
+  const before = JSON.parse((await call('/api/storage/get', { key: 'trainee:' + bob.id }, admin)).body.value);
+  await call('/api/storage/set', { key: 'trainee:' + bob.id, value: JSON.stringify(Object.assign({}, before, { registeredAt: '2020-01-01T00:00:00Z', registeredAtFixedAt: 'x', registeredAtWas: 'y' })) }, bob.token);
+  const after = JSON.parse((await call('/api/storage/get', { key: 'trainee:' + bob.id }, admin)).body.value);
+  if (after.registeredAt !== before.registeredAt || after.registeredAtFixedAt || after.registeredAtWas) fail('a trainee changed their own registration date or faked a trainer\'s fix');
+
   if (failures.length) { console.error('Sheet access test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Sheet access test passed (a trainee reads all of their own sheet and nothing of another trainee\'s, gets no list of trainees, moves nobody\'s batch and cannot undo or forge a trainer\'s move; the trainer reads and moves them all).');
+  console.log('Sheet access test passed (a trainee reads all of their own sheet and nothing of another trainee\'s, gets no list of trainees, moves nobody\'s batch and cannot undo or forge a trainer\'s move or change a registration date; the trainer reads and moves them all).');
 })().catch(e => { console.error(e); process.exit(1); });

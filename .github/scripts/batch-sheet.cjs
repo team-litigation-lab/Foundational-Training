@@ -137,6 +137,17 @@ const failures = []; const fail = m => failures.push(m);
   if ((await get('trainee:' + dee)).name !== 'Dee Glitch') fail('the open tab\'s save changed the trainee\'s name');
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
 
+  // ✎ Fix a date: Ben's registration was recorded wrong; the trainer sets it, and the sheet marks it
+  await page.evaluate(() => FTBatchSheet.dateOpen()); await page.waitForTimeout(200);
+  await page.selectOption('#bsDateWho', ids.Ben); await page.waitForTimeout(200);
+  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave());
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
+  const benRec = await get('trainee:' + ids.Ben);
+  if (!benRec.registeredAt || new Date(benRec.registeredAt).getDate() !== 30 || !benRec.registeredAtFixedAt || !benRec.registeredAtWas) fail(`✎ Fix a date: ${JSON.stringify({ at: benRec.registeredAt, fixed: benRec.registeredAtFixedAt, was: benRec.registeredAtWas })}`);
+  const benRow = await page.evaluate(id => FTBatchSheet.tables().find(t => t.id === 'trainees').rows.find(r => /Ben/.test(r[0].v)), ids.Ben);
+  if (!benRow || !/Oct 30, 2026/.test(benRow[2].v) || !/✎/.test(benRow[2].v) || !/fixed by a trainer/.test(benRow[2].f)) fail(`the fixed date isn't shown and marked: ${benRow && JSON.stringify(benRow[2])}`);
+  await page.fill('#bsDateAt', '').catch(() => {});
+
   // 🔒 the trainee's side: Ada's 📋 My Progress is her own row and nothing about anyone else
   await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Ada Active'; state.view = 'modules'; render(); }, ids.Ada);
   await page.waitForTimeout(400);
