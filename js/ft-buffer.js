@@ -25,6 +25,10 @@ const ACTS = {
   // saved under (2:s2); no gate on the readings and no lock on the Softphones and PPTs)
   "2:s2l": {kind: "buffer", task: true, corner: true, float: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}},
+  // Day 2's Homework (Softphones and PPTs): its items #8–9, the same corner card and 📤 Submit (the Monitoring Sheet is
+  // already linked, so no link on the slide: update, then Submit)
+  "2:s4": {kind: "buffer", task: true, corner: true, title: "📒 Update items #8–9 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [8, 9], activity: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"}},
   // Day 4's Monitoring Sheet update (items #10–11): no slide of its own any more. Its card and 📤 Submit sit at the lower right of
   // the mock calls' metrics page, the preparation slide's last (s2b), under the key it was saved under (4:s2m). corner: a small
   // card after the slide's content, nothing on the trainer's slide, and the slide stays readable
