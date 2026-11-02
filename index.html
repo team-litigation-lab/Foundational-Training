@@ -6178,11 +6178,11 @@ async function callAIJson(prompt, maxTokens, timeoutMs, feature){
   }
 }
 function fmtDate(iso){ if(!iso) return ""; const d=new Date(iso); return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
-function toast(msg){
+function toast(msg, ms){   // (ms: a longer message stays up longer; 2.6 s by default)
   const t=document.getElementById("toast");
   t.textContent=msg; t.classList.add("show");
   clearTimeout(window.__toastTimer);
-  window.__toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
+  window.__toastTimer=setTimeout(()=>t.classList.remove("show"),Number(ms)||2600);
 }
 function burstConfetti(){
   const colors=["#DB8437","#262B45","#3F7D58","#B5651F","#F0C08A"];
@@ -18917,7 +18917,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=ft-2026.11.01-day2-lfc"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.30-lien-optional"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.30-pi-recep-kc"></script>
+<script src="/js/ft-process.js?v=ft-2026.11.02-submit-why"></script>
 <script src="/js/ft-assess.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-claims-email.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-rules.js?v=ft-2026.11.01-day2-lfc"></script>
