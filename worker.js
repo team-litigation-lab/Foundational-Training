@@ -1117,6 +1117,36 @@ async function checkIn(kv, id, training) {
   await kv.put(key, JSON.stringify(v), { expirationTtl: 40 * 86400, metadata: { t: v.timeIn, at: v.at, n: v.name, b: v.batch, tr: v.training } });
   return { ok: true, date: et.date, timeIn: v.timeIn };
 }
+// ✍ A trainer's manual Time In (Admin → 🕘 Attendance → ✍ Set Time In): written into the day's attendance record,
+// attendance:<batch key>:<YYYY-MM-DD> rows[<id>].timeIn — the record the Training Portal's /attendance.html and the
+// Google Sheet keep (functions/_attendance.js saveRows there), where a Time In wins over the automatic check-in. So an
+// override shows on the Portal and in the Sheet too, and the check-in itself is left as recorded. Like saveRows, it
+// re-reads the day and changes only this row's timeIn (an empty timeIn clears it, back to the automatic one).
+// The batch key is the Portal's: slugPart of the batch as typed, "_none" for none.
+const attBatchKey = (b) => { const v = String(b || "").trim(); return slugPart(/^[A-Za-z0-9][A-Za-z0-9 _\-]{0,23}$/.test(v) ? v : "") || "_none"; };
+async function setTimeIn(kv, b, by) {
+  const date = String(b.date || ""), id = String(b.id || "").slice(0, 100), hm = String(b.timeIn || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^[A-Za-z0-9_-]{1,100}$/.test(id)) return { ok: false, error: "A date and a trainee are needed" };
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hm);
+  if (hm && (!m || Number(m[1]) > 23 || Number(m[2]) > 59)) return { ok: false, error: "Time In must be HH:MM" };
+  const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+  if (!rec) return { ok: false, error: "No such trainee" };
+  const batch = String(rec.batch || "").trim(), key = `attendance:${attBatchKey(batch)}:${date}`;
+  const ci = JSON.parse((await kv.get(`checkin:${date}:${id}`)) || "null") || {};
+  const day = JSON.parse((await kv.get(key)) || "null") || { v: 1, batch: /^[A-Za-z0-9][A-Za-z0-9 _\-]{0,23}$/.test(batch) ? batch : "", date, rows: {}, training: "" };
+  day.rows = day.rows && typeof day.rows === "object" ? day.rows : {};
+  if (day.day == null) {
+    const pre = `attendance:${attBatchKey(batch)}:`, dates = []; let cursor;
+    do { const r = await kv.list({ prefix: pre, cursor }); r.keys.forEach((x) => dates.push(x.name.slice(pre.length))); cursor = r.list_complete ? null : r.cursor; } while (cursor);
+    day.day = dates.filter((d) => d < date).length + 1;
+  }
+  const at = new Date().toISOString();
+  const cur = day.rows[id] || { name: ci.name || String(rec.name || id).slice(0, 80), training: "", timeIn: "", timeOut: "", status: "", note: "" };
+  day.rows[id] = Object.assign({}, cur, { timeIn: hm ? `${m[1].padStart(2, "0")}:${m[2]}` : "", at, by: String(by || "trainer").slice(0, 80) });
+  day.updatedAt = at;
+  await kv.put(key, JSON.stringify(day));
+  return { ok: true, date, timeIn: day.rows[id].timeIn, auto: ci.timeIn || "" };
+}
 
 /* ---------- documents in R2 ---------- */
 // The document-heavy folders (ft/, trainer/) are served from R2: the DOCUMENTS binding,
@@ -1456,6 +1486,11 @@ export default {
         const id = tok.role === "t" ? tok.id : (!secure && typeof b.id === "string" ? b.id.slice(0, 100) : "");
         if (!id) return json({ ok: false, error: "Trainees only" }, 403);
         return json(await checkIn(kvOf(env), id, b.training));
+      }
+      if (path === "/api/attendance/time-in") {
+        if (tok.role !== "a") return json({ ok: false, error: "Trainers only" }, 403);
+        const b = await request.json().catch(() => ({}));
+        return json(await setTimeIn(kvOf(env), b, tok.name || tok.id || "trainer"));
       }
 
       /* ---------- AI proxy (signed-in users only, so strangers can't spend your credits) ---------- */

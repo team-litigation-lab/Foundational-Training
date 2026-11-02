@@ -32,9 +32,27 @@ const etDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_Y
   if (!row('Bea Other')) fail('a trainee of another active batch is missing');
   if (row('Arch Gone')) fail('an archived trainee is listed');
   if (!r.batches.some(b => /B103026/.test(b) && /1 of 2 in|of \d+ in/.test(b))) fail(`the batch count isn't shown: ${JSON.stringify(r.batches)}`);
+  // ✍ manual override: set Owen's Time In by hand; it goes into the Portal's attendance record and shows as ✍ Manual
+  const rowSel = n => page.locator('.fat-tbl tbody tr', { hasText: n });
+  await rowSel('Owen Out').locator('text=✍ Set Time In').click(); await page.waitForTimeout(300);
+  await page.fill('#fatTime', '09:05'); await rowSel('Owen Out').locator('text=💾 Save').click(); await page.waitForTimeout(2000);
+  const owen = await page.evaluate(() => ([...document.querySelectorAll('.fat-tbl tbody tr')].find(tr => /Owen Out/.test(tr.innerText)) || {}).innerText || '');
+  if (!/9:05 AM/.test(owen) || !/Manual/.test(owen)) fail(`a manual Time In isn't shown as ✍ Manual: ${owen}`);
+  const att = await page.evaluate(d => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'attendance:b103026:' + d }) }).then(r => r.json()).then(j => JSON.parse(j.value || 'null')), etDate());
+  if (!att || !att.rows || !att.rows['owen-out--b103026'] || att.rows['owen-out--b103026'].timeIn !== '09:05') fail(`the manual Time In isn't in the day's attendance record: ${JSON.stringify(att)}`);
+  // override an automatic Time In, then clear it back to the automatic one
+  await rowSel('Ivy In').locator('text=✍ Edit Time In').click(); await page.waitForTimeout(300);
+  await page.fill('#fatTime', '08:00'); await rowSel('Ivy In').locator('text=💾 Save').click(); await page.waitForTimeout(2000);
+  if (!/8:00 AM/.test(await rowSel('Ivy In').innerText())) fail('an automatic Time In could not be overridden');
+  page.once('dialog', d => d.accept());
+  await rowSel('Ivy In').locator('text=✍ Edit Time In').click(); await page.waitForTimeout(300);
+  await rowSel('Ivy In').locator('text=✖ Clear').click(); await page.waitForTimeout(2000);
+  const ivy = await rowSel('Ivy In').innerText();
+  if (!/8:25 AM/.test(ivy) || /Manual/.test(ivy)) fail(`clearing the override doesn't go back to the automatic Time In: ${ivy}`);
+
   await page.click('.fat-day button:first-child'); await page.waitForTimeout(1500);
   if (!/Not in yet/.test(await page.evaluate(() => ([...document.querySelectorAll('.fat-tbl tbody tr')].find(tr => /Ivy In/.test(tr.innerText)) || {}).innerText || ''))) fail('the day before still shows today\'s Time In');
   await browser.close();
   if (failures.length) { console.error('Attendance tab test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Attendance tab test passed (every active trainee by batch, the day\'s Time In, ⏳ Not in yet for the rest, no archived trainee, the day before).');
+  console.log('Attendance tab test passed (every active trainee by batch, the day\'s Time In, ⏳ Not in yet for the rest, no archived trainee, the ✍ manual override set, saved to the attendance record and cleared, the day before).');
 })().catch(e => { console.error(e); process.exit(1); });

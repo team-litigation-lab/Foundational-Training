@@ -68,7 +68,7 @@ const MAP = [
    steps:[`Review and score Practice Sessions: ${SEC.lab} → ${go("sessions","🟢 Practice Sessions")}.`,
      `Record live demos and mock calls with you: ${go("trainerinputs","🧑‍🏫 Trainer Inputs")} and ${go("mockscores","📋 Mock Call Scorecards")}.`,
      `Calendaring work: ${go("calweek","📅 Calendaring Activity")}, ${go("calcheck","✅ Calendar Activity Check")}, ${go("calrules","📅 Booking Rules")} and ${go("calscores","📅 Calendar Scores")}.`,
-     `Call Listening and the To-Do: ${go("listening","🎧 Call Listening")} and ${go("shadowing","📋 Hubstaff To-Do")}.`,
+     `Call Listening: ${go("listening","🎧 Call Listening")}.`,
      `Is a trainee out of repeat attempts because of a technical problem? Use Trainee Audit → ↺ Reset Attempts. A trainee who asked for more shows "🙋 asked for more attempts".`]},
   {stage:"7 · Daily records", trainee:"Fills in the Daily Task Tracker and the Monitoring Sheet, and takes the typing and spelling tests.",
    steps:[`Check them every day: ${SEC.seg} → ${go("trackers","📋 Task Trackers")}, ${go("monitor","📒 Monitoring Sheets")} and ${go("drivetrackers","📁 Drive Trackers")}.`,

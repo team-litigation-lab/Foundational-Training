@@ -114,24 +114,16 @@ async function workerChecks() {
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   if (/Shadowing/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance still shows shadowing');
 
-  // the trainer: a note for the day, which the trainee then sees
-  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'shadowing'; FTShadowAdmin.reload(); goto('admin'); });
-  await page.waitForTimeout(2500);
-  if (await page.evaluate(() => !!document.querySelector('#tdaBuddy, #tdaVideos, .td-atbl'))) fail('the trainer\'s To-Do tab still has the shadowing buddy, videos or write-ups');
-  await page.fill('#tdaNote', 'Set it before the 8:00 AM session.');
-  await page.click('text=💾 Save Day 11'); await page.waitForTimeout(1300);
-  const st = await get('settings:todo');
-  if (!st || !st.days['11'] || !/8:00 AM/.test(st.days['11'].note || '')) fail(`the day's note wasn't saved: ${JSON.stringify(st)}`);
-  await page.evaluate(() => { state.isAdmin = false; state.adminData = null; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
-  await page.evaluate(() => FTShadow.open(11)); await page.waitForTimeout(1200);
-  const td = await page.evaluate(() => (document.querySelector('.td-card') || {}).innerText || '');
-  if (!/To-Do: Classroom Discussion: Insurance Communication Training Day 2/.test(td) || /Shadowing/.test(td)) fail(`Day 11's To-Do card isn't just its discussion: ${td.slice(0, 250)}`);
-  if (!/8:00 AM session/.test(td)) fail('the trainee doesn\'t see the trainer\'s note');
+  // the trainer's 📋 Hubstaff To-Do tab is gone from Admin
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; goto('admin'); });
+  await page.waitForTimeout(2000);
+  if (await page.evaluate(() => [...document.querySelectorAll('.admin-tab-btn')].some(b => /Hubstaff To-Do/.test(b.textContent)) || /Hubstaff To-Do/.test(String(window.adminGroups && JSON.stringify(window.adminGroups))))) fail('Admin still has a 📋 Hubstaff To-Do tab');
+  await page.evaluate(() => { state.isAdmin = false; state.adminData = null; });
 
   await put('shadow:' + id, null); await put('settings:todo', null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await put('settings:opendays', openWas || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Shadowing & To-Do test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and no shadowing anywhere, each day\'s own activities and the Process Questions of the lesson it discusses (Calendaring\'s absent sheet said so, not offered), the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; no shadowing log or My Performance row; the trainer\'s note for a day, which the trainee then sees; the worker\'s rules).');
+  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and no shadowing anywhere, each day\'s own activities and the Process Questions of the lesson it discusses (Calendaring\'s absent sheet said so, not offered), the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; no shadowing log or My Performance row; no trainer\'s To-Do tab in Admin; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });
