@@ -1070,6 +1070,8 @@ function fitSheets(){
     if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
     // (a block dealt out by its own rows, all of them on other pages, is hidden too: its margins would push this page over)
     if(pages.length > 1) [...sheet.children].forEach(k => { if(k.children.length && [...k.children].every(c => c.style.display === "none")) k.style.display = "none"; });
+    // (a reading page that is one block alone, Day 11's Additional Reminders for Drafting Your LOR, sits in the middle of the sheet)
+    sheet.classList.toggle("ftdd-read-one", sheet.matches(".ftdd-read") && [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none").length === 1);
     sheet.scrollTop = 0;
     fitCrops(sheet);
     // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
@@ -2856,6 +2858,7 @@ main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{
 main.main-ftdd .ftdd-sheet.ftdd-read h3, main.main-ftdd .ftdd-sheet.ftdd-read h2.ftdd-pi-h{font-size:20px !important;}
 /* and its pages start at the top of the sheet (the cards right under the slide's bar), not in the middle */
 main.main-ftdd .ftdd-sheet.ftdd-read:not(.ftdd-sheet-edit){justify-content:flex-start;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-read-one:not(.ftdd-sheet-edit){justify-content:center;}
 /* a line of space between one step (or section) and the next */
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
