@@ -180,7 +180,6 @@ function partHtml(doc, p){
   let n = 0;
   return `<section class="fa-part"><h3>${e(p.h)}</h3><p class="fa-lead">${e(p.lead)}</p>
     ${p.groups.map(g => `<div class="fa-grp"><p class="fa-scn">${e(g.note)} <a href="https://docs.google.com/document/d/${doc}/preview" target="_blank" rel="noopener noreferrer">Open the document ↗</a></p>
-      <details class="fa-doc"><summary>📄 Show the Declaration Page here</summary><div class="fa-docframe"><iframe src="https://docs.google.com/document/d/${doc}/preview" title="The assessment’s document" loading="lazy"></iframe></div></details>
       <ol class="fa-qs" start="${n + 1}">${g.qs.map(q => { n++; return `<li><p>${e(q)}</p>${field(doc, p.id + n, "essay")}</li>`; }).join("")}</ol></div>`).join("")}</section>`;
 }
 root.FTAssess = {
@@ -254,8 +253,6 @@ root.FTAssess = {
 .fa-in{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;} .fa-essay{resize:vertical;}
 .fa-mark{display:inline-block;margin-left:8px;font-weight:800;} .fa-mark.ok{color:var(--success);} .fa-mark.no{color:var(--danger);} .fa-mark.part{color:#B7791F;}
 .fa-note{margin:4px 0 0;font-size:13.5px;color:var(--ink-soft);}
-.fa-doc{margin:0 0 10px;} .fa-doc summary{cursor:pointer;font-weight:700;color:var(--navy);} .fa-docframe{height:60vh;margin-top:8px;border:2px solid #343C66;border-radius:10px;overflow:hidden;}
-.fa-docframe iframe{width:100%;height:100%;border:0;}
 .fa-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px;}
 .fa-done{margin:0;color:var(--success);font-weight:700;} .fa-muted{margin:0;color:var(--ink-soft);}
 .fa-form .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
