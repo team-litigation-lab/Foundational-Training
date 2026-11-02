@@ -179,7 +179,7 @@ function hsWindow(w, h, m){
     <circle cx="210" cy="57" r="17" fill="#fff" stroke="#5b6178" stroke-width="1.5"/>
     <rect x="202" y="49" width="12" height="15" rx="2" fill="none" stroke="#1B1E2E" stroke-width="1.8"/><path d="M208 61l8-8 2.5 2.5-8 8H208z" fill="#1B1E2E"/>
     <text x="125" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#111">LSH - SUPPORT (Training Jr)</text>
-    <text x="125" y="123" text-anchor="middle" font-size="12.5" fill="#222">Classroom Discussion: Recep…</text>
+    <text x="125" y="123" text-anchor="middle" font-size="12.5" fill="#222">To-Do: Classroom Discuss…</text>
     <path d="M20 150H230M125 150V178" stroke="#9aa0ab" stroke-width="1.5"/>
     <circle cx="125" cy="148" r="18" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><rect x="118" y="141" width="14" height="14" rx="2" fill="${HB}"/>
     <text x="64" y="178" text-anchor="middle" font-size="12" fill="#3d4357">No limits</text><text x="186" y="178" text-anchor="middle" font-size="12" fill="#3d4357">Today: 7:33</text>
@@ -206,9 +206,9 @@ function figNote(){
 // The to-do list: click the training project, paste the to-do in Create a to-do and click +, then the button inside it.
 function figTodo(){
   const m = "ftrArrowTodo", sel = 2;
-  const rows = [["Classroom Discussion: Reception Training Day 1", "09/25/2026 07:58 AM"],
-                ["Classroom Discussion: Reception Training Day 2", "09/28/2026 07:57 AM"],
-                ["Classroom Discussion: Reception Training Day 3", "09/29/2026 07:59 AM"]];
+  const rows = [["To-Do: Classroom Discussion: Reception Training Day 1", "09/25/2026 07:58 AM"],
+                ["To-Do: Classroom Discussion: Reception Training Day 2", "09/28/2026 07:57 AM"],
+                ["To-Do: Classroom Discussion: Reception Training Day 3", "09/29/2026 07:59 AM"]];
   const projects = [["LSH - CHECK-IN", "0:00"], ["LSH - FILLER", "0:00"], ["LSH - SUPPORT (Training Jr)", "7:33"]];
   return `<svg viewBox="0 0 760 420" role="img" aria-label="The Hubstaff app: click your training project, paste your to-do in Create a to-do and click +, then click the button inside today’s to-do to track time on it.">
     ${hsWindow(760, 420, m)}
@@ -221,11 +221,11 @@ function figTodo(){
     <rect x="262" y="102" width="464" height="34" rx="5" fill="none" stroke="${OR}" stroke-width="2.5" stroke-dasharray="6 3"/>
     <rect x="730" y="107" width="22" height="24" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="741" y="125" text-anchor="middle" font-size="17" font-weight="700" fill="#111">+</text>
     <rect x="725" y="102" width="32" height="34" rx="6" fill="none" stroke="${OR}" stroke-width="3"/>
-    <text x="292" y="158" font-size="11" font-weight="700" fill="#3d4357">TO-DO</text><text x="590" y="158" font-size="11" font-weight="700" fill="#3d4357">CREATED</text>
+    <text x="292" y="158" font-size="11" font-weight="700" fill="#3d4357">TO-DO</text><text x="618" y="158" font-size="11" font-weight="700" fill="#3d4357">CREATED</text>
     <path d="M251 168H759" stroke="#9aa0ab" stroke-width="1.5"/>
     ${rows.map((r,i)=>{ const y = 168 + i*38, on = i===sel;
       return `${on ? `<rect x="251" y="${y}" width="507" height="38" fill="${HB}"/><circle cx="272" cy="${y+19}" r="8" fill="#fff"/><rect x="268.5" y="${y+15.5}" width="7" height="7" rx="1" fill="${HB}"/><circle cx="272" cy="${y+19}" r="14" fill="none" stroke="${OR}" stroke-width="3.5"/>` : `<path d="M251 ${y+38}H759" stroke="#b4bac6"/>`}
-        <text x="292" y="${y+24}" font-size="12.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${r[0]}</text><text x="590" y="${y+24}" font-size="12.5" fill="${on ? "#fff" : "#1B1E2E"}">${r[1]}</text>`; }).join("")}
+        <text x="292" y="${y+24}" font-size="11.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${r[0]}</text><text x="618" y="${y+24}" font-size="11" fill="${on ? "#fff" : "#1B1E2E"}">${r[1]}</text>`; }).join("")}
     ${arrow("M125 382V362", m)}${callout(28, 380, 196, ["① Click Your Project"])}
     ${arrow("M741 86V100", m)}${callout(470, 34, 280, ["② Paste It in Create a To-Do", "Then click + (or press Enter)."])}
     ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
@@ -308,12 +308,13 @@ const SLIDES = [
   // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 16 To-Dos to copy)
   // on the left, the Hubstaff picture big on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
-    // every To-Do starts "Classroom Discussion: ": the list shows the rest (📋 Copy still copies the whole name)
-    const PRE = "Classroom Discussion: ", short = t=>t.startsWith(PRE) ? t.slice(PRE.length) : t;
+    // each row is the whole To-Do as the trainer writes it ("To-Do: Classroom Discussion: …"), and 📋 Copy / Copy All
+    // copy it that way, "To-Do:" included, as it reads in Hubstaff
+    const full = t=>"To-Do: " + t;
     const row = (t, n)=>`<div class="ftr-todo">
       <span class="ftr-todo-n">${n}</span>
-      <span class="ftr-todo-tx" title="${esc(t)}">${esc(short(t))}</span>
-      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
+      <span class="ftr-todo-tx" title="${esc(full(t))}"><b class="ftr-todo-lbl">To-Do:</b> ${esc(t)}</span>
+      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(full(t))}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
     return `<div class="ftr-notes ftr-todos-one" data-ftr-max="1"><div class="ftr-parts">
     <div class="ftr-part">
       <div class="ftr-part-h"><span>Part 1</span>Add Today’s To-Do</div>
@@ -325,8 +326,8 @@ const SLIDES = [
       </ol>
       <p class="ftr-tip">💡 More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div>
     <div class="ftr-part ftr-todos">
-      <div class="ftr-part-h ftr-todos-h"><div class="ftr-todos-t"><span>Part 2</span>Your ${TODOS.length} Hubstaff To-Dos</div><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
-      <p class="ftr-todos-pre">The Classroom Discussions start with <b>${esc(PRE.trim())}</b> — 📋 Copy copies the whole name.</p>
+      <div class="ftr-part-h ftr-todos-h"><div class="ftr-todos-t"><span>Part 2</span>Your ${TODOS.length} Hubstaff To-Dos</div><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.map(full).join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
+      <p class="ftr-todos-pre">📋 Copy copies the whole To-Do, <b>To-Do:</b> included, ready to paste into Hubstaff.</p>
       <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>
     ${fig(FIGS.todo())}</div>`; }],
   // the steps on the left, the picture (Part 2) big on the right
@@ -723,7 +724,8 @@ body.ft-orient #lessonSlideWrap .ftr-todos-h .btn{padding:4px 12px !important;fo
 body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;font-weight:600 !important;color:#2A2F45 !important;}
 body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:2px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;font-weight:700 !important;color:#1B1E2E !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:12.5px !important;font-weight:700 !important;color:#1B1E2E !important;line-height:1.25 !important;white-space:normal;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-lbl{color:#C2410C;font-weight:800;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;font-weight:700 !important;min-height:0 !important;white-space:nowrap;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
