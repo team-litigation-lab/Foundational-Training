@@ -411,7 +411,7 @@ function assessCard(lesson){
 
 // 📄 an assessment opened by its video's Next on the deck (Day 2's: js/ft-day-decks.js ASSESS_NEXT): a Knowledge Check
 // page of its own, the assessment and nothing else (no Process Questions, no other check), and the button on to the
-// deck's next slide
+// deck's next slide (opened from its lesson's Knowledge Check instead: the button back to that page)
 function assessPage(b){
   const x = (ASSESSMENTS[b.l] || []).find(a => a.id === b.assess); if(!x) return "";
   // (answered on the platform where js/ft-assess.js has it, with 📝 Submit for Grading; else its document)
@@ -420,7 +420,7 @@ function assessPage(b){
       <p>${here ? "Answer every item here: your answers save as you type. Then hit <b>📝 Submit for Grading</b>." : "Answer it in its document, then upload it to your Assessments/Activities subfolder."}</p></div>
     ${here ? FTAssess.html(x.id) : `<div class="card fp-set fp-assess"><div class="fp-body">
       <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>`}
-    ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>` : ""}`;
+    ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>`  : `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">← Back to ✍️ Knowledge Check: ${e(ftName(b.l))}</button></div>`}`;
 }
 
 function renderPage(){
@@ -465,7 +465,8 @@ window.FTProcess = {
   // Back to the classroom: the deck's next activity after the slide the sheet was opened from (see FTDayDecks.toKC)
   backToClass(){
     let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
-    if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || ""), "", b.at || ""); else goto("process");
+    // (an assessment opened from its lesson's Knowledge Check, FTProcess.openAssess: back to that lesson's page)
+    if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || ""), "", b.at || ""); else if(b && b.l && kcQuestionsFor(Number(b.l)).length) goto("process", Number(b.l)); else goto("process");
   },
   // an on-platform assessment opened from its lesson's Knowledge Check: its own page, as from the deck (with no way back to a deck)
   openAssess(lesson, doc){
