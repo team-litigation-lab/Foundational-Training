@@ -459,12 +459,13 @@ s3: html => {
     '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
     '<div class="ftdd-ev-line">🎥 <span class="ftdd-ev-link">Join with Google Meet</span> <small>meet.google.com/dyt-voan-kta</small></div>' +
     '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">meet.google.com/dyt-voan-kta</span></div>' +
-    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Notification ▾</span><span class="ftdd-ev-f">15</span><span class="ftdd-ev-f">minutes ▾</span></div>' +
-    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Velarde ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot"></span> Client Meetings ▾</span></div>' +
+    // (marked as the title is: the notification, the calendar and its colour, the notes and the guests, each with its label)
+    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-mark ftdd-ev-markin"><span class="ftdd-ev-f">Notification ▾</span><span class="ftdd-ev-f">15</span><span class="ftdd-ev-f">minutes ▾</span></span><span class="ftdd-ev-note">◀ Notification</span></div>' +
+    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-mark ftdd-ev-markin"><span class="ftdd-ev-f">Michelle Velarde ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot"></span> Client Meetings ▾</span></span><span class="ftdd-ev-note">◀ Calendar &amp; color</span></div>' +
     '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
-    '<div class="ftdd-ev-desc"><ol><li>Review contract documents prior to the consultation.</li><li>Review the client’s observations, concerns, and instructions regarding the contract.</li><li>Be prepared to discuss the contract and address the client’s questions or concerns during the GMeet consultation.</li></ol></div></div>' +
-    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
-    '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
+    '<p class="ftdd-ev-note ftdd-ev-noteup">▼ Notes</p><div class="ftdd-ev-desc ftdd-ev-mark"><ol><li>Review contract documents prior to the consultation.</li><li>Review the client’s observations, concerns, and instructions regarding the contract.</li><li>Be prepared to discuss the contract and address the client’s questions or concerns during the GMeet consultation.</li></ol></div></div>' +
+    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><p class="ftdd-ev-note ftdd-ev-noteup">▼ Add guests</p><div class="ftdd-ev-mark ftdd-ev-markin"><div class="ftdd-ev-f wide">Add guests</div>' +
+    '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
   // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
   // (the three links are buttons in one row, ftdd-linkbtns: a new tab each; the six steps two to a row, ftdd-steps2, so the

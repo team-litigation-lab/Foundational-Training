@@ -2946,6 +2946,8 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h b{color:#fff !important;}
 .ft-body .ftdd-ev-title{font:500 22px/1.25 'Inter',system-ui,sans-serif;border-bottom:1px solid #747775;padding-bottom:3px;}
 .ft-body .ftdd-ev-mark{outline:2.5px solid #D93025;outline-offset:2px;}
 .ft-body .ftdd-ev-note{color:#1A56DB;font:700 14px/1 'IBM Plex Mono',monospace;}
+.ft-body .ftdd-ev-markin{display:inline-flex;gap:6px;align-items:center;border-radius:4px;} .ft-body .ftdd-ev-side div.ftdd-ev-markin{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:4px;text-align:left;} .ft-body .ftdd-ev-side div.ftdd-ev-markin .ftdd-ev-guest{justify-content:flex-start;} .ft-body .ftdd-ev-line .ftdd-ev-note{margin-left:8px;}
+main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700 14px/1 'IBM Plex Mono',monospace !important;color:#1A56DB !important;}
 .ft-body .ftdd-ev-save{margin-left:auto;background:#0B57D0;color:#fff;border-radius:999px;padding:6px 18px;font-weight:700;}
 .ft-body .ftdd-ev-when{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px;padding:7px;outline:2.5px solid #D93025;}
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
