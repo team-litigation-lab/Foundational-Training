@@ -160,7 +160,11 @@ async function readPortalTicket(env, ticket, why = {}) {
   if (t.r === "a") return { admin: true, name: String(t.n || "").trim().slice(0, 60) };   // an administrator signed in on the Portal (their own admin account)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
-  return { name: `${first} ${last}`, first, last, batch };
+  // (a middle name or initial, when the Portal sends one: m / middle / mi, or the whole name as registered, full. It is
+  // the name shown, fullName; the ID stays first + last name, so a trainee never gets a second account from it)
+  const middle = String(t.m || t.middle || t.mi || "").trim().slice(0, 60);
+  const full = (String(t.full || "").trim() || [first, middle, last].filter(Boolean).join(" ")).replace(/\s+/g, " ").slice(0, 120);
+  return { name: `${first} ${last}`, first, last, batch, full };
 }
 // Like readToken, but an expired token still counts for a while (same signature, same trainee), so a trainee
 // midway through the course whose 30 days run out isn't sent back to the portal in the middle of a lesson.
@@ -1287,7 +1291,10 @@ export default {
         // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
         // to the new batch, with all its progress; a duplicate made since (newer than it) is archived, merged into it.
         const moved = await movedBatch(kv, who.name, who.batch);
+        // the full name as registered on the Portal (with a middle name or initial), kept beside the record's name
+        const withFull = async (id, rec) => { if (rec && who.full && who.full !== who.name && rec.fullName !== who.full) { rec.fullName = who.full; await kv.put(`trainee:${id}`, JSON.stringify(rec)); } return rec; };
         if (moved) {
+          await withFull(moved.id, moved.rec);
           const blockedM = (await blockedIds(env))[moved.id];
           if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
           return json({ id: moved.id, token: await makeToken(env, "t", moved.id, 24 * 30), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
@@ -1304,6 +1311,7 @@ export default {
           await kv.put(`trainee:${out.id}`, JSON.stringify(rec));
           out.existing = rec;
         }
+        if (out.existing) await withFull(out.id, out.existing);
         return json(Object.assign(out, { name: who.name, first: who.first, last: who.last, batch: who.batch }));
       }
 
