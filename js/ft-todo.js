@@ -257,7 +257,8 @@ window.FTShadowAdmin = {
     X.at = Date.now(); render();
   }
 };
-ftAdminTab("shadowing", "📋 Hubstaff To-Do", adminHtml);
+// The trainer's 📋 Hubstaff To-Do tab was taken off Admin (Nov 2026): the To-Do lines are the guide's own wording.
+// adminHtml / FTShadowAdmin stay unused, so a saved settings:todo still shows to the trainees.
 
 (function(){ const st = document.createElement("style"); st.id = "ft-todo"; st.textContent = `
 main.main-td{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
