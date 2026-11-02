@@ -3242,6 +3242,10 @@ html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:
 main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}
 main.main-ftdd .ftdd-sheet > .ftdd-keep:has(.ftdd-evl){align-self:stretch;width:100%;}
 .ftdd-sheet .ftdd-evl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin:10px 0 6px;text-align:left;}
+/* (the checklist's own title over the cards: Accident or Injury Claim Documents & Evidence, CHECKLIST in orange) */
+main.main-ftdd .ftdd-sheet .ftdd-evl-title{width:100%;text-align:center;margin:2px 0 4px;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-title b{display:block;font:800 26px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-title span{display:block;font:800 22px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;color:#E8590C;}
 @media(max-width:900px){ .ftdd-sheet .ftdd-evl{grid-template-columns:minmax(0,1fr);} }
 .ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 17px/1.3 'Poppins','Inter',sans-serif;}

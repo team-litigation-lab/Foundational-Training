@@ -1171,7 +1171,7 @@ const ROWS = {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
         // (the Other Intake-Related Documents folder: its documents read on the slide, with no link to the Drive folder)
-        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
+        return x.replace(two, () => INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]}]
   },
   8: {
