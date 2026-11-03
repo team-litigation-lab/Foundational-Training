@@ -763,7 +763,8 @@ function facilitatorVoice(saved) {
    trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
    read by their public export, as before. */
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
-// (one token per scope: reading is drive.readonly; 💾 Save to Drive writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
+// (one token per scope and identity: reads go through readTokens, as GDRIVE_SA_SUBJECT first when it is set; 💾 Save to Drive
+// writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
 const SA_TOKENS = {};
 // (self: the drive scope as the service account itself, never as GDRIVE_SA_SUBJECT: for sharing a folder with that user)
 async function driveToken(env, write, self) {
@@ -785,13 +786,25 @@ async function driveToken(env, write, self) {
   SA_TOKENS[slot] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
   return j.access_token;
 }
+/* The tokens a read tries, in order. With GDRIVE_SA_SUBJECT set, the platform reads AS that Workspace user first (the
+   trainer, an Editor on every trainee's Drive): no trainee has to share anything with the service account. Then as the
+   service account itself (files a trainee did share with it, Shared Drives it is a member of). (The subject's token has the
+   drive scope: the one domain-wide delegation authorizes.) */
+async function readTokens(env) {
+  const out = [];
+  if (env.GDRIVE_SA_SUBJECT) { try { out.push(await driveToken(env, true)); } catch (e) { /* then the account itself */ } }
+  try { out.push(await driveToken(env)); } catch (e) { if (!out.length) throw e; }
+  return out;
+}
 async function fetchGoogle(url, env) {
   if (!url) throw new Error("link");
-  const headers = driveSA(env) ? { Authorization: "Bearer " + await driveToken(env) } : {};
-  const res = await fetch(url, { redirect: "follow", headers });
-  const text = await res.text();
-  if (!res.ok || /^\s*<(!doctype|html)/i.test(text.slice(0, 200))) throw new Error("not-shared");
-  return text;
+  const tokens = driveSA(env) ? await readTokens(env) : [null];
+  for (const tk of tokens) {
+    const res = await fetch(url, { redirect: "follow", headers: tk ? { Authorization: "Bearer " + tk } : {} });
+    const text = await res.text();
+    if (res.ok && !/^\s*<(!doctype|html)/i.test(text.slice(0, 200))) return text;
+  }
+  throw new Error("not-shared");
 }
 /* 📄 The answer sheets in a trainee's Assessment and Activities Folder (js/ft-process.js finds each sheet there by its name):
    the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
@@ -800,7 +813,14 @@ async function folderFiles(env, folderUrl) {
   const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return publicFolderFiles(fid);
-  const token = await driveToken(env), FOLDER = "application/vnd.google-apps.folder", out = [];
+  let tokens;
+  try { tokens = await readTokens(env); } catch (e) { return { error: "drive" }; }
+  let last = { error: "no-access" };
+  for (const token of tokens) { const r = await folderFilesAs(token, fid); if (!r.error) return r; last = r; }
+  return last;
+}
+async function folderFilesAs(token, fid) {
+  const FOLDER = "application/vnd.google-apps.folder", out = [];
   const list = async (parent) => {
     let page = "", n = 0;
     do {
@@ -1014,6 +1034,53 @@ async function checkShots(env, id) {
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString() }) : { files, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString(), error: "" };
   await kv.put(rk, JSON.stringify(cur));
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
+}
+
+/* 🔗 The trainee's three Drive links, opened now through the service account (📁 My Drive links: on 💾 Save my links and
+   🔁 Check again): each one ok, or why not, with the address to share it with. Kept in trackerreview:<id>.verify
+   ({folder|tracker|monitor: {ok, url, error, name, at}}), so the 📋 Batch Sheet's Drive links read it too: the trainee fixes a
+   link the system can't open, and no trainer has to check it by hand. */
+const VERIFY_WHY = {
+  share: (sa) => `The system can't open it. Share it with ${sa} as Editor (Share → add the address → Editor), then check again.`,
+  folder: "This isn't a folder's link. Open your Assessment and Activities Folder and copy its address (…/drive/folders/…).",
+  sheet: "The Task Tracker must be a Google Sheets link (docs.google.com/spreadsheets/…).",
+  doc: "The Monitoring Sheet must be a Google Docs or Google Sheets link."
+};
+async function verifyLinks(env, id) {
+  const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
+  if (!driveSA(env)) return { error: "no-sa" };
+  // (the address to share with: the Workspace user the platform reads as, when it is set; else the service account)
+  const sa = String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL), at = new Date().toISOString(), out = {};
+  let tokens;
+  try { tokens = await readTokens(env); } catch (e) { return { error: "drive-auth" }; }
+  for (const k of ["folder", "tracker", "monitor"]) {
+    const url = String(drive[k] || "").trim();
+    if (!url) continue;
+    const f = TR.googleFile(url), fid = k === "folder" ? folderId(url) : f.id;
+    let r;
+    if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : k === "tracker" ? VERIFY_WHY.sheet : VERIFY_WHY.doc };
+    else if (k === "tracker" && f.kind !== "sheet") r = { ok: false, error: VERIFY_WHY.sheet };
+    else {
+      try {
+        let res, j = {};
+        for (const token of tokens) {
+          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+          j = await res.json().catch(() => ({}));
+          if (res.ok) break;
+        }
+        if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa) };
+        else if (k === "folder" && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: VERIFY_WHY.folder };
+        else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
+        else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "")) r = { ok: false, error: VERIFY_WHY.doc };
+        else r = { ok: true, name: String(j.name || "").slice(0, 200) };
+      } catch (e) { r = { ok: false, error: "Google Drive didn't answer. Check again in a minute." , retry: true }; }
+    }
+    out[k] = Object.assign(r, { url: url.slice(0, 500), at });
+  }
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  cur.verify = out; cur.verifyAt = at;
+  await kv.put(rk, JSON.stringify(cur));
+  return { ok: true, verify: out, share: sa };
 }
 
 async function runTrackerChecks(env, opts) {
@@ -1527,6 +1594,18 @@ export default {
         return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
       }
 
+      /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
+      if (path === "/api/drive/verify") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
+          if (last && last.verifyAt && Date.now() - Date.parse(last.verifyAt) < 20 * 1000) return json({ error: "Checked a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+        }
+        return json(await verifyLinks(env, id));
+      }
+
       /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */
       if (path === "/api/drive/check") {
         const b = await request.json().catch(() => ({}));
@@ -1688,7 +1767,7 @@ export default {
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
         try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
-          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
+          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
