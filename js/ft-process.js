@@ -160,6 +160,19 @@ async function checkFolder(force){
   });
   if(changed) queueSave();   // (nothing on the trainee's page changes: the trainer sees the result)
 }
+// 🔎 the same check, run by a trainer from ✍️ Process Questions (a trainee's folder only ever was looked in from their own
+// session, so a sheet saved there showed "Not found in their folder" until they came back): /api/drive/answers with the
+// trainee's id (admins only), matched by the sheet's convention with the trainee's own first name. Nothing is written:
+// the trainee's next visit records it on their sheet as before.
+const firstOf = n => String(n || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
+function findInFolder(set, x, files, first){
+  const named = n => normName(bare(n)) === normName(fileName(set, first));
+  const mine = (files || []).filter(f => looksLike(set, f.name)).sort((a, b) => (named(b.name) - named(a.name)) || String(a.created).localeCompare(String(b.created)));
+  const f = mine[0]; if(!f) return null;
+  const due = (x && x.assignedOn) || (x && x.submittedAt ? ptDay(x.submittedAt) : "");
+  return {name: f.name, link: f.link, at: f.created || f.modified, nameOk: named(f.name), onTime: !due || ptDay(f.created || f.modified) <= due};
+}
+const FOLDER_WHY = {"no-folder": "No Assessment & Activities Folder linked yet", "no-access": "Their folder isn’t shared with the training account", drive: "Google Drive couldn’t be read just now", offline: "Couldn’t reach the server"};
 // the result, for the trainee and the trainer alike
 function fileStatus(set, x){
   const f = x && x.file; if(!f) return "";
@@ -570,7 +583,7 @@ window.ftKcQuestions = kcQuestionsFor;
 // (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
-const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}, qeditOpen:false};
+const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}, qeditOpen:false, folder:{}};
 async function loadAdmin(){
   FPA.loading = true;
   try{
@@ -614,10 +627,16 @@ function renderAdminProcess(){
         return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTProcessAdmin.row('${x.id}')">${open?"▾":"▸"} <b>${e(x.name)}</b> <span class="fp-pill ${sub===PROCESS_SETS.length?"ok":sub?"mid":"bad"}">${sub} of ${PROCESS_SETS.length} submitted</span> ${kcPills(x.p)}</div>
           ${open ? `<pre class="fp-report">${e(reportLine(x))}</pre>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.folder('${x.id}')" ${(FPA.folder[x.id] || {}).busy ? "disabled" : ""}>🔁 Check their folder</button>
             ${kcAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
-              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.link || a.file.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>` : ` <span class="fp-pill bad">Not found in their folder</span>`}</div>
-                ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
+              const sc = sheetScore(x, s), fl = folderCell(x, s, a);
+              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>
+                ${sc.pct != null ? `<span class="fp-pill ${sc.pct >= KC_PASS ? "ok" : "mid"}" title="${e(sc.how)}">🏅 ${sc.pct}%${sc.trainer ? " · trainer’s final" : ""}</span>` : a && a.submittedAt ? `<span class="fp-pill">not graded yet</span>` : ""} ${fl}</div>
+                ${FPA.sheetOpen[k] ? `${sc.summary ? `<p class="fp-muted fp-why"><b>Why ${sc.pct}%:</b> ${e(sc.how)}. ${e(sc.summary)}</p>` : sc.pct != null ? `<p class="fp-muted fp-why"><b>Why ${sc.pct}%:</b> ${e(sc.how)}.</p>` : ""}
+                  <ol class="fp-aans">${s.questions.map((q,i)=>{ const g = answerGrade(x, s, i);
+                    return `<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div>
+                    ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback || "")}</div>` : ""}${g && g.note ? `<div class="fp-tnote">🧑‍🏫 ${e(g.note)}</div>` : ""}</li>`; }).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
 }
@@ -625,6 +644,45 @@ function renderAdminProcess(){
 // facilitator's DNA, per answer), and the trainer's own comment per answer, overall comment and final score.
 // (a lesson with a 📖 Reading Task, Day 1: two entries, the lesson's own sheet and the Reading Task, each with its own review:
 // the Reading Task's in kcreview:<id>.read[lesson], its final score the Reading Task's own, apart from the lesson's)
+/* 🏅 a sheet's score, as the Scorecard counts it: the trainer's final score, else the graded best of its Knowledge Check
+   (a 📖 Reading Task its own; a sheet split across lessons, its first lesson's), with the why: the attempts and the
+   overall evaluation. Each answer's grade (out of 10) and feedback from the last graded attempt, with the trainer's note. */
+const setLessons = s => kcLessons(s);
+function sheetScore(x, s){
+  const read = !!s.open && !!readSetOf(s.lesson), l = setLessons(s)[0];
+  const rec = read ? ((x.p.kcRead || {})[l]) : ((x.p.kc || {})[l]), rv = read ? ((x.rv.read || {})[l] || {}) : (x.rv.lessons[l] || {});
+  const t = trainerScore(rv), g = rec && rec.attempts ? rec.best : null, pct = t != null ? t : g;
+  const how = t != null ? `the trainer’s final score${g != null ? ` (graded best ${g}%, ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"})` : ""}`
+    : g != null ? `graded best of ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"} (the ${ftName(l)} Knowledge Check, 70% passes)` : "";
+  return {pct, trainer: t != null, how, summary: [rec && rec.last && rec.last.summary, rv.comment ? "Trainer: " + rv.comment : ""].filter(Boolean).join(" ")};
+}
+function answerGrade(x, s, i){
+  const recs = Object.values(x.p.kc || {}).concat(Object.values(x.p.kcRead || {})).filter(r => r && r.last && Array.isArray(r.last.items));
+  const g = recs.map(r => r.last.items.find(it => it.sid === s.id && it.i === i)).filter(Boolean)[0];
+  const note = Object.values(x.rv.lessons || {}).concat(Object.values(x.rv.read || {})).map(r => ((r || {}).notes || {})[s.id + "|" + i]).find(has);
+  return g || note ? Object.assign({score: g ? g.score : "—", feedback: g ? g.feedback : ""}, note ? {note} : {}) : null;
+}
+// the folder, for the trainer: what the trainee's session recorded, else the trainer's own look in the folder
+function folderCell(x, s, a){
+  const link = f => `<a href="${e(f.link || f.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(f.name)}” ↗</a>`;
+  if(a && a.file) return `${fileStatus(s, a)} ${link(a.file)}`;
+  const F = FPA.folder[x.id];
+  const found = F && F.files ? findInFolder(s, a, F.files, firstOf(x.name)) : null;
+  if(found) return `${fileStatus(s, {file: found})} ${link(found)} <span class="fp-muted">(found by the trainer’s check)</span>`;
+  if(a && a.drive && a.drive.at) return `<span class="fp-pill ok">📄 Saved to their folder ${e(new Date(a.drive.at).toLocaleDateString())}</span>${a.drive.link ? " " + link({name: fileName(s, firstOf(x.name)) + ".pdf", link: a.drive.link}) : ""}`;
+  if(!a || !(a.submittedAt || answered(s, a))) return "";
+  if(!F || F.busy) return `<span class="fp-pill">Checking their folder…</span>`;
+  if(F.error) return `<span class="fp-pill mid" title="${e(FOLDER_WHY[F.error] || F.error)}">⚠ ${e(FOLDER_WHY[F.error] || "Couldn’t check their folder")}</span>`;
+  return `<span class="fp-pill bad" title="Looked for “${e(fileName(s, firstOf(x.name)))}” in their Assessment & Activities Folder">Not found in their folder</span>`;
+}
+async function checkTraineeFolder(id, force){
+  const F = FPA.folder[id]; if(F && (F.busy || (!force && F.at && Date.now() - F.at < 120000))) return;
+  FPA.folder[id] = {busy: true, at: Date.now()}; render();
+  let j = {};
+  try{ const r = await authFetch("/api/drive/answers", {id}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
+  FPA.folder[id] = {busy: false, at: Date.now(), files: j.files || null, error: j.files ? "" : (j.error || "drive")};
+  if(state.view === "process") render();
+}
 const readSetOf = l => { const sets = [...new Set(kcQuestionsFor(l).map(q => q.set))]; return sets.length > 1 ? sets.find(st => !!st.open) || null : null; };
 function kcAdmin(x){
   const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b).filter(l=>DAYS.find(d=>d.id===l));
@@ -668,10 +726,11 @@ window.FTProcessAdmin = {
     }catch(err){ toast("Couldn’t save the review. Check your connection."); }
     btn.disabled = false; render();
   },
-  row(id){ FPA.open[id] = !FPA.open[id]; render(); },
+  row(id){ FPA.open[id] = !FPA.open[id]; render(); if(FPA.open[id]) checkTraineeFolder(id); },
+  folder(id){ checkTraineeFolder(id, true); },
   sheet(id, sid){ const k = id+"|"+sid; FPA.sheetOpen[k] = !FPA.sheetOpen[k]; render(); },
   batch(b){ FPA.closed[b] = !FPA.closed[b]; render(); },
-  refresh(){ FPA.rows = null; render(); },
+  refresh(){ FPA.rows = null; FPA.folder = {}; render(); },
   copy(id){ const x = FPA.rows.find(r=>r.id===id); if(!x) return;
     (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); },
   toggleQEdit(){ FPA.qeditOpen = !FPA.qeditOpen; render(); },
@@ -993,6 +1052,7 @@ function kcPills(p){
 
 (function(){ const s = document.createElement("style"); s.id = "ft-process"; s.textContent = `
 main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
+.fp-why{margin:6px 0 2px 18px;} .fp-tnote{margin:4px 0 0;padding:5px 9px;border-left:3px solid #5B7DB1;background:#F3F6FB;font-size:13px;}
 .kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
 .kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
 .kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
