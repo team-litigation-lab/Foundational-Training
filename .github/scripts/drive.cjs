@@ -163,7 +163,7 @@ const failures = []; const fail = (m) => failures.push(m);
     // ✅ the day's compliance (dailyCompliance): the AM typing and the spelling taken on the platform, the day's EOD pasted, the
     // output link submitted; no PM typing
     store.set('ft:skills:' + id, JSON.stringify({ typing: [{ date: D, slot: 'AM', wpm: 40 }], spelling: [{ date: D, score: 18 }] }));
-    const dr = JSON.parse(store.get('ft:drive:' + id)); dr.days[D] = Object.assign({}, dr.days[D], { eod: { text: 'Subject: EOD Report – today – Dee Drive. Tasks completed today: the Reception lesson.', at: new Date().toISOString() } });
+    const dr = JSON.parse(store.get('ft:drive:' + id)); dr.days[D] = Object.assign({}, dr.days[D], { eod: { text: `Subject: Daily Report ${D.slice(5, 7)}/${D.slice(8)}/${D.slice(2, 4)}\n\nAccomplishments/Completed Tasks:\n- the Reception lesson\n\nThese are the things I've learned that I can put into practice later on:\n- I learned verification. You confirm the name and DOB first.\n- I learned the warm transfer. You brief the case manager first.\n- I learned the CMS notes. Every call gets a note on the file.\n\nOn queue for tomorrow:\n- Calendar Management\n`, at: new Date(D + 'T19:00:00Z').toISOString() } });
     store.set('ft:drive:' + id, JSON.stringify(dr));
     const nightly = await call('/api/tracker/check', { id }, admin);
     if (!((nightly.body || {}).results || []).some(r => r.tests && r.shots === 1)) fail(`the nightly check didn't look for the test screenshots: ${JSON.stringify(nightly.body)}`);
@@ -231,6 +231,24 @@ const failures = []; const fail = (m) => failures.push(m);
       if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
       const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
       if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }
+
+    // 📧 EOD monitoring: an EOD emailed to the platform's address (worker.js email → receiveEod) is matched to the trainee by the
+    // address they send from, kept as the day's EOD and checked against its template; one no trainee matches is kept for the trainer
+    { const dv = JSON.parse(store.get('ft:drive:' + id)); dv.eodFrom = 'dee.drive@gmail.com'; store.set('ft:drive:' + id, JSON.stringify(dv));
+      const D2 = TR.ptDate(), [yy, mm, dd] = D2.split('-'), body = `Accomplishments/Completed Tasks:\n- Finished the Reception deck\n\nThese are the things I've learned that I can put into practice later on:\n- I learned caller verification. You confirm the name, DOB and DOL first.\n- I learned the warm transfer. You brief the case manager before connecting.\n- I learned the Ring Channel. It plays the call while I take notes.\n\nOn queue for tomorrow:\n- Calendar Management\n`;
+      const raw = `From: Dee Drive <Dee.Drive@gmail.com>\r\nSubject: Daily Report ${mm}/${dd}/${yy.slice(2)}\r\nContent-Type: multipart/alternative; boundary="b1"\r\n\r\n--b1\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n${body.replace(/\n/g, '\r\n').replace(/=/g, '=3D')}\r\n--b1--\r\n`;
+      const hdr = new Map([['from', 'Dee Drive <Dee.Drive@gmail.com>'], ['subject', `Daily Report ${mm}/${dd}/${yy.slice(2)}`], ['date', new Date(D2 + 'T19:00:00Z').toUTCString()]]);
+      await worker.email({ from: 'dee.drive@gmail.com', raw: new Response(raw).body, headers: { get: k => hdr.get(k) || null } }, env, { waitUntil() {} });
+      const e1 = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[D2] || {}).eod || {};
+      if (e1.via !== 'email' || !/warm transfer/.test(e1.text || '')) fail(`the emailed EOD wasn't kept as the day's EOD: ${JSON.stringify(e1).slice(0, 200)}`);
+      const cc = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {})[D2] || {};
+      if (!cc.eodCheck || cc.parts.eod !== 100 || cc.eodCheck.via !== 'email') fail(`the emailed EOD wasn't checked (100%): ${JSON.stringify(cc.eodCheck || cc.parts)}`);
+      // an EOD missing its learnings: its % and what is missing
+      const r2 = await call('/api/eod/receive', { from: 'Dee Drive <dee.drive@gmail.com>', subject: 'EOD', date: new Date(D2 + 'T19:30:00Z').toISOString(), text: 'Accomplishments/Completed Tasks:\n- the deck\n' }, admin);
+      if (!r2.body || !r2.body.matched || r2.body.check.pct >= 100 || !r2.body.check.rules.some(r => r.id === 'learn' && !r.pass)) fail(`a partial EOD isn't marked down with what's missing: ${JSON.stringify(r2.body).slice(0, 300)}`);
+      const r3 = await call('/api/eod/receive', { from: 'Someone Else <x@y.com>', subject: 'Daily Report', text: 'hello' }, admin);
+      if (!r3.body || r3.body.matched !== false || !((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Someone Else/.test(x.from))) fail('an EOD no trainee matches isn\'t kept for the trainer');
+      if ((await call('/api/eod/receive', { from: 'x', text: 'y' }, trainee)).status !== 403) fail('a trainee could post an EOD as the platform'); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');

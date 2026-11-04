@@ -1165,6 +1165,65 @@ async function verifyLinks(env, id) {
   return { ok: true, verify: out, share: sa };
 }
 
+
+/* 📧 EOD MONITORING: the trainees' EOD emails, received by the platform and checked against their template
+   The trainees CC the platform's EOD address (EOD_INBOX, e.g. eod@train.legalsupporthelp.com: Cloudflare Email Routing sends
+   that address to this Worker, `email` below) on the EOD they send their trainers. Each one is matched to its trainee — by
+   the address they send from (📁 My Drive links: drive:<id>.eodFrom), else by the sender's name — kept as that day's EOD
+   (drive:<id>.days[<date>].eod = {text, subject, at, via: "email", from}), checked against the template of Setting of
+   Expectations (TR.checkEod: the subject and its date, the three parts, 3 learnings of 2 sentences or more, sent before the
+   end of the shift) and the day's compliance is worked out again (its EOD part is that check's %). An EOD no trainee
+   matches is kept for the trainer (admin:eod-unmatched, the last 50). A pasted EOD (📋 Task Tracker) is checked the same way. */
+function mimeText(raw) {
+  const text = String(raw || "");
+  const decodeQP = (s) => s.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16)));
+  const decodeB64 = (s) => { try { return decodeURIComponent(escape(atob(s.replace(/\s+/g, "")))); } catch (e) { try { return atob(s.replace(/\s+/g, "")); } catch (e2) { return ""; } } };
+  const body = (part) => { const i = part.search(/\r?\n\r?\n/); if (i < 0) return { h: part, b: "" }; return { h: part.slice(0, i), b: part.slice(i).replace(/^\r?\n\r?\n/, "") }; };
+  const decode = (h, b) => /content-transfer-encoding:\s*base64/i.test(h) ? decodeB64(b) : /content-transfer-encoding:\s*quoted-printable/i.test(h) ? decodeQP(b) : b;
+  const walk = (part) => {
+    const { h, b } = body(part), bm = /boundary="?([^";\r\n]+)"?/i.exec(h);
+    if (/content-type:\s*multipart\//i.test(h) && bm) {
+      const parts = b.split("--" + bm[1]).slice(1).filter((x) => !/^--/.test(x));
+      for (const p of parts) { const t = walk(p.replace(/^\r?\n/, "")); if (t && t.plain) return t; }
+      for (const p of parts) { const t = walk(p.replace(/^\r?\n/, "")); if (t && t.html) return t; }
+      return null;
+    }
+    if (/content-type:\s*text\/html/i.test(h)) return { html: decode(h, b) };
+    return { plain: decode(h, b) };
+  };
+  const r = walk(text) || {};
+  if (r.plain) return r.plain;
+  return String(r.html || "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h\d)>/gi, "\n").replace(/<li[^>]*>/gi, "- ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'");
+}
+const normName = (v) => String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim();
+async function receiveEod(env, msg) {
+  const kv = kvOf(env);
+  const fromH = String(msg.from || ""), addr = ((/<([^>]+)>/.exec(fromH) || [])[1] || fromH).trim().toLowerCase(), name = fromH.replace(/<[^>]*>/, "").replace(/"/g, "").trim();
+  const at = msg.date && isFinite(Date.parse(msg.date)) ? new Date(msg.date).toISOString() : new Date().toISOString();
+  const D = TR.ptDate(new Date(at)), text = String(msg.text || "").replace(/\r/g, "").slice(0, 12000), subject = String(msg.subject || "").slice(0, 300);
+  // the trainee: by the address they send from, else by the sender's name (an approved trainee, not offboarded)
+  const ids = (await listAll(env, "trainee:")).map((k) => k.slice("trainee:".length));
+  let id = null, byName = null;
+  for (const tid of ids) {
+    const rec = JSON.parse((await kv.get(`trainee:${tid}`)) || "null"); if (!rec || rec.approved !== true || rec.archived || rec.offboarded) continue;
+    const dv = JSON.parse((await kv.get(`drive:${tid}`)) || "null") || {};
+    if (addr && String(dv.eodFrom || "").trim().toLowerCase() === addr) { id = tid; break; }
+    if (!byName && name && normName(rec.name) && normName(rec.name) === normName(name)) byName = tid;
+  }
+  id = id || byName;
+  if (!id) {
+    const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] };
+    un.items = [{ from: fromH.slice(0, 200), subject, at, text: text.slice(0, 3000) }].concat(un.items || []).slice(0, 50);
+    await kv.put("admin:eod-unmatched", JSON.stringify(un));
+    return { matched: false };
+  }
+  const dv = JSON.parse((await kv.get(`drive:${id}`)) || "null") || { days: {} }; dv.days = dv.days || {};
+  dv.days[D] = Object.assign({}, dv.days[D] || {}, { eod: { text, subject, at, via: "email", from: addr } });
+  await kv.put(`drive:${id}`, JSON.stringify(dv));
+  try { await dailyCompliance(env, id, D); } catch (e) { /* the end of the shift works it out */ }
+  return { matched: true, id, date: D, check: TR.checkEod(text, subject, D, at) };
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -1295,13 +1354,15 @@ async function dailyCompliance(env, id, D, o = {}) {
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved || subs.length ? 100 : 0,
-    eod: day.eod && String(day.eod.text || "").trim() ? 100 : 0
+    // (📧 the EOD checked against its template, TR.checkEod: its %, not 100 for anything there)
+    eod: day.eod && String(day.eod.text || "").trim() ? TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at).pct : 0
   };
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean),
+    eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
   await kv.put(rk, JSON.stringify(cur));
@@ -1395,6 +1456,13 @@ async function docFromR2(env, request, path) {
 }
 
 export default {
+  // 📧 an EOD sent to the platform's EOD address (Cloudflare Email Routing → this Worker): receiveEod
+  async email(message, env, ctx) {
+    try {
+      const raw = await new Response(message.raw).text();
+      await receiveEod(env, { from: message.headers.get("from") || message.from, subject: message.headers.get("subject") || "", date: message.headers.get("date") || "", text: mimeText(raw) });
+    } catch (e) { /* an email that can't be read is dropped quietly */ }
+  },
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
   },
@@ -1721,6 +1789,12 @@ export default {
       }
 
       /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
+      /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
+      if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || "").trim() });
+      if (path === "/api/eod/unmatched") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); return json(JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }); }
+      // (a trainer's test of the intake without an email: the same as an email arriving)
+      if (path === "/api/eod/receive") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); const b = await request.json().catch(() => ({})); return json(await receiveEod(env, b)); }
+
       /* ---------- 🔄 a batch's past training days, worked out now (a trainer opening its 📋 Batch Sheet): backfillCompliance ---------- */
       if (path === "/api/compliance/backfill") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);

@@ -577,7 +577,8 @@ function outputsNotesHtml(){
     if(c.tests){ const t = c.tests, miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
       plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
     if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
-    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod) todo.push("No EOD email for the day"); }
+    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod && !c.eodCheck) todo.push("No EOD email for the day");
+      (c.eodCheck ? c.eodCheck.rules || [] : []).filter(r => !r.pass).forEach(r => todo.push(`EOD: ${r.label}${r.detail ? " — " + r.detail : ""}`)); }
     const did = [...(c.platform || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
       ...(c.submissions || []).slice(0, 4)].filter(Boolean);
     // the AI's review (the tracker's notes) and the trainer's comment

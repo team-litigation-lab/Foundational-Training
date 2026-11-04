@@ -86,6 +86,8 @@ function linksCard(auto = true){
     ${stepsHtml(auto)}
     ${verifyBox()}
     ${MONITORED.map(([k, label, ph, hint]) => row(k, label, ph, hint)).join("")}
+    <label class="fdr-l"><span>📧 The email address you send your EOD from</span><div class="fdr-row"><input id="fdr-eodFrom" type="email" placeholder="you@gmail.com" value="${e(x.eodFrom || "")}"></div>
+      <small>So the EOD you CC to the platform is matched to you.</small></label>
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
 }
 const TAM_WHERE = "Google Drive → Shared with me → your batch folder (e.g. B073126) → LSH Trainee folder → LSH Task Assessment Manual (TAM) | [Batch]_ [Your Full Name].";
@@ -135,10 +137,15 @@ function renderTrackerPage(){
 // 📧 the day's EOD email, as sent (pasted here so the end-of-shift check can count it: the email itself can't be read):
 // drive:<id>.days[<date>].eod = {text, at}
 function eodHtml(d){
-  const x = (D.drive.days[d] || {}).eod || {};
+  const x = (D.drive.days[d] || {}).eod || {}, inbox = window.FT_EOD_INBOX || "";
+  // 📧 the template's check (TR.checkEod): the subject and its date, the three parts, 3 learnings of 2 sentences or more, on time
+  const ck = x.text && TR.checkEod ? TR.checkEod(x.text, x.subject || "", d, x.at) : null;
   return `<h3>📧 Your EOD email</h3>
-      <p class="fdr-muted">Before your shift ends, send your EOD email (the template is in Setting of Training Expectations), then paste what you sent here: the subject and the message.</p>
-      <textarea id="fdrEod" class="fdr-eod" rows="5" placeholder="Subject: EOD Report – [Date] – [Your Name]&#10;&#10;Tasks completed today: …">${e(x.text || "")}</textarea>
+      <p class="fdr-muted">Before your shift ends, send your EOD email (the template is in Setting of Training Expectations)${inbox ? `, with <b>${e(inbox)}</b> in CC: it shows here by itself and is checked against the template` : ""}. Or paste what you sent here: the subject and the message.</p>
+      ${x.via === "email" ? `<p class="fdr-muted">📧 Received by email ${e(new Date(x.at).toLocaleString())}${x.subject ? ` · “${e(x.subject)}”` : ""}.</p>` : ""}
+      ${ck ? `<div class="fdr-res"><div class="fdr-res-h"><span class="fdr-pct ${ck.pct >= 100 ? "ok" : ck.pct >= 60 ? "mid" : "bad"}">${ck.pct}%</span><span class="fdr-muted">checked against the EOD template</span></div>
+        <ul>${ck.rules.map(r => `<li class="${r.pass ? "ok" : "miss"}">${r.pass ? "✓" : "✗"} <b>${e(r.label)}</b> <span>${e(r.detail || "")}</span></li>`).join("")}</ul></div>` : ""}
+      <textarea id="fdrEod" class="fdr-eod" rows="5" placeholder="Subject: Daily Report mm/dd/yy&#10;&#10;Accomplishments/Completed Tasks:&#10;- …">${e(x.text || "")}</textarea>
       <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveEod()">📤 Submit today’s EOD</button></div>
       ${x.at ? `<p class="fdr-muted">EOD submitted ${e(new Date(x.at).toLocaleString())}.</p>` : ""}`;
 }
@@ -184,6 +191,9 @@ function paintLinkModal(){
     <span>Your folder, Task Tracker and Monitoring Sheet are checked automatically once they’re linked and shared.</span>
     <button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Fix my links</button></div>`;
 });
+// 📧 the platform's EOD address trainees CC (worker.js EOD_INBOX): read once a session
+window.FT_EOD_INBOX = window.FT_EOD_INBOX || "";
+setTimeout(() => { if(typeof authFetch === "function" && (state.traineeId || state.isAdmin)) authFetch("/api/eod/inbox", {}).then(r => r.json()).then(j => { if(j && j.address){ window.FT_EOD_INBOX = j.address; } }).catch(() => {}); }, 1500);
 window.FTDrive = {
   async linkMine(){
     // a trainer, or someone not signed in as a trainee, sees the window as a trainee does (the steps), but saves nothing
@@ -228,6 +238,7 @@ window.FTDrive = {
     if(v("tracker") && TR.googleFile(v("tracker")).kind !== "sheet"){ toast("The Task Tracker link must be a Google Sheets link."); return; }
     if(["typing", "spelling", "folder"].some(k => v(k) && !/\/folders\//.test(v(k)))){ toast("Links 3–5 are folders: open the folder in Drive and copy its address (…/drive/folders/…)."); return; }
     MKEYS.forEach(k => { D.drive[k] = v(k); });
+    { const em = v("eodFrom"); if(em && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast("The EOD email address doesn’t look right."); return; } D.drive.eodFrom = em.toLowerCase(); }
     if(!D.drive.startDate) D.drive.startDate = today();
     if(await save() === false){ toast("Couldn’t save. Check your connection."); return; }
     toast("✓ Links saved. Checking that the system can open them…"); render(); paintLinkModal();
