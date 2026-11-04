@@ -74,7 +74,12 @@ function loadMine(force){
 const SEEN = "ft_fb_seen";
 const seen = () => { try{ return JSON.parse(localStorage.getItem(SEEN) || "{}"); }catch(err){ return {}; } };
 function markSeen(keys){ try{ const s = seen(); keys.forEach(k => { s[k] = Date.now(); }); localStorage.setItem(SEEN, JSON.stringify(s)); }catch(err){} }
-const isNew = (k, it) => { const s = seen()[k]; return !s || s < new Date(it.at).getTime(); };
+// (a feedback shown as NEW stays NEW while the trainee is on that page, which redraws after it is marked seen; leaving the page
+// ends it: back on it later, it is seen)
+const SHOWN = {view: null, keys: new Set()};
+const shownNow = () => { if(SHOWN.view !== (typeof state === "object" ? state.view : null)){ SHOWN.view = typeof state === "object" ? state.view : null; SHOWN.keys = new Set(); } return SHOWN.keys; };
+const isNew = (k, it) => { if(shownNow().has(k + "|" + it.at)) return true; const s = seen()[k]; return !s || s < new Date(it.at).getTime(); };
+function markSeenShown(keys, items){ const set = shownNow(); keys.forEach(k => { const it = items[k]; if(it && isNew(k, it)) set.add(k + "|" + it.at); }); markSeen(keys); }
 function fbCard(it, k){
   return `<div class="tfb-item${isNew(k, it) ? " tfb-new" : ""}"><div class="tfb-item-h"><b>${e(it.title)}</b>${isNew(k, it) ? `<span class="tfb-badge">NEW</span>` : ""}
       ${it.score != null && it.score !== "" ? `<span class="tfb-score">${e(it.score)}%</span>` : ""}<span class="tfb-when">${e(when(it.at))}</span></div>
@@ -89,6 +94,7 @@ function pageCard(act){
 const __after = window.afterRender;
 window.afterRender = function(){
   const out = __after ? __after.apply(this, arguments) : undefined;
+  try{ shownNow(); }catch(err){}   // (a page left: what was NEW on it is seen when back)
   try{
     const act = Object.keys(ACTS).find(a => ACTS[a].view === state.view);
     if(act && state.traineeId && !state.isAdmin){
@@ -98,7 +104,7 @@ window.afterRender = function(){
         const main = document.querySelector("main"); if(!main) return;
         const back = main.querySelector(":scope > .back-link");
         (back || main.firstElementChild || main).insertAdjacentHTML(back ? "afterend" : "beforebegin", html);
-        markSeen(Object.keys(F.rec.items).filter(k => F.rec.items[k].act === act));
+        markSeenShown(Object.keys(F.rec.items).filter(k => F.rec.items[k].act === act), F.rec.items);
       };
       if(F.rec && F.id === state.traineeId) put(); else loadMine().then(put);
     }
@@ -142,7 +148,7 @@ function renderMine(){
       ${it.week ? `<details class="tfb-rub" open><summary>📊 Your row of ${e(it.week.title)}</summary><table>${it.week.cols.map(c => `<tr><td>${e(c.label)}${c.sub ? ` <small>${e(c.sub)}</small>` : ""}</td>
         <td><b>${c.type === "notes" ? "" : c.raw === "" ? "—" : c.max === 5 ? e(c.raw) + "/5" : `${e(c.raw)}/${e(c.max)} → ${c.mark == null ? "—" : Number(c.mark).toFixed(2) + "/5"}`}</b></td><td>${e(c.note)}</td></tr>`).join("")}</table></details>` : ""}</div>`).join("")
     : `<div class="card" style="padding:24px;">No feedback yet. When your trainer reviews your work (the transcriptions, your video notes, your process guides, your letters, the mock calls and demos), it shows here.</div>`;
-  markSeen(MF.list.map(x => x.k));
+  markSeenShown(MF.list.map(x => x.k), Object.fromEntries(MF.list.map(x => [x.k, x])));
   return `<div class="tfb-hero"><p class="lp-eyebrow">📂 My Pages</p><h1>📬 My Feedback</h1><p>Everything your trainer sent you about your work, newest first. Your scores are on 🏅 My Performance too.</p></div>${html}`;
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["myfeedback"]);
