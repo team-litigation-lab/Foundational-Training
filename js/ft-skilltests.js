@@ -317,13 +317,14 @@ function shotsCard(rec){
 
 /* ---------- the trainer: a batch, day by day ---------- */
 const AD = {people: null, recs: {}, shots: {}, loading: false, batch: "", from: "", to: "", busy: false};
+window.addEventListener("ft-roster-changed", () => { AD.people = null; });
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 async function loadAdmin(){
   AD.loading = true;
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
-    AD.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", since: String(r.registeredAt || "").slice(0, 10)})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    AD.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r))).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", since: String(r.registeredAt || "").slice(0, 10)})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!AD.batch){ const bs = [...new Set(AD.people.map(p => bLabel(p.batch)).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
     const ppl = AD.people, vals = [];
     const keys = ppl.flatMap(p => ["skills:" + p.id, "trackerreview:" + p.id]);

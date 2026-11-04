@@ -930,6 +930,53 @@ function kcSave(qs){
   if(isTraineeHere()){ sets.forEach(assignedOn); checkFolder(); }
   return "";
 }
+// ✍️ the grading prompt (the facilitator's DNA, each answer 0–10 and its feedback, the summary): the trainee's 📝 Submit for
+// Grading, and a sheet left "Submitted" graded by itself on the trainer's side (ftKcGradeFor)
+function kcPrompt(d, qs, ans){
+  return `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
+
+Grade each answer from 0 to 10, rigorously and realistically:
+- Accuracy: correct about U.S. law-firm practice and the personal injury workflow; no wrong legal or procedural statements.
+- Depth: answers every part of the question (both the "what" and the "why"), with reasons or a concrete example.
+- Clarity: complete sentences in a professional tone.
+Scale: 9-10 thorough and correct; 7-8 good with minor gaps; 5-6 partly answers or stays shallow; 3-4 mostly vague or off target; 0-2 blank, irrelevant or wrong. A one-line or generic answer can't score above 4. Don't reward length alone.
+Write the feedback the way this program's facilitator evaluates trainees (her feedback DNA, below): for each answer, two or three sentences in the third person, opening with a verdict label and a period ("Very strong performance.", "Good.", "Good, with Improvements Needed.", "Satisfactory.", "Needs Improvement.", "Needs Significant Improvement.", "Incomplete Submission."), then "Demonstrated a … understanding of …" naming exactly what the answer got right, then "However, improvement is needed in …" naming the exact parts of the question it missed or got wrong, and closing on why it matters for the Legal VA's work. Name specifics, never vague praise. Don't give legal advice.
+The summary is the facilitator's overall evaluation of the response: a verdict label, the strength, the precise improvements needed, in 2–4 sentences.
+
+FACILITATOR'S FEEDBACK DNA:
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+
+QUESTIONS AND ANSWERS:
+${qs.map((x,k)=>`${k+1}. QUESTION: ${x.q}\n   ANSWER: ${ans(x).replace(/\s+/g, " ")}`).join("\n")}
+
+Return ONLY a JSON object, no other text:
+{"items":[{"n":1,"score":<integer 0-10>,"feedback":"..."}, ... one per question, in order], "summary":"the facilitator's overall evaluation, 2-4 sentences"}`;
+}
+/* 🔁 an answer sheet submitted but never graded (✍️ Process Questions shows "Submitted"): graded on the trainer's side, in the
+   same way, when the batch's Batch Sheet opens (js/ft-batch-sheet.js) — its result kept in the trainee's process:<id> as their
+   own grading would (kc / kcRead[lesson]: attempts, best, last), so the Score Card, ✍️ Process Questions and the trainee's
+   Knowledge Check page show it. read: the lesson's Reading Task sheet (Day 1's), else its own. */
+window.ftKcGradeFor = async function(tid, lessonId, read){
+  const d = DAYS.find(x => x.id === Number(lessonId)); if(!d || typeof callAIJson !== "function") return null;
+  const proc = (await sharedGet("process:" + tid)) || {}; proc.sets = proc.sets || {};
+  const all = kcQuestionsFor(lessonId), sets = [...new Set(all.map(x => x.set))], rs = sets.length > 1 ? sets.find(st => st.open) : null;
+  const qs = all.filter(x => read ? x.set === rs : (!rs || x.set !== rs)); if(!qs.length) return null;
+  const ans = x => String((((proc.sets[x.set.id] || {}).answers) || [])[x.i] || "").trim();
+  if(!qs.some(x => ans(x))) return null;
+  const raw = await callAIJson(kcPrompt(d, qs, ans), 1800, undefined, "grading");
+  const got = Array.isArray(raw && raw.items) ? raw.items : []; if(!got.length) return null;
+  const items = qs.map((x, k) => { const it = got.find(g => Number(g && g.n) === k + 1) || got[k] || {};
+    return {sid: x.set.id, i: x.i, score: Math.max(0, Math.min(10, Math.round(Number(it.score) || 0))), feedback: String(it.feedback || "").slice(0, 900)}; });
+  const pct = Math.round(items.reduce((a, b) => a + b.score, 0) / (10 * items.length) * 100);
+  const r = {pct, items, summary: String((raw && raw.summary) || "").slice(0, 1200), at: new Date().toISOString(), voice: "facilitator-dna", auto: "trainer-side"};
+  // (read again just before writing: the trainee may have saved meanwhile; only their grading record is added to)
+  const cur = (await sharedGet("process:" + tid)) || proc, slot = read ? "kcRead" : "kc";
+  cur[slot] = cur[slot] || {}; const rec = cur[slot][lessonId] = cur[slot][lessonId] || {attempts: 0, best: 0, last: null};
+  if(rec.attempts) return null;   // (graded meanwhile)
+  rec.attempts = 1; rec.best = pct; rec.last = r;
+  if(await sharedSet("process:" + tid, cur) === false) return null;
+  return r;
+};
 window.FTKc = {
   open(id){ state.dayId = Number(id); KC.shown[id] = null; KC.shown[shownKey(id, true)] = null; goto("kc"); window.scrollTo(0, 0); },
   async submit(id){
@@ -955,24 +1002,7 @@ window.FTKc = {
       toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands. Change an answer to grade it again.`, 8000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
-    const prompt = `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
-
-Grade each answer from 0 to 10, rigorously and realistically:
-- Accuracy: correct about U.S. law-firm practice and the personal injury workflow; no wrong legal or procedural statements.
-- Depth: answers every part of the question (both the "what" and the "why"), with reasons or a concrete example.
-- Clarity: complete sentences in a professional tone.
-Scale: 9-10 thorough and correct; 7-8 good with minor gaps; 5-6 partly answers or stays shallow; 3-4 mostly vague or off target; 0-2 blank, irrelevant or wrong. A one-line or generic answer can't score above 4. Don't reward length alone.
-Write the feedback the way this program's facilitator evaluates trainees (her feedback DNA, below): for each answer, two or three sentences in the third person, opening with a verdict label and a period ("Very strong performance.", "Good.", "Good, with Improvements Needed.", "Satisfactory.", "Needs Improvement.", "Needs Significant Improvement.", "Incomplete Submission."), then "Demonstrated a … understanding of …" naming exactly what the answer got right, then "However, improvement is needed in …" naming the exact parts of the question it missed or got wrong, and closing on why it matters for the Legal VA's work. Name specifics, never vague praise. Don't give legal advice.
-The summary is the facilitator's overall evaluation of the response: a verdict label, the strength, the precise improvements needed, in 2–4 sentences.
-
-FACILITATOR'S FEEDBACK DNA:
-${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
-
-QUESTIONS AND ANSWERS:
-${qs.map((x,k)=>`${k+1}. QUESTION: ${x.q}\n   ANSWER: ${ans(x).replace(/\s+/g, " ")}`).join("\n")}
-
-Return ONLY a JSON object, no other text:
-{"items":[{"n":1,"score":<integer 0-10>,"feedback":"..."}, ... one per question, in order], "summary":"the facilitator's overall evaluation, 2-4 sentences"}`;
+    const prompt = kcPrompt(d, qs, ans);
     try{
       const raw = await callAIJson(prompt, 1800, undefined, "grading");
       const got = Array.isArray(raw && raw.items) ? raw.items : [];

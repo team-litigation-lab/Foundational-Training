@@ -370,13 +370,14 @@ window.render = function(){
 
 /* ---------- 🛡 Admin Master Control → 🏅 Scorecards: every trainee's, in one table ---------- */
 const AS = {rows:null, loading:false, fresh:false, batch:"", open:{}};
+window.addEventListener("ft-roster-changed", () => { AS.rows = null; });
 async function loadAdmin(){
   AS.loading = true;
   try{
     if(AS.fresh && typeof loadAdminLedgerQuiet === "function"){ AS.fresh = false; await loadAdminLedgerQuiet(); }   // ↻ Refresh: the trainees again too
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const ks = keyed(), want = [];
     people.forEach(r => ks.forEach(s => want.push(s.key + r.id)));
     const vals = await sharedGetMany(want.concat(CFG.shared)), shared = {};

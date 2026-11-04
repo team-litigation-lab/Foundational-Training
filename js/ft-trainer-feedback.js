@@ -174,7 +174,7 @@ async function loadAdmin(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
-    A.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    A.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r))).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!A.batch){ const bs = batchesOf(); A.batch = bs[bs.length - 1] || ""; }
     const ppl = A.people.filter(p => bLabel(p.batch) === A.batch), keys = [];
     ppl.forEach(p => keys.push("transcribe:" + p.id, "lor:" + p.id, "trainerfb:" + p.id));
@@ -251,6 +251,7 @@ function renderAdmin(){
             <button class="btn btn-navy btn-sm" onclick="FTFeedback.send(this)">📤 ${cur.sent ? "Send the update" : "Send to the trainee"}</button></div>
           ${cur.sent ? `<p class="fss-muted">Sent ${e(new Date(cur.sent.at).toLocaleString())}. Sending again replaces it.</p>` : ""}</div></div></div>` : ""}</div>`;
 }
+window.addEventListener("ft-roster-changed", () => { A.rows = null; A.people = null; A.open = null; });
 window.FTFeedback = {
   batch(b){ A.batch = b; A.open = null; loadAdmin(); },
   act(a){ A.act = a; A.open = null; if(String(a).startsWith("m|")) A.status = "all"; render(); },
