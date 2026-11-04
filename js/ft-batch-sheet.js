@@ -64,15 +64,22 @@ async function loadPeople(){
       .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", registeredAtWas: r.registeredAtFixedAt ? r.registeredAtWas || "" : null, lastActive: r.lastActive || "",
         progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    if(!B.batch){
-      // the batch with the newest registration: the one the facilitator is running now
-      const newest = B.people.slice().sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)))[0];
-      B.batch = newest ? bLabel(newest.batch) : (batches()[batches().length - 1] || "");
-    }
+    // 🏅 the Scorecard opens on the latest batch (its Batch ID's date, B + MMDDYY: the one the facilitator is running now)
+    // each time it is opened; a batch picked in the dropdown holds until the Scorecard is left
+    if(!B.batch || !B.picked) B.batch = latestBatch() || B.batch;
   }catch(err){ B.people = []; }
   B.loading = false; rerender();
 }
 const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).concat((B.auto || []).map(p => p.batch)).filter(Boolean))].sort();
+// the latest batch: the newest Batch ID date (B + MMDDYY), else the batch with the newest registration
+function latestBatch(){
+  const bs = batches(); if(!bs.length) return "";
+  const dt = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; };
+  const dated = bs.filter(dt).sort((a, b) => dt(b).localeCompare(dt(a)));
+  if(dated.length) return dated[0];
+  const newest = (B.people || []).slice().sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)))[0];
+  return newest ? bLabel(newest.batch) : bs[bs.length - 1];
+}
 const people = () => meOn() ? (B.me ? [B.me] : []) : (B.people || []).filter(p => bLabel(p.batch) === B.batch);
 
 /* ---------- what the platform already keeps about each of them ---------- */
@@ -847,6 +854,8 @@ function dateHtml(ppl){
 function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
+  // (opened: the latest batch, unless one was picked while here)
+  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; B.sel = null; } }
   if(!B.batch) return `<div class="card gs-card"><p class="sc-empty">No trainee has registered yet. They appear here as soon as they register.</p></div>`;
   loadData();
   const ppl = people(), D = B.data, ready = D && !B.dataLoading && !D.error;
@@ -873,7 +882,7 @@ function renderSheet(){
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
 window.addEventListener("ft-roster-changed", () => { B.people = null; B.data = null; B.dataKey = ""; B.sel = null; });
 window.FTBatchSheet = {
-  batch(b){ if(!adminOn()) return; B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
+  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   period(v){ B.recent = Number(v) || 0; render(); },
   // ↩ the batch's trainees the tidy-up archived on its own come back to the active list; the batch is marked restored in
@@ -1063,6 +1072,8 @@ window.renderTopbar = function(){
 // the page is wide while the Batch Sheet is open: more room for the tables
 const __render = window.render;
 window.render = function(){
+  // (the Scorecard left: it opens on the latest batch again next time)
+  try{ if(!on() && B.picked && !meOn()){ B.picked = false; B.batch = ""; B.data = null; B.dataKey = ""; } }catch(err){}
   const out = __render.apply(this, arguments);
   try{ document.body.classList.toggle("bs-wide", on()); }catch(err){}
   return out;

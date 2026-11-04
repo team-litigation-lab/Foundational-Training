@@ -311,6 +311,11 @@ const failures = []; const fail = m => failures.push(m);
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
+  // 🏅 opened again, the Scorecard is on the latest batch (the newest Batch ID date), not the one picked last time
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(1500);
+  const lbs = await page.evaluate(() => { const sel = document.querySelector('.gs-batch select'); if (!sel) return null; const dt = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(b); return m ? `20${m[3]}-${m[1]}-${m[2]}` : ''; };
+    const opts = [...sel.options].map(o => o.value).filter(dt).sort((a, b) => dt(b).localeCompare(dt(a))); return { on: sel.value, latest: opts[0] }; });
+  if (!lbs || (lbs.latest && lbs.on !== lbs.latest)) fail(`the Scorecard doesn't open on the latest batch: ${JSON.stringify(lbs)}`);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }

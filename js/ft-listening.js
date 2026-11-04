@@ -206,10 +206,10 @@ const gradedOf = sid => ((POP.review || {}).assess || {})[sid] || null;
 // (the trainee's own answer sheet opened with a broken grade on it: graded again, quietly)
 async function regradeIfStale(sid){
   const g = gradedOf(sid); if(!ftStaleGrade(g) || POP.regrading || !state.traineeId || state.isAdmin) return;
-  POP.regrading = true; paintPop();
+  POP.regrading = true; try{ paintPop(); }catch(err){}
   try{ const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc: sid});
     if(r.ok){ POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review; const n = gradedOf(sid); if(n) toast(`🔁 Your answers were graded again: ${n.score} of ${n.max} (${n.pct}%).`); } }catch(err){}
-  POP.regrading = false; paintPop();
+  POP.regrading = false; try{ paintPop(); }catch(err){}
 }
 function popHtml(){
   if(!R.rec || !X.data) return `<div class="ln-pop-b"><div class="card" style="padding:24px;">Loading…</div></div>`;
@@ -293,9 +293,10 @@ window.FTListen = {
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
   // 📝 the activity's answer sheet in a pop-up over the deck
-  pop(sid){ POP.sid = sid || "recact"; load(); loadSets(); paintPop();
-    if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; paintPop(); regradeIfStale(POP.sid); }).catch(() => {}); },
-  close(){ POP.sid = null; paintPop(); }, submit: submitPop,
+  pop(sid){ const opened = sid || "recact"; POP.sid = opened; load(); loadSets(); paintPop();
+    // (a broken grade on the sheet is graded again: the sheet it was opened on, whatever the redraw does meanwhile)
+    if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; regradeIfStale(opened); try{ paintPop(); }catch(err){} }).catch(() => {}); },
+  close(){ POP.sid = null; paintPop(); }, submit: submitPop, regrade: sid => regradeIfStale(sid || POP.sid),
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
   state: () => R, reload: () => { X.at = 0; return Promise.all([load(true), loadSets(true)]); }
