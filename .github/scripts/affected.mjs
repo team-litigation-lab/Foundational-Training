@@ -24,7 +24,7 @@ const CORE = [/^index\.html$/, /^worker\.js$/, /^calweek-api\.js$/, /^wrangler\.
   /^js\/ft-program\.js$/, /^\.github\/scripts\/(server\.mjs|sign-in\.cjs|affected\.mjs|smoke\.mjs)$/, /^\.github\/workflows\/checks\.yml$/, /^build\/[^/]*\.py$/, /^trainer\//];
 // no browser test reads them (the Checks workflow's first job still checks every file)
 const NONE = [/\.md$/, /^docs\//, /^img\//, /^handouts\//, /^ft\//, /^favicon\.png$/, /^logo\.svg$/, /^\.github\/workflows\/r2-docs\.yml$/, /^\.gitignore$/, /^\.assetsignore$/,
-  /^\.github\/scripts\/(check-site|batch-id|sso|gemini-keys|r2-docs|r2-sync|drive|calsim-activity)\.(m?js|cjs)$/];
+  /^\.github\/scripts\/(check-site|batch-id|sso|gemini-keys|claude-primary|r2-docs|r2-sync|drive|calsim-activity)\.(m?js|cjs)$/];
 // the build's sources stand for what they build
 const BUILT = [[/^build\/(days|calls)\/|^build\/day-decks\.cjs$|^build\/ref-terms\.py$/, ['js/ft-day-decks.js']], [/^build\/lessons\//, ['index.html']]];
 
