@@ -52,10 +52,11 @@ window.LSH_PROGRAM = {
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
-    scorecard: ["batchsheet", "audit", "tfeedback", "sendfeedback", "skilltests"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
+    scorecard: ["batchsheet", "sendfeedback", "skilltests", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
-  adminHidden: ["ranking"],
+  // (👥 Trainees & Batches: its approvals, trainee actions and batches at the foot of 📋 Batch Sheet; 💬 Trainee Feedback: removed)
+  adminHidden: ["ranking", "audit", "tfeedback"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
