@@ -118,7 +118,8 @@ async function workerChecks() {
 
     // 🧑‍🏫 the trainer's slides: no panel, no live tracker, no preview of what trainees see (a mock call and a demo)
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
-    for (const [d, sl] of [[8, 's3']]) {
+    // (Day 4's mock calls, and Day 8's demo preparation now that its demo has no slide of its own)
+    for (const [d, sl] of [[4, 's3'], [8, 's3p']]) {
       await open(a, d, sl); await a.waitForTimeout(1500);
       if (await a.evaluate(() => !!document.querySelector('.ftbf, .ftbf-tr, .ftbf-pv'))) fail(`the trainer's Day ${d} ${sl} slide still has a panel, a tracker or what trainees see`);
     }
@@ -126,5 +127,5 @@ async function workerChecks() {
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own; the buffer, demo and mock call screens; Day 8\'s demo Done, its confirmation and the way on; Day 9\'s Intake mock calls on their metrics slide, with the case and the practice links; no panel or tracker on the trainer\'s slides).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own; the buffer and mock call screens; Day 8\'s demo off the deck, its preparation slide kept; Day 9\'s Intake mock calls on their metrics slide, with the case and the practice links; no panel or tracker on the trainer\'s slides).');
 })();
