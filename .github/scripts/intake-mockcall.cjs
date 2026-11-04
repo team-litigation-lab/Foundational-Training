@@ -1,6 +1,6 @@
 // 📞 The Intake Mock Call on the same case in the CMS and on Ring Channel (js/ft-intake.js .ftis-mockcall / .ftis-mcase): the
 // cases are the CMS's own Intake Mock Calls (its call-packs.js, which Ring Channel mirrors); the trainer assigns each trainee
-// one in Admin → 📦 Intake Packets, beside the packet, in the same intakeassign:<id> record (each write keeps the other);
+// a packet in Admin → 📦 Intake Packets and the case pairs with it, in the same intakeassign:<id> record (each write keeps the other);
 // the trainer's slide lists every case with where to pick it on Ring Channel and the caller's script; the trainee's slide
 // shows only their own case (never the script) with the Prototype CMS opened blank for a first call, on the case file for a
 // call back; the trainer's scoring sheet shows the picked trainee's case and 💾 Save keeps it with the score.
@@ -32,7 +32,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
   const get = k => page.evaluate(async k => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) }).then(r => r.json())).value || 'null'), k);
   try {
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    const openWas = await get('settings:opendays');
+    const openWas = await get('settings:opendays'), intakeWas = await get('settings:intake');
     await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} });
     await signIn(page, 'Ivy', 'Intake' + String(Date.now()).slice(-6).replace(/\d/g, d => 'abcdefghij'[d]), BATCH);
     const id = await page.evaluate(() => state.traineeId);
@@ -43,16 +43,22 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'intake'; goto('admin'); });
     await page.waitForTimeout(2500);
     await page.evaluate(b => FTIntakeAdmin.batch(b), BATCH); await page.waitForTimeout(800);
-    const opts = await page.evaluate(() => { const s = [...document.querySelectorAll('.ftis-admin select')].find(x => /assignCall/.test(x.getAttribute('onchange') || ''));
-      return s ? [...s.options].map(o => o.value) : null; });
-    if (JSON.stringify(opts) !== JSON.stringify(['', 'ft_in_derek', 'ft_in_nicole', 'ft_in_retainer'])) fail(`the Mock call case column's choices are ${JSON.stringify(opts)}`);
-    await page.evaluate(id => FTIntakeAdmin.assign(id, '3'), id); await page.waitForTimeout(600);
-    await page.evaluate(id => FTIntakeAdmin.assignCall(id, 'ft_in_nicole'), id); await page.waitForTimeout(600);
+    // (no case dropdown: the packet is the trainer's only pick, and its case pairs with it: packet n, the n-th intake call)
+    if (await page.evaluate(() => [...document.querySelectorAll('.ftis-admin select')].some(x => /assignCall/.test(x.getAttribute('onchange') || '')))) fail('the Mock call case is still a dropdown of its own');
+    await page.evaluate(id => FTIntakeAdmin.assign(id, '2'), id); await page.waitForTimeout(800);
     let rec = await get('intakeassign:' + id);
-    if (!rec || rec.packet !== 3 || rec.call !== 'ft_in_nicole') fail(`the case wasn't saved beside the packet: ${JSON.stringify(rec)}`);
-    await page.evaluate(id => FTIntakeAdmin.assign(id, '4'), id); await page.waitForTimeout(600);
+    if (!rec || rec.packet !== 2 || rec.call !== 'ft_in_nicole') fail(`packet 2 didn't bring its mock call case: ${JSON.stringify(rec)}`);
+    const cell = await page.evaluate(() => (document.querySelector('.ftis-admin .ftis-case-auto') || {}).textContent || '');
+    if (!/New Intake With a Deadline Close/.test(cell)) fail(`the case column doesn't show the paired case: ${cell}`);
+    await page.evaluate(id => FTIntakeAdmin.assign(id, '4'), id); await page.waitForTimeout(800);
     rec = await get('intakeassign:' + id);
-    if (!rec || rec.packet !== 4 || rec.call !== 'ft_in_nicole') fail(`assigning a packet lost the mock call case: ${JSON.stringify(rec)}`);
+    if (!rec || rec.packet !== 4 || rec.call !== 'ft_in_derek') fail(`a new packet didn't re-pair the case (packet 4: the list's first again): ${JSON.stringify(rec)}`);
+    // (a packet whose client is a caller pairs with that caller's first call)
+    await put('settings:intake', Object.assign({}, (await get('settings:intake')) || {}, { packets: Object.assign({}, ((await get('settings:intake')) || {}).packets, { 5: { client: 'Nicole Adams', url: '' } }) }));
+    await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
+    await page.evaluate(id => FTIntakeAdmin.assign(id, '5'), id); await page.waitForTimeout(800);
+    if (((await get('intakeassign:' + id)) || {}).call !== 'ft_in_nicole') fail('a packet whose client is a caller didn\'t pair with their call');
+    await page.evaluate(id => FTIntakeAdmin.assign(id, '2'), id); await page.waitForTimeout(800);
 
     // Day 8's Practice Intake Calls has no cases box (and no Sample Intake Forms): the cases are on Day 9's preparation slide
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);
@@ -99,7 +105,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     await page.waitForTimeout(1500);
     const lr2 = ((((await get('labreview:' + id)) || {}).acts) || {})['intake-live'] || {};
     if (lr2.case !== null) fail(`a score saved with no case assigned kept the earlier case: ${JSON.stringify(lr2.case)}`);
-    if (((await get('intakeassign:' + id)) || {}).packet !== 4) fail('unassigning the case lost the packet');
+    if (((await get('intakeassign:' + id)) || {}).packet !== 2) fail('unassigning the case lost the packet');
 
     // the trainee: their own case only, never the script; the CMS opened blank for a first call
     // (their mock call not scored yet: a scored one shows ✅ done on its panel instead of the case)
@@ -133,7 +139,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
 
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);
     const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
-    await put('settings:opendays', openWas || { all: [], batches: {} });
+    await put('settings:opendays', openWas || { all: [], batches: {} }); await put('settings:intake', intakeWas);
   } catch (e) { fail(e.stack || String(e)); }
   await browser.close();
   if (failures.length) { console.error('Intake Mock Call case test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
