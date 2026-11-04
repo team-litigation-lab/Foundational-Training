@@ -417,6 +417,41 @@ function outputsTable(){
           return {v: pct(vs[i]), f: `${md(d)}: ${parts}${tests}${(x.submissions || []).length ? ` · submitted: ${x.submissions.join(", ")}` : ""} = ${pct(vs[i])}`, cls: "gs-num " + tone(vs[i])}; }));
     })};
 }
+/* 📤 under the Daily outputs table: each checked day's summarized comments — what the platform's end-of-shift check found
+   (each part, what is missing) and the AI's review of the tracker's notes and of the Monitoring Sheet, with the trainer's
+   comment where there is one. For one trainee (a trainer picks; a trainee reads their own, on 📋 My Progress). */
+function outputsNotesHtml(){
+  const ppl = people(); if(!ppl.length || !B.data) return "";
+  const id = meOn() ? ppl[0].id : (B.oc && ppl.some(p => p.id === B.oc) ? B.oc : ppl[0].id);
+  const R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {}, comp = rv.compliance || {};
+  const dates = Object.keys(comp).sort().reverse().slice(0, 14);
+  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", timeZone: "UTC"}); };
+  const clip = (v, n) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+  const mon = rv.monitor || null;
+  const day = d => { const c = comp[d] || {}, P = c.parts || {}, tk = (rv.days || {})[d] || null, plat = [], todo = [];
+    // the platform's check, part by part
+    if(P.tracker != null){ const miss = tk ? (tk.rules || []).filter(r => !r.pass) : [];
+      plat.push(`📋 Task Tracker ${P.tracker}%`); miss.slice(0, 3).forEach(r => todo.push(`Task Tracker: ${r.label}${r.detail ? " — " + clip(r.detail, 160) : ""}`)); }
+    if(P.monitor != null){ plat.push(`📒 Monitoring Sheet ${P.monitor}%`); if(mon && mon.error) todo.push("Monitoring Sheet: " + clip(mon.error, 160)); }
+    if(c.tests){ const t = c.tests, miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
+      plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
+    if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
+    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod) todo.push("No EOD email for the day"); }
+    const did = [(c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
+      ...(c.submissions || []).slice(0, 4)].filter(Boolean);
+    // the AI's review (the tracker's notes) and the trainer's comment
+    const ai = tk && tk.review ? clip(tk.review, 420) : "", tr = tk && tk.comment ? clip(tk.comment, 300) : "";
+    return `<details class="bs-oc-day"${d === dates[0] ? " open" : ""}><summary><b>${e(md(d))}</b><em class="${tone(c.pct)}">${pct(c.pct) || "—"}</em><span>${e(plat.join(" · "))}</span></summary>
+      ${did.length ? `<div class="bs-ctx bs-best"><b>✅ Done</b><p>${e(did.join(" · "))}</p></div>` : ""}
+      ${todo.length ? `<div class="bs-ctx bs-imp"><b>🔧 To fix</b><ul>${todo.map(x => `<li>${e(x)}</li>`).join("")}</ul></div>` : ""}
+      ${ai ? `<div class="bs-ctx bs-why"><b>🤖 AI review of the tracker's notes</b><p>${e(ai)}</p></div>` : ""}
+      ${tr ? `<div class="bs-ctx bs-why"><b>🧑‍🏫 Trainer</b><p>${e(tr)}</p></div>` : ""}
+      ${!did.length && !todo.length && !ai && !tr ? `<p class="bs-ctx-none">Nothing more recorded for this day.</p>` : ""}</details>`; };
+  return `<div class="bs-ck bs-oc">${meOn() ? `<h4>💬 My days: comments</h4>` : `<label class="bs-ck-who">💬 Comments for <select onchange="FTBatchSheet.ocWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
+    <p class="bs-note">Each day as the end-of-shift check found it, summarized: what was done, what to fix, and the AI's review of the Task Tracker's notes${mon && mon.review ? "; the Monitoring Sheet's review is first" : ""}.</p>
+    ${mon && (mon.review || mon.comment) ? `<div class="bs-ctx bs-why"><b>📒 Monitoring Sheet${typeof mon.pct === "number" ? ` · ${mon.pct}%` : ""}${mon.checkedAt ? ` · checked ${e(when(mon.checkedAt))}` : ""}</b>${mon.review ? `<p>🤖 ${e(clip(mon.review, 500))}</p>` : ""}${mon.comment ? `<p>🧑‍🏫 ${e(clip(mon.comment, 300))}</p>` : ""}</div>` : ""}
+    ${dates.length ? `<div class="bs-oc-days">${dates.map(day).join("")}</div>` : `<p class="bs-ctx-none">No day checked yet: the check runs at the end of every shift.</p>`}</div>`;
+}
 /* Everything each trainee did, from what the platform keeps, newest first. */
 function events(){
   const out = [], push = (p, at, what, detail, score) => { const d = t(at); if(d) out.push({p, at: d, what, detail: detail || "", score: typeof score === "number" ? score : null}); };
@@ -702,7 +737,7 @@ function renderSheet(){
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : T.map((x, i) => x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>") : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
     ${ready ? peopleHtml() : ""}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
@@ -749,6 +784,7 @@ window.FTBatchSheet = {
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
+  ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
@@ -861,7 +897,7 @@ function renderMine(){
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : T.map((x, i) => x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>") : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
 FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };
@@ -920,7 +956,10 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-how{font-size:13.5px;}
 .bs-lk-rows{display:flex;flex-direction:column;gap:6px;margin:8px 0;} .bs-lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font:14px Arial,sans-serif;} .bs-lk-n{min-width:240px;} .bs-lk-row b{min-width:96px;} .bs-lk-why{flex-basis:100%;color:#7A5A00;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
-.bs-ds-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.bs-ds-days, .bs-oc-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.bs-oc-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;padding:0 10px 6px;}
+.bs-oc-day > summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:7px 0;flex-wrap:wrap;} .bs-oc-day > summary span{color:#5F6368;font-size:12.5px;}
+.bs-oc-day > summary em{font-style:normal;font-weight:700;padding:1px 8px;border-radius:9px;}
 .bs-ds-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;}
 .bs-ds-day > summary{cursor:pointer;display:flex;gap:8px;align-items:center;padding:7px 10px;list-style:none;} .bs-ds-day > summary::-webkit-details-marker{display:none;}
 .bs-ds-day > summary::before{content:"▸";color:#5F6368;} .bs-ds-day[open] > summary::before{content:"▾";}

@@ -45,7 +45,11 @@ const failures = []; const fail = m => failures.push(m);
   await put('drive:' + ids.Ada, Object.assign({ days: {} }, L6));
   const ck = (k, ok) => ({ url: L6[k], ok, error: ok ? '' : 'the system can\'t open it', at: iso(now - 7200e3) });
   await put('trackerreview:' + ids.Ada, { days: {}, monitor: { pct: 0, found: 0, total: 0, entries: [], error: 'The system can\'t open this file.', url: L6.monitor, checkedAt: iso(now - 7200e3) },
-    verify: { monitor: ck('monitor', false), tam: ck('tam', true), spelling: ck('spelling', true), folder: ck('folder', true), tracker: ck('tracker', true) }, verifyAt: iso(now - 7200e3) });
+    verify: { monitor: ck('monitor', false), tam: ck('tam', true), spelling: ck('spelling', true), folder: ck('folder', true), tracker: ck('tracker', true) }, verifyAt: iso(now - 7200e3),
+    compliance: { '2026-11-02': { pct: 54, parts: { tracker: 50, tests: 67, outputs: 0, eod: 100 }, tests: { AM: true, PM: false, SP: true }, links: 0, saved: 0, submissions: ['Assessment: Common Terms Used'] } } });
+  { const rv = await get('trackerreview:' + ids.Ada);
+    rv.days = { '2026-11-02': { pct: 50, rules: [{ id: 'notes', label: 'Every open task has its Daily Note', pass: false, detail: '2 tasks without a note' }], review: 'AI-NOTES: clear notes; add the next step on each task.', comment: 'TRAINER-NOTE: good start.' } };
+    await put('trackerreview:' + ids.Ada, rv); }
   // 🧑‍🏫 her Reception Mock Call, scored on the rubric with remarks (📅 Day 1–16: Detailed Scores, with its context)
   await put('labreview:' + ids.Ada, { acts: { 'reception-live': { status: 'Passed', score: 76, comment: 'Good call control overall.', at: iso(now - 3600e3),
     rubric: { key: 'reception', scores: [5, 4, 2, 4, 4, 3, 4], feedback: ['Warm, branded greeting.', '', 'Skipped the caller verification.', '', '', '', ''], avg: 3.8 } } } });
@@ -237,6 +241,8 @@ const failures = []; const fail = m => failures.push(m);
   // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
   if (MT[0].id !== 'dayscores' || MT[1].title !== '👤 Me') fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
   if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
+  // (her 📤 Daily outputs with the day's comments: the platform's check and the AI's review)
+  if (!/AI-NOTES/.test(await page.evaluate(() => (document.querySelector('.bs-mine #bs-outputs .bs-oc') || {}).innerText || ''))) fail('the trainee doesn\'t see her days\' comments under 📤 Daily outputs');
   // (no checklist on her page either, and no trainer's picker)
   if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
@@ -268,6 +274,12 @@ const failures = []; const fail = m => failures.push(m);
     const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
     if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
   }
+
+  // 📤 Daily outputs: under the table, a day's summarized comments (the platform's check and the AI's review), for the trainer
+  await page.evaluate(id => FTBatchSheet.ocWho(id), ids.Ada); await page.waitForTimeout(500);
+  const oc = await page.evaluate(() => (document.querySelector('#bs-outputs .bs-oc') || {}).innerText || '');
+  if (!/afternoon typing test/.test(oc) || !/No output link submitted/.test(oc) || !/AI-NOTES/.test(oc) || !/TRAINER-NOTE/.test(oc) || !/Common Terms Used/.test(oc) || !/Every open task has its Daily Note/.test(oc))
+    fail(`📤 Daily outputs' comments for Ada don't summarize the day (the check, what to fix, the AI's review, the trainer): ${oc.slice(0, 300)}`);
 
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); });
