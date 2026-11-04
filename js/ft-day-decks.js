@@ -833,6 +833,7 @@ function renderDeck(){
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
+        ${tr && root.FTMetrics && FTMetrics.graders ? `<button type="button" class="btn ftdd-graders" onclick="FTMetrics.graders()" title="Every mock call and demo scoresheet, in one list">🧑‍🏫 Graders</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
@@ -1845,8 +1846,16 @@ function introCard(l, cur, ex, tags){
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
   // (locked: 🔒 Request asks the trainer for it; ⏳ Requested until they approve it — js/ft-updates.js)
-  if(vid){ const ask = vid.classList.contains("ft-video-ask"), wait = vid.classList.contains("ft-video-pending");
-    vid.textContent = ask ? "🔒 Request Video" : wait ? "⏳ Requested" : vid.disabled ? "🔒 Video" : "🎬 Video"; }
+  const vidLabel = (b, name) => { const ask = b.classList.contains("ft-video-ask"), wait = b.classList.contains("ft-video-pending");
+    b.textContent = (ask ? "🔒 Request " : wait ? "⏳ " : b.disabled ? "🔒 " : "🎬 ") + (name || (wait ? "Requested" : "Video")); b.title = name ? `${name} video` : b.title; };
+  if(vid) vidLabel(vid);
+  // (a card that holds two lessons, Personal Injury Process Flow / Reception: a video button for each, each its own lesson's
+  // video, locked and requested on its own)
+  const both = cardLessons(l.id);
+  const vids = both.length > 1 ? both.map(id => { const L = (typeof DAYS !== "undefined" ? DAYS : []).find(x => Number(x.id) === id); if(!L) return null;
+    const tt = document.createElement("template"); tt.innerHTML = String(moduleCard(L)).trim();
+    const b = [...tt.content.querySelectorAll(".mc-grid button")].find(x => /Video/.test(x.textContent)); if(!b) return null;
+    vidLabel(b, VIDEO_NAME[id] || lessonTitle(id)); return b.outerHTML; }).filter(Boolean) : [];
   const acts = cardRows(c, ex).length;
   // the lesson's icon opens its day card (the day deck); ▶ Start Training fills the top row
   const body = card.querySelector(".module-body");
@@ -1854,10 +1863,12 @@ function introCard(l, cur, ex, tags){
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
   grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); ${startGo(c.lesson)}"` : "disabled"} title="${open_ ? e(readFirst(c.lesson) ? "The Reading Task, then the lesson deck" : "The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? startLabel(c.lesson, done) : "🔒 Start Training"}</button>
-    ${vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
+    ${vids.length > 1 ? `<span class="ftli-vids">${vids.join("")}</span>` : vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
   return card.outerHTML;
 }
+// the short name of a lesson's video, on a card with two (Personal Injury Process Flow / Reception)
+const VIDEO_NAME = {3: "PI Workflow", 4: "Receptionist"};
 root.LSH_HOME_GRID_LAYOUT = function(ctx){
   if(!((root.FTDays && FTDays.DAYS) || []).length || !(ctx.lessons || []).length) return "";
   if(!decks()) loadDecks();
@@ -2441,6 +2452,9 @@ main.main-dash .module-grid > .ftli .mc-grid.mc-n1{grid-template-columns:minmax(
 main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
 main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* (a card with two lessons: a video button for each, side by side under the start buttons) */
+main.main-dash .module-grid > .ftli .mc-grid > .ftli-vids{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+main.main-dash .module-grid > .ftli .mc-grid > .ftli-vids > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* the full Classroom Activity card, as the first slide of its days' decks: scaled to fit the slide (fitSheets) */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
 .ftdd-lcslide .ftlc{box-shadow:none;}
