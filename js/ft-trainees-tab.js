@@ -30,6 +30,12 @@ if(typeof __row === "function") window.renderAdminRow = function(){
     const kids = [...grid.children];
     kids.slice(1, -1).forEach(k => k.remove());   // days, avg, runs, last active
     grid.style.gridTemplateColumns = "minmax(180px,1fr) auto";
+    // 📜 the trainee's log: every evaluation and every output submitted (js/ft-trainee-log.js)
+    const acts = grid.lastElementChild, fb = acts && acts.querySelector('[onclick^="openFeedbackFor("]');
+    const id = fb ? (/openFeedbackFor\('([^']+)'\)/.exec(fb.getAttribute("onclick")) || [])[1] : "";
+    const nm = ((grid.querySelector(".admin-name") || {}).textContent || "").trim();
+    if(acts && id && window.FTTraineeLog){ const b = document.createElement("button"); b.className = "btn btn-sm btn-ghost"; b.title = "Every evaluation on this trainee's account and every output they submitted";
+      b.dataset.id = id; b.dataset.n = nm; b.setAttribute("onclick", "FTTraineeLog.open(this.dataset.id, this.dataset.n)"); b.textContent = "📜 Log"; acts.insertBefore(b, acts.children[1] || null); }
   }
   t.content.querySelectorAll(".audit-strip .as-block").forEach(b => {
     const h = ((b.querySelector("b") || {}).textContent || "").trim();

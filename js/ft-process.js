@@ -125,6 +125,8 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
+// the name as shown in its box: it may wrap after an underscore or before "(name)", never in the middle of a word
+const codeName = n => e(n).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(");
 /* 📄 The answer sheet as a deliverable: the trainee only saves it in their Assessment and Activities Folder that day, named by
    its convention (the rule, with "Your First Name": not a name to copy). The platform finds it there itself
    (/api/drive/answers: the files in the folder the trainee linked), checks its name against the convention and
@@ -207,7 +209,7 @@ function worksheetBox(set){
   const w = WORKSHEETS[set.file]; if(!w) return "";
   // (📤 Submit to my Drive Folder: the trainee picks the finished Word file, saved into their folder under the convention)
   return `<div class="fp-pdf fp-ws"><a class="btn btn-ghost btn-sm" href="${e(w.href)}" target="_blank" rel="noopener noreferrer" download>📝 ${e(w.t)} · ⬇ Download the Word file</a>
-    <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(w))}</code></p>
+    <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(w))}</code></p>
     <button class="btn btn-ghost btn-sm fp-ws-drive" type="button" onclick="this.nextElementSibling.click()">📤 Submit to my Drive Folder</button>
     <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="FTProcess.submitWorksheet('${e(set.file)}', this)">
     <p class="fp-muted fp-ws-note">Fill it in, then 📤 Submit to my Drive Folder: it is saved to your Assessment and Activities Folder${FP.driveFolder ? ` (<a href="${e(FP.driveFolder)}" target="_blank" rel="noopener noreferrer">📁 open it</a>)` : ""}, named by the convention.</p></div>`;
@@ -235,7 +237,7 @@ async function submitWorksheet(file, input){
 // beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder, then its worksheet, if any
 function pdfBox(lesson, only){
   const sets = lessonFiles(lesson).filter(set => !only || set.file === only.file); if(!sets.length) return "";
-  return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
+  return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(set))}</code></p>`).join("")}
     <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button>
     <button class="btn btn-ghost btn-sm fp-dl" type="button" onclick="FTProcess.downloadPdf(${Number(lesson)})" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div>${sets.map(worksheetBox).join("")}`;
 }
@@ -391,7 +393,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // (a module not finished yet: its locked note, and still its Submit — not yet pressable — and each sheet's naming convention)
   if(!qs.length){ const seen = new Set(), files = [...new Set(all.map(x => x.set))].filter(st => !seen.has(st.file) && seen.add(st.file));
     return lockedCard(title).replace(/<\/div>$/, `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" disabled title="Opens when you finish this module">📝 Submit for Grading</button></div></div>
-      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(st))}</code></p>`).join("")}
+      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(st))}</code></p>`).join("")}
       <button class="btn btn-ghost btn-sm" type="button" disabled title="Opens when you finish this module">📄 Save PDF to my Folder</button></div>`); }
   // (the count and status are the sheet on screen's — Day 1 shows one of its two sheets at a time — not the whole lesson's)
   const onScreen = shownSets(qs), sq = qs.filter(x => onScreen.includes(x.set));
@@ -556,6 +558,10 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   savePdf, downloadPdf, submitWorksheet,
+  // 🏷 the naming conventions of the files this page asks for (js/ft-trainee-log.js checks a trainee's folder against them):
+  // each answer sheet's and each worksheet's, with "(first name)" after it
+  conventions: () => [...new Set(PROCESS_SETS.map(st => st.file))].map(f => ({name: f + " (VA’s first name)", what: "✍️ Knowledge Check answer sheet"}))
+    .concat(Object.values(WORKSHEETS).map(w => ({name: w.file + " (VA’s first name)", what: "📝 " + w.t}))),
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
@@ -1024,9 +1030,9 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
-.fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
+.fp-pdf-rule{margin:0;flex:1 1 100%;font-size:14px;line-height:1.9;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
 .fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-drive{margin-left:auto;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
-.fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
+.fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;line-height:1.5;word-break:normal;overflow-wrap:normal;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
 .fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
