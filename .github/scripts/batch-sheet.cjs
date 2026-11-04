@@ -133,6 +133,16 @@ const failures = []; const fail = m => failures.push(m);
   if (!ben || ben[1] !== 'Approved' || !ben[2]) fail(`a trainee with no progress isn't listed with their registration: ${ben}`);
   if (!ada || !/^1 \//.test(ada[4]) || !/^1 \//.test(ada[5]) || !/Lesson deck/.test(ada[6])) fail(`Ada's decks / Knowledge Checks / last opened: ${ada}`);
 
+  // 🔄 Update all scores: one call per approved trainee (redo), then the sheet is read again
+  { const asked = []; const watch = r => { if (/\/api\/compliance\/backfill/.test(r.url()) && /"redo":true/.test(r.postData() || '')) asked.push(JSON.parse(r.postData()).ids[0]); };
+    page.on('request', watch);
+    await page.click('button.bs-upd');
+    await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd'); return b && !b.disabled && /Update all scores/.test(b.textContent); }, null, { timeout: 30000 }).catch(() => fail('🔄 Update all scores never finished'));
+    await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet wasn\'t read again after 🔄 Update all scores'));
+    page.off('request', watch);
+    const want = tr.filter(r => r[1] === 'Approved').length;
+    if (asked.length !== want) fail(`🔄 Update all scores asked for ${asked.length} trainees, not the ${want} approved: ${asked}`); }
+
   // 📁 Drive links: Ada 3 / 3 with the Monitoring Sheet flagged; Ben none
   const dlinks = by('drive'), da = dlinks.rows.find(r => /Ada/.test(r[0])), db = dlinks.rows.find(r => /Ben/.test(r[0]));
   // (the columns: Monitoring Sheet, TAM, Typing Tests, Spelling Tests, Assessments/Activities, Daily Task Tracker)
@@ -268,7 +278,7 @@ const failures = []; const fail = m => failures.push(m);
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
   if (/Ben Blank|Cy Waiting|Dee Glitch/.test(text)) fail('another trainee\'s name is on the trainee\'s page');
   if (await page.$('.bs-mine .gs-batch select, .bs-mine .bs-fix, .bs-mine .bs-back')) fail('a trainee has the batch picker or a trainer\'s tool');
-  if (/Fix the batch name|Bring them back/.test(text)) fail('a trainee sees a trainer\'s tool');
+  if (/Fix the batch name|Bring them back|Update all scores/.test(text)) fail('a trainee sees a trainer\'s tool');
   if (!(await page.evaluate(() => document.body.classList.contains('bs-wide')))) fail('My Progress is not full width');
   // a trainer's actions do nothing for a trainee
   await page.evaluate(() => { FTBatchSheet.fixOpen(); FTBatchSheet.batch('B03101'); });
