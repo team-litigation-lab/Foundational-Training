@@ -59,19 +59,27 @@ async function loadPeople(){
     // trainees the tidy-up archived on its own (js/ft-admin-tidy.js), not a trainer: offered back with ↩ Bring them back
     B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
       .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
-    B.people = list.filter(r => r && r.id && !r.archived && !r.rejected && !r.purgedAt && (r.batch || r.registeredAt))
+    // (👥 a revoked trainee — offboarded, rejected, on the block list — leaves the sheet: js/ft-roster.js)
+    B.people = list.filter(r => r && r.id && !r.archived && !r.rejected && !r.purgedAt && (r.batch || r.registeredAt) && (!window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})))
       .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", registeredAtWas: r.registeredAtFixedAt ? r.registeredAtWas || "" : null, lastActive: r.lastActive || "",
         progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    if(!B.batch){
-      // the batch with the newest registration: the one the facilitator is running now
-      const newest = B.people.slice().sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)))[0];
-      B.batch = newest ? bLabel(newest.batch) : (batches()[batches().length - 1] || "");
-    }
+    // 🏅 the Scorecard opens on the latest batch (its Batch ID's date, B + MMDDYY: the one the facilitator is running now)
+    // each time it is opened; a batch picked in the dropdown holds until the Scorecard is left
+    if(!B.batch || !B.picked) B.batch = latestBatch() || B.batch;
   }catch(err){ B.people = []; }
   B.loading = false; rerender();
 }
 const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).concat((B.auto || []).map(p => p.batch)).filter(Boolean))].sort();
+// the latest batch: the newest Batch ID date (B + MMDDYY), else the batch with the newest registration
+function latestBatch(){
+  const bs = batches(); if(!bs.length) return "";
+  const dt = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; };
+  const dated = bs.filter(dt).sort((a, b) => dt(b).localeCompare(dt(a)));
+  if(dated.length) return dated[0];
+  const newest = (B.people || []).slice().sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)))[0];
+  return newest ? bLabel(newest.batch) : bs[bs.length - 1];
+}
 const people = () => meOn() ? (B.me ? [B.me] : []) : (B.people || []).filter(p => bLabel(p.batch) === B.batch);
 
 /* ---------- what the platform already keeps about each of them ---------- */
@@ -103,6 +111,17 @@ async function loadData(){
     if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
       try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
     B.data = {rec, sources: S, reps, at: new Date()};
+    // ✍️ an answer sheet submitted but never graded ("Submitted"): graded now, once a session, then the sheet is read again
+    if(adminOn() && !meOn() && window.ftKcGradeFor && !(B.kcAuto || {})[B.batch]){ (B.kcAuto = B.kcAuto || {})[B.batch] = 1; const bb = B.batch, todo = [];
+      ppl.forEach(p => kcSheets().forEach(k => { const g = sheetGrade(p, k); if(g.pct == null && g.subm) todo.push({p, k}); }));
+      if(todo.length) (async () => { let n = 0; for(const t of todo){ try{ if(await ftKcGradeFor(t.p.id, t.k.l, t.k.read)) n++; }catch(err){} }
+        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb){ B.data = null; B.dataKey = ""; rerender(); } } })(); }
+    // 🔁 the batch's grades saved by the broken grading (window.ftStaleGrade, js/ft-listening.js): graded again, once a
+    // session, then the sheet is read again
+    if(adminOn() && !meOn() && window.ftStaleGrade && !(B.regraded || {})[B.batch]){ (B.regraded = B.regraded || {})[B.batch] = 1; const bb = B.batch, jobs = [];
+      ppl.forEach(p => Object.entries(((((rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}).forEach(([doc, g]) => { if(ftStaleGrade(g)) jobs.push({id: p.id, doc}); }));
+      if(jobs.length) (async () => { let n = 0; for(const j of jobs){ try{ const r = await authFetch("/api/assess/grade", j); if(r.ok) n++; }catch(err){} }
+        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb){ B.data = null; B.dataKey = ""; rerender(); } } })(); }
     // 🔄 the batch's past training days not worked out yet (worker.js backfillCompliance), once a session: the sheet is read
     // again when any were, so 📤 Daily outputs and the scores count the whole training
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
@@ -249,11 +268,12 @@ function rationaleHtml(){
     return `<div class="bs-rat">${who.length > 1 ? `<h5>${e(p.name)}</h5>` : ""}
       <div class="bs-rat-avg">Average: <b class="${tone(a)}">${pct(a) || "—"}</b>${got.length ? ` <span>= (${got.map((g, i) => g.pct).join(" + ")}) / ${got.length} graded answer sheet${got.length === 1 ? "" : "s"}</span>` : " <span>no answer sheet graded yet</span>"}</div>
       <div class="bs-days">${K.map((k, i) => { const g = gs[i]; if(g.pct == null && !g.subm && !g.items.some(y => y.answer)) return "";
-        return `<div class="bs-day"><div class="bs-day-h"><b>${e(k.title)}</b><em class="${tone(g.pct)}">${g.pct != null ? g.pct + "%" : "—"}</em></div>
+        // (each answer sheet a row that opens: its title and score shut, the evaluation and each answer's grade when opened)
+        return `<details class="bs-day bs-rat-d"><summary class="bs-day-h"><b>${e(k.title)}</b><span class="bs-rat-sum">${e(g.how)}</span><em class="${tone(g.pct)}">${g.pct != null ? g.pct + "%" : "—"}</em></summary>
           <p class="bs-rat-how"><b>How it was scored:</b> ${e(g.how)}${g.last && g.last.at ? `, last graded ${e(when(g.last.at))}` : ""}.</p>
           ${g.last && g.last.summary ? `<p class="bs-rat-how"><b>Evaluation:</b> ${e(g.last.summary)}</p>` : ""}
           ${g.rv.comment ? `<p class="bs-rat-how"><b>🧑‍🏫 Trainer:</b> ${e(g.rv.comment)}</p>` : ""}
-          ${g.items.map((y, j) => `<div class="bs-gr"><span>Q${j + 1}. ${e(y.q)}</span><b class="${y.score == null ? "" : tone(y.score * 10)}">${y.score == null ? "—" : y.score + "/10"}</b>${y.feedback ? `<small>${e(y.feedback)}</small>` : y.answer ? "" : `<small>(unanswered)</small>`}${y.note ? `<small>🧑‍🏫 ${e(y.note)}</small>` : ""}</div>`).join("")}</div>`; }).join("") || `<p class="bs-note">Nothing submitted yet.</p>`}</div></div>`; };
+          ${g.items.map((y, j) => `<div class="bs-gr"><span>Q${j + 1}. ${e(y.q)}</span><b class="${y.score == null ? "" : tone(y.score * 10)}">${y.score == null ? "—" : y.score + "/10"}</b>${y.feedback ? `<small>${e(y.feedback)}</small>` : y.answer ? "" : `<small>(unanswered)</small>`}${y.note ? `<small>🧑‍🏫 ${e(y.note)}</small>` : ""}</div>`).join("")}</details>`; }).join("") || `<p class="bs-note">Nothing submitted yet.</p>`}</div></div>`; };
   return `<div class="bs-ck">${meOn() ? `<h4>🧾 My scoring rationale</h4>` : `<label class="bs-ck-who">🧾 Scoring rationale for <select onchange="FTBatchSheet.raWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     ${who.map(one).join("")}</div>`;
 }
@@ -521,7 +541,7 @@ function sectionsHtml(T){
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
-const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email", progress: "Progress on the platform"};
+const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", platform: "Platform work", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email"};
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
@@ -552,12 +572,14 @@ function outputsNotesHtml(){
     if(P.tracker != null){ const miss = tk ? (tk.rules || []).filter(r => !r.pass) : [];
       plat.push(`📋 Task Tracker ${P.tracker}%`); miss.slice(0, 3).forEach(r => todo.push(`Task Tracker: ${r.label}${r.detail ? " — " + clip(r.detail, 160) : ""}`)); }
     if(P.monitor != null){ plat.push(`📒 Monitoring Sheet ${P.monitor}%`); if(mon && mon.error) todo.push("Monitoring Sheet: " + clip(mon.error, 160)); }
+    (c.unreadable || []).forEach(k => todo.push(`${k === "tracker" ? "Task Tracker" : "Monitoring Sheet"}: the system can't open it, so it isn't counted: share it with the program's account (📁 My Drive links)`));
+    if(P.platform != null){ plat.push(`🖥 Platform ${P.platform}%`); if(!P.platform) todo.push("Nothing done on the platform that day"); else if(P.platform < 100) todo.push("Lessons opened, but nothing finished or submitted that day"); }
     if(c.tests){ const t = c.tests, miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
       plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
     if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
-    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod) todo.push("No EOD email for the day"); }
-    if(P.progress != null){ plat.push(`📚 Progress ${P.progress}%`); if(!P.progress) todo.push("No lesson, Knowledge Check, practice or submission on the platform that day"); }
-    const did = [...(c.work || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
+    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod && !c.eodCheck) todo.push("No EOD email for the day");
+      (c.eodCheck ? c.eodCheck.rules || [] : []).filter(r => !r.pass).forEach(r => todo.push(`EOD: ${r.label}${r.detail ? " — " + r.detail : ""}`)); }
+    const did = [...(c.platform || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
       ...(c.submissions || []).slice(0, 4)].filter(Boolean);
     // the AI's review (the tracker's notes) and the trainer's comment
     const ai = tk && tk.review ? clip(tk.review, 420) : "", tr = tk && tk.comment ? clip(tk.comment, 300) : "";
@@ -839,6 +861,8 @@ function dateHtml(ppl){
 function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
+  // (opened: the latest batch, unless one was picked while here)
+  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; B.sel = null; } }
   if(!B.batch) return `<div class="card gs-card"><p class="sc-empty">No trainee has registered yet. They appear here as soon as they register.</p></div>`;
   loadData();
   const ppl = people(), D = B.data, ready = D && !B.dataLoading && !D.error;
@@ -846,9 +870,9 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
-    <div class="bs-sum"><span><b>${ppl.length}</b> registered</span><span><b>${approved}</b> approved</span>${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
+    <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a></span>
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
@@ -862,8 +886,10 @@ function renderSheet(){
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 
+// 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
+window.addEventListener("ft-roster-changed", () => { B.people = null; B.data = null; B.dataKey = ""; B.sel = null; });
 window.FTBatchSheet = {
-  batch(b){ if(!adminOn()) return; B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
+  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
@@ -1027,7 +1053,7 @@ function renderMine(){
   const D = B.data, ready = D && !B.dataLoading && !D.error, T = ready ? tables() : null;
   return `<div class="card gs-card bs-card bs-mine">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
-      <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
+      <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
     <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
@@ -1066,6 +1092,8 @@ window.renderTopbar = function(){
 // the page is wide while the Batch Sheet is open: more room for the tables
 const __render = window.render;
 window.render = function(){
+  // (the Scorecard left: it opens on the latest batch again next time)
+  try{ if(!on() && B.picked && !meOn()){ B.picked = false; B.batch = ""; B.data = null; B.dataKey = ""; } }catch(err){}
   const out = __render.apply(this, arguments);
   try{ document.body.classList.toggle("bs-wide", on()); }catch(err){}
   return out;
@@ -1121,7 +1149,13 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-isc{font-size:12px;margin-left:4px;} .bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
 .bs-rat-avg{font:14px Arial,sans-serif;margin:4px 0 6px;} .bs-rat-avg b{font-size:16px;} .bs-rat-avg span{color:#5F6368;}
 .bs-rat-how{margin:2px 0 6px;font-size:12.5px;color:#444746;line-height:1.4;}
-.bs-rat .bs-days{grid-template-columns:repeat(auto-fill,minmax(420px,1fr));} @media (max-width:640px){ .bs-rat .bs-days{grid-template-columns:1fr;} }
+.bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
+/* (the scoring rationale: a row per answer sheet that opens, read in a larger size) */
+.bs-rat-d{padding:0;} .bs-rat-d > summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:16px;align-items:center;gap:12px;}
+.bs-rat-d > summary::-webkit-details-marker{display:none;} .bs-rat-d > summary::before{content:"▸";color:#5F6368;margin-right:2px;} .bs-rat-d[open] > summary::before{content:"▾";}
+.bs-rat-d > summary b{font-size:16px;} .bs-rat-d > summary em{margin-left:auto;font-size:17px;font-weight:800;font-style:normal;} .bs-rat-sum{color:#5F6368;font-size:13.5px;}
+.bs-rat-d[open]{padding-bottom:10px;} .bs-rat-d > :not(summary){margin-left:14px;margin-right:14px;}
+.bs-rat-d .bs-rat-how{font-size:15px;line-height:1.55;color:#202124;} .bs-rat-d .bs-gr{font-size:15px;padding:7px 0;} .bs-rat-d .bs-gr small{font-size:14px;line-height:1.5;color:#3C4043;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}

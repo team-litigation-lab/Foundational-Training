@@ -173,7 +173,7 @@ async function workerChecks() {
     // 📋 Task Trackers and 📒 Monitoring Sheets (Admin tabs) and ✍️ Process Questions (its own page, no
     // Admin tab): the list, the trainees, their sheets. Each reads the sheets with get-many, not one by one.
     await page.evaluate(() => goto('admin')).catch(e => fail(`opening Admin: ${e.message}`)); await page.waitForTimeout(1500);
-    for (const [tab, sheets, label] of [['trackers', 'tracker|trackerreview', 'Task Trackers'], ['monitor', 'monitor', 'Monitoring Sheets'], ['#process', 'process', 'Process Questions']]) {
+    for (const [tab, sheets, label] of [['trackers', 'tracker|trackerreview', 'Task Trackers'], ['monitor', 'monitor', 'Feedback and Monitoring Rubric'], ['#process', 'process', 'Process Questions']]) {
         // settle whatever the page before this one started, so the window below counts only this page's requests
         await page.waitForTimeout(1200);
         t0 = Date.now();

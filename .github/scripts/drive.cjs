@@ -163,7 +163,7 @@ const failures = []; const fail = (m) => failures.push(m);
     // ✅ the day's compliance (dailyCompliance): the AM typing and the spelling taken on the platform, the day's EOD pasted, the
     // output link submitted; no PM typing
     store.set('ft:skills:' + id, JSON.stringify({ typing: [{ date: D, slot: 'AM', wpm: 40 }], spelling: [{ date: D, score: 18 }] }));
-    const dr = JSON.parse(store.get('ft:drive:' + id)); dr.days[D] = Object.assign({}, dr.days[D], { eod: { text: 'Subject: EOD Report – today – Dee Drive. Tasks completed today: the Reception lesson.', at: new Date().toISOString() } });
+    const dr = JSON.parse(store.get('ft:drive:' + id)); dr.days[D] = Object.assign({}, dr.days[D], { eod: { text: `Subject: Daily Report ${D.slice(5, 7)}/${D.slice(8)}/${D.slice(2, 4)}\n\nAccomplishments/Completed Tasks:\n- the Reception lesson\n\nThese are the things I've learned that I can put into practice later on:\n- I learned verification. You confirm the name and DOB first.\n- I learned the warm transfer. You brief the case manager first.\n- I learned the CMS notes. Every call gets a note on the file.\n\nOn queue for tomorrow:\n- Calendar Management\n`, at: new Date(D + 'T19:00:00Z').toISOString() } });
     store.set('ft:drive:' + id, JSON.stringify(dr));
     const nightly = await call('/api/tracker/check', { id }, admin);
     if (!((nightly.body || {}).results || []).some(r => r.tests && r.shots === 1)) fail(`the nightly check didn't look for the test screenshots: ${JSON.stringify(nightly.body)}`);
@@ -215,12 +215,19 @@ const failures = []; const fail = (m) => failures.push(m);
     { const back = new Date(Date.now() - 9 * 864e5), wk = [], today = TR.ptDate();
       for (let t = Date.parse(TR.ptDate(back) + 'T12:00:00Z'); ; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break; if (TR.isWeekday(d)) wk.push(d); }
       const tr0 = JSON.parse(store.get('ft:trainee:' + id)); tr0.registeredAt = back.toISOString(); store.set('ft:trainee:' + id, JSON.stringify(tr0));
-      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = {}; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      // (a day worked out before the platform's own work counted, v1: worked out again; practice logged on the platform the
+      // second day: 🖥 Platform 100%)
+      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = { [wk[0]]: { pct: 0, parts: { tracker: 0 } } }; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      store.set('ft:progress:' + id, JSON.stringify({ traineeId: id, data: { 'work-log': [{ at: wk[1] + 'T16:00:00Z', kind: 'lab', label: 'Intake Practice', score: 80 }] } }));
       store.set('ft:skills:' + id, JSON.stringify({ typing: [{ id: 'bt', at: new Date(wk[0] + 'T15:00:00Z').toISOString(), date: wk[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }));
       const bf = await call('/api/compliance/backfill', { ids: [id] }, admin);
       if (!bf.body || !bf.body.ok || bf.body.filled[id] !== wk.length) fail(`the backfill didn't work out the ${wk.length} past weekdays: ${JSON.stringify(bf.body)}`);
       const c = JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {}, c0 = c[wk[0]] || {};
       if (!c0.backfilled || !c0.tests || !c0.tests.AM || c0.parts.tracker !== null) fail(`a backfilled day isn't marked, misses its test, or counts an unchecked tracker as 0: ${JSON.stringify(c0)}`);
+      if (!(c0.v >= 2)) fail(`a day worked out before the new rules wasn't worked out again: ${JSON.stringify(c0)}`);
+      const c1 = c[wk[1]] || {}, c2 = c[wk[2]] || {};
+      if (c1.parts.platform !== 100 || !(c1.platform || []).some(x => /Intake Practice/.test(x))) fail(`a day with practice on the platform isn't 🖥 Platform 100%: ${JSON.stringify(c1)}`);
+      if (wk[2] && c2.parts.platform !== 0) fail(`a day with nothing on the platform isn't 0: ${JSON.stringify(c2)}`);
       if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
       const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
       if (again.body.filled[id] !== 0) fail('the backfill worked out a day again');
@@ -233,11 +240,29 @@ const failures = []; const fail = (m) => failures.push(m);
       if ((await call('/api/compliance/backfill', { ids: [id], redo: true }, trainee)).status !== 403) fail('a trainee could update all scores');
       const rd = await call('/api/compliance/backfill', { ids: [id], redo: true }, admin);
       if (!rd.body || !rd.body.ok || rd.body.redone[id] !== wk.length + (TR.isWeekday(today) ? 1 : 0)) fail(`Update all scores didn't work out every training day: ${JSON.stringify(rd.body)}`);
-      const c1 = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {};
-      if (c1.parts.progress !== 100 || !(c1.work || []).some(x => /Lesson 3 deck finished/.test(x)) || !(c1.work || []).some(x => /Knowledge Check/.test(x))) fail(`a day's progress on the platform isn't counted: ${JSON.stringify(c1)}`);
-      if (c1.parts.tracker !== 80 || !c1.backfilled || !(c1.pct > before)) fail(`Update all scores lost the day's tracker check or the backfilled mark, or the score didn't go up: ${JSON.stringify(c1)} (was ${before})`);
-      const cOther = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[wk[0]] || {};
-      if (cOther.parts.progress !== 0) fail(`a day with no progress on the platform counts it: ${JSON.stringify(cOther.parts)}`); }
+      const cRedo = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {};
+      if (cRedo.parts.platform !== 100 || !(cRedo.platform || []).some(x => /Lesson 3 deck finished/.test(x)) || !(cRedo.platform || []).some(x => /Knowledge Check/.test(x))) fail(`a day's progress on the platform isn't counted: ${JSON.stringify(cRedo)}`);
+      if (cRedo.parts.tracker !== 80 || !cRedo.backfilled || !(cRedo.pct > before)) fail(`Update all scores lost the day's tracker check or the backfilled mark, or the score didn't go up: ${JSON.stringify(cRedo)} (was ${before})`);
+      const cOther = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[wk[2]] || {};
+      if (wk[2] && cOther.parts.platform !== 0) fail(`a day with no progress on the platform counts it: ${JSON.stringify(cOther.parts)}`); }
+
+    // 📧 EOD monitoring: an EOD emailed to the platform's address (worker.js email → receiveEod) is matched to the trainee by the
+    // address they send from, kept as the day's EOD and checked against its template; one no trainee matches is kept for the trainer
+    { const dv = JSON.parse(store.get('ft:drive:' + id)); dv.eodFrom = 'dee.drive@gmail.com'; store.set('ft:drive:' + id, JSON.stringify(dv));
+      const D2 = TR.ptDate(), [yy, mm, dd] = D2.split('-'), body = `Accomplishments/Completed Tasks:\n- Finished the Reception deck\n\nThese are the things I've learned that I can put into practice later on:\n- I learned caller verification. You confirm the name, DOB and DOL first.\n- I learned the warm transfer. You brief the case manager before connecting.\n- I learned the Ring Channel. It plays the call while I take notes.\n\nOn queue for tomorrow:\n- Calendar Management\n`;
+      const raw = `From: Dee Drive <Dee.Drive@gmail.com>\r\nSubject: Daily Report ${mm}/${dd}/${yy.slice(2)}\r\nContent-Type: multipart/alternative; boundary="b1"\r\n\r\n--b1\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n${body.replace(/\n/g, '\r\n').replace(/=/g, '=3D')}\r\n--b1--\r\n`;
+      const hdr = new Map([['from', 'Dee Drive <Dee.Drive@gmail.com>'], ['subject', `Daily Report ${mm}/${dd}/${yy.slice(2)}`], ['date', new Date(D2 + 'T19:00:00Z').toUTCString()]]);
+      await worker.email({ from: 'dee.drive@gmail.com', raw: new Response(raw).body, headers: { get: k => hdr.get(k) || null } }, env, { waitUntil() {} });
+      const e1 = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[D2] || {}).eod || {};
+      if (e1.via !== 'email' || !/warm transfer/.test(e1.text || '')) fail(`the emailed EOD wasn't kept as the day's EOD: ${JSON.stringify(e1).slice(0, 200)}`);
+      const cc = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {})[D2] || {};
+      if (!cc.eodCheck || cc.parts.eod !== 100 || cc.eodCheck.via !== 'email') fail(`the emailed EOD wasn't checked (100%): ${JSON.stringify(cc.eodCheck || cc.parts)}`);
+      // an EOD missing its learnings: its % and what is missing
+      const r2 = await call('/api/eod/receive', { from: 'Dee Drive <dee.drive@gmail.com>', subject: 'EOD', date: new Date(D2 + 'T19:30:00Z').toISOString(), text: 'Accomplishments/Completed Tasks:\n- the deck\n' }, admin);
+      if (!r2.body || !r2.body.matched || r2.body.check.pct >= 100 || !r2.body.check.rules.some(r => r.id === 'learn' && !r.pass)) fail(`a partial EOD isn't marked down with what's missing: ${JSON.stringify(r2.body).slice(0, 300)}`);
+      const r3 = await call('/api/eod/receive', { from: 'Someone Else <x@y.com>', subject: 'Daily Report', text: 'hello' }, admin);
+      if (!r3.body || r3.body.matched !== false || !((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Someone Else/.test(x.from))) fail('an EOD no trainee matches isn\'t kept for the trainer');
+      if ((await call('/api/eod/receive', { from: 'x', text: 'y' }, trainee)).status !== 403) fail('a trainee could post an EOD as the platform'); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');

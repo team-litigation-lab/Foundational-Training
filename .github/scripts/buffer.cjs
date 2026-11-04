@@ -84,14 +84,15 @@ async function workerChecks() {
     const d13 = await t.evaluate(() => FTDayDecks.list(13).map(s => s.h || ''));
     if (d13.some(h => /Buffer Time/i.test(h))) fail(`Day 13 still has a Buffer Time slide: ${JSON.stringify(d13)}`);
     if (!d13.some(h => /Call Listening/.test(h))) fail(`Day 13 lost its Call Listening session: ${JSON.stringify(d13)}`);
-    // 📒 the Monitoring Sheet's items #10–11 close Reception Part 2: their card and 📤 Submit at the lower right of the metrics page (s2b's last)
+    // 📒 the Monitoring Sheet's items #10–11 close Reception Part 2: their card and 📤 Submit at the lower right of s2b's last page
+    // (how the one-on-one mock calls run: the metrics page that followed it is gone, its scorecard is on the preparation page)
     await open(t, 4, 's2b');
     if (!(await toPanel(t))) fail('Day 4\'s metrics page has no Monitoring Sheet card');
     else {
       if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 4's Monitoring Sheet card reads: ${await panel(t)}`);
       const pos = await t.evaluate(() => { const c = document.querySelector('.ftbf-slot.ftbf-corner'), s = c && c.closest('.ftdd-sheet'); if (!c || !s) return null;
-        const a = c.getBoundingClientRect(), b = s.getBoundingClientRect(); return { right: b.right - a.right, last: !c.nextElementSibling, metrics: /WEIGHTED AVERAGE/.test(s.textContent), only: s.classList.contains('ftbf-only') }; });
-      if (!pos || pos.right > 60 || !pos.last || !pos.metrics || pos.only) fail(`the Monitoring Sheet card should be at the lower right of the metrics page, after it: ${JSON.stringify(pos)}`);
+        const a = c.getBoundingClientRect(), b = s.getBoundingClientRect(); return { right: b.right - a.right, last: !c.nextElementSibling, run: /How the mock calls run/.test(s.textContent), metrics: /WEIGHTED AVERAGE/.test(s.textContent), only: s.classList.contains('ftbf-only') }; });
+      if (!pos || pos.right > 60 || !pos.last || !pos.run || pos.metrics || pos.only) fail(`the Monitoring Sheet card should be at the lower right of the mock calls page, after it (and no metrics page after it): ${JSON.stringify(pos)}`);
     }
     // 📅 Day 5's Attorney Calendar Management Activity: no Submit panel (and no tracker) on its slides: it is submitted on the Main Portal
     await open(t, 5, 's3b');

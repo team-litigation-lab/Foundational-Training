@@ -424,10 +424,11 @@ FTSessions.trainerCards = function(){
 
 /* ---------- Admin → 🟢 Practice Sessions ---------- */
 const AD = {rows:null, loading:false, batch:"", open:{}, live:true, timer:null, at:0};
+window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 async function loadAdmin(quiet){
   AD.loading = true;
   try{
-    const ok = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt;
+    const ok = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt && (!window.ftActiveTrainee || ftActiveTrainee(r));
     let people = state.adminData;
     // (a cached list with no approved trainee, say one loaded before the approvals, is read again from storage)
     if(!people || !people.some(ok)){ const keys = await sharedList("trainee:"), got = []; for(let i = 0; i < keys.length; i += 99) got.push(...(await sharedGetMany(keys.slice(i, i + 99))).filter(Boolean)); people = got; }
