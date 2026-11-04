@@ -43,6 +43,25 @@ const ACTS = {
       text: () => Object.entries(l.fields || {}).filter(([k, v]) => has(v)).map(([k, v]) => `${k}: ${v}`).join("\n")}))}
 };
 
+// ✍️ manual feedback, on any activity of the training (Admin → 📝 Send Feedback, the activity picked from every one): kept as
+// trainerfb:<id>.items["manual:<activity>"] = {act: "manual", item, title, group, verdict, score, comment, at}
+ACTS.manual = {icon: "✍️", label: "Trainer's feedback", items: () => []};
+const actInfo = a => ACTS[a] || {icon: "📝", label: String(a || "")};
+// every activity a trainer can give feedback on: the Knowledge Checks, the Practice Lab, the mock calls and demos, the side
+// activities, and each day's classroom activities and outputs (js/ft-day-activities.js, the Training Guide's own list)
+function catalogue(){
+  const out = [], seen = new Set(), add = (group, id, title) => { if(seen.has(id)) return; seen.add(id); out.push({group, id, title}); };
+  (typeof DAYS !== "undefined" && Array.isArray(DAYS) ? DAYS : window.DAYS || []).forEach(d => add("✍️ Knowledge Checks", "kc-" + d.id, `Knowledge Check: ${d.title}`));
+  add("✍️ Knowledge Checks", "reading-1", "📖 Reading Task: Personal Injury Overview");
+  const D = (window.FTDays && FTDays.DAYS) || [];
+  const grp = it => it.at === "trainer" || /Mock call|Demo/i.test(it.kind || "") ? "🎙 Mock calls & demos" : it.at === "session" || it.at === "tool" ? "🛠 Practice Lab" : "🏫 Classroom & outputs";
+  D.forEach(d => (d.items || []).forEach(it => { if(/^(Typing Test \(morning|Spelling Test \(once a day\)|Free Communication Upskill)/.test(it.t)) return;
+    const id = (it.at === "trainer" || it.at === "session" || it.at === "tool") && it.id ? `${it.at}-${it.id}` : `d${d.day}-${String(it.t).toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 48)}`;
+    add(grp(it), id, `${it.at === "trainer" || it.at === "session" || it.at === "tool" ? "" : `Day ${d.day} · `}${it.t}`); }));
+  [["typing", "🧪 Typing & Spelling Tests"], ["monitor", "📒 Training Monitoring Sheet"], ["tracker", "📋 Daily Task Tracker"], ["tam", "📘 Task Assessment Manual (TAM)"],
+   ["outputs", "📤 Daily outputs & EOD email"], ["links", "📁 Drive links & folders"], ["general", "💬 General feedback"]].forEach(([id, t]) => add("🧩 Side activities", "side-" + id, t));
+  return out;
+}
 /* ---------- the trainee: their trainer's feedback ---------- */
 const F = {id: null, rec: null, at: 0, loading: null};
 function loadMine(force){
@@ -95,7 +114,7 @@ async function loadAll(){
   try{
     const [fb, lab, kc, rk] = await sharedGetMany(["trainerfb:" + id, "labreview:" + id, "kcreview:" + id, "rankshare:" + id]);
     F.id = id; F.rec = fb && fb.items ? fb : {items: {}}; F.at = Date.now();
-    const out = Object.entries(F.rec.items).map(([k, it]) => Object.assign({k, icon: (ACTS[it.act] || {}).icon || "📝", what: (ACTS[it.act] || {}).label || it.act}, it));
+    const out = Object.entries(F.rec.items).map(([k, it]) => Object.assign({k, icon: (ACTS[it.act] || {}).icon || "📝", what: it.act === "manual" ? `Trainer's feedback${it.group ? " · " + it.group.replace(/^\S+\s/, "") : ""}` : (ACTS[it.act] || {}).label || it.act}, it));
     const acts = (window.FTSessions && FTSessions.trainerActs) ? FTSessions.trainerActs() : [];
     Object.entries((lab && lab.acts) || {}).forEach(([aid, r]) => { if(!r || !(r.status || has(r.comment) || r.score != null)) return;
       const a = acts.find(x => x.id === aid) || {title: aid};
@@ -164,6 +183,9 @@ async function loadAdmin(){
       gk.filter(k => k.startsWith(`guide:${p.id}:`)).forEach(k => { const g = k.slice(`guide:${p.id}:`.length);
         rows.push({p, act: "guide", item: g, title: (guides().find(x => x.id === g) || {}).title || g, lazyKey: k, sent: sent["guide:" + g] || null}); });
     }
+    // (✍️ a manual activity picked: every trainee of the batch, to write their feedback on it)
+    A.sentBy = {}; ppl.forEach((p, i) => { A.sentBy[p.id] = ((vals[i * 3 + 2] || {}).items) || {}; });
+    A.ppl = ppl;
     A.rows = rows.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   }catch(err){ A.rows = []; }
   A.loading = false; if(state.view === "admin" && state.adminTab === "sendfeedback") render();
@@ -181,27 +203,39 @@ async function openRow(i){
   const el = document.getElementById("tfbForm"); if(el) el.scrollIntoView({block: "nearest"});
 }
 function workHtml(r){
+  if(r.manual) return `<p class="fss-muted">✍️ Your own feedback on this activity: write what they did well, what to improve and why. The trainee gets a notification as soon as you send it, and it stays in their 📬 My Feedback.</p>`;
   if(r.lazyKey && !r.loaded) return `<p class="fss-muted">Opening the guide…</p>`;
   if(r.act === "guide") return r.html ? `<div class="tfb-guide">${window.FTGuide ? FTGuide.clean(r.html) : ""}</div>` : `<p class="fss-muted">The guide is empty.</p>`;
   return `<div class="tfb-work">${String(r.text ? r.text() : "").split("\n").map(l => { const m = /^([^:]{2,60}):\s?(.*)$/.exec(l); return m ? `<p><b>${e(m[1])}:</b> ${e(m[2])}</p>` : `<p>${e(l)}</p>`; }).join("")}</div>`;
 }
+// (a manual activity's rows: each trainee of the batch, with the feedback already sent on it)
+function manualRows(){
+  const a = catalogue().find(x => "m|" + x.id === A.act); if(!a) return [];
+  return (A.ppl || []).map(p => { const k = "manual:" + a.id, ex = A.rows.find(r => r.p.id === p.id && r.act === "manual" && r.item === a.id);
+    if(ex) return ex; const r = {p, act: "manual", item: a.id, title: a.title, group: a.group, manual: true, sent: (A.sentBy[p.id] || {})[k] || null}; A.rows.push(r); return r; });
+}
 function renderAdmin(){
   if(!A.rows){ if(!A.loading) loadAdmin(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting the trainees’ work…</div>`; }
+  if(String(A.act).startsWith("m|")) manualRows();
   const bs = batchesOf();
-  const rows = A.rows.map((r, i) => Object.assign({i}, r)).filter(r => (!A.act || r.act === A.act) && (A.status === "all" || (A.status === "todo" ? !r.sent : !!r.sent)));
-  const todo = A.rows.filter(r => !r.sent).length;
+  const mAct = String(A.act).startsWith("m|") ? A.act.slice(2) : null;
+  const rows = A.rows.map((r, i) => Object.assign({i}, r)).filter(r => mAct ? r.act === "manual" && r.item === mAct && (A.status === "all" || A.status === "todo" ? true : !!r.sent)
+    : (!A.act || r.act === A.act) && !r.manual && (A.status === "all" || (A.status === "todo" ? !r.sent : !!r.sent)));
+  const todo = A.rows.filter(r => !r.sent && !r.manual).length;
+  const cat = catalogue(), groups = [...new Set(cat.map(x => x.group))];
   const cur = A.open != null ? A.rows[A.open] : null, s = cur && cur.sent || {};
   return `<div class="card tfb-admin"><div class="ff-bar"><div><h3>📝 Send Feedback</h3><p class="fss-muted">The trainees’ work on the platform’s activities, by batch: open one, read it, and send your verdict, score and comment. The trainee sees it on that activity’s page, on 📬 My Feedback and in their scores. (Mock calls and demos: their scorecards in 🧑‍🏫 Trainer Inputs.)</p></div>
       <span class="tfb-filters"><select onchange="FTFeedback.batch(this.value)">${bs.map(b => `<option ${b === A.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batches</option>"}</select>
-        <select onchange="FTFeedback.act(this.value)"><option value="">Every activity</option>${Object.keys(ACTS).map(k => `<option value="${k}" ${A.act === k ? "selected" : ""}>${ACTS[k].icon} ${e(ACTS[k].label)}</option>`).join("")}</select>
+        <select onchange="FTFeedback.act(this.value)" aria-label="Activity"><option value="">Every activity (the work to review)</option><optgroup label="📝 The work to review">${Object.keys(ACTS).filter(k => k !== "manual").map(k => `<option value="${k}" ${A.act === k ? "selected" : ""}>${ACTS[k].icon} ${e(ACTS[k].label)}</option>`).join("")}</optgroup>
+          ${groups.map(g => `<optgroup label="✍️ ${e(g.replace(/^\S+\s/, ""))}">${cat.filter(x => x.group === g).map(x => `<option value="m|${e(x.id)}" ${A.act === "m|" + x.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</optgroup>`).join("")}</select>
         <select onchange="FTFeedback.status(this.value)"><option value="todo" ${A.status === "todo" ? "selected" : ""}>To review (${todo})</option><option value="sent" ${A.status === "sent" ? "selected" : ""}>Sent</option><option value="all" ${A.status === "all" ? "selected" : ""}>All</option></select>
         <button class="btn btn-ghost btn-sm" onclick="FTFeedback.refresh()">↻</button></span></div>
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl tfb-tbl"><thead><tr><th>Trainee</th><th>Activity</th><th>Work</th><th>Last worked on</th><th>Checks</th><th>Your feedback</th></tr></thead><tbody>
-      ${rows.map(r => `<tr class="${A.open === r.i ? "tfb-on" : ""}" onclick="FTFeedback.open(${r.i})"><td><b>${e(r.p.name)}</b></td><td>${ACTS[r.act].icon} ${e(ACTS[r.act].label)}</td><td>${e(r.title)}${r.done === false ? ` <span class="fss-pill">in progress</span>` : ""}</td>
+      ${rows.map(r => `<tr class="${A.open === r.i ? "tfb-on" : ""}" onclick="FTFeedback.open(${r.i})"><td><b>${e(r.p.name)}</b></td><td>${actInfo(r.act).icon} ${e(r.manual ? r.group || actInfo(r.act).label : actInfo(r.act).label)}</td><td>${e(r.title)}${r.done === false ? ` <span class="fss-pill">in progress</span>` : ""}</td>
         <td>${e(when(r.at)) || "—"}</td><td>${r.auto != null ? e(r.auto) + "%" : "—"}</td>
-        <td>${r.sent ? `<span class="fss-pill ok">✓ Sent ${e(when(r.sent.at))}</span> ${r.sent.score != null && r.sent.score !== "" ? e(r.sent.score) + "%" : ""}` : `<span class="fss-pill mid">To review</span>`}</td></tr>`).join("")}
-    </tbody></table></div>` : `<p class="fss-muted">${A.status === "todo" ? "Nothing waiting for your feedback" : "Nothing here"}${A.act ? " in " + e(ACTS[A.act].label) : ""} for ${e(A.batch || "this batch")}.</p>`}
-    ${cur ? `<div class="tfb-panel" id="tfbForm"><div class="tfb-panel-h"><b>${ACTS[cur.act].icon} ${e(cur.p.name)} · ${e(ACTS[cur.act].label)} · ${e(cur.title)}</b><button class="btn btn-ghost btn-sm" onclick="FTFeedback.close()">Close</button></div>
+        <td>${r.sent ? `<span class="fss-pill ok">✓ Sent ${e(when(r.sent.at))}</span> ${r.sent.score != null && r.sent.score !== "" ? e(r.sent.score) + "%" : ""}` : `<span class="fss-pill mid">${r.manual ? "✍️ Write feedback" : "To review"}</span>`}</td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="fss-muted">${A.status === "todo" ? "Nothing waiting for your feedback" : "Nothing here"}${A.act && !mAct ? " in " + e(actInfo(A.act).label) : ""} for ${e(A.batch || "this batch")}.</p>`}
+    ${cur ? `<div class="tfb-panel" id="tfbForm"><div class="tfb-panel-h"><b>${actInfo(cur.act).icon} ${e(cur.p.name)} · ${e(cur.manual ? cur.group || "" : actInfo(cur.act).label)} · ${e(cur.title)}</b><button class="btn btn-ghost btn-sm" onclick="FTFeedback.close()">Close</button></div>
       <div class="tfb-cols"><div><p class="tfb-sub">Their work</p>${workHtml(cur)}${cur.ai ? `<p class="tfb-sub">🤖 The AI’s evaluation</p><div class="tfb-work">${paras(cur.ai)}</div>` : ""}</div>
         <div class="tfb-form"><p class="tfb-sub">Your feedback</p>
           <label>Verdict<select data-verdict><option value="">—</option>${VERDICTS.map(v => `<option ${s.verdict === v ? "selected" : ""}>${e(v)}</option>`).join("")}</select></label>
@@ -213,7 +247,7 @@ function renderAdmin(){
 }
 window.FTFeedback = {
   batch(b){ A.batch = b; A.open = null; loadAdmin(); },
-  act(a){ A.act = a; A.open = null; render(); },
+  act(a){ A.act = a; A.open = null; if(String(a).startsWith("m|")) A.status = "all"; render(); },
   status(s){ A.status = s; A.open = null; render(); },
   refresh(){ A.open = null; loadAdmin(); },
   open: openRow, close(){ A.open = null; render(); },
@@ -221,7 +255,7 @@ window.FTFeedback = {
     const r = A.rows[A.open]; if(!r) return; const box = btn.closest(".tfb-form");
     A.drafting = true; btn.disabled = true; btn.textContent = "Writing…";
     try{
-      const prompt = `You are the training facilitator of Legal Support Help writing your feedback on a trainee Legal VA's work in the ${ACTS[r.act].label}: ${r.title}.
+      const prompt = `You are the training facilitator of Legal Support Help writing your feedback on a trainee Legal VA's work in the ${r.manual ? r.group.replace(/^\S+\s/, "") : actInfo(r.act).label}: ${r.title}.
 Trainee's first name: ${String(r.p.name).split(/\s+/)[0]}
 THEIR WORK:
 ${String(r.text ? r.text() : "").slice(0, 7000)}
@@ -251,7 +285,7 @@ Return ONLY JSON: {"verdict":"...","score":0,"comment":"..."}`;
     btn.disabled = true;
     try{
       const cur = (await sharedGet("trainerfb:" + r.p.id)) || {}; cur.items = cur.items || {};
-      const it = {act: r.act, item: r.item, title: r.title, verdict, score: sv === "" ? null : Math.round(Number(sv)), comment: comment.slice(0, 4000), at: new Date().toISOString()};
+      const it = Object.assign({act: r.act, item: r.item, title: r.title, verdict, score: sv === "" ? null : Math.round(Number(sv)), comment: comment.slice(0, 4000), at: new Date().toISOString()}, r.manual ? {group: r.group} : {});
       cur.items[r.act + ":" + r.item] = it; cur.updatedAt = it.at;
       if(await sharedSet("trainerfb:" + r.p.id, cur) === false) throw new Error("save");
       r.sent = it; toast(`📤 Sent to ${String(r.p.name).split(/\s+/)[0]}.`);
@@ -263,6 +297,29 @@ Return ONLY JSON: {"verdict":"...","score":0,"comment":"..."}`;
 };
 ftAdminTab("sendfeedback", "📝 Send Feedback", renderAdmin);
 
+/* 🔔 THE TRAINEE'S NOTIFICATION: new feedback from their trainer (anything in trainerfb:<id> newer than they have seen) pops up
+   over the page as soon as it is read — on signing in, and about once a minute while they use the platform — with each new
+   one (its title, verdict, score and comment) and the way to 📬 My Feedback. Shown once a feedback: ✓ Got it marks them seen. */
+const POPPED = new Set();
+function fbPopup(){
+  if(!state.traineeId || state.isAdmin || state.adminPreview || document.getElementById("tfbPop")) return;
+  const items = Object.entries((F.rec && F.rec.items) || {}).filter(([k, it]) => it && it.at && isNew(k, it) && !POPPED.has(k + "|" + it.at))
+    .sort((a, b) => String(b[1].at).localeCompare(String(a[1].at)));
+  if(!items.length) return;
+  items.forEach(([k, it]) => POPPED.add(k + "|" + it.at));
+  const m = document.createElement("div"); m.id = "tfbPop"; m.className = "tfb-pop"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "New feedback from your trainer");
+  m.innerHTML = `<div class="tfb-pop-box"><div class="tfb-pop-h">🔔 New feedback from your trainer${items.length > 1 ? ` (${items.length})` : ""}</div>
+    <div class="tfb-pop-b">${items.slice(0, 3).map(([k, it]) => `<div class="tfb-pop-it"><p class="tfb-pop-k">${actInfo(it.act).icon} ${e(it.act === "manual" ? (it.group || "").replace(/^\S+\s/, "") || "Trainer's feedback" : actInfo(it.act).label)}</p>${fbCard(it, k)}</div>`).join("")}
+      ${items.length > 3 ? `<p class="fss-muted">and ${items.length - 3} more in 📬 My Feedback.</p>` : ""}</div>
+    <div class="tfb-pop-f"><button type="button" class="btn btn-ghost btn-sm" onclick="FTFeedback.popClose(true)">✓ Got it</button><button type="button" class="btn btn-navy btn-sm" onclick="FTFeedback.popClose(true); goto('myfeedback')">📬 Open My Feedback</button></div></div>`;
+  m.dataset.keys = JSON.stringify(items.map(([k]) => k));
+  document.body.appendChild(m);
+}
+FTFeedback.popClose = function(seenToo){ const m = document.getElementById("tfbPop"); if(!m) return; if(seenToo){ try{ markSeen(JSON.parse(m.dataset.keys || "[]")); }catch(err){} } m.remove(); };
+FTFeedback.checkNew = function(){ if(!state.traineeId || state.isAdmin || state.adminPreview) return; loadMine(true).then(fbPopup).catch(() => {}); };
+setTimeout(() => FTFeedback.checkNew(), 2500);
+setInterval(() => { if(!document.hidden) FTFeedback.checkNew(); }, 60000);
+
 // 🏅 My Performance: the scores the trainer sent (js/ft-program.js lists this source)
 window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || {}).items) || {}).filter(it => it && it.score != null && it.score !== "")
   .map(it => ({name: `${(ACTS[it.act] || {}).icon || "📝"} ${(ACTS[it.act] || {}).label || it.act} · ${it.title}`, pct: Number(it.score), note: it.verdict || "Trainer’s score"}));
@@ -273,6 +330,12 @@ main.main-tfb{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tfb-page{padding:14px 18px;border-left:5px solid #DB8437;}
 .tfb-page h3{margin:0 0 8px;color:var(--navy);}
 .tfb-item{border-top:1px solid #F0F1F5;padding:8px 0;} .tfb-item:first-of-type{border-top:0;}
+.tfb-pop{position:fixed;inset:0;z-index:10060;background:rgba(15,18,40,.5);display:flex;align-items:center;justify-content:center;padding:14px;}
+.tfb-pop-box{background:#fff;border-radius:14px;width:min(560px,100%);max-height:calc(100vh - 28px);display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden;animation:tfbPopIn .25s ease-out;}
+.tfb-pop-h{background:#1E2340;color:#fff;font-weight:800;font-size:17px;padding:12px 16px;border-bottom:3px solid #DB8437;}
+.tfb-pop-b{padding:10px 16px;overflow:auto;} .tfb-pop-k{margin:6px 0 0;font-size:12px;font-weight:800;color:#8A4A00;text-transform:uppercase;letter-spacing:.04em;}
+.tfb-pop-f{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;border-top:1px solid #EEF0F5;}
+@keyframes tfbPopIn{from{transform:translateY(12px);opacity:0;}to{transform:none;opacity:1;}}
 .tfb-item-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .tfb-item p{margin:4px 0 0;font-size:14px;line-height:1.5;}
 .tfb-verdict{font-weight:800;color:#1F2A44;}

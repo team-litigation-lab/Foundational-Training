@@ -68,7 +68,7 @@ async function workerChecks() {
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
   if (!/^.?.?\s*Video$/.test(await btn()) || /Request|Requested/.test(await btn())) fail(`after the approval, the button reads "${await btn()}", not 🎬 Video`);
   // (the Personal Injury Process Flow / Reception card: its two videos, PI Workflow and Receptionist, each still to request)
-  const v3 = await page.evaluate(() => [...document.querySelectorAll('#dayl-3 .mc-grid .ftli-vids > button')].map(b => b.innerText));
+  const v3 = await page.evaluate(() => [...document.querySelectorAll('#dayl-3 .mc-grid .ftli-vids > button')].map(b => b.innerText + ' ' + b.title));
   if (v3.length !== 2 || !v3.every(t => /Request/.test(t)) || !/PI Workflow/.test(v3[0]) || !/Receptionist/.test(v3[1])) fail(`approving one lesson's video opened another's: ${v3.join(' | ')}`);
 
   await put('settings:openvideos', vidsBefore || { all: [], batches: {} });

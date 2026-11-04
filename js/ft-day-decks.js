@@ -1847,7 +1847,9 @@ function introCard(l, cur, ex, tags){
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
   // (locked: 🔒 Request asks the trainer for it; ⏳ Requested until they approve it — js/ft-updates.js)
   const vidLabel = (b, name) => { const ask = b.classList.contains("ft-video-ask"), wait = b.classList.contains("ft-video-pending");
-    b.textContent = (ask ? "🔒 Request " : wait ? "⏳ " : b.disabled ? "🔒 " : "🎬 ") + (name || (wait ? "Requested" : "Video")); b.title = name ? `${name} video` : b.title; };
+    // (two on one card: the short name, the request on hover — "🔒 PI Workflow", "Request the PI Workflow video")
+    if(name){ b.textContent = (ask || b.disabled ? "🔒 " : wait ? "⏳ " : "🎬 ") + name; b.title = ask ? `Request the ${name} video` : wait ? `${name} video: requested` : `${name} video`; return; }
+    b.textContent = ask ? "🔒 Request Video" : wait ? "⏳ Requested" : b.disabled ? "🔒 Video" : "🎬 Video"; };
   if(vid) vidLabel(vid);
   // (a card that holds two lessons, Personal Injury Process Flow / Reception: a video button for each, each its own lesson's
   // video, locked and requested on its own)
