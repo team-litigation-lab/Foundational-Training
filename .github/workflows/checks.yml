@@ -39,6 +39,8 @@ jobs:
         run: node .github/scripts/sso.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
+      - name: Claude as the primary AI provider (ANTHROPIC_API_KEY; Haiku for chat, Sonnet for grading; the Gemini pool takes over when Claude can't answer)
+        run: node .github/scripts/claude-primary.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)

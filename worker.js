@@ -9,6 +9,11 @@
  * signed-in trainer (admin token) in secure mode.
  *
  * Secrets (set once with `wrangler secret put <NAME>`):
+ *   ANTHROPIC_API_KEY  — optional: makes Claude the primary AI provider (see callClaude). Every AI call tries Claude first
+ *                        and the Gemini keys below answer only when Claude can't (a limit, no credits, busy, a refusal).
+ *                        With AI_GATEWAY_SECRET set, calls go to the Portal's gateway instead, so set the key on the Portal.
+ *   CLAUDE_CHAT_MODEL / CLAUDE_GRADING_MODEL — optional variables: defaults claude-haiku-5-5 (chat, tracker) and
+ *                        claude-sonnet-5-5 (grading and trainer tools).
  *   GEMINI_API_KEY5 … GEMINI_API_KEY9 — the Gemini key pool behind every AI feature (see GEMINI_POOL).
  *                        Each request starts on the next key in turn; a key that hits its limit is
  *                        rested and the next key takes over. At least one is required.
@@ -639,7 +644,7 @@ async function viaGateway(env, req, user) {
   try {
     r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
-      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
     });
     data = await r.json().catch(() => null);
   } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
@@ -648,13 +653,71 @@ async function viaGateway(env, req, user) {
   return json({ error: { message: (status === 429 ? "rate limit (shared AI budget): " : "") + ((data && data.error) || "AI gateway error " + r.status) } }, status);
 }
 
+/* ---------- Claude (the primary provider when ANTHROPIC_API_KEY is set) ----------
+   Same request and reply shape as callGemini. Chat and the tracker use CLAUDE_CHAT_MODEL (claude-haiku-5-5); grading and
+   trainer tools CLAUDE_GRADING_MODEL (claude-sonnet-5-5). A rejected key rests 10 minutes, no credits an hour, a rate limit
+   its retry-after: the Gemini pool answers meanwhile. → a Response on success, else { status, msg } */
+const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
+const claudeGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
+const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (claudeGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
+let claudeRest = 0;
+async function callClaude(env, req) {
+  if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
+  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
+  // alternating turns that start and end with the user (an opening line from the model gets a short user turn before it)
+  const turns = [];
+  for (const m of req.messages || []) {
+    const role = m.role === "assistant" ? "assistant" : "user", text = toText(m.content).trim();
+    if (!text) continue;
+    const prev = turns[turns.length - 1];
+    if (prev && prev.role === role) prev.content += "\n\n" + text; else turns.push({ role, content: text });
+  }
+  if (!turns.length || turns[0].role !== "user") turns.unshift({ role: "user", content: "(Begin.)" });
+  if (turns[turns.length - 1].role !== "user") turns.push({ role: "user", content: "(Continue.)" });
+  const grading = claudeGrading(req.feature), model = claudeModel(env, req.feature);
+  // max_tokens covers thinking as well as the answer, so it has room above the page's max_tokens (only what's used is billed)
+  const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
+  const sys = toText(req.system).trim();
+  if (sys) body.system = sys;
+  const headers = { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" };
+  // Sonnet 5.5: a request its safety classifier declines is answered by a fallback model the server picks, instead of failing
+  if (model === "claude-sonnet-5-5") { headers["anthropic-beta"] = "server-side-fallback-2026-07-01"; body.fallbacks = "default"; }
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), grading ? 60000 : 20000);
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal: ctl.signal, headers, body: JSON.stringify(body) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = String((data.error && data.error.message) || `Claude error ${r.status}`);
+      if (r.status === 401 || r.status === 403) claudeRest = Date.now() + 600000;
+      else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
+      else if (r.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(r.headers.get("retry-after")) || 60, 5), 600) * 1000;
+      return { status: r.status, msg };
+    }
+    if (data.stop_reason === "refusal") return { status: 502, msg: "Claude declined this request" };
+    const text = (data.content || []).filter((b) => b && b.type === "text").map((b) => b.text || "").join("");
+    if (!text.trim()) return { status: 502, msg: `Claude returned no text (${data.stop_reason || "empty"})` };
+    return json({ content: [{ type: "text", text }], model: data.model || model, stop_reason: data.stop_reason === "max_tokens" ? "max_tokens" : "end_turn", provider: "claude" });
+  } catch (e) {
+    return { status: 502, msg: ctl.signal.aborted ? "Claude took too long to answer" : "Claude unreachable: " + (e && e.message || e) };
+  } finally { clearTimeout(timer); }
+}
+
 async function callGemini(env, rawBody, user) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
-  if (gatewayOn(env)) return await viaGateway(env, req, user);
+  if (gatewayOn(env)) return await viaGateway(env, req, user);   // (Claude, when set on the Portal, answers there first)
+  // Claude first when ANTHROPIC_API_KEY is set; the Gemini pool below only when Claude can't answer.
+  let claudeFail = null;
+  if (claudeOn(env)) {
+    const c = await callClaude(env, req);
+    if (c instanceof Response) return c;
+    claudeFail = c;
+    console.error("Claude failed, the Gemini pool takes over:", c.status, c.msg);
+  }
   // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429), the key is
   // rejected, or it is out of credits or has billing off, it rests and the next key takes the request.
   const keys = geminiKeyOrder(env);
-  if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+  if (!keys.length && claudeFail) return json({ error: { message: (claudeFail.status === 429 ? "rate limit (Claude): " : "Claude: ") + claudeFail.msg } }, claudeFail.status === 429 ? 429 : 502);
+  if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
   const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
   const payload = {
@@ -738,7 +801,7 @@ async function listAll(env, prefix) {
    For every approved trainee with a tracker: run the rules for the day, write a notes review
    against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
 async function aiText(env, system, prompt, maxTokens) {
-  if (!hasGemini(env)) return "";
+  if (!hasGemini(env) && !claudeOn(env)) return "";
   const r = await callGemini(env, JSON.stringify({ feature: "tracker", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
@@ -1292,7 +1355,7 @@ export default {
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
         const deployment = (env.CF_VERSION_METADATA && env.CF_VERSION_METADATA.id) || "unknown";
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAdmin password: ${adminPassStatus(env)}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAdmin password: ${adminPassStatus(env)}\nAI provider: ${gatewayOn(env) ? "the Portal's shared AI gateway (Claude first when ANTHROPIC_API_KEY is set there)" : claudeOn(env) ? "Claude (chat " + claudeModel(env, "chat") + ", grading and trainer tools " + claudeModel(env, "grading") + "), Gemini as the fallback" : hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
@@ -1583,7 +1646,7 @@ export default {
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
         const body = await request.text();
-        if (!hasGemini(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+        if (!hasGemini(env) && !claudeOn(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
         return await callGemini(env, body, tok && tok.id);
       }
 
@@ -1697,7 +1760,7 @@ export default {
           ask.push({ id: k, essay: !!it.essay, points: it.pts, key: it.answer, answer: a.slice(0, 2500) });
         }
         let ai = false;
-        if (ask.length && hasGemini(env)) {
+        if (ask.length && (hasGemini(env) || claudeOn(env))) {
           try {
             const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
             const raw = await aiText(env, `You are a training supervisor at Legal Support Help grading a trainee virtual assistant's ${K.context || "assessment on personal injury terms and auto insurance"}. Never mention that you are an AI. Answer with JSON only.` + voice,
