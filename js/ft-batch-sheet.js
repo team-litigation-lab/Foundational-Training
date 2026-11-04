@@ -422,7 +422,11 @@ function peopleHtml(){
 // 📊 the Weekly Ranking (js/ft-ranking.js), below the Day 1–16 scores, for the same batch
 function rankingHtml(){
   if(meOn() || !window.FTRanking || !FTRanking.embed) return "";
-  return `<section class="bs-sec bs-rank" id="bs-ranking">${FTRanking.embed(B.batch)}</section>`;
+  // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
+  const sheet = FTRanking.embed(B.batch);
+  if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
+  return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking</h3>${FTRankSummary.html()}
+    <details class="bs-more bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
    🏅 THE SIMPLIFIED SCORECARD: what the Batch Sheet opens on (the facilitator's own sheet)
@@ -933,6 +937,7 @@ window.FTBatchSheet = {
   // (the compliance table's Drive link picked for a trainee; ▸ More detail open or shut)
   dlPick(id, k){ B.dl = B.dl || {}; B.dl[id] = k; render(); },
   more(open){ B.more = !!open; },
+  rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },

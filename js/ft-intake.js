@@ -324,11 +324,9 @@ function adminHtml(){
         <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
-    <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
-    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
     <h4>The additional intake documents</h4><p class="fss-muted">The shared default for each document (each trainee enters their own on the slide, ✏️ My document links, which takes their place): its own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
     <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
-    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets and documents</button></div></div>`;
+    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the documents</button></div></div>`;
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the mock call case never overwrite each other, whoever changed the other one and however quickly
@@ -365,12 +363,12 @@ window.FTIntakeAdmin = {
   async save(){
     // read the form first: loading the saved settings re-renders the page and the form with it
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
-    const pk = {}; for(let n = 1; n <= NPACK; n++){ const c = v("ftisC" + n), u = v("ftisU" + n); if(c || u) pk[n] = {client: c, url: u}; }
     const docs = DOCS.map((_, i) => v("ftisD" + i));
-    const bad = [...Object.values(pk).map(x => x.url), ...docs].filter(u => u && !/^https:\/\//.test(u));
+    const bad = docs.filter(u => u && !/^https:\/\//.test(u));
     if(bad.length){ toast("A link must start with https://"); return; }
     await loadK(true);
-    const next = Object.assign({}, K.set, {packets: pk, docs, updatedAt: new Date().toISOString()});
+    // (the packets: each trainee links their own, 📁 My Drive links; the ones saved before stay for the mock call's pairing)
+    const next = Object.assign({}, K.set, {docs, updatedAt: new Date().toISOString()});
     const ok = await sharedSet("settings:intake", next);
     if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
     K.set = next; K.at = Date.now(); toast("✓ Saved — trainees see it within two minutes."); render();
