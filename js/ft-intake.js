@@ -105,7 +105,8 @@ function loadK(force){
     .then(([v, a, d, w]) => { K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
       K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now();
       // (the trainee's own links to the additional intake documents: drive:<id>.intakeDocs, theirs to write)
-      K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : []; })
+      K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : [];
+      K.packetLink = d && /^https:\/\//.test(String(d.intakePacket || "")) ? String(d.intakePacket) : ""; })
     .catch(() => { if(!K.set) K.set = {}; })
     .then(() => { K.loading = null; paint(); });
   return K.loading;
@@ -215,7 +216,11 @@ function packetHtml(){
   const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
   return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${pk.client ? `<small>Client: <b>${e(pk.client)}</b> · name your subfolder after them</small>` : ""}</div></div>
     <div class="ftis-pk-act">${pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it") : `<span class="ftis-pk-note">Your trainer is adding this packet’s link.</span>`}${folderBtn()}</div>
-    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>`;
+    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>
+    <div class="ftis-pk-link"><b>🔗 Link your packet</b> <small>Your renamed copy in your Google Drive: open it, copy its link, paste it here.</small>
+      <div class="ftis-ws-row"><input type="url" id="ftisPkLink" placeholder="https://drive.google.com/file/d/…" value="${e(K.packetLink || "")}" aria-label="The Drive link of your renamed packet">
+      <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.savePacketLink(this)">💾 ${K.packetLink ? "Save again" : "Save"}</button></div>
+      ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a></p>` : ""}</div>`;
 }
 // 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
 function sheetHtml(el){
@@ -284,6 +289,10 @@ async function loadAdmin(){
     const keys = people.map(r => "intakeassign:" + r.id), vals = [], subs = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     // (each trainee's submitted Intake Worksheet link: actsub:<id>.items.intakews)
+    // (and each trainee's own packet link: drive:<id>.intakePacket)
+    const dvs = []; const dkeys = people.map(r => "drive:" + r.id);
+    for(let i = 0; i < dkeys.length; i += 99) dvs.push(...await sharedGetMany(dkeys.slice(i, i + 99)));
+    AD.pk = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); });
     const skeys = people.map(r => "actsub:" + r.id);
     for(let i = 0; i < skeys.length; i += 99) subs.push(...await sharedGetMany(skeys.slice(i, i + 99)));
     AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
@@ -308,9 +317,10 @@ function adminHtml(){
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
     <h4>Assign the packets (each packet brings its mock call case)</h4>
     <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
+        <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : `<span class="fss-muted">Not linked</span>`}</td>
         <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
@@ -411,6 +421,18 @@ window.FTIntake = {
   },
   reload: () => loadK(true),
   docsEdit(){ K.edit = !K.edit; paint(true); },
+  // 🔗 the trainee's own packet link, into drive:<id>.intakePacket (read fresh first: the record holds their other links too)
+  async savePacketLink(b){
+    if(!isTrainee()) return;
+    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim();
+    if(u && !/^https:\/\/(drive|docs)\.google\.com\//.test(u)){ toast("Paste the Google Drive link of your packet: it starts with https://drive.google.com/ or https://docs.google.com/"); return; }
+    b.disabled = true; let ok = false;
+    try{ const cur = (await sharedGet("drive:" + state.traineeId)) || {days: {}}; cur.intakePacket = u; cur.updatedAt = new Date().toISOString();
+      ok = await sharedSet("drive:" + state.traineeId, cur) !== false; }catch(err){}
+    b.disabled = false;
+    if(!ok){ toast("Couldn’t save. Check your connection and try again."); return; }
+    K.packetLink = u; paint(); toast(u ? "✓ Your packet is linked: your trainer sees it." : "Link removed.");
+  },
   // 💾 the trainee's own document links, into drive:<id>.intakeDocs (read fresh first: the record holds their six links too)
   async docsSave(b){
     if(!isTrainee()) return;
@@ -499,6 +521,7 @@ window.FTIntake = {
 .ftis-dedit{background:#F6F8FC;border:1px solid #D9DFEA;border-radius:10px;padding:10px 14px;margin:8px 0;text-align:left;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px;}
 .ftis-dedit > p, .ftis-dedit > .ftis-asave{grid-column:1/-1;margin:0;} .ftis-dedit label{display:flex;flex-direction:column;font-size:12.5px;gap:2px;} .ftis-dedit input{padding:5px 8px;border:1px solid #C9D1E0;border-radius:6px;font:inherit;}
 .ftis-doc-t small{display:block;color:#8A93A6;font-weight:400;}
+.ftis-pk-link{margin:10px 0 0;text-align:left;} .ftis-pk-link small{display:block;color:#5F6368;margin:2px 0 4px;}
 .ftis-mockcall{background:#FFF8EF;border:2px dashed #DB8437;border-radius:12px;padding:12px 16px;margin:8px 0 10px;color:#1B1E2E;text-align:left;}
 .ftbf .ftis-mockcall{margin:12px auto;max-width:720px;}
 .ftis-mc-card{background:#fff;border:1px solid #DCE0EA;border-left:5px solid #262B45;border-radius:12px;padding:10px 14px;margin:6px 0 2px;}
