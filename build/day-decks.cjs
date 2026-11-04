@@ -830,7 +830,7 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
   MOCK_BTNS) + PGBREAK + mockPage("ftdd-mock-metrics",
   "<p><b>Reception Mock Calls Metrics</b></p>\n" +
   '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
-  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n");
+  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fifteen, which reaches your Scorecard.</p>\n");
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.

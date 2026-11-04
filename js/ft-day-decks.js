@@ -1411,7 +1411,7 @@ const LESSON_CARDS = {
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
+      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
@@ -1724,10 +1724,10 @@ const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.le
 // the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
 const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.days[0]);
 // a day after the discussion is named for what it holds
-const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
+const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Mock Calls", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
   11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
   14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
-const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
+const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Mock Calls", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 // 🎯 each day card's objective, under its focus: what the trainee can do by the end of that day
@@ -2577,7 +2577,7 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;letter-spacing:.02em;}
+.ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
 .ftms-tbl th:not(:first-child){text-align:center;width:90px;}
 .ftms-tbl th:nth-child(3){width:auto;min-width:200px;text-align:left;}
 .ftms-tbl td{padding:2px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;}
@@ -3449,17 +3449,11 @@ main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p{font-size:20px !important;font-we
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
-/* (the metrics on a deck slide, read only: in two columns, so they read large, a header over each half) */
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){display:block;max-width:1400px;margin:0 auto;font-size:18px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead{display:block;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{display:grid;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr) 80px;column-gap:0;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::before{content:"";order:3;background:#6AA84F;border-left:16px solid #fff;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{content:"Score";order:4;background:#6AA84F;color:#fff;font-weight:800;text-align:center;padding:7px 10px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{display:block;width:auto !important;padding:7px 10px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody{display:block;columns:2;column-gap:16px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
+/* (the metrics on a deck slide, read only: one table, read large; its "Score" header on one line) */
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1100px;margin:0 auto;font-size:18px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:7px 10px;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:110px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:3px 12px !important;line-height:1.2 !important;font-size:17px;}
 /* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
