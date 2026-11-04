@@ -211,7 +211,9 @@ const failures = []; const fail = (m) => failures.push(m);
     // 🔄 the past training days: from when she registered to yesterday, each weekday without a compliance record gets one
     // (backfillCompliance, /api/compliance/backfill, and the end of every shift), marked backfilled; a tracker not checked
     // that day is "not checked", not 0
-    { const back = new Date(Date.now() - 9 * 864e5), wk = []; for (let t = back.getTime(); t < Date.now() - 864e5; t += 864e5) { const d = TR.ptDate(new Date(t)); if (TR.isWeekday(d)) wk.push(d); }
+    // (the past weekdays as the backfill counts them: from the registration's date, Pacific time, up to today, by calendar date)
+    { const back = new Date(Date.now() - 9 * 864e5), wk = [], today = TR.ptDate();
+      for (let t = Date.parse(TR.ptDate(back) + 'T12:00:00Z'); ; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break; if (TR.isWeekday(d)) wk.push(d); }
       const tr0 = JSON.parse(store.get('ft:trainee:' + id)); tr0.registeredAt = back.toISOString(); store.set('ft:trainee:' + id, JSON.stringify(tr0));
       const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = {}; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
       store.set('ft:skills:' + id, JSON.stringify({ typing: [{ id: 'bt', at: new Date(wk[0] + 'T15:00:00Z').toISOString(), date: wk[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }));
