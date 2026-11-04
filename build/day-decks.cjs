@@ -754,13 +754,12 @@ const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
   '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ Ring Channel: Intake Calls</a></div>\n' +
   '<p>On Ring Channel, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in the Prototype CMS, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
-const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
-  `<p>Your demonstration of saving your assigned Intake Packet and its extracted intake documents in SA (Smart Advocate) is run by your trainer, one trainee at a time. If your shadow buddy confirms a shadowing session, the demo runs at the same time: your trainer pulls you from the session for your turn. Without live shadowing, you watch a recorded shadowing session while you wait.</p>\n` +
-  `<p><b>Before your turn</b></p>\n<ul>` +
-  `<li>Every intake document is extracted from your assigned Intake Packet, and every file, the Intake Packet itself included, is renamed under the firm’s naming convention. These are the exact files you upload and report on SA, so this is done before the demo.</li>` +
-  `<li>Your task is posted in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>, naming the Intake Packets to save.</li>` +
-  `<li>SA lets only one user in at a time: your trainer gives you access for your turn, with 10–15 minutes first to explore it.</li></ul>\n` +
-  // (the Additional Reminder on the first page, with Before your turn; the metrics open the next page on their own)
+// (no "Trainer Facilitated Demo" heading or lead paragraph: the slide opens on the instructions, written as general steps)
+const DEMO_SLIDE = `<p><b>Instructions</b></p>\n<ul>` +
+  `<li>Extract every intake document from your assigned Intake Packet, and rename every file, the Intake Packet included, under the firm’s naming convention. These are the files you upload and report in SA.</li>` +
+  `<li>Find your task in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>. It names the Intake Packets to save.</li>` +
+  `<li>Only one user can be in SA at a time. Your trainer gives you access, with 10–15 minutes to explore it first.</li></ul>\n` +
+  // (the Additional Reminder on the first page, with the Instructions; the metrics open the next page on their own)
   `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n<div class="ftdd-pgbreak"></div>\n`;
 const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
   `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
@@ -1068,7 +1067,9 @@ const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
 const PDOC_DIR = "/ft/day7/forms";
 // (the document's name alone on its bar: no page count or new-tab link. big: its pages in one row, as large as the
 // slide allows: Day 7's blank intake forms)
-const pdocHtml = ([slug, title, n, dir = PDOC_DIR], big) => `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
+// (note: a line under the name saying what the document is for, a 📌 callout)
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR, note], big) => `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
+  (note ? `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p>` : "") +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
 // Day 8's naming convention reference (Topic 2, between steps 3 and 4)
@@ -1077,7 +1078,11 @@ const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)
 const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
   ["medical-malpractice", "Blank Intake Form: Medical Malpractice", 9], ["premises-liability", "Blank Intake Form: Premises Liability", 4],
   ["slip-and-fall", "Blank Intake Form: Slip and Fall", 5]];
-const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit (additional insurance): blank", 2]];
+const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit (additional insurance): blank", 2, PDOC_DIR,
+  "<b>What this is for:</b> a sworn statement the firm asks the at-fault party (3P) to fill in, under oath and notarized. It shows whether they have " +
+  "<b>any other insurance</b> that could pay the client’s claim beyond their auto policy’s Bodily Injury (BI) limit: other policies in their or a household " +
+  "member’s name, an umbrella policy, coverage through their employer, and whether they are worth more than $200,000. It is sent with the 3P Letter of " +
+  "Representation (the <i>LOR with Affidavit</i>)."]];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
@@ -1168,7 +1173,7 @@ const ROWS = {
       {id: "formsc", h: "AM: Reference: Mock Intake Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']],
         fix: [["<p>Mock Intake (non-VLF) recording</p>", "<p>Mock Intake recording</p>"], ['data-title="Mock Intake (non-VLF) recording"', 'data-bare data-title="Mock Intake recording"']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
-        fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
+        fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings, each a harder kind of caller. Play one, note how the intake specialist handles it, then open the transcript to check what you heard.</p>\n", "<h4>Sample Intake Calls</h4>\n"]]},
       {id: "formse-2", h: "AM: Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]},
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
@@ -1223,9 +1228,9 @@ const ROWS = {
           h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
           // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
-          // (Opening Claims drawn three recordings to a row, two rows: data-cols / data-rows, js/ft-day-decks.js fitFolders)
+          // (both folders drawn three recordings to a row, two rows: data-cols / data-rows, js/ft-day-decks.js fitFolders)
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-cols="3" data-rows="2" data-title="Opening Claims"'],
-          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-cols="3" data-rows="2" data-title="Checking for Existing Claims"'],
           // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2; Opening Claims three to a row)
           h => { const re = /(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/;
             if(!re.test(h)) throw new Error("Day 10's two recording folders are no longer where the build looks for them");
@@ -1420,9 +1425,9 @@ const EX_RENAME = {
 // (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
 // Day 8's slides or Day 9's metrics slide
 const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
-// a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 12, 14
-// and 16; Day 9's Intake Mock Calls, whose case and practice links are on its metrics slide, s2, build/days/day09.js)
-const PREP_OFF = {9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
+// a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 8, 12,
+// 14 and 16; Day 9's Intake Mock Calls, whose case and practice links are on its metrics slide, s2, build/days/day09.js)
+const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)

@@ -88,7 +88,35 @@ const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons
 /* A slide's own HTML, as the trainer has it. js/ft-slide-editor.js lets a trainer rewrite any slide of any day
    (settings:dayslides); the edit stands in for what build/day-decks.cjs built, for trainers and trainees alike, and
    everything downstream — the agenda, the slide's buttons — reads the slide through here. */
-const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : v; }catch(err){ return (s || {}).html; } };
+const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : evlInline(v); }catch(err){ return (s || {}).html; } };
+/* The Accident or Injury Claim Documents and Evidence Checklist is read on the platform, never as a Drive file: a slide a
+   trainer saved while it was still a Drive preview or link (its file id below) shows the checklist itself, as Day 7 builds
+   it (build/days/day07.js: the ftdd-evl title and cards), in place of the preview, the link and the heading over them. */
+const EVL_FILE = "1-a8jF7dTZxdoYv4brVSe9GwGrT9MGFnV";
+function evlCards(){
+  const d = decks(), s = d && d[7] && (d[7].slides || []).find(x => /class="ftdd-evl"/.test(x.html || ""));
+  const m = s && s.html.match(/<div class="ftdd-evl-title">[^]*?<\/div>\s*<div class="ftdd-evl">(?:<div class="ftdd-evl-card">[^]*?<\/div><\/div>)+<\/div>/);
+  return m ? m[0] : "";
+}
+function evlInline(html){
+  const h = String(html || "");
+  if(h.indexOf(EVL_FILE) < 0) return h;
+  const cards = evlCards(); if(!cards) return h;
+  const t = document.createElement("template"); t.innerHTML = h;
+  let done = false;
+  t.content.querySelectorAll(`a[href*="${EVL_FILE}"], iframe[src*="${EVL_FILE}"]`).forEach(a => {
+    // the block it sits in: the preview card, or the line holding the link
+    const box = a.closest(".ftdd-shot, .ftdd-inline, figure, p, li") || a;
+    if(!box.parentNode) return;
+    // (the heading or name line just before it, "📄 Accident or Injury Claim …", goes with it: the cards carry their own title)
+    const prev = box.previousElementSibling;
+    if(prev && /accident or injury claim|evidence checklist/i.test(prev.textContent) && !prev.querySelector("a, iframe")) prev.remove();
+    if(done){ box.remove(); return; }
+    const w = document.createElement("div"); w.className = "ftdd-keep"; w.innerHTML = cards;
+    box.replaceWith(w); done = true;
+  });
+  return t.innerHTML;
+}
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
 /* ✓ Finished: a lesson runs over one day or several (Reception, Days 3–5; Intake, Days 7–9), so its cards say Finished and
@@ -177,7 +205,7 @@ function kindOf(s, html){
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
-  if(/Trainer Facilitated Demo/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
+  if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
@@ -209,11 +237,12 @@ function linkKind(href, label, dk){
   if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
   if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
   if(/docs\.google\.com\/document\//.test(u)) return {k: "doc", ic: "📄", act: "Open the document"};
-  // a sample or template is a document to read, whatever the lines around it say about recordings
-  if(/drive\.google\.com\/file\//.test(u) && /^\s*(sample|template)\b/i.test(label || "")) return {k: "file", ic: "📄", act: "Open the file"};
+  // a sample or template is a document to read, whatever the lines around it say about recordings (a file's tile is its
+  // name alone, no "Open the file" under it: a click on the name opens it)
+  if(/drive\.google\.com\/file\//.test(u) && /^\s*(sample|template)\b/i.test(label || "")) return {k: "file", ic: "📄", act: ""};
   if(/loom\.com|youtube\.com|youtu\.be/.test(u) || dk === "video" || VIDEO_WORDS.test(label || "")) return {k: "video", ic: "🎬", act: "▶ Watch"};
   if(/canva\.com/.test(u)) return {k: "canva", ic: "🎨", act: "Open the deck"};
-  if(/drive\.google\.com\/file\//.test(u)) return {k: "file", ic: "📄", act: "Open the file"};
+  if(/drive\.google\.com\/file\//.test(u)) return {k: "file", ic: "📄", act: ""};
   return {k: "web", ic: "🔗", act: "Open in a new tab ↗"};
 }
 // a tile's name from the sentence that introduced it: "Task 1 - Please go to this link to watch the video presentation
@@ -254,7 +283,7 @@ function visual(html){
       el.href = href;
       if(a.classList.contains("viewer-link")){ el.setAttribute("data-kind", lk.k === "video" ? "video" : "doc"); el.setAttribute("data-title", name); }
       else { el.target = "_blank"; el.rel = "noopener noreferrer"; }
-      el.innerHTML = `<span class="ftdd-tile-ic">${lk.ic}</span><span class="ftdd-tile-t"><b></b><small>${lk.act}</small></span>`;
+      el.innerHTML = `<span class="ftdd-tile-ic">${lk.ic}</span><span class="ftdd-tile-t"><b></b>${lk.act ? `<small>${lk.act}</small>` : ""}</span>`;
       el.querySelector("b").textContent = name;
       return el;
     });
@@ -322,7 +351,8 @@ function visual(html){
       // 📁 a Drive folder (Day 10's VA call recordings): the slide's full width, Drive's grid laid out wide enough for a row
       // of seven files and scaled down to the box (fitCrops)
       if(/\/folders\//.test(href) && !(crop > 0)){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-row"); box.classList.add("is-row");
-        // (a folder drawn as a grid, data-cols files to a row and data-rows rows: Day 10's Opening Claims, three by two)
+        // (a folder drawn as a grid, data-cols files to a row and data-rows rows: Day 10’s Opening Claims and Checking for Existing
+        // Claims, both three by two, so their files are drawn the same size and the boxes the same height)
         if(a.dataset.cols){ em.dataset.cols = a.dataset.cols; em.dataset.rows = a.dataset.rows || "1"; box.classList.add("is-grid"); } }
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
@@ -1432,7 +1462,7 @@ const LESSON_CARDS = {
       {t: "Other Intake-Related Documents", sub: "The folder", k: "read", d: 7, s: "formsd", lead: false},
       {t: "Call Listening Activity", sub: "The intake audio recordings", k: "listen", d: 7, s: "listen", go: "listening"},
       // (Part 2: Intake Video, Intake Documents Video with the naming convention in its steps, Other Intake Documents,
-      // Instructions, CMS Demo and Mock Call, then the PM demo's preparation and the demo)
+      // Instructions, CMS Demo and Mock Call, then the PM demo’s preparation; the demo itself has no slide, build/day-decks.cjs PREP_OFF)
       {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
       {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "interactive", d: 8, s: "s1b"},
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
@@ -1440,7 +1470,6 @@ const LESSON_CARDS = {
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
       {t: "CMS Demo and Mock Call", sub: "SA tutorial video · Prototype CMS & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
-      {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
       // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
       {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 9, s: "s2"},
       // (Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on the metrics slide, s2)
@@ -3312,6 +3341,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:
 .ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h span{font:600 14px/1.3 'Inter',sans-serif;color:#E6E9F5;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:700 14px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;text-decoration:underline;}
 .ftdd-sheet .ftdd-pdoc-pages{--rows:1;--cols:var(--n);display:grid;grid-template-columns:repeat(var(--cols),auto);justify-content:center;gap:12px 18px;margin-top:10px;}
