@@ -24,7 +24,7 @@ const failures = []; const fail = (m) => failures.push(m);
     let shared = true, folderGone = false;
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
-    const META = {}, metaCalls = [];   // 🔗 the six links' names, as Drive gives them
+    const META = {}, metaCalls = [];   // 🔗 the links' names, as Drive gives them (null: the account can't open it)
     let subShared = false;   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
@@ -33,6 +33,11 @@ const failures = []; const fail = (m) => failures.push(m);
         const bearer = String((init.headers || {}).Authorization || '');
         if (/\/files\/abcFolderId01\/permissions/.test(u)) { if (bearer !== 'Bearer ci-token') return new Response('{}', { status: 403 });
             const pm = JSON.parse(init.body); subShared = pm.role === 'writer' && pm.emailAddress === env.GDRIVE_SA_SUBJECT; return new Response(JSON.stringify({ id: 'perm1' })); }
+        { const m = u.match(/googleapis\.com\/drive\/v3\/files\/([A-Za-z0-9_-]+)\?fields=id,name,mimeType/);
+          if (m) { metaCalls.push(m[1]); if (bearer !== 'Bearer sub-token' || META[m[1]] === null) return new Response('{"error":{"code":404}}', { status: 404 });
+            const folder = m[1] === 'abcFolderId01' || /Folder/.test(m[1]), mt = folder ? 'application/vnd.google-apps.folder' : m[1].startsWith('1Tracker') ? 'application/vnd.google-apps.spreadsheet' : 'application/vnd.google-apps.document';
+            const name = META[m[1]] || (m[1] === 'abcFolderId01' ? 'LSH Trainee folder – B9 Dee Drive Assessments/Activities' : m[1].startsWith('1Tracker') ? 'LSH Daily Task Tracker | B9 Dee Drive' : 'LSH VA Training Monitoring Sheet__Dee Drive');
+            return new Response(JSON.stringify({ id: m[1], name, mimeType: mt })); } }
         if (bearer === 'Bearer sub-token' && !subShared && /googleapis\.com\/(upload\/)?drive\/v3\/files/.test(u)) return new Response('{"error":{"code":404}}', { status: 404 });
         if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
             if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
@@ -55,9 +60,6 @@ const failures = []; const fail = (m) => failures.push(m);
         if (u === 'https://oauth2.googleapis.com/token') { const jwt = decodeURIComponent(String(init.body || '').split('assertion=')[1] || '');
             const claims = JSON.parse(Buffer.from((jwt.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString() || '{}');
             return new Response(JSON.stringify({ access_token: claims.sub ? 'sub-token' : 'ci-token' })); }
-        // 🔗 the six-link check: a file's or folder's name through the service account (META: id → name; absent: can't open)
-        const meta = u.match(/^https:\/\/www\.googleapis\.com\/drive\/v3\/files\/([\w-]+)\?fields=name/);
-        if (meta) { metaCalls.push(meta[1]); return META[meta[1]] ? new Response(JSON.stringify({ name: META[meta[1]], mimeType: 'x' })) : new Response('{"error":{"code":404}}', { status: 404 }); }
         if (u.startsWith('https://www.googleapis.com/drive/v3/files?')) {
             const parent = decodeURIComponent(u).match(/'([^']+)' in parents/)[1];
             const files = parent === 'abcFolderId01' ? [{ id: 'sub1', name: 'Week 1', mimeType: 'application/vnd.google-apps.folder' }, { id: 'f1', name: 'PI Overview_Answers (Dee)', mimeType: 'application/vnd.google-apps.document', createdTime: '2026-10-26T15:00:00Z', webViewLink: 'https://docs.google.com/document/d/f1/edit' }]
@@ -135,7 +137,15 @@ const failures = []; const fail = (m) => failures.push(m);
     env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
     const n0 = uploads.length, s6 = await call('/api/drive/save', doc, trainee);
     if (!s6.body || !s6.body.ok || !subShared || uploads.length !== n0 + 1) fail(`a save as GDRIVE_SA_SUBJECT on a folder shared only with the service account should add that user and save: ${JSON.stringify(s6.body)} (added: ${subShared})`);
+    // 🔗 the trainee's links, checked now: read AS GDRIVE_SA_SUBJECT (the trainer, an Editor on every trainee's Drive),
+    // so files never shared with the service account itself still open; without the subject, the account alone can't
+    const v1 = await call('/api/drive/verify', {}, trainee), vv = (v1.body || {}).verify || {};
+    if (!v1.body || !v1.body.ok || !vv.folder || !vv.folder.ok || !vv.tracker || !vv.tracker.ok || !vv.monitor || !vv.monitor.ok || v1.body.share !== 'saver@lsh.example') fail(`the links should open as GDRIVE_SA_SUBJECT: ${JSON.stringify(v1.body)}`);
+    if (!(JSON.parse(store.get('ft:trackerreview:' + id)).verify || {}).folder) fail('the link check wasn\'t kept in trackerreview (the Batch Sheet reads it)');
     delete env.GDRIVE_SA_SUBJECT;
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; delete rv.verify; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait; a link not checked yet: a ✓ is locked for its link)
+    const v2 = await call('/api/drive/verify', {}, trainee), vv2 = (v2.body || {}).verify || {};
+    if (!v2.body || !v2.body.ok || (vv2.folder || {}).ok !== false || !/Share it with ci@lsh\.iam\.gserviceaccount\.com as Editor/.test((vv2.folder || {}).error || '')) fail(`without GDRIVE_SA_SUBJECT, a file the account can't open should say whom to share it with: ${JSON.stringify(v2.body)}`);
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
     const s4 = await call('/api/drive/save', doc, trainee);
     if (!s4.body || s4.body.error !== 'no-sa') fail(`without the service account, saving should say it isn't set up: ${JSON.stringify(s4.body)}`);
@@ -161,29 +171,30 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!comp || comp.parts.tests !== 67 || !comp.tests.AM || comp.tests.PM || !comp.tests.SP || comp.parts.eod !== 100 || comp.parts.outputs !== 100
       || typeof comp.parts.tracker !== 'number' || typeof comp.parts.monitor !== 'number' || typeof comp.pct !== 'number') fail(`the day's compliance: ${JSON.stringify(comp)}`);
     if (!((nightly.body || {}).results || []).some(r => r.id === id && typeof r.compliance === 'number')) fail('the nightly check didn\'t record the day\'s compliance');
-    // 🔗 the six monitored links (worker.js checkLinks): ✓ when it opens and is the right one, locked for that link;
-    // ❌ when it can't be opened or is another file; a new link checked again; a trainee's save checks only what is new
+    // 🔗 the six monitored links (worker.js verifyLinks): ✓ when it opens and is the right kind with the right name, locked for
+    // that link; ✗ when it can't be opened or is another file, with why; a new link checked again
     const six = { monitor: DOC, tracker: SHEET, folder: 'https://drive.google.com/drive/folders/abcFolderId01', tam: 'https://docs.google.com/document/d/1TamDocIdForTheCiTest0000001/edit',
       typing: 'https://drive.google.com/drive/folders/1TypingFolderIdForCi01', spelling: 'https://drive.google.com/drive/folders/1SpellingFolderIdCi001' };
-    Object.assign(META, { '1MonitorDocIdForTheCiTest000001': 'LSH VA Training Monitoring Sheet__Dee Drive', '1TrackerSheetIdForTheCiTest0001': 'LSH Daily Task Tracker | B9 Dee Drive',
-      abcFolderId01: 'LSH Trainee folder – B9 Dee Drive Assessments/Activities', '1TamDocIdForTheCiTest0000001': 'Week 1 notes', '1TypingFolderIdForCi01': 'Typing Tests' });
+    Object.assign(META, { '1TamDocIdForTheCiTest0000001': 'Week 1 notes', '1TypingFolderIdForCi01': 'Typing Tests', '1SpellingFolderIdCi001': null });
     store.set('ft:drive:' + id, JSON.stringify(Object.assign(JSON.parse(store.get('ft:drive:' + id)), six)));
-    env.GDRIVE_SA_EMAIL = 'ci@lsh.iam.gserviceaccount.com'; env.GDRIVE_SA_KEY = `-----BEGIN PRIVATE KEY-----\\n${pk}\\n-----END PRIVATE KEY-----`;
-    const lk1 = await call('/api/drive/links', { id }, admin), L1 = (lk1.body || {}).links || {};
-    if (!L1.monitor || !L1.monitor.ok || !L1.tracker.ok || !L1.folder.ok || !L1.typing.ok) fail(`the links that open and are the right ones aren't ✓: ${JSON.stringify(L1)}`);
-    if (!L1.tam || L1.tam.ok || !/isn't the LSH Task Assessment Manual/.test(L1.tam.err)) fail(`a link to another file isn't ❌ with why: ${JSON.stringify(L1.tam)}`);
-    if (!L1.spelling || L1.spelling.ok || !/share it with ci@lsh/.test(L1.spelling.err)) fail(`a link the system can't open isn't ❌ with the address to share it with: ${JSON.stringify(L1.spelling)}`);
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verify; delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+    env.GDRIVE_SA_EMAIL = 'ci@lsh.iam.gserviceaccount.com'; env.GDRIVE_SA_KEY = `-----BEGIN PRIVATE KEY-----\\n${pk}\\n-----END PRIVATE KEY-----`; env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
+    const lk1 = await call('/api/drive/verify', { id }, admin), L1 = (lk1.body || {}).verify || {};
+    if (!L1.monitor || !L1.monitor.ok || !L1.tracker.ok || !L1.folder.ok || !L1.typing || !L1.typing.ok) fail(`the links that open and are the right ones aren't ✓: ${JSON.stringify(L1)}`);
+    if (!L1.tam || L1.tam.ok || !/isn't your LSH Task Assessment Manual/.test(L1.tam.error)) fail(`a link to another file isn't ✗ with why: ${JSON.stringify(L1.tam)}`);
+    if (!L1.spelling || L1.spelling.ok || !/Share it with saver@lsh\.example/.test(L1.spelling.error)) fail(`a link the system can't open isn't ✗ with the address to share it with: ${JSON.stringify(L1.spelling)}`);
     metaCalls.length = 0; META['1MonitorDocIdForTheCiTest000001'] = 'Something else';
-    await call('/api/drive/links', { id }, admin);
+    await call('/api/drive/verify', { id }, admin);
     if (metaCalls.includes('1MonitorDocIdForTheCiTest000001')) fail('a ✓ link was checked again: it should stay locked for that link');
-    // (the trainee replaces the TAM link: a trainee's save checks only that one)
+    // (the trainee replaces the TAM link: checked again, and ✓)
     const tamNew = 'https://docs.google.com/document/d/1TamDocNewForTheCiTest000002/edit'; META['1TamDocNewForTheCiTest000002'] = 'LSH Task Assessment Manual (TAM) | B9 Dee Drive';
     store.set('ft:drive:' + id, JSON.stringify(Object.assign(JSON.parse(store.get('ft:drive:' + id)), { tam: tamNew })));
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait)
     metaCalls.length = 0;
-    const lk2 = await call('/api/drive/links', {}, trainee), L2 = (lk2.body || {}).links || {};
+    const lk2 = await call('/api/drive/verify', {}, trainee), L2 = (lk2.body || {}).verify || {};
     if (!L2.tam || !L2.tam.ok || L2.tam.url !== tamNew) fail(`a new link wasn't checked again: ${JSON.stringify(L2.tam)}`);
-    if (metaCalls.length !== 1) fail(`a trainee's save checked more than the new link: ${JSON.stringify(metaCalls)}`);
-    delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
+    if (metaCalls.includes('1TrackerSheetIdForTheCiTest0001') || !metaCalls.includes('1TamDocNewForTheCiTest000002')) fail(`a check opened a ✓ link again, or not the new one: ${JSON.stringify(metaCalls)}`);
+    delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY; delete env.GDRIVE_SA_SUBJECT;
 
     // a folder that can't be read keeps the screenshots already found, and says so
     folderGone = true;

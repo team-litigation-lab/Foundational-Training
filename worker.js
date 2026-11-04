@@ -9,6 +9,11 @@
  * signed-in trainer (admin token) in secure mode.
  *
  * Secrets (set once with `wrangler secret put <NAME>`):
+ *   ANTHROPIC_API_KEY  — optional: makes Claude the primary AI provider (see callClaude). Every AI call tries Claude first
+ *                        and the Gemini keys below answer only when Claude can't (a limit, no credits, busy, a refusal).
+ *                        With AI_GATEWAY_SECRET set, calls go to the Portal's gateway instead, so set the key on the Portal.
+ *   CLAUDE_CHAT_MODEL / CLAUDE_GRADING_MODEL — optional variables: defaults claude-haiku-5-5 (chat, tracker) and
+ *                        claude-sonnet-5-5 (grading and trainer tools).
  *   GEMINI_API_KEY5 … GEMINI_API_KEY9 — the Gemini key pool behind every AI feature (see GEMINI_POOL).
  *                        Each request starts on the next key in turn; a key that hits its limit is
  *                        rested and the next key takes over. At least one is required.
@@ -639,7 +644,7 @@ async function viaGateway(env, req, user) {
   try {
     r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
-      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
     });
     data = await r.json().catch(() => null);
   } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
@@ -648,13 +653,71 @@ async function viaGateway(env, req, user) {
   return json({ error: { message: (status === 429 ? "rate limit (shared AI budget): " : "") + ((data && data.error) || "AI gateway error " + r.status) } }, status);
 }
 
+/* ---------- Claude (the primary provider when ANTHROPIC_API_KEY is set) ----------
+   Same request and reply shape as callGemini. Chat and the tracker use CLAUDE_CHAT_MODEL (claude-haiku-5-5); grading and
+   trainer tools CLAUDE_GRADING_MODEL (claude-sonnet-5-5). A rejected key rests 10 minutes, no credits an hour, a rate limit
+   its retry-after: the Gemini pool answers meanwhile. → a Response on success, else { status, msg } */
+const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
+const claudeGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
+const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (claudeGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
+let claudeRest = 0;
+async function callClaude(env, req) {
+  if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
+  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
+  // alternating turns that start and end with the user (an opening line from the model gets a short user turn before it)
+  const turns = [];
+  for (const m of req.messages || []) {
+    const role = m.role === "assistant" ? "assistant" : "user", text = toText(m.content).trim();
+    if (!text) continue;
+    const prev = turns[turns.length - 1];
+    if (prev && prev.role === role) prev.content += "\n\n" + text; else turns.push({ role, content: text });
+  }
+  if (!turns.length || turns[0].role !== "user") turns.unshift({ role: "user", content: "(Begin.)" });
+  if (turns[turns.length - 1].role !== "user") turns.push({ role: "user", content: "(Continue.)" });
+  const grading = claudeGrading(req.feature), model = claudeModel(env, req.feature);
+  // max_tokens covers thinking as well as the answer, so it has room above the page's max_tokens (only what's used is billed)
+  const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
+  const sys = toText(req.system).trim();
+  if (sys) body.system = sys;
+  const headers = { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" };
+  // Sonnet 5.5: a request its safety classifier declines is answered by a fallback model the server picks, instead of failing
+  if (model === "claude-sonnet-5-5") { headers["anthropic-beta"] = "server-side-fallback-2026-07-01"; body.fallbacks = "default"; }
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), grading ? 60000 : 20000);
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal: ctl.signal, headers, body: JSON.stringify(body) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = String((data.error && data.error.message) || `Claude error ${r.status}`);
+      if (r.status === 401 || r.status === 403) claudeRest = Date.now() + 600000;
+      else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
+      else if (r.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(r.headers.get("retry-after")) || 60, 5), 600) * 1000;
+      return { status: r.status, msg };
+    }
+    if (data.stop_reason === "refusal") return { status: 502, msg: "Claude declined this request" };
+    const text = (data.content || []).filter((b) => b && b.type === "text").map((b) => b.text || "").join("");
+    if (!text.trim()) return { status: 502, msg: `Claude returned no text (${data.stop_reason || "empty"})` };
+    return json({ content: [{ type: "text", text }], model: data.model || model, stop_reason: data.stop_reason === "max_tokens" ? "max_tokens" : "end_turn", provider: "claude" });
+  } catch (e) {
+    return { status: 502, msg: ctl.signal.aborted ? "Claude took too long to answer" : "Claude unreachable: " + (e && e.message || e) };
+  } finally { clearTimeout(timer); }
+}
+
 async function callGemini(env, rawBody, user) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
-  if (gatewayOn(env)) return await viaGateway(env, req, user);
+  if (gatewayOn(env)) return await viaGateway(env, req, user);   // (Claude, when set on the Portal, answers there first)
+  // Claude first when ANTHROPIC_API_KEY is set; the Gemini pool below only when Claude can't answer.
+  let claudeFail = null;
+  if (claudeOn(env)) {
+    const c = await callClaude(env, req);
+    if (c instanceof Response) return c;
+    claudeFail = c;
+    console.error("Claude failed, the Gemini pool takes over:", c.status, c.msg);
+  }
   // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429), the key is
   // rejected, or it is out of credits or has billing off, it rests and the next key takes the request.
   const keys = geminiKeyOrder(env);
-  if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+  if (!keys.length && claudeFail) return json({ error: { message: (claudeFail.status === 429 ? "rate limit (Claude): " : "Claude: ") + claudeFail.msg } }, claudeFail.status === 429 ? 429 : 502);
+  if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
   const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
   const payload = {
@@ -738,7 +801,7 @@ async function listAll(env, prefix) {
    For every approved trainee with a tracker: run the rules for the day, write a notes review
    against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
 async function aiText(env, system, prompt, maxTokens) {
-  if (!hasGemini(env)) return "";
+  if (!hasGemini(env) && !claudeOn(env)) return "";
   const r = await callGemini(env, JSON.stringify({ feature: "tracker", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
@@ -763,7 +826,8 @@ function facilitatorVoice(saved) {
    trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
    read by their public export, as before. */
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
-// (one token per scope: reading is drive.readonly; 💾 Save to Drive writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
+// (one token per scope and identity: reads go through readTokens, as GDRIVE_SA_SUBJECT first when it is set; 💾 Save to Drive
+// writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
 const SA_TOKENS = {};
 // (self: the drive scope as the service account itself, never as GDRIVE_SA_SUBJECT: for sharing a folder with that user)
 async function driveToken(env, write, self) {
@@ -785,13 +849,25 @@ async function driveToken(env, write, self) {
   SA_TOKENS[slot] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
   return j.access_token;
 }
+/* The tokens a read tries, in order. With GDRIVE_SA_SUBJECT set, the platform reads AS that Workspace user first (the
+   trainer, an Editor on every trainee's Drive): no trainee has to share anything with the service account. Then as the
+   service account itself (files a trainee did share with it, Shared Drives it is a member of). (The subject's token has the
+   drive scope: the one domain-wide delegation authorizes.) */
+async function readTokens(env) {
+  const out = [];
+  if (env.GDRIVE_SA_SUBJECT) { try { out.push(await driveToken(env, true)); } catch (e) { /* then the account itself */ } }
+  try { out.push(await driveToken(env)); } catch (e) { if (!out.length) throw e; }
+  return out;
+}
 async function fetchGoogle(url, env) {
   if (!url) throw new Error("link");
-  const headers = driveSA(env) ? { Authorization: "Bearer " + await driveToken(env) } : {};
-  const res = await fetch(url, { redirect: "follow", headers });
-  const text = await res.text();
-  if (!res.ok || /^\s*<(!doctype|html)/i.test(text.slice(0, 200))) throw new Error("not-shared");
-  return text;
+  const tokens = driveSA(env) ? await readTokens(env) : [null];
+  for (const tk of tokens) {
+    const res = await fetch(url, { redirect: "follow", headers: tk ? { Authorization: "Bearer " + tk } : {} });
+    const text = await res.text();
+    if (res.ok && !/^\s*<(!doctype|html)/i.test(text.slice(0, 200))) return text;
+  }
+  throw new Error("not-shared");
 }
 /* 📄 The answer sheets in a trainee's Assessment and Activities Folder (js/ft-process.js finds each sheet there by its name):
    the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
@@ -800,7 +876,14 @@ async function folderFiles(env, folderUrl) {
   const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return publicFolderFiles(fid);
-  const token = await driveToken(env), FOLDER = "application/vnd.google-apps.folder", out = [];
+  let tokens;
+  try { tokens = await readTokens(env); } catch (e) { return { error: "drive" }; }
+  let last = { error: "no-access" };
+  for (const token of tokens) { const r = await folderFilesAs(token, fid); if (!r.error) return r; last = r; }
+  return last;
+}
+async function folderFilesAs(token, fid) {
+  const FOLDER = "application/vnd.google-apps.folder", out = [];
   const list = async (parent) => {
     let page = "", n = 0;
     do {
@@ -995,61 +1078,6 @@ async function checkDrive(env, id, D, o = {}) {
   return out;
 }
 
-/* 🔗 The six monitored links a trainee saves in 📁 My Drive links (drive:<id>, js/ft-drive.js LINKS): can the system open each,
-   and is it the file or folder it should be (its name, through the service account)? Into trackerreview:<id>.links[k] =
-   {url, ok, err, name, checkedAt}. A link found opening is locked as ✓ for that very URL (never checked again); a new link
-   is checked again (until then it reads ⏳ Pending verification). Runs at the end of every shift, on 🔁 Check now, and when a
-   trainee saves their links (/api/drive/links). */
-const LINK_TARGETS = {
-  monitor: { label: "LSH VA Training Monitoring Sheet", re: /monitoring/i },
-  tam: { label: "LSH Task Assessment Manual (TAM)", re: /task assessment manual|\btam\b/i },
-  typing: { label: "Typing Tests folder", re: /typing/i },
-  spelling: { label: "Spelling Tests folder", re: /spelling/i },
-  folder: { label: "Assessments/Activities folder", re: /assessment|activit/i },
-  tracker: { label: "LSH Daily Task Tracker", re: /task tracker/i } };
-const driveFileId = u => (String(u || "").match(/\/(?:file|document|spreadsheets|presentation|forms)\/d\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
-async function openLink(env, url) {
-  if (!/^https:\/\/(drive|docs)\.google\.com\//.test(String(url || ""))) return { ok: false, err: "not a Google Drive link" };
-  const fid = driveFileId(url);
-  if (!fid) return { ok: false, err: "not a file's or folder's own link: open it and copy its address" };
-  if (driveSA(env)) {
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=name,mimeType,trashed&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + await driveToken(env) } });
-    if (!res.ok) return { ok: false, err: `the system can't open it: share it with ${env.GDRIVE_SA_EMAIL} (Viewer or Editor)` };
-    const j = await res.json().catch(() => ({}));
-    if (j.trashed) return { ok: false, err: "it is in the Drive trash", name: j.name || "" };
-    return { ok: true, name: String(j.name || "") };
-  }
-  // (no service account: the link as anyone with it opens it; Google's sign-in page means it isn't shared)
-  const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
-  const text = res.ok ? await res.text() : "";
-  if (!res.ok || /accounts\.google\.com|ServiceLogin|>Sign in</i.test((res.url || "") + text.slice(0, 4000))) return { ok: false, err: "the system can't open it: share it as the course asks" };
-  const title = (text.match(/<title>([^<]*)<\/title>/i) || [])[1] || "";
-  return { ok: true, name: title.replace(/\s*-\s*Google (Drive|Docs|Sheets)\s*$/i, "").trim() };
-}
-async function checkLinks(env, id, o = {}) {
-  const kv = kvOf(env);
-  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  if (!drive) return null;
-  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
-  const links = cur.links && typeof cur.links === "object" ? cur.links : {}, at = new Date().toISOString(), out = { id, links: {} };
-  for (const [k, T] of Object.entries(LINK_TARGETS)) {
-    const url = String(drive[k] || "").trim().slice(0, 500);
-    if (!url) { delete links[k]; continue; }
-    const prev = links[k];
-    if (prev && prev.ok && prev.url === url) { out.links[k] = "locked"; continue; }   // (✓ locked for that URL)
-    if (o.onlyNew && prev && prev.url === url) { out.links[k] = "same"; continue; }
-    let r;
-    try { r = await openLink(env, url); } catch (e) { r = { ok: false, err: "the check couldn't reach Google Drive: it runs again at the end of the shift" }; }
-    // (it opens: is it the right one? its name says so)
-    if (r.ok && r.name && !T.re.test(r.name)) r = { ok: false, err: `it opens, but it isn't the ${T.label} (its name is "${r.name}")`, name: r.name };
-    links[k] = { url, ok: !!r.ok, err: r.ok ? "" : r.err, name: r.name || "", checkedAt: at };
-    out.links[k] = r.ok ? "ok" : "bad";
-  }
-  cur.links = links; cur.linksAt = at;
-  await kv.put(rk, JSON.stringify(cur));
-  return out;
-}
-
 /* 🧪 The daily Typing and Spelling Test screenshots the trainee saves in their Drive folder (drive:<id>.folder, and the
    folders in it): each file named for a test (TR.parseTestShot: "Typing Test [date][AM/PM]") is one test taken, for the
    day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
@@ -1069,6 +1097,70 @@ async function checkShots(env, id) {
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString() }) : { files, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString(), error: "" };
   await kv.put(rk, JSON.stringify(cur));
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
+}
+
+/* 🔗 The trainee's six monitored Drive links (📁 My Drive links: the Monitoring Sheet, the TAM, the Typing Tests and Spelling
+   Tests folders, the Assessments/Activities folder and the Daily Task Tracker), opened through the service account (as
+   GDRIVE_SA_SUBJECT first, readTokens): on 💾 Save my links, 🔁 Check again / Check now and at the end of every shift. Each
+   is ✓ when it opens and is the right kind of file or folder with the right name (LINKS_KIND), or ✗ with why, and the
+   address to share it with. A ✓ is locked for that very link (✓ Mark as opening: never checked again); a link that changes
+   is checked again (⏳ Pending verification until then). Kept in trackerreview:<id>.verify ({<key>: {ok, url, error, name,
+   at}}), so the 📋 Batch Sheet's Drive links read it too: no trainer has to check a link by hand. */
+const VERIFY_WHY = {
+  share: (sa) => `The system can't open it. Share it with ${sa} as Editor (Share → add the address → Editor), then check again.`,
+  folder: "This isn't a folder's link. Open your Assessment and Activities Folder and copy its address (…/drive/folders/…).",
+  sheet: "The Task Tracker must be a Google Sheets link (docs.google.com/spreadsheets/…).",
+  doc: "The Monitoring Sheet must be a Google Docs or Google Sheets link."
+};
+// each link: a folder or a file, and the name it must carry (the course's naming: "LSH VA Training Monitoring Sheet__VA Name", …)
+const LINKS_KIND = {
+  monitor: { folder: false, label: "LSH VA Training Monitoring Sheet", re: /monitoring/i },
+  tam: { folder: false, label: "LSH Task Assessment Manual (TAM)", re: /task assessment manual|\btam\b/i },
+  typing: { folder: true, label: "Typing Tests folder", re: /typing/i },
+  spelling: { folder: true, label: "Spelling Tests folder", re: /spelling/i },
+  folder: { folder: true, label: "Assessments/Activities folder", re: /assessment|activit/i },
+  tracker: { folder: false, label: "LSH Daily Task Tracker", re: /task tracker/i } };
+const notFolder = (label) => `This isn't a folder's link. Open your ${label} and copy its address (…/drive/folders/…).`;
+async function verifyLinks(env, id) {
+  const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
+  if (!driveSA(env)) return { error: "no-sa" };
+  // (the address to share with: the Workspace user the platform reads as, when it is set; else the service account)
+  const sa = String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL), at = new Date().toISOString(), out = {};
+  let tokens;
+  try { tokens = await readTokens(env); } catch (e) { return { error: "drive-auth" }; }
+  const rk0 = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, prev = rk0.verify || {};
+  for (const k of Object.keys(LINKS_KIND)) {
+    const url = String(drive[k] || "").trim(), K = LINKS_KIND[k];
+    if (!url) continue;
+    // (✓ Mark as opening: locked for this very link)
+    if (prev[k] && prev[k].ok && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; continue; }
+    const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || [])[1]);
+    let r;
+    if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : K.folder ? notFolder(K.label) : k === "tracker" ? VERIFY_WHY.sheet : k === "monitor" ? VERIFY_WHY.doc : `This isn't a file's own link. Open your ${K.label} and copy its address from the address bar.` };
+    else if (k === "tracker" && f.kind !== "sheet") r = { ok: false, error: VERIFY_WHY.sheet };
+    else {
+      try {
+        let res, j = {};
+        for (const token of tokens) {
+          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+          j = await res.json().catch(() => ({}));
+          if (res.ok) break;
+        }
+        if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa) };
+        else if (K.folder && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
+        else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
+        else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "")) r = { ok: false, error: VERIFY_WHY.doc };
+        // (it opens: is it the right one? its name says so)
+        else if (j.name && !K.re.test(String(j.name))) r = { ok: false, error: `It opens, but it isn't your ${K.label} (its name is "${String(j.name).slice(0, 120)}"). Link the right one.`, name: String(j.name).slice(0, 200) };
+        else r = { ok: true, name: String(j.name || "").slice(0, 200) };
+      } catch (e) { r = { ok: false, error: "Google Drive didn't answer. Check again in a minute." , retry: true }; }
+    }
+    out[k] = Object.assign(r, { url: url.slice(0, 500), at });
+  }
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  cur.verify = out; cur.verifyAt = at;
+  await kv.put(rk, JSON.stringify(cur));
+  return { ok: true, verify: out, share: sa };
 }
 
 async function runTrackerChecks(env, opts) {
@@ -1108,7 +1200,8 @@ async function runTrackerChecks(env, opts) {
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
     try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
-    try { const r = await checkLinks(env, id); if (r) done.push(Object.assign({ links: true }, r)); } catch (e) { /* the next trainee */ }
+    // (the six monitored links, checked again at the end of the shift: a ✓ stays for its link, verifyLinks)
+    if (driveSA(env)) { try { const r = await verifyLinks(env, id); if (r && r.ok) done.push({ id, links: true }); } catch (e) { /* the next trainee */ } }
   }
   // ✅ then each approved trainee's day, in one record: what they were to do and what was found (dailyCompliance)
   const people = o.id ? [`trainee:${o.id}`] : await listAll(env, "trainee:");
@@ -1281,7 +1374,7 @@ export default {
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
         const deployment = (env.CF_VERSION_METADATA && env.CF_VERSION_METADATA.id) || "unknown";
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAdmin password: ${adminPassStatus(env)}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAdmin password: ${adminPassStatus(env)}\nAI provider: ${gatewayOn(env) ? "the Portal's shared AI gateway (Claude first when ANTHROPIC_API_KEY is set there)" : claudeOn(env) ? "Claude (chat " + claudeModel(env, "chat") + ", grading and trainer tools " + claudeModel(env, "grading") + "), Gemini as the fallback" : hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
@@ -1572,7 +1665,7 @@ export default {
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
         const body = await request.text();
-        if (!hasGemini(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+        if (!hasGemini(env) && !claudeOn(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
         return await callGemini(env, body, tok && tok.id);
       }
 
@@ -1581,6 +1674,18 @@ export default {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
         return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
+      }
+
+      /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
+      if (path === "/api/drive/verify") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
+          if (last && last.verifyAt && Date.now() - Date.parse(last.verifyAt) < 20 * 1000) return json({ error: "Checked a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+        }
+        return json(await verifyLinks(env, id));
       }
 
       /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */
@@ -1600,17 +1705,6 @@ export default {
         try { await dailyCompliance(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate()); } catch (e) { /* the checks above still stand */ }
         if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
-      }
-
-      /* ---------- 🔗 the six monitored links: check now (the trainee's own, on saving them: only the links not checked yet;
-         an admin's for anyone, 🔁 Check now: every link not already ✓ for its URL) ---------- */
-      if (path === "/api/drive/links") {
-        const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
-        if (!id) return json({ error: "Missing trainee" }, 400);
-        const r = await checkLinks(env, id, { onlyNew: tok.role !== "a" });
-        if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
-        return json({ ok: true, result: r, links: (JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).links || {} });
       }
 
       /* ---------- 📒 Submit a Monitoring Sheet update: some numbered items of the trainee's linked Monitoring Sheet (Day 2's
@@ -1685,7 +1779,7 @@ export default {
           ask.push({ id: k, essay: !!it.essay, points: it.pts, key: it.answer, answer: a.slice(0, 2500) });
         }
         let ai = false;
-        if (ask.length && hasGemini(env)) {
+        if (ask.length && (hasGemini(env) || claudeOn(env))) {
           try {
             const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
             const raw = await aiText(env, `You are a training supervisor at Legal Support Help grading a trainee virtual assistant's ${K.context || "assessment on personal injury terms and auto insurance"}. Never mention that you are an AI. Answer with JSON only.` + voice,
@@ -1755,7 +1849,7 @@ export default {
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
         try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
-          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
+          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */

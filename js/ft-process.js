@@ -125,6 +125,8 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
+// the name as shown in its box: it may wrap after an underscore or before "(name)", never in the middle of a word
+const codeName = n => e(n).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(");
 /* 📄 The answer sheet as a deliverable: the trainee only saves it in their Assessment and Activities Folder that day, named by
    its convention (the rule, with "Your First Name": not a name to copy). The platform finds it there itself
    (/api/drive/answers: the files in the folder the trainee linked), checks its name against the convention and
@@ -160,6 +162,19 @@ async function checkFolder(force){
   });
   if(changed) queueSave();   // (nothing on the trainee's page changes: the trainer sees the result)
 }
+// 🔎 the same check, run by a trainer from ✍️ Process Questions (a trainee's folder only ever was looked in from their own
+// session, so a sheet saved there showed "Not found in their folder" until they came back): /api/drive/answers with the
+// trainee's id (admins only), matched by the sheet's convention with the trainee's own first name. Nothing is written:
+// the trainee's next visit records it on their sheet as before.
+const firstOf = n => String(n || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
+function findInFolder(set, x, files, first){
+  const named = n => normName(bare(n)) === normName(fileName(set, first));
+  const mine = (files || []).filter(f => looksLike(set, f.name)).sort((a, b) => (named(b.name) - named(a.name)) || String(a.created).localeCompare(String(b.created)));
+  const f = mine[0]; if(!f) return null;
+  const due = (x && x.assignedOn) || (x && x.submittedAt ? ptDay(x.submittedAt) : "");
+  return {name: f.name, link: f.link, at: f.created || f.modified, nameOk: named(f.name), onTime: !due || ptDay(f.created || f.modified) <= due};
+}
+const FOLDER_WHY = {"no-folder": "No Assessment & Activities Folder linked yet", "no-access": "Their folder isn’t shared with the training account", drive: "Google Drive couldn’t be read just now", offline: "Couldn’t reach the server"};
 // the result, for the trainee and the trainer alike
 function fileStatus(set, x){
   const f = x && x.file; if(!f) return "";
@@ -207,7 +222,7 @@ function worksheetBox(set){
   const w = WORKSHEETS[set.file]; if(!w) return "";
   // (📤 Submit to my Drive Folder: the trainee picks the finished Word file, saved into their folder under the convention)
   return `<div class="fp-pdf fp-ws"><a class="btn btn-ghost btn-sm" href="${e(w.href)}" target="_blank" rel="noopener noreferrer" download>📝 ${e(w.t)} · ⬇ Download the Word file</a>
-    <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(w))}</code></p>
+    <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(w))}</code></p>
     <button class="btn btn-ghost btn-sm fp-ws-drive" type="button" onclick="this.nextElementSibling.click()">📤 Submit to my Drive Folder</button>
     <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="FTProcess.submitWorksheet('${e(set.file)}', this)">
     <p class="fp-muted fp-ws-note">Fill it in, then 📤 Submit to my Drive Folder: it is saved to your Assessment and Activities Folder${FP.driveFolder ? ` (<a href="${e(FP.driveFolder)}" target="_blank" rel="noopener noreferrer">📁 open it</a>)` : ""}, named by the convention.</p></div>`;
@@ -235,7 +250,7 @@ async function submitWorksheet(file, input){
 // beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder, then its worksheet, if any
 function pdfBox(lesson, only){
   const sets = lessonFiles(lesson).filter(set => !only || set.file === only.file); if(!sets.length) return "";
-  return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
+  return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(set))}</code></p>`).join("")}
     <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button>
     <button class="btn btn-ghost btn-sm fp-dl" type="button" onclick="FTProcess.downloadPdf(${Number(lesson)})" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div>${sets.map(worksheetBox).join("")}`;
 }
@@ -391,7 +406,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   // (a module not finished yet: its locked note, and still its Submit — not yet pressable — and each sheet's naming convention)
   if(!qs.length){ const seen = new Set(), files = [...new Set(all.map(x => x.set))].filter(st => !seen.has(st.file) && seen.add(st.file));
     return lockedCard(title).replace(/<\/div>$/, `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" disabled title="Opens when you finish this module">📝 Submit for Grading</button></div></div>
-      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(st))}</code></p>`).join("")}
+      <div class="fp-pdf">${files.map(st => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(st))}</code></p>`).join("")}
       <button class="btn btn-ghost btn-sm" type="button" disabled title="Opens when you finish this module">📄 Save PDF to my Folder</button></div>`); }
   // (the count and status are the sheet on screen's — Day 1 shows one of its two sheets at a time — not the whole lesson's)
   const onScreen = shownSets(qs), sq = qs.filter(x => onScreen.includes(x.set));
@@ -556,6 +571,10 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   savePdf, downloadPdf, submitWorksheet,
+  // 🏷 the naming conventions of the files this page asks for (js/ft-trainee-log.js checks a trainee's folder against them):
+  // each answer sheet's and each worksheet's, with "(first name)" after it
+  conventions: () => [...new Set(PROCESS_SETS.map(st => st.file))].map(f => ({name: f + " (VA’s first name)", what: "✍️ Knowledge Check answer sheet"}))
+    .concat(Object.values(WORKSHEETS).map(w => ({name: w.file + " (VA’s first name)", what: "📝 " + w.t}))),
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
@@ -570,7 +589,7 @@ window.ftKcQuestions = kcQuestionsFor;
 // (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
-const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}, qeditOpen:false};
+const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}, qeditOpen:false, folder:{}};
 async function loadAdmin(){
   FPA.loading = true;
   try{
@@ -614,10 +633,16 @@ function renderAdminProcess(){
         return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTProcessAdmin.row('${x.id}')">${open?"▾":"▸"} <b>${e(x.name)}</b> <span class="fp-pill ${sub===PROCESS_SETS.length?"ok":sub?"mid":"bad"}">${sub} of ${PROCESS_SETS.length} submitted</span> ${kcPills(x.p)}</div>
           ${open ? `<pre class="fp-report">${e(reportLine(x))}</pre>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.folder('${x.id}')" ${(FPA.folder[x.id] || {}).busy ? "disabled" : ""}>🔁 Check their folder</button>
             ${kcAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
-              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.link || a.file.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>` : ` <span class="fp-pill bad">Not found in their folder</span>`}</div>
-                ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
+              const sc = sheetScore(x, s), fl = folderCell(x, s, a);
+              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>
+                ${sc.pct != null ? `<span class="fp-pill ${sc.pct >= KC_PASS ? "ok" : "mid"}" title="${e(sc.how)}">🏅 ${sc.pct}%${sc.trainer ? " · trainer’s final" : ""}</span>` : a && a.submittedAt ? `<span class="fp-pill">not graded yet</span>` : ""} ${fl}</div>
+                ${FPA.sheetOpen[k] ? `${sc.summary ? `<p class="fp-muted fp-why"><b>Why ${sc.pct}%:</b> ${e(sc.how)}. ${e(sc.summary)}</p>` : sc.pct != null ? `<p class="fp-muted fp-why"><b>Why ${sc.pct}%:</b> ${e(sc.how)}.</p>` : ""}
+                  <ol class="fp-aans">${s.questions.map((q,i)=>{ const g = answerGrade(x, s, i);
+                    return `<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div>
+                    ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback || "")}</div>` : ""}${g && g.note ? `<div class="fp-tnote">🧑‍🏫 ${e(g.note)}</div>` : ""}</li>`; }).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
 }
@@ -625,6 +650,45 @@ function renderAdminProcess(){
 // facilitator's DNA, per answer), and the trainer's own comment per answer, overall comment and final score.
 // (a lesson with a 📖 Reading Task, Day 1: two entries, the lesson's own sheet and the Reading Task, each with its own review:
 // the Reading Task's in kcreview:<id>.read[lesson], its final score the Reading Task's own, apart from the lesson's)
+/* 🏅 a sheet's score, as the Scorecard counts it: the trainer's final score, else the graded best of its Knowledge Check
+   (a 📖 Reading Task its own; a sheet split across lessons, its first lesson's), with the why: the attempts and the
+   overall evaluation. Each answer's grade (out of 10) and feedback from the last graded attempt, with the trainer's note. */
+const setLessons = s => kcLessons(s);
+function sheetScore(x, s){
+  const read = !!s.open && !!readSetOf(s.lesson), l = setLessons(s)[0];
+  const rec = read ? ((x.p.kcRead || {})[l]) : ((x.p.kc || {})[l]), rv = read ? ((x.rv.read || {})[l] || {}) : (x.rv.lessons[l] || {});
+  const t = trainerScore(rv), g = rec && rec.attempts ? rec.best : null, pct = t != null ? t : g;
+  const how = t != null ? `the trainer’s final score${g != null ? ` (graded best ${g}%, ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"})` : ""}`
+    : g != null ? `graded best of ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"} (the ${ftName(l)} Knowledge Check, 70% passes)` : "";
+  return {pct, trainer: t != null, how, summary: [rec && rec.last && rec.last.summary, rv.comment ? "Trainer: " + rv.comment : ""].filter(Boolean).join(" ")};
+}
+function answerGrade(x, s, i){
+  const recs = Object.values(x.p.kc || {}).concat(Object.values(x.p.kcRead || {})).filter(r => r && r.last && Array.isArray(r.last.items));
+  const g = recs.map(r => r.last.items.find(it => it.sid === s.id && it.i === i)).filter(Boolean)[0];
+  const note = Object.values(x.rv.lessons || {}).concat(Object.values(x.rv.read || {})).map(r => ((r || {}).notes || {})[s.id + "|" + i]).find(has);
+  return g || note ? Object.assign({score: g ? g.score : "—", feedback: g ? g.feedback : ""}, note ? {note} : {}) : null;
+}
+// the folder, for the trainer: what the trainee's session recorded, else the trainer's own look in the folder
+function folderCell(x, s, a){
+  const link = f => `<a href="${e(f.link || f.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(f.name)}” ↗</a>`;
+  if(a && a.file) return `${fileStatus(s, a)} ${link(a.file)}`;
+  const F = FPA.folder[x.id];
+  const found = F && F.files ? findInFolder(s, a, F.files, firstOf(x.name)) : null;
+  if(found) return `${fileStatus(s, {file: found})} ${link(found)} <span class="fp-muted">(found by the trainer’s check)</span>`;
+  if(a && a.drive && a.drive.at) return `<span class="fp-pill ok">📄 Saved to their folder ${e(new Date(a.drive.at).toLocaleDateString())}</span>${a.drive.link ? " " + link({name: fileName(s, firstOf(x.name)) + ".pdf", link: a.drive.link}) : ""}`;
+  if(!a || !(a.submittedAt || answered(s, a))) return "";
+  if(!F || F.busy) return `<span class="fp-pill">Checking their folder…</span>`;
+  if(F.error) return `<span class="fp-pill mid" title="${e(FOLDER_WHY[F.error] || F.error)}">⚠ ${e(FOLDER_WHY[F.error] || "Couldn’t check their folder")}</span>`;
+  return `<span class="fp-pill bad" title="Looked for “${e(fileName(s, firstOf(x.name)))}” in their Assessment & Activities Folder">Not found in their folder</span>`;
+}
+async function checkTraineeFolder(id, force){
+  const F = FPA.folder[id]; if(F && (F.busy || (!force && F.at && Date.now() - F.at < 120000))) return;
+  FPA.folder[id] = {busy: true, at: Date.now()}; render();
+  let j = {};
+  try{ const r = await authFetch("/api/drive/answers", {id}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
+  FPA.folder[id] = {busy: false, at: Date.now(), files: j.files || null, error: j.files ? "" : (j.error || "drive")};
+  if(state.view === "process") render();
+}
 const readSetOf = l => { const sets = [...new Set(kcQuestionsFor(l).map(q => q.set))]; return sets.length > 1 ? sets.find(st => !!st.open) || null : null; };
 function kcAdmin(x){
   const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b).filter(l=>DAYS.find(d=>d.id===l));
@@ -668,10 +732,11 @@ window.FTProcessAdmin = {
     }catch(err){ toast("Couldn’t save the review. Check your connection."); }
     btn.disabled = false; render();
   },
-  row(id){ FPA.open[id] = !FPA.open[id]; render(); },
+  row(id){ FPA.open[id] = !FPA.open[id]; render(); if(FPA.open[id]) checkTraineeFolder(id); },
+  folder(id){ checkTraineeFolder(id, true); },
   sheet(id, sid){ const k = id+"|"+sid; FPA.sheetOpen[k] = !FPA.sheetOpen[k]; render(); },
   batch(b){ FPA.closed[b] = !FPA.closed[b]; render(); },
-  refresh(){ FPA.rows = null; render(); },
+  refresh(){ FPA.rows = null; FPA.folder = {}; render(); },
   copy(id){ const x = FPA.rows.find(r=>r.id===id); if(!x) return;
     (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); },
   toggleQEdit(){ FPA.qeditOpen = !FPA.qeditOpen; render(); },
@@ -993,6 +1058,7 @@ function kcPills(p){
 
 (function(){ const s = document.createElement("style"); s.id = "ft-process"; s.textContent = `
 main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
+.fp-why{margin:6px 0 2px 18px;} .fp-tnote{margin:4px 0 0;padding:5px 9px;border-left:3px solid #5B7DB1;background:#F3F6FB;font-size:13px;}
 .kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
 .kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
 .kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
@@ -1024,9 +1090,9 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
-.fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
+.fp-pdf-rule{margin:0;flex:1 1 100%;font-size:14px;line-height:1.9;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
 .fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-drive{margin-left:auto;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
-.fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
+.fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;line-height:1.5;word-break:normal;overflow-wrap:normal;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
 .fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}

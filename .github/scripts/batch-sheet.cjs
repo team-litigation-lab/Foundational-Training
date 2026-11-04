@@ -43,9 +43,9 @@ const failures = []; const fail = m => failures.push(m);
   const L6 = { folder: 'https://drive.google.com/drive/folders/abcdefghijklmn', tracker: 'https://docs.google.com/spreadsheets/d/abcdefghijklmn/edit', monitor: 'https://docs.google.com/document/d/abcdefghijklmn/edit',
     tam: 'https://docs.google.com/document/d/tamtamtamtamtam/edit', typing: 'https://drive.google.com/drive/folders/typingtypingty', spelling: 'https://drive.google.com/drive/folders/spellingspell' };
   await put('drive:' + ids.Ada, Object.assign({ days: {} }, L6));
-  const ck = (k, ok) => ({ url: L6[k], ok, err: ok ? '' : 'the system can\'t open it', checkedAt: iso(now - 7200e3) });
+  const ck = (k, ok) => ({ url: L6[k], ok, error: ok ? '' : 'the system can\'t open it', at: iso(now - 7200e3) });
   await put('trackerreview:' + ids.Ada, { days: {}, monitor: { pct: 0, found: 0, total: 0, entries: [], error: 'The system can\'t open this file.', url: L6.monitor, checkedAt: iso(now - 7200e3) },
-    links: { monitor: ck('monitor', false), tam: ck('tam', true), spelling: ck('spelling', true), folder: ck('folder', true), tracker: ck('tracker', true) }, linksAt: iso(now - 7200e3) });
+    verify: { monitor: ck('monitor', false), tam: ck('tam', true), spelling: ck('spelling', true), folder: ck('folder', true), tracker: ck('tracker', true) }, verifyAt: iso(now - 7200e3) });
   // 🧑‍🏫 her Reception Mock Call, scored on the rubric with remarks (📅 Day 1–16: Detailed Scores, with its context)
   await put('labreview:' + ids.Ada, { acts: { 'reception-live': { status: 'Passed', score: 76, comment: 'Good call control overall.', at: iso(now - 3600e3),
     rubric: { key: 'reception', scores: [5, 4, 2, 4, 4, 3, 4], feedback: ['Warm, branded greeting.', '', 'Skipped the caller verification.', '', '', '', ''], avg: 3.8 } } } });
@@ -91,8 +91,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec:not(.bs-rank)')).length !== 9) fail('the nine tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'process', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec:not(.bs-rank)')).length !== 10) fail('the ten tables are not all on the one page');
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
@@ -127,9 +127,10 @@ const failures = []; const fail = m => failures.push(m);
   // 📅 Day by Day: a column per training day; Ada's Day 1 has the Knowledge Check ticked by itself (and her scored Reception
   // Mock Call is 1 of the Mock Calls & Demos); a trainer ticks a classroom activity
   const dd = by('days');
-  if (dd.head.length !== 6 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[6] !== 'Day 1' || JSON.stringify(dd.head.slice(2, 6)) !== JSON.stringify(['✍️ Knowledge Checks', '🛠 Practice', '🎙 Mock Calls & Demos', '🏫 Classroom & outputs'])) fail(`📅 Day by Day's columns: ${dd.head.slice(0, 7)}`);
+  if (dd.head.length !== 7 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[7] !== 'Day 1' || dd.head[1] !== 'Average score' || dd.head[2] !== 'Days complete' || JSON.stringify(dd.head.slice(3, 7)) !== JSON.stringify(['✍️ Knowledge Checks', '🛠 Practice', '🎙 Mock Calls & Demos', '🏫 Classroom & outputs'])) fail(`📅 Day by Day's columns: ${dd.head.slice(0, 8)}`);
   const adaKinds = dd.rows.find(r => /Ada/.test(r[0]));
-  if (!adaKinds || !/^1 \/ \d+$/.test(adaKinds[2]) || !/^1 \/ \d+$/.test(adaKinds[4])) fail(`Ada's Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(2, 6)}`);
+  // (scores, not counts: Ada's Knowledge Check 90%; her Reception Mock Call, scored 76% by the trainer)
+  if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
   const autoKC = await page.evaluate(() => { const d1 = FTDays.of(1), it = d1.items.find(i => i.at === 'tool' && i.id === 'process'); return it ? it.t : ''; });
   if (autoKC && !(await page.evaluate(t => [...document.querySelectorAll('.bs-day')][0].innerText.includes(t), autoKC))) fail('Day 1\'s checklist misses its Knowledge Check');
   if (autoKC && !(await page.evaluate(t => { const l = [...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item'); const x = [...l].find(n => n.innerText.includes(t)); return x && x.querySelector('input').checked && /auto/.test(x.innerText); }, autoKC))) fail('Ada\'s passed Day 1 Knowledge Check is not ticked by itself');
@@ -140,8 +141,8 @@ const failures = []; const fail = m => failures.push(m);
   await box.evaluate(b => b.click()); await page.waitForTimeout(1500);   // (the page redraws on the tick)
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
-  const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[6].v;
-  if (!/^[2-9]\d*\//.test(d1.replace('✓ ', ''))) fail(`Ada's Day 1 count doesn't include the ticks: ${d1}`);
+  const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
+  if (!/^\d+%$/.test(d1.v.replace('✓ ', '')) || !/Process Questions 90%/.test(d1.f) || !/ [2-9]\d* of \d+ done/.test(d1.f)) fail(`Ada's Day 1 isn't her score with the ticks counted: ${d1.v} · ${d1.f}`);
 
   // 🛠 Practice Lab: Ada practised in a tool (82%) and took a typing test; Ben hasn't practised
   const pl = by('practice'), pa = pl.rows.find(r => /Ada/.test(r[0])), pb = pl.rows.find(r => /Ben/.test(r[0]));
@@ -157,6 +158,13 @@ const failures = []; const fail = m => failures.push(m);
   if (sh[sh.length - 2] !== 'Overall %' || sh[sh.length - 1] !== 'Rank' || !sh.includes('Daily compliance') || !sh.includes('Weeks average (/5)') || !sh.includes('Scorecard overall')) fail(`🏅 Scores' columns: ${sh}`);
   // 🔎 a trainee's grades in detail (what 🏅 Scorecards showed): Ada's Knowledge Check 90%
   if (!(await page.evaluate(() => /Grades in detail/.test(document.getElementById('bs-scores').innerText)))) fail('🏅 Scores has no grades in detail');
+  if (!(await page.evaluate(() => /Scorecard overall: .*= the average of/.test(document.getElementById('bs-scores').innerText)))) fail('🔎 Grades in detail has no breakdown of the overall');
+  // ✍️ Process Questions: each answer sheet's score, the average, and the scoring rationale for every trainee
+  const pq = by('process'), pqa = pq.rows.find(r => /Ada/.test(r[0]));
+  if (!pqa || pqa[1] !== '90%' || !pqa.slice(3).includes('90%')) fail(`✍️ Process Questions for Ada: ${pqa}`);
+  if (!(await page.evaluate(() => /Scoring rationale/.test(document.getElementById('bs-process').innerText)))) fail('✍️ Process Questions has no scoring rationale');
+  await page.selectOption('#bs-process .bs-ck-who select', '*'); await page.waitForTimeout(400);
+  if (!(await page.evaluate(() => { const t = document.getElementById('bs-process').innerText; return /Ada Active/.test(t) && /Ben Blank/.test(t); }))) fail('👥 Every trainee doesn\'t show every trainee\'s rationale');
 
   // 🕒 Recent progress: newest first, every kind
   const rc = by('recent').rows, kinds = rc.map(r => r[2]);
@@ -261,5 +269,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in nine tables, opening on 📅 Day 1–16: Detailed Scores (each score with why, what to improve and what they did best) and the 📊 Weekly Ranking under it; their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in ten tables, opening on 📅 Day 1–16: Detailed Scores (each score with why, what to improve and what they did best) and the 📊 Weekly Ranking under it; their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });
