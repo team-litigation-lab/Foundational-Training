@@ -198,7 +198,19 @@ function renderLn(){
    by the AI against the key, the VA's response out of 2). The grade goes to trackerreview:<id>.assess.recact and 🏅 My
    Performance; the pop-up marks each field with it. */
 const POP = {sid: null, sending: false, review: null, x: 0, y: 0, w: "", h: ""};
+// 🔁 a grade saved by the broken grading (one AI request for the whole sheet, its reply cut off): the AI's reply unreadable
+// (ai false) and answers marked ✗ with no note and not left to the trainer — graded again by itself (worker.js grades in
+// batches now, and leaves to the trainer what it can't check)
+window.ftStaleGrade = g => !!g && g.ai === false && Object.values(g.items || {}).some(r => r && !r.ok && !r.pending && !r.note);
 const gradedOf = sid => ((POP.review || {}).assess || {})[sid] || null;
+// (the trainee's own answer sheet opened with a broken grade on it: graded again, quietly)
+async function regradeIfStale(sid){
+  const g = gradedOf(sid); if(!ftStaleGrade(g) || POP.regrading || !state.traineeId || state.isAdmin) return;
+  POP.regrading = true; paintPop();
+  try{ const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc: sid});
+    if(r.ok){ POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review; const n = gradedOf(sid); if(n) toast(`🔁 Your answers were graded again: ${n.score} of ${n.max} (${n.pct}%).`); } }catch(err){}
+  POP.regrading = false; paintPop();
+}
 function popHtml(){
   if(!R.rec || !X.data) return `<div class="ln-pop-b"><div class="card" style="padding:24px;">Loading…</div></div>`;
   const cur = setLive(POP.sid), g = gradedOf(POP.sid), k = countDone(R.rec, cur);
@@ -210,7 +222,7 @@ function popHtml(){
       ${cur.recs.map(r => recHtml(cur, r, null, {all: true, graded: g})).join("")}</div>
     <div class="ln-pop-f"><span>${k} of ${cur.n} calls logged</span>
       <button type="button" class="btn btn-ghost" onclick="FTListen.close()">Close</button>
-      <button type="button" class="btn btn-primary" onclick="FTListen.submit()"${POP.sending ? " disabled" : ""}>${POP.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>`;
+      <button type="button" class="btn btn-primary" onclick="FTListen.submit()"${POP.sending || POP.regrading ? " disabled" : ""}>${POP.sending ? "Grading…" : POP.regrading ? "🔁 Grading again…" : "📝 Submit for Grading"}</button></div>`;
 }
 function paintPop(){
   let box = document.getElementById("lnPop");
@@ -282,7 +294,7 @@ window.FTListen = {
   open(sid){ if(sid) R.set = sid; goto("listening"); },
   // 📝 the activity's answer sheet in a pop-up over the deck
   pop(sid){ POP.sid = sid || "recact"; load(); loadSets(); paintPop();
-    if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; paintPop(); }).catch(() => {}); },
+    if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; paintPop(); regradeIfStale(POP.sid); }).catch(() => {}); },
   close(){ POP.sid = null; paintPop(); }, submit: submitPop,
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },

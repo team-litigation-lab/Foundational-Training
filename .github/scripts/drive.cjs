@@ -215,12 +215,19 @@ const failures = []; const fail = (m) => failures.push(m);
     { const back = new Date(Date.now() - 9 * 864e5), wk = [], today = TR.ptDate();
       for (let t = Date.parse(TR.ptDate(back) + 'T12:00:00Z'); ; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break; if (TR.isWeekday(d)) wk.push(d); }
       const tr0 = JSON.parse(store.get('ft:trainee:' + id)); tr0.registeredAt = back.toISOString(); store.set('ft:trainee:' + id, JSON.stringify(tr0));
-      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = {}; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      // (a day worked out before the platform's own work counted, v1: worked out again; practice logged on the platform the
+      // second day: 🖥 Platform 100%)
+      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = { [wk[0]]: { pct: 0, parts: { tracker: 0 } } }; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      store.set('ft:progress:' + id, JSON.stringify({ traineeId: id, data: { 'work-log': [{ at: wk[1] + 'T16:00:00Z', kind: 'lab', label: 'Intake Practice', score: 80 }] } }));
       store.set('ft:skills:' + id, JSON.stringify({ typing: [{ id: 'bt', at: new Date(wk[0] + 'T15:00:00Z').toISOString(), date: wk[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }));
       const bf = await call('/api/compliance/backfill', { ids: [id] }, admin);
       if (!bf.body || !bf.body.ok || bf.body.filled[id] !== wk.length) fail(`the backfill didn't work out the ${wk.length} past weekdays: ${JSON.stringify(bf.body)}`);
       const c = JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {}, c0 = c[wk[0]] || {};
       if (!c0.backfilled || !c0.tests || !c0.tests.AM || c0.parts.tracker !== null) fail(`a backfilled day isn't marked, misses its test, or counts an unchecked tracker as 0: ${JSON.stringify(c0)}`);
+      if (!(c0.v >= 2)) fail(`a day worked out before the new rules wasn't worked out again: ${JSON.stringify(c0)}`);
+      const c1 = c[wk[1]] || {}, c2 = c[wk[2]] || {};
+      if (c1.parts.platform !== 100 || !(c1.platform || []).some(x => /Intake Practice/.test(x))) fail(`a day with practice on the platform isn't 🖥 Platform 100%: ${JSON.stringify(c1)}`);
+      if (wk[2] && c2.parts.platform !== 0) fail(`a day with nothing on the platform isn't 0: ${JSON.stringify(c2)}`);
       if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
       const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
       if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }

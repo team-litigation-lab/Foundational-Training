@@ -1232,7 +1232,7 @@ async function backfillCompliance(env, id, o = {}) {
   const want = [];
   for (let t = Date.parse(start + "T12:00:00Z"); want.length < (o.max || 10); t += 864e5) {
     const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break;
-    if (TR.isWeekday(d) && !have[d]) want.push(d);
+    if (TR.isWeekday(d) && (!have[d] || !(have[d].v >= 2))) want.push(d);
   }
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
@@ -1254,7 +1254,7 @@ async function backfillCompliance(env, id, o = {}) {
 async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
   const get = async (k) => JSON.parse((await kv.get(k)) || "null");
-  const [drive, skills, proc, tr] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`)]);
+  const [drive, skills, proc, tr, prog, ses] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`)]);
   const rk = `trackerreview:${id}`, cur = (await get(rk)) || { days: {} };
   const onD = (t) => !!t && TR.ptDate(new Date(t)) === D;
   // the tests: the AM and PM typing and the spelling, a make-up counting for the slot it was taken for
@@ -1275,18 +1275,33 @@ async function dailyCompliance(env, id, D, o = {}) {
   Object.entries((tr || {}).r || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt)) subs.push("Transcription · Recording " + n); });
   Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
   const tk = (cur.days || {})[D];
+  // 🖥 what they did on the platform itself that day (progress:<id>, the trainee's own saved progress; sessions:<id>): a lesson
+  // deck finished, a Knowledge Check attempt, a Practice Session submitted, practice in the tools, a test taken, an answer sheet
+  // or a transcription submitted — 100; only opening lessons (a slide read, a deck opened) — 50; nothing — 0
+  const data = (prog && prog.data) || {}, dp = data["day-progress"] || {}, done = [], seen = [];
+  Object.entries(dp).forEach(([l, x]) => { if(!x) return; if (onD(x.studiedAt)) done.push(`Lesson ${l} deck finished`);
+    if ((Array.isArray(x.history) ? x.history : []).some((h) => h && onD(h.date)) || (onD(x.date) && typeof x.score === "number")) done.push(`Lesson ${l} Knowledge Check`); });
+  (Array.isArray(data["work-log"]) ? data["work-log"] : []).forEach((w) => { if (w && onD(w.at)) (w.kind === "view" || w.kind === "open" ? seen : done).push(w.label || w.kind || "practice"); });
+  Object.entries((ses || {}).runs || {}).forEach(([k, r]) => { if (r && onD(r.submittedAt)) done.push("Practice Session: " + k.split("|")[0]); else if (r && onD(r.startedAt)) seen.push("Practice Session started"); });
+  if (onD(data["last-view"] && data["last-view"].at)) seen.push("on the platform");
+  if (onD(prog && prog.savedAt)) seen.push("progress saved");
+  const testsTaken = Object.values(tests).some(Boolean), platformDid = done.length + subs.length + (testsTaken ? 1 : 0);
+  // (a tracker or Monitoring Sheet the system can't open is "not checked" that day, not 0: the comments say why)
+  const unreadable = (x) => !!x && /can't open|can.t be read|not shared|sign.?in/i.test(String(x));
+  const trRule = tk && (tk.rules || []).find((r) => r.id === "sheet" && !r.pass);
   const parts = {
-    // (a past day worked out afterwards, o.backfill: a tracker never checked that day is "not checked", not 0)
-    tracker: tk && typeof tk.pct === "number" ? tk.pct : (drive && drive.tracker && !o.backfill ? 0 : null),
-    monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" ? cur.monitor.pct : (drive && drive.monitor ? 0 : null),
+    tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
+    monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" && !unreadable(cur.monitor.error) ? cur.monitor.pct : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
-    outputs: links || saved ? 100 : 0,
+    outputs: links || saved || subs.length ? 100 : 0,
     eod: day.eod && String(day.eod.text || "").trim() ? 100 : 0
   };
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
-  cur.compliance[D] = Object.assign({ pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
+  cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
   await kv.put(rk, JSON.stringify(cur));
@@ -1849,7 +1864,7 @@ export default {
           if (x.essay) items[x.id] = { ok: false, pts: 0, pending: true, note: "Your trainer grades this one." };
           // (a short answer the key has no pattern for: the trainer checks it, rather than a ✗ for a right answer)
           else if (!it.accept) items[x.id] = { ok: false, pts: 0, pending: true, note: "Your trainer checks this one." };
-          else { let ok = false; try { ok = new RegExp(it.accept, "i").test(x.answer); } catch (e) {} items[x.id] = { ok, pts: ok ? it.pts : 0 }; }
+          else { let ok = false; try { ok = new RegExp(it.accept, "i").test(x.answer); } catch (e) {} items[x.id] = { ok, pts: ok ? it.pts : 0, note: ok ? "" : "Checked against the answer key: it doesn't match." }; }
         }
         const max = Object.values(K.items).reduce((t, it) => t + it.pts, 0), score = Object.values(items).reduce((t, r) => t + (r.pts || 0), 0);
         const now = new Date(), when = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(now) + " ET";

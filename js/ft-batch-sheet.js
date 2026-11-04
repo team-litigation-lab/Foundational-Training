@@ -104,6 +104,12 @@ async function loadData(){
     if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
       try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
     B.data = {rec, sources: S, reps, at: new Date()};
+    // 🔁 the batch's grades saved by the broken grading (window.ftStaleGrade, js/ft-listening.js): graded again, once a
+    // session, then the sheet is read again
+    if(adminOn() && !meOn() && window.ftStaleGrade && !(B.regraded || {})[B.batch]){ (B.regraded = B.regraded || {})[B.batch] = 1; const bb = B.batch, jobs = [];
+      ppl.forEach(p => Object.entries(((((rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}).forEach(([doc, g]) => { if(ftStaleGrade(g)) jobs.push({id: p.id, doc}); }));
+      if(jobs.length) (async () => { let n = 0; for(const j of jobs){ try{ const r = await authFetch("/api/assess/grade", j); if(r.ok) n++; }catch(err){} }
+        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb){ B.data = null; B.dataKey = ""; rerender(); } } })(); }
     // 🔄 the batch's past training days not worked out yet (worker.js backfillCompliance), once a session: the sheet is read
     // again when any were, so 📤 Daily outputs and the scores count the whole training
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
@@ -522,7 +528,7 @@ function sectionsHtml(T){
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
-const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email"};
+const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", platform: "Platform work", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email"};
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
@@ -553,11 +559,13 @@ function outputsNotesHtml(){
     if(P.tracker != null){ const miss = tk ? (tk.rules || []).filter(r => !r.pass) : [];
       plat.push(`📋 Task Tracker ${P.tracker}%`); miss.slice(0, 3).forEach(r => todo.push(`Task Tracker: ${r.label}${r.detail ? " — " + clip(r.detail, 160) : ""}`)); }
     if(P.monitor != null){ plat.push(`📒 Monitoring Sheet ${P.monitor}%`); if(mon && mon.error) todo.push("Monitoring Sheet: " + clip(mon.error, 160)); }
+    (c.unreadable || []).forEach(k => todo.push(`${k === "tracker" ? "Task Tracker" : "Monitoring Sheet"}: the system can't open it, so it isn't counted: share it with the program's account (📁 My Drive links)`));
+    if(P.platform != null){ plat.push(`🖥 Platform ${P.platform}%`); if(!P.platform) todo.push("Nothing done on the platform that day"); else if(P.platform < 100) todo.push("Lessons opened, but nothing finished or submitted that day"); }
     if(c.tests){ const t = c.tests, miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
       plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
     if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
     if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod) todo.push("No EOD email for the day"); }
-    const did = [(c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
+    const did = [...(c.platform || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
       ...(c.submissions || []).slice(0, 4)].filter(Boolean);
     // the AI's review (the tracker's notes) and the trainer's comment
     const ai = tk && tk.review ? clip(tk.review, 420) : "", tr = tk && tk.comment ? clip(tk.comment, 300) : "";
