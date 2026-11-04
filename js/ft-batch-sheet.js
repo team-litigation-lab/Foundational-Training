@@ -111,6 +111,11 @@ async function loadData(){
     if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
       try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
     B.data = {rec, sources: S, reps, at: new Date()};
+    // ✍️ an answer sheet submitted but never graded ("Submitted"): graded now, once a session, then the sheet is read again
+    if(adminOn() && !meOn() && window.ftKcGradeFor && !(B.kcAuto || {})[B.batch]){ (B.kcAuto = B.kcAuto || {})[B.batch] = 1; const bb = B.batch, todo = [];
+      ppl.forEach(p => kcSheets().forEach(k => { const g = sheetGrade(p, k); if(g.pct == null && g.subm) todo.push({p, k}); }));
+      if(todo.length) (async () => { let n = 0; for(const t of todo){ try{ if(await ftKcGradeFor(t.p.id, t.k.l, t.k.read)) n++; }catch(err){} }
+        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb){ B.data = null; B.dataKey = ""; rerender(); } } })(); }
     // 🔁 the batch's grades saved by the broken grading (window.ftStaleGrade, js/ft-listening.js): graded again, once a
     // session, then the sheet is read again
     if(adminOn() && !meOn() && window.ftStaleGrade && !(B.regraded || {})[B.batch]){ (B.regraded = B.regraded || {})[B.batch] = 1; const bb = B.batch, jobs = [];
