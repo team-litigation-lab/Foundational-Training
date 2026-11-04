@@ -860,7 +860,10 @@ const FIT_MIN = 0.8;
 const isMid = d => Number(d) >= 6 && Number(d) <= 15;
 const MID_FIT = 0.75;
 // a heading, or a line drawn as a section bar (contrastMarks: ftdd-hbar), never ends a page: it moves on with what it heads
-const isHead = x => /^H[1-6]$/.test(x.tagName) || x.classList.contains("ftdd-hbar");
+// (a heading: an <h1>–<h6>, a heading bar, or a short label line on its own — "Samples", a bold "Sample:" line — with no picture,
+// table or form in it: it moves to the next page with what it heads, never left at a page's foot)
+const isHead = x => /^H[1-6]$/.test(x.tagName) || x.classList.contains("ftdd-hbar") || (/^(P|DIV)$/.test(x.tagName) && !x.querySelector("img, iframe, video, table, svg, input, textarea, select, button, .ftdd-ev, .ftdd-tile")
+  && (t => t.length > 0 && t.length <= 60 && !/[.!?]$/.test(t))(String(x.textContent || "").replace(/\s+/g, " ").trim()));
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 // (and a slide the build marks read: Day 11's LOR Drafting guidelines)
 const isReadPart = s => !!s && (!!s.read || Object.values(KC_NEXT[DD.day] || {}).some(k => isPart(k, s.id)));
@@ -3020,6 +3023,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
 .ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
 .ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
+/* 🖍 the highlighter: what a trainee must do or get right (Day 5's Time Zone & Submit: the instruction, the sample's fields) */
+.ft-body mark.ftdd-hl{background:#FFF200;color:inherit;padding:1px 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.ft-body .ftdd-ev-hlf{background:#FFF200 !important;box-shadow:0 0 0 2px #FFF200;border-radius:3px;}
 .ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
 .ft-body .ftdd-ev-sub{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
 .ft-body .ftdd-ev-box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid #444746;border-radius:3px;font-size:11px;color:#fff;margin-right:6px;}
