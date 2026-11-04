@@ -539,7 +539,7 @@ const scoreLine = xs => { const sc = xs.filter(y => y.score); return {avg: sc.le
   why: sc.map(y => `${y.it.t.replace(/\s*\(.*$/, "")} ${y.score.pct}% (${y.score.how})`).join("; ")}; };
 function daysTable(){
   const ppl = people(), D = dayList();
-  return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Practice Session, the Mock Call / Demo the trainer scored, the tools' grades). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score. ${meOn() ? "Your checklist is under the table." : "Pick a trainee under the table to tick off their activities."} ✓ = every activity of the day done.`,
+  return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Practice Session, the Mock Call / Demo the trainer scored, the tools' grades). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score.  ✓ = every activity of the day done.`,
     head: ["Trainee", "Average score", "Days complete"].concat(KINDS.map(k => k[1]), D.map(d => `Day ${d.day}`)),
     rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), full = st.filter(x => x.length && x.every(y => y.done)).length;
       const all = st.flat(), kind = k => all.filter(y => kindOf(y.it) === k), dayAvgs = st.map(x => scoreLine(x).avg), avg = avgOf(dayAvgs);
@@ -557,18 +557,7 @@ function daysTable(){
             cls: "bs-lesson " + (sl.avg != null ? tone(sl.avg) : done ? "gs-hi" : n ? "gs-mid" : "")}; }));
     })};
 }
-function checklistHtml(){
-  const ppl = people(); if(!ppl.length || !B.data) return "";
-  const id = meOn() ? ppl[0].id : (B.ck && ppl.some(p => p.id === B.ck) ? B.ck : ppl[0].id), p = ppl.find(x => x.id === id), can = adminOn() && !meOn();
-  const D = dayList(), ic = it => ({session: "🟢", trainer: "🧑‍🏫", tool: "🛠", drive: "📁", gc: "💬", room: "🏫", offline: "📴"}[it.at] || "•");
-  return `<div class="bs-ck">${meOn() ? `<h4>✅ My checklist</h4>` : `<label class="bs-ck-who">✅ Checklist for <select onchange="FTBatchSheet.ckWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
-    <p class="bs-note">${can ? "Tick an activity when it is done. A ✓ the platform ticked itself (a Knowledge Check passed, a Practice Session submitted, a Mock Call / Demo you recorded) is already ticked." : "✓ = done. Your trainer ticks the classroom activities; the platform ticks what you do on it."}</p>
-    <div class="bs-days">${D.map(d => { const st = dayStatus(p, d), n = st.filter(x => x.done).length;
-      return `<div class="bs-day ${st.length && n === st.length ? "is-done" : ""}"><div class="bs-day-h"><b>Day ${d.day}</b> <span>${e(d.role)}</span><em>${(() => { const sl = scoreLine(st); return sl.avg != null ? `<span class="${tone(sl.avg)}">${sl.avg}%</span> · ` : ""; })()}${n} / ${st.length}</em></div>
-        ${st.map(x => `<label class="bs-item ${x.done ? "is-done" : ""}" title="${e(x.auto ? x.auto.how : "Ticked by the trainer")}${x.manual && x.mAt ? " · ticked " + e(when(x.mAt)) : ""}">
-          <input type="checkbox" ${x.done ? "checked" : ""} ${can && !(x.auto && x.auto.done && !x.manual) ? "" : "disabled"} onchange="FTBatchSheet.tick('${e(p.id)}', ${e(JSON.stringify(x.key)).replace(/&quot;/g, "&quot;")}, this.checked)">
-          <span>${ic(x.it)} ${e(x.it.t)}${x.score ? ` <b class="bs-isc ${tone(x.score.pct)}" title="${e(x.score.how)}">${x.score.pct}%</b>` : ""}${x.auto && x.auto.done && !x.manual ? ` <small>✓ auto</small>` : x.manual ? ` <small>✓ trainer</small>` : x.auto && /Redo/.test(x.auto.how) ? ` <small class="bs-redo">Redo</small>` : ""}</span></label>`).join("")}</div>`; }).join("")}</div></div>`;
-}
+// (no ✅ Checklist panel under 📅 Day by Day any more: the table shows each day; ticks saved before still count)
 /* 📁 Drive links: the six monitored links a trainee saves in 📁 My Drive links (drive:<id>, js/ft-drive.js) — the Monitoring Sheet,
    the TAM, the Typing and Spelling Tests folders, the Assessments/Activities folder and the Daily Task Tracker (worker.js verifyLinks); the Assessment and
    Activities Folder, the Daily Task Tracker and the Monitoring Sheet — each saved or not, and whether the end-of-shift check
@@ -581,6 +570,8 @@ const sameLink = (a, b) => String(a || "").trim() === String(b || "").trim();
    again at the end of the shift), "trainer" (✓ a trainer opened it and marked it as opening: daycheck:<id>.links, for that
    very link; a new link drops it). A check from before checks recorded their link (url) counts as this link's unless the
    links were saved after it. */
+// an error that means the system couldn't open the file (not one about what is in it)
+const ACCESS = err => /can.?t (be )?open|can.?t be read|share (it|each)|not shared|sign.?in/i.test(String(err || ""));
 function linkState(p){
   const R = B.data.rec[p.id] || {}, dv = R.drive || {}, rv = (R.src || {})["trackerreview:"] || {}, ov = ((R.daycheck || {}).links) || {};
   const days = Object.keys(rv.days || {}).sort(), lastDay = days.length ? rv.days[days[days.length - 1]] : null;
@@ -596,10 +587,14 @@ function linkState(p){
     // 🔁 the system's check of this very link (worker.js verifyLinks: on saving the links, on 🔁 Check now and at the end of
     // every shift), when it is the newest
     const v = (rv.verify || {})[k];
+    // (✓ Mark as opening: the system opened this very link, so it stays ✓ for it, whatever a later check of its CONTENT says)
+    if(v && v.ok && sameLink(v.url, link)){ out[k] = {st: "ok", label, link, c: {err: "", at: v.at}, issue: c && c.err && !ACCESS(c.err) && sameLink(c.url || link, link) ? c.err : ""}; return; }
     if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", at: v.at}}; return; }
     // (not checked yet, or checked on another link: ⏳ Pending verification)
     if(!c || (c.url && !sameLink(c.url, link))){ out[k] = {st: "pending", label, link, c}; return; }
     if(!c.err){ out[k] = {st: "ok", label, link, c}; return; }
+    // (the file opened, but its content needs a fix — the Daily Task Tracker's tab, a link that isn't a Google Sheet: not "can't open")
+    if(!ACCESS(c.err)){ out[k] = {st: "fix", label, link, c}; return; }
     const ofThis = c.url ? sameLink(c.url, link) : !(t(dv.updatedAt) && t(c.at) && t(dv.updatedAt) > t(c.at));
     out[k] = {st: ofThis ? "bad" : "relinked", label, link, c};
   });
@@ -610,9 +605,10 @@ function linkCell(x){
   if(x.st === "none") return {v: "—", f: `${x.label}: not linked yet`, cls: "bs-lesson gs-lo"};
   if(x.st === "trainer") return {v: "✓ trainer", f: `${x.label}: ${x.link} · marked as opening by a trainer ${when(x.o.at)}${x.c && x.c.err ? ` (the system's check said: ${x.c.err})` : ""}`, cls: "bs-lesson gs-hi"};
   if(x.st === "bad") return {v: "❌ Inaccessible", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}${meOn() ? "" : ". A trainer can open it and mark it ✓ under the table."}`, cls: "bs-lesson gs-mid"};
+  if(x.st === "fix") return {v: "⚠ needs a fix", f: `${x.label}: ${x.link} · the system opens it, but: ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}`, cls: "bs-lesson gs-mid"};
   if(x.st === "pending") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: not checked yet on this link (it is checked when saved, at the end of the shift and on 🔁 Check now)`, cls: "bs-lesson gs-mid"};
   if(x.st === "relinked") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: saved after the last check, which couldn't open the old link; it is checked again at the end of the shift`, cls: "bs-lesson gs-hi"};
-  return {v: "✓ opening", f: `${x.label}: ${x.link} · ✓ Mark as opening: the system opened it${x.c && x.c.at ? " " + when(x.c.at) : ""}, locked for this link`, cls: "bs-lesson gs-hi"};
+  return {v: "✓ opening", f: `${x.label}: ${x.link} · ✓ Mark as opening: the system opened it${x.c && x.c.at ? " " + when(x.c.at) : ""}, locked for this link${x.issue ? `. Its last check of the content says: ${x.issue}` : ""}`, cls: "bs-lesson gs-hi"};
 }
 function linksTable(){
   const ppl = people();
@@ -704,7 +700,7 @@ function renderSheet(){
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "drive" ? sheetHtml(x, i).replace(/<\/section>$/, linksFixHtml() + "</section>") : x.id === "days" ? sheetHtml(x, i).replace(/<\/section>$/, checklistHtml() + "</section>") : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "drive" ? sheetHtml(x, i).replace(/<\/section>$/, linksFixHtml() + "</section>") : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 
@@ -751,7 +747,6 @@ window.FTBatchSheet = {
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
-  ckWho(id){ if(!adminOn()) return; B.ck = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
@@ -863,7 +858,7 @@ function renderMine(){
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "drive" ? sheetHtml(x, i).replace(/<\/section>$/, linksFixHtml() + "</section>") : x.id === "days" ? sheetHtml(x, i).replace(/<\/section>$/, checklistHtml() + "</section>") : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : T.map((x, i) => x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "drive" ? sheetHtml(x, i).replace(/<\/section>$/, linksFixHtml() + "</section>") : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
 FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };

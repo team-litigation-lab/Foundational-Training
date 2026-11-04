@@ -131,14 +131,10 @@ const failures = []; const fail = m => failures.push(m);
   const adaKinds = dd.rows.find(r => /Ada/.test(r[0]));
   // (scores, not counts: Ada's Knowledge Check 90%; her Reception Mock Call, scored 76% by the trainer)
   if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
-  const autoKC = await page.evaluate(() => { const d1 = FTDays.of(1), it = d1.items.find(i => i.at === 'tool' && i.id === 'process'); return it ? it.t : ''; });
-  if (autoKC && !(await page.evaluate(t => [...document.querySelectorAll('.bs-day')][0].innerText.includes(t), autoKC))) fail('Day 1\'s checklist misses its Knowledge Check');
-  if (autoKC && !(await page.evaluate(t => { const l = [...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item'); const x = [...l].find(n => n.innerText.includes(t)); return x && x.querySelector('input').checked && /auto/.test(x.innerText); }, autoKC))) fail('Ada\'s passed Day 1 Knowledge Check is not ticked by itself');
-  if (!(await page.$('.bs-ck-who select'))) fail('the trainer can\'t pick whose checklist to open');
-  await page.selectOption('.bs-ck-who select', ids.Ada); await page.waitForTimeout(400);
+  // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
+  if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
   const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'room') || {}).t);
-  const box = await page.evaluateHandle(t => [...[...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item')].find(n => n.innerText.includes(t)).querySelector('input'), roomT);
-  await box.evaluate(b => b.click()); await page.waitForTimeout(1500);   // (the page redraws on the tick)
+  await page.evaluate(([id, k]) => FTBatchSheet.tick(id, k, true), [ids.Ada, '1|' + roomT]); await page.waitForTimeout(1500);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
   const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
@@ -242,10 +238,8 @@ const failures = []; const fail = m => failures.push(m);
   // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
   if (MT[0].id !== 'dayscores' || MT[1].title !== '👤 Me') fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
   if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
-  // her own checklist, read only, with the trainer's tick on it
-  if (!(await page.$('.bs-mine .bs-ck h4')) || await page.$('.bs-mine .bs-ck-who')) fail('the trainee doesn\'t get her own checklist, or gets the trainer\'s picker');
-  if (await page.$('.bs-mine .bs-item input:not([disabled])')) fail('a trainee can tick her own checklist');
-  if (!(await page.evaluate(() => [...document.querySelectorAll('.bs-mine .bs-item.is-done')].some(n => /trainer/.test(n.innerText))))) fail('the trainee doesn\'t see the trainer\'s tick');
+  // (no checklist on her page either, and no trainer's picker)
+  if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
   if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
