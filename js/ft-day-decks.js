@@ -381,6 +381,8 @@ function visual(html){
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
+    // (data-big: the slide is the metrics alone, so the scorecard is drawn large across it: Day 16's Before Your Demo)
+    if(p.hasAttribute("data-big")) box.classList.add("ftdd-score-big");
     // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
     const M = window.FTMetrics;
     // (data-nohead: the slide is the metrics alone and its title names them, Day 9's Intake Mock Calls Metrics)
@@ -1526,7 +1528,7 @@ const LESSON_CARDS = {
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
-      {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
+      {t: "Before Your Demo: Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · how the demo is scored", k: "demo", d: 16, s: "s2b"},
       {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
       // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
       ],
@@ -3484,6 +3486,14 @@ main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3)))
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
 main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
+/* (a slide that is the metrics alone, data-big: the scorecard across the slide, its text larger; "Score" kept on one line) */
+main.main-ftdd .ftdd-sheet > .ftdd-score.ftdd-score-big{align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1500px;font-size:23px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr) 110px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{grid-template-columns:minmax(0,1fr) 110px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:12px 14px;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{padding:12px 14px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:23px;padding:12px 14px;}
 /* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}

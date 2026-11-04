@@ -1317,13 +1317,20 @@ const ROWS = {
   16: {
     s1: [{id: "s1", parts: [[null, "<h4>Please add these in your notes. </h4>"]]},
       {id: "s1b", h: "AM: Notes for Your Guide", parts: [["<h4>Please add these in your notes. </h4>", null]],
-        // (the templates kept together on one page; no Sending request section)
-        fix: [["<h4>Please add these in your notes. </h4>\n", ""], ["<p><b>Templates </b></p>\n", KEEP[0] + "<p><b>Templates </b></p>\n"],
+        // (the naming convention and the e-mail's subject line side by side, a card each, then the templates kept together on
+        // one page)
+        fix: [["<h4>Please add these in your notes. </h4>\n", ""],
+          ["<p><b>Naming convention for Lien Balance Verification</b></p>\n<p>MED – Lien Holder(Provider) –  Lien Balance Verification mm.dd.yyyy (va’s first name)</p>\n<p><b>Note:</b>  For NPIM, always put the name of the doctor after the medical provider&#x27;s name.  </p>\n<p>Example:</p>\n<p>MED - RDG(NPIM Dr. Fabito) - Lien Balance Verification 08.17.2022 (jane)</p>\n<p><b>-----------------</b></p>\n",
+            '<div class="ftdd-keep ftdd-d12"><div class="ftdd-cards2">' +
+            '<div class="ftdd-card4"><p class="ftdd-card4-h">🏷 Naming convention for Lien Balance Verification</p><p>MED – Lien Holder(Provider) – Lien Balance Verification mm.dd.yyyy (va’s first name)</p>' +
+            '<p><b>Note:</b> For NPIM, always put the name of the doctor after the medical provider&#x27;s name.</p><p><b>Example:</b> MED - RDG(NPIM Dr. Fabito) - Lien Balance Verification 08.17.2022 (jane)</p></div>' +
+            '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ Sending request: E-mail/E-filing</p><p><b>Subject Line:</b></p><p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p></div>' +
+            "</div></div>\n"], ["<p><b>Templates </b></p>\n", KEEP[0] + "<p><b>Templates </b></p>\n"],
           ["<p><b>-----------------</b></p>\n<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>", KEEP[1].trimStart()]]}],
     s2: [{id: "s2", parts: [[null, SLOT(16, "s2-3")]]},
-      {id: "s2b", h: "PM: Before Your Demo: Rules, Metrics & Time Limit", parts: [[SLOT(16, "s2-3"), null]],
-        // (the e-mail's subject line from the Notes for Your Guide, ahead of the rules; no ⏳ While you wait box: data-nowait)
-        fix: [["<h3>5. All trainees must be fully prepared", KEEP[0].replace('"ftdd-keep"', '"ftdd-keep" data-nowait') + "<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>" + KEEP[1] + "\n<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
+      {id: "s2b", h: "PM: Before Your Demo: Metrics & Time Limit", parts: [[SLOT(16, "s2-3"), null]],
+        // (the metrics alone: no rules on rescheduling, and the e-mail's subject line is on the Notes for Your Guide, s1b)
+        fix: [["<h3>5. All trainees must be fully prepared to perform their scheduled demonstrations. Any missed demonstration due to unpreparedness will be considered a missed performance and will NOT be rescheduled under any circumstance.</h3>\n<p>The only valid reason for rescheduling a demonstration is when the delay is due to a Training Team factor, such as lack of time during the session, unexpected scheduling conflicts initiated by the training team, or technical limitations.</p>\n", ""], ["<h4>6. Demo Metrics</h4>", "<h4 data-big>Demo Metrics</h4>"]]}]
   }
 };
 // a section cut into its rows' slides (ROWS above); carry holds the fragments that go to a later section
