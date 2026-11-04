@@ -34,7 +34,8 @@ let fbStyleLoadedAt = 0;
 function fbEffective(saved){
   if(saved && saved.v2) return saved;
   const dna = window.FT_FACILITATOR_DNA;
-  return dna ? {enabled:true, dna:true, guide:dna.guide, traits:dna.traits.slice(), examples:dna.examples.slice(), source:dna.source, learnedAt:dna.learnedAt} : saved;
+  // (and what was learned from the trainer's own entries, kept with it: js/ft-dna-learn.js)
+  return dna ? {enabled:true, dna:true, guide:dna.guide, traits:dna.traits.slice(), examples:dna.examples.slice(), source:dna.source, learnedAt:dna.learnedAt, learned:saved && saved.learned || null} : saved;
 }
 async function fbEnsureStyle(force){
   if(!force && fbStyleLoadedAt && Date.now() - fbStyleLoadedAt < 10 * 60000) return state.fbStyle;
@@ -87,6 +88,7 @@ function renderAdminFeedbackStyle(){
   const bySrc = (src) => items.filter(x => x.source === src).length;
   return `
     <p style="color:var(--ink-soft);font-size:13.5px;max-width:82ch;margin:0 0 14px;">Teach the AI to write feedback the way your facilitator does. It learns from real feedback — the reviews you've edited and sent in the portal, plus any examples you paste (Messenger/email/Docs feedback works well). Once learned, <b>every AI feedback</b> — the Task Tracker's daily notes review, trainer reviews, graded exercises and 📝 Activities drafts — is written in that voice. Ratings and scores are unchanged; only the wording follows the style.</p>
+    ${window.ftDnaLearnedCard ? ftDnaLearnedCard() : ""}
     <div class="card fbs-card">
       <div class="fbs-h"><b>Current voice</b>
         ${st.guide ? `<label class="da-check"><input type="checkbox" ${st.enabled !== false ? "checked" : ""} onchange="fbToggle(this.checked)"> Use this voice for all AI feedback</label>` : `<span class="pill pill-locked">Not learned yet</span>`}</div>

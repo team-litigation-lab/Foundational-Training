@@ -150,7 +150,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
     segs: [...c.querySelectorAll('.mc-grid > .ftseg > .ftseg-b')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
-    steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.module-body.ftli-days') || {}).id })));
+    steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
+    vids: [...c.querySelectorAll('.mc-grid > .ftli-vids > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.module-body.ftli-days') || {}).id })));
   // (Personal Injury Process Flow and Receptionist Training are one card, Part 1 Day 3 and Part 2 Day 4: no card of Lesson 4's)
   if (grid.length !== 7) fail(`📚 Dashboard draws ${grid.length} lesson cards, not 7`);
   if (grid.map(c => c.id).join() !== 'dayl-1,dayl-2,dayl-3,dayl-5,dayl-6,dayl-7,dayl-8') fail(`the lesson cards run ${grid.map(c => c.id).join()}`);
@@ -160,6 +161,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
     const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
+    // (the Personal Injury Process Flow / Reception card: a video for each of its two lessons, PI Workflow and Receptionist)
+    if (c.id === 'dayl-3') { if (c.segs.join() !== want.join() || c.steps.length || !/PI Workflow/.test(c.vids[0] || '') || !/Receptionist/.test(c.vids[1] || '')) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps, c.vids).join(' | ')}`); return; }
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
