@@ -952,7 +952,7 @@ function D14_CARDS(x){
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
   return '<div class="ftdd-keep ftdd-d12"><p>Please take note and include these reminders &amp; updates in your notes/work guide.</p>\n<div class="ftdd-cards2">' +
-    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "PDF Editor", "Process Guide"])) +
     card("🏷", "Complete Naming Convention", "<p>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (va’s first name)</p><p><b>Example:</b> MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
     card("🩺", "Naming convention for NPIM doctors", ul(["Indicate the name of the doctor.", "The lien holder (here, JML) still comes first; the NPIM doctor&#x27;s name goes after the medical provider, inside the brackets."]) +
       "<p><b>Example:</b> MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)</p>") +
@@ -964,7 +964,7 @@ function D14_CARDS(x){
     "</div></div>\n";
 }
 // Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
-// wording, each heading a card; the build stops if the guide's text changes under it
+// wording, each heading a card (its tools: a PDF Editor, not the guide's Nitro Pro, and the trainee's Process Guide); the build stops if the guide's text changes under it
 function D12_CARDS(x){
   for(const t of ["For BOTH 1P and 3P insurance entries", "Plaintiff Insurance Owner Field", "Defendant Insurance Owner field", "OWNER, FAKE",
     "Driver’s name, if different from the owner", "Nitro Pro (pdf editing tool)", "LOR with Affidavit mm.dd.yy", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])
@@ -982,7 +982,7 @@ function D12_CARDS(x){
     card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
       ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
     "</div></div>\n" + PGBREAK + '<div class="ftdd-keep ftdd-d12"><div class="ftdd-cards2">' +
-    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "PDF Editor", "Process Guide"])) +
     card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
       "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
     "</div></div>\n";
