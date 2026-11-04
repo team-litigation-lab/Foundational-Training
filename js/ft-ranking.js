@@ -244,7 +244,7 @@ ${row.notes ? `The trainer's own notes so far: ${row.notes}` : ""}
 Write 1–3 sentences in the facilitator's feedback DNA (below): factual and specific, naming the strongest results and the exact items that need improvement or are missing, and what is expected next week. Do not repeat every score. No greeting.
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 Return ONLY JSON: {"notes":"..."}`;
     const out = await callAIJson(prompt, 500, undefined, "grading");

@@ -238,7 +238,7 @@ ${((f.rules || {})[{reception:"reception", calendaring:"calendar", intake:"intak
 Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming exactly what was done correctly, then "However, improvement is needed in …" naming each missed item with the correct value, then the habit or rule that prevents it, tying it to the firm's rules. 3-5 sentences, third person, using the trainee's work only.
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 Return ONLY JSON: {"summary":"..."}`;
       const out = await callAIJson(prompt, 900, undefined, "grading");
@@ -582,7 +582,7 @@ ${String(box.querySelector("[data-comment]").value || "").trim() ? `Your notes s
 Write the comment the trainee will read, in your feedback DNA (below): a verdict label, the strengths naming the criteria scored well, then "However, improvement is needed in …" naming the exact criteria scored low and what to fix, tied to its purpose. 2–4 sentences.
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 Return ONLY JSON: {"comment":"..."}`;
       const out = await callAIJson(prompt, 700, undefined, "grading");

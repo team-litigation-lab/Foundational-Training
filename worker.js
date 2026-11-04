@@ -814,7 +814,9 @@ function facilitatorVoice(saved) {
   const st = saved && saved.v2 ? saved : (dna ? { enabled: true, guide: dna.guide, examples: dna.examples } : saved);
   if (!st || st.enabled === false || !st.guide) return "";
   const ex = (st.examples || []).slice(0, 3).map((x, i) => `(${i + 1}) ${String(x).slice(0, 900)}`).join("\n");
-  return `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 3500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
+  // (and what was learned from the trainer's own grades and feedback: js/ft-dna-learn.js, settings:feedback-style.learned)
+  const L = saved && saved.learned, lt = L && ((L.voice || []).length || (L.scoring || []).length) ? `\n\nLEARNED FROM THE TRAINER'S OWN ENTRIES (follow these too):${(L.voice || []).length ? `\nVoice:\n- ${L.voice.join("\n- ")}` : ""}${(L.scoring || []).length ? `\nScoring (calibrate every score to these; the evidence still decides):\n- ${L.scoring.join("\n- ")}` : ""}` : "";
+  return lt + `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 3500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
 }
 /* ---------- the tracker and the Monitoring Sheet kept in Google Drive (js/ft-drive.js) ----------
    The trainee saves their Google links (drive:<id>). The Worker reads each file's export (a sheet as CSV, a doc as text),

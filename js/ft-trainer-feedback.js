@@ -265,7 +265,7 @@ ${r.ai ? `The AI's earlier evaluation: ${r.ai}` : ""}
 Write your feedback in your feedback DNA (below). Return a verdict label from your list, a score from 0 to 100, and the comment (2–4 sentences: the strengths named specifically, then "However, improvement is needed in …" naming exactly what to fix, tied to its purpose).
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 Return ONLY JSON: {"verdict":"...","score":0,"comment":"..."}`;
       const out = await callAIJson(prompt, 900, undefined, "grading");
