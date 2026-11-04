@@ -356,10 +356,12 @@ function checklistHtml(){
           <input type="checkbox" ${x.done ? "checked" : ""} ${can && !(x.auto && x.auto.done && !x.manual) ? "" : "disabled"} onchange="FTBatchSheet.tick('${e(p.id)}', ${e(JSON.stringify(x.key)).replace(/&quot;/g, "&quot;")}, this.checked)">
           <span>${ic(x.it)} ${e(x.it.t)}${x.auto && x.auto.done && !x.manual ? ` <small>✓ auto</small>` : x.manual ? ` <small>✓ trainer</small>` : x.auto && /Redo/.test(x.auto.how) ? ` <small class="bs-redo">Redo</small>` : ""}</span></label>`).join("")}</div>`; }).join("")}</div></div>`;
 }
-/* 📁 Drive links: the three links a trainee saves in 📁 My Drive links (drive:<id>, js/ft-drive.js) — the Assessment and
+/* 📁 Drive links: the six monitored links a trainee saves in 📁 My Drive links (drive:<id>, js/ft-drive.js) — the Monitoring Sheet,
+   the TAM, the Typing and Spelling Tests folders, the Assessments/Activities folder and the Daily Task Tracker (worker.js checkLinks); the Assessment and
    Activities Folder, the Daily Task Tracker and the Monitoring Sheet — each saved or not, and whether the end-of-shift check
    could open it (trackerreview:<id>: the tracker's latest day, the Monitoring Sheet's check, the folder's screenshot look). */
-const LINKS = [["folder", "📁 Assessment & Activities Folder"], ["tracker", "📋 Daily Task Tracker"], ["monitor", "📒 Monitoring Sheet"]];
+// (the six monitored links, in the course's order: js/ft-drive.js MONITORED, checked by worker.js checkLinks)
+const LINKS = [["monitor", "📒 Monitoring Sheet"], ["tam", "📘 TAM"], ["typing", "⌨️ Typing Tests"], ["spelling", "🔤 Spelling Tests"], ["folder", "📁 Assessments/Activities"], ["tracker", "📋 Daily Task Tracker"]];
 const sameLink = (a, b) => String(a || "").trim() === String(b || "").trim();
 /* each link's state: "none" (not saved), "ok" (opened at the last check, or not checked yet), "bad" (the last check of THIS
    link couldn't open it), "relinked" (the last check failed, but on a link the trainee has replaced since: it is checked
@@ -373,45 +375,51 @@ function linkState(p){
   const chk = {tracker: lastDay ? {err: trRule ? trRule.detail : "", url: lastDay.url, at: lastDay.checkedAt} : null,
     monitor: rv.monitor ? {err: rv.monitor.error || "", url: rv.monitor.url, at: rv.monitor.checkedAt} : null,
     folder: rv.shots ? {err: rv.shots.error ? "the folder can't be opened by the system: share it as the course asks" : "", url: rv.shots.url, at: rv.shots.checkedAt} : null};
+  // (the six-link check, trackerreview:<id>.links: ✓ locked for the link it opened; checked again once the link changes)
+  const lk = rv.links || {};
+  Object.keys(lk).forEach(k => { const x = lk[k]; if(x) chk[k] = {err: x.ok ? "" : (x.err || "the system can't open it"), url: x.url, at: x.checkedAt, ok: !!x.ok}; });
   const out = {};
   LINKS.forEach(([k, label]) => {
     const link = dv[k], c = chk[k], o = ov[k];
     if(!link){ out[k] = {st: "none", label}; return; }
     if(o && o.ok && sameLink(o.url, link)){ out[k] = {st: "trainer", label, link, o, c}; return; }
-    if(!c || !c.err){ out[k] = {st: "ok", label, link, c}; return; }
+    // (not checked yet, or checked on another link: ⏳ Pending verification)
+    if(!c || (c.url && !sameLink(c.url, link))){ out[k] = {st: "pending", label, link, c}; return; }
+    if(!c.err){ out[k] = {st: "ok", label, link, c}; return; }
     const ofThis = c.url ? sameLink(c.url, link) : !(t(dv.updatedAt) && t(c.at) && t(dv.updatedAt) > t(c.at));
     out[k] = {st: ofThis ? "bad" : "relinked", label, link, c};
   });
-  const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
+  const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt, rv.linksAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
   return {L: out, dv, checked};
 }
 function linkCell(x){
   if(x.st === "none") return {v: "—", f: `${x.label}: not linked yet`, cls: "bs-lesson gs-lo"};
   if(x.st === "trainer") return {v: "✓ trainer", f: `${x.label}: ${x.link} · marked as opening by a trainer ${when(x.o.at)}${x.c && x.c.err ? ` (the system's check said: ${x.c.err})` : ""}`, cls: "bs-lesson gs-hi"};
-  if(x.st === "bad") return {v: "⚠ can't open", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}${meOn() ? "" : ". A trainer can open it and mark it ✓ under the table."}`, cls: "bs-lesson gs-mid"};
-  if(x.st === "relinked") return {v: "✓ new link", f: `${x.label}: ${x.link} · saved after the last check, which couldn't open the old link; it is checked again at the end of the shift`, cls: "bs-lesson gs-hi"};
-  return {v: "✓", f: `${x.label}: ${x.link}`, cls: "bs-lesson gs-hi"};
+  if(x.st === "bad") return {v: "❌ Inaccessible", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}${meOn() ? "" : ". A trainer can open it and mark it ✓ under the table."}`, cls: "bs-lesson gs-mid"};
+  if(x.st === "pending") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: not checked yet on this link (it is checked when saved, at the end of the shift and on 🔁 Check now)`, cls: "bs-lesson gs-mid"};
+  if(x.st === "relinked") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: saved after the last check, which couldn't open the old link; it is checked again at the end of the shift`, cls: "bs-lesson gs-hi"};
+  return {v: "✓ opening", f: `${x.label}: ${x.link} · ✓ Mark as opening: the system opened it${x.c && x.c.at ? " " + when(x.c.at) : ""}, locked for this link`, cls: "bs-lesson gs-hi"};
 }
 function linksTable(){
   const ppl = people();
-  return {id: "drive", title: "📁 Drive links", note: `The three Google Drive links ${meOn() ? "you save" : "each trainee saves"} in 📁 My Drive links, and whether the system could open them at the last check (the end of every shift). ✓ linked · ✓ trainer: a trainer opened it and marked it · ⚠ linked but the system can't open it · — not linked yet.`,
+  return {id: "drive", title: "📁 Drive links", note: `The six monitored Google Drive links ${meOn() ? "you save" : "each trainee saves"} in 📁 My Drive links, and whether the system could open them at the last check (the end of every shift). ✓ opening: the system opened it, locked for that link · ⏳ Pending: a link not verified yet · ✓ trainer: a trainer opened it and marked it · ❌ Inaccessible: linked, but the system can't open it · — not linked yet.`,
     head: ["Trainee", "Linked"].concat(LINKS.map(x => x[1]), ["Last checked"]),
     rows: ppl.map(p => {
       const {L, dv, checked} = linkState(p), n = LINKS.filter(([k]) => dv[k]).length;
-      return [{v: p.name, f: p.name, cls: "gs-name"}, {v: `${n} / 3`, f: `${n} of the 3 links saved${dv.linkedBy === "trainer" ? " (set by the trainer)" : ""}`, cls: "gs-num gs-bold " + (n === 3 ? "gs-hi" : n ? "gs-mid" : "gs-lo")}]
+      return [{v: p.name, f: p.name, cls: "gs-name"}, {v: `${n} / ${LINKS.length}`, f: `${n} of the ${LINKS.length} links saved${dv.linkedBy === "trainer" ? " (set by the trainer)" : ""}`, cls: "gs-num gs-bold " + (n === LINKS.length ? "gs-hi" : n ? "gs-mid" : "gs-lo")}]
         .concat(LINKS.map(([k]) => linkCell(L[k])),
           [{v: checked ? when(checked) : "Not yet", f: checked ? `Last checked ${checked.toLocaleString()} (${ago(checked)})` : "Not checked yet: the check runs at the end of every shift", cls: checked ? "" : "gs-lo"}]);
     })};
 }
-/* 🔧 under the table (a trainer's): one trainee's three links — open each, ✓ mark it as opening (the manual override, when
+/* 🔧 under the table (a trainer's): one trainee's six links — open each, ✓ mark it as opening (the manual override, when
    the trainer can open it but the system's check can't), ↩ undo, and 🔁 Check now (the same check the end of the shift runs) */
 function linksFixHtml(){
   const ppl = people(); if(!ppl.length || !B.data || !adminOn() || meOn()) return "";
   const bad = ppl.filter(p => { const L = linkState(p).L; return LINKS.some(([k]) => L[k].st === "bad"); });
   const id = B.lk && ppl.some(p => p.id === B.lk) ? B.lk : (bad[0] || ppl[0]).id, p = ppl.find(x => x.id === id), {L} = linkState(p);
-  const mark = {none: "—", ok: "✓", trainer: "✓ trainer", bad: "⚠ can't open", relinked: "✓ new link"};
+  const mark = {none: "—", ok: "✓ Mark as opening", trainer: "✓ trainer", bad: "❌ Inaccessible", relinked: "⏳ Pending verification", pending: "⏳ Pending verification"};
   return `<div class="bs-ck bs-lk"><label class="bs-ck-who">🔧 Links for <select onchange="FTBatchSheet.lkWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}${bad.includes(x) ? " ⚠" : ""}</option>`).join("")}</select></label>
-    <p class="bs-note">The system can only open a link it's been given access to. Open it: if it opens for you and it's the right file, <b>✓ Mark as opening</b> (it stays marked for that link; a new link is checked again). <b>🔁 Check now</b> runs the end-of-shift check on all three.</p>
+    <p class="bs-note">The system can only open a link it's been given access to. Open it: if it opens for you and it's the right file, <b>✓ Mark as opening</b> (it stays marked for that link; a new link is checked again). <b>🔁 Check now</b> runs the end-of-shift check on all six.</p>
     <div class="bs-lk-rows">${LINKS.map(([k]) => { const x = L[k];
       return `<div class="bs-lk-row"><span class="bs-lk-n">${e(x.label)}</span><b class="${x.st === "bad" ? "gs-mid" : x.st === "none" ? "gs-lo" : "gs-hi"}">${mark[x.st]}</b>
         ${x.link ? `<a class="btn btn-ghost btn-sm" href="${e(x.link)}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}
@@ -548,7 +556,7 @@ window.FTBatchSheet = {
     if(!adminOn() || B.lkBusy) return;
     B.lkBusy = true; B.lk = id; render();
     let bad = 0;
-    for(const [u, body] of [["/api/drive/check", {id}], ["/api/drive/shots", {ids: [id]}]]){
+    for(const [u, body] of [["/api/drive/links", {id}], ["/api/drive/check", {id}], ["/api/drive/shots", {ids: [id]}]]){
       try{ const r = await authFetch(u, body); if(!r.ok && r.status !== 400) bad++; }catch(err){ bad++; }
     }
     B.lkBusy = false;

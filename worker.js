@@ -995,6 +995,61 @@ async function checkDrive(env, id, D, o = {}) {
   return out;
 }
 
+/* 🔗 The six monitored links a trainee saves in 📁 My Drive links (drive:<id>, js/ft-drive.js LINKS): can the system open each,
+   and is it the file or folder it should be (its name, through the service account)? Into trackerreview:<id>.links[k] =
+   {url, ok, err, name, checkedAt}. A link found opening is locked as ✓ for that very URL (never checked again); a new link
+   is checked again (until then it reads ⏳ Pending verification). Runs at the end of every shift, on 🔁 Check now, and when a
+   trainee saves their links (/api/drive/links). */
+const LINK_TARGETS = {
+  monitor: { label: "LSH VA Training Monitoring Sheet", re: /monitoring/i },
+  tam: { label: "LSH Task Assessment Manual (TAM)", re: /task assessment manual|\btam\b/i },
+  typing: { label: "Typing Tests folder", re: /typing/i },
+  spelling: { label: "Spelling Tests folder", re: /spelling/i },
+  folder: { label: "Assessments/Activities folder", re: /assessment|activit/i },
+  tracker: { label: "LSH Daily Task Tracker", re: /task tracker/i } };
+const driveFileId = u => (String(u || "").match(/\/(?:file|document|spreadsheets|presentation|forms)\/d\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+async function openLink(env, url) {
+  if (!/^https:\/\/(drive|docs)\.google\.com\//.test(String(url || ""))) return { ok: false, err: "not a Google Drive link" };
+  const fid = driveFileId(url);
+  if (!fid) return { ok: false, err: "not a file's or folder's own link: open it and copy its address" };
+  if (driveSA(env)) {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=name,mimeType,trashed&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + await driveToken(env) } });
+    if (!res.ok) return { ok: false, err: `the system can't open it: share it with ${env.GDRIVE_SA_EMAIL} (Viewer or Editor)` };
+    const j = await res.json().catch(() => ({}));
+    if (j.trashed) return { ok: false, err: "it is in the Drive trash", name: j.name || "" };
+    return { ok: true, name: String(j.name || "") };
+  }
+  // (no service account: the link as anyone with it opens it; Google's sign-in page means it isn't shared)
+  const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
+  const text = res.ok ? await res.text() : "";
+  if (!res.ok || /accounts\.google\.com|ServiceLogin|>Sign in</i.test((res.url || "") + text.slice(0, 4000))) return { ok: false, err: "the system can't open it: share it as the course asks" };
+  const title = (text.match(/<title>([^<]*)<\/title>/i) || [])[1] || "";
+  return { ok: true, name: title.replace(/\s*-\s*Google (Drive|Docs|Sheets)\s*$/i, "").trim() };
+}
+async function checkLinks(env, id, o = {}) {
+  const kv = kvOf(env);
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+  if (!drive) return null;
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  const links = cur.links && typeof cur.links === "object" ? cur.links : {}, at = new Date().toISOString(), out = { id, links: {} };
+  for (const [k, T] of Object.entries(LINK_TARGETS)) {
+    const url = String(drive[k] || "").trim().slice(0, 500);
+    if (!url) { delete links[k]; continue; }
+    const prev = links[k];
+    if (prev && prev.ok && prev.url === url) { out.links[k] = "locked"; continue; }   // (✓ locked for that URL)
+    if (o.onlyNew && prev && prev.url === url) { out.links[k] = "same"; continue; }
+    let r;
+    try { r = await openLink(env, url); } catch (e) { r = { ok: false, err: "the check couldn't reach Google Drive: it runs again at the end of the shift" }; }
+    // (it opens: is it the right one? its name says so)
+    if (r.ok && r.name && !T.re.test(r.name)) r = { ok: false, err: `it opens, but it isn't the ${T.label} (its name is "${r.name}")`, name: r.name };
+    links[k] = { url, ok: !!r.ok, err: r.ok ? "" : r.err, name: r.name || "", checkedAt: at };
+    out.links[k] = r.ok ? "ok" : "bad";
+  }
+  cur.links = links; cur.linksAt = at;
+  await kv.put(rk, JSON.stringify(cur));
+  return out;
+}
+
 /* 🧪 The daily Typing and Spelling Test screenshots the trainee saves in their Drive folder (drive:<id>.folder, and the
    folders in it): each file named for a test (TR.parseTestShot: "Typing Test [date][AM/PM]") is one test taken, for the
    day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
@@ -1053,6 +1108,7 @@ async function runTrackerChecks(env, opts) {
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
     try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
+    try { const r = await checkLinks(env, id); if (r) done.push(Object.assign({ links: true }, r)); } catch (e) { /* the next trainee */ }
   }
   // ✅ then each approved trainee's day, in one record: what they were to do and what was found (dailyCompliance)
   const people = o.id ? [`trainee:${o.id}`] : await listAll(env, "trainee:");
@@ -1544,6 +1600,17 @@ export default {
         try { await dailyCompliance(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate()); } catch (e) { /* the checks above still stand */ }
         if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
+      }
+
+      /* ---------- 🔗 the six monitored links: check now (the trainee's own, on saving them: only the links not checked yet;
+         an admin's for anyone, 🔁 Check now: every link not already ✓ for its URL) ---------- */
+      if (path === "/api/drive/links") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const r = await checkLinks(env, id, { onlyNew: tok.role !== "a" });
+        if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
+        return json({ ok: true, result: r, links: (JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).links || {} });
       }
 
       /* ---------- 📒 Submit a Monitoring Sheet update: some numbered items of the trainee's linked Monitoring Sheet (Day 2's
