@@ -91,7 +91,7 @@ function save(){
   paintSaved();
 }
 function paintSaved(){ const el = document.getElementById("rkSaved"); if(el) el.textContent = R.saved ? "✓ Saved" : "Saving…"; }
-const rerender = () => { if(state.view === "admin" && state.adminTab === "ranking") render(); };
+const rerender = () => { if(state.view === "admin" && (state.adminTab === "ranking" || state.adminTab === "batchsheet")) render(); };
 
 /* ---------- ⤓ fill the empty cells from what the platform already graded ---------- */
 // the Scorecard's sources (js/ft-program.js) give every trainee's graded items; a column's src picks one:
@@ -523,6 +523,8 @@ const autoBanner = () => {
 };
 const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.week - 1)); return v && Array.isArray(v.cols) ? v.cols : null; }catch(err){ return null; } };
 window.FTRanking = {
+  // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
+  embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },
   batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); render(); },
   approve(){ if(!R.data || !R.data.auto) return; R.data.auto.approved = true; R.data.auto.approvedAt = new Date().toISOString(); save(); toast("✓ Approved: you can 📤 share it with the trainees now."); render(); },
   // opened on a batch's week from elsewhere (📈 Overall Performance, the trainer's dashboard card)
