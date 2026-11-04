@@ -30,8 +30,8 @@ const BASE = () => [
   {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes", src: "skills"},
   COL("Monitoring Sheet", "", 5, "drive:Monitoring Sheet"), COL("Tracker", "", 5, "drive:Tracker")];
 const TEMPLATES = {
-  week1: {label: "📋 Week 1 columns", cols: () => BASE().concat([COL("PI Reading Task", "", 40), COL("Ass: Common Terms", "", 27),
-    COL("Ass: Auto Liability Insurance", "", 45), COL("RC: Data Extraction", "", 125), COL("Reception Mock Calls", "", 5, "trainer:Reception Mock Call")])},
+  week1: {label: "📋 Week 1 columns", cols: () => BASE().concat([COL("PI Reading Task", "", 40, "kc:Reading Task"), COL("Ass: Common Terms", "", 27, "drive:Common Terms"),
+    COL("Ass: Auto Liability Insurance", "", 45, "drive:Auto Liability"), COL("RC: Data Extraction", "", 125), COL("Reception Mock Calls", "", 5, "trainer:Reception Mock Call")])},
   blank: {label: "Only the trackers", cols: BASE}
 };
 // the facilitator's usual notes under a score (her feedback DNA's compliance wording)
@@ -82,8 +82,18 @@ async function loadWeek(){
   let v = null; try{ v = await sharedGet(key); }catch(err){}
   if(R.key !== key) return;
   R.data = v && Array.isArray(v.cols) ? Object.assign({rows: {}}, v) : null;
+  let named = 0;
+  if(R.data) R.data.cols.forEach(c => { if(c.src) return; const k = Object.keys(KNOWN_SRC).find(x => String(c.label || "").toLowerCase().includes(x)); if(k && (KNOWN_SRC[k] === "skills") === (c.type === "notes")){ c.src = KNOWN_SRC[k]; named++; } });
+  if(named && !(R.data.auto && R.data.auto.approved)) save();
   R.dataLoading = false; rerender();
+  // 🔄 the report follows the trainees' progress: each time it is opened (until it is approved), its empty cells fill from
+  // the platform, never over what a trainer typed
+  if(R.data && !(R.data.auto && R.data.auto.approved)) setTimeout(() => { if(R.key === key) fillFromPortal(true); }, 0);
 }
+// a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
+const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
+  "monitoring sheet": "drive:Monitoring Sheet", "tracker": "drive:Tracker", "reception mock call": "trainer:Reception Mock Call",
+  "spelling & typing": "skills", "daily compliance": "compliance"};
 function save(){
   if(!R.data) return; R.saved = false; R.data.updatedAt = new Date().toISOString();
   clearTimeout(R.saveT); const key = R.key, data = R.data;
@@ -135,11 +145,11 @@ function srcOptions(){
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
      ["trainer:MedLOR", "🧑‍🏫 MedLOR Demo scorecard"], ["trainer:LV (Lien", "🧑‍🏫 LV Demo scorecard"], ["trainer:Settlement", "🧑‍🏫 Reduction / Closing & Settlement Demo scorecard"]]);
 }
-async function fillFromPortal(){
+async function fillFromPortal(quiet){
   if(!R.data || R.fill) return;
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
   const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance");
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance"); if(!cols.length && !notesCols.length && !compCols.length){ toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance"); if(!cols.length && !notesCols.length && !compCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   try{
@@ -149,7 +159,7 @@ async function fillFromPortal(){
     shared.forEach((k, i) => { sh[k] = vals[want.length + i] || null; });
     // (a column set to "This week only": the grades dated in the week, weekRange; the daily tracker counts that week's days)
     const range = cols.some(c => c.period === "week") ? weekRange() : null;
-    if(cols.some(c => c.period === "week") && !range) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
+    if(cols.some(c => c.period === "week") && !range && !quiet) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
     const inWeek = x => !!(range && x.at && String(x.at).slice(0, 10) >= range[0] && String(x.at).slice(0, 10) <= range[1]);
     let n = 0, undated = 0;
     ppl.forEach((p, i) => {
@@ -195,8 +205,8 @@ async function fillFromPortal(){
     if(notesCols.length && window.FTSkills){
       const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id)), rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
       notesCols.forEach(c => {
-        const range = parseRange(c.sub) || (R.data.auto ? weekRange() : null);
-        if(!range){ toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
+        const range = parseRange(c.sub) || weekRange();
+        if(!range){ if(!quiet) toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
         ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
           if(cur && String(cur.note || "").trim()) return;                                  // never over what the trainer typed
           const rec = FTSkills.withShots(recs[i], (rvs[i] || {}).shots);   // 📷 the screenshots in Drive count too
@@ -204,9 +214,9 @@ async function fillFromPortal(){
       });
     }
     if(n) save();
-    toast((n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform${range ? ` (this week: ${range[0]} to ${range[1]})` : ""}. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.")
+    if(quiet){ if(n) toast(`🔄 ${n} score${n === 1 ? "" : "s"} filled in from the trainees’ progress.`); } else toast((n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform${range ? ` (this week: ${range[0]} to ${range[1]})` : ""}. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.")
       + (undated ? " Some weekly columns’ sources keep no dates (Knowledge Checks, graded calls, games), so only their dated grades were counted." : ""));
-  }catch(err){ toast("Couldn’t read the trainees’ grades. Try again."); }
+  }catch(err){ if(!quiet) toast("Couldn’t read the trainees’ grades. Try again."); }
   R.fill = false; rerender();
 }
 

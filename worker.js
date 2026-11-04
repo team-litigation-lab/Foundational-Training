@@ -1210,8 +1210,33 @@ async function runTrackerChecks(env, opts) {
     const rec = JSON.parse((await kv.get(k)) || "null");
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
     try { const r = await dailyCompliance(env, id, D); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
+    if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
   return { date: D, checked: done.length, results: done };
+}
+/* 🔄 Every past training day, worked out afterwards: a weekday from the batch's start (its Batch ID, B + MMDDYY; else the day
+   the trainee registered) to yesterday that has no compliance record yet gets one from what the platform already keeps (the
+   tests taken, the outputs and EOD, what was submitted, the tracker's check where it ran), marked backfilled. So the
+   scorecards (📤 Daily outputs, 📊 Weekly Ranking's Daily Compliance, 🏅 Scores) count the whole training, not only the days
+   since the check began. At most o.max days a call; returns how many. */
+async function backfillCompliance(env, id, o = {}) {
+  const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+  if (!rec) return 0;
+  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
+  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  if (!start) return 0;
+  const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
+  const want = [];
+  for (let t = Date.parse(start + "T12:00:00Z"); want.length < (o.max || 10); t += 864e5) {
+    const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break;
+    if (TR.isWeekday(d) && !have[d]) want.push(d);
+  }
+  if (!want.length) return 0;
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+  let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
+  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, files: files || undefined });
+  return want.length;
 }
 
 /* ✅ A trainee's daily compliance: at the end of every shift (the cron, runTrackerChecks, and an admin's ✅ Check now), what the
@@ -1224,7 +1249,7 @@ async function runTrackerChecks(env, opts) {
      • eod      — the day's EOD email, pasted on 📋 Task Tracker (drive:<id>.days[<date>].eod).
    pct is the average of the parts that have one; submissions counts what the trainee submitted on the platform that day (answer
    sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
-async function dailyCompliance(env, id, D) {
+async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
   const get = async (k) => JSON.parse((await kv.get(k)) || "null");
   const [drive, skills, proc, tr] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`)]);
@@ -1239,7 +1264,8 @@ async function dailyCompliance(env, id, D) {
   // the day's outputs: links submitted, or files saved in the folder that day
   const day = ((drive || {}).days || {})[D] || {};
   let saved = 0, folderError = "";
-  if (drive && drive.folder) { const res = await folderFiles(env, drive.folder); if (res.error) folderError = res.error; else saved = (res.files || []).filter((f) => onD(f.modified || f.created)).length; }
+  // (a backfill reads the folder once for all the days it works out: o.files)
+  if (drive && drive.folder) { const res = o.files || await folderFiles(env, drive.folder); if (res.error) folderError = res.error; else saved = (res.files || []).filter((f) => onD(f.modified || f.created)).length; }
   const links = (day.links || []).length;
   // what they submitted on the platform that day
   const subs = [];
@@ -1248,7 +1274,8 @@ async function dailyCompliance(env, id, D) {
   Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
   const tk = (cur.days || {})[D];
   const parts = {
-    tracker: tk && typeof tk.pct === "number" ? tk.pct : (drive && drive.tracker ? 0 : null),
+    // (a past day worked out afterwards, o.backfill: a tracker never checked that day is "not checked", not 0)
+    tracker: tk && typeof tk.pct === "number" ? tk.pct : (drive && drive.tracker && !o.backfill ? 0 : null),
     monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" ? cur.monitor.pct : (drive && drive.monitor ? 0 : null),
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved ? 100 : 0,
@@ -1257,7 +1284,7 @@ async function dailyCompliance(env, id, D) {
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
-  cur.compliance[D] = { pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), checkedAt: new Date().toISOString() };
+  cur.compliance[D] = Object.assign({ pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
   await kv.put(rk, JSON.stringify(cur));
@@ -1677,6 +1704,16 @@ export default {
       }
 
       /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
+      /* ---------- 🔄 a batch's past training days, worked out now (a trainer opening its 📋 Batch Sheet): backfillCompliance ---------- */
+      if (path === "/api/compliance/backfill") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const ids = (Array.isArray(b.ids) ? b.ids : []).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 60);
+        const out = {};
+        for (const id of ids) { try { out[id] = await backfillCompliance(env, id, { max: 30 }); } catch (e) { out[id] = 0; } }
+        return json({ ok: true, filled: out });
+      }
+
       if (path === "/api/drive/verify") {
         const b = await request.json().catch(() => ({}));
         const id = tok.role === "a" ? String(b.id || "") : tok.id;

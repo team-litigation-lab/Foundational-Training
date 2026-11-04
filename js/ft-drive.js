@@ -169,12 +169,8 @@ function closeLinkModal(){ const o = document.getElementById("fdrLinkModal"); if
 function linkModalKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); closeLinkModal(); } }
 function paintLinkModal(){
   const o = document.getElementById("fdrLinkModal"); if(!o) return;
-  const x = D.drive || {}, ok = k => x[k] ? "✓" : "—";
-  // the window: the links form, then one box that says how the monitoring works and what is linked so far
-  o.querySelector(".fdr-modal-body").innerHTML = linksCard(false) + `<div class="card fdr-card fdr-modal-status">
-      <div class="fdr-auto">🤖 Each link is verified when you save it and again at the end of every shift: ✓ Mark as opening once the system opens it and it is the right file or folder (it stays ✓ for that link). Share each one with the program’s account as the course asks. Your tracker and Monitoring Sheet are also checked for their entries.
-        <p class="fdr-linked"><b>Linked:</b> ${MKEYS.filter(k => x[k]).length} of 6</p></div>
-      <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
+  // (the links form only: no status box under it; each link shows its own ✓ / ⏳ / ❌)
+  o.querySelector(".fdr-modal-body").innerHTML = linksCard(false);
 }
 
 // 📁 on the trainee's 📚 Dashboard until their six links are saved and open for the system: what's missing, and the way in

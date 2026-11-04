@@ -103,6 +103,11 @@ async function loadData(){
     if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
       try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
     B.data = {rec, sources: S, reps, at: new Date()};
+    // 🔄 the batch's past training days not worked out yet (worker.js backfillCompliance), once a session: the sheet is read
+    // again when any were, so 📤 Daily outputs and the scores count the whole training
+    if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
+      authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
+        if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.data = null; B.dataKey = ""; rerender(); } }).catch(() => {}); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
   B.dataLoading = false; rerender();
 }

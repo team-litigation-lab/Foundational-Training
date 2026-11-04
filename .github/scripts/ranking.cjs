@@ -211,6 +211,20 @@ const failures = []; const fail = m => failures.push(m);
   await put(`ranking:${PAST}:w1`, null); await put('trackerreview:' + una, null); await put('rankshare:' + una, null);
   { const r = await get('trainee:' + una); if (r) { r.archived = true; await put('trainee:' + una, r); } }
 
+  // 🔄 a report started before its columns had sources ("Ass: Common Terms", no source) follows the trainees' progress:
+  // opening it gives the column its source and fills its empty cells from the graded assessment (never over a typed one)
+  const ct = 'c-ct', pi = 'c-pi';
+  await put(`ranking:${BATCH}:w2`, { batch: BATCH, week: 2, cols: [{ id: ct, label: 'Ass: Common Terms', sub: '', max: 27, type: 'score', src: '' }, { id: pi, label: 'PI Reading Task', sub: '', max: 40, type: 'score', src: '' }],
+    rows: { [ids.Sam]: { cells: { [ct]: { raw: '20' } } } }, createdAt: new Date().toISOString() });
+  for (const [f, pct] of [['Rhea', 80], ['Sam', 50]]) { const rv = (await get('trackerreview:' + ids[f])) || { days: {} };
+    rv.assess = Object.assign({}, rv.assess, { '14sz5f3HTQKmryc7Upvlc6qua008rPnmw': { title: 'Common Terms Used – Assessment', score: pct * 27 / 100, max: 27, pct, at: new Date().toISOString(), items: {} } });
+    await put('trackerreview:' + ids[f], rv); }
+  await page.evaluate(b => FTRanking.open(b, 2), BATCH); await page.waitForTimeout(4000);
+  const w2 = await get(`ranking:${BATCH}:w2`), cRhea = (((w2 || {}).rows || {})[ids.Rhea] || { cells: {} }).cells[ct], cSam = (((w2 || {}).rows || {})[ids.Sam] || { cells: {} }).cells[ct];
+  if (!w2 || (w2.cols.find(c => c.id === ct) || {}).src !== 'drive:Common Terms') fail(`the Common Terms column didn't get its source: ${JSON.stringify(w2 && w2.cols)}`);
+  if (!cRhea || Number(cRhea.raw) !== 21.6) fail(`opening the report didn't fill Rhea's Common Terms from her graded assessment (80% of 27 = 21.6): ${JSON.stringify(cRhea)}`);
+  if (!cSam || cSam.raw !== '20') fail(`the fill wrote over a score the trainer typed: ${JSON.stringify(cSam)}`);
+
   for (const w of [1, 2]) await put(`ranking:${BATCH}:w${w}`, null);
   for (const id of Object.values(ids)) await put('rankshare:' + id, null);
   for (const id of Object.values(ids)) { const r = await get('trainee:' + id); if (r) { r.archived = true; await put('trainee:' + id, r); } }

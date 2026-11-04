@@ -208,6 +208,21 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!sheetRule || sheetRule.id !== 'sheet' || !/can't open this file.*file's own link/.test(sheetRule.detail)) fail(`an unreadable sheet should say to check its link: ${JSON.stringify(sheetRule)}`);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
+    // 🔄 the past training days: from when she registered to yesterday, each weekday without a compliance record gets one
+    // (backfillCompliance, /api/compliance/backfill, and the end of every shift), marked backfilled; a tracker not checked
+    // that day is "not checked", not 0
+    { const back = new Date(Date.now() - 9 * 864e5), wk = []; for (let t = back.getTime(); t < Date.now() - 864e5; t += 864e5) { const d = TR.ptDate(new Date(t)); if (TR.isWeekday(d)) wk.push(d); }
+      const tr0 = JSON.parse(store.get('ft:trainee:' + id)); tr0.registeredAt = back.toISOString(); store.set('ft:trainee:' + id, JSON.stringify(tr0));
+      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = {}; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      store.set('ft:skills:' + id, JSON.stringify({ typing: [{ id: 'bt', at: new Date(wk[0] + 'T15:00:00Z').toISOString(), date: wk[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }));
+      const bf = await call('/api/compliance/backfill', { ids: [id] }, admin);
+      if (!bf.body || !bf.body.ok || bf.body.filled[id] !== wk.length) fail(`the backfill didn't work out the ${wk.length} past weekdays: ${JSON.stringify(bf.body)}`);
+      const c = JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {}, c0 = c[wk[0]] || {};
+      if (!c0.backfilled || !c0.tests || !c0.tests.AM || c0.parts.tracker !== null) fail(`a backfilled day isn't marked, misses its test, or counts an unchecked tracker as 0: ${JSON.stringify(c0)}`);
+      if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
+      const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
+      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }
+
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });
