@@ -404,6 +404,120 @@ function rankingHtml(){
   if(meOn() || !window.FTRanking || !FTRanking.embed) return "";
   return `<section class="bs-sec bs-rank" id="bs-ranking">${FTRanking.embed(B.batch)}</section>`;
 }
+/* ============================================================
+   🏅 THE SIMPLIFIED SCORECARD: what the Batch Sheet opens on (the facilitator's own sheet)
+     • 🏅 Score Card: a group of columns per lesson — ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, the Average of
+       the three, and the Remarks / Trainer Feedback — a row per trainee.
+         ✍️ Knowledge Checks  the lesson's answer sheets (its Knowledge Check, Day 1's Reading Task too), as ✍️ Process Questions
+                              counts them: the trainer's final score, else the graded best;
+         🛠 Practice           the scored practice of the lesson's days: Practice Sessions, the tools' grades, and the mock
+                              calls and demos the trainer scored;
+         Classroom & outputs  the end-of-shift check of the lesson's training days (📤 Daily outputs: the tracker, the
+                              Monitoring Sheet, the tests, the outputs, the EOD), each day its date from the Batch ID;
+         Remarks              the trainer's day-by-day feedback on the lesson, as sent (its rating; the summary on a click).
+     • Compliance and Platform Utilization Monitoring: the six monitored Drive links (a dropdown: pick one, and Correct /
+       Wrong says whether the system opened it and it is the right file), how many are correct, and the trainee's progress
+       on the platform (lesson decks finished, Knowledge Checks passed, last on the platform).
+   ✍️ Process Questions, 📤 Daily outputs and 📊 Weekly Ranking follow; every other table is under ▸ More detail.
+   ============================================================ */
+// a lesson's training days (FTDays: a day with no lesson of its own is its lesson's, the one before)
+function lessonDays(){
+  if(B.ld) return B.ld; const m = {}; let last = null;
+  dayList().forEach(d => { const ls = (d.lessons || []).length ? d.lessons : last ? [last] : []; if(ls.length) last = ls[ls.length - 1]; ls.forEach(l => (m[l] = m[l] || []).push(d)); });
+  return (B.ld = m);
+}
+// training day n's date: the nth weekday from the batch's first day (its Batch ID, B + MMDDYY)
+function dayDate(n){
+  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(B.batch || "").trim()); if(!m) return null;
+  let t = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T12:00:00Z`), k = 0;
+  while(true){ const wd = new Date(t).getUTCDay(); if(wd >= 1 && wd <= 5){ k++; if(k >= n) return new Date(t).toISOString().slice(0, 10); } t += 864e5; if(k > 40) return null; }
+}
+function lessonScore(p, l){
+  const R = B.data.rec[p.id] || {}, days = lessonDays()[l] || [];
+  // ✍️ the lesson's answer sheets
+  const kcs = kcSheets().filter(k => Number(k.l) === Number(l)).map(k => ({k, g: sheetGrade(p, k)})).filter(x => x.g.pct != null);
+  const kc = avgOf(kcs.map(x => x.g.pct));
+  // 🛠 the scored practice, mock calls and demos of its days (a deliverable on several days counted once)
+  const seen = new Set(), prs = [];
+  days.forEach(d => dayStatus(p, d).forEach(x => { const k = kindOf(x.it); if((k === "practice" || k === "mock") && x.score && !seen.has(x.it.at + "|" + x.it.id)){ seen.add(x.it.at + "|" + x.it.id); prs.push({t: x.it.t, pct: x.score.pct}); } }));
+  const pr = avgOf(prs.map(x => x.pct));
+  // 📤 the end-of-shift check of its days
+  const comp = ((R.src || {})["trackerreview:"] || {}).compliance || {};
+  const cds = days.map(d => ({n: d.day, date: dayDate(d.day)})).filter(x => x.date && comp[x.date] && typeof comp[x.date].pct === "number").map(x => ({n: x.n, date: x.date, pct: comp[x.date].pct}));
+  const cl = avgOf(cds.map(x => x.pct));
+  const avg = avgOf([kc, pr, cl]);
+  const fb = ((((R.feedback || {}).days) || {})[l]) || null, sent = fb && fb.status === "sent" ? fb : null;
+  return {kc, kcs, pr, prs, cl, cds, avg, fb: sent};
+}
+function scoreCardTable(){
+  const ppl = people(), L = lessons().filter(d => (lessonDays()[d.id] || []).length || kcSheets().some(k => Number(k.l) === Number(d.id)));
+  const P = ["✍️ Knowledge Checks", "🛠 Practice", "Classroom & outputs", "Average", "Remarks / Trainer Feedback"];
+  const T = {id: "scorecard", title: "🏅 Score Card", note: `${meOn() ? "Your" : "Each trainee's"} scores, lesson by lesson: ✍️ the lesson's Knowledge Checks, 🛠 the practice, mock calls and demos scored in its days, Classroom & outputs (the end-of-shift check of its days), their Average, and the trainer's feedback. Click a cell for how it was worked out. Blank: nothing scored yet.`,
+    groups: [{label: "", span: 2}].concat(L.map(d => ({label: `${d.id}. ${lessonName(d.id)}`, span: P.length}))),
+    head: ["Trainee", "Overall"].concat(...L.map(() => P)),
+    rows: ppl.map(p => { const S = L.map(d => lessonScore(p, d.id)), all = avgOf(S.map(x => x.avg));
+      return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(all), f: all == null ? "Nothing scored yet" : `Overall = the average of the lessons' averages (${S.map((x, i) => x.avg == null ? null : `${L[i].id}: ${Math.round(x.avg)}%`).filter(Boolean).join(", ")}) = ${Math.round(all)}%`, cls: "gs-num gs-calc gs-bold " + tone(all)}]
+        .concat(...S.map((x, i) => { const nm = `${L[i].id}. ${lessonName(L[i].id)}`;
+          return [
+            {v: pct(x.kc), f: x.kc == null ? `${nm} · Knowledge Checks: not graded yet` : `${nm} · Knowledge Checks: ${x.kcs.map(y => `${y.k.title} ${y.g.pct}% (${y.g.how})`).join("; ")}`, cls: "gs-num " + tone(x.kc)},
+            {v: pct(x.pr), f: x.pr == null ? `${nm} · Practice: nothing scored yet` : `${nm} · Practice: ${x.prs.map(y => `${y.t.replace(/\s*\(.*$/, "")} ${y.pct}%`).join("; ")}`, cls: "gs-num " + tone(x.pr)},
+            {v: pct(x.cl), f: x.cl == null ? `${nm} · Classroom & outputs: no checked day yet` : `${nm} · Classroom & outputs: ${x.cds.map(y => `Day ${y.n} (${y.date}) ${y.pct}%`).join("; ")} — the end-of-shift check`, cls: "gs-num " + tone(x.cl)},
+            {v: pct(x.avg), f: x.avg == null ? `${nm}: nothing to average yet` : `${nm} · Average = the average of ${[x.kc, x.pr, x.cl].filter(v => v != null).length} (${[x.kc, x.pr, x.cl].filter(v => v != null).map(v => Math.round(v) + "%").join(" + ")}) = ${Math.round(x.avg)}%`, cls: "gs-num gs-calc gs-bold " + tone(x.avg)},
+            {v: x.fb ? (x.fb.rating || "Sent") : "", f: x.fb ? `${nm} · Trainer: ${x.fb.rating || ""}${x.fb.summary ? " — " + String(x.fb.summary).replace(/\s+/g, " ").slice(0, 400) : ""}` : `${nm}: no feedback sent yet`, cls: "gs-txt " + (x.fb ? (/Strong/i.test(x.fb.rating || "") ? "gs-hi" : /Needs/i.test(x.fb.rating || "") ? "gs-lo" : "gs-mid") : "")}]; }));
+    })};
+  return T;
+}
+// Compliance and Platform Utilization Monitoring
+const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], none: ["— Not linked", ""]};
+function complianceTable(){
+  const ppl = people();
+  return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links — pick one in the dropdown: Correct (the system opened it and it is the right file or folder) or Wrong (and why, on a click) — and progress on the platform.`,
+    groups: [{label: "", span: 1}, {label: "Drive Links", span: 3}, {label: "Progress", span: 3}],
+    head: ["Trainee", "Assessment (dropdown)", "Correct / Wrong", "Links correct", "Lesson decks", "Knowledge Checks passed", "Last on the platform"],
+    rows: ppl.map(p => { const {L} = linkState(p), k = (B.dl || {})[p.id] && L[(B.dl || {})[p.id]] ? B.dl[p.id] : (LINKS.find(([k]) => !/ok|trainer/.test(L[k].st)) || LINKS[0])[0];
+      const x = L[k], st = LSTAT[x.st] || ["—", ""], okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
+      const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
+      const decks = ls.filter(d => deckOf(p, d).finished).length, kcs = ls.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
+      return [{v: p.name, f: p.name, cls: "gs-name"},
+        {v: x.label, f: x.link || "", cls: "gs-txt bs-dl", dl: {id: p.id, k, L}},
+        {v: st[0], f: `${x.label}: ${x.link ? x.link + " · " : ""}${x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`, cls: "bs-lesson " + st[1]},
+        {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["—"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")},
+        {v: `${decks} / ${ls.length}`, f: `${decks} of the ${ls.length} lesson decks finished`, cls: "gs-num"},
+        {v: `${kcs} / ${ls.length}`, f: `${kcs} of the ${ls.length} lessons' Knowledge Checks passed`, cls: "gs-num"},
+        {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}];
+    })};
+}
+// a table with a row of grouped headings over its own (the lessons over their five columns) and, in the compliance
+// table, the Drive link's dropdown in its cell
+function groupedSheetHtml(T, ti){
+  const n = T.head.length, empty = !T.rows.length;
+  const cell = (c, ri, ci) => c.dl ? `<td class="${c.cls || ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}"><select class="bs-dl-sel" aria-label="Drive link" onchange="FTBatchSheet.dlPick('${e(c.dl.id)}', this.value)">${LINKS.map(([k, label]) => `<option value="${k}" ${k === c.dl.k ? "selected" : ""}>${e(label)}</option>`).join("")}</select></td>`
+    : `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  let col = 0;
+  return `<section class="bs-sec bs-sc" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span></h3><p class="bs-note">${e(T.note)}</p>
+    <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
+      <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
+      <tr class="gs-group"><th class="gs-rn"></th>${T.groups.map((g, gi) => { const c0 = col; col += g.span; return `<th colspan="${g.span}" class="${c0 === 0 ? "gs-frz" : ""}${gi % 2 ? " gs-g2" : ""}">${e(g.label)}</th>`; }).join("")}</tr>
+      <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${e(h)}</th>`).join("")}</tr></thead>
+      <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => cell(c, ri, ci)).join("")}</tr>`).join("")}
+      ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">No trainee in this batch yet.</td></tr>` : ""}</tbody></table></div></section>`;
+}
+// the page: the Score Card and the compliance first, then the Weekly Ranking, the Process Questions and the Daily outputs;
+// every other table under ▸ More detail; the approvals and batches at the foot
+const MAIN = ["scorecard", "compliance", "process", "outputs"];
+function sectionsHtml(T){
+  const one = (x, i) => x.id === "scorecard" || x.id === "compliance" ? groupedSheetHtml(x, i)
+    : x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>")
+    : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
+    : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
+    : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>")
+    : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `)
+    : sheetHtml(x, i);
+  const at = id => T.findIndex(x => x.id === id), main = id => one(T[at(id)], at(id));
+  const rest = T.map((x, i) => [x, i]).filter(([x]) => !MAIN.includes(x.id));
+  return main("scorecard") + main("compliance") + rankingHtml() + main("process") + main("outputs")
+    + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
+}
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
@@ -680,7 +794,7 @@ function linksTable(){
 }
 // (no 🔧 "Links for" panel under the table: the six links are checked by themselves, worker.js verifyLinks; a ✓ trainer
 // mark saved before still shows)
-const tables = () => [dayScoresTable(), traineesTable(), linksTable(), lessonsTable(), daysTable(), practiceTable(), scoresTable(), processTable(), outputsTable(), recentTable()];
+const tables = () => [scoreCardTable(), complianceTable(), processTable(), outputsTable(), dayScoresTable(), traineesTable(), linksTable(), lessonsTable(), daysTable(), practiceTable(), scoresTable(), recentTable()];
 
 /* ---------- drawing: each table a small sheet (column letters, row numbers, the names frozen) ---------- */
 function sheetHtml(T, ti){
@@ -734,7 +848,7 @@ function renderSheet(){
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button></span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum"><span><b>${ppl.length}</b> registered</span><span><b>${approved}</b> approved</span>${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
-      <span class="bs-jump">Go to: <a href="#bs-dayscores" onclick="return FTBatchSheet.go('dayscores')">📅 Day 1–16 Scores</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a> · <a href="#bs-trainees" onclick="return FTBatchSheet.go('trainees')">👥 Trainees</a> · <a href="#bs-drive" onclick="return FTBatchSheet.go('drive')">📁 Drive links</a> · <a href="#bs-lessons" onclick="return FTBatchSheet.go('lessons')">📚 Lessons</a> · <a href="#bs-days" onclick="return FTBatchSheet.go('days')">📅 Day by Day</a> · <a href="#bs-practice" onclick="return FTBatchSheet.go('practice')">🛠 Practice Lab</a> · <a href="#bs-scores" onclick="return FTBatchSheet.go('scores')">🏅 Scores</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-recent" onclick="return FTBatchSheet.go('recent')">🕒 Recent progress</a></span>
+      <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a></span>
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
@@ -742,7 +856,7 @@ function renderSheet(){
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>") : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : sectionsHtml(T)}
     ${ready ? peopleHtml() : ""}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
@@ -789,6 +903,9 @@ window.FTBatchSheet = {
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
+  // (the compliance table's Drive link picked for a trainee; ▸ More detail open or shut)
+  dlPick(id, k){ B.dl = B.dl || {}; B.dl[id] = k; render(); },
+  more(open){ B.more = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
@@ -898,11 +1015,11 @@ function renderMine(){
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
       <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
-    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-dayscores" onclick="return FTBatchSheet.go('dayscores')">📅 Day 1–16 Scores</a> · <a href="#bs-trainees" onclick="return FTBatchSheet.go('trainees')">👤 Me</a> · <a href="#bs-drive" onclick="return FTBatchSheet.go('drive')">📁 Drive links</a> · <a href="#bs-lessons" onclick="return FTBatchSheet.go('lessons')">📚 Lessons</a> · <a href="#bs-days" onclick="return FTBatchSheet.go('days')">📅 Day by Day</a> · <a href="#bs-practice" onclick="return FTBatchSheet.go('practice')">🛠 Practice Lab</a> · <a href="#bs-scores" onclick="return FTBatchSheet.go('scores')">🏅 Scores</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-recent" onclick="return FTBatchSheet.go('recent')">🕒 Recent progress</a></span>
+    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
       ${D && D.at ? `<span class="bs-at">Updated ${e(D.at.toLocaleTimeString())}</span>` : ""}</div>
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
-      : T.map((x, i) => x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>") : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>") + rankingHtml() : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>") : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>") : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `) : sheetHtml(x, i)).join("")}
+      : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
 FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };
@@ -961,6 +1078,10 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-how{font-size:13.5px;}
 .bs-lk-rows{display:flex;flex-direction:column;gap:6px;margin:8px 0;} .bs-lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font:14px Arial,sans-serif;} .bs-lk-n{min-width:240px;} .bs-lk-row b{min-width:96px;} .bs-lk-why{flex-basis:100%;color:#7A5A00;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
+.gs .gs-group th{background:#1E2340;color:#fff;font:700 13px Arial,sans-serif;text-align:left;padding:5px 10px;border-left:2px solid #fff;white-space:nowrap;} .gs .gs-group th.gs-g2{background:#33406B;}
+.bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
+.bs-more{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
+.bs-more > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary{border-bottom:1px solid #E1E3E1;}
 .bs-ds-days, .bs-oc-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
 .bs-oc-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;padding:0 10px 6px;}
 .bs-oc-day > summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:7px 0;flex-wrap:wrap;} .bs-oc-day > summary span{color:#5F6368;font-size:12.5px;}

@@ -92,10 +92,28 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
+  // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking, ✍️ Process Questions and
+  // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)
+  const top = await page.evaluate(() => [...document.querySelectorAll('.bs-card > .bs-sec, .bs-card > details.bs-more')].map(x => x.id || (x.classList.contains('bs-more') ? 'more' : '')).filter(Boolean));
+  if (JSON.stringify(top.slice(0, 6)) !== JSON.stringify(['bs-scorecard', 'bs-compliance', 'bs-ranking', 'bs-process', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
+  if (await page.evaluate(() => document.querySelector('details.bs-more').open)) fail('▸ More detail is open before the trainer opens it');
+  await page.evaluate(() => { FTBatchSheet.more(true); render(); }); await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'process', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 10) fail('the ten tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['scorecard', 'compliance', 'process', 'outputs', 'dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 12) fail('the twelve tables are not all on the one page');
+  // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
+  // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
+  const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
+  if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
+  if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
+  // Compliance and Platform Utilization: the Drive link's dropdown, Correct / Wrong for the one picked, how many are correct, the progress
+  const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Assessment (dropdown)', 'Correct / Wrong', 'Links correct', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  if (!ca || ca[1] !== '📒 Monitoring Sheet' || !/Wrong/.test(ca[2]) || ca[3] !== '4 / 6') fail(`Ada's compliance (her Monitoring Sheet wrong; 4 of 6 correct): ${ca}`);
+  await page.evaluate(id => FTBatchSheet.dlPick(id, 'tam'), ids.Ada); await page.waitForTimeout(300);
+  const ca2 = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'compliance'); const r = t.rows.find(r => /Ada/.test(r[0].v)); return [r[1].v, r[2].v]; });
+  if (ca2[0] !== '📘 TAM' || !/Correct/.test(ca2[1])) fail(`picking Ada's TAM in the dropdown: ${ca2}`);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
@@ -104,8 +122,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   const dx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception/i.test(x.textContent)); return it ? it.innerText : ''; });
   if (!/Why this score/i.test(dx) || !/3\.80\/5/.test(dx) || !/did best[\s\S]*Warm, branded greeting/i.test(dx) || !/to be improved[\s\S]*Skipped the caller verification/i.test(dx)) fail(`the mock call's context (why, best, to improve): ${dx}`);
-  const rkAt = await page.evaluate(() => { const a = document.getElementById('bs-dayscores'), r = document.getElementById('bs-ranking'); return !!(a && r && a.nextElementSibling === r && r.querySelector('.rk-bar')); });
-  if (!rkAt) fail('the 📊 Weekly Ranking is not right under the 📅 Day 1–16 scores');
+  const rkAt = await page.evaluate(() => { const a = document.getElementById('bs-compliance'), r = document.getElementById('bs-ranking'); return !!(a && r && a.nextElementSibling === r && r.querySelector('.rk-bar')); });
+  if (!rkAt) fail('the 📊 Weekly Ranking is not right under the Score Card and the compliance');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -239,7 +257,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(400);
   const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
   // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
-  if (MT[0].id !== 'dayscores' || MT[1].title !== '👤 Me') fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
+  if (MT[0].id !== 'scorecard' || MT[1].id !== 'compliance' || !MT.some(x => x.title === '👤 Me')) fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
   if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
   // (her 📤 Daily outputs with the day's comments: the platform's check and the AI's review)
   if (!/AI-NOTES/.test(await page.evaluate(() => (document.querySelector('.bs-mine #bs-outputs .bs-oc') || {}).innerText || ''))) fail('the trainee doesn\'t see her days\' comments under 📤 Daily outputs');
@@ -287,5 +305,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in ten tables, opening on 📅 Day 1–16: Detailed Scores (each score with why, what to improve and what they did best) and the 📊 Weekly Ranking under it; their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in twelve tables, opening on the simplified scorecard (🏅 Score Card lesson by lesson, the compliance with the Drive links dropdown, 📊 Weekly Ranking, ✍️ Process Questions, 📤 Daily outputs; the rest under ▸ More detail, with the reasons for each score on 📅 Day 1–16); their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });
