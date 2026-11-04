@@ -3300,6 +3300,7 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-help{grid-template-columns:minm
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-help{font:800 22px/1.4 'Poppins','Inter',sans-serif !important;border:10px solid #1E2340;border-radius:40px;padding:26px 30px !important;background:#fff;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-banner{background:#000;color:#fff !important;border-radius:10px;padding:12px 30px !important;font:800 18px/1.4 'Poppins','Inter',sans-serif !important;margin:0 0 14px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,280px));justify-content:center;gap:28px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts.ftdd-sa-one{grid-template-columns:minmax(0,280px);}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots a{height:30vh !important;border:0 !important;padding:0 !important;background:none !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p{margin:10px 0 0 !important;text-align:center !important;font:800 20px/1.3 'Inter',sans-serif !important;color:#1E2340 !important;background:none !important;padding:0 !important;border:0 !important;}
