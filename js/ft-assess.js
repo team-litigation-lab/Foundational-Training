@@ -186,6 +186,8 @@ function partHtml(doc, p){
 }
 root.FTAssess = {
   has: doc => !!FORMS[doc],
+  // 🏷 each assessment's naming convention (js/ft-trainee-log.js)
+  conventions: () => Object.values(FORMS).filter(f => f.file).map(f => ({name: f.file + " (VA’s first name)", what: "📄 " + (f.title || "Assessment")})),
   // the assessment, to answer on the page, and 📝 Submit for Grading
   html(doc){
     const f = FORMS[doc]; if(!f) return "";
@@ -194,7 +196,7 @@ root.FTAssess = {
     return `<div class="card fp-set fa-form">${f.intro ? `<section class="fa-part fa-intro">${f.intro}</section>` : ""}${f.parts.map(p => partHtml(doc, p)).join("")}
       <div class="fa-foot">${g ? `<p class="fa-done">✓ Graded ${e(g.when || "")}${g.pending ? " · your trainer grades the essays" : ""}. Your score is on 🏅 My Performance. You can correct your answers and submit again.</p>` : `<p class="fa-muted">Your answers save as you type.</p>`}
         <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>
-      <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc))}</code></p>
+      <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc)).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(")}</code></p>
         <button class="btn btn-ghost btn-sm fa-drive" type="button" onclick="FTAssess.savePdf('${doc}')"${A.saving ? " disabled" : ""}>${A.saving ? "Saving the PDF…" : "📄 Save PDF to my Folder"}</button>
         <button class="btn btn-ghost btn-sm fa-dl" type="button" onclick="FTAssess.downloadPdf('${doc}')" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div></div>`;
   },

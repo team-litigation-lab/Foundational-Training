@@ -2145,6 +2145,12 @@ root.FTDayDecks = {open, go, next: nextKC,
   state: () => DD,
   // 🗺 Map: the training roadmap
   // (the deck already showing moves to the slide; from anywhere else, the dashboard or a lesson, the deck opens on it)
+  // 🏷 the file names the lesson cards' Tools lines set (js/ft-trainee-log.js): "MedLOR: <i>MED - … (VA’s first name)</i>";
+  // "Recording 1 / 2" is two names; the tests' screenshot names are read by FTTrackerRules.parseTestShot instead
+  namings: () => Object.values(LESSON_CARDS).flatMap(c => (c.tools || []).filter(x => typeof x === "string")).flatMap(x => {
+    const m = /^([^:<]+):\s*<i>([^<]+)<\/i>/.exec(x); if(!m || /Test \[date/.test(m[2])) return [];
+    const n = m[2].trim(), r = /Recording 1 \/ 2/.exec(n);
+    return (r ? [n.replace(r[0], "Recording 1"), n.replace(r[0], "Recording 2")] : [n]).map(name => ({name, what: m[1].trim()})); }),
   map: mapOpen, mapClose, mapStop, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
