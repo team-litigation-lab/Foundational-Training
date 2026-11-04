@@ -305,12 +305,13 @@ window.render = function(){
 
 /* ---------- Admin → 📁 Drive Trackers: links, checks and the trainer's score and comment ---------- */
 const DA = {rows:null, loading:false, batch:"", open:{}, busy:{}, edit:false, saving:false};
+window.addEventListener("ft-roster-changed", () => { DA.rows = null; });
 async function loadAdmin(){
   DA.loading = true;
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const keys = people.flatMap(r => ["drive:" + r.id, "trackerreview:" + r.id]), vals = [];
     for(let i = 0; i < keys.length; i += 100) vals.push(...await sharedGetMany(keys.slice(i, i + 100)));
     DA.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", drive:vals[i * 2] || null, rv:vals[i * 2 + 1] || {days:{}}}))
