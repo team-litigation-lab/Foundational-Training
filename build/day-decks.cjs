@@ -792,11 +792,11 @@ const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2). mockPrep: the PI practice calls'
    warm-up, then the seven steps; MOCK_RUN: how the one-on-one mock calls run, the buttons to the Call Simulator's
-   Reception line, the Ring Channel and the CMS (MOCK_BTNS), and the Reception metrics. */
+   Reception line, the Ring Channel and the CMS (MOCK_BTNS). The Reception metrics are the scorecard on the preparation page. */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 // (read in pages, ftdd-pgbreak, each page one block, ftdd-mockpage, that the deck keeps whole and scales to fit, so a
 // heading never parts from what it heads: the warm-up; the seven steps under Instructions on Your Mock Call; how the
-// one-on-one runs, with the tools' buttons under it (MOCK_BTNS); the metrics)
+// one-on-one runs, with the tools' buttons under it (MOCK_BTNS))
 const PGBREAK = '<div class="ftdd-pgbreak"></div>\n';
 const mockPage = (cls, html) => `<div class="ftdd-mockpage ${cls}">\n${html}</div>\n`;
 // (where Day 4's Mock Call Preparation slide starts: ROWS[4].s2)
@@ -827,10 +827,9 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
   "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
-  MOCK_BTNS) + PGBREAK + mockPage("ftdd-mock-metrics",
-  "<p><b>Reception Mock Calls Metrics</b></p>\n" +
-  '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
-  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fifteen, which reaches your Scorecard.</p>\n");
+  MOCK_BTNS);
+// (no Reception Mock Calls Metrics page after it: the preparation page already carries the Reception Mock Call scorecard
+// and the trainer's 🧑‍🏫 Scoresheet, so the deck had the same scorecard twice)
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.
