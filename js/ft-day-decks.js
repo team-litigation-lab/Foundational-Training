@@ -88,7 +88,20 @@ const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons
 /* A slide's own HTML, as the trainer has it. js/ft-slide-editor.js lets a trainer rewrite any slide of any day
    (settings:dayslides); the edit stands in for what build/day-decks.cjs built, for trainers and trainees alike, and
    everything downstream — the agenda, the slide's buttons — reads the slide through here. */
-const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : evlInline(v); }catch(err){ return (s || {}).html; } };
+const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : plainHeads(evlInline(v)); }catch(err){ return (s || {}).html; } };
+/* A slide's headings are the deck's navy bar with white text: a highlight or a text colour a trainer's edit put on a heading
+   (Day 7's "What to collect about insurance on an intake call", in yellow) is dropped, on the heading and inside it */
+function plainHeads(html){
+  const h = String(html || "");
+  if(!/<h[1-6][\s>]/i.test(h) || !/(background|color)\s*:/i.test(h)) return h;
+  const t = document.createElement("template"); t.innerHTML = h;
+  t.content.querySelectorAll(":is(h1,h2,h3,h4,h5,h6), :is(h1,h2,h3,h4,h5,h6) [style]").forEach(el => {
+    if(!el.style) return;
+    ["background", "background-color", "color"].forEach(p => el.style.removeProperty(p));
+    if(!el.getAttribute("style")) el.removeAttribute("style");
+  });
+  return t.innerHTML;
+}
 /* The Accident or Injury Claim Documents and Evidence Checklist is read on the platform, never as a Drive file: a slide a
    trainer saved while it was still a Drive preview or link (its file id below) shows the checklist itself, as Day 7 builds
    it (build/days/day07.js: the ftdd-evl title and cards), in place of the preview, the link and the heading over them. */
