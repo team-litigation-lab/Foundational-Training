@@ -40,9 +40,11 @@ const failures = []; const fail = m => failures.push(m);
   // the trainer opens the tab
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'ranking'; FTRanking.reload(); goto('admin'); });
   await page.waitForTimeout(2500);
-  if (!(await page.$('.rk'))) fail('Admin has no 📊 Weekly Ranking tab');
+  // (no tab of its own: the report is in 📋 Batch Sheet, under 📅 Day 1–16: Detailed Scores; the old tab lands there)
+  if (!(await page.$('#bs-ranking .rk'))) fail('the 📊 Weekly Ranking is not in the 📋 Batch Sheet');
+  if (await page.evaluate(() => state.adminTab) !== 'batchsheet') fail('the old 📊 Weekly Ranking tab doesn\'t land on the 📋 Batch Sheet');
   const tabs = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
-  if (!/Batch Sheet/.test(tabs) || !/Weekly Ranking/.test(tabs)) fail(`📊 Weekly Ranking is not in 🏅 Scorecard beside the 📋 Batch Sheet: ${tabs}`);
+  if (!/Batch Sheet/.test(tabs) || /Weekly Ranking/.test(tabs)) fail(`🏅 Scorecard still has a 📊 Weekly Ranking tab: ${tabs}`);
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
   if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
@@ -214,5 +216,5 @@ const failures = []; const fail = m => failures.push(m);
   for (const id of Object.values(ids)) { const r = await get('trainee:' + id); if (r) { r.archived = true; await put('trainee:' + id, r); } }
   await browser.close();
   if (failures.length) { console.error('Weekly Ranking test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Weekly Ranking test passed (a week that is over drafts its report, with the Daily Compliance, and is shared only once approved; 📋 the Batch Sheet with each trainee\'s compliance, weeks, Overall % and rank (📈 Overall Performance folded in), and its card on a trainer\'s dashboard; the tab in 🏅 Scorecard beside the 📋 Batch Sheet; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; 📤 each trainee gets only their own row; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
+  console.log('Weekly Ranking test passed (a week that is over drafts its report, with the Daily Compliance, and is shared only once approved; 📋 the Batch Sheet with each trainee\'s compliance, weeks, Overall % and rank (📈 Overall Performance folded in), and its card on a trainer\'s dashboard; the report in the 📋 Batch Sheet under the Day 1–16 scores, no tab of its own; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; 📤 each trainee gets only their own row; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
 })().catch(e => { console.error(e); process.exit(1); });

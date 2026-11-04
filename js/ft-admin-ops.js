@@ -78,7 +78,7 @@ const MAP = [
      `Score transcriptions, video notes, process guides and letters in ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")}. Write it in the house voice set in ${go("fbstyle","🗣 Feedback Style")}.`,
      `Give one clear next step as a 🎯 Focus item. The trainee works on it and you see when they have acted on it.`]},
   {stage:"9 · Weekly review", trainee:"Gets their weekly average and rank.",
-   steps:[`Build and share the week's results in ${SEC.sc} → ${go("ranking","📊 Weekly Ranking")}.`,
+   steps:[`Build and share the week's results in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 📊 Weekly Ranking.`,
      `See every grade in one table in ${go("batchsheet","📋 Batch Sheet")} → 🏅 Scores. Coach anyone in the red before the next week.`,
      `Read what trainees say about the program in ${SEC.sc} → ${go("tfeedback","💬 Trainee Feedback")} and adjust the next sessions.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",

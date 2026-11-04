@@ -525,10 +525,11 @@ const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.w
 window.FTRanking = {
   // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
   embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },
-  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); render(); },
+  // (the report is the Batch Sheet's batch: picking one moves the sheet too)
+  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); if(window.FTBatchSheet && state.adminTab === "batchsheet") FTBatchSheet.batch(b); else render(); },
   approve(){ if(!R.data || !R.data.auto) return; R.data.auto.approved = true; R.data.auto.approvedAt = new Date().toISOString(); save(); toast("✓ Approved: you can 📤 share it with the trainees now."); render(); },
   // opened on a batch's week from elsewhere (📈 Overall Performance, the trainer's dashboard card)
-  open(batch, week){ if(batch) R.batch = batch; if(week){ R.week = Number(week); R.weekSet = true; } R.key = ""; R.data = null; state.adminTab = "ranking"; goto("admin"); },
+  open(batch, week){ if(batch) R.batch = batch; if(week){ R.week = Number(week); R.weekSet = true; } R.key = ""; R.data = null; toRanking(batch); },
   week(w){ R.week = Number(w) || 1; R.key = ""; R.data = null; R.edit = false; render(); },
   async start(k){
     let cols = k === "last" ? await prevWeek() : (TEMPLATES[k] || TEMPLATES.blank).cols();
@@ -596,7 +597,15 @@ window.FTRanking = {
   html: () => wordDoc(), mark, reload(){ R.people = null; R.key = ""; R.data = null; render(); }
 };
 
-ftAdminTab("ranking", "📊 Weekly Ranking", renderRanking);
+/* 📊 no tab of its own: the report is in 📋 Batch Sheet, under 📅 Day 1–16: Detailed Scores (FTRanking.embed). An old link,
+   a saved tab or FTRanking.open lands there, on the report, for the batch asked for. */
+function toRanking(batch){
+  state.adminTab = "batchsheet";
+  if(batch && window.FTBatchSheet && state.isAdmin) FTBatchSheet.batch(batch);
+  if(state.view !== "admin") goto("admin"); else render();
+  let n = 0; const t = setInterval(() => { const el = document.getElementById("bs-ranking"); if(el || ++n > 40){ clearInterval(t); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); } }, 250);
+}
+ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(R.batch), 0); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">📊 The Weekly Ranking is in 📋 Batch Sheet, under the Day 1–16 scores…</div>`; });
 
 (function(){ const s = document.createElement("style"); s.id = "ft-ranking"; s.textContent = `
 .rk{padding:18px 20px;display:flex;flex-direction:column;gap:12px;}

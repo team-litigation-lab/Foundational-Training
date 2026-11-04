@@ -256,7 +256,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(600);
 
   // leaving it: back to the normal width
-  await page.evaluate(() => { state.adminTab = 'ranking'; render(); });
+  await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
 
   await browser.close();
