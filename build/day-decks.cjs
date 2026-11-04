@@ -1114,9 +1114,8 @@ const ROWS = {
       // (none of the guide's section: the five practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
       {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []},
-      // (the Listening Activity: the PI practice calls again, optional, one card per recording, after the activity, on its
-      // step; Carlos's recordings are off it)
-      {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []}]
+      // (the optional Listening Activity, the PI practice calls again, is off Reception Part 1: no s1b)
+      ]
   },
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)

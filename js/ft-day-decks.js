@@ -1382,7 +1382,7 @@ const LESSON_CARDS = {
       // Part 1: 💬 the PI Workflow deck, then 💬 the Reception deck (▶ Start Training: each lesson's deck, as on Days 1 and 2),
       // then their one ✍️ Knowledge Check (Receptionist Training's, ten questions, Personal Injury Process Flow's first:
       // js/ft-process.js kc), the decision trees, the sample SOP, the sample call recordings, the Reception Listening
-      // Activity (the Harbor & Pine calls, then the optional reference recordings) and the CRM/CMS videos
+      // Activity (the Harbor & Pine calls) and the CRM/CMS videos
       {t: "PI Workflow Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
       {t: "Reception Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson", lesson: 4, kc: 4},
       {t: "Knowledge Check: 10 Process Questions", sub: "PI Workflow & Reception · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(4)"},
@@ -1393,7 +1393,7 @@ const LESSON_CARDS = {
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
       // Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet opens in a pop-up on the
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
-      {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
+      // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)

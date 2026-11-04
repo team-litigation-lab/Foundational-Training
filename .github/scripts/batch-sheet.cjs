@@ -60,11 +60,10 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
-  // 📁 Batch Folders and 💬 Trainee Feedback sit in 🏅 Scorecard now (no longer in 🛡 Admin Master Control), and the feedback stays
-  // (Trainee Audit and 📁 Batch Folders are one tab, 👥 Trainees & Batches: js/ft-trainees-tab.js)
-  if (!/Trainees & Batches/.test(row.join(' ')) || /Trainee Audit|Batch Folders/.test(row.join(' '))) fail(`🏅 Scorecard should have one 👥 Trainees & Batches tab (no Trainee Audit or 📁 Batch Folders of their own): ${row.join(' | ')}`);
+  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are at the
+  // foot of the Batch Sheet, and the trainees' feedback is still kept)
+  if (/Trainees & Batches|Trainee Audit|Batch Folders|Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard still has a tab the Batch Sheet replaced: ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
-  if (!/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 💬 Trainee Feedback: ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
   await page.evaluate(() => { state.adminTab = 'tfeedback'; state.tfbAdmin = null; render(); }); await page.waitForTimeout(1500);
   const fbText = await page.evaluate(() => document.querySelector('main').innerText);
@@ -92,7 +91,7 @@ const failures = []; const fail = m => failures.push(m);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
   if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'process', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec:not(.bs-rank)')).length !== 10) fail('the ten tables are not all on the one page');
+  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 10) fail('the ten tables are not all on the one page');
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
