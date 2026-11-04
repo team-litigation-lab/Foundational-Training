@@ -521,12 +521,12 @@ function sectionsHtml(T){
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
-const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email"};
+const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email", progress: "Progress on the platform"};
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC"}); };
-  return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs and the EOD email, each a %, averaged. Click a day for its parts. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Click a day for its parts. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs);
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
@@ -556,7 +556,8 @@ function outputsNotesHtml(){
       plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
     if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
     if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod) todo.push("No EOD email for the day"); }
-    const did = [(c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
+    if(P.progress != null){ plat.push(`📚 Progress ${P.progress}%`); if(!P.progress) todo.push("No lesson, Knowledge Check, practice or submission on the platform that day"); }
+    const did = [...(c.work || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
       ...(c.submissions || []).slice(0, 4)].filter(Boolean);
     // the AI's review (the tracker's notes) and the trainer's comment
     const ai = tk && tk.review ? clip(tk.review, 420) : "", tr = tk && tk.comment ? clip(tk.comment, 300) : "";
@@ -845,7 +846,7 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button></span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="window.print()">🖨 Print</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum"><span><b>${ppl.length}</b> registered</span><span><b>${approved}</b> approved</span>${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-process" onclick="return FTBatchSheet.go('process')">✍️ Process Questions</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a></span>
@@ -864,6 +865,19 @@ function renderSheet(){
 window.FTBatchSheet = {
   batch(b){ if(!adminOn()) return; B.batch = b; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
+  // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
+  // what the platform keeps now, their progress included; then the sheet is read again
+  async updateAll(){
+    if(!adminOn() || meOn() || B.upd) return;
+    const ppl = people().filter(p => p.status === "Approved"); if(!ppl.length) return;
+    B.upd = {n: 0, of: ppl.length}; render(); let bad = 0;
+    for(const p of ppl){
+      try{ const r = await authFetch("/api/compliance/backfill", {ids: [p.id], redo: true}); const j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; }
+      B.upd.n++; render();
+    }
+    B.upd = null; B.data = null; B.dataKey = ""; render();
+    if(bad && typeof toast === "function") toast(`${bad} trainee${bad === 1 ? "" : "s"} couldn't be updated. Try 🔄 Update all scores again.`);
+  },
   period(v){ B.recent = Number(v) || 0; render(); },
   // ↩ the batch's trainees the tidy-up archived on its own come back to the active list; the batch is marked restored in
   // settings:autoarchive (done), so the tidy-up doesn't archive it again — as 📁 Batch Folders → ↩ Restore batch does

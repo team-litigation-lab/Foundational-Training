@@ -223,7 +223,21 @@ const failures = []; const fail = (m) => failures.push(m);
       if (!c0.backfilled || !c0.tests || !c0.tests.AM || c0.parts.tracker !== null) fail(`a backfilled day isn't marked, misses its test, or counts an unchecked tracker as 0: ${JSON.stringify(c0)}`);
       if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
       const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
-      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }
+      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again');
+      // 🔄 Update all scores (redo, redoCompliance): every training day again from what the platform keeps now — a lesson
+      // finished and a Knowledge Check taken on a past day count as that day's progress; a tracker checked on the day keeps its %
+      const w1 = wk[1], at1 = new Date(w1 + 'T17:00:00Z').toISOString();
+      store.set('ft:progress:' + id, JSON.stringify({ data: { 'day-progress': { 3: { studied: true, studiedAt: at1, history: [{ score: 90, passed: true, date: at1 }] } } } }));
+      { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); rv.compliance[w1].parts.tracker = 80; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+      const before = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {}).pct;
+      if ((await call('/api/compliance/backfill', { ids: [id], redo: true }, trainee)).status !== 403) fail('a trainee could update all scores');
+      const rd = await call('/api/compliance/backfill', { ids: [id], redo: true }, admin);
+      if (!rd.body || !rd.body.ok || rd.body.redone[id] !== wk.length + (TR.isWeekday(today) ? 1 : 0)) fail(`Update all scores didn't work out every training day: ${JSON.stringify(rd.body)}`);
+      const c1 = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {};
+      if (c1.parts.progress !== 100 || !(c1.work || []).some(x => /Lesson 3 deck finished/.test(x)) || !(c1.work || []).some(x => /Knowledge Check/.test(x))) fail(`a day's progress on the platform isn't counted: ${JSON.stringify(c1)}`);
+      if (c1.parts.tracker !== 80 || !c1.backfilled || !(c1.pct > before)) fail(`Update all scores lost the day's tracker check or the backfilled mark, or the score didn't go up: ${JSON.stringify(c1)} (was ${before})`);
+      const cOther = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[wk[0]] || {};
+      if (cOther.parts.progress !== 0) fail(`a day with no progress on the platform counts it: ${JSON.stringify(cOther.parts)}`); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');

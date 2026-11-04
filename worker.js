@@ -1241,6 +1241,31 @@ async function backfillCompliance(env, id, o = {}) {
   return want.length;
 }
 
+/* 🔄 Update all scores (📋 Batch Sheet, an admin): a trainee's every training day, from the batch's start (as backfillCompliance
+   counts it) to today, worked out again from what the platform keeps now — their progress included — so 📤 Daily outputs, 📊
+   Weekly Ranking's Daily Compliance and 🏅 Scores match it. The records are read once and trackerreview written once. Returns the
+   number of days. */
+async function redoCompliance(env, id) {
+  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const rec = await get(`trainee:${id}`);
+  if (!rec) return 0;
+  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
+  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  if (!start) return 0;
+  const today = TR.ptDate(), want = [];
+  for (let t = Date.parse(start + "T12:00:00Z"); want.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) want.push(d); }
+  if (!want.length) return 0;
+  const [drive, skills, proc, tr, prog, cur] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`trackerreview:${id}`)]);
+  let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
+  const pre = { drive, skills, proc, tr, prog, cur: cur || { days: {} } };
+  for (const d of want) {
+    const had = (pre.cur.compliance || {})[d];
+    await dailyCompliance(env, id, d, { pre, redo: true, files: files || undefined, backfill: !had && d < today });
+  }
+  await kv.put(`trackerreview:${id}`, JSON.stringify(pre.cur));
+  return want.length;
+}
+
 /* ✅ A trainee's daily compliance: at the end of every shift (the cron, runTrackerChecks, and an admin's ✅ Check now), what the
    day asked of them and what was found, kept in trackerreview:<id>.compliance[<date>] = {pct, parts: {tracker, monitor, tests,
    outputs, eod}, submissions, checkedAt}. Each part is a % (null where the day had nothing to check, e.g. no Drive links yet):
@@ -1248,14 +1273,19 @@ async function backfillCompliance(env, id, o = {}) {
      • monitor  — the Training Progress Monitoring Sheet's latest check, its %;
      • tests    — the AM and PM Typing Tests and the Spelling Test, taken on the platform (skills:<id>) or a screenshot in Drive;
      • outputs  — the day's outputs: links submitted on 📋 Task Tracker, or files saved in their Assessment and Activities Folder that day;
-     • eod      — the day's EOD email, pasted on 📋 Task Tracker (drive:<id>.days[<date>].eod).
+     • eod      — the day's EOD email, pasted on 📋 Task Tracker (drive:<id>.days[<date>].eod);
+     • progress — their progress on the platform that day: a lesson deck finished, a Knowledge Check, practice, a roleplay, a
+                  random task (progress:<id>), or something submitted (Process Questions, a transcription, an assessment).
    pct is the average of the parts that have one; submissions counts what the trainee submitted on the platform that day (answer
    sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
 async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
   const get = async (k) => JSON.parse((await kv.get(k)) || "null");
-  const [drive, skills, proc, tr] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`)]);
-  const rk = `trackerreview:${id}`, cur = (await get(rk)) || { days: {} };
+  // (o.pre: a 🔄 Update all scores run reads the trainee's records once for all their days, and writes trackerreview once at the end)
+  const pre = o.pre || null;
+  const [drive, skills, proc, tr, prog] = pre ? [pre.drive, pre.skills, pre.proc, pre.tr, pre.prog]
+    : await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`)]);
+  const rk = `trackerreview:${id}`, cur = pre ? pre.cur : ((await get(rk)) || { days: {} });
   const onD = (t) => !!t && TR.ptDate(new Date(t)) === D;
   // the tests: the AM and PM typing and the spelling, a make-up counting for the slot it was taken for
   const slots = {};
@@ -1274,6 +1304,16 @@ async function dailyCompliance(env, id, D, o = {}) {
   Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { if (x && onD(x.submittedAt)) subs.push("Process Questions: " + sid); });
   Object.entries((tr || {}).r || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt)) subs.push("Transcription · Recording " + n); });
   Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
+  // 📚 their progress on the platform that day (progress:<id>, what 📋 Batch Sheet reads): a lesson deck finished, a Knowledge
+  // Check taken, practice in a tool, a roleplay or a random task
+  const pd = (prog && prog.data) || {}, work = [];
+  Object.entries(pd["day-progress"] || {}).forEach(([l, x]) => {
+    if (!x) return;
+    if (onD(x.studiedAt)) work.push("Lesson " + l + " deck finished");
+    const kc = (Array.isArray(x.history) ? x.history : []).filter((h) => h && onD(h.date)).length || (!Array.isArray(x.history) && typeof x.score === "number" && onD(x.date) ? 1 : 0);
+    if (kc) work.push("Lesson " + l + " Knowledge Check");
+  });
+  (Array.isArray(pd["work-log"]) ? pd["work-log"] : []).forEach((w) => { if (w && w.kind !== "quiz" && onD(w.at)) work.push((w.kind === "lab" ? "Practice" : w.kind === "roleplay" ? "Roleplay" : w.kind === "task" ? "Random task" : "Practice") + (w.label ? ": " + w.label : "")); });
   const tk = (cur.days || {})[D];
   const parts = {
     // (a past day worked out afterwards, o.backfill: a tracker never checked that day is "not checked", not 0)
@@ -1281,15 +1321,20 @@ async function dailyCompliance(env, id, D, o = {}) {
     monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" ? cur.monitor.pct : (drive && drive.monitor ? 0 : null),
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved ? 100 : 0,
-    eod: day.eod && String(day.eod.text || "").trim() ? 100 : 0
+    eod: day.eod && String(day.eod.text || "").trim() ? 100 : 0,
+    progress: work.length || subs.length ? 100 : 0
   };
+  // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
+  // checked keeps them; everything else is worked out again from what the platform keeps now)
+  const was = (cur.compliance || {})[D];
+  if (o.redo && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
-  cur.compliance[D] = Object.assign({ pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), checkedAt: new Date().toISOString() }, o.backfill ? { backfilled: true } : {});
+  cur.compliance[D] = Object.assign({ pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), work: work.slice(0, 30), checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
-  await kv.put(rk, JSON.stringify(cur));
+  if (pre) pre.cur = cur; else await kv.put(rk, JSON.stringify(cur));
   return cur.compliance[D];
 }
 
@@ -1712,6 +1757,8 @@ export default {
         const b = await request.json().catch(() => ({}));
         const ids = (Array.isArray(b.ids) ? b.ids : []).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 60);
         const out = {};
+        // (redo: 🔄 Update all scores, every training day again — one trainee a call, the page asks for each in turn)
+        if (b.redo) { for (const id of ids.slice(0, 1)) { try { out[id] = await redoCompliance(env, id); } catch (e) { out[id] = 0; } } return json({ ok: true, redone: out }); }
         for (const id of ids) { try { out[id] = await backfillCompliance(env, id, { max: 30 }); } catch (e) { out[id] = 0; } }
         return json({ ok: true, filled: out });
       }
