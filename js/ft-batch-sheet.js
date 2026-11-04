@@ -263,11 +263,12 @@ function rationaleHtml(){
     return `<div class="bs-rat">${who.length > 1 ? `<h5>${e(p.name)}</h5>` : ""}
       <div class="bs-rat-avg">Average: <b class="${tone(a)}">${pct(a) || "—"}</b>${got.length ? ` <span>= (${got.map((g, i) => g.pct).join(" + ")}) / ${got.length} graded answer sheet${got.length === 1 ? "" : "s"}</span>` : " <span>no answer sheet graded yet</span>"}</div>
       <div class="bs-days">${K.map((k, i) => { const g = gs[i]; if(g.pct == null && !g.subm && !g.items.some(y => y.answer)) return "";
-        return `<div class="bs-day"><div class="bs-day-h"><b>${e(k.title)}</b><em class="${tone(g.pct)}">${g.pct != null ? g.pct + "%" : "—"}</em></div>
+        // (each answer sheet a row that opens: its title and score shut, the evaluation and each answer's grade when opened)
+        return `<details class="bs-day bs-rat-d"><summary class="bs-day-h"><b>${e(k.title)}</b><span class="bs-rat-sum">${e(g.how)}</span><em class="${tone(g.pct)}">${g.pct != null ? g.pct + "%" : "—"}</em></summary>
           <p class="bs-rat-how"><b>How it was scored:</b> ${e(g.how)}${g.last && g.last.at ? `, last graded ${e(when(g.last.at))}` : ""}.</p>
           ${g.last && g.last.summary ? `<p class="bs-rat-how"><b>Evaluation:</b> ${e(g.last.summary)}</p>` : ""}
           ${g.rv.comment ? `<p class="bs-rat-how"><b>🧑‍🏫 Trainer:</b> ${e(g.rv.comment)}</p>` : ""}
-          ${g.items.map((y, j) => `<div class="bs-gr"><span>Q${j + 1}. ${e(y.q)}</span><b class="${y.score == null ? "" : tone(y.score * 10)}">${y.score == null ? "—" : y.score + "/10"}</b>${y.feedback ? `<small>${e(y.feedback)}</small>` : y.answer ? "" : `<small>(unanswered)</small>`}${y.note ? `<small>🧑‍🏫 ${e(y.note)}</small>` : ""}</div>`).join("")}</div>`; }).join("") || `<p class="bs-note">Nothing submitted yet.</p>`}</div></div>`; };
+          ${g.items.map((y, j) => `<div class="bs-gr"><span>Q${j + 1}. ${e(y.q)}</span><b class="${y.score == null ? "" : tone(y.score * 10)}">${y.score == null ? "—" : y.score + "/10"}</b>${y.feedback ? `<small>${e(y.feedback)}</small>` : y.answer ? "" : `<small>(unanswered)</small>`}${y.note ? `<small>🧑‍🏫 ${e(y.note)}</small>` : ""}</div>`).join("")}</details>`; }).join("") || `<p class="bs-note">Nothing submitted yet.</p>`}</div></div>`; };
   return `<div class="bs-ck">${meOn() ? `<h4>🧾 My scoring rationale</h4>` : `<label class="bs-ck-who">🧾 Scoring rationale for <select onchange="FTBatchSheet.raWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     ${who.map(one).join("")}</div>`;
 }
@@ -1129,7 +1130,13 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-isc{font-size:12px;margin-left:4px;} .bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
 .bs-rat-avg{font:14px Arial,sans-serif;margin:4px 0 6px;} .bs-rat-avg b{font-size:16px;} .bs-rat-avg span{color:#5F6368;}
 .bs-rat-how{margin:2px 0 6px;font-size:12.5px;color:#444746;line-height:1.4;}
-.bs-rat .bs-days{grid-template-columns:repeat(auto-fill,minmax(420px,1fr));} @media (max-width:640px){ .bs-rat .bs-days{grid-template-columns:1fr;} }
+.bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
+/* (the scoring rationale: a row per answer sheet that opens, read in a larger size) */
+.bs-rat-d{padding:0;} .bs-rat-d > summary{cursor:pointer;list-style:none;padding:10px 14px;font-size:16px;align-items:center;gap:12px;}
+.bs-rat-d > summary::-webkit-details-marker{display:none;} .bs-rat-d > summary::before{content:"▸";color:#5F6368;margin-right:2px;} .bs-rat-d[open] > summary::before{content:"▾";}
+.bs-rat-d > summary b{font-size:16px;} .bs-rat-d > summary em{margin-left:auto;font-size:17px;font-weight:800;font-style:normal;} .bs-rat-sum{color:#5F6368;font-size:13.5px;}
+.bs-rat-d[open]{padding-bottom:10px;} .bs-rat-d > :not(summary){margin-left:14px;margin-right:14px;}
+.bs-rat-d .bs-rat-how{font-size:15px;line-height:1.55;color:#202124;} .bs-rat-d .bs-gr{font-size:15px;padding:7px 0;} .bs-rat-d .bs-gr small{font-size:14px;line-height:1.5;color:#3C4043;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
