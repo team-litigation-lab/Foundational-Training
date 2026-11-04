@@ -45,6 +45,8 @@ jobs:
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
         run: node .github/scripts/drive.cjs
+      - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)
+        run: node .github/scripts/assess-grade.cjs
       - name: Who sees what of the Batch Sheet and My Progress (a trainee only their own; only a trainer moves a batch)
         run: node .github/scripts/sheet-access.cjs
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)

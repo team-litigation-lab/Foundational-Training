@@ -54,6 +54,8 @@ window.LSH_PROGRAM = {
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
     scorecard: ["batchsheet", "audit", "tfeedback", "sendfeedback", "skilltests"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
+  // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
+  adminHidden: ["ranking"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
