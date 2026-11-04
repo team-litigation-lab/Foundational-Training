@@ -427,7 +427,7 @@ window.renderTopbar = function(){
 };
 const __admin = window.renderAdmin;
 window.renderAdmin = function(){
-  const tab = `<button class="admin-tab-btn ${state.adminTab==="monitor"?"active":""}" onclick="setAdminTab('monitor')">📒 Monitoring Sheets</button>`;
+  const tab = `<button class="admin-tab-btn ${state.adminTab==="monitor"?"active":""}" onclick="setAdminTab('monitor')">📒 Feedback and Monitoring Rubric</button>`;
   if(state.adminTab==="monitor"){
     if(!FTM.topics){ loadTopics().then(()=>{ if(state.adminTab==="monitor") render(); }); }
     state.adminTab = "opendays";                   // borrow the tab bar…
