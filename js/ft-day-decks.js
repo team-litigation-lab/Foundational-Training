@@ -865,6 +865,7 @@ function renderDeck(){
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
+        ${tr && root.FTMetrics && FTMetrics.graders ? `<button type="button" class="btn ftdd-graders" onclick="FTMetrics.graders()" title="Every mock call and demo scoresheet, in one list">🧑‍🏫 Graders</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
@@ -892,7 +893,10 @@ const FIT_MIN = 0.8;
 const isMid = d => Number(d) >= 6 && Number(d) <= 15;
 const MID_FIT = 0.75;
 // a heading, or a line drawn as a section bar (contrastMarks: ftdd-hbar), never ends a page: it moves on with what it heads
-const isHead = x => /^H[1-6]$/.test(x.tagName) || x.classList.contains("ftdd-hbar");
+// (a heading: an <h1>–<h6>, a heading bar, or a short label line on its own — "Samples", a bold "Sample:" line — with no picture,
+// table or form in it: it moves to the next page with what it heads, never left at a page's foot)
+const isHead = x => /^H[1-6]$/.test(x.tagName) || x.classList.contains("ftdd-hbar") || (/^(P|DIV)$/.test(x.tagName) && !x.querySelector("img, iframe, video, table, svg, input, textarea, select, button, .ftdd-ev, .ftdd-tile")
+  && (t => t.length > 0 && t.length <= 60 && !/[.!?]$/.test(t))(String(x.textContent || "").replace(/\s+/g, " ").trim()));
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 // (and a slide the build marks read: Day 11's LOR Drafting guidelines)
 const isReadPart = s => !!s && (!!s.read || Object.values(KC_NEXT[DD.day] || {}).some(k => isPart(k, s.id)));
@@ -1414,7 +1418,7 @@ const LESSON_CARDS = {
       // Part 1: 💬 the PI Workflow deck, then 💬 the Reception deck (▶ Start Training: each lesson's deck, as on Days 1 and 2),
       // then their one ✍️ Knowledge Check (Receptionist Training's, ten questions, Personal Injury Process Flow's first:
       // js/ft-process.js kc), the decision trees, the sample SOP, the sample call recordings, the Reception Listening
-      // Activity (the Harbor & Pine calls, then the optional reference recordings) and the CRM/CMS videos
+      // Activity (the Harbor & Pine calls) and the CRM/CMS videos
       {t: "PI Workflow Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
       {t: "Reception Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson", lesson: 4, kc: 4},
       {t: "Knowledge Check: 10 Process Questions", sub: "PI Workflow & Reception · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(4)"},
@@ -1425,7 +1429,7 @@ const LESSON_CARDS = {
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
       // Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet opens in a pop-up on the
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
-      {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
+      // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
@@ -1440,7 +1444,7 @@ const LESSON_CARDS = {
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
+      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
@@ -1752,10 +1756,10 @@ const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.le
 // the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
 const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.days[0]);
 // a day after the discussion is named for what it holds
-const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
+const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Mock Calls", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
   11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
   14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
-const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
+const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Mock Calls", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 // 🎯 each day card's objective, under its focus: what the trainee can do by the end of that day
@@ -1873,8 +1877,18 @@ function introCard(l, cur, ex, tags){
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
   // (locked: 🔒 Request asks the trainer for it; ⏳ Requested until they approve it — js/ft-updates.js)
-  if(vid){ const ask = vid.classList.contains("ft-video-ask"), wait = vid.classList.contains("ft-video-pending");
-    vid.textContent = ask ? "🔒 Request Video" : wait ? "⏳ Requested" : vid.disabled ? "🔒 Video" : "🎬 Video"; }
+  const vidLabel = (b, name) => { const ask = b.classList.contains("ft-video-ask"), wait = b.classList.contains("ft-video-pending");
+    // (two on one card: the short name, the request on hover — "🔒 PI Workflow", "Request the PI Workflow video")
+    if(name){ b.textContent = (ask || b.disabled ? "🔒 " : wait ? "⏳ " : "🎬 ") + name; b.title = ask ? `Request the ${name} video` : wait ? `${name} video: requested` : `${name} video`; return; }
+    b.textContent = ask ? "🔒 Request Video" : wait ? "⏳ Requested" : b.disabled ? "🔒 Video" : "🎬 Video"; };
+  if(vid) vidLabel(vid);
+  // (a card that holds two lessons, Personal Injury Process Flow / Reception: a video button for each, each its own lesson's
+  // video, locked and requested on its own)
+  const both = cardLessons(l.id);
+  const vids = both.length > 1 ? both.map(id => { const L = (typeof DAYS !== "undefined" ? DAYS : []).find(x => Number(x.id) === id); if(!L) return null;
+    const tt = document.createElement("template"); tt.innerHTML = String(moduleCard(L)).trim();
+    const b = [...tt.content.querySelectorAll(".mc-grid button")].find(x => /Video/.test(x.textContent)); if(!b) return null;
+    vidLabel(b, VIDEO_NAME[id] || lessonTitle(id)); return b.outerHTML; }).filter(Boolean) : [];
   const acts = cardRows(c, ex).length;
   // the lesson's icon opens its day card (the day deck); ▶ Start Training fills the top row
   const body = card.querySelector(".module-body");
@@ -1882,10 +1896,12 @@ function introCard(l, cur, ex, tags){
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
   grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); ${startGo(c.lesson)}"` : "disabled"} title="${open_ ? e(readFirst(c.lesson) ? "The Reading Task, then the lesson deck" : "The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? startLabel(c.lesson, done) : "🔒 Start Training"}</button>
-    ${vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
+    ${vids.length > 1 ? `<span class="ftli-vids">${vids.join("")}</span>` : vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
   return card.outerHTML;
 }
+// the short name of a lesson's video, on a card with two (Personal Injury Process Flow / Reception)
+const VIDEO_NAME = {3: "PI Workflow", 4: "Receptionist"};
 root.LSH_HOME_GRID_LAYOUT = function(ctx){
   if(!((root.FTDays && FTDays.DAYS) || []).length || !(ctx.lessons || []).length) return "";
   if(!decks()) loadDecks();
@@ -2469,6 +2485,9 @@ main.main-dash .module-grid > .ftli .mc-grid.mc-n1{grid-template-columns:minmax(
 main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
 main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* (a card with two lessons: a video button for each, side by side under the start buttons) */
+main.main-dash .module-grid > .ftli .mc-grid > .ftli-vids{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+main.main-dash .module-grid > .ftli .mc-grid > .ftli-vids > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* the full Classroom Activity card, as the first slide of its days' decks: scaled to fit the slide (fitSheets) */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
 .ftdd-lcslide .ftlc{box-shadow:none;}
@@ -2605,7 +2624,7 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;letter-spacing:.02em;}
+.ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
 .ftms-tbl th:not(:first-child){text-align:center;width:90px;}
 .ftms-tbl th:nth-child(3){width:auto;min-width:200px;text-align:left;}
 .ftms-tbl td{padding:2px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;}
@@ -3051,6 +3070,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
 .ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
 .ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
+/* 🖍 the highlighter: what a trainee must do or get right (Day 5's Time Zone & Submit: the instruction, the sample's fields) */
+.ft-body mark.ftdd-hl{background:#FFF200;color:inherit;padding:1px 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.ft-body .ftdd-ev-hlf{background:#FFF200 !important;box-shadow:0 0 0 2px #FFF200;border-radius:3px;}
 .ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
 .ft-body .ftdd-ev-sub{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
 .ft-body .ftdd-ev-box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid #444746;border-radius:3px;font-size:11px;color:#fff;margin-right:6px;}
@@ -3475,25 +3497,16 @@ main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p{font-size:20px !important;font-we
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
-/* (the metrics on a deck slide, read only: in two columns, so they read large, a header over each half) */
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){display:block;max-width:1400px;margin:0 auto;font-size:18px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead{display:block;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{display:grid;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr) 80px;column-gap:0;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::before{content:"";order:3;background:#6AA84F;border-left:16px solid #fff;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{content:"Score";order:4;background:#6AA84F;color:#fff;font-weight:800;text-align:center;padding:7px 10px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{display:block;width:auto !important;padding:7px 10px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody{display:block;columns:2;column-gap:16px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tr{break-inside:avoid;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 80px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{display:block;padding:6px 10px;font-size:18px;}
-/* (a slide that is the metrics alone, data-big: the scorecard across the slide, its text larger; "Score" kept on one line) */
+/* (the metrics on a deck slide, read only: one table, read large; its "Score" header on one line) */
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1100px;margin:0 auto;font-size:18px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:7px 10px;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:110px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:3px 12px !important;line-height:1.2 !important;font-size:17px;}
+/* (a slide that is the metrics alone, data-big: the scorecard across more of the slide, its text larger) */
 main.main-ftdd .ftdd-sheet > .ftdd-score.ftdd-score-big{align-self:stretch;width:100%;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1500px;font-size:23px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) thead tr{grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr) 110px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) tbody tr{grid-template-columns:minmax(0,1fr) 110px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:12px 14px;white-space:nowrap;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) thead tr::after{padding:12px 14px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:23px;padding:12px 14px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1300px;font-size:22px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:6px 16px !important;font-size:21px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:140px !important;}
 /* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}

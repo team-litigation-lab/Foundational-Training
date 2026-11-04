@@ -244,6 +244,20 @@ const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="S
   '<p class="ftdd-ev-perm">3 guests <small>· 1 yes, 2 awaiting</small></p>' +
   '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Bernardino</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#12A4AF">M</span><span><b>Martin Anthony Gan</b></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#5B3CC4">M</span><span><b>Michelle Velarde</b></span></div>' +
   '<p class="ftdd-ev-perm">Guest permissions</p><div><span class="ftdd-ev-box"></span> Modify event</div><div><span class="ftdd-ev-box on">✓</span> Invite others</div><div><span class="ftdd-ev-box on">✓</span> See guest list</div></div></div></div>\n';
+// 🖍 Day 5's sample, with a highlighter on what each appointment must have right (what the Calendar Activity Check compares):
+// the title and time zone (already marked), the date and time, the location, the reminder, the calendar and its colour, the
+// guests and the description
+function DEPOSITION_HL(){
+  const hl = (s, a) => { if(s.indexOf(a) < 0) throw new Error("Day 5's sample event changed: " + a.slice(0, 40)); return s.replace(a, a.replace(/^<(span|div|p) class="/, '<$1 class="ftdd-ev-hlf ')); };
+  let s = DEPOSITION_EV;
+  s = hl(s, '<span class="ftdd-ev-f">Feb 4, 2025</span>'); s = hl(s, '<span class="ftdd-ev-f">11:00am</span>'); s = hl(s, '<span class="ftdd-ev-f">1:00pm</span>');
+  s = hl(s, '<span class="ftdd-ev-f wide">Attorney’s Office or Zoom for Remote Attendees</span>');
+  s = hl(s, '<span class="ftdd-ev-f">Email ▾</span>'); s = hl(s, '<span class="ftdd-ev-f">1</span>'); s = hl(s, '<span class="ftdd-ev-f">days ▾</span>');
+  s = hl(s, '<span class="ftdd-ev-f">Michelle Bernardino ▾</span>');
+  s = hl(s, '<div class="ftdd-ev-desc">');
+  s = s.replace(/<div class="ftdd-ev-guest">/g, '<div class="ftdd-ev-hlf ftdd-ev-guest">');
+  return s;
+}
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note and its naming convention go: the answers are on ✍️ Knowledge Check
@@ -326,7 +340,7 @@ s3: html => {
     // under its heading; not the Drive folder, which asks a trainee for access)
     // (the heading and the drawn event are one block, ftdd-keep: one page, scaled to fit a short screen)
     .replace(/<p>Samples<\/p>\n?/, "")
-    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, '<div class="ftdd-keep"><p><b>Sample: a finished event should follow this structure:</b></p>\n' + DEPOSITION_EV + "</div>");
+    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, '<div class="ftdd-keep"><p><b>Sample: a finished event should follow this structure:</b> <mark class="ftdd-hl">the highlighted parts are what each of your appointments must have right</mark></p>\n' + DEPOSITION_HL() + "</div>");
   if(!act.includes("ftdd-ev-dep") || !act.includes("Sample: a finished event")) throw new Error("Day 5's Samples are no longer where the build looks for them");
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
@@ -360,7 +374,10 @@ s3: html => {
     `<div class="ftdd-calsim ftdd-calsim-ins" data-calsim-activity="5:s3-ins">${calsimPortal("btn btn-navy")}</div>\n` +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
-      .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +
+      .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")
+      // (🖍 what the trainee must do, highlighted)
+      .replace("Set the appropriate time zone for each activity item.", '<mark class="ftdd-hl">Set the appropriate time zone for each activity item.</mark>')
+      .replace("Check it BEFORE saving each appointment,", '<mark class="ftdd-hl">Check it BEFORE saving each appointment</mark>,')) + "\n" +
     cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the Call Listening Sessions, the sample recordings and SOP as links (a new tab,
@@ -812,7 +829,7 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
   MOCK_BTNS) + PGBREAK + mockPage("ftdd-mock-metrics",
   "<p><b>Reception Mock Calls Metrics</b></p>\n" +
   '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
-  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n");
+  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fifteen, which reaches your Scorecard.</p>\n");
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.
@@ -1119,9 +1136,8 @@ const ROWS = {
       // (none of the guide's section: the five practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
       {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []},
-      // (the Listening Activity: the PI practice calls again, optional, one card per recording, after the activity, on its
-      // step; Carlos's recordings are off it)
-      {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []}]
+      // (the optional Listening Activity, the PI practice calls again, is off Reception Part 1: no s1b)
+      ]
   },
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)

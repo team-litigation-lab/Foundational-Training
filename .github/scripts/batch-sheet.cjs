@@ -38,9 +38,21 @@ const failures = []; const fail = m => failures.push(m);
     'work-log': [{ at: iso(now - 3600e3), kind: 'lab', label: 'Intake Practice', score: 82 }],
     'last-view': { view: 'day', dayId: lesson, at: now - 600e3 } } });
   await put('skills:' + ids.Ada, { typing: [{ id: 't1', at: iso(now - 5 * 3600e3), date: iso(now).slice(0, 10), slot: 'AM', net: 48, gross: 52, acc: 96 }], spelling: [] });
-  // her three Drive links; the Monitoring Sheet's last check couldn't open it
-  await put('drive:' + ids.Ada, { folder: 'https://drive.google.com/drive/folders/abcdefghijklmn', tracker: 'https://docs.google.com/spreadsheets/d/abcdefghijklmn/edit', monitor: 'https://docs.google.com/document/d/abcdefghijklmn/edit', days: {} });
-  await put('trackerreview:' + ids.Ada, { days: {}, monitor: { pct: 0, found: 0, total: 0, entries: [], error: 'The system can\'t open this file.', checkedAt: iso(now - 7200e3) } });
+  // her six Drive links; the Monitoring Sheet's last check couldn't open it
+  // (the six monitored links: the Typing Tests folder not verified yet; the others ✓ opening, locked for their link)
+  const L6 = { folder: 'https://drive.google.com/drive/folders/abcdefghijklmn', tracker: 'https://docs.google.com/spreadsheets/d/abcdefghijklmn/edit', monitor: 'https://docs.google.com/document/d/abcdefghijklmn/edit',
+    tam: 'https://docs.google.com/document/d/tamtamtamtamtam/edit', typing: 'https://drive.google.com/drive/folders/typingtypingty', spelling: 'https://drive.google.com/drive/folders/spellingspell' };
+  await put('drive:' + ids.Ada, Object.assign({ days: {} }, L6));
+  const ck = (k, ok) => ({ url: L6[k], ok, error: ok ? '' : 'the system can\'t open it', at: iso(now - 7200e3) });
+  await put('trackerreview:' + ids.Ada, { days: {}, monitor: { pct: 0, found: 0, total: 0, entries: [], error: 'The system can\'t open this file.', url: L6.monitor, checkedAt: iso(now - 7200e3) },
+    verify: { monitor: ck('monitor', false), tam: ck('tam', true), spelling: ck('spelling', true), folder: ck('folder', true), tracker: ck('tracker', true) }, verifyAt: iso(now - 7200e3),
+    compliance: { '2026-11-02': { pct: 54, parts: { tracker: 50, tests: 67, outputs: 0, eod: 100 }, tests: { AM: true, PM: false, SP: true }, links: 0, saved: 0, submissions: ['Assessment: Common Terms Used'] } } });
+  { const rv = await get('trackerreview:' + ids.Ada);
+    rv.days = { '2026-11-02': { pct: 50, rules: [{ id: 'notes', label: 'Every open task has its Daily Note', pass: false, detail: '2 tasks without a note' }], review: 'AI-NOTES: clear notes; add the next step on each task.', comment: 'TRAINER-NOTE: good start.' } };
+    await put('trackerreview:' + ids.Ada, rv); }
+  // 🧑‍🏫 her Reception Mock Call, scored on the rubric with remarks (📅 Day 1–16: Detailed Scores, with its context)
+  await put('labreview:' + ids.Ada, { acts: { 'reception-live': { status: 'Passed', score: 76, comment: 'Good call control overall.', at: iso(now - 3600e3),
+    rubric: { key: 'reception', scores: [5, 4, 2, 4, 4, 3, 4], feedback: ['Warm, branded greeting.', '', 'Skipped the caller verification.', '', '', '', ''], avg: 3.8 } } } });
   await put('simresults:' + ids.Ada, { traineeId: ids.Ada, results: [{ simulator: 'Calendaring Activity', scenario: 'Week 1', score: 75, at: iso(now - 30 * 60e3) }] });
 
   // the trainer presses 🏅 Scorecard: it opens on the Batch Sheet
@@ -52,11 +64,10 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
-  // 📁 Batch Folders and 💬 Trainee Feedback sit in 🏅 Scorecard now (no longer in 🛡 Admin Master Control), and the feedback stays
-  // (Trainee Audit and 📁 Batch Folders are one tab, 👥 Trainees & Batches: js/ft-trainees-tab.js)
-  if (!/Trainees & Batches/.test(row.join(' ')) || /Trainee Audit|Batch Folders/.test(row.join(' '))) fail(`🏅 Scorecard should have one 👥 Trainees & Batches tab (no Trainee Audit or 📁 Batch Folders of their own): ${row.join(' | ')}`);
+  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are at the
+  // foot of the Batch Sheet, and the trainees' feedback is still kept)
+  if (/Trainees & Batches|Trainee Audit|Batch Folders|Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard still has a tab the Batch Sheet replaced: ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
-  if (!/Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard has no 💬 Trainee Feedback: ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
   await page.evaluate(() => { state.adminTab = 'tfeedback'; state.tfbAdmin = null; render(); }); await page.waitForTimeout(1500);
   const fbText = await page.evaluate(() => document.querySelector('main').innerText);
@@ -81,10 +92,38 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
+  // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking, ✍️ Process Questions and
+  // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)
+  const top = await page.evaluate(() => [...document.querySelectorAll('.bs-card > .bs-sec, .bs-card > details.bs-more')].map(x => x.id || (x.classList.contains('bs-more') ? 'more' : '')).filter(Boolean));
+  if (JSON.stringify(top.slice(0, 6)) !== JSON.stringify(['bs-scorecard', 'bs-compliance', 'bs-ranking', 'bs-process', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
+  if (await page.evaluate(() => document.querySelector('details.bs-more').open)) fail('▸ More detail is open before the trainer opens it');
+  await page.evaluate(() => { FTBatchSheet.more(true); render(); }); await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
-  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'process', 'outputs', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec')).length !== 9) fail('the nine tables are not all on the one page');
+  if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['scorecard', 'compliance', 'process', 'outputs', 'dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
+  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 12) fail('the twelve tables are not all on the one page');
+  // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
+  // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
+  const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
+  if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
+  if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
+  // Compliance and Platform Utilization: the Drive link's dropdown, Correct / Wrong for the one picked, how many are correct, the progress
+  const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Assessment (dropdown)', 'Correct / Wrong', 'Links correct', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  if (!ca || ca[1] !== '📒 Monitoring Sheet' || !/Wrong/.test(ca[2]) || ca[3] !== '4 / 6') fail(`Ada's compliance (her Monitoring Sheet wrong; 4 of 6 correct): ${ca}`);
+  await page.evaluate(id => FTBatchSheet.dlPick(id, 'tam'), ids.Ada); await page.waitForTimeout(300);
+  const ca2 = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'compliance'); const r = t.rows.find(r => /Ada/.test(r[0].v)); return [r[1].v, r[2].v]; });
+  if (ca2[0] !== '📘 TAM' || !/Correct/.test(ca2[1])) fail(`picking Ada's TAM in the dropdown: ${ca2}`);
+  // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
+  // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
+  const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
+  if (ds.head.length !== 18 || ds.head[2] !== 'Day 1' || ds.head[17] !== 'Day 16') fail(`📅 Day 1–16's columns: ${ds.head}`);
+  if (!dsa || dsa[5] !== '76%') fail(`Ada's Day 4 isn't her Reception Mock Call's 76%: ${dsa}`);
+  await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
+  const dx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception/i.test(x.textContent)); return it ? it.innerText : ''; });
+  if (!/Why this score/i.test(dx) || !/3\.80\/5/.test(dx) || !/did best[\s\S]*Warm, branded greeting/i.test(dx) || !/to be improved[\s\S]*Skipped the caller verification/i.test(dx)) fail(`the mock call's context (why, best, to improve): ${dx}`);
+  const rkAt = await page.evaluate(() => { const a = document.getElementById('bs-compliance'), r = document.getElementById('bs-ranking'); return !!(a && r && a.nextElementSibling === r && r.querySelector('.rk-bar')); });
+  if (!rkAt) fail('the 📊 Weekly Ranking is not right under the Score Card and the compliance');
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -96,8 +135,9 @@ const failures = []; const fail = m => failures.push(m);
 
   // 📁 Drive links: Ada 3 / 3 with the Monitoring Sheet flagged; Ben none
   const dlinks = by('drive'), da = dlinks.rows.find(r => /Ada/.test(r[0])), db = dlinks.rows.find(r => /Ben/.test(r[0]));
-  if (!da || da[1] !== '3 / 3' || da[2] !== '✓' || da[3] !== '✓' || !/can't open/.test(da[4]) || /Not yet/.test(da[5])) fail(`📁 Drive links for Ada: ${da}`);
-  if (!db || db[1] !== '0 / 3' || db.slice(2, 5).some(x => x !== '—')) fail(`📁 Drive links for Ben, who linked nothing: ${db}`);
+  // (the columns: Monitoring Sheet, TAM, Typing Tests, Spelling Tests, Assessments/Activities, Daily Task Tracker)
+  if (!da || da[1] !== '6 / 6' || !/Inaccessible/.test(da[2]) || da[3] !== '✓ opening' || !/Pending/.test(da[4]) || da[5] !== '✓ opening' || da[6] !== '✓ opening' || da[7] !== '✓ opening' || /Not yet/.test(da[8])) fail(`📁 Drive links for Ada: ${da}`);
+  if (!db || db[1] !== '0 / 6' || db.slice(2, 8).some(x => x !== '—')) fail(`📁 Drive links for Ben, who linked nothing: ${db}`);
 
   // 📚 Ada's first lesson: deck finished, Knowledge Check 90%
   const ls = by('lessons').rows.find(r => /Ada/.test(r[0]));
@@ -105,20 +145,17 @@ const failures = []; const fail = m => failures.push(m);
   const lb = by('lessons').rows.find(r => /Ben/.test(r[0]));
   if (!lb || lb.slice(1).some(Boolean)) fail(`📚 Ben has done nothing, yet his row has: ${lb}`);
 
-  // 📅 Day by Day: a column per training day; Ada's Day 1 has the Knowledge Check ticked by itself; a trainer ticks a classroom activity
+  // 📅 Day by Day: a column per training day; Ada's Day 1 has the Knowledge Check ticked by itself (and her scored Reception
+  // Mock Call is 1 of the Mock Calls & Demos); a trainer ticks a classroom activity
   const dd = by('days');
   if (dd.head.length !== 7 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[7] !== 'Day 1' || dd.head[1] !== 'Average score' || dd.head[2] !== 'Days complete' || JSON.stringify(dd.head.slice(3, 7)) !== JSON.stringify(['✍️ Knowledge Checks', '🛠 Practice', '🎙 Mock Calls & Demos', '🏫 Classroom & outputs'])) fail(`📅 Day by Day's columns: ${dd.head.slice(0, 8)}`);
   const adaKinds = dd.rows.find(r => /Ada/.test(r[0]));
-  // (scores, not counts: Ada's Knowledge Check 90%; no Mock Call or Demo done or scored yet)
-  if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
-  const autoKC = await page.evaluate(() => { const d1 = FTDays.of(1), it = d1.items.find(i => i.at === 'tool' && i.id === 'process'); return it ? it.t : ''; });
-  if (autoKC && !(await page.evaluate(t => [...document.querySelectorAll('.bs-day')][0].innerText.includes(t), autoKC))) fail('Day 1\'s checklist misses its Knowledge Check');
-  if (autoKC && !(await page.evaluate(t => { const l = [...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item'); const x = [...l].find(n => n.innerText.includes(t)); return x && x.querySelector('input').checked && /auto/.test(x.innerText); }, autoKC))) fail('Ada\'s passed Day 1 Knowledge Check is not ticked by itself');
-  if (!(await page.$('.bs-ck-who select'))) fail('the trainer can\'t pick whose checklist to open');
-  await page.selectOption('.bs-ck-who select', ids.Ada); await page.waitForTimeout(400);
+  // (scores, not counts: Ada's Knowledge Check 90%; her Reception Mock Call, scored 76% by the trainer)
+  if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
+  // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
+  if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
   const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'room') || {}).t);
-  const box = await page.evaluateHandle(t => [...[...document.querySelectorAll('.bs-day')][0].querySelectorAll('.bs-item')].find(n => n.innerText.includes(t)).querySelector('input'), roomT);
-  await box.evaluate(b => b.click()); await page.waitForTimeout(1500);   // (the page redraws on the tick)
+  await page.evaluate(([id, k]) => FTBatchSheet.tick(id, k, true), [ids.Ada, '1|' + roomT]); await page.waitForTimeout(1500);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
   const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
@@ -219,11 +256,13 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('My Progress never finished loading'));
   await page.waitForTimeout(400);
   const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
-  if (MT[0].title !== '👤 Me') fail(`the trainee's first table is ${MT[0].title}`);
-  // her own checklist, read only, with the trainer's tick on it
-  if (!(await page.$('.bs-mine .bs-ck h4')) || await page.$('.bs-mine .bs-ck-who')) fail('the trainee doesn\'t get her own checklist, or gets the trainer\'s picker');
-  if (await page.$('.bs-mine .bs-item input:not([disabled])')) fail('a trainee can tick her own checklist');
-  if (!(await page.evaluate(() => [...document.querySelectorAll('.bs-mine .bs-item.is-done')].some(n => /trainer/.test(n.innerText))))) fail('the trainee doesn\'t see the trainer\'s tick');
+  // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
+  if (MT[0].id !== 'scorecard' || MT[1].id !== 'compliance' || !MT.some(x => x.title === '👤 Me')) fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
+  if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
+  // (her 📤 Daily outputs with the day's comments: the platform's check and the AI's review)
+  if (!/AI-NOTES/.test(await page.evaluate(() => (document.querySelector('.bs-mine #bs-outputs .bs-oc') || {}).innerText || ''))) fail('the trainee doesn\'t see her days\' comments under 📤 Daily outputs');
+  // (no checklist on her page either, and no trainer's picker)
+  if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
   if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
@@ -241,11 +280,30 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
   await page.waitForTimeout(600);
 
+  // 👥 Trainees & Batches at the foot of the sheet (no tab of its own, nor 💬 Trainee Feedback): Cy waits for approval there,
+  // and Approve approves her
+  const tabs2 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
+  if (/Trainees & Batches|Trainee Feedback/.test(tabs2) || !/Batch Sheet/.test(tabs2)) fail(`🏅 Scorecard's tabs: ${tabs2}`);
+  const pend = await page.evaluate(() => { const s = document.getElementById('bs-people'); return s ? { text: s.innerText, btn: !!s.querySelector('button[onclick*="approveTrainee"]') } : null; });
+  if (!pend || !/Pending Approvals/.test(pend.text) || !/Cy/.test(pend.text) || !pend.btn) fail(`the Batch Sheet has no ⏳ Pending Approvals with Cy and Approve: ${pend && pend.text.slice(0, 200)}`);
+  else {
+    await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
+    if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('Approve on the Batch Sheet didn\'t approve Cy');
+    const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
+    if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
+  }
+
+  // 📤 Daily outputs: under the table, a day's summarized comments (the platform's check and the AI's review), for the trainer
+  await page.evaluate(id => FTBatchSheet.ocWho(id), ids.Ada); await page.waitForTimeout(500);
+  const oc = await page.evaluate(() => (document.querySelector('#bs-outputs .bs-oc') || {}).innerText || '');
+  if (!/afternoon typing test/.test(oc) || !/No output link submitted/.test(oc) || !/AI-NOTES/.test(oc) || !/TRAINER-NOTE/.test(oc) || !/Common Terms Used/.test(oc) || !/Every open task has its Daily Note/.test(oc))
+    fail(`📤 Daily outputs' comments for Ada don't summarize the day (the check, what to fix, the AI's review, the trainer): ${oc.slice(0, 300)}`);
+
   // leaving it: back to the normal width
-  await page.evaluate(() => { state.adminTab = 'ranking'; render(); });
+  await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in eight tables; their three Drive links, linked and readable; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in twelve tables, opening on the simplified scorecard (🏅 Score Card lesson by lesson, the compliance with the Drive links dropdown, 📊 Weekly Ranking, ✍️ Process Questions, 📤 Daily outputs; the rest under ▸ More detail, with the reasons for each score on 📅 Day 1–16); their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -966,7 +966,7 @@ Write the feedback the way this program's facilitator evaluates trainees (her fe
 The summary is the facilitator's overall evaluation of the response: a verdict label, the strength, the precise improvements needed, in 2–4 sentences.
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 QUESTIONS AND ANSWERS:
 ${qs.map((x,k)=>`${k+1}. QUESTION: ${x.q}\n   ANSWER: ${ans(x).replace(/\s+/g, " ")}`).join("\n")}

@@ -302,7 +302,7 @@ The minutes are scored on these metrics: ${((window.FT_RUBRICS && FT_RUBRICS.for
 Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming what was done well, then "However, improvement is needed in …" naming each gap, then the habit that prevents it. 3-5 sentences, third person.
 
 FACILITATOR'S FEEDBACK DNA:
-${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
+${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 
 Return ONLY JSON: {"summary":"..."}`;
       const out = await callAIJson(prompt, 900, undefined, "grading");

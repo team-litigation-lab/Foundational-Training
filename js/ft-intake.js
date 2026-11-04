@@ -94,7 +94,7 @@ const downloadUrl = u => { const id = driveId(u); return !id ? String(u || "") :
 const copyUrl = u => { const id = driveId(u); return id && isDocs(u) ? `https://docs.google.com/document/d/${id}/copy` : ""; };
 const embed = u => (typeof window.lvEmbedUrl === "function" && window.lvEmbedUrl(u)) || "";
 const isTrainee = () => typeof state === "object" && !!state.traineeId && !state.isAdmin && !state.adminPreview;
-const K = {set: null, mine: null, folder: "", sub: null, id: null, at: 0, loading: null};
+const K = {set: null, mine: null, folder: "", sub: null, id: null, at: 0, loading: null, docs: [], edit: false};
 // the trainee's completed Intake Worksheet, its link submitted on the slide (actsub:<id>.items.intakews: {answer: the link, submittedAt})
 const WS = "intakews";
 function loadK(force){
@@ -103,7 +103,10 @@ function loadK(force){
   if(!force && K.set && K.id === id && Date.now() - K.at < 120000) return Promise.resolve();
   K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null])
     .then(([v, a, d, w]) => { K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
-      K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now(); })
+      K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now();
+      // (the trainee's own links to the additional intake documents: drive:<id>.intakeDocs, theirs to write)
+      K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : [];
+      K.packetLink = d && /^https:\/\//.test(String(d.intakePacket || "")) ? String(d.intakePacket) : ""; })
     .catch(() => { if(!K.set) K.set = {}; })
     .then(() => { K.loading = null; paint(); });
   return K.loading;
@@ -213,7 +216,11 @@ function packetHtml(){
   const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
   return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${pk.client ? `<small>Client: <b>${e(pk.client)}</b> · name your subfolder after them</small>` : ""}</div></div>
     <div class="ftis-pk-act">${pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it") : `<span class="ftis-pk-note">Your trainer is adding this packet’s link.</span>`}${folderBtn()}</div>
-    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>`;
+    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>
+    <div class="ftis-pk-link"><b>🔗 Link your packet</b> <small>Your renamed copy in your Google Drive: open it, copy its link, paste it here.</small>
+      <div class="ftis-ws-row"><input type="url" id="ftisPkLink" placeholder="https://drive.google.com/file/d/…" value="${e(K.packetLink || "")}" aria-label="The Drive link of your renamed packet">
+      <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.savePacketLink(this)">💾 ${K.packetLink ? "Save again" : "Save"}</button></div>
+      ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a></p>` : ""}</div>`;
 }
 // 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
 function sheetHtml(el){
@@ -236,17 +243,23 @@ function wsubHtml(){
     ${K.sub ? `<p class="ftis-ws-ok">✓ Submitted ${e(when)}: <a href="${e(K.sub.answer)}" target="_blank" rel="noopener noreferrer">your worksheet ↗</a></p>`
       : `<p class="ftis-pk-note">In Google Drive: Share → General access “Anyone with the link” → Copy link, then paste it here.</p>`}`;
 }
-// 📄 the additional intake documents, each in the slide: a click shows it bigger in the viewer
+// 📄 the additional intake documents, each in the slide: a click shows it bigger in the viewer. Each trainee enters each
+// document's own Drive link from the Additional Intake Documents folder (✏️ My document links, saved in drive:<id>.intakeDocs);
+// a document with no link of theirs takes the trainer's (Admin → 📦 Intake Packets), and with neither, opens the folder
 function docsHtml(el){
   if(!K.set) return `<p class="ftis-wait">Loading the documents…</p>`;
-  const links = (K.set.docs || []), folder = el.getAttribute("data-folder") || DFOLDER;
+  const links = (K.set.docs || []), folder = el.getAttribute("data-folder") || DFOLDER, own = isTrainee() ? K.docs : [];
   // (the slide's line about them is drawn with them, so it never stands on a page of its own; each card is the document's
   // preview over its name, bigger on a click)
-  return `<p class="ftis-docs-lead">Additional Intake Documents for your reference.</p>
-    <div class="ftis-docs-g">${DOCS.map((t, i) => { const u = String(links[i] || "").trim(), src = u && embed(u);
+  const n = DOCS.filter((t, i) => String(own[i] || "").trim()).length;
+  return `<p class="ftis-docs-lead">Additional Intake Documents for your reference.${isTrainee() ? ` <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docsEdit()">✏️ My document links (${n} of ${DOCS.length})</button>` : ""}</p>
+    ${isTrainee() && K.edit ? `<div class="ftis-dedit"><p class="ftis-pk-note">Open the <a href="${e(folder)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>, open each document and copy its link from the address bar. A document with no link opens the folder.</p>
+      ${DOCS.map((t, i) => `<label><b>${i + 1}. ${e(t)}</b><input type="url" data-doc="${i}" placeholder="https://drive.google.com/file/d/…" value="${e(own[i] || "")}"></label>`).join("")}
+      <div class="ftis-asave"><button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.docsSave(this)">💾 Save my document links</button> <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docsEdit()">Close</button></div></div>` : ""}
+    <div class="ftis-docs-g">${DOCS.map((t, i) => { const u = String(own[i] || "").trim() || String(links[i] || "").trim(), src = u && embed(u);
     return `<a class="viewer-link ftis-doc" data-kind="doc" data-title="${e(t)}" href="${e(u || folder)}">
       <span class="ftis-doc-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-doc-ic">📄</span>`}</span>
-      <span class="ftis-doc-t">${e(t)}</span></a>`; }).join("")}</div>`;
+      <span class="ftis-doc-t">${e(t)}${u ? "" : " <small>(opens the folder)</small>"}</span></a>`; }).join("")}</div>`;
 }
 // 📋 the sample intake forms: shown in the slide for reference, bigger on a click
 function formsHtml(el){
@@ -276,6 +289,10 @@ async function loadAdmin(){
     const keys = people.map(r => "intakeassign:" + r.id), vals = [], subs = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     // (each trainee's submitted Intake Worksheet link: actsub:<id>.items.intakews)
+    // (and each trainee's own packet link: drive:<id>.intakePacket)
+    const dvs = []; const dkeys = people.map(r => "drive:" + r.id);
+    for(let i = 0; i < dkeys.length; i += 99) dvs.push(...await sharedGetMany(dkeys.slice(i, i + 99)));
+    AD.pk = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); });
     const skeys = people.map(r => "actsub:" + r.id);
     for(let i = 0; i < skeys.length; i += 99) subs.push(...await sharedGetMany(skeys.slice(i, i + 99)));
     AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
@@ -300,15 +317,16 @@ function adminHtml(){
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
     <h4>Assign the packets (each packet brings its mock call case)</h4>
     <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
+        <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : `<span class="fss-muted">Not linked</span>`}</td>
         <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
     <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
     <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
-    <h4>The additional intake documents</h4><p class="fss-muted">Each document’s own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
+    <h4>The additional intake documents</h4><p class="fss-muted">The shared default for each document (each trainee enters their own on the slide, ✏️ My document links, which takes their place): its own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
     <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
     <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets and documents</button></div></div>`;
 }
@@ -402,6 +420,32 @@ window.FTIntake = {
     const c = callById((rec || {}).call); return c ? {id: c.id, title: c.title} : null;
   },
   reload: () => loadK(true),
+  docsEdit(){ K.edit = !K.edit; paint(true); },
+  // 🔗 the trainee's own packet link, into drive:<id>.intakePacket (read fresh first: the record holds their other links too)
+  async savePacketLink(b){
+    if(!isTrainee()) return;
+    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim();
+    if(u && !/^https:\/\/(drive|docs)\.google\.com\//.test(u)){ toast("Paste the Google Drive link of your packet: it starts with https://drive.google.com/ or https://docs.google.com/"); return; }
+    b.disabled = true; let ok = false;
+    try{ const cur = (await sharedGet("drive:" + state.traineeId)) || {days: {}}; cur.intakePacket = u; cur.updatedAt = new Date().toISOString();
+      ok = await sharedSet("drive:" + state.traineeId, cur) !== false; }catch(err){}
+    b.disabled = false;
+    if(!ok){ toast("Couldn’t save. Check your connection and try again."); return; }
+    K.packetLink = u; paint(); toast(u ? "✓ Your packet is linked: your trainer sees it." : "Link removed.");
+  },
+  // 💾 the trainee's own document links, into drive:<id>.intakeDocs (read fresh first: the record holds their six links too)
+  async docsSave(b){
+    if(!isTrainee()) return;
+    const v = [...document.querySelectorAll(".ftis-dedit input[data-doc]")].reduce((a, x) => { a[Number(x.getAttribute("data-doc"))] = String(x.value || "").trim(); return a; }, []);
+    if(v.some(u => u && !/^https:\/\/(drive|docs)\.google\.com\//.test(u))){ toast("Paste Google Drive links: they start with https://drive.google.com/ or https://docs.google.com/"); return; }
+    b.disabled = true;
+    let ok = false;
+    try{ const cur = (await sharedGet("drive:" + state.traineeId)) || {days: {}}; cur.intakeDocs = DOCS.map((t, i) => v[i] || ""); cur.updatedAt = new Date().toISOString();
+      ok = await sharedSet("drive:" + state.traineeId, cur) !== false; }catch(err){}
+    b.disabled = false;
+    if(!ok){ toast("Couldn’t save. Check your connection and try again."); return; }
+    K.docs = DOCS.map((t, i) => v[i] || ""); K.edit = false; paint(true); toast("✓ Your document links are saved: each shows on the slide, bigger on a click.");
+  },
   view(b){ if(typeof lvOpen === "function") lvOpen({kind: "doc", title: b.getAttribute("data-title"), url: b.getAttribute("data-url")}); },
   // 📤 the completed worksheet's link (wsubHtml): a Google Docs or Drive link, saved with the time it was sent
   async submitSheet(b){
@@ -474,6 +518,10 @@ window.FTIntake = {
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
 .ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
 .ftis-admin h4{margin:16px 0 6px;color:#262B45;}
+.ftis-dedit{background:#F6F8FC;border:1px solid #D9DFEA;border-radius:10px;padding:10px 14px;margin:8px 0;text-align:left;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px;}
+.ftis-dedit > p, .ftis-dedit > .ftis-asave{grid-column:1/-1;margin:0;} .ftis-dedit label{display:flex;flex-direction:column;font-size:12.5px;gap:2px;} .ftis-dedit input{padding:5px 8px;border:1px solid #C9D1E0;border-radius:6px;font:inherit;}
+.ftis-doc-t small{display:block;color:#8A93A6;font-weight:400;}
+.ftis-pk-link{margin:10px 0 0;text-align:left;} .ftis-pk-link small{display:block;color:#5F6368;margin:2px 0 4px;}
 .ftis-mockcall{background:#FFF8EF;border:2px dashed #DB8437;border-radius:12px;padding:12px 16px;margin:8px 0 10px;color:#1B1E2E;text-align:left;}
 .ftbf .ftis-mockcall{margin:12px auto;max-width:720px;}
 .ftis-mc-card{background:#fff;border:1px solid #DCE0EA;border-left:5px solid #262B45;border-radius:12px;padding:10px 14px;margin:6px 0 2px;}

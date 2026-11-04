@@ -417,7 +417,7 @@ function groupTabs(out){
   const a = out.indexOf('<div class="admin-tabs"'); if(a < 0) return out;
   const b = out.indexOf("</div>", a) + 6;
   const t = document.createElement("template"); t.innerHTML = out.slice(a, b);
-  const tabs = [...t.content.querySelectorAll(".admin-tab-btn")].map(x => ({id:((x.getAttribute("onclick") || "").match(/setAdminTab\('([^']+)'\)/) || [])[1], html:x.outerHTML})).filter(x => x.id);
+  const tabs = [...t.content.querySelectorAll(".admin-tab-btn")].map(x => ({id:((x.getAttribute("onclick") || "").match(/setAdminTab\('([^']+)'\)/) || [])[1], html:x.outerHTML})).filter(x => x.id && !(CFG.adminHidden || []).includes(x.id));
   if(!tabs.length) return out;
   const cur = groupOf(state.adminTab || "audit");
   // a section's lead tab (LSH_PROGRAM.adminLead, e.g. {scorecard: "batchsheet"}) comes first, so the section's button opens on it

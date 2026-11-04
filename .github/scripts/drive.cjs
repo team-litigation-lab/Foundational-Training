@@ -24,6 +24,7 @@ const failures = []; const fail = (m) => failures.push(m);
     let shared = true, folderGone = false;
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
+    const META = {}, metaCalls = [];   // 🔗 the links' names, as Drive gives them (null: the account can't open it)
     let subShared = false;   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
@@ -33,9 +34,10 @@ const failures = []; const fail = (m) => failures.push(m);
         if (/\/files\/abcFolderId01\/permissions/.test(u)) { if (bearer !== 'Bearer ci-token') return new Response('{}', { status: 403 });
             const pm = JSON.parse(init.body); subShared = pm.role === 'writer' && pm.emailAddress === env.GDRIVE_SA_SUBJECT; return new Response(JSON.stringify({ id: 'perm1' })); }
         { const m = u.match(/googleapis\.com\/drive\/v3\/files\/([A-Za-z0-9_-]+)\?fields=id,name,mimeType/);
-          if (m) { if (bearer !== 'Bearer sub-token') return new Response('{"error":{"code":404}}', { status: 404 });
-            const mt = m[1] === 'abcFolderId01' ? 'application/vnd.google-apps.folder' : m[1].startsWith('1Tracker') ? 'application/vnd.google-apps.spreadsheet' : 'application/vnd.google-apps.document';
-            return new Response(JSON.stringify({ id: m[1], name: 'File ' + m[1].slice(0, 8), mimeType: mt })); } }
+          if (m) { metaCalls.push(m[1]); if (bearer !== 'Bearer sub-token' || META[m[1]] === null) return new Response('{"error":{"code":404}}', { status: 404 });
+            const folder = m[1] === 'abcFolderId01' || /Folder/.test(m[1]), mt = folder ? 'application/vnd.google-apps.folder' : m[1].startsWith('1Tracker') ? 'application/vnd.google-apps.spreadsheet' : 'application/vnd.google-apps.document';
+            const name = META[m[1]] || (m[1] === 'abcFolderId01' ? 'LSH Trainee folder – B9 Dee Drive Assessments/Activities' : m[1].startsWith('1Tracker') ? 'LSH Daily Task Tracker | B9 Dee Drive' : 'LSH VA Training Monitoring Sheet__Dee Drive');
+            return new Response(JSON.stringify({ id: m[1], name, mimeType: mt })); } }
         if (bearer === 'Bearer sub-token' && !subShared && /googleapis\.com\/(upload\/)?drive\/v3\/files/.test(u)) return new Response('{"error":{"code":404}}', { status: 404 });
         if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
             if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
@@ -135,13 +137,13 @@ const failures = []; const fail = (m) => failures.push(m);
     env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
     const n0 = uploads.length, s6 = await call('/api/drive/save', doc, trainee);
     if (!s6.body || !s6.body.ok || !subShared || uploads.length !== n0 + 1) fail(`a save as GDRIVE_SA_SUBJECT on a folder shared only with the service account should add that user and save: ${JSON.stringify(s6.body)} (added: ${subShared})`);
-    // 🔗 the trainee's three links, checked now: read AS GDRIVE_SA_SUBJECT (the trainer, an Editor on every trainee's Drive),
+    // 🔗 the trainee's links, checked now: read AS GDRIVE_SA_SUBJECT (the trainer, an Editor on every trainee's Drive),
     // so files never shared with the service account itself still open; without the subject, the account alone can't
     const v1 = await call('/api/drive/verify', {}, trainee), vv = (v1.body || {}).verify || {};
     if (!v1.body || !v1.body.ok || !vv.folder || !vv.folder.ok || !vv.tracker || !vv.tracker.ok || !vv.monitor || !vv.monitor.ok || v1.body.share !== 'saver@lsh.example') fail(`the links should open as GDRIVE_SA_SUBJECT: ${JSON.stringify(v1.body)}`);
     if (!(JSON.parse(store.get('ft:trackerreview:' + id)).verify || {}).folder) fail('the link check wasn\'t kept in trackerreview (the Batch Sheet reads it)');
     delete env.GDRIVE_SA_SUBJECT;
-    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait)
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; delete rv.verify; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait; a link not checked yet: a ✓ is locked for its link)
     const v2 = await call('/api/drive/verify', {}, trainee), vv2 = (v2.body || {}).verify || {};
     if (!v2.body || !v2.body.ok || (vv2.folder || {}).ok !== false || !/Share it with ci@lsh\.iam\.gserviceaccount\.com as Editor/.test((vv2.folder || {}).error || '')) fail(`without GDRIVE_SA_SUBJECT, a file the account can't open should say whom to share it with: ${JSON.stringify(v2.body)}`);
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
@@ -169,6 +171,31 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!comp || comp.parts.tests !== 67 || !comp.tests.AM || comp.tests.PM || !comp.tests.SP || comp.parts.eod !== 100 || comp.parts.outputs !== 100
       || typeof comp.parts.tracker !== 'number' || typeof comp.parts.monitor !== 'number' || typeof comp.pct !== 'number') fail(`the day's compliance: ${JSON.stringify(comp)}`);
     if (!((nightly.body || {}).results || []).some(r => r.id === id && typeof r.compliance === 'number')) fail('the nightly check didn\'t record the day\'s compliance');
+    // 🔗 the six monitored links (worker.js verifyLinks): ✓ when it opens and is the right kind with the right name, locked for
+    // that link; ✗ when it can't be opened or is another file, with why; a new link checked again
+    const six = { monitor: DOC, tracker: SHEET, folder: 'https://drive.google.com/drive/folders/abcFolderId01', tam: 'https://docs.google.com/document/d/1TamDocIdForTheCiTest0000001/edit',
+      typing: 'https://drive.google.com/drive/folders/1TypingFolderIdForCi01', spelling: 'https://drive.google.com/drive/folders/1SpellingFolderIdCi001' };
+    Object.assign(META, { '1TamDocIdForTheCiTest0000001': 'Week 1 notes', '1TypingFolderIdForCi01': 'Typing Tests', '1SpellingFolderIdCi001': null });
+    store.set('ft:drive:' + id, JSON.stringify(Object.assign(JSON.parse(store.get('ft:drive:' + id)), six)));
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verify; delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+    env.GDRIVE_SA_EMAIL = 'ci@lsh.iam.gserviceaccount.com'; env.GDRIVE_SA_KEY = `-----BEGIN PRIVATE KEY-----\\n${pk}\\n-----END PRIVATE KEY-----`; env.GDRIVE_SA_SUBJECT = 'saver@lsh.example';
+    const lk1 = await call('/api/drive/verify', { id }, admin), L1 = (lk1.body || {}).verify || {};
+    if (!L1.monitor || !L1.monitor.ok || !L1.tracker.ok || !L1.folder.ok || !L1.typing || !L1.typing.ok) fail(`the links that open and are the right ones aren't ✓: ${JSON.stringify(L1)}`);
+    if (!L1.tam || L1.tam.ok || !/isn't your LSH Task Assessment Manual/.test(L1.tam.error)) fail(`a link to another file isn't ✗ with why: ${JSON.stringify(L1.tam)}`);
+    if (!L1.spelling || L1.spelling.ok || !/Share it with saver@lsh\.example/.test(L1.spelling.error)) fail(`a link the system can't open isn't ✗ with the address to share it with: ${JSON.stringify(L1.spelling)}`);
+    metaCalls.length = 0; META['1MonitorDocIdForTheCiTest000001'] = 'Something else';
+    await call('/api/drive/verify', { id }, admin);
+    if (metaCalls.includes('1MonitorDocIdForTheCiTest000001')) fail('a ✓ link was checked again: it should stay locked for that link');
+    // (the trainee replaces the TAM link: checked again, and ✓)
+    const tamNew = 'https://docs.google.com/document/d/1TamDocNewForTheCiTest000002/edit'; META['1TamDocNewForTheCiTest000002'] = 'LSH Task Assessment Manual (TAM) | B9 Dee Drive';
+    store.set('ft:drive:' + id, JSON.stringify(Object.assign(JSON.parse(store.get('ft:drive:' + id)), { tam: tamNew })));
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait)
+    metaCalls.length = 0;
+    const lk2 = await call('/api/drive/verify', {}, trainee), L2 = (lk2.body || {}).verify || {};
+    if (!L2.tam || !L2.tam.ok || L2.tam.url !== tamNew) fail(`a new link wasn't checked again: ${JSON.stringify(L2.tam)}`);
+    if (metaCalls.includes('1TrackerSheetIdForTheCiTest0001') || !metaCalls.includes('1TamDocNewForTheCiTest000002')) fail(`a check opened a ✓ link again, or not the new one: ${JSON.stringify(metaCalls)}`);
+    delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY; delete env.GDRIVE_SA_SUBJECT;
+
     // a folder that can't be read keeps the screenshots already found, and says so
     folderGone = true;
     const shB = await call('/api/drive/shots', { id }, admin), kept2 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
@@ -180,6 +207,23 @@ const failures = []; const fail = (m) => failures.push(m);
     const sheetRule = (r3.body.review.days[D].rules || [])[0];
     if (!sheetRule || sheetRule.id !== 'sheet' || !/can't open this file.*file's own link/.test(sheetRule.detail)) fail(`an unreadable sheet should say to check its link: ${JSON.stringify(sheetRule)}`);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
+
+    // 🔄 the past training days: from when she registered to yesterday, each weekday without a compliance record gets one
+    // (backfillCompliance, /api/compliance/backfill, and the end of every shift), marked backfilled; a tracker not checked
+    // that day is "not checked", not 0
+    // (the past weekdays as the backfill counts them: from the registration's date, Pacific time, up to today, by calendar date)
+    { const back = new Date(Date.now() - 9 * 864e5), wk = [], today = TR.ptDate();
+      for (let t = Date.parse(TR.ptDate(back) + 'T12:00:00Z'); ; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break; if (TR.isWeekday(d)) wk.push(d); }
+      const tr0 = JSON.parse(store.get('ft:trainee:' + id)); tr0.registeredAt = back.toISOString(); store.set('ft:trainee:' + id, JSON.stringify(tr0));
+      const rv0 = JSON.parse(store.get('ft:trackerreview:' + id)); rv0.compliance = {}; store.set('ft:trackerreview:' + id, JSON.stringify(rv0));
+      store.set('ft:skills:' + id, JSON.stringify({ typing: [{ id: 'bt', at: new Date(wk[0] + 'T15:00:00Z').toISOString(), date: wk[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }));
+      const bf = await call('/api/compliance/backfill', { ids: [id] }, admin);
+      if (!bf.body || !bf.body.ok || bf.body.filled[id] !== wk.length) fail(`the backfill didn't work out the ${wk.length} past weekdays: ${JSON.stringify(bf.body)}`);
+      const c = JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {}, c0 = c[wk[0]] || {};
+      if (!c0.backfilled || !c0.tests || !c0.tests.AM || c0.parts.tracker !== null) fail(`a backfilled day isn't marked, misses its test, or counts an unchecked tracker as 0: ${JSON.stringify(c0)}`);
+      if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
+      const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
+      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Drive trackers test passed (the day\'s compliance: tracker, Monitoring Sheet, tests, outputs and EOD; the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');

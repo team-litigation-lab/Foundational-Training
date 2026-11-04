@@ -62,7 +62,8 @@ function stepsHtml(auto = true){
 }
 // 🔗 a link's state from the last 🔁 check (trackerreview:<id>.verify, worker.js verifyLinks), for the link saved now
 const vOf = k => { const v = ((D.review || {}).verify || {})[k], u = String((D.drive || {})[k] || "").trim(); return v && u && String(v.url || "").trim() === u ? v : null; };
-const VERIFIED = ["folder", "tracker", "monitor"];
+// (all six monitored links: js/ft-drive.js MONITORED, worker.js verifyLinks)
+const VERIFIED = ["monitor", "tam", "typing", "spelling", "folder", "tracker"];
 const linksOk = () => VERIFIED.every(k => (D.drive || {})[k] && (vOf(k) || {}).ok);
 function verifyBox(){
   if(preview() || D.look) return "";
@@ -72,25 +73,39 @@ function verifyBox(){
   if(!VERIFIED.some(k => x[k])) return tip;
   const head = bad.length ? `<div class="fdr-vbad">✗ ${bad.length} link${bad.length === 1 ? "" : "s"} can’t be opened by the system yet: fix ${bad.length === 1 ? "it" : "them"} below, then 🔁 Check again.</div>`
     : missing.length ? `<div class="fdr-vmid">Paste the ${missing.length === 1 ? "missing link" : missing.length + " missing links"} below.</div>`
-    : linksOk() ? `<div class="fdr-vok">✓ All three links open. Your tracker, Monitoring Sheet and folder are checked automatically from now on.</div>` : "";
+    : linksOk() ? `<div class="fdr-vok">✓ All six links open. They’re checked automatically from now on.</div>` : "";
   return `${head}${tip}<div class="fp-actions"><button class="btn btn-ghost btn-sm" type="button" ${D.verifying ? "disabled" : ""} onclick="FTDrive.verify()">${D.verifying ? "Checking…" : "🔁 Check again"}</button></div>`;
 }
 function linksCard(auto = true){
   const x = D.drive, row = (k, label, ph, hint) => { const v = VERIFIED.includes(k) && x[k] ? vOf(k) : null;
-    return `<label class="fdr-l"><span>${label}</span>
+    return `<label class="fdr-l"><span>${label} ${linkBadge(k)}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${v ? (v.ok ? `<small class="fdr-v ok">✓ Opens${v.name ? ": " + e(v.name) : ""}</small>` : `<small class="fdr-v bad">✗ ${e(v.error || "The system can’t open it.")}</small>`) : ""}
       ${hint ? `<small>${hint}</small>` : ""}</label>`; };
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
     ${stepsHtml(auto)}
     ${verifyBox()}
-    ${row("folder", "📁 Assessment and Activities Folder (your daily outputs)", "https://drive.google.com/drive/folders/…", "")}
-    ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Link the Daily Task Tracker tab.")}
-    ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "")}
-    ${row("tam", "📘 LSH Task Assessment Manual (TAM)", "https://docs.google.com/document/d/…", TAM_WHERE)}
+    ${MONITORED.map(([k, label, ph, hint]) => row(k, label, ph, hint)).join("")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
 }
 const TAM_WHERE = "Google Drive → Shared with me → your batch folder (e.g. B073126) → LSH Trainee folder → LSH Task Assessment Manual (TAM) | [Batch]_ [Your Full Name].";
+// 🔗 the six monitored links, in the course's order (worker.js verifyLinks checks each: ✓ Mark as opening once the system
+// opens it and it is the right file or folder, locked for that link; a new link is ⏳ Pending verification until checked)
+const MONITORED = [
+  ["monitor", "1. 📒 LSH VA Training Monitoring Sheet__VA Name", "https://docs.google.com/document/d/…", ""],
+  ["tam", "2. 📘 LSH Task Assessment Manual (TAM) | BatchID VA Name", "https://docs.google.com/document/d/…", TAM_WHERE],
+  ["typing", "3. ⌨️ LSH Trainee folder – BatchID VA Name/Typing Tests", "https://drive.google.com/drive/folders/…", "The Typing Tests folder itself."],
+  ["spelling", "4. 🔤 BatchID VA Name/Spelling Tests", "https://drive.google.com/drive/folders/…", "The Spelling Tests folder itself."],
+  ["folder", "5. 📁 LSH Trainee folder – BatchID VA Name Assessments/Activities", "https://drive.google.com/drive/folders/…", "Your daily outputs go here."],
+  ["tracker", "6. 📋 LSH Daily Task Tracker | BatchID VA Name (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Link the Daily Task Tracker tab."]];
+const MKEYS = MONITORED.map(x => x[0]);
+// a link's status: the system's last check of this very link (trackerreview:<id>.links[k])
+function linkBadge(k){
+  const u = String((D.drive || {})[k] || "").trim(); if(!u) return "";
+  const v = vOf(k);
+  if(!v || v.retry) return `<em class="fdr-st fdr-st-wait">⏳ Pending verification</em>`;
+  return v.ok ? `<em class="fdr-st fdr-st-ok">✓ Mark as opening</em>` : `<em class="fdr-st fdr-st-bad">❌ Inaccessible</em>`;
+}
 function rulesHtml(res){
   if(!res) return `<p class="fdr-muted">Not checked yet.</p>`;
   return `<div class="fdr-res"><div class="fdr-res-h"><span class="fdr-pct ${res.pct >= 100 ? "ok" : res.pct >= 60 ? "mid" : "bad"}">${res.pct}%</span>
@@ -154,22 +169,18 @@ function closeLinkModal(){ const o = document.getElementById("fdrLinkModal"); if
 function linkModalKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); closeLinkModal(); } }
 function paintLinkModal(){
   const o = document.getElementById("fdrLinkModal"); if(!o) return;
-  const x = D.drive || {}, ok = k => x[k] ? "✓" : "—";
-  // the window: the links form, then one box that says how the monitoring works and what is linked so far
-  o.querySelector(".fdr-modal-body").innerHTML = linksCard(false) + `<div class="card fdr-card fdr-modal-status">
-      <div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.
-        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} Assessment and Activities Folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet · ${ok("tam")} TAM</p></div>
-      <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
+  // (the links form only: no status box under it; each link shows its own ✓ / ⏳ / ❌)
+  o.querySelector(".fdr-modal-body").innerHTML = linksCard(false);
 }
 
-// 📁 on the trainee's 📚 Dashboard until their three links are saved and open for the system: what's missing, and the way in
+// 📁 on the trainee's 📚 Dashboard until their six links are saved and open for the system: what's missing, and the way in
 (window.LSH_HOME_NOTICES = window.LSH_HOME_NOTICES || []).push(function(){
   if(!isTrainee()) return "";
   if(D.id !== state.traineeId || !D.drive){ load(); return ""; }
   if(linksOk()) return "";
   const x = D.drive, missing = VERIFIED.filter(k => !x[k]).length, bad = VERIFIED.filter(k => x[k] && vOf(k) && !vOf(k).ok).length;
   if(!missing && !bad) return "";
-  return `<div class="card fdr-notice"><b>📁 ${missing ? `Link your Drive files (${missing} of 3 missing)` : `${bad} Drive link${bad === 1 ? "" : "s"} can’t be opened by the system`}</b>
+  return `<div class="card fdr-notice"><b>📁 ${missing ? `Link your Drive files (${missing} of ${VERIFIED.length} missing)` : `${bad} Drive link${bad === 1 ? "" : "s"} can’t be opened by the system`}</b>
     <span>Your folder, Task Tracker and Monitoring Sheet are checked automatically once they’re linked and shared.</span>
     <button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Fix my links</button></div>`;
 });
@@ -212,16 +223,17 @@ window.FTDrive = {
   async saveLinks(){
     if(previewOnly()) return;
     const v = k => String((document.getElementById("fdr-" + k) || {}).value || "").trim();
-    const bad = ["folder", "tracker", "monitor", "tam"].filter(k => v(k) && !isGoogle(v(k)));
+    const bad = MKEYS.filter(k => v(k) && !isGoogle(v(k)));
     if(bad.length){ toast("Paste Google Drive links (they start with https://drive.google.com/ or https://docs.google.com/)."); return; }
     if(v("tracker") && TR.googleFile(v("tracker")).kind !== "sheet"){ toast("The Task Tracker link must be a Google Sheets link."); return; }
-    ["folder", "tracker", "monitor", "tam"].forEach(k => { D.drive[k] = v(k); });
+    if(["typing", "spelling", "folder"].some(k => v(k) && !/\/folders\//.test(v(k)))){ toast("Links 3–5 are folders: open the folder in Drive and copy its address (…/drive/folders/…)."); return; }
+    MKEYS.forEach(k => { D.drive[k] = v(k); });
     if(!D.drive.startDate) D.drive.startDate = today();
     if(await save() === false){ toast("Couldn’t save. Check your connection."); return; }
     toast("✓ Links saved. Checking that the system can open them…"); render(); paintLinkModal();
     await FTDrive.verify(true);
   },
-  // 🔁 the three links, opened now by the system (worker.js /api/drive/verify): ✓ or why not, under each one
+  // 🔁 the six links, opened now by the system (worker.js /api/drive/verify): ✓ or why not, under each one
   async verify(quiet){
     if(D.verifying || (quiet === "auto" ? !isTrainee() : previewOnly())) return;
     D.verifying = true; render(); paintLinkModal();
@@ -229,7 +241,7 @@ window.FTDrive = {
     try{ const r = await authFetch("/api/drive/verify", {}); j = await r.json().catch(() => ({})); if(!r.ok && !j.error) j.error = "send"; }catch(err){ j = {error: "offline"}; }
     D.verifying = false;
     if(j.ok){ D.review = D.review || {days:{}}; D.review.verify = j.verify || {}; D.share = j.share || D.share;
-      if(quiet !== "auto") toast(linksOk() ? "✓ All three links open. They’re checked automatically from now on." : "Some links can’t be opened yet: see the ✗ under each one.", 7000); }
+      if(quiet !== "auto") toast(linksOk() ? "✓ All six links open. They’re checked automatically from now on." : "Some links can’t be opened yet: see the ✗ under each one.", 7000); }
     else if(quiet !== "auto" && (!quiet || j.code !== "wait")) toast(j.error === "no-sa" ? "Link checking isn’t set up on this program yet: tell your trainer." : j.error && j.code === "wait" ? j.error : "Couldn’t check the links. Try again in a minute.");
     render(); paintLinkModal();
   },
@@ -314,15 +326,15 @@ function scoreForm(id, which, res){
     <button class="btn btn-navy btn-sm" onclick="FTDriveAdmin.save('${e(id)}', '${e(which)}', this)">Save</button></div>`;
 }
 /* 🔗 the trainer sets a batch's Drive links for its trainees (the shared folders and files the batch was given), in one place:
-   a row per trainee with their four links, typed or pasted from a sheet (a row per trainee: their name, then the folder, the
+   a row per trainee with their six links, typed or pasted from a sheet (a row per trainee: their name, then the folder, the
    tracker, the Monitoring Sheet and the TAM, tab- or comma-separated, as copied from Google Sheets). 💾 Save writes each
    trainee's drive:<id> (their days and start date kept): their 📁 My Drive links show them filled in, and the nightly check
    reads them from then on. */
-const LINK_KEYS = [["folder", "📁 Assessment and Activities Folder"], ["tracker", "📋 Daily Task Tracker"], ["monitor", "📒 Monitoring Sheet"], ["tam", "📘 TAM"]];
+const LINK_KEYS = [["monitor", "📒 Monitoring Sheet"], ["tam", "📘 TAM"], ["typing", "⌨️ Typing Tests"], ["spelling", "🔤 Spelling Tests"], ["folder", "📁 Assessments/Activities"], ["tracker", "📋 Daily Task Tracker"]];
 function linksEditor(rows){
   if(!DA.batch) return `<p class="fdr-err">Pick a batch first.</p>`;
   return `<div class="fdr-bulk"><h4>🔗 ${e(DA.batch)}’s Drive links</h4>
-    <p class="fdr-muted">Each trainee’s four links: the folder and files shared with them. Type or paste them below, or paste a block copied from a sheet (a row per trainee: <b>name, folder, Task Tracker, Monitoring Sheet, TAM</b>), then 💾 Save. A trainee’s links show filled in on their 📁 My Drive links, and the end-of-shift check reads them.</p>
+    <p class="fdr-muted">Each trainee’s six links: the folder and files shared with them. Type or paste them below, or paste a block copied from a sheet (a row per trainee: <b>name, Monitoring Sheet, TAM, Typing Tests, Spelling Tests, Assessments/Activities folder, Task Tracker</b>), then 💾 Save. A trainee’s links show filled in on their 📁 My Drive links, and the end-of-shift check reads them.</p>
     <textarea id="fdrBulkPaste" rows="3" placeholder="Jamie Cruz	https://drive.google.com/drive/folders/…	https://docs.google.com/spreadsheets/d/…	https://docs.google.com/document/d/…	https://docs.google.com/document/d/…"></textarea>
     <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.paste()">⤓ Fill from the pasted rows</button></div>
     <div class="fdr-bulk-wrap"><table class="fdr-bulk-t"><thead><tr><th>Trainee</th>${LINK_KEYS.map(([, t]) => `<th>${t}</th>`).join("")}</tr></thead><tbody>
@@ -358,7 +370,7 @@ function renderAdminDrive(){
 window.FTDriveAdmin = {
   batch(b){ DA.batch = b; render(); },
   edit(){ DA.edit = !DA.edit; render(); },
-  // a block copied from a sheet: a row per trainee, their name then the four links (tabs or commas between); matched by name
+  // a block copied from a sheet: a row per trainee, their name then the six links (tabs or commas between); matched by name
   paste(){
     const t = String((document.getElementById("fdrBulkPaste") || {}).value || "").trim(); if(!t){ toast("Paste the rows first."); return; }
     const norm = x => String(x || "").toLowerCase().replace(/[^a-z]/g, "");
@@ -455,6 +467,7 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-notice{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 16px;margin:0 0 12px;border-left:5px solid var(--orange);} .fdr-notice span{flex:1 1 260px;color:var(--ink);font-size:13.5px;}
 .fdr-linked{margin:8px 0 0 !important;font-size:13.5px;} .fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
+.fdr-st{font-style:normal;font-weight:700;font-size:12px;margin-left:6px;padding:1px 7px;border-radius:9px;} .fdr-st-ok{background:#E6F4EA;color:#1E7B34;} .fdr-st-wait{background:#FFF4E0;color:#9A5B00;} .fdr-st-bad{background:#FDE8E8;color:#B42318;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fdr-row .fdr-label{flex:0 1 240px;} .fdr-row a.btn{text-decoration:none;}
 .fdr-bulk{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#F8F9FC;margin:8px 0 12px;}
