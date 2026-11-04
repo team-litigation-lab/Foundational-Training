@@ -299,9 +299,23 @@ const failures = []; const fail = m => failures.push(m);
   if (!/afternoon typing test/.test(oc) || !/No output link submitted/.test(oc) || !/AI-NOTES/.test(oc) || !/TRAINER-NOTE/.test(oc) || !/Common Terms Used/.test(oc) || !/Every open task has its Daily Note/.test(oc))
     fail(`📤 Daily outputs' comments for Ada don't summarize the day (the check, what to fix, the AI's review, the trainer): ${oc.slice(0, 300)}`);
 
+  // 👥 a trainee revoked (🚫 Offboard) leaves the scorecards at once, and comes back when restored (js/ft-roster.js)
+  await page.evaluate(id => confirmRevokeTrainee(id, 'Ben Blank'), ids.Ben); await page.waitForTimeout(3000);
+  const gone = await page.evaluate(() => { const t = FTBatchSheet.tables(); return t ? t.find(x => x.id === 'scorecard').rows.map(r => r[0].v) : null; });
+  if (!gone || gone.some(n => /Ben/.test(n))) fail(`an offboarded trainee is still on the Score Card: ${gone}`);
+  if (await page.evaluate(() => !!(window.FT_BLOCKED || {})[Object.keys(window.FT_BLOCKED || {}).find(k => /ben/i.test(k))])) { /* on the block list too */ } else fail('the block list wasn\'t read again after the offboarding');
+  await page.evaluate(id => restoreOffboarded(id, 'Ben Blank'), ids.Ben); await page.waitForTimeout(3000);
+  const back = await page.evaluate(() => { const t = FTBatchSheet.tables(); return t ? t.find(x => x.id === 'scorecard').rows.map(r => r[0].v) : null; });
+  if (!back || !back.some(n => /Ben/.test(n))) fail(`a restored trainee isn't back on the Score Card: ${back}`);
+
   // leaving it: back to the normal width
   await page.evaluate(() => { state.adminTab = 'tfeedback'; render(); });
   if (await page.evaluate(() => document.body.classList.contains('bs-wide'))) fail('the page stays wide after leaving the Batch Sheet');
+  // 🏅 opened again, the Scorecard is on the latest batch (the newest Batch ID date), not the one picked last time
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(1500);
+  const lbs = await page.evaluate(() => { const sel = document.querySelector('.gs-batch select'); if (!sel) return null; const dt = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(b); return m ? `20${m[3]}-${m[1]}-${m[2]}` : ''; };
+    const opts = [...sel.options].map(o => o.value).filter(dt).sort((a, b) => dt(b).localeCompare(dt(a))); return { on: sel.value, latest: opts[0] }; });
+  if (!lbs || (lbs.latest && lbs.on !== lbs.latest)) fail(`the Scorecard doesn't open on the latest batch: ${JSON.stringify(lbs)}`);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }

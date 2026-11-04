@@ -67,7 +67,7 @@ async function loadPeople(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
-    R.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
+    R.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r))).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!R.batch){ const bs = batches(); R.batch = bs[bs.length - 1] || ""; }
     // (opened on the batch's week now)
@@ -532,6 +532,7 @@ const autoBanner = () => {
     <small>Check the scores and notes, change what needs changing, then approve it. Only an approved report can be shared with the trainees.</small></div>`;
 };
 const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.week - 1)); return v && Array.isArray(v.cols) ? v.cols : null; }catch(err){ return null; } };
+window.addEventListener("ft-roster-changed", () => { R.people = null; });
 window.FTRanking = {
   // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
   embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },

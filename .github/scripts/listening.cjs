@@ -106,6 +106,17 @@ async function workerChecks() {
   if (!(await page.locator('.ln-rec').first().locator('a[href*="/file/d/ABC/"]').count())) fail('a recording\'s own link isn\'t offered');
   if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '1 of 3 logged') fail('the count doesn\'t follow the trainer\'s set');
 
+  // 🔁 a Reception Listening grade saved by the broken grading (the AI's reply unreadable, every answer ✗ with no note) is graded
+  // again by itself when the trainee opens the answer sheet: the caller ✓ by the key, the rest left to the trainer, not ✗
+  await put('listening:' + id, { logs: { recact: { 1: { caller: 'gloria benton, client', callback: '555-019-2047', verified: 'DOB July 5th 1960', reason: 'missing email', action: 'message to Mara', obstacle: 'mixed-up details', response: 'asked again' } } } });
+  { const items = {}; ['caller', 'callback', 'verified', 'reason', 'action', 'obstacle', 'response'].forEach(f => { items['c1_' + f] = { ok: false, pts: 0 }; });
+    await put('trackerreview:' + id, { days: {}, assess: { recact: { at: '2026-11-03T15:00:00Z', title: 'Reception Listening', score: 0, max: 40, pct: 0, ai: false, items } } }); }
+  await page.evaluate(() => FTListen.pop('recact')); await page.waitForTimeout(4000);
+  const rg = ((await get('trackerreview:' + id)) || { assess: {} }).assess.recact || {};
+  if (!rg.items || !rg.items.c1_caller.ok || !rg.items.c1_callback.ok || !rg.items.c1_reason.pending || rg.at === '2026-11-03T15:00:00Z') fail(`a broken grade wasn't graded again on opening the answer sheet: ${JSON.stringify(rg).slice(0, 300)}`);
+  await page.evaluate(() => FTListen.close());
+  await put('trackerreview:' + id, null);
+
   await put('listening:' + id, null); await put('settings:listening', null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await put('settings:opendays', openWas || { all: [], batches: {} });
