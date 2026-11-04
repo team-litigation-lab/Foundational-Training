@@ -114,8 +114,8 @@ const packets = () => (K.set && K.set.packets) || {};
    The calls are the CMS's own (its call-packs.js, the Call Simulator's 📋 Intake Mock Calls line), read from the CMS
    itself so they are never a copy that drifts: Ring Channel mirrors the same file (lshringchannel src/cms/call-packs.js),
    so the call a trainer plays from Ring Channel's Scenario Picker is the call, the caller and the case the trainee works
-   in the CMS. The trainer assigns each trainee a call in Admin → 📦 Intake Packets: intakeassign:<id>.call, kept beside
-   the packet in the same trainer-owned record (both writes keep the other's field). */
+   in the CMS. The trainer assigns each trainee a call in Admin → 📦 Intake Packets by assigning the packet only: the case pairs with
+   it (pairedCall), intakeassign:<id>.call, kept beside the packet in the same trainer-owned record (both writes keep the other's field). */
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const LINE = "Intake Mock Calls";
 const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?" + new URLSearchParams({program: "FT", line: LINE});
@@ -133,6 +133,13 @@ function packs(){
 const PK = {failed: false};
 const mockCalls = () => window.CALL_PACKS && window.CALL_PACKS.CALLS ? window.CALL_PACKS.CALLS.filter(c => c.program === "FT" && c.line === LINE && c.dir !== "out") : null;
 const callById = id => (mockCalls() || []).find(c => c.id === id) || null;
+// 📞 the packet's mock call case, paired automatically (the packet is the trainer's only pick): the intake call whose caller is
+// the packet's client (a first call before a call back), otherwise packet n's is the CMS's n-th Intake Mock Call (round the list)
+function pairedCall(n){
+  const calls = mockCalls(); n = Number(n) || 0; if(!n || !calls || !calls.length) return null;
+  const client = String((packets()[n] || {}).client || "").trim().toLowerCase(), named = client ? calls.filter(c => String(c.name || "").trim().toLowerCase() === client) : [];
+  return named.find(c => !onFile(c)) || named[0] || calls[(n - 1) % calls.length];
+}
 // a call back about a file already in the CMS (the case is open in front of the trainee); a first call starts a blank intake
 const onFile = c => !!c.doc && /calling back|callback|retainer|\(MC-/i.test(c.you + " " + c.role);
 const cmsUrl = c => CMS + "?" + new URLSearchParams(Object.assign({program: "intake", from: "standard"}, c && onFile(c) ? {mock: c.doc} : {}));
@@ -174,7 +181,7 @@ function mockcallHtml(el){
     tagged.forEach(r => { const c = AD.recs[r.id].call; (by[c] = by[c] || []).push(r.name.split(/\s+/)[0] + (several && r.batch ? ` (${r.batch})` : "")); });
     return head + `<p class="ftis-pk-note">Play the trainee’s assigned case from Ring Channel while they work it in the Prototype CMS. Each trainee sees their case on this slide once it is assigned.</p>
       ${calls.map(c => trainerCase(c, (by[c.id] || []).join(", "))).join("")}
-      <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📞 Assign the cases</button></div>`;
+      <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📦 Assign the packets</button></div>`;
   }
   const c = isTrainee() && K.mine && K.mine.call ? callById(K.mine.call) : null;
   if(isTrainerView() && !trainer) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>The trainee’s mock call case appears here</b><small>Each trainee sees only their own case: who calls, what they know going in and the Prototype CMS. Never the caller’s script.</small></div></div>`;
@@ -187,7 +194,7 @@ function mcaseHtml(el){
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
   if(!freshAdmin()) return "";
   const c = callById(((AD.recs || {})[id] || {}).call);
-  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">📞 No mock call case assigned to this trainee yet: <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
+  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">📞 No mock call case for this trainee yet: it comes with their packet, <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
 }
 const btn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 // (a button, not a viewer link: the deck draws a link in a slide as a tile)
@@ -259,7 +266,7 @@ function paint(){
 }
 
 /* ---------- 🧑‍🏫 Admin → 📦 Intake Packets ---------- */
-const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: ""};
+const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: "", paired: {}};
 async function loadAdmin(){
   AD.loading = true;
   try{
@@ -283,17 +290,20 @@ function adminHtml(){
   if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
   if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
-  const callOpt = id => `<option value="">Not assigned</option>${(calls || []).map(c => `<option value="${e(c.id)}" ${c.id === (((AD.recs[id] || {}).call) || "") ? "selected" : ""}>${e(c.title)} · ${e(c.name)}</option>`).join("")}`;
+  // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString()}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
+  const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="Paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
+    : `<span class="fss-muted">${!calls ? (PK.failed ? "Cases didn’t load" : "Loading…") : AD.assign[id] ? "Pairing…" : "Follows the packet"}</span>`; };
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
   return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download. Download the packets from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>, rename each with its trainee’s name if you share them that way, and paste each packet’s link below.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <h4>Assign the packets and the mock call cases</h4>
-    <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
+    <h4>Assign the packets (each packet brings its mock call case)</h4>
+    <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
-        <td><select ${calls ? "" : "disabled"} onchange="FTIntakeAdmin.assignCall('${e(r.id)}', this.value)">${callOpt(r.id)}</select></td>
+        <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
     <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
@@ -319,10 +329,13 @@ function writeAssign(id, patch){
 window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
   async assign(id, v){
-    const n = Number(v) || 0;
-    // (the record also holds the trainee's mock call case: the packet's write keeps it)
-    try{ await writeAssign(id, {packet: n, at: new Date().toISOString()}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
-    toast(n ? `✓ Packet ${n} assigned — the trainee sees it within two minutes.` : "✓ Unassigned.");
+    const n = Number(v) || 0, at = new Date().toISOString();
+    // (the packet is the only pick: its mock call case pairs with it, pairedCall, and Ring Channel's Scenario Picker plays the same call)
+    let c = null; if(n){ try{ await packs(); }catch(err){} c = pairedCall(n); }
+    const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at} : {});
+    try{ await writeAssign(id, patch); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
+    if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
+    toast(n ? `✓ Packet ${n} assigned${c ? ` with its mock call case, ${c.title}` : ""} — the trainee sees it within two minutes.` : "✓ Unassigned.");
   },
   async assignCall(id, v){
     const c = callById(v);

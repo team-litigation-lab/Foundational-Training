@@ -42,7 +42,7 @@ const ACTS = {
   // Calendaring Activity calendar, 📤 Submit for evaluation, and its scores come back to the Scorecard: simresults)
   // (Day 9's Buffer Time is off the deck: build/day-decks.cjs SKIP[9])
   // (Day 13's Buffer Time is off the deck too: build/day-decks.cjs SKIP[13])
-  // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done)
+  // (simple: no "Mock Calls Ongoing" box: the trainee sees the slide, its metrics read only, until the trainer scores the call)
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
@@ -115,8 +115,8 @@ function traineePanel(h){
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
   // (a mock call: its heading only, no Done: the trainer's saved scoresheet makes it done, above)
   if(a.plain) return `<p class="ftbf-plain">${e(a.plain)}</p>`;
-  if(a.simple && a.noTracker) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : "Mock Calls Ongoing"}</p>
-    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
+  // (a mock call: no "Mock Calls Ongoing" box; the trainee reads the slide itself, Day 4's Reception metrics, read only)
+  if(a.simple && a.noTracker) return a.act === "intake-live" ? `<div class="ftbf"><div class="ftis-mockcall"></div></div>` : "";
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}
@@ -206,7 +206,10 @@ function paint(){
   if(h.a.corner){ box.classList.add("ftbf-corner"); if(h.a.float) box.classList.add("ftbf-float"); box.innerHTML = traineePanel(h); sheet.appendChild(box);
     if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => { const n = here(); if(n && n.k === h.k && mine(h.k)) render(); });
     return; }
-  box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
+  const panel = traineePanel(h);
+  // (nothing to show, a mock call before it is scored: the slide stays as it is; it is drawn again once the trainer scores it)
+  if(!panel) return;
+  box.innerHTML = panel; if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
   if((h.a.kind === "buffer" && (!h.a.task || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");

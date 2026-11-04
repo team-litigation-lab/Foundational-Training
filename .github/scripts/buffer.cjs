@@ -2,7 +2,7 @@
 //   - the worker: a trainee marks only their own Done (at the server's time), can't undo it or release the batch, and
 //     can't write another trainee's; the trainer writes the release, which the trainee reads;
 //   - a demo (Day 8's) shows Demos Ongoing and Done, confirmed in a dialog (Cancel keeps them there), then ✅ Done and Go to
-//     the next activity →; a mock call (Day 9's Intake) shows only Mock Calls Ongoing, no Done, and turns to ✅ Your mock call
+//     the next activity →; a mock call (Day 4's Reception) shows no Mock Calls Ongoing box and no Done, only its metrics, and turns to ✅ Your mock call
 //     is done once the trainer has saved the trainee's scoresheet (a Done saved before no longer counts); a
 //     buffer slide (Day 9), Day 5's Monitoring Sheet update and a demo (Day 8) get their own screens; other slides get none;
 //   - the trainer, on the same slide: no panel and no live tracker.
@@ -129,6 +129,11 @@ async function workerChecks() {
     const m9 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), metrics: !!s.querySelector('.ftdd-score .ftms-tbl'), cas: !!s.querySelector('.ftis-mockcall'),
       sim: !!s.querySelector('a[href*="call.html"][href*="track=intake"]'), cms: !!s.querySelector('a[href*="program=intake"]') }; });
     if (m9.panel || !m9.metrics || !m9.cas || !m9.sim || !m9.cms) fail(`Day 9's metrics slide isn't the metrics with the case and the two practice links beside them: ${JSON.stringify(m9)}`);
+
+    // ☎ Day 4's Reception mock calls: no "Mock Calls Ongoing" box; the trainee reads the slide's metrics, read only
+    await open(t, 4, 's3');
+    const m4 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), only: s.classList.contains('ftbf-only'), ongoing: /Mock Calls Ongoing/.test(s.textContent), metrics: !!s.querySelector('.ftdd-score .ftms-tbl') }; });
+    if (m4.panel || m4.only || m4.ongoing || !m4.metrics) fail(`Day 4's Reception mock calls still show the Mock Calls Ongoing box, or not the metrics: ${JSON.stringify(m4)}`);
 
     // 🧑‍🏫 the trainer's slides: no panel, no live tracker, no preview of what trainees see (a mock call and a demo)
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
