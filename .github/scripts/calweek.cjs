@@ -192,6 +192,26 @@ async function workerChecks({ perfect, practice }) {
   await page.evaluate(() => { FTCalWeek.state().data = null; FTCalWeek.open(); }); await page.waitForTimeout(1200);
   if (await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events)) !== graded) fail('practicing changed the graded calendar');
 
+  // a sign-out and another trainee's sign-in in the same tab (no reload): the last trainee's bookings are not shown, and
+  // a save puts only the new trainee's own booking in their record
+  await page.evaluate(() => FTCalPractice.open()); await page.waitForTimeout(800);
+  await page.evaluate(() => FTCalPractice.edit('demand')); await page.waitForTimeout(200);
+  await page.evaluate(() => FTCalPractice.book()); await page.waitForTimeout(1200);
+  await page.evaluate(() => logout()); await page.waitForTimeout(800);
+  // (a new name each run, so a record left by an earlier run on the same test server never counts)
+  await signIn(page, 'Xena', 'Next' + Array.from({ length: 6 }, () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]).join(''), 'B102926');
+  const id2 = await page.evaluate(() => state.traineeId);
+  if (!id2 || id2 === id) fail(`the second sign-in: ${id2}`);
+  for (const [G, view, task] of [['FTCalWeek', 'calweek', 'records'], ['FTCalPractice', 'calpractice', 'expert']]) {
+    await page.evaluate(view => goto(view), view); await page.waitForTimeout(1200);
+    const s2 = await page.evaluate(G => ({ rec: window[G].state().data && window[G].state().data.record, mine: document.querySelectorAll('.cw-ev.cw-mine, .cw-task .cw-at').length }), G);
+    if (s2.rec || s2.mine) fail(`${view}: the next trainee in the same tab sees the last trainee's calendar: ${JSON.stringify(s2)}`);
+    await page.evaluate(([G, task]) => window[G].edit(task), [G, task]); await page.waitForTimeout(200);
+    await page.evaluate(G => window[G].book(), G); await page.waitForTimeout(1200);
+    const ev2 = await page.evaluate(G => (window[G].state().data.record || {}).events, G);
+    if (!ev2 || ev2.length !== 1 || ev2[0].task !== task) fail(`${view}: the next trainee's save carried the last trainee's bookings: ${JSON.stringify(ev2 && ev2.map(x => x.task))}`);
+  }
+
   await browser.close();
   if (failures.length) { console.error('✗ ' + failures.join('\n✗ ')); process.exit(1); }
   console.log('✓ Standard Training - Calendaring Activity: the week resolver, the relative engine, the controller, the page and the links; 🧪 the VA Practice Only clone, kept apart and never graded');
