@@ -2508,13 +2508,15 @@ window.toolHead = function(t){
 .bf-archived-banner .grow{flex:1 1 260px;}
 `; document.head.appendChild(s); })();
 
-function bfAll(k){ return (state.adminData||[]).filter(r=>batchKey(r)===k); }
+// a batch's records: archived ones stay (the 📦 Archive shelf); a revoked, rejected or offboarded trainee drops off (js/ft-roster.js)
+function bfLive(r){ return r && (r.archived || !window.ftActiveTrainee || ftActiveTrainee(r, {pending:true})); }
+function bfAll(k){ return (state.adminData||[]).filter(r=>bfLive(r) && batchKey(r)===k); }
 function bfIsArchived(k){ const all = bfAll(k); return all.length>0 && all.every(r=>r.archived); }
 function bfArchivedAt(k){ return bfAll(k).map(r=>r.archivedAt).filter(Boolean).sort().pop() || null; }
 // An archived batch shows all of its records; an active one hides archived trainees unless asked.
 function batchMembers(k){ const all = bfAll(k), arch = all.length>0 && all.every(r=>r.archived); return all.filter(r=>arch || state.batchShowArchived || !r.archived); }
 function bfKeys(){
-  return Array.from(new Set((state.adminData||[]).map(batchKey))).sort((a,b)=> a===NO_BATCH ? 1 : b===NO_BATCH ? -1 : a.localeCompare(b, undefined, {numeric:true}));
+  return Array.from(new Set((state.adminData||[]).filter(bfLive).map(batchKey))).sort((a,b)=> a===NO_BATCH ? 1 : b===NO_BATCH ? -1 : a.localeCompare(b, undefined, {numeric:true}));
 }
 function bfMatches(k){
   const q = String(state.bfSearch||"").trim().toLowerCase(); if(!q) return {ok:true, names:[]};

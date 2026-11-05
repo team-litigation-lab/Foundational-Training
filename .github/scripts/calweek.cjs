@@ -143,9 +143,10 @@ async function workerChecks({ perfect, practice }) {
   const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.textContent.trim()));
   if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Practice Session isn't renamed: ${JSON.stringify(lab)}`);
   if (lab.some(t => /Calendaring Practice Lab/.test(t))) fail('the old name is still on the Practice Lab');
-  // (the Calendaring Activity is step 3 of Day 5's one Attorney Calendar Management Activity card, js/ft-simulators.js CAL_CARDS)
-  const steps = await page.evaluate(() => [...document.querySelectorAll('.fts-calcard .fts-calstep')].map(s => ({ h: s.querySelector('.fts-calstep-h b').textContent, on: [...s.querySelectorAll('button')].map(b => b.getAttribute('onclick')).join(' ') })));
-  if (!steps.some(s => /Standard Training - Calendaring Activity/.test(s.h) && /goto\('calweek'\)/.test(s.on))) fail(`no Calendaring Activity step on the Attorney Calendar card: ${JSON.stringify(steps)}`);
+  // (the Calendaring Activity is a step of Day 5's one card, 🗓 Attorney Calendar Management Activity: its button opens it)
+  const calStep = await page.evaluate(() => [...document.querySelectorAll('.fts-card')].filter(c => /Attorney Calendar Management Activity/.test((c.querySelector('h3') || {}).textContent || ''))
+    .some(c => [...c.querySelectorAll('.fts-calstep button')].some(b => /goto\('calweek'\)/.test(b.getAttribute('onclick') || ''))));
+  if (!calStep) fail(`no Calendaring Activity step on the Attorney Calendar Management Activity card: ${JSON.stringify(lab)}`);
   // (only scored work on the Practice Lab: the unscored 🧪 Calendar Practice (VA Practice Only) isn't there)
   if (lab.some(t => /VA Practice Only/.test(t))) fail(`the unscored VA Practice Only card is on the Practice Lab: ${JSON.stringify(lab)}`);
 
