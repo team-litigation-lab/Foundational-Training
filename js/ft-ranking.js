@@ -19,7 +19,7 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
-const R = {sort: "rank",   // (highest final average first; ↕ switches to A–Z)
+const R = {draftRun: null, sort: "rank",   // (highest final average first; ↕ switches to A–Z)
    act: null, people: null, loading: false, batch: "", week: 1, data: null, key: "", dataLoading: false, saveT: null, saved: true, fill: false, drafting: {}, edit: false, auto: null, weekSet: false};
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const keyOf = (b, w) => `ranking:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
@@ -103,7 +103,9 @@ async function loadWeek(){
   R.dataLoading = false; rerender();
   // 🔄 the report follows the trainees' progress: each time it is opened (until it is approved), its empty cells fill from
   // the platform, never over what a trainer typed
-  if(R.data && !(R.data.auto && R.data.auto.approved)) setTimeout(() => { if(R.key === key) fillFromPortal(true); }, 0);
+  // (🤖 a draft read back before it was done — the report read again mid-draft: its fill and notes go on, finishDraft)
+  if(R.data && R.data.auto && !R.data.auto.approved && R.data.auto.state !== "done") setTimeout(() => { if(R.key === key) finishDraft(key); }, 0);
+  else if(R.data && !(R.data.auto && R.data.auto.approved)) setTimeout(() => { if(R.key === key) fillFromPortal(true); }, 0);
 }
 // a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
 const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
@@ -167,10 +169,13 @@ async function fillFromPortal(quiet){
   const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links"); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
+  // (the report read again while its grades are read — FTRanking.reload —: the fill stops, it isn't the report on screen any more)
+  const D = R.data, gone = () => R.data !== D;
   try{
     const shared = (window.LSH_PROGRAM || {}).shared || [], want = [];
     ppl.forEach(p => S.forEach(s => want.push(s.key + p.id)));
     const vals = await sharedGetMany(want.concat(shared)), sh = {};
+    if(gone()){ R.fill = false; return; }
     shared.forEach((k, i) => { sh[k] = vals[want.length + i] || null; });
     // (a column set to "This week only": the grades dated in the week, weekRange; the daily tracker counts that week's days)
     const range = cols.some(c => c.period === "week") ? weekRange() : null;
@@ -210,6 +215,7 @@ async function fillFromPortal(quiet){
     // dailyCompliance) in the week (a column set to "Whole training": every day so far)
     if(compCols.length){
       const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
+      if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
@@ -229,6 +235,7 @@ async function fillFromPortal(quiet){
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
     if(notesCols.length && window.FTSkills){
       const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id)), rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
+      if(gone()){ R.fill = false; return; }
       notesCols.forEach(c => {
         const range = parseRange(c.sub) || weekRange();
         if(!range){ if(!quiet) toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
@@ -559,13 +566,27 @@ async function autoDraft(){
   if(r) cols.forEach(c => { if(c.src === "skills") c.sub = `${md(r[0])} to ${md(r[1])}`; });
   R.data = {batch: R.batch, week: R.week, cols, rows: {}, createdAt: new Date().toISOString(), auto: {at: new Date().toISOString(), state: "filling", approved: false}};
   save(); rerender();
-  await fillFromPortal();
-  if(R.key !== key) return;
-  R.data.auto.state = "notes"; rerender();
-  // (the AI unavailable: the first trainee's notes fail, and the rest are left for the trainer rather than each waiting on it)
-  for(const p of people()){ if(R.key !== key) return; if(!String((rowOf(p.id).notes) || "").trim() && !(await draftNotes(p.id, true))){ R.data.auto.noNotes = true; break; } }
-  if(R.key !== key) return;
-  R.data.auto.state = "done"; save(); rerender();
+  return finishDraft(key);
+}
+// the draft's ⤓ fill and ✨ notes. The report can be read again while they run (↻ the Batch Sheet's 🔄 Update, FTRanking.reload,
+// sets R.data to null and reads it back under the same key): each step goes on only while the draft is still the report on
+// screen, and loadWeek picks a draft that isn't done back up here, so it never stops halfway at "filling…"
+async function finishDraft(key){
+  if(R.draftRun === key) return; R.draftRun = key;
+  const D = R.data, live = () => R.key === key && R.data === D && !!D && !!D.auto && !D.auto.approved;
+  try{
+    if(!live()) return;
+    if(R.data.auto.state === "filling"){ await fillFromPortal(); if(!live()) return; R.data.auto.state = "notes"; save(); rerender(); }
+    // (the AI unavailable: the first trainee's notes fail, and the rest are left for the trainer rather than each waiting on it)
+    for(const p of people()){ if(!live()) return; if(!String((rowOf(p.id).notes) || "").trim() && !(await draftNotes(p.id, true))){ if(!live()) return; R.data.auto.noNotes = true; break; } }
+    if(!live()) return;
+    R.data.auto.state = "done"; save(); rerender();
+  }finally{
+    if(R.draftRun === key) R.draftRun = null;
+    // (read again meanwhile: the copy now on screen goes on from where its saved draft stopped; still being read, loadWeek does it)
+    const N = R.data;
+    if(R.key === key && N && N !== D && N.auto && !N.auto.approved && N.auto.state !== "done") setTimeout(() => { if(R.key === key) finishDraft(key); }, 0);
+  }
 }
 const autoBanner = () => {
   const a = R.data && R.data.auto; if(!a) return "";
@@ -655,7 +676,10 @@ window.FTRanking = {
   print(){ const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print."); return; } w.document.write(wordDoc()); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); },
   // for the checks
   report: () => R.data && {title: title(), ranked: ranked().map(x => ({id: x.p.id, name: x.p.name, avg: x.avg == null ? null : fix2(x.avg), rank: x.rank}))},
-  html: () => wordDoc(), mark, reload(){ R.people = null; R.key = ""; R.data = null; render(); }
+  html: () => wordDoc(), mark, reload(){ R.people = null;
+    // (🤖 a draft still being written is the newest the report can be: kept on screen, not read back from what it has saved so far)
+    if(!(R.draftRun && R.draftRun === R.key && R.data)){ R.key = ""; R.data = null; }
+    render(); }
 };
 
 /* 📊 no tab of its own: the report is in 📋 Batch Sheet, under 📅 Day 1–16: Detailed Scores (FTRanking.embed). An old link,
