@@ -487,7 +487,7 @@ function scoreCardTable(){
   return T;
 }
 // Compliance and Platform Utilization Monitoring
-const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], none: ["— Not linked", ""]};
+const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], unchecked: ["⚠ Can’t check", "gs-mid"], none: ["— Not linked", ""]};
 function complianceTable(){
   const ppl = people();
   return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links — pick one in the dropdown: Correct (the system opened it and it is the right file or folder) or Wrong (and why, on a click) — and progress on the platform.`,
@@ -549,6 +549,29 @@ function groupedSheetHtml(T, ti){
       <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => cell(c, ri, ci)).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">No trainee in this batch yet.</td></tr>` : ""}</tbody></table></div></section>`;
 }
+/* 🔌 Google Drive's connection (worker.js /api/drive/status), above the Drive links: ✓ connected as who, or which setting to
+   fix, in plain words from Google's own reason — so a link left ⏳ Pending says why, not nothing */
+function driveWhy(d){
+  const x = String(d || "");
+  if(/unauthorized_client/i.test(x)) return "domain-wide delegation isn’t authorized for this service account. In admin.google.com → Security → Access and data control → API controls → Manage Domain Wide Delegation, add the service account’s Client ID (its Unique ID in Google Cloud, not its email) with the scope https://www.googleapis.com/auth/drive";
+  if(/invalid_grant/i.test(x) && /email|user/i.test(x)) return "GDRIVE_SA_SUBJECT isn’t a user of your Google Workspace: check its spelling (a Workspace account, not a group or a Gmail address)";
+  if(/invalid_grant/i.test(x)) return "Google refused the service account’s key: GDRIVE_SA_EMAIL and GDRIVE_SA_KEY must come from the same, current JSON key file";
+  if(/GDRIVE_SA_KEY isn/i.test(x)) return x;
+  if(/aren.t set/i.test(x)) return "Google Drive isn’t connected: GDRIVE_SA_EMAIL and GDRIVE_SA_KEY aren’t set on the Worker";
+  if(/invalid_client|deleted|disabled/i.test(x)) return "the service account or its key is disabled or deleted in Google Cloud: make a new JSON key and update GDRIVE_SA_KEY";
+  return x || "Google Drive didn’t answer";
+}
+function driveBanner(){
+  if(!adminOn() || meOn()) return "";
+  const S = B.dstat;
+  if(S === undefined){ B.dstat = null; authFetch("/api/drive/status", {}).then(r => r.json()).then(j => { B.dstat = j && typeof j === "object" ? j : {err: true}; rerender(); }).catch(() => { B.dstat = {err: true}; rerender(); }); return ""; }
+  if(!S || S.err) return "";
+  const box = (cls, html) => `<div class="bs-warn bs-dstat ${cls}">${html} <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.dstat()">🔁 Test again</button></div>`;
+  if(!S.sa) return box("bad", `🔌 <b>Google Drive isn’t connected.</b> Add <code>GDRIVE_SA_EMAIL</code> and <code>GDRIVE_SA_KEY</code> to the Worker (Cloudflare → foundational-training → Settings → Variables and Secrets), then Deploy. Until then no link can be checked.`);
+  if(!S.saOk) return box("bad", `🔌 <b>The service account can’t sign in to Google:</b> ${e(driveWhy(S.saDetail))}.`);
+  if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Until it’s fixed, the platform reads only files shared with ${e(S.email)}.`);
+  return box("ok", `🔌 ✓ <b>Google Drive is connected</b>${S.subject ? ` and reads as <b>${e(S.subject)}</b>` : ` as the service account <b>${e(S.email)}</b> (files must be shared with it)`}.`);
+}
 // the page: the Score Card and the compliance first, then the Weekly Ranking, the Process Questions and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "process", "outputs"];
@@ -562,7 +585,7 @@ function sectionsHtml(T){
     : sheetHtml(x, i);
   const at = id => T.findIndex(x => x.id === id), main = id => one(T[at(id)], at(id));
   const rest = T.map((x, i) => [x, i]).filter(([x]) => !MAIN.includes(x.id));
-  return main("scorecard") + main("compliance") + rankingHtml() + main("process") + main("outputs")
+  return main("scorecard") + driveBanner() + main("compliance") + rankingHtml() + main("process") + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
@@ -811,8 +834,10 @@ function linkState(p){
     // (✓ Mark as opening: the system opened this very link, so it stays ✓ for it, whatever a later check of its CONTENT says)
     if(v && v.ok && sameLink(v.url, link)){ out[k] = {st: "ok", label, link, c: {err: "", at: v.at}, issue: c && c.err && !ACCESS(c.err) && sameLink(c.url || link, link) ? c.err : ""}; return; }
     if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", at: v.at}}; return; }
-    // (not checked yet, or checked on another link: ⏳ Pending verification)
-    if(!c || (c.url && !sameLink(c.url, link))){ out[k] = {st: "pending", label, link, c}; return; }
+    // (not checked yet, or checked on another link: ⏳ Pending verification — or ⚠ Can't check, when the last try couldn't sign
+    // in to Google Drive at all: rv.verifyError, worker.js verifyLinks, with Google's reason)
+    if(!c || (c.url && !sameLink(c.url, link))){ const ve = rv.verifyError && !(t(rv.verifyAt) && t(rv.verifyAt) > t(rv.verifyError.at)) ? rv.verifyError : null;
+      out[k] = ve ? {st: "unchecked", label, link, c: {err: "The system couldn't check it: " + driveWhy(ve.detail), at: ve.at}} : {st: "pending", label, link, c}; return; }
     if(!c.err){ out[k] = {st: "ok", label, link, c}; return; }
     // (the file opened, but its content needs a fix — the Daily Task Tracker's tab, a link that isn't a Google Sheet: not "can't open")
     if(!ACCESS(c.err)){ out[k] = {st: "fix", label, link, c}; return; }
@@ -827,6 +852,7 @@ function linkCell(x){
   if(x.st === "trainer") return {v: "✓ trainer", f: `${x.label}: ${x.link} · marked as opening by a trainer ${when(x.o.at)}${x.c && x.c.err ? ` (the system's check said: ${x.c.err})` : ""}`, cls: "bs-lesson gs-hi"};
   if(x.st === "bad") return {v: "❌ Inaccessible", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}`, cls: "bs-lesson gs-mid"};
   if(x.st === "fix") return {v: "⚠ needs a fix", f: `${x.label}: ${x.link} · the system opens it, but: ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}`, cls: "bs-lesson gs-mid"};
+  if(x.st === "unchecked") return {v: "⚠ Can’t check", f: `${x.label}: ${x.link} · ${x.c.err}`, cls: "bs-lesson gs-mid"};
   if(x.st === "pending") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: not checked yet on this link (it is checked when saved, at the end of the shift and on 🔁 Check now)`, cls: "bs-lesson gs-mid"};
   if(x.st === "relinked") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: saved after the last check, which couldn't open the old link; it is checked again at the end of the shift`, cls: "bs-lesson gs-hi"};
   return {v: "✓ opening", f: `${x.label}: ${x.link} · ✓ Mark as opening: the system opened it${x.c && x.c.at ? " " + when(x.c.at) : ""}, locked for this link${x.issue ? `. Its last check of the content says: ${x.issue}` : ""}`, cls: "bs-lesson gs-hi"};
@@ -982,6 +1008,7 @@ window.FTBatchSheet = {
   rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
+  dstat(){ B.dstat = undefined; B.verified = {}; B.dataKey = ""; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
@@ -1198,6 +1225,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat-d .bs-rat-how{font-size:15px;line-height:1.55;color:#202124;} .bs-rat-d .bs-gr{font-size:15px;padding:7px 0;} .bs-rat-d .bs-gr small{font-size:14px;line-height:1.5;color:#3C4043;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-dstat{line-height:1.55;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
 .bs-fix-list{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;} .bs-fix-list label{display:flex;align-items:center;gap:6px;cursor:pointer;}
