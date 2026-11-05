@@ -8841,7 +8841,7 @@ async function logout(){
 }
 window.logout = logout;
 
-async function forceRevokedLogout(){
+async function forceRevokedLogout(msg){
   if(state.approvalPollInterval){ clearInterval(state.approvalPollInterval); state.approvalPollInterval = null; }
   state.activeSurpriseTask = null;
   state.surpriseResult = null;
@@ -8862,7 +8862,7 @@ async function forceRevokedLogout(){
   await resetTraineeSessionData();
   state.view = "login";
   render();
-  toast("Your access to this program has been revoked. Contact your trainer if you believe this is a mistake.");
+  toast(msg || "Your access to this program has been revoked. Contact your trainer if you believe this is a mistake.");
 }
 // How often an open page asks the server. Every /api/ request counts toward Cloudflare's daily
 // Worker requests for the whole account (shared with the other LSH sites): when they run out, the
@@ -8895,7 +8895,8 @@ async function approvalPollTick(traineeId){
     let me;
     try{ me = await sharedGetStrict("trainee:"+traineeId); }catch(e){ return; }
     if(!me || me.approved !== true){
-      await forceRevokedLogout();
+      // (👥 an account the trainer merged into the trainee's other one: signed out to sign in again, onto the kept one)
+      await forceRevokedLogout(me && me.mergedInto ? "Your account was merged into your current one. Open the program again from the LSH Training Portal to continue with all your progress." : "");
       return;
     }
     state.liveResetAt = Date.now();   // the record was just read: liveTick needn't read it again for a while
@@ -18937,7 +18938,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.05-36d40fce";
+var APP_BUILD = "ft-2026.11.05-5b05482c";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -19003,7 +19004,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=32b64c1dab"></script>
 <script src="/js/ft-ranking-summary.js?v=36fd02e1e6"></script>
 <script src="/js/ft-overall.js?v=8a08446d33"></script>
-<script src="/js/ft-batch-sheet.js?v=04f3817ed3"></script>
+<script src="/js/ft-batch-sheet.js?v=2ed9266728"></script>
 <script src="/js/ft-skilltests.js?v=892ae2978c"></script>
 <script src="/js/ft-drills.js?v=b1a7af7657"></script>
 <script src="/js/ft-calrules.js?v=8184cf8378"></script>
