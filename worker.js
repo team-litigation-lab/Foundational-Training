@@ -280,7 +280,8 @@ async function setBlocked(env, changes) {
 }
 const BLOCK_MSG = {
   offboarded: "Your access to this program has been revoked. Contact your trainer if you believe this is a mistake.",
-  archived: "Your batch's training has ended and its records were archived. Contact your trainer if you need anything from it."
+  archived: "Your batch's training has ended and its records were archived. Contact your trainer if you need anything from it.",
+  merged: "This account was merged into your current one. Open the program again from the LSH Training Portal."
 };
 // Clearing a batch from the platform (POST /api/batch/purge): the trainee's working records go (they are in the Drive
 // backup first). Kept for the Main Portal's 📊 Progress & Feedback and its scorecard, which read this program's records
@@ -292,6 +293,75 @@ const PURGE_KEYS = (id) => [`progress:${id}`, `focus:${id}`, `tracker:${id}`, `t
 const PURGE_PREFIXES = (id) => [`actup:${id}:`, `guide:${id}:`];
 // every record of a trainee, for the Drive backup
 const BACKUP_KEYS = (id) => [...new Set([`trainee:${id}`, `feedback:${id}`, `callsim:${id}`, ...OWN(id), ...TRAINER_OWNED(id), ...PURGE_KEYS(id)])];
+
+/* 👥 MERGE A DUPLICATE ACCOUNT (📋 Batch Sheet → 👥 Duplicate accounts, POST /api/batch/merge, admins): a trainee who ended
+   up with two accounts (an older Batch ID change made a second, empty or half-used one) keeps ONE. Every record of the
+   faulty account is merged into the one kept — what only the faulty one has is moved; where both have a record they are
+   combined (each field the kept one lacks is filled from the other; lists joined, without repeats; on a clash the kept
+   one's value stays) — its attendance check-ins and its rows in the Weekly Ranking reports too. Then every record of the
+   faulty account is deleted, and only a redirect is left, merged:<faulty id> = {into, at}: a sign-in that would have
+   opened the faulty account opens the kept one (traineeSession), and a page still open on it is signed out (the block
+   list, why "merged") instead of writing to it again. */
+const MERGE_EXTRA = (id) => [`calweek:${id}`, `buffer:${id}`];
+function mergeVals(a, b) {
+  if (a === undefined || a === null || a === "") return b === undefined ? a : b;
+  if (b === undefined || b === null || b === "") return a;
+  if (Array.isArray(a) && Array.isArray(b)) { const seen = new Set(a.map((x) => JSON.stringify(x))); return a.concat(b.filter((x) => !seen.has(JSON.stringify(x)))); }
+  if (typeof a === "object" && typeof b === "object" && !Array.isArray(a) && !Array.isArray(b)) {
+    const out = Object.assign({}, a); for (const k of Object.keys(b)) out[k] = mergeVals(a[k], b[k]); return out;
+  }
+  return a;
+}
+// (an object's keys named after the faulty account, in a shared record — a Weekly Ranking report's rows — merged into the kept one's)
+function renameId(v, from, into) {
+  if (!v || typeof v !== "object") return v;
+  if (Array.isArray(v)) return v.map((x) => renameId(x, from, into));
+  const out = {};
+  for (const [k, x] of Object.entries(v)) { const y = renameId(x, from, into);
+    if (k === from) out[into] = mergeVals(out[into] !== undefined ? out[into] : v[into], y); else if (k === into && out[into] !== undefined) out[into] = mergeVals(y, out[into]); else out[k] = y; }
+  return out;
+}
+async function mergeAccounts(env, from, into) {
+  const kv = kvOf(env), at = new Date().toISOString();
+  const get = async (k) => { const v = await kv.get(k); if (v == null) return undefined; try { return JSON.parse(v); } catch (e) { return v; } };
+  const fr = await get(`trainee:${from}`), ir = await get(`trainee:${into}`);
+  if (!fr || !ir || typeof fr !== "object" || typeof ir !== "object") return { error: "Both accounts must exist", status: 404 };
+  if (slugPart(fr.name || "") !== slugPart(ir.name || "")) return { error: "These two accounts aren't the same person's name", status: 400 };
+  const moved = [];
+  const keys = [...new Set(BACKUP_KEYS(from).concat(MERGE_EXTRA(from)))].filter((k) => k !== `trainee:${from}`);
+  for (const k of keys) {
+    const v = await get(k); if (v === undefined) continue;
+    const ik = k.slice(0, k.length - from.length) + into, w = await get(ik);
+    await kv.put(ik, JSON.stringify(w === undefined ? v : mergeVals(w, v))); await kv.delete(k); moved.push(k.split(":")[0]);
+  }
+  // (the records named by a prefix: a trainee's uploads and guide notes; attendance check-ins, checkin:<date>:<id>)
+  for (const pre of PURGE_PREFIXES(from)) {
+    const list = ((await kv.list({ prefix: pre })).keys || []).map((x) => x.name);
+    for (const k of list) { const ik = PURGE_PREFIXES(into)[PURGE_PREFIXES(from).indexOf(pre)] + k.slice(pre.length); if ((await kv.get(ik)) == null) await kv.put(ik, await kv.get(k)); await kv.delete(k); moved.push(pre.split(":")[0]); }
+  }
+  for (const pre of ["checkin:", "ranking:"]) {
+    let cursor; do { const r = await kv.list(Object.assign({ prefix: pre }, cursor ? { cursor } : {}));
+      for (const x of (r.keys || [])) {
+        if (pre === "checkin:") { if (!x.name.endsWith(":" + from)) continue; const ik = x.name.slice(0, x.name.length - from.length) + into;
+          const v = await get(x.name), w = await get(ik); await kv.put(ik, JSON.stringify(w === undefined ? v : mergeVals(w, v))); await kv.delete(x.name); moved.push("checkin"); continue; }
+        const raw = await kv.get(x.name); if (!raw || !raw.includes(`"${from}"`)) continue;
+        let v; try { v = JSON.parse(raw); } catch (e) { continue; }
+        await kv.put(x.name, JSON.stringify(renameId(v, from, into))); moved.push("ranking");
+      }
+      cursor = r.list_complete === false ? r.cursor : null; } while (cursor);
+  }
+  // the kept account: its own identity and batch, with what the faulty one had added (progress, submissions…), the earliest
+  // registration and the latest activity
+  const keep = mergeVals(ir, fr), first = [ir.registeredAt, fr.registeredAt].filter(Boolean).sort()[0], last = [ir.lastActive, fr.lastActive].filter(Boolean).sort().pop();
+  ["id", "name", "batch", "batchFrom", "batchMovedAt", "batchMovedBy", "approved", "rejected", "archived", "archivedAt", "offboarded", "purgedAt"].forEach((f) => { if (f in ir) keep[f] = ir[f]; else delete keep[f]; });
+  if (first) keep.registeredAt = first; if (last) keep.lastActive = last;
+  keep.merged = (Array.isArray(ir.merged) ? ir.merged : []).concat([{ from, batch: fr.batch || "", at }]);
+  await kv.put(`trainee:${into}`, JSON.stringify(keep));
+  await kv.delete(`trainee:${from}`);
+  await kv.put(`merged:${from}`, JSON.stringify({ into, at }));
+  await setBlocked(env, { [from]: { why: "merged", into, at } });
+  return { ok: true, from, into, moved: [...new Set(moved)] };
+}
 function slimTrainee(rec) {
   const keep = ["id", "name", "firstName", "lastName", "batch", "approved", "rejected", "archived", "archivedAt", "registeredAt", "lastActive", "offboarded"];
   const out = {};
@@ -2074,15 +2144,19 @@ export default {
           const lrec = legacy ? JSON.parse(legacy) : null;
           if (lrec && (!lrec.batch || batchKey(lrec.batch) === batchKey(batch))) { chosen = legacyId; existing = legacy; }
         }
+        // (an account merged into another, 👥 Duplicate accounts: the sign-in opens the one kept)
+        let redirected = false;
+        if (!existing) { const m = JSON.parse((await kv.get(`merged:${chosen}`)) || "null"); const mr = m && m.into ? await kv.get(`trainee:${m.into}`) : null;
+          if (mr) { chosen = m.into; existing = mr; redirected = true; } }
         // (an account kept through a Batch ID change, movedBatch: its ID carries the old batch, its record the new one)
         let kept = null;
-        if (id && id !== chosen && id !== newId && id !== rawId && id !== legacyId) {
+        if (id && !redirected && id !== chosen && id !== newId && id !== rawId && id !== legacyId) {
           const r = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
           if (r && r.batchFrom !== undefined && slugPart(r.name || "") === slugPart(name) && batchKey(r.batch || "") === batchKey(batch)) { kept = id; existing = JSON.stringify(r); }
           else return json({ error: "Name/batch don't match this session" }, 403);
         }
         if (kept) chosen = kept;
-        else if (id && (id === newId || id === rawId || id === legacyId)) chosen = id;
+        else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
         if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, 24 * 30), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
@@ -2180,6 +2254,8 @@ export default {
           const b = await request.clone().json().catch(() => ({}));
           if (path === "/api/storage/get" && b.key === `trainee:${tok.id}`) {
             const rec = JSON.parse((await kv.get(b.key)) || "null");
+            // (a merged account: its record is gone, so the page is told where it went, and signs out with that, not "revoked")
+            if (blocked.why === "merged") return json({ value: JSON.stringify({ id: tok.id, approved: false, mergedInto: blocked.into || "" }) });
             return json({ value: rec ? JSON.stringify(Object.assign({}, rec, { approved: false })) : null });
           }
           return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
@@ -2193,6 +2269,10 @@ export default {
         const id = String(b.id || "").slice(0, 120), now = new Date().toISOString();
         // 🚫 offboard (or ↩ restore) a VA: their access closes now and they leave Batch Folders, Rankings and the trainer's
         // tabs; their records stay, so restoring brings them back as they were
+        if (path === "/api/batch/merge") {
+          const r = await mergeAccounts(env, String(b.from || "").slice(0, 120), String(b.into || "").slice(0, 120));
+          return json(r.error ? { error: r.error } : r, r.error ? r.status || 400 : 200);
+        }
         if (path === "/api/batch/offboard") {
           const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
           if (!rec) return json({ error: "No such trainee" }, 404);

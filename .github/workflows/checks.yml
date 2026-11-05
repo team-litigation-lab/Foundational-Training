@@ -57,6 +57,8 @@ jobs:
         run: node .github/scripts/intake-packet.cjs
       - name: Who sees what of the Batch Sheet and My Progress (a trainee only their own; only a trainer moves a batch)
         run: node .github/scripts/sheet-access.cjs
+      - name: A duplicate account merges into the one kept (everything moves, the faulty one is deleted, its sign-in opens the kept one)
+        run: node .github/scripts/merge-accounts.cjs
       - name: A Knowledge Check is taken once (a second attempt isn't saved; a trainer's retry lets one more through)
         run: node .github/scripts/kc-once.cjs
       - name: The six Drive links are the trainee's own, named by their rules (the template, another batch's or trainee's, the same file twice are caught)
