@@ -58,8 +58,9 @@ window.LSH_PROGRAM = {
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
   // (💬 Trainee Feedback: removed)
   // (📋 Mock Call Scorecards and 🧑‍🏫 Trainer Inputs: in 🧑‍🏫 Graders: Mock Calls & Demos, the one button for them)
-  // (👥 Trainees & Batches: its approvals, trainee actions and batches at the foot of 📋 Batch Sheet)
-  adminHidden: ["ranking", "audit", "tfeedback", "mockscores", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
+  // (👥 Trainees & Batches: removed: the Main Portal approves trainees, and one it signs in is approved here; 📋 Task Trackers:
+  // no button, the end-of-day check runs by itself and its results are in 📋 Batch Sheet's 📤 Daily outputs)
+  adminHidden: ["ranking", "audit", "trackers", "tfeedback", "mockscores", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
