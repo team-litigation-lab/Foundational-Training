@@ -327,15 +327,27 @@
     "PD Claims", "HITECH", "HIPAA", "Signed Medicare Form", "Signed Contingency Fee Agreement", "ISO Claim Search", "Front Passport Card",
     "Back Passport Card", "Client Communication Disclosure", "Signature Certificate", "Police Report", "Traffic Accident Report",
     "Traffic Ticket", "Insurance vs Lien Disclaimer", "Affidavit of Communication", "Notice and Waiver of Potential Conflict of Interest"];
-  const pkNorm = (v) => " " + String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\.(pdf|docx?|jpe?g|png)$/i, "")
+  const pkNorm = (v) => " " + String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\u2018\u2019\u02bc`\u00b4\u2032]/g, "'").replace(/\.(pdf|docx?|jpe?g|png)$/i, "")
     .replace(/driver'?s?\s*licen[cs]e/g, "dl").replace(/traffic accident report|\btar\b/g, "tar").replace(/acknowledg(e)?ment/g, "ack")
-    .replace(/client'?s'?/g, "clients").replace(/attorney'?s/g, "attorneys").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim() + " ";
-  const pkWords = (v) => pkNorm(v).trim().split(" ").filter((w) => w && !["of", "and", "the", "for", "a", "form", "signed"].includes(w));
+    .replace(/\bclient(?:'?s'?)?\b/g, "clients").replace(/attorney'?s/g, "attorneys").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim() + " ";
+  const pkWords = (v) => pkNorm(v).trim().split(" ").filter((w) => w && !["of", "and", "the", "for", "a", "form", "signed"].includes(w)).map((w) => w.length > 3 ? w.replace(/s$/, "") : w);
+  // (words that tell two documents apart: a front and a back, the 1P's and the 3P's, a notice and a waiver)
+  const PK_QUAL = [["front", "back"], ["1p", "3p"], ["notice", "waiver"]];
   // (a document title and a document name the same document: one's words inside the other's, or most of them shared)
   function sameDoc(a, b){
-    const A = pkNorm(a), B = pkNorm(b); if(A.trim() && (A.includes(B) || B.includes(A))) return true;
-    const wa = pkWords(a), wb = pkWords(b); if(!wa.length || !wb.length) return false;
-    const hit = wa.filter((w) => wb.includes(w)).length; return hit / Math.max(wa.length, wb.length) >= 0.6;
+    const A = pkNorm(a), B = pkNorm(b), wa = pkWords(a), wb = pkWords(b);
+    if(!wa.length || !wb.length) return false;
+    if(A === B) return true;
+    if(PK_QUAL.some((g) => { const qa = g.filter((q) => wa.includes(q)), qb = g.filter((q) => wb.includes(q)); return qa.join() !== qb.join(); })) return false;
+    if(A.includes(B) || B.includes(A)) return true;
+    const hit = wa.filter((w) => wb.includes(w)).length; return hit / Math.max(wa.length, wb.length) > 0.6;
+  }
+  // (each extracted file stands for one document of the packet at most: exact names first, then the closest)
+  function matchDocs(docs, titles){
+    const used = new Set(), got = new Map();
+    const pass = (test) => docs.forEach((d, i) => { if(got.has(i)) return; const k = titles.findIndex((t, j) => !used.has(j) && test(t, d)); if(k >= 0){ used.add(k); got.set(i, k); } });
+    pass((t, d) => pkNorm(t) === pkNorm(d)); pass(sameDoc);
+    return {missing: docs.filter((d, i) => !got.has(i)), wrong: titles.filter((t, j) => !used.has(j))};
   }
   // "INTAKE - Police Report (lory).pdf" → {title: "Police Report", who: "lory"}; null when it isn't in the convention
   function intakeName(n){
@@ -353,8 +365,7 @@
     const misnamed = extracted.filter((f) => { const x = intakeName(f.name); return !x || !isVa(x.who); }).map((f) => f.name);
     const titles = extracted.map((f) => (intakeName(f.name) || {title: f.name}).title);
     const docs = Array.isArray(o.docs) ? o.docs.filter((d) => d && !/^intake packet$/i.test(String(d).trim())) : null;
-    const missing = docs ? docs.filter((d) => !titles.some((t) => sameDoc(t, d))) : [];
-    const wrong = docs ? titles.filter((t) => !docs.some((d) => sameDoc(t, d))) : [];
+    const M = docs ? matchDocs(docs, titles) : {missing: [], wrong: []}, missing = M.missing, wrong = M.wrong;
     const folderName = String(folder.name || ""), fw = pkWords(folderName), cw = pkWords(client);
     const folderOk = !!folderName && (cw.length ? cw.filter((w) => w.length > 1).every((w) => fw.includes(w)) : !/assessments?|activities/i.test(folderName));
     const changed = file.modified && o.assignedAt ? Date.parse(file.modified) >= Date.parse(o.assignedAt) : null;
@@ -370,17 +381,18 @@
         detail: !folder.ok ? (folder.error || "Link the client subfolder you saved the packet and its documents in") : folderOk ? `“${folderName}”` : `The subfolder is “${folderName}”${client ? `: name it after ${client}` : ""}`},
       {id: "packet-in", label: "The renamed packet is in the subfolder with its documents", pass: !!folder.ok && files.some((f) => isPacket(f.name)),
         detail: folder.ok && !files.some((f) => isPacket(f.name)) ? "No packet found in the subfolder" : ""},
-      {id: "complete", label: "Every document in the packet extracted", pass: !!folder.ok && extracted.length > 0 && (!docs || !missing.length),
-        detail: !folder.ok ? "" : !extracted.length ? "No extracted document in the subfolder" : !docs ? `${plural(extracted.length, "document")} extracted (the packet itself couldn't be read to compare)`
+      {id: "complete", label: "Every document in the packet extracted", pass: !docs && folder.ok && extracted.length ? null : !!folder.ok && extracted.length > 0 && !missing.length,
+        detail: !folder.ok ? "" : !extracted.length ? "No extracted document in the subfolder" : !docs ? `${plural(extracted.length, "document")} extracted (pending: the packet’s own pages couldn’t be read to compare)`
           : missing.length ? `${plural(missing.length, "document")} missing: ${missing.join(", ")}` : `All ${plural(docs.length, "document")} of the packet extracted`},
-      {id: "identified", label: "Each document correctly identified", pass: !!folder.ok && extracted.length > 0 && !wrong.length,
-        detail: wrong.length ? `Not in the packet (check what each document is): ${wrong.join(", ")}` : ""},
+      {id: "identified", label: "Each document correctly identified", pass: !docs && folder.ok && extracted.length ? null : !!folder.ok && extracted.length > 0 && !wrong.length,
+        detail: !docs && folder.ok && extracted.length ? "Pending: the packet’s own pages couldn’t be read to compare (check again, or your trainer reviews it)" : wrong.length ? `Not in the packet (check what each document is): ${wrong.join(", ")}` : ""},
       {id: "naming", label: "Each document named INTAKE - Document (Your Name)", pass: !!folder.ok && extracted.length > 0 && !misnamed.length,
         detail: misnamed.length ? `${plural(misnamed.length, "file")} to rename: ${misnamed.slice(0, 8).join(", ")}${misnamed.length > 8 ? "…" : ""}` : ""},
       {id: "worksheet", label: "The Intake Worksheet kept outside the client subfolder", pass: !files.some((f) => isSheet(f.name)),
         detail: files.some((f) => isSheet(f.name)) ? "Move the worksheet to your Assessments/Activities folder" : ""}];
-    const pct = Math.round(100 * rules.filter((r) => r.pass).length / rules.length);
-    return {pct, pass: rules.every((r) => r.pass), rules, extracted: extracted.length, missing, wrong, misnamed, docsRead: !!docs};
+    // (a point pending — the packet's pages unread — counts neither way, and the check isn't passed until it's read)
+    const scored = rules.filter((r) => r.pass !== null), pct = Math.round(100 * scored.filter((r) => r.pass).length / scored.length);
+    return {pct, pass: rules.every((r) => r.pass === true), pending: rules.some((r) => r.pass === null), rules, extracted: extracted.length, missing, wrong, misnamed, docsRead: !!docs};
   }
 
   root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,

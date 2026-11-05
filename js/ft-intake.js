@@ -238,7 +238,8 @@ function packetHtml(){
 }
 // 📦 the assigned client: the packet's (saved by the trainer), else the caller of the mock call case paired with it
 function clientOf(n){
-  const pk = packets()[n] || {}; if(pk.client) return pk.client;
+  const pk = packets()[n] || {}; if(pk.client) return pk.client; if((K.mine || {}).client) return K.mine.client;
+  if(!mockCalls() && !PK.failed) packs().catch(() => {});
   const c = callById((K.mine || {}).call) || (mockCalls() ? pairedCall(n) : null); return c && c.name ? c.name : "";
 }
 // 🔎 the packet's check (worker.js checkIntakePacket, intakecheck:<id>): each point met or not, and the feedback
@@ -246,8 +247,8 @@ function checkHtml(ck, mini){
   if(!ck) return "";
   const tone = ck.pct >= 100 ? "ok" : ck.pct >= 70 ? "mid" : "bad";
   return `<div class="ftis-ck${mini ? " ftis-ck-mini" : ""}"><div class="ftis-ck-h"><span class="ftis-ck-pct ftis-${tone}">${ck.pct}%</span><b>Accuracy &amp; completeness</b>
-      <small>checked ${e(new Date(ck.at).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}${ck.docsRead ? ` · ${ck.docs.length} document${ck.docs.length === 1 ? "" : "s"} found in the packet` : " · the packet’s pages couldn’t be read"}</small></div>
-    <ul>${ck.rules.map(r => `<li class="${r.pass ? "ok" : "miss"}">${r.pass ? "✓" : "✗"} <b>${e(r.label)}</b>${r.detail ? ` <span>${e(r.detail)}</span>` : ""}</li>`).join("")}</ul>
+      <small>checked ${e(new Date(ck.at).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}${ck.docsRead && Array.isArray(ck.docs) ? ` · ${ck.docs.length} document${ck.docs.length === 1 ? "" : "s"} found in the packet` : " · the packet’s pages couldn’t be read"}</small></div>
+    <ul>${ck.rules.map(r => `<li class="${r.pass === null ? "pend" : r.pass ? "ok" : "miss"}">${r.pass === null ? "⏳" : r.pass ? "✓" : "✗"} <b>${e(r.label)}</b>${r.detail ? ` <span>${e(r.detail)}</span>` : ""}</li>`).join("")}</ul>
     ${ck.feedback ? `<p class="ftis-ck-fb">🧑‍🏫 ${e(ck.feedback)}</p>` : ""}</div>`;
 }
 // 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
@@ -340,7 +341,9 @@ function adminHtml(){
   const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
   if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
   // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
-  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString()}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
+  // (an assignment made before the client was kept with it gets its case's client, once)
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}, c = v.call && !v.client && !AD.paired[r.id] ? callById(v.call) : null; if(c && c.name){ AD.paired[r.id] = 1; writeAssign(r.id, {client: String(c.name)}).catch(() => {}); } });
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
   const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="Paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
     : `<span class="fss-muted">${!calls ? (PK.failed ? "Cases didn’t load" : "Loading…") : AD.assign[id] ? "Pairing…" : "Follows the packet"}</span>`; };
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
@@ -394,14 +397,14 @@ window.FTIntakeAdmin = {
     const n = Number(v) || 0, at = new Date().toISOString();
     // (the packet is the only pick: its mock call case pairs with it, pairedCall, and Ring Channel's Scenario Picker plays the same call)
     let c = null; if(n){ try{ await packs(); }catch(err){} c = pairedCall(n); }
-    const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at} : {});
+    const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at, client: c ? String(c.name || "") : ""} : {});
     try{ await writeAssign(id, patch); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
     toast(n ? `✓ Packet ${n} assigned${c ? ` with its mock call case, ${c.title}` : ""} — the trainee sees it within two minutes.` : "✓ Unassigned.");
   },
   async assignCall(id, v){
     const c = callById(v);
-    try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString()}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
+    try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString(), client: c ? String(c.name || "") : ""}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     paint();
     toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Mock call case unassigned.");
   },
@@ -481,6 +484,8 @@ window.FTIntake = {
   // 🔎 the corrected packet and its subfolder, checked now (worker.js /api/intake/check)
   async checkPacket(){
     if(!isTrainee() || K.checking) return;
+    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim(), f = String((document.getElementById("ftisPkFolder") || {}).value || "").trim();
+    if(u !== (K.packetLink || "") || f !== (K.packetFolder || "")){ toast("Click 💾 Save first, then 🔎 Check my packet."); return; }
     K.checking = true; paint();
     let j = null, r = null;
     try{ r = await authFetch("/api/intake/check", {client: clientOf(Number((K.mine || {}).packet) || 0)}); j = await r.json().catch(() => null); }catch(err){}
@@ -542,7 +547,7 @@ window.FTIntake = {
 .ftis-pk-steps{margin:8px 0 10px 18px;padding:0;font-size:14.5px;line-height:1.55;} .ftis-pk-steps li{margin:2px 0;} .ftis-pk-steps code:not(.ftis-name){background:#fff;border:1px solid #F0D2B4;border-radius:5px;padding:0 5px;}
 .ftis-pk-link b{display:block;margin-top:6px;} .ftis-ck{margin:10px 0 2px;padding:10px 12px;border:1px solid #E1E5EE;border-radius:10px;background:#fff;color:#1E2340;}
 .ftis-ck-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .ftis-ck-h small{color:#5F6368;} .ftis-ck ul{list-style:none;margin:8px 0 0;padding:0;font-size:14px;}
-.ftis-ck li{margin:3px 0;} .ftis-ck li.ok{color:#14532D;} .ftis-ck li.miss{color:#9B1C1C;} .ftis-ck li span{color:#3C4043;font-weight:400;}
+.ftis-ck li{margin:3px 0;} .ftis-ck li.ok{color:#14532D;} .ftis-ck li.miss{color:#9B1C1C;} .ftis-ck li.pend{color:#8A4A00;} .ftis-ck li span{color:#3C4043;font-weight:400;}
 .ftis-ck-pct{display:inline-block;min-width:44px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;} .ftis-ok{background:#D7F0DE;color:#14532D;} .ftis-mid{background:#FFF1D6;color:#8A4A00;} .ftis-bad{background:#FDE2E1;color:#9B1C1C;}
 .ftis-ck-fb{margin:8px 0 0;padding:8px 10px;border-left:4px solid #DB8437;background:#FFF8EF;border-radius:6px;font-size:14px;line-height:1.5;}
 .ftis-ckcell{min-width:180px;} .ftis-ckcell details summary{cursor:pointer;} .ftis-ck-mini{width:460px;max-width:60vw;font-size:13px;box-sizing:border-box;} .ftis-ck-mini, .ftis-ck-mini *{white-space:normal;}
