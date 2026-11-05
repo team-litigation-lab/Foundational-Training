@@ -1635,7 +1635,7 @@ async function verifyLinks(env, id) {
         if (!res.ok && busy && prev[k] && prev[k].url === url.slice(0, 500) && !prev[k].retry) { out[k] = prev[k]; if (prev[k].fid) seen.set(prev[k].fid, k); continue; }
         if (!res.ok && busy) r = { ok: false, error: "Google Drive was busy and didn't answer. Check again in a minute.", retry: true };
         else if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa), why: String((j.error || {}).message || res.status).slice(0, 200) };
-        else if (K.folder && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
+        else if (K.folder && j.mimeType !== FOLDER_MIME) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
         else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
@@ -1765,6 +1765,7 @@ async function driveItem(env, fid, folder) {
 }
 const PDF_MAX = 20e6;
 const WORD_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const FOLDER_MIME = "application/vnd.google-apps.folder";
 async function docxText(b) {
   const u16 = (o) => b[o] | (b[o + 1] << 8), u32 = (o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
   let e = -1; for (let i = b.length - 22; i >= Math.max(0, b.length - 66000); i--) if (u32(i) === 0x06054b50) { e = i; break; }
@@ -1977,10 +1978,9 @@ async function backfillCompliance(env, id, o = {}) {
    account. A file goes to the trainee of the batch whose name it carries (the most name words; a tie with another trainee
    assigns it to nobody). A link is filled in where the trainee has none, or where theirs isn't ✓ (trackerreview.verify);
    a trainee's own ✓ link is never replaced. drive:<id>.auto[k] = when it was linked this way. */
-const driveUrl = (f) => f.mimeType === "application/vnd.google-apps.folder" ? `https://drive.google.com/drive/folders/${f.id}`
+const driveUrl = (f) => f.mimeType === FOLDER_MIME ? `https://drive.google.com/drive/folders/${f.id}`
   : f.mimeType === "application/vnd.google-apps.spreadsheet" ? `https://docs.google.com/spreadsheets/d/${f.id}/edit`
   : f.mimeType === "application/vnd.google-apps.document" ? `https://docs.google.com/document/d/${f.id}/edit` : (f.webViewLink || `https://drive.google.com/file/d/${f.id}/view`);
-const FOLDER_MIME = "application/vnd.google-apps.folder";
 async function driveSearch(tokens, q, max = 3000) {
   const seen = new Map();
   for (const token of tokens) {
@@ -3049,7 +3049,7 @@ export default {
         if (word ? magic.slice(0, 4) !== "PK\u0003\u0004" : magic !== "%PDF-") return json({ error: word ? "Not a Word file" : "Not a PDF" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
-        try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
+        try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? WORD_MIME : "");
           return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: shareAddr(env) }, env.GDRIVE_SA_SUBJECT && Date.now() < SUB_DOWN.until ? { sub: false } : {}, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
