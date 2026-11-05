@@ -326,6 +326,25 @@ function queueSave(){
   clearTimeout(FP.timer); FP.saving = true; paintSave();
   FP.timer = setTimeout(async ()=>{ const ok = await sharedSet("process:"+FP.id, FP.data); FP.saving = false; FP.savedAt = ok === false ? null : new Date(); paintSave(ok); }, 1000);
 }
+// a graded attempt is written at once (not on the 1-second timer): a reload straight after it can't lose it
+async function saveNow(){
+  if(!state.traineeId || !FP.data) return false;
+  clearTimeout(FP.timer); FP.data.updatedAt = new Date().toISOString(); FP.saving = true; paintSave();
+  const ok = await sharedSet("process:" + FP.id, FP.data); FP.saving = false; FP.savedAt = ok === false ? null : new Date(); paintSave(ok);
+  return ok;
+}
+// a record read from the server itself, telling "no record" ({ok:true, value:null}) from a failed read ({ok:false}): a
+// read-modify-write must never take a failed read for an empty record and write over it
+async function readStrict(key){
+  try{ const r = await authFetch("/api/storage/get", {key}); if(!r.ok) return {ok:false};
+    const d = await r.json(); return {ok:true, value:d && d.value ? JSON.parse(d.value) : null}; }
+  catch(err){ return {ok:false}; }
+}
+// 🔒 the attempts another tab or device (or the trainer-side grading) saved since this page loaded: the higher count wins
+function mergeAttempts(fresh){
+  ["kc", "kcRead"].forEach(slot => { const f = (fresh && fresh[slot]) || {}; FP.data[slot] = FP.data[slot] || {};
+    Object.keys(f).forEach(l => { const a = FP.data[slot][l], b = f[l]; if(b && (Number(b.attempts) || 0) > ((a && Number(a.attempts)) || 0)) FP.data[slot][l] = b; }); });
+}
 // (a platform update reloads the page: an answer typed in the last second is saved first, not left on the timer)
 (window.LSH_FLUSH_BEFORE_UPDATE = window.LSH_FLUSH_BEFORE_UPDATE || []).push(async () => {
   if(!FP.timer || !FP.saving || !state.traineeId || !FP.data) return;
@@ -735,7 +754,8 @@ window.FTProcessAdmin = {
     if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)){ toast("The final score is a number from 0 to 100."); return; }
     btn.disabled = true;
     try{
-      const cur = (await sharedGet("kcreview:" + id)) || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
+      const got = await readStrict("kcreview:" + id); if(!got.ok) throw new Error("read");   // (never over the retries and other reviews on a failed read)
+      const cur = got.value || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
       const review = {score:sv === "" ? null : Math.round(Number(sv)), comment:String(box.querySelector("textarea[data-comment]").value || "").trim().slice(0, 4000), notes, at:new Date().toISOString(), by:"trainer"};
       if(read){ cur.read = cur.read || {}; cur.read[l] = review; } else cur.lessons[l] = review;
       if(await sharedSet("kcreview:" + id, cur) === false) throw new Error("save");
@@ -750,7 +770,8 @@ window.FTProcessAdmin = {
     if(!why){ toast("Write the technical problem first: it is kept with the retry."); return; }
     btn.disabled = true;
     try{
-      const cur = (await sharedGet("kcreview:" + id)) || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
+      const got = await readStrict("kcreview:" + id); if(!got.ok) throw new Error("read");   // (never over the reviews on a failed read)
+      const cur = got.value || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
       const k = retryKey(l, read), used = ((((x.p || {})[read ? "kcRead" : "kc"] || {})[l]) || {}).attempts || 0;
       cur.retries = cur.retries || {};
       // (one attempt more than they have used: a trainee who took it several times before the once-only rule gets one more too)
@@ -1040,6 +1061,8 @@ window.FTKc = {
     const onScreen = shownSets(all), read = isReadPage(all, onScreen), sk = shownKey(id, read);
     // 🔒 taken once: the trainer's grants read fresh first (a retry granted a minute ago counts)
     { const p = loadReview(true); if(p) await p; }
+    // (and the attempts saved elsewhere since this page loaded: a second tab mustn't grade again)
+    { const fr = await readStrict("process:" + state.traineeId); if(fr.ok && fr.value) mergeAttempts(fr.value); }
     if(kcLeft(id, read) <= 0){ toast(`You've taken this ${read ? "Reading Task" : "Knowledge Check"}: it is taken once. If a technical problem affected your attempt, ask your trainer for a retry.`, 9000); render(); return; }
     const qs = all.filter(x => onScreen.includes(x.set));
     // (a lesson graded from two answer sheets, Day 1's Reading Task and its Process Questions: the message names the sheet
@@ -1070,7 +1093,7 @@ window.FTKc = {
         const rr = FP.data.kcRead[id] = FP.data.kcRead[id] || {attempts:0, best:0, last:null};
         rr.attempts++; rr.best = Math.max(rr.best||0, pct); rr.last = r;
         onScreen.forEach(set=>{ const x = sheet(set.id); if(answered(set, x) === set.questions.length) x.submittedAt = r.at; });
-        queueSave();
+        await saveNow();
         const tRead = trainerScore(readReview(id));
         state.progress[id] = Object.assign({}, state.progress[id] || {}, {readScore:tRead != null ? tRead : rr.best, readAttempts:rr.attempts}, tRead != null ? {readGraded:rr.best} : {});
         await storeSet("day-progress", state.progress);
@@ -1084,7 +1107,7 @@ window.FTKc = {
       rec.attempts++; rec.best = Math.max(rec.best||0, pct); rec.last = r;
       // the answer sheet counts as submitted once all its questions are answered
       [...new Set(qs.map(x=>x.set))].forEach(set=>{ const x = sheet(set.id); if(answered(set, x) === set.questions.length) x.submittedAt = r.at; });
-      queueSave();
+      await saveNow();
       const prev = state.progress[id] || {};
       const tScore = trainerScore(kcReview(id));
       state.progress[id] = Object.assign({}, prev, {score:tScore != null ? tScore : rec.best, kcAttempts:rec.attempts}, tScore != null ? {gradedScore:rec.best} : {}, (tScore != null ? tScore : pct) >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});

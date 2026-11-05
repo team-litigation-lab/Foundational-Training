@@ -45,6 +45,10 @@ const failures = []; const fail = (m) => failures.push(m);
   // a first write can't claim several attempts at once
   await set({ sets, kc: { 1: (await get()).kc[1], 2: att(3, 95) } });
   if (((await get()).kc || {})[2]) fail('a first attempt claiming 3 attempts was saved');
+  // a crafted count (negative, a fraction, a string) is no way round it: not saved as a first attempt, and a record
+  // already there of any shape stays taken
+  await set({ sets, kc: Object.assign({}, (await get()).kc, { 4: { attempts: -5, best: 0 }, 5: { attempts: 0.5, best: 10 }, 6: { attempts: '1', best: 20 } }) });
+  { const k = (await get()).kc; if (k[4] || k[5] || k[6]) fail(`a crafted attempt count was saved: ${JSON.stringify(k)}`); }
   // the answers still save as they type
   await set({ sets: { 'va-essentials': { answers: ['changed answer'] } }, kc: (await get()).kc });
   if ((await get()).sets['va-essentials'].answers[0] !== 'changed answer') fail('the answers no longer save');

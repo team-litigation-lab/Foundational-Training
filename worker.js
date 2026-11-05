@@ -365,13 +365,14 @@ async function traineeWrite(env, tok, key, value) {
     let rv = null; try { rv = rvRaw ? JSON.parse(rvRaw) : null; } catch (e) { rv = null; }
     const allowed = (slot, l) => 1 + Math.max(0, Math.floor(Number(((rv && rv.retries) || {})[(slot === "kcRead" ? "read" : "") + l]) || 0));
     const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
-    const n = (r) => Math.max(0, Math.floor(Number(r && r.attempts) || 0));
+    // (a count is a whole number from 1: a stored record of any other shape still counts as taken, and none is accepted)
+    const n = (r) => { const v = r && r.attempts; return typeof v === "number" && Number.isInteger(v) && v >= 1 ? v : 0; };
     for (const slot of ["kc", "kcRead"]) {
       const was = obj(existing && existing[slot]), now = obj(incoming[slot]), out = {};
       for (const l of new Set([...Object.keys(was), ...Object.keys(now)])) {
         const w = was[l], v = now[l];
-        if (n(w) > 0) out[l] = v && n(v) > n(w) && n(w) < allowed(slot, l) && n(v) <= allowed(slot, l) ? v : w;   // a new attempt, if one is left
-        else if (v) { if (n(v) <= allowed(slot, l)) out[l] = v; }   // the first attempt
+        if (w) out[l] = v && n(v) > n(w) && n(w) < allowed(slot, l) && n(v) <= allowed(slot, l) ? v : w;   // a new attempt, if one is left
+        else if (v && n(v) >= 1 && n(v) <= allowed(slot, l)) out[l] = v;   // the first attempt
       }
       if (Object.keys(out).length || slot in incoming || (existing && slot in existing)) incoming[slot] = out;
     }

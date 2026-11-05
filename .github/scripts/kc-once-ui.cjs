@@ -23,17 +23,25 @@ const failures = []; const fail = (m) => failures.push(m);
     // Lesson 2's Knowledge Check, graded once (55%)
     const qn = await page.evaluate(() => ftKcQuestions(2).length);
     const answers = Array.from({ length: qn }, (_, i) => `My answer to question ${i + 1} in complete sentences here.`);
-    await put('process:' + id, { sets: { 'law-firm-communication': { answers } }, kc: { 2: { attempts: 1, best: 55, last: { pct: 55, items: [], summary: 'Satisfactory.', at: new Date().toISOString() } } } });
+    // (the page opens before the attempt: Submit for Grading)
+    await put('process:' + id, { sets: { 'law-firm-communication': { answers } } });
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
     await page.evaluate(() => FTKc.open(2)); await page.waitForTimeout(2000);
+    const t0 = await page.evaluate(() => { const b = document.getElementById('kcSubmit'); return { b: b && b.textContent, dis: b && b.disabled }; });
+    if (t0.dis || t0.b !== 'Submit for Grading') fail(`before the attempt the button isn't Submit for Grading: ${JSON.stringify(t0)}`);
+    // the attempt is graded in another tab (saved on the server); this stale tab must not grade again
+    let ai = 0; await page.exposeFunction('__aiCalled', () => { ai++; });
+    await page.evaluate(() => { const o = window.callAIJson; window.callAIJson = async (...a) => { window.__aiCalled(); return o(...a); }; });
+    await put('process:' + id, { sets: { 'law-firm-communication': { answers } }, kc: { 2: { attempts: 1, best: 55, last: { pct: 55, items: [], summary: 'Satisfactory.', at: new Date().toISOString() } } } });
+    await page.evaluate(() => FTKc.submit(2)); await page.waitForTimeout(2000);
+    if (ai) fail('a tab opened before the attempt graded the Knowledge Check again');
+        await page.evaluate(() => FTKc.open(2)); await page.waitForTimeout(1500);
     const t1 = await page.evaluate(() => { const b = document.getElementById('kcSubmit'); return { b: b && b.textContent, dis: b && b.disabled, ro: [...document.querySelectorAll('.kc-card textarea')].every(t => t.readOnly), n: document.querySelectorAll('.kc-card textarea').length, note: (document.querySelector('.kc-once') || {}).textContent || '', intro: document.querySelector('.kc-hero').innerText }; });
     if (!t1.dis || !/Taken · 1 of 1 attempt used/.test(t1.b)) fail(`after the graded attempt the button isn't ✓ Taken (disabled): ${JSON.stringify(t1)}`);
     if (!t1.n || !t1.ro) fail('the answers of a taken Knowledge Check are still editable');
     if (!/taken once/.test(t1.note) || !/grant a retry/.test(t1.note)) fail(`the note doesn't say it is taken once and a trainer can grant a retry: ${t1.note}`);
     if (/Retake/.test(t1.intro)) fail('the Knowledge Check page still offers retakes');
     // pressing Submit anyway grades nothing (no AI call, no new attempt)
-    let ai = 0; await page.exposeFunction('__aiCalled', () => { ai++; });
-    await page.evaluate(() => { const o = window.callAIJson; window.callAIJson = async (...a) => { window.__aiCalled(); return o(...a); }; });
     await page.evaluate(() => FTKc.submit(2)); await page.waitForTimeout(1500);
     if (ai) fail('a taken Knowledge Check was sent for grading again');
     if (((await get('process:' + id)).kc[2] || {}).attempts !== 1) fail('a second attempt was recorded');
