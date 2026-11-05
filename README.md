@@ -901,6 +901,29 @@ node .github/scripts/smoke.mjs ALL                               # every browser
 
 Nobody bumps a `?v=` or `APP_BUILD` by hand any more. The deploy's build step (`wrangler.json` → `build.command`: `node build/day-decks.cjs && node build/script-versions.cjs`) stamps the deployed copy of `index.html`: every local script and stylesheet it loads gets `?v=` + a fingerprint of the file (and of the `/js/` files it loads by name, e.g. the Day decks' slides), so a changed file is fetched fresh by every browser and an unchanged one stays cached; and `APP_BUILD` (the footer's *build …*, `/version`, the Blueprint PDF's rebuild) becomes `ft-<the deploy's date>-<a fingerprint of them all>`. The `?v=` written in the repository can stay as they are. `node build/script-versions.cjs --check` (in Checks) prints what a deploy would stamp.
 
+## 🔄 Open pull requests are kept up to date after each deploy
+
+Several pull requests are often open at once, all editing `js/ft-*.js` and `index.html`, so each merge used to leave the others conflicting. `.github/workflows/pr-auto-update.yml` runs after every push to `main` (every deploy) and brings each open pull request into `main` from this repository up to date (`.github/scripts/pr-auto-update.sh`):
+
+- **Merge, never rewrite:** `main` is merged into the branch with a merge commit. The branch's own commits are never rewritten or force-pushed. A session working on that branch picks the merge up with `git pull` before its next push. A branch pushed to while the update runs is left for the next deploy, and so is one already merged into `main`.
+- **Only safe conflicts are resolved** (`.github/scripts/resolve-conflicts.cjs`, which reads the ancestor too: diff3):
+  - *`index.html`'s version stamps:* a `<script src>` / `<link href>` `?v=` or `var APP_BUILD` that differs and nothing else. `main`'s are kept, since the deploy writes every stamp again. A `?v=` anywhere else, such as an image's cache-buster or a regex, is a real edit.
+  - *Different lines both sides added at the same spot:* both are kept whole, the branch's first. This only applies when they share no line and declare no name on both sides (a function, `const`/`let`, a method, an object key, a CSS selector, an element id). Otherwise the same thing reached both sides, or two things clash.
+- **Always left for a person:** the same lines changed two ways, a file deleted on one side or created on both, a binary or non-UTF-8 file, mixed line ends, and marker-like lines in a file's own content.
+- **Checked before it is pushed:** every changed script parses, the Day decks build, every versioned file exists and every local reference resolves. The branch's code runs without any token. A check the branch already failed before the merge isn't blamed on the merge: the update goes on and says so.
+- **When it can't:** one comment on the pull request says what needs a person. It is updated after later deploys, not repeated, and removed once the branch is up to date.
+- **Opting out:** a pull request labelled `no-auto-update` is left alone. *Run workflow* on the Actions tab runs it by hand.
+
+**🔑 Workflow files need a token.** GitHub doesn't let a workflow's own token push a change to `.github/workflows` (for example a new step in `checks.yml`). So a branch whose update would bring one in gets the comment instead, until it is merged by hand once. To have those done too, add the repository secret **`PR_UPDATE_TOKEN`**:
+
+1. Create a fine-grained personal access token on GitHub: *Settings → Developer settings → Fine-grained tokens*.
+2. Give it this repository only, with *Contents*, *Pull requests* and *Workflows* set to *Read and write*.
+3. Save it as `PR_UPDATE_TOKEN` in this repository's *Settings → Secrets and variables → Actions*.
+
+With the secret, pushes also start each pull request's **Checks** by themselves. Without it, the workflow starts **Checks** on every branch it updated.
+
+`node .github/scripts/pr-auto-update-test.cjs` (part of **Checks**) runs the resolver on its own and as a command in a real merge, then the updater on real branches of a copy of this repository. It covers every case above.
+
 ## 🔎 The six Drive links are checked as the trainee's own
 
 Beyond opening and being the right kind of file, each of the six 📁 My Drive links (`worker.js` `verifyLinks` → `ownCheck`) must be **the trainee's own copy, named by its rule** (`NAMING`: *LSH VA Training Monitoring Sheet__Your Name*, *LSH Task Assessment Manual (TAM) | BatchID Your Name*, *LSH Trainee folder – BatchID Your Name/Typing Tests*, *BatchID Your Name/Spelling Tests*, *LSH Trainee folder – BatchID Your Name Assessments/Activities*, *LSH Daily Task Tracker | BatchID Your Name*; a plain-named folder is read with its parent's name). It is ✗, with why and the exact name it should have, when it is the blank template (*VA Name*, *BatchID*), another batch's, another trainee's (their name), without the trainee's name, without their Batch ID where the rule has one, the same file as another of their six, or a file another trainee already linked (`drivelink:<file id>`). A ✓ from before these checks is checked once more (`VERIFY_V`). **The trainee is told:** a 🔔 pop-up on signing in, after any check (theirs or the end-of-shift one) and every few minutes names each wrong link with why and **📁 Fix my links**; *Later* holds it for the same links and reasons; 📚 Dashboard keeps its notice until the links are right; the trainer sees the same reasons on the 📋 Batch Sheet: **Compliance and Platform Utilization Monitoring** shows the six links side by side, one column each (✓ Correct, ✗ Wrong with why on a hover or a click, ⏳ Pending, — Not linked), after *Links correct* (no dropdown). The orientation's *Part 5 · Link Them Once* names all six and the check.
