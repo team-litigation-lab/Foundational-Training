@@ -281,10 +281,26 @@ function gradesHtml(){
 function kcRows(p){
   return kcSheets().map(k => { const g = sheetGrade(p, k); return {k, g}; });
 }
+// (who the breakdown is for: the trainee picked, or every trainee; a trainee: only themself)
+function kdPick(){
+  const ppl = people(), id = meOn() ? (ppl[0] || {}).id : B.kd === ALL ? ALL : (B.kd && ppl.some(p => p.id === B.kd) ? B.kd : (ppl[0] || {}).id);
+  return {ppl, id, who: id === ALL ? ppl : ppl.filter(p => p.id === id)};
+}
+// 📤 the breakdown to share, as text (📋 Copy: a chat or an email) — the same content as on the page, trainee by trainee
+function kdText(who){
+  return who.map(p => { const rows = kcRows(p), R = B.data.rec[p.id] || {}, done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
+    let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}) : ""; }catch(err){}
+    return [`✍️ KNOWLEDGE CHECKS — ${p.name}${B.batch ? ` (${B.batch})` : ""}`, `Average: ${avg != null ? pct(avg) : "nothing graded yet"} · ${done.length} of ${rows.length} graded`, rep ? "\n" + rep : ""]
+      .concat(rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, sc = g.items.filter(it => typeof it.score === "number");
+        return ["", `■ ${k.title}: ${g.pct != null ? g.pct + "% — " + g.how : g.how}${sc.length ? ` · answers ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}` : ""}`,
+          last && last.summary ? `Graded${last.at ? " " + when(last.at) : ""}: ${last.summary}` : "", rv.comment ? `Trainer's overall comment: ${rv.comment}` : ""]
+          .concat(g.items.map((it, n) => [`  ${n + 1}. ${it.q}`, `     Answer: ${it.answer || "(unanswered)"}`,
+            typeof it.score === "number" ? `     Grade: ${it.score}/10${it.feedback ? " — " + it.feedback : ""}` : it.answer && g.subm ? "     Grade: not graded yet" : "",
+            it.note ? `     Trainer: ${it.note}` : ""].filter(Boolean).join("\n"))).filter(Boolean).join("\n"); })).filter(x => x !== "").join("\n"); }).join("\n\n————————————————————\n\n");
+}
 function kcDetailHtml(){
-  const ppl = people(); if(!ppl.length || !B.data || !kcSheets().length) return "";
-  const id = meOn() ? ppl[0].id : B.kd === ALL ? ALL : (B.kd && ppl.some(p => p.id === B.kd) ? B.kd : ppl[0].id);
-  const who = id === ALL ? ppl : ppl.filter(p => p.id === id);
+  if(!people().length || !B.data || !kcSheets().length) return "";
+  const {ppl, id, who} = kdPick();
   const fbTone = v => typeof v !== "number" ? "" : v >= 8 ? "gs-hi" : v >= 7 ? "gs-mid" : "gs-lo";
   const one = p => { const rows = kcRows(p), R = B.data.rec[p.id] || {};
     let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}) : ""; }catch(err){}
@@ -304,6 +320,8 @@ function kcDetailHtml(){
         </details>`; }).join("")}</div>`; };
   return `<div class="bs-ck bs-kdw">${meOn() ? `<h4>✍️ My Knowledge Checks in detail</h4>` : `<label class="bs-ck-who">✍️ Knowledge Checks in detail for <select onchange="FTBatchSheet.kdWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     <button type="button" class="bs-dl" onclick="FTBatchSheet.kdCsv()" title="Every trainee's Knowledge Checks, answer by answer: the grade, the feedback and the trainer's comments (.csv)">⬇ Download the breakdown</button>
+    <button type="button" class="bs-dl" onclick="FTBatchSheet.kdCopy()" title="The breakdown shown here as text, ready to paste into a chat or an email">📋 Copy</button>
+    <button type="button" class="bs-dl" onclick="FTBatchSheet.kdPrint()" title="The breakdown shown here on a clean page: print it, or Save as PDF to send">🖨 Print / PDF</button>
     <p class="bs-note">Each Knowledge Check answer by answer: the grade out of 10 with its feedback, the trainer’s comment on it, the trainer’s overall comment and final score — as on the ✍️ Knowledge Check page.</p>
     ${who.map(one).join("")}</div>`;
 }
@@ -1297,6 +1315,26 @@ window.FTBatchSheet = {
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   kdWho(id){ if(!adminOn()) return; B.kd = id; render(); },
+  // 📤 sharing the breakdown shown (the trainee picked, or every trainee): 📋 as text, 🖨 as a clean page to print or save as PDF
+  kdCopy(){
+    if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
+    const t = kdText(kdPick().who);
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: paste it into a chat or an email."), () => toast("Couldn’t copy. Use 🖨 Print / PDF instead."));
+  },
+  kdPrint(){
+    if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
+    const box = document.querySelector(".bs-kdw"); if(!box){ toast("Open the breakdown first."); return; }
+    const c = box.cloneNode(true); c.querySelectorAll("button, select, label.bs-ck-who").forEach(x => x.remove()); c.querySelectorAll("details").forEach(d => d.setAttribute("open", ""));
+    const {who} = kdPick(), title = `Knowledge Checks — ${who.length === 1 ? who[0].name : "Batch " + (B.batch || "")}`;
+    const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups for this site to print the breakdown."); return; }
+    const css = [...document.querySelectorAll("style#ft-batch-sheet")].map(x => x.textContent).join("\n");
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${e(title)}</title><style>${css}
+      body{font:15px Arial,sans-serif;color:#141A2E;margin:28px;} h1{font:800 22px Arial,sans-serif;margin:0 0 4px;} .bs-ck{border:0;padding:0;margin:0;}
+      .bs-kd{break-inside:avoid-page;} .bs-kd > summary{list-style:none;} .bs-kd > summary::-webkit-details-marker{display:none;}
+      .gs-hi{color:#0B57D0;} .gs-mid{color:#9A6700;} .gs-lo{color:#C5221F;} @media print{body{margin:12mm;}}</style></head>
+      <body><h1>✍️ ${e(title)}</h1><p class="bs-note">LSH Foundational Training · ${e(new Date().toLocaleDateString())}</p>${c.innerHTML}</body></html>`);
+    w.document.close(); setTimeout(() => { try{ w.focus(); w.print(); }catch(err){} }, 400);
+  },
   // ⬇ the Knowledge Checks' breakdown: a row per answer
   kdCsv(){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }

@@ -267,6 +267,15 @@ const failures = []; const fail = m => failures.push(m);
       if (!/Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
+      // 📤 shareable: 📋 Copy puts the same breakdown on the clipboard as text; 🖨 Print / PDF opens it on a clean page
+      const shared = await page.evaluate(async () => { let copied = '', printed = '';
+        Object.defineProperty(navigator, 'clipboard', { value: { writeText: async t => { copied = t; } }, configurable: true });
+        const was = window.open; window.open = () => ({ document: { write: h => { printed += h; }, close() {} }, focus() {}, print() {} });
+        FTBatchSheet.kdCopy(); await new Promise(r => setTimeout(r, 200)); FTBatchSheet.kdPrint(); await new Promise(r => setTimeout(r, 600)); window.open = was;
+        return { copied, printed }; });
+      if (!/KNOWLEDGE CHECKS — Ada Active/.test(shared.copied) || !/Grade: 9\/10 — Named every step in order/.test(shared.copied) || !/Trainer: Spot on\./.test(shared.copied)
+        || !/Trainer's overall comment: Good start/.test(shared.copied) || !/Process Questions Responses/.test(shared.copied)) fail(`📋 Copy doesn't carry the breakdown: ${shared.copied.slice(0, 500)}`);
+      if (!/Knowledge Checks — Ada Active/.test(shared.printed) || !/9\/10/.test(shared.printed) || !/Spot on\./.test(shared.printed) || /<select|<button/.test(shared.printed)) fail(`🖨 Print / PDF doesn't show the breakdown on a clean page: ${shared.printed.slice(0, 300)}`);
       await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     } else fail('no Knowledge Check questions for the first lesson');
