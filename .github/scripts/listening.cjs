@@ -1,6 +1,7 @@
 // 🎧 Call Listening Log (js/ft-listening.js): the four Call Listening sets open with their days; a trainee logs a
 //   recording, a half-filled log doesn't count and a full one does; it's saved in listening:<id>, counted on the
-//   Practice Lab card and 🏅 My Performance; the day map's steps point to it; the trainer reads a trainee's log and
+//   Practice Lab card and 🏅 My Performance, where Day 3's Reception Listening Activity counts by its grade (not graded
+//   until submitted, and once only); the day map's steps point to it; the trainer reads a trainee's log and
 //   changes a set's recordings (settings:listening); the worker keeps listening:<id> the trainee's own.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/listening.cjs http://localhost:8787/
 const { chromium } = require('playwright');
@@ -82,6 +83,25 @@ async function workerChecks() {
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   if (!/Call Listening[\s\S]*Reception calls[\s\S]*10%/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the listening log');
 
+  // 📝 Day 3's Reception Listening Activity counts in 🎧 Call Listening by its grade: logged and not submitted, it is not graded
+  // (no score, never a 0); graded, its score is there, and not under 📋 Task Tracker & Monitoring Sheet as well (counted once)
+  const perf = async () => { await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1200); await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
+    return page.evaluate(() => [...document.querySelectorAll('.sc-src')].map(c => ({ h: c.querySelector('.sc-src-h').innerText, rows: [...c.querySelectorAll('tr')].map(r => r.innerText) }))); };
+  const actOf = cards => { const c = cards.find(x => /Call Listening/.test(x.h)) || { h: '', rows: [] }; return { h: c.h, row: c.rows.find(r => /Reception Listening Activity/.test(r)) || '' }; };
+  const logged = await get('listening:' + id);
+  await put('listening:' + id, Object.assign({}, logged, { logs: Object.assign({}, logged.logs, { recact: { 1: { caller: 'Gloria Benton, existing client', at: new Date().toISOString() } } }) }));
+  let cardsNow = await perf(), act = actOf(cardsNow);
+  if (!/Not graded yet/.test(act.row) || /\d+%/.test(act.row)) fail(`a Reception Listening Activity not submitted yet isn't "not graded" on My Performance: ${act.row || act.h}`);
+  if (!/10%/.test(act.h)) fail(`an activity not graded yet counted in 🎧 Call Listening's score: ${act.h}`);
+  await put('trackerreview:' + id, { days: {}, assess: { recact: { at: new Date().toISOString(), when: 'Nov 5, 9:30 AM ET', title: 'Reception Listening Activity: Harbor & Pine Calls', score: 32, max: 40, pct: 80, pending: false, ai: true, items: { c1_caller: { ok: true, pts: 1 } } } } });
+  cardsNow = await perf(); act = actOf(cardsNow);
+  if (!/80%/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance with its score: ${act.row || act.h}`);
+  // (🎧 Call Listening's score: the average of the Reception calls' 10% and the activity's 80%)
+  if (!/45%/.test(act.h)) fail(`🎧 Call Listening's score isn't the average of its sets and the graded activity: ${act.h}`);
+  const twice = cardsNow.filter(c => !/Call Listening/.test(c.h) && c.rows.some(r => /Reception Listening/.test(r))).map(c => c.h);
+  if (twice.length) fail(`the Reception Listening Activity also counts under ${twice.join(', ')}`);
+  await put('trackerreview:' + id, null); await put('listening:' + id, logged);
+
   // the trainer: reads the log, and changes the set's recordings
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'listening'; FTListenAdmin.reload(); goto('admin'); });
   await page.waitForTimeout(2500);
@@ -122,5 +142,5 @@ async function workerChecks() {
   await put('settings:opendays', openWas || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Call Listening Log test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Call Listening Log test passed (the four sets on their days and the day map\'s steps; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer reads a log and changes a set\'s recordings, which the trainee then sees; the worker\'s rules).');
+  console.log('Call Listening Log test passed (the four sets on their days and the day map\'s steps; a part-filled log saved but not counted, a full one counted, saved and on My Performance, with the Reception Listening Activity by its grade, once; the trainer reads a log and changes a set\'s recordings, which the trainee then sees; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -318,6 +318,19 @@ function kcCtx(R, p, l){
     rv.comment ? clip(rv.comment, 300) : last && last.summary ? clip(last.summary, 300) : ""].filter(Boolean).join(". ");
   return {name: `✍️ Knowledge Check: ${lessonName(l)}`, pct: sc, status: sc >= 70 ? "Passed" : "Not yet", why, best, improve: low, by: "✍️ Graded"};
 }
+// 📝 an activity answered on the platform and graded by its 📝 Submit for Grading (the day item's assess: Day 3's Reception
+// Listening Activity): its points, each call it got fully right, and each answer the grading marked down, with its note
+function assessCtx(R, it){
+  const g = assessOf(R, it), sc = gradePct(g); if(sc == null) return null;
+  const nm = k => window.FTListen && FTListen.answerName ? FTListen.answerName(it.assess, k) : k, callOf = k => Number((/^c(\d+)_/.exec(k) || [])[1]) || 0;
+  // (in the calls' order: the grading keeps the answers in the order it graded them)
+  const its = Object.entries(g.items || {}).filter(([, x]) => x).sort((a, b) => callOf(a[0]) - callOf(b[0]));
+  const calls = [...new Set(its.map(([k]) => callOf(k)).filter(Boolean))], left = its.filter(([, x]) => x.pending).length;
+  const best = calls.filter(n => its.every(([k, x]) => callOf(k) !== n || x.ok)).slice(0, 3).map(n => `${nm("c" + n)}: every answer right`);
+  const improve = its.filter(([, x]) => !x.ok && !x.pending).slice(0, 4).map(([k, x]) => `${nm(k)}${x.pts > 0 ? " (partly right)" : ""}${x.note ? ": " + clip(x.note, 200) : ""}`);
+  const why = `${g.score} of ${g.max} points (${sc}%), graded ${g.when || day(g.at)}${left ? `; ${left} answer${left === 1 ? "" : "s"} left for the trainer to grade` : ""}`;
+  return {name: it.t, pct: sc, status: "Graded", why, best, improve, by: "📝 Answer Sheet"};
+}
 // (a deliverable the guide lists on several days — a lesson's Knowledge Check, a Practice Session, a mock call — is scored
 // once, on the last day that lists it; the days before say where its score is)
 function lastDayOf(){
@@ -336,6 +349,7 @@ function dayDeliverables(p, d){
     if(lk){ out.push({name: it.t, pct: null, status: `Scored on Day ${lk}`, why: `Its score is on Day ${lk}, the last day it runs.`, best: [], improve: [], by: ""}); return; }
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ out.push(trainerCtx(acts[it.id], it.t)); return; }
     if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ out.push(c); return; } }
+    if(it.assess){ const c = assessCtx(R, it); if(c){ out.push(c); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ out.push(...cs); return; }
       if(ls.length && !here_.length){ const n = later("kc|" + ls[0]); out.push({name: it.t, pct: null, status: `Scored on Day ${n}`, why: `The Knowledge Check's score is on Day ${n}, the last day it runs.`, best: [], improve: [], by: ""}); return; } }
@@ -360,7 +374,7 @@ function dayDeliverables(p, d){
 const dayAvg = xs => avgOf(xs.map(x => x.pct));
 function dayScoresTable(){
   const ppl = people(), D = dayList();
-  return {id: "dayscores", title: "📅 Day 1–16: Detailed Scores", note: `${meOn() ? "Your" : "Each trainee's"} score for each training day: the average of the day's scored deliverables (mock calls and demos, Practice Sessions, Knowledge Checks, Monitoring Sheet updates). Click a day for its deliverables. ${meOn() ? "Your days in detail, with why each was scored that way, what to improve and what you did best, are under the table." : "Pick a trainee under the table for each deliverable's score with why it was scored that way, what needs to be improved and what they did best."}`,
+  return {id: "dayscores", title: "📅 Day 1–16: Detailed Scores", note: `${meOn() ? "Your" : "Each trainee's"} score for each training day: the average of the day's scored deliverables (mock calls and demos, Practice Sessions, Knowledge Checks, 📝 Answer Sheets graded on the platform, Monitoring Sheet updates). Click a day for its deliverables. ${meOn() ? "Your days in detail, with why each was scored that way, what to improve and what you did best, are under the table." : "Pick a trainee under the table for each deliverable's score with why it was scored that way, what needs to be improved and what they did best."}`,
     head: ["Trainee", "Average"].concat(D.map(d => `Day ${d.day}`)),
     rows: ppl.map(p => { const per = D.map(d => dayDeliverables(p, d)), avgs = per.map(dayAvg), a = avgOf(avgs);
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(a), f: a == null ? "No scored deliverable yet" : `The average of the days' scores = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
@@ -431,7 +445,9 @@ function lessonScore(p, l){
   const kc = avgOf(kcs.map(x => x.g.pct));
   // 🛠 the scored practice, mock calls and demos of its days (a deliverable on several days counted once)
   const seen = new Set(), prs = [];
-  days.forEach(d => dayStatus(p, d).forEach(x => { const k = kindOf(x.it); if((k === "practice" || k === "mock") && x.score && !seen.has(x.it.at + "|" + x.it.id)){ seen.add(x.it.at + "|" + x.it.id); prs.push({t: x.it.t, pct: x.score.pct}); } }));
+  // (an answer sheet graded on the platform has no id, only its assess: Day 3's Reception Listening Activity)
+  days.forEach(d => dayStatus(p, d).forEach(x => { const k = kindOf(x.it), once = x.it.at + "|" + (x.it.id || x.it.assess);
+    if((k === "practice" || k === "mock") && x.score && !seen.has(once)){ seen.add(once); prs.push({t: x.it.t, pct: x.score.pct}); } }));
   const pr = avgOf(prs.map(x => x.pct));
   // 📤 the end-of-shift check of its days
   const comp = ((R.src || {})["trackerreview:"] || {}).compliance || {};
@@ -747,12 +763,15 @@ function practiceTable(){
 }
 /* 📅 Day by Day: the 16 training days (js/ft-day-activities.js, the Training Guide's own list), each activity a tick box.
    Ticked by itself where the platform already has the proof — the day's Knowledge Check passed, the Practice Session
-   submitted, the trainer-recorded Mock Call / Demo, the tool's work saved — and by the trainer for the rest (the classroom,
-   the GC, Drive), in daycheck:<id> = {items: {"<day>|<activity>": {done, at}}}, which a trainee reads and only a trainer
-   writes (worker.js TRAINER_OWNED). The daily tests and upskill hour, repeated on every day, are left out of the count. */
+   submitted, the trainer-recorded Mock Call / Demo, the tool's work saved, the 📝 Answer Sheet submitted for grading — and
+   by the trainer for the rest (the classroom, the GC, Drive), in daycheck:<id> = {items: {"<day>|<activity>": {done, at}}},
+   which a trainee reads and only a trainer writes (worker.js TRAINER_OWNED). The daily tests and upskill hour, repeated on
+   every day, are left out of the count. */
 // each activity's kind, for the totals across the 16 days
 const KINDS = [["kc", "✍️ Knowledge Checks"], ["practice", "🛠 Practice"], ["mock", "🎙 Mock Calls & Demos"], ["class", "🏫 Classroom & outputs"]];
-const kindOf = it => it.at === "tool" && it.id === "process" ? "kc" : it.at === "trainer" || /Mock call|Demo/i.test(it.kind || "") ? "mock" : it.at === "session" || it.at === "tool" ? "practice" : "class";
+// (an activity answered on the platform and graded there, assess — Day 3's Reception Listening Activity — is 🛠 Practice, as
+// the tools are, so the 🏅 Score Card counts its grade)
+const kindOf = it => it.at === "tool" && it.id === "process" ? "kc" : it.at === "trainer" || /Mock call|Demo/i.test(it.kind || "") ? "mock" : it.at === "session" || it.at === "tool" || it.assess ? "practice" : "class";
 const DAILY_T = /^(Typing Test \(morning|Spelling Test \(once a day\)|Free Communication Upskill)/;
 const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t));
@@ -766,6 +785,8 @@ function autoDone(R, d, it, p){
     if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
     if(a.status === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%)` : "")};
     return {done: a.status === "Passed" || a.score != null || !!a.status, how: `Trainer: ${a.status || "recorded"}${a.score != null ? ` · ${a.score}%` : ""}`}; }
+  // 📝 done once submitted for grading; until then the trainer's tick still counts (the worksheet, handed in on Drive)
+  if(it.assess){ const g = assessOf(R, it); return g && g.at ? {done: true, how: `Submitted for grading ${g.when || when(g.at)}`} : null; }
   if(it.at !== "tool") return null;
   switch(it.id){
     case "process": { const ls = d.lessons || []; if(!ls.length) return null; const ok = ls.every(l => dp[l] && dp[l].done);
@@ -781,10 +802,16 @@ function autoDone(R, d, it, p){
 }
 /* each activity's score, where the platform has one (the Scorecard's own sources): the day's Knowledge Checks (the trainer's
    final score, else the graded best; Day 1's 📖 Reading Task its own), the Practice Session (the trainer's score, else its
-   automated checks), the Mock Call / Demo the trainer scored, and a tool's grading-system average. A classroom activity the
-   trainer ticks has no score: it counts in "done", not in the average. */
+   automated checks), the Mock Call / Demo the trainer scored, a tool's grading-system average, and an activity answered on
+   the platform its 📝 Submit for Grading (assess). A classroom activity the trainer ticks has no score: it counts in "done",
+   not in the average. */
 const TOOL_SYS = {drills: "drills", listening: "listening", calcheck: "calcheck", calactivity: "calcheck", calrules: "calrules", calweek: "calweek", calsim: "calendar", callsim: "calls", skills: "skills"};
 const numOr = v => v != null && v !== "" && isFinite(Number(v)) ? Math.max(0, Math.min(100, Math.round(Number(v)))) : null;
+// 📝 a day item's grade from its 📝 Submit for Grading (its assess: trackerreview:<id>.assess[…], worker.js /api/assess/grade),
+// and its score: none until it is graded, nor while a broken grade waits to be graded again (window.ftStaleGrade,
+// js/ft-listening.js) — not graded is no score, never a 0
+const assessOf = (R, it) => ((((R.src || {})["trackerreview:"] || {}).assess) || {})[it.assess] || null;
+const gradePct = g => g && g.score != null && !(window.ftStaleGrade && ftStaleGrade(g)) ? numOr(g.pct) : null;
 function scoreOf(R, d, it, p){
   const src = R.src || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   if(it.at === "session"){
@@ -795,6 +822,8 @@ function scoreOf(R, d, it, p){
   }
   if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a ? numOr(a.score) : null;
     return v != null ? {pct: v, how: `trainer's score${a.status ? " · " + a.status : ""}`} : null; }
+  if(it.assess){ const g = assessOf(R, it), v = gradePct(g);
+    return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;
   if(it.id === "process"){
     const rv = src["kcreview:"] || {}, xs = [];
@@ -804,8 +833,11 @@ function scoreOf(R, d, it, p){
       if(rg != null) xs.push({pct: rg, how: `📖 Reading Task ${rg}%${tr != null ? " (trainer's final)" : ""}`}); });
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: "Knowledge Check: " + xs.map(x => x.how).join(", ")} : null;
   }
+  // (less the grading system's items a day scores on their own, assess: Day 3's Reception Listening Activity is in 🎧 Call
+  // Listening's grades, and scored on Day 3 by itself, so the Call Listening step's score doesn't count it a second time)
   const sys = TOOL_SYS[it.id], row = sys && R.score && R.score.rows ? R.score.rows.find(r => r.s && r.s.id === sys) : null;
-  return row && row.avg != null ? {pct: Math.round(row.avg), how: `${row.s.label} average`} : null;
+  const g = row ? (row.items || []).filter(x => typeof x.pct === "number" && isFinite(x.pct) && !x.assess) : [];
+  return g.length ? {pct: Math.round(avgOf(g.map(x => x.pct))), how: `${row.s.label} average`} : null;
 }
 function dayStatus(p, d){
   const R = B.data.rec[p.id] || {}, man = ((R.daycheck || {}).items) || {};
@@ -817,7 +849,7 @@ const scoreLine = xs => { const sc = xs.filter(y => y.score); return {avg: sc.le
   why: sc.map(y => `${y.it.t.replace(/\s*\(.*$/, "")} ${y.score.pct}% (${y.score.how})`).join("; ")}; };
 function daysTable(){
   const ppl = people(), D = dayList();
-  return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Practice Session, the Mock Call / Demo the trainer scored, the tools' grades). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score.  ✓ = every activity of the day done.`,
+  return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Practice Session, the Mock Call / Demo the trainer scored, the tools' grades, a 📝 Answer Sheet graded on the platform). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score.  ✓ = every activity of the day done.`,
     head: ["Trainee", "Average score", "Days complete"].concat(KINDS.map(k => k[1]), D.map(d => `Day ${d.day}`)),
     rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), full = st.filter(x => x.length && x.every(y => y.done)).length;
       const all = st.flat(), kind = k => all.filter(y => kindOf(y.it) === k), dayAvgs = st.map(x => scoreLine(x).avg), avg = avgOf(dayAvgs);

@@ -21,7 +21,8 @@ const failures = []; const fail = (m) => failures.push(m);
   const ann = await signIn('Ann Own'), bob = await signIn('Bob Other');
   const admin = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
   // their records, as the platform keeps them (written by the trainer)
-  const KEYS = id => ['trainee:', 'progress:', 'skills:', 'simresults:', 'kcreview:', 'labreview:', 'callsim:', 'calsim:', 'calweek:', 'trackerreview:', 'trainerfb:', 'rankshare:', 'daycheck:'].map(k => k + id);
+  // (listening:<id> with trackerreview:<id>: 🎧 Call Listening's items, Day 3's Reception Listening Activity graded among them)
+  const KEYS = id => ['trainee:', 'progress:', 'skills:', 'simresults:', 'kcreview:', 'labreview:', 'callsim:', 'calsim:', 'calweek:', 'trackerreview:', 'listening:', 'trainerfb:', 'rankshare:', 'daycheck:'].map(k => k + id);
   for (const t of [ann, bob]) for (const k of KEYS(t.id)) await call('/api/storage/set', { key: k, value: JSON.stringify(k.startsWith('trainee:') ? { id: t.id, name: k, batch: 'B103026', approved: true } : { mine: k }) }, admin);
 
   // a trainee: their own sheet's records, all of them

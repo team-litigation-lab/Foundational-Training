@@ -15,7 +15,7 @@
      lessons  the lesson deck(s) the day's discussions use ([] where the day has no deck)
      items    the day's activities, in the order the guide runs them
 
-   Each item: {t, kind, at, id}
+   Each item: {t, kind, at, id, assess}
      t     the activity, as the Training Guide names it
      kind  Skill test · Assessment · Breakout · Process questions · Exercise · Mock call ·
            Demo · Activity · Session · Buffer · Shadowing · Upskill · Discussion · Offline
@@ -32,6 +32,9 @@
              "gc"       run in the training GC (the activity sheet / handouts are posted there)
              "room"     done live in the classroom, nothing to submit
      id    the platform record it maps to, where at is "session", "trainer" or "tool"
+     assess  where the activity's answers are on the platform and graded by its 📝 Submit for Grading: the grade's key in
+           trackerreview:<id>.assess (worker.js /api/assess/grade), which scores the activity on the 📋 Batch Sheet's days
+           (js/ft-batch-sheet.js). Day 3's Reception Listening Activity, "recact": its 📝 Answer Sheet (js/ft-listening.js)
 
    Who reads it:
      • js/ft-sessions.js — the day badge on the 🟢 Practice Sessions and 🧑‍🏫 cards, and
@@ -75,7 +78,8 @@ const DAYS = [
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
-    {t:"Reception Listening Activity: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
+    // (its t and at stay as they were: the trainer's ticks, daycheck:<id>, and 📝 Send Feedback's list are keyed by them)
+    {t:"Reception Listening Activity: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc", assess:"recact"}
   ]},
   {day:4, role:"Reception Training", lessons:[4], items:[
     {t:"Training Video Viewing", kind:"Activity", at:"room"},
