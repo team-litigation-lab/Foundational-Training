@@ -3362,7 +3362,10 @@ main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:
 .ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
-main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:20px;}
+/* (the 💡/📌 yellow callouts: big, bold and dark enough to read from across the room) */
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) p.ftdd-callout:not(.ftdd-pick-foot){font-size:20px !important;font-weight:800 !important;line-height:1.5 !important;color:#14110A !important;background:#FFF1C9;border-left:6px solid #E8A400;}
+main.main-ftdd .ftdd-sheet p.ftdd-callout :is(b, strong, i){color:#000 !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h span{font:600 14px/1.3 'Inter',sans-serif;color:#E6E9F5;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:700 14px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;text-decoration:underline;}
 .ftdd-sheet .ftdd-pdoc-pages{--rows:1;--cols:var(--n);display:grid;grid-template-columns:repeat(var(--cols),auto);justify-content:center;gap:12px 18px;margin-top:10px;}
