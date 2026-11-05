@@ -899,7 +899,7 @@ node .github/scripts/smoke.mjs ALL                               # every browser
 
 ## 🔖 Versions are stamped on every deploy
 
-Nobody bumps a `?v=` or `APP_BUILD` by hand any more. The deploy's build step (`wrangler.json` → `build.command`: `node build/day-decks.cjs && node build/stamp-assets.cjs`) stamps the deployed copy of `index.html`: every local script and stylesheet it loads gets `?v=` + a hash of the file (a changed file is fetched fresh by every browser; an unchanged one stays cached), and `APP_BUILD` (the footer's *build …*, `/version`, the Blueprint PDF's rebuild) becomes `ft-<the deploy's date>-<a hash of them all>`. The `?v=` written in the repository can stay as they are. `node build/stamp-assets.cjs --check` prints what a deploy would stamp.
+Nobody bumps a `?v=` or `APP_BUILD` by hand any more. The deploy's build step (`wrangler.json` → `build.command`: `node build/day-decks.cjs && node build/script-versions.cjs`) stamps the deployed copy of `index.html`: every local script and stylesheet it loads gets `?v=` + a fingerprint of the file (and of the `/js/` files it loads by name, e.g. the Day decks' slides), so a changed file is fetched fresh by every browser and an unchanged one stays cached; and `APP_BUILD` (the footer's *build …*, `/version`, the Blueprint PDF's rebuild) becomes `ft-<the deploy's date>-<a fingerprint of them all>`. The `?v=` written in the repository can stay as they are. `node build/script-versions.cjs --check` (in Checks) prints what a deploy would stamp.
 
 ## 🔎 The six Drive links are checked as the trainee's own
 
