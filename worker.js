@@ -873,7 +873,11 @@ async function driveStatus(env) {
   const out = { sa: driveSA(env), email: env.GDRIVE_SA_EMAIL || "", subject: env.GDRIVE_SA_SUBJECT || "" };
   if (!out.sa) return out;
   Object.keys(SA_TOKENS).forEach(k => delete SA_TOKENS[k]);
-  try { await driveToken(env); out.saOk = true; } catch (e) { out.saOk = false; out.saDetail = e.detail || e.message; }
+  try {
+    const tk = await driveToken(env); out.saOk = true;
+    // (the Client ID Google gives this sign-in: the number that has to be in admin.google.com's Domain-wide delegation list)
+    try { const ti = await (await fetch("https://oauth2.googleapis.com/tokeninfo?access_token=" + encodeURIComponent(tk))).json(); out.clientId = String(ti.azp || ti.issued_to || ti.aud || "").slice(0, 40); } catch (e) { /* the status without it */ }
+  } catch (e) { out.saOk = false; out.saDetail = e.detail || e.message; }
   if (out.subject) { try { await driveToken(env, true); out.subjectOk = true; } catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; } }
   return out;
 }

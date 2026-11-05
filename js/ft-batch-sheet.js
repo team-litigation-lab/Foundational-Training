@@ -569,7 +569,8 @@ function driveBanner(){
   const box = (cls, html) => `<div class="bs-warn bs-dstat ${cls}">${html} <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.dstat()">🔁 Test again</button></div>`;
   if(!S.sa) return box("bad", `🔌 <b>Google Drive isn’t connected.</b> Add <code>GDRIVE_SA_EMAIL</code> and <code>GDRIVE_SA_KEY</code> to the Worker (Cloudflare → foundational-training → Settings → Variables and Secrets), then Deploy. Until then no link can be checked.`);
   if(!S.saOk) return box("bad", `🔌 <b>The service account can’t sign in to Google:</b> ${e(driveWhy(S.saDetail))}.`);
-  if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Until it’s fixed, the platform reads only files shared with ${e(S.email)}.`);
+  if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Until it’s fixed, the platform reads only files shared with ${e(S.email)}.
+    <div class="bs-dstat-id">The Worker signs in as <code>${e(S.email)}</code>${S.clientId ? `, Client ID <code>${e(S.clientId)}</code>: this exact number has to be in the Domain-wide delegation list, with the scope <code>https://www.googleapis.com/auth/drive</code>` : ""}.<br><small>Google said: ${e(S.subjectDetail || "")}</small></div>`);
   return box("ok", `🔌 ✓ <b>Google Drive is connected</b>${S.subject ? ` and reads as <b>${e(S.subject)}</b>` : ` as the service account <b>${e(S.email)}</b> (files must be shared with it)`}.`);
 }
 // the page: the Score Card and the compliance first, then the Weekly Ranking, the Process Questions and the Daily outputs;
@@ -1225,7 +1226,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat-d .bs-rat-how{font-size:15px;line-height:1.55;color:#202124;} .bs-rat-d .bs-gr{font-size:15px;padding:7px 0;} .bs-rat-d .bs-gr small{font-size:14px;line-height:1.5;color:#3C4043;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
-.bs-dstat{line-height:1.55;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
+.bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
 .bs-fix-list{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 10px;} .bs-fix-list label{display:flex;align-items:center;gap:6px;cursor:pointer;}
