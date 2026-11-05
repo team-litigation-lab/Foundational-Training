@@ -1361,6 +1361,9 @@ const LINKS_KIND = {
   spelling: { folder: true, label: "Spelling Tests folder", re: /spelling/i },
   folder: { folder: true, label: "Assessments/Activities folder", re: /assessment|activit/i },
   tracker: { folder: false, label: "LSH Daily Task Tracker", re: /task tracker/i } };
+// Google's answer is "busy" (too many requests, or a server hiccup), not "can't open it": 429, 5xx, or 403 with a rate-limit reason
+const driveBusy = (res, j) => !!res && !res.ok && (res.status === 429 || res.status >= 500
+  || (res.status === 403 && /rate.?limit|quota|backendError/i.test(JSON.stringify((j && j.error) || {}))));
 const notFolder = (label) => `This isn't a folder's link. Open your ${label} and copy its address (…/drive/folders/…).`;
 /* 🔎 IS IT THEIRS: a link that opens and is the right kind of file is also checked to be the trainee's OWN copy. The six
    are made per trainee and named with the Batch ID and the VA's name ("LSH Daily Task Tracker | B103026 Ana Cruz"; the
@@ -1472,13 +1475,23 @@ async function verifyLinks(env, id) {
     else if (k === "tracker" && f.kind !== "sheet") r = { ok: false, error: VERIFY_WHY.sheet };
     else {
       try {
-        let res, j = {};
+        let res, j = {}, busy = false;
         for (const token of tokens) {
-          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
-          j = await res.json().catch(() => ({}));
+          // (Google's "too many requests" / a hiccup — a batch's links are checked all at once — is tried again, then said as
+          // such: only a real "not found / no permission" is "can't open it, share it", never a busy Drive)
+          for (let n = 0; n < 3; n++) {
+            res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+            j = await res.json().catch(() => ({}));
+            busy = driveBusy(res, j);
+            if (!busy || n === 2) break;
+            await new Promise((ok) => setTimeout(ok, 800 * (n + 1) + Math.random() * 400));
+          }
           if (res.ok) break;
         }
-        if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa) };
+        // (busy: the last answer for this very link stands; a link never checked yet says Drive was busy)
+        if (!res.ok && busy && prev[k] && prev[k].url === url.slice(0, 500) && !prev[k].retry) { out[k] = prev[k]; if (prev[k].fid) seen.set(prev[k].fid, k); continue; }
+        if (!res.ok && busy) r = { ok: false, error: "Google Drive was busy and didn't answer. Check again in a minute.", retry: true };
+        else if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa), why: String((j.error || {}).message || res.status).slice(0, 200) };
         else if (K.folder && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
         else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };

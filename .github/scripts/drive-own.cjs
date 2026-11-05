@@ -34,10 +34,12 @@ const failures = []; const fail = (m) => failures.push(m);
     nobatch000001: { name: 'LSH Daily Task Tracker | Ana Cruz', mimeType: SHEET },
     benFolder00001: { name: 'Assessments/Activities', mimeType: FOLDER },   // (no parent the system can read)
   };
+  let busyHits = 0;
   globalThis.fetch = async (url) => {
     const u = String(url);
     if (u === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'tok' }));
     const m = u.match(/drive\/v3\/files\/([A-Za-z0-9_-]+)\?fields=([^&]+)/);
+    if (m && /^busy/.test(m[1])) { busyHits++; return new Response('{"error":{"code":429,"message":"User rate limit exceeded","errors":[{"reason":"userRateLimitExceeded"}]}}', { status: 429 }); }
     if (m) { const f = F[m[1]]; if (!f) return new Response('{"error":{"code":404}}', { status: 404 }); return new Response(JSON.stringify(Object.assign({ id: m[1] }, f))); }
     return new Response('not found', { status: 404 });
   };
@@ -124,6 +126,18 @@ const failures = []; const fail = (m) => failures.push(m);
   store.set('ft:trackerreview:' + ann, JSON.stringify(rv));
   v = await verify(ann, six({ monitor: link.doc('template000001') }));
   if (!v.monitor || v.monitor.ok !== false) fail(`an old ✓ wasn't checked again with the new rules: ${JSON.stringify(v.monitor)}`);
+
+  // ⏳ Google busy (429, too many requests: a batch is checked all at once) is tried again, then said as busy — never "can't
+  // open it, share it" — isn't put in the trainee's 🔔, and a link already checked keeps its last answer
+  store.delete('ft:trackerreview:' + ann);
+  v = await verify(ann, six({ monitor: link.doc('busyMonitor001') }));
+  if (!v.monitor || v.monitor.ok !== false || !v.monitor.retry || /Share it/.test(v.monitor.error) || !/busy/.test(v.monitor.error) || busyHits < 3) fail(`a busy Drive reads as can't open it: ${JSON.stringify(v.monitor)} (${busyHits} tries)`);
+  if (((JSON.parse(store.get('ft:trackerreview:' + ann)).verifyAlert || {}).keys || []).includes('monitor')) fail('a busy Drive was put in the trainee\'s 🔔');
+  const rv2 = JSON.parse(store.get('ft:trackerreview:' + ann));
+  rv2.verify.monitor = { ok: false, url: link.doc('busyMonitor001'), error: 'earlier answer', at: 'x', v: 2 };
+  store.set('ft:trackerreview:' + ann, JSON.stringify(rv2));
+  v = await verify(ann, six({ monitor: link.doc('busyMonitor001') }));
+  if (!v.monitor || v.monitor.error !== 'earlier answer') fail(`a busy Drive overwrote the link's last answer: ${JSON.stringify(v.monitor)}`);
 
   if (failures.length) { console.error('Drive links are theirs test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
   console.log('Drive links are theirs test passed (their own six ✓; the template, another batch, another trainee by name or by a folder\'s parent, no name, no Batch ID, the same file twice and a file another trainee linked are ✗ with why and the name it should have; an old ✓ checked again; the trainee\'s alert).');

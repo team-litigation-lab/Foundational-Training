@@ -140,7 +140,8 @@ const failures = []; const fail = m => failures.push(m);
   }
   await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
   const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
-  if (!/Ada Active’s files can’t be opened/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/move the files into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's own files: ${sb2.slice(0, 300)}`);
+  // (it names the very link that fails — her 📒 Monitoring Sheet — not "files": the other five may open)
+  if (!/Ada Active’s 📒 Monitoring Sheet can’t be opened/.test(sb2) || /files can’t/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/doesn’t exist \(yet\)/.test(sb2) || !/move it into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's failing link: ${sb2.slice(0, 300)}`);
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
