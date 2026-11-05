@@ -109,9 +109,15 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     fail(`Day 5's activity isn't its Instructions in two cards, then its ten cards (8 on a slide of its own) with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
   if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || /Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, lost its drawn samples (Day 6\'s format), or still has the Calendar Activity Check tile (the activity\'s one link is on its Instructions slide)');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
+  // (the samples and the time zone, s3b, come before the items, right after the Instructions; the sample's title names the
+  // client, and its calendar colour is highlighted like the other parts an appointment must have right)
+  const order5 = (D[5].slides || []).map(s => s.id).filter(x => /^s3/.test(x)).join();
+  if (order5 !== 's3,s3b,s3i,s3j,s3k,s3l') fail(`Day 5's samples and time zone aren't between the activity's Instructions and its items: ${order5}`);
+  if (!/<span class="ftdd-ev-mark">Deposition Meeting – Jane Doe<\/span>/.test(sl(5, 's3b')) || !/◀ Specific title, naming the person/.test(sl(5, 's3b'))
+    || !/<span class="ftdd-ev-hlf ftdd-ev-f"><span class="ftdd-ev-dot"/.test(sl(5, 's3b'))) fail('Day 5\'s sample event doesn\'t name its client in the title, or its calendar colour isn\'t highlighted');
   // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
   // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
-  // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Time Zone & Submit)
+  // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Sample & Time Zone)
   const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">📅 Standard Training - Calendaring Activity</;
   if (!portal.test(sl(5, 's3')) || [...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
     fail('Day 5\'s activity should link its calendar once, on the Instructions slide, and nowhere after');

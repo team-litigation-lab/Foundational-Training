@@ -180,7 +180,7 @@ async function workerChecks() {
   });
   pure.out.forEach(fail);
 
-  // the Practice Lab card and Day 5 (the Check's tile is on the activity's Time Zone & Submit slide, s3b: its card rows' slides)
+  // the Practice Lab card and Day 5 (the activity's Sample & Time Zone slide, s3b, shown before its items, has no tile: the Check is the day card's stop)
   await page.evaluate(() => { state.ftOpenDays = { all: [1], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (await page.$('text=Check my calendar')) fail('the Calendar Activity Check shows on the Practice Lab before its day');
   await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
@@ -190,8 +190,8 @@ async function workerChecks() {
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
   const deck = await page.evaluate(() => ({ bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length, tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
   if (deck.bar) fail('Day 5\'s Attorney Calendar Management Activity slide still has link pills on its bar');
-  // (the activity's one link is on its Instructions slide: its Time Zone & Submit slide has no tiles)
-  if (deck.tile || deck.portal) fail('Day 5\'s Time Zone & Submit slide still has the Check\'s or the Portal\'s tile');
+  // (the activity's one link is on its Instructions slide: its Sample & Time Zone slide has no tiles)
+  if (deck.tile || deck.portal) fail('Day 5\'s Sample & Time Zone slide still has the Check\'s or the Portal\'s tile');
   // the Instructions slide links the activity's simulator (the Main Portal's Calendaring Activity calendar), under the instructions
   await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
   const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
