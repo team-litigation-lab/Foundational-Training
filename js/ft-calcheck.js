@@ -440,7 +440,7 @@ window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = r
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 📅 Calendar Activity ---------- */
 const AD = {rows: null, loading: false, batch: "", open: {}};
 // a revoked or offboarded trainee leaves the roster: drop the cached rows so the next look reloads
-window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 async function loadAdmin(){
   AD.loading = true;
   try{

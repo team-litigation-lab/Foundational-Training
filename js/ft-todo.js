@@ -220,7 +220,7 @@ async function loadAdmin(){
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "shadowing") render();
 }
-window.addEventListener("ft-roster-changed", () => { AD.rows = null; });   // a revoked trainee drops off the table
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });   // a revoked trainee drops off the table
 function adminHtml(){
   if(!AD.rows || !X.data){ if(!AD.loading) loadAdmin(); loadTodo(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);

@@ -610,7 +610,7 @@ async function loadAdmin(){
   if(state.view==="process") render();
 }
 // a trainee added, revoked or offboarded: the rows are read again
-window.addEventListener("ft-roster-changed", () => { FPA.rows = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { FPA.rows = null; });
 // The ranking report's line, in the facilitator's words.
 function reportLine(x){
   const sets = PROCESS_SETS, done = sets.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt);

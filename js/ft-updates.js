@@ -755,7 +755,7 @@ async function ftLoadVideoRequests(){
   if(state.view === "admin") render();
 }
 // a trainee revoked or offboarded: their requests go from the list at its next read
-window.addEventListener("ft-roster-changed", () => { VREQ.rows = null; VREQ.at = 0; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { VREQ.rows = null; VREQ.at = 0; });
 window.ftApproveVideo = async function(tid, lesson, on){
   const cur = (await sharedGet("videoaccess:" + tid)) || {};
   const acc = Object.assign({}, cur.lessons || {});

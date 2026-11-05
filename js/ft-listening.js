@@ -341,7 +341,7 @@ async function loadAdmin(){
   AD.loading = false; if(state.view === "admin" && state.adminTab === "listening") render();
 }
 // (the roster changed: read the trainees again)
-window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 function adminLogs(r, s){
   const l = (r.rec.logs || {})[s.id] || {};
   return `<div class="ln-alogs">${s.recs.map(x => { const g = l[x.n]; if(!g || !Object.keys(g).length) return "";

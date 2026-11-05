@@ -218,7 +218,7 @@ async function loadAdmin(){
   }catch(err){ G.admin.rows = []; }
   if(state.view === "guide") render();
 }
-window.addEventListener("ft-roster-changed", () => { G.admin = null; });   // a revoked trainee drops off the picker
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { G.admin = null; });   // a revoked trainee drops off the picker
 function renderAdmin(){
   if(!G.admin) loadAdmin();
   const rows = G.admin && G.admin.rows, v = G.view;

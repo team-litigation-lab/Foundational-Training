@@ -363,7 +363,7 @@ async function loadAdmin(){
   A.loading = false;
   if(state.view === "lor") render();
 }
-window.addEventListener("ft-roster-changed", () => { A.rows = null; });   // a revoked trainee drops off the list
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { A.rows = null; });   // a revoked trainee drops off the list
 function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
   useScratch();                       // draft on the test copy, never on a trainee's

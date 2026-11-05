@@ -234,7 +234,7 @@ async function loadAdmin(){
   if(state.view === "transcribe") render();
 }
 // (the roster changed: read the trainees again)
-window.addEventListener("ft-roster-changed", () => { T.admin = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { T.admin = null; });
 function renderAdmin(){
   if(!T.admin) loadAdmin();
   const rows = (T.admin && T.admin.rows) || null;

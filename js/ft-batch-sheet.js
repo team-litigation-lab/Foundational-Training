@@ -921,7 +921,7 @@ function renderSheet(){
 
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
-window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; B.sel = null; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; B.sel = null; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
   batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },

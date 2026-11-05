@@ -114,7 +114,7 @@ window.FTAttendance = {
 };
 ftAdminTab("attendance", "🕘 Attendance", render_);
 // a trainee approved, revoked or offboarded elsewhere: read the roster again
-window.addEventListener("ft-roster-changed", () => { A.people = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { A.people = null; });
 (function(){ const s = document.createElement("style"); s.id = "ft-attendance"; s.textContent = `
 .fat-admin{padding:20px 22px;}
 .fat-bar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
