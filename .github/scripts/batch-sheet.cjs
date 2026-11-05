@@ -64,8 +64,8 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
-  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are in
-  // 🛡 Admin Master Control → 👥 Trainees & Batches, and the trainees' feedback is still kept)
+  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are at the
+  // foot of the Batch Sheet, and the trainees' feedback is still kept)
   if (/Trainees & Batches|Trainee Audit|Batch Folders|Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard still has a tab the Batch Sheet replaced: ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
@@ -290,23 +290,20 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
   await page.waitForTimeout(600);
 
-  // 👥 Trainees & Batches is not in 🏅 Scorecard (neither a tab nor a section at the foot of the Batch Sheet, nor 💬 Trainee
-  // Feedback): it is a tab of 🛡 Admin Master Control, where Cy waits for approval and Approve approves her
+  // 👥 Trainees & Batches at the foot of the sheet, and no tab of its own in any section (nor 💬 Trainee Feedback): Cy waits
+  // for approval there, and Approve approves her
   const tabs2 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (/Trainees & Batches|Trainee Feedback/.test(tabs2) || !/Batch Sheet/.test(tabs2)) fail(`🏅 Scorecard's tabs: ${tabs2}`);
-  if (await page.evaluate(() => !!document.getElementById('bs-people'))) fail('the Batch Sheet still has 👥 Trainees & Batches at its foot');
   await page.evaluate(() => { const b = [...document.querySelectorAll('.lp-admin-sec')].find(x => /Admin Master Control/.test(x.innerText)); if (b) b.click(); });
   await page.waitForTimeout(600);
   const tabs3 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
-  if (!/Trainees & Batches/.test(tabs3)) fail(`🛡 Admin Master Control has no 👥 Trainees & Batches tab: ${tabs3}`);
-  await page.evaluate(() => { state.adminTab = 'audit'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
-  const pend = await page.evaluate(() => { const s = document.querySelector('main') || document.body; return s ? { text: s.innerText, btn: !!s.querySelector('button[onclick*="approveTrainee"]') } : null; });
-  if (!pend || !/Pending Approvals/.test(pend.text) || !/Cy/.test(pend.text) || !pend.btn) fail(`👥 Trainees & Batches has no ⏳ Pending Approvals with Cy and Approve: ${pend && pend.text.slice(0, 200)}`);
+  if (/Trainees & Batches/.test(tabs3)) fail(`🛡 Admin Master Control still has a 👥 Trainees & Batches tab: ${tabs3}`);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
+  const pend = await page.evaluate(() => { const s = document.getElementById('bs-people'); return s ? { text: s.innerText, btn: !!s.querySelector('button[onclick*="approveTrainee"]') } : null; });
+  if (!pend || !/Pending Approvals/.test(pend.text) || !/Cy/.test(pend.text) || !pend.btn) fail(`the Batch Sheet has no ⏳ Pending Approvals with Cy and Approve: ${pend && pend.text.slice(0, 200)}`);
   else {
     await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
-    if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('Approve on 👥 Trainees & Batches didn\'t approve Cy');
-    // (back on the Batch Sheet, its 👥 Trainees table shows her approved)
-    await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(2500);
+    if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('Approve on the Batch Sheet didn\'t approve Cy');
     const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
     if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
   }
