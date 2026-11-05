@@ -77,6 +77,8 @@ if(typeof __admin === "function") window.renderAdmin = function(){
 
 const st = document.createElement("style"); st.id = "ft-admin-tidy"; st.textContent = `
 /* a solid panel over the background photo, dark bold text */
+/* (the trainer's screens wider: the batch sheets, the day grids and their compliance lines need the room) */
+main:has(.ft-admin-screen){max-width:min(1880px,98vw);padding-left:14px;padding-right:14px;}
 .ft-admin-screen{background:#FFFFFF;border-radius:16px;padding:20px 24px 26px;box-shadow:0 10px 30px rgba(14,18,40,.28);color:#141A2E;font-weight:600;}
 .ft-admin-screen p, .ft-admin-screen li, .ft-admin-screen label, .ft-admin-screen td{color:#141A2E;}
 .ft-admin-screen [style*="--ink-soft"], .ft-admin-screen .ops-muted, .ft-admin-screen .ops-empty, .ft-admin-screen .sc-about,

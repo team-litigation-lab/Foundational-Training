@@ -137,6 +137,20 @@ async function workerChecks() {
   await page.evaluate(() => FTListen.close());
   await put('trackerreview:' + id, null);
 
+  // 📝 a trainer in 👁 Switch View opens the answer sheet before the listening sets are in (a fresh page, the sets slow to come):
+  // it shows as soon as they arrive — it no longer waits for the page's redraw to come round to it — never "Loading…" for good
+  { const p2 = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+    p2.on('pageerror', e => fail(`page error (Switch View sheet): ${e.message}`));
+    await p2.route('**/api/storage/get', async route => { let k = ''; try{ k = JSON.parse(route.request().postData() || '{}').key; }catch(e){}
+      if (k === 'settings:listening') await new Promise(r => setTimeout(r, 2500)); return route.continue(); });
+    await p2.goto(BASE); await p2.waitForTimeout(800);
+    await p2.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminPreview = true; state.view = 'daydeck';
+      window.render = function(){ /* the redraw never comes round to the sheet */ }; FTListen.pop('recact'); });
+    await p2.waitForTimeout(5500);
+    const txt = await p2.evaluate(() => (document.getElementById('lnPop') || {}).innerText || '');
+    if (!/For each call/.test(txt) || /Loading/.test(txt)) fail(`the answer sheet stays on "Loading…" in Switch View when the sets come in late: ${txt.slice(0, 160)}`);
+    await p2.close(); }
+
   await put('listening:' + id, null); await put('settings:listening', null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await put('settings:opendays', openWas || { all: [], batches: {} });

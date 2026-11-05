@@ -67,6 +67,10 @@ const HABITS = [
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."]],
    }
 ];
+// 📧 the address the EOD is CC'd to so the platform checks it (worker.js EOD_ADDRESS, the trainers' inbox: Lei Abut's), always
+// shown on the EOD slides; the Worker's EOD_INBOX, when set, is read at sign-in (window.FT_EOD_INBOX)
+const EOD_CC = () => window.FT_EOD_INBOX || "team-litigation@legalsupporthelp.com";
+const EOD_CC_HTML = () => `<b>CC</b><span>${esc(EOD_CC())} <small>(Lei Abut: this CC is what triggers your EOD check)</small></span>`;
 // The EOD email (Setting of Expectations).
 const EOD = {
   subject:"Daily Report mm/dd/yy", subjectAlt:"EOD Report mm/dd/yy",
@@ -289,7 +293,7 @@ const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}
 const habitCard = h=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-      ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}${window.FT_EOD_INBOX && /EOD/.test(h.name) ? `<b>CC</b><span>${esc(window.FT_EOD_INBOX)}</span>` : ""}</div>` : ""}
+      ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}${/EOD/.test(h.name) ? EOD_CC_HTML() : ""}</div>` : ""}
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
       ${h.links.length ? `<div class="ftr-linkgrid">${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}</div>` : ""}
     </div>`;
@@ -430,6 +434,7 @@ const SLIDES = [
   ["eod", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <div class="ftr-part ftr-eod">
       <div class="ftr-part-h">📧 Your EOD Email</div>
+      <div class="ftr-to"><b>Send To</b>${HABITS[0].to.map(a=>`<span>${esc(a)}</span>`).join("")}${EOD_CC_HTML()}</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
       ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0]).replace(/\//g, "/<wbr>")}</b><span>${esc(p[1])}</span></div>`).join("")}
       <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
