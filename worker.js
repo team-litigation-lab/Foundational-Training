@@ -2747,7 +2747,7 @@ export default {
       if (path === "/api/attendance/time-in") {
         if (tok.role !== "a") return json({ ok: false, error: "Trainers only" }, 403);
         const b = await request.json().catch(() => ({}));
-        return json(await setTimeIn(kvOf(env), b, tok.name || tok.id || "trainer"));
+        return json(await setTimeIn(kvOf(env), b, tok.id || "trainer"));
       }
 
       /* ---------- AI proxy (signed-in users only, so strangers can't spend your credits) ---------- */
