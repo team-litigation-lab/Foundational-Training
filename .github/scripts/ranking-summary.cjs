@@ -25,16 +25,19 @@ const failures = []; const fail = m => failures.push(m);
     await put('labreview:' + id, { acts: { 'reception-live': { status: 'Passed', score: 80, comment: 'DEMO-NOTE: verify the caller before sharing anything.', at,
       rubric: { key: 'reception', scores: [5, 2, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4, 4], feedback: ['', 'Skipped the DOB check.', '', '', '', '', '', '', '', '', '', '', '', '', ''], avg: 4.0 } } } });
     await put('feedback:' + id, { days: { 4: { status: 'sent', rating: 'On Track', summary: 'Good call control this week.', sentAt: at } } });
-    await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); });
-    await page.waitForTimeout(2000); await page.evaluate(b => FTBatchSheet.batch(b), BATCH); await page.waitForTimeout(3000);
-    await page.evaluate(() => FTRanking.week(1)); await page.waitForTimeout(800);
-    if (!(await page.$('#bs-ranking .rks-wrap'))) fail('📊 Weekly Ranking has no management summary');
-    // the AI stubbed: comments, and a score it tries to move by more than 0.5 (Call Handling to 1)
+    // the AI stubbed (before the sheet opens: an unsummarized week summarizes itself): comments, and a score it tries to move by
+    // more than 0.5 (Call Handling to 1)
     let seen = '';
     await page.exposeFunction('__prompt', t => { seen = t; });
     await page.evaluate(() => { window.callAIJson = async p => { window.__prompt(p); const k = ['attention', 'compliance', 'timely', 'communication', 'english', 'call', 'tools']; const o = { scores: { call: 1 }, comments: {} };
       k.forEach(x => { o.comments[x] = 'AI-' + x; }); o.trainer = 'TRAINER-SUMMARY'; o.overall = 'A steady week.'; return o; }; });
-    await page.evaluate(() => FTRankSummary.draft()); await page.waitForTimeout(4000);
+    const idle = async () => { await page.waitForTimeout(400); await page.waitForFunction(() => window.FTRankSummary && !FTRankSummary.busy(), null, { timeout: 30000 }).catch(() => fail('the summary never finished')); await page.waitForTimeout(600); };
+    await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); });
+    await page.waitForTimeout(2000); await page.evaluate(b => FTBatchSheet.batch(b), BATCH); await page.waitForTimeout(3000);
+    await page.evaluate(() => FTRanking.week(1)); await page.waitForTimeout(800);
+    if (!(await page.$('#bs-ranking .rks-wrap'))) fail('📊 Weekly Ranking has no management summary');
+    // (the week summarized itself on opening, with the AI stubbed below; asked again, it runs once more when that one is done)
+    await page.evaluate(() => FTRankSummary.draft()); await idle();
     let d = await get(`rksum:${BATCH}:w1`), r = d && d.rows && d.rows[id];
     if (!r) fail(`the summary wasn't kept: ${JSON.stringify(d).slice(0, 200)}`);
     else {
@@ -46,7 +49,7 @@ const failures = []; const fail = m => failures.push(m);
     // a trainer's edit stays when the week is summarized again; without the AI the base scores stand
     await page.evaluate(id => FTRankSummary.set(id, 'comment', 'english', 'EDITED-BY-TRAINER'), id); await page.waitForTimeout(800);
     await page.evaluate(() => { window.callAIJson = async () => { throw new Error('no AI'); }; });
-    await page.evaluate(() => FTRankSummary.draft()); await page.waitForTimeout(4000);
+    await page.evaluate(() => FTRankSummary.draft()); await idle();
     d = await get(`rksum:${BATCH}:w1`); r = d && d.rows && d.rows[id];
     if (!r || r.comments.english !== 'EDITED-BY-TRAINER') fail('a trainer\'s edit was lost when the week was summarized again');
     if (!r || r.scores.call !== 4) fail(`without the AI, Call Handling isn't the mock call's 4.0: ${r && r.scores.call}`);

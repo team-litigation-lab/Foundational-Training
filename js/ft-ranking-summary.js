@@ -105,13 +105,13 @@ THE WEEK'S EVIDENCE:
 ${brief(ev) || "(nothing recorded this week)"}
 ${voice || ""}
 
-Return ONLY JSON: {"scores":{${COMP.map(([k]) => `"${k}":<0-5 one decimal or null>`).join(",")}},"comments":{${COMP.map(([k]) => `"${k}":"..."`).join(",")}},"trainer":"the trainer's feedback, summarized in 2-3 sentences","overall":"one sentence on the week"}`;
+Return ONLY JSON: {"scores":{${COMP.map(([k]) => `"${k}":<0-5 one decimal or null>`).join(",")}},"comments":{${COMP.map(([k]) => `"${k}":"..."`).join(",")}},"trainer":"the trainer's feedback, summarized in 2-3 sentences","overall":"the AI summary of their performance for the whole week: 2-4 sentences, opening with a verdict label (Excellent / Good / Good, with Improvements Needed / Needs Improvement), what they did well and what to improve, with the specifics"}`;
   try{
     const j = await callAIJson(prompt, 1800, undefined, "grading");
     if(j && j.comments){
       COMP.forEach(([k]) => { const c = j.comments[k]; if(has(c)) out.comments[k] = clip(c, 600);
         const v = j.scores && j.scores[k]; if(v != null && isFinite(Number(v))){ const n = Math.max(0, Math.min(5, Number(v))); out.scores[k] = base[k] == null ? r1(n) : r1(Math.max(base[k] - 0.5, Math.min(base[k] + 0.5, n))); } });
-      if(has(j.trainer)) out.trainer = clip(j.trainer, 700); if(has(j.overall)) out.overallComment = clip(j.overall, 300); out.ai = true;
+      if(has(j.trainer)) out.trainer = clip(j.trainer, 700); if(has(j.overall)) out.overallComment = clip(j.overall, 900); out.ai = true;
     }
   }catch(err){}
   return out;
@@ -125,7 +125,8 @@ async function load(c){
   if(S.key !== key) return; S.data = S.data || d; S.loading = false; redraw();
 }
 async function draft(){
-  const c = ctx(); if(!c || S.busy) return; const key = keyOf(c.batch, c.week), ppl = c.people || [];
+  // (asked while one runs — the automatic one, say —: it runs again as soon as that one is done, with what is asked now)
+  const c = ctx(); if(!c) return; if(S.busy){ S.again = true; return; } const key = keyOf(c.batch, c.week), ppl = c.people || [];
   if(!ppl.length){ toast("No approved trainee in this batch."); return; }
   S.busy = true; S.err = ""; redraw();
   const voice = typeof window.fbStyleBlock === "function" ? (window.fbStyleBlock() || "") : "";
@@ -137,7 +138,7 @@ async function draft(){
     {edited: true, scoresEdited: r.scoresEdited, commentsEdited: r.commentsEdited, trainerEdited: r.trainerEdited}); } });
   S.data = {batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
   if(await sharedSet(key, S.data) === false) toast("Couldn’t save the summary. Check your connection.");
-  S.busy = false; toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
+  S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
 const overall = r => r1(avg(COMP.map(([k]) => r.scores[k])));
 function ranked(){ const rows = Object.entries((S.data || {}).rows || {}).map(([id, r]) => Object.assign({id}, r, {overall: overall(r)}));
@@ -191,12 +192,24 @@ window.FTRankSummary = {
   html(){
     const c = ctx(); if(!c || !c.batch) return "";
     load(c);
+    // 🤖 a week already under way with no summary yet: summarized by itself, once a session (kept: rksum:<batch>:w<N>)
+    const k = keyOf(c.batch, c.week);
+    if(!S.loading && S.key === k && !S.data && !S.busy && !(S.tried || {})[k] && (c.people || []).length && c.range && c.range[0] <= new Date().toISOString().slice(0, 10)){
+      (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     const d = S.data;
     return `<div class="rks-wrap"><div class="rks-bar-acts"><select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
         ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.word()">⬇ Word</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.print()">🖨 Print</button>` : ""}
         <span class="rks-note">Each trainee's week: seven competencies scored out of 5 with a summarized comment, and the trainer's feedback.</span></div>
       ${S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
+  // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line
+  weekSummary(id){
+    const r = ((S.data || {}).rows || {})[id]; if(!r) return {text: "", state: S.busy ? "busy" : S.data ? "none" : "wait"};
+    if(has(r.overallComment)) return {text: r.overallComment, ai: true};
+    const sc = COMP.filter(([k]) => r.scores[k] != null), best = sc.slice().sort((a, b) => r.scores[b[0]] - r.scores[a[0]])[0], low = sc.slice().sort((a, b) => r.scores[a[0]] - r.scores[b[0]])[0], o = overall(r);
+    return {text: o == null ? "" : `${LBL[tone(o)]} (${o.toFixed(1)}/5).${best ? ` Strongest: ${best[2]} (${r.scores[best[0]].toFixed(1)}).` : ""}${low && low !== best ? ` To improve: ${low[2]} (${r.scores[low[0]].toFixed(1)}).` : ""}`, ai: false};
+  },
+  busy: () => !!S.busy,
   draft, toggleEdit(){ S.edit = !S.edit; redraw(); },
   async set(id, what, k, v){
     const r = ((S.data || {}).rows || {})[id]; if(!r) return; r.edited = true;
