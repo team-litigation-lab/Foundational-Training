@@ -845,9 +845,12 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl-wrap{overflow:auto;max-height:62vh;border:1px solid #C8C8C8;background:#fff;}
 .xl{border-collapse:separate;border-spacing:0;font:600 14.5px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
 /* (every trainee's row the same height, for balance: a long note scrolls inside its cell) */
-.xl-row > td,.xl-row > th{height:76px;box-sizing:border-box;}
-.xl-row .xl-txt{height:72px;overflow-y:auto;font-size:13px;font-weight:600;}
-.xl-clip{max-height:66px;overflow-y:auto;}
+/* (compact: every row 58px whatever is in it — a long note or summary scrolls inside its own cell — so the sheet leaves room
+   for the other scorecards) */
+.xl-row > td,.xl-row > th{height:58px;max-height:58px;box-sizing:border-box;}
+.xl-row .xl-txt{height:54px;max-height:54px;overflow-y:auto;font-size:12px;font-weight:600;line-height:1.3;padding:3px 6px;}
+.xl-clip{max-height:50px;overflow-y:auto;}
+.xl-row td.xl-aisum{font-size:11.5px;line-height:1.35;padding:3px 6px;}
 .xl-num{font-weight:800 !important;font-size:15.5px;}
 .xl-calc{font-size:15.5px;font-weight:800 !important;}
 .t-ex{background:#E3EEFF !important;color:#0B3FA8 !important;} .t-gd{background:#E3F5E9 !important;color:#14652F !important;}
@@ -859,23 +862,23 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl-letters th{position:sticky;top:0;z-index:4;background:#F3F3F3;color:#555;font-weight:400;font-size:11.5px;height:20px;text-align:center;min-width:76px;}
 .xl-letters th.xl-l:not(.xl-frz){cursor:pointer;} .xl-letters th.xl-l:not(.xl-frz):hover{background:#E3ECDC;}
 .xl th.xl-folded,.xl td.xl-fold{min-width:14px !important;width:14px;max-width:14px;padding:0 !important;background:repeating-linear-gradient(90deg,#EEF1F4,#EEF1F4 3px,#E1E5EA 3px,#E1E5EA 6px);}
-.xl-head th.xl-h-ai{min-width:320px;background:#2F5D8C;}
-.xl td.xl-aisum{min-width:320px;max-width:420px;white-space:normal;font-size:12.5px;line-height:1.45;vertical-align:top;padding:5px 7px;background:#F4F8FC;color:#1E2340;}
+.xl-head th.xl-h-ai{min-width:260px;background:#2F5D8C;}
+.xl td.xl-aisum{min-width:260px;max-width:340px;white-space:normal;font-size:12.5px;line-height:1.45;vertical-align:top;padding:5px 7px;background:#F4F8FC;color:#1E2340;}
 .xl td.xl-aisum.is-plain{color:#3C4043;font-style:italic;} .xl td.xl-aisum .xl-wait{color:#80868B;font-style:italic;}
 .xl-corner,.xl-rn{position:sticky;left:0;z-index:5;background:#F3F3F3 !important;color:#555;font-weight:400 !important;font-size:11.5px;width:34px;min-width:34px !important;text-align:center;}
 .xl-corner{top:0;z-index:6;}
 .xl-title td{padding:5px 8px;font-size:14px;background:#fff;}
 .xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:800;font-size:13px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
-.xl-head th.xl-h-name,.xl-head th.xl-h-notes,.xl-head th.xl-h-addl{min-width:200px;}
+.xl-head th.xl-h-name{min-width:150px;} .xl-head th.xl-h-notes{min-width:170px;max-width:230px;} .xl-head th.xl-h-addl{min-width:190px;}
 .xl-head th.xl-h-calc,.xl-head th.xl-h-avg,.xl-head th.xl-h-rank{background:#4A7F28;}
 .xl .xl-frz{position:sticky;left:34px;z-index:2;background:#fff;}
 .xl-head .xl-frz{z-index:4;background:#5B9A32;}
 .xl-head th.xl-rn{color:#555;font-weight:400;}
-.xl-name{padding:4px 8px !important;font-weight:800;font-size:15px;min-width:190px;vertical-align:middle;outline:none;}
+.xl-name{padding:4px 8px !important;font-weight:800;font-size:14px;min-width:150px;vertical-align:middle;outline:none;}
 .xl-td{position:relative;vertical-align:top;}
 .xl-in{display:block;width:100%;border:0;border-radius:0;background:transparent;font:inherit;color:inherit;padding:4px 6px;outline:none;resize:none;}
 .xl-num{text-align:right;min-width:76px;}
-.xl-txt{min-width:200px;line-height:1.3;}
+.xl-txt{min-width:170px;line-height:1.3;}
 .xl-calc{background:#F2F2F2;text-align:right;padding:4px 8px !important;font-weight:700;vertical-align:top;outline:none;min-width:64px;}
 .xl-avg{color:#1F4E2C;} .xl-rank{text-align:center;color:#B5651F;}
 .xl td.xl-sel,.xl td:focus{box-shadow:inset 0 0 0 2px #217346;}
@@ -885,7 +888,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .rk-xw h4{margin:10px 0 2px;color:var(--navy);font-size:14px;} .rk-xw ul{margin:2px 0;padding-left:18px;} .rk-xw p{margin:2px 0;}
 .rk-xt{border-collapse:collapse;font-size:13px;margin-top:4px;} .rk-xt th,.rk-xt td{border:1px solid #E3E6EF;padding:3px 7px;text-align:center;} .rk-xt th{background:#F4F6FA;}
 .xl-td.is-auto::before{content:"⤓";position:absolute;bottom:1px;left:2px;font-size:9px;color:#217346;}
-.xl-addl{min-width:240px;}
+.xl-addl{min-width:190px;}
 .xl-ai{position:absolute;top:2px;right:2px;border:1px solid #D4D4D4;background:#fff;border-radius:4px;font-size:11px;padding:0 4px;cursor:pointer;opacity:.75;}
 .xl-ai:hover{opacity:1;}
 @media(max-width:900px){.rk-col{grid-template-columns:1fr 1fr;}}
