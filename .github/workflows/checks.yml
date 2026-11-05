@@ -45,6 +45,8 @@ jobs:
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
         run: node .github/scripts/drive.cjs
+      - name: A Monitoring Sheet kept as a Word file (.docx) in Drive read and checked
+        run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)
         run: node .github/scripts/assess-grade.cjs
       - name: Day 8's Intake Packet checked (the corrected packet and its client subfolder; missing, misidentified and misnamed documents)
