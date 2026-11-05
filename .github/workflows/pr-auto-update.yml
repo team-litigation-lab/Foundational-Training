@@ -1,0 +1,95 @@
+# 🔄 After every deploy (a push to main: Cloudflare deploys main), every open pull request into main is brought up to date
+# with it, so a branch never falls behind what is live and its js/ft-* files and index.html don't pile up conflicts while
+# other work is merged. For each open pull request from this repository into main (.github/scripts/pr-auto-update.sh):
+#   - main is merged into its branch (a merge commit: the branch's own commits are never rewritten or force-pushed);
+#   - the conflicts that are safe without a person are resolved (.github/scripts/resolve-conflicts.cjs): index.html's
+#     script stamps and APP_BUILD (main's kept; the deploy writes them again) and different lines both sides added at the
+#     same spot (both kept);
+#   - the result is checked (every changed script parses, the Day decks build, every versioned file exists, every local
+#     reference resolves; the branch's code runs without any token) before it is pushed;
+#   - anything else is left as it was, and one comment on the pull request says what needs a person; it is updated, not
+#     repeated, after later deploys, and removed once the branch is up to date.
+# 🔑 GitHub doesn't let this workflow's own token push a merge that brings in a change to .github/workflows. With the
+# repository secret PR_UPDATE_TOKEN (a fine-grained token on this repository: Contents, Pull requests and Workflows read and
+# write) those are pushed too, and the push starts the pull request's Checks by itself; without it, such a branch gets the
+# comment, and the Checks workflow is started on every branch this token updated (its pushes don't start it).
+# A pull request labelled "no-auto-update" is left alone. "Run workflow" (Actions tab) runs it by hand.
+name: Keep pull requests up to date
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # push the merge to the pull requests' branches
+  pull-requests: write   # the "needs a person" comment
+  actions: write         # start the Checks workflow on an updated branch
+
+concurrency:
+  group: pr-auto-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Merge main into the open pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false   # (no token left in .git/config for a branch's code to read)
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Update each open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}                                   # (comments and starting Checks: as github-actions[bot])
+          PUSH_TOKEN: ${{ secrets.PR_UPDATE_TOKEN || github.token }}      # (fetch and push only)
+          CAN_PUSH_WORKFLOWS: ${{ secrets.PR_UPDATE_TOKEN != '' && '1' || '0' }}
+          REPO: ${{ github.repository }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          # (the resolver and the updater as main has them, whatever a branch has)
+          cp .github/scripts/resolve-conflicts.cjs "$RUNNER_TEMP/resolve-conflicts.cjs"
+          cp .github/scripts/pr-auto-update.sh "$RUNNER_TEMP/pr-auto-update.sh"
+          export RESOLVER="$RUNNER_TEMP/resolve-conflicts.cjs" SUMMARY="$RUNNER_TEMP/summary.md" PR_AUTO_UPDATE=1
+          MARK="<!-- pr-auto-update -->"
+          gh pr list --repo "$REPO" --state open --base main --limit 100 --json number,headRefName,isCrossRepository,labels \
+            --jq '.[] | select(.isCrossRepository | not) | select([.labels[].name] | index("no-auto-update") | not) | "\(.number) \(.headRefName)"' > "$RUNNER_TEMP/prs.txt"
+          echo "Open pull requests into main: $(wc -l < "$RUNNER_TEMP/prs.txt")"
+          updated=0; waiting=0
+          # (each pull request on its own: a failed call for one never stops the others)
+          while read -r NUM BRANCH; do
+            [ -n "$NUM" ] || continue
+            echo "::group::#$NUM $BRANCH"
+            CODE=0; bash "$RUNNER_TEMP/pr-auto-update.sh" "$BRANCH" || CODE=$?
+            # this workflow's own comment on the pull request: github-actions[bot]'s, starting with the marker
+            OLD=$( { gh api "repos/$REPO/issues/$NUM/comments" --paginate 2>/dev/null || true; } \
+              | jq -rs --arg m "$MARK" '[.[][]? | select(.user.login == "github-actions[bot]" and ((.body // "") | startswith($m))) | .id][0] // empty' 2>/dev/null || true)
+            if [ $CODE -eq 2 ] || [ $CODE -eq 3 ] || [ $CODE -eq 4 ]; then
+              waiting=$((waiting+1))
+              BODY="$MARK
+          ### 🔄 This branch couldn't be brought up to date with \`main\` automatically
+
+          $(cat "$SUMMARY")
+
+          This is tried again after every deploy; once the branch is up to date this comment goes away.
+
+          ---
+          _Posted by the [Keep pull requests up to date](https://github.com/$REPO/actions/workflows/pr-auto-update.yml) workflow._"
+              if [ -n "$OLD" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$OLD" -f body="$BODY" >/dev/null || echo "::warning::Couldn't update the comment on #$NUM"
+              else gh pr comment "$NUM" --repo "$REPO" --body "$BODY" >/dev/null || echo "::warning::Couldn't comment on #$NUM"; fi
+            else
+              if [ -n "$OLD" ]; then gh api -X DELETE "repos/$REPO/issues/comments/$OLD" >/dev/null || echo "::warning::Couldn't remove the comment on #$NUM"; fi
+              if [ $CODE -eq 0 ]; then
+                updated=$((updated+1))
+                # (a push with PR_UPDATE_TOKEN starts the pull request's Checks itself; one with this workflow's token doesn't)
+                if [ "$CAN_PUSH_WORKFLOWS" != "1" ]; then gh workflow run checks.yml --repo "$REPO" --ref "$BRANCH" || echo "::warning::Couldn't start the Checks workflow on $BRANCH"; fi
+              fi
+            fi
+            echo "::endgroup::"
+          done < "$RUNNER_TEMP/prs.txt"
+          echo "### 🔄 Pull requests: $updated brought up to date, $waiting need a person" >> "$GITHUB_STEP_SUMMARY"
