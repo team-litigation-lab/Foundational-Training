@@ -130,10 +130,11 @@ async function loadData(){
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
         if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
-    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table), checked now (worker.js verifyLinks, /api/drive/verify:
+    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table) or whose last check couldn't sign in to Google
+    // (⚠ Can't check: a key or setting fixed since), checked now (worker.js verifyLinks, /api/drive/verify:
     // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
     if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
-      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked/.test(L[k].st)); }catch(err){ return false; } });
+      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked|unchecked/.test(L[k].st)); }catch(err){ return false; } });
       if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
         if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
@@ -557,6 +558,21 @@ function driveBanner(){
     <div class="bs-dstat-id">The Worker signs in as <code>${e(S.email)}</code>${S.clientId ? `, Client ID <code>${e(S.clientId)}</code>: this exact number has to be in the Domain-wide delegation list, with the scope <code>https://www.googleapis.com/auth/drive</code>` : ""}.<br><small>Google said: ${e(S.subjectDetail || "")}</small></div>`);
   return box("ok", `🔌 ✓ <b>Google Drive is connected</b>${S.subject ? ` and reads as <b>${e(S.subject)}</b>` : ` as the service account <b>${e(S.email)}</b> (files must be shared with it)`}.`);
 }
+/* 📁 ONE SHARE PER BATCH: each batch's files sit in a folder of its own, so when the system can't open the links of a batch's
+   trainees (✗ "can't open it": not shared with the account it reads as), the Batch Sheet says so once for the batch, with the
+   address to share its folder with (📋 Copy): one share of the batch folder, as Editor, covers every trainee in it. 🔁 Check
+   them now opens each trainee's links again (worker.js /api/drive/verify). It goes away once the links open. */
+function shareBanner(){
+  if(!adminOn() || meOn() || !B.data) return "";
+  const S = B.dstat; if(!S || S.err || !S.sa || !S.saOk) return "";   // (not connected: the 🔌 banner above says what to fix)
+  const who = S.subject && S.subjectOk ? S.subject : S.email; if(!who) return "";
+  const ppl = people(), stuck = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); }catch(err){ return false; } });
+  if(!stuck.length) return "";
+  const names = stuck.slice(0, 6).map(p => p.name).join(", ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
+  return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>
+    <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>
+    <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 I’ve shared it: check them now"}</button></div>`;
+}
 // the page: the Score Card and the compliance first, then the Weekly Ranking and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "outputs"];
@@ -568,7 +584,7 @@ function sectionsHtml(T){
     : sheetHtml(x, i);
   const at = id => T.findIndex(x => x.id === id), main = id => one(T[at(id)], at(id));
   const rest = T.map((x, i) => [x, i]).filter(([x]) => !MAIN.includes(x.id));
-  return main("scorecard") + driveBanner() + main("compliance") + rankingHtml() + main("outputs")
+  return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
@@ -997,6 +1013,18 @@ window.FTBatchSheet = {
   rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   dstat(){ B.dstat = undefined; B.verified = {}; B.dataKey = ""; render(); },
+  copyShare(){ const t = (document.getElementById("bsShareTo") || {}).textContent || ""; if(!t) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: " + t), () => toast("Couldn’t copy. Select the address instead.")); },
+  // 🔁 every trainee of the batch whose links can't be opened: checked again now, then the sheet read again
+  async recheckLinks(){
+    if(!adminOn() || B.rechecking || !B.data) return;
+    const ids = people().filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st !== "none" && !/ok|trainer/.test(L[k].st)); }catch(err){ return false; } }).map(p => p.id);
+    let ok = 0;
+    for(let i = 0; i < ids.length; i++){ B.rechecking = `${i + 1} of ${ids.length}`; rerender();
+      try{ const r = await authFetch("/api/drive/verify", {id: ids[i]}); if(r.ok) ok++; }catch(err){} }
+    B.rechecking = null; B.data = null; B.dataKey = ""; rerender();
+    toast(ok ? `✓ Checked ${ok} trainee${ok === 1 ? "" : "s"}’ links again.` : "Couldn’t check the links. Try again in a minute.");
+  },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
@@ -1211,6 +1239,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
