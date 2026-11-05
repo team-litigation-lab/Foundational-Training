@@ -520,6 +520,26 @@ function foldRender(id){
 /* 🔗 A TRAINER LINKS A TRAINEE'S FILES (under ✅ Compliance): pick a trainee, paste or change any of their six Drive links and
    💾 Save — written to drive:<id> as the trainee's own would be (linkedBy: "trainer"), then checked at once (/api/drive/verify).
    For a file the automatic search couldn't find or tell apart. */
+/* ✍ A TRAINER'S OWN EOD SCORE, and 📘 THE TAM FOR A SHADOWING ACTIVITY (under ✅ Compliance):
+     • ✍ EOD by hand — for a day the EOD monitoring missed or ran before it was set up: the trainee, the day, a score (0–100)
+       and a note; the day's compliance is worked out again (worker.js /api/eod/grade). An empty score takes it off.
+     • 📘 Grade the TAM — the TAM isn't a daily part: when there is a shadowing activity, the trainer reads it here
+       (worker.js /api/drive/tam), and it shows its dated entries. */
+function trainerToolsHtml(){
+  if(!adminOn() || meOn() || !B.data) return "";
+  const ppl = people(); if(!ppl.length) return "";
+  const id = B.tt && ppl.some(p => p.id === B.tt) ? B.tt : ppl[0].id, R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {};
+  const today = new Date().toISOString().slice(0, 10), t = rv.tam;
+  const tamOut = B.tamBusy ? "Reading the TAM…" : !t ? "Not graded yet." : t.error ? "✗ " + t.error : Object.keys(t.entries || {}).length
+    ? Object.entries(t.entries).sort().slice(-8).map(([d, x]) => `${d}: ${x.words} words`).join(" · ") : "No dated entry found in the TAM.";
+  return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
+    <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.ttWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
+    <div class="bs-tt-row"><b>✍ EOD</b> <input type="date" id="bsEodD" value="${e(B.ttDay || today)}" max="${today}"> <input type="number" id="bsEodS" min="0" max="100" placeholder="Score %" style="width:90px">
+      <input type="text" id="bsEodN" placeholder="Note (optional)" style="flex:1;min-width:160px"> <button class="btn btn-navy btn-sm" type="button" onclick="FTBatchSheet.eodGrade('${e(id)}')">💾 Save the EOD score</button></div>
+    <p class="bs-note">For a day the EOD monitoring missed, or before it was set up. It replaces the automatic check for that day; an empty score takes it off.</p>
+    <div class="bs-tt-row"><b>📘 TAM</b> <button class="btn btn-ghost btn-sm" type="button" ${B.tamBusy ? "disabled" : ""} onclick="FTBatchSheet.tamGrade('${e(id)}')">📘 Grade the TAM now</button> <span class="bs-note">${e(tamOut)}</span></div>
+    <p class="bs-note">The TAM is only for shadowing: it isn’t scored every day. Grade it when there is a shadowing activity.</p></details>`;
+}
 function linksEditHtml(){
   if(!adminOn() || meOn() || !B.data) return "";
   const ppl = people(); if(!ppl.length) return "";
@@ -533,6 +553,8 @@ function linksEditHtml(){
 }
 // 🔄 a section's own Update (FTBatchSheet.sync): the trainer's, and its progress while it runs
 const SYNC_OF = {scorecard: "scores", compliance: "links", outputs: "outputs", ranking: "ranking"};
+// ⬇ each scorecard on its own (a .csv: it opens in Excel or Google Sheets), beside its 🔄 Update
+const dlBtn = id => `<button type="button" class="bs-dl" onclick="FTBatchSheet.csv('${e(id)}')" title="Download this scorecard (.csv: opens in Excel or Google Sheets)">⬇ Download</button>`;
 function updBtn(id){
   const sc = SYNC_OF[id]; if(!sc || !adminOn() || meOn()) return "";
   const S = B.sync, mine = S && (S.scope === sc || S.scope === "all");
@@ -549,7 +571,7 @@ function groupedSheetHtml(T, ti){
   const folds = T.groups.map((g, gi) => foldable(g) ? gi : -1).filter(gi => gi >= 0), allIn = folds.length && folds.every(gi => F.g.includes(gi));
   const tid = e(T.id);
   const head = `<h3 class="bs-h"><button type="button" class="bs-fold-sec" onclick="FTBatchSheet.hideSec('${tid}')" aria-expanded="${!F.hide}" title="${F.hide ? "Show" : "Hide"} this table">${F.hide ? "▸" : "▾"}</button> ${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>
-    ${updBtn(T.id)}${!F.hide && folds.length > 1 ? `<button type="button" class="bs-fold-all" onclick="FTBatchSheet.foldAll('${tid}', ${allIn ? "false" : "true"})">${allIn ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>` : ""}</h3>`;
+    ${updBtn(T.id)}${dlBtn(T.id)}${!F.hide && folds.length > 1 ? `<button type="button" class="bs-fold-all" onclick="FTBatchSheet.foldAll('${tid}', ${allIn ? "false" : "true"})">${allIn ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>` : ""}</h3>`;
   if(F.hide) return `<section class="bs-sec bs-sc bs-hidden" id="bs-${T.id}">${head}</section>`;
   let col = 0;
   return `<section class="bs-sec bs-sc" id="bs-${T.id}">${head}<p class="bs-note">${e(T.note)}${folds.length ? " Click a heading's ▾ to fold its columns away." : ""}</p>
@@ -624,7 +646,7 @@ function shareBanner(){
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "outputs"];
 function sectionsHtml(T){
-  const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, linksEditHtml() + "</section>")
+  const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, linksEditHtml() + trainerToolsHtml() + "</section>")
     : x.id === "scorecard" ? groupedSheetHtml(x, i)
     : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
     : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
@@ -700,10 +722,6 @@ function dayActs(R, d){
       : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : monDay && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       more: monDay && mon.review ? "AI review: " + mon.review : ""});
   }
-  // 📘 the TAM: the day's entry, by its date (worker.js tamEntries)
-  if(P.tam != null || unread("tam")){ const te = c.tam || null;
-    out.push({k: "tam", icon: "📘", label: "TAM", pct: P.tam, text: unread("tam") ? sent2(share)
-      : sent2(!te ? "No TAM entry dated that day." : te.words >= 15 ? `Entry written for the day (${plural(te.words, "word")}).` : `A short entry for the day (${plural(te.words, "word")}): 15 or more count in full.`)}); }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
     out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
   if(c.tests || P.tests != null){ const t = c.tests || {}, took = [t.AM && "the morning typing test", t.PM && "the afternoon typing test", t.SP && "the spelling test"].filter(Boolean),
@@ -714,7 +732,7 @@ function dayActs(R, d){
       : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
       sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
-    out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
+    out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Scored by a trainer: ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
       miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
   return out;
 }
@@ -972,7 +990,7 @@ const tables = () => [scoreCardTable(), complianceTable(), outputsTable(), daySc
 /* ---------- drawing: each table a small sheet (column letters, row numbers, the names frozen) ---------- */
 function sheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length;
-  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>${updBtn(T.id)}</h3><p class="bs-note">${e(T.note)}</p>${T.tools || ""}
+  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>${updBtn(T.id)}${dlBtn(T.id)}</h3><p class="bs-note">${e(T.note)}</p>${T.tools || ""}
     <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
       <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
       <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${T.headHtml && T.headHtml[i] != null ? T.headHtml[i] : e(h)}</th>`).join("")}</tr></thead>
@@ -1231,6 +1249,25 @@ window.FTBatchSheet = {
   recheckLinks(){ return FTBatchSheet.sync("links"); },
   leOpen(o){ B.leOpen = !!o; },
   leWho(id){ if(!adminOn()) return; B.le = id; B.leOpen = true; render(); },
+  ttOpen(v){ B.ttOpen = !!v; },
+  ttWho(id){ if(!adminOn()) return; B.tt = id; B.ttOpen = true; render(); },
+  async eodGrade(id){
+    if(!adminOn()) return;
+    const d = (document.getElementById("bsEodD") || {}).value, sc = (document.getElementById("bsEodS") || {}).value, note = (document.getElementById("bsEodN") || {}).value;
+    if(!d){ toast("Pick the day."); return; } B.ttDay = d;
+    try{ const r = await authFetch("/api/eod/grade", {id, date: d, score: sc === "" ? null : Number(sc), note}), j = await r.json().catch(() => null);
+      if(!r.ok || !j || !j.ok) throw new Error("save");
+      toast(sc === "" ? `EOD score taken off for ${d}.` : `✍ EOD for ${d} scored ${j.eod}% (the day: ${j.pct}%).`);
+    }catch(err){ toast("Couldn’t save the EOD score. Try again."); }
+    B.data = null; B.dataKey = ""; render();
+  },
+  async tamGrade(id){
+    if(!adminOn() || B.tamBusy) return; B.tamBusy = true; B.tt = id; render();
+    try{ const r = await authFetch("/api/drive/tam", {id}), j = await r.json().catch(() => null);
+      const t = j && j.tam; toast(!t ? "The TAM isn’t linked." : t.error ? "📘 " + t.error : `📘 TAM read: ${Object.keys(t.entries || {}).length} dated entries.`);
+    }catch(err){ toast("Couldn’t read the TAM. Try again."); }
+    B.tamBusy = false; B.data = null; B.dataKey = ""; render();
+  },
   async leSave(id, btn){
     if(!adminOn() || B.leBusy) return;
     const box = btn.closest(".bs-le"), vals = {};
@@ -1377,13 +1414,16 @@ window.FTBatchSheet = {
     B.sel = {ref: `${T.title.replace(/^\S+\s/, "")}!${letter(c)}${r + 2}`, f: cell.f || String(cell.v || "")};
     const ref = document.getElementById("bsRef"), bar = document.getElementById("bsBar"); if(ref) ref.textContent = B.sel.ref; if(bar) bar.value = B.sel.f;
   },
-  csv(){
+  csv(only){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
+    const pick = typeof only === "string" && only ? tables().filter(T => T.id === only) : null;
+    if(pick && !pick.length){ toast("That scorecard isn’t on the page."); return; }
     const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
     const lines = [];
-    tables().forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.csv != null ? c.csv : c.v)).join(","))); lines.push(""); });
+    (pick || tables()).forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.csv != null ? c.csv : c.v)).join(","))); lines.push(""); });
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv"}));
-    a.download = meOn() ? `My Progress ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Batch Sheet ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
+    const what = pick ? " " + pick[0].title.replace(/^\S+\s/, "").replace(/[\\/:*?"<>|]+/g, "-").slice(0, 60) : "";
+    a.download = meOn() ? `My Progress${what} ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Batch Sheet ${B.batch}${what} ${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   },
   // for the checks
@@ -1538,7 +1578,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-sweep .bs-sweep-sum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;} .bs-sweep-list{max-height:420px;overflow:auto;}
 .bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
 .bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
-.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
+.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-dl{margin-left:8px;font:inherit;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #C9D3E6;background:#fff;color:var(--navy);cursor:pointer;vertical-align:middle;} .bs-dl:hover{background:#EEF2FA;}
+.bs-tt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 2px;} .bs-tt-row input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;}
+.bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}

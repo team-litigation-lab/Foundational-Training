@@ -124,8 +124,19 @@ const failures = []; const fail = (m) => failures.push(m);
     { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
       if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
       if (c1.monitor !== 25 || c2.monitor !== 13) fail(`the Monitoring Sheet part isn't the discussions due by each day (10/30 25, 11/02 13): ${c1.monitor} / ${c2.monitor}`);
-      if (c1.tam !== 100 || c2.tam !== 50 || (cur.compliance['2026-11-03'] && c3.tam !== 0)) fail(`the TAM part isn't the day's entry (10/30 100, 11/02 50, 11/03 0): ${c1.tam} / ${c2.tam} / ${c3.tam}`);
-      if (!cur.tam || !cur.tam.entries || !cur.tam.entries['2026-10-30']) fail(`the TAM's entries weren't read: ${JSON.stringify(cur.tam)}`); }
+      // (📘 the TAM isn't a daily part: only graded when a trainer asks, for a shadowing activity)
+      if ('tam' in c1 || 'tam' in c2 || 'tam' in c3 || cur.tam) fail(`the TAM is still read or scored daily: ${JSON.stringify({ c1, tam: cur.tam })}`); }
+    // 📘 a trainer grades the TAM (shadowing): its entries by date
+    { const tg = (await call('/api/drive/tam', { id: ana }, admin)).body || {};
+      if ((await call('/api/drive/tam', { id: ana }, trainee)).status !== 403) fail('a trainee graded the TAM');
+      if (!tg.ok || !tg.tam || !tg.tam.entries || !tg.tam.entries['2026-10-30'] || !(tg.tam.entries['2026-10-30'].words >= 15) || !tg.tam.entries['2026-11-02']) fail(`📘 Grade the TAM didn't read its dated entries: ${JSON.stringify(tg)}`); }
+    // ✍ a trainer's EOD score for a day the EOD monitoring missed: the day's EOD part, and taken off again
+    { const g = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80, note: 'Sent to the team lead' }, admin)).body || {};
+      if ((await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80 }, trainee)).status !== 403) fail('a trainee scored an EOD');
+      const c = (get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {};
+      if (!g.ok || g.eod !== 80 || (c.parts || {}).eod !== 80 || !c.eodTrainer || c.eodTrainer.note !== 'Sent to the team lead') fail(`a trainer's EOD score isn't the day's EOD part: ${JSON.stringify(g)} / ${JSON.stringify(c.parts)}`);
+      const g2 = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: null }, admin)).body || {};
+      if (!g2.ok || g2.eod !== 0) fail(`taking the EOD score off didn't put the day back to its own check: ${JSON.stringify(g2)}`); }
     // 🔁 the Monitoring Sheet read through the Drive API when the docs.google.com export gives a sign-in page
     if (!apiReads || !cur.monitor || cur.monitor.error || cur.monitor.found !== 1) fail(`the Monitoring Sheet wasn't read through the Drive API: ${apiReads} reads, ${JSON.stringify(cur.monitor && { error: cur.monitor.error, found: cur.monitor.found })}`);
     // 🧪 the Typing Tests folder is read: "10-30 AM.png" in it is her 10/30 AM typing test, and counts on the day

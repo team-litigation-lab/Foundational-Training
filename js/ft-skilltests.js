@@ -349,7 +349,8 @@ function renderAdmin(){
       <span class="st-filters"><select onchange="FTSkills.batch(this.value)">${bs.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batches</option>"}</select>
         <label>From <input type="date" value="${e(from)}" onchange="FTSkills.range('from', this.value)"></label><label>To <input type="date" value="${e(to)}" onchange="FTSkills.range('to', this.value)"></label>
         <button class="btn btn-ghost btn-sm" onclick="FTSkills.reload()">↻</button>
-        <button class="btn btn-navy btn-sm" ${AD.busy || !ppl.length ? "disabled" : ""} onclick="FTSkills.checkBatch()">${AD.busy ? "Checking…" : "📷 Check Drive now"}</button></span></div>
+        <button class="btn btn-navy btn-sm" ${AD.busy || !ppl.length ? "disabled" : ""} onclick="FTSkills.checkBatch()">${AD.busy ? "Checking…" : "📷 Check Drive now"}</button>
+        <button class="btn btn-ghost btn-sm" ${!ppl.length ? "disabled" : ""} onclick="FTSkills.download()" title="Download this scorecard (.csv: opens in Excel or Google Sheets)">⬇ Download</button></span></div>
     ${ppl.length ? `<div class="st-glance"><span><b>Today ${e(md(today))}</b></span><span class="ok">✓ All 3 done: <b>${tday.filter(n => n === 3).length}</b></span><span class="mk">Partly: <b>${tday.filter(n => n && n < 3).length}</b></span><span class="no">None yet: <b>${tday.filter(n => !n).length}</b></span>
       <span class="fss-muted">${last ? `Drive last checked ${e(new Date(last).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}))}` : "Drive not checked yet"}${noFolder ? ` · ${noFolder} without a readable Drive folder` : ""}</span></div>` : ""}
     ${ppl.length ? `<div class="ff-scroll"><table class="ff-tbl st-grid"><thead><tr><th>Trainee</th><th>Typing (last 10)</th><th>Spelling</th>${days.map(k => `<th>${e(md(k))}</th>`).join("")}<th>Compliance (${e(md(from))} to ${e(md(to))})</th></tr></thead><tbody>
@@ -367,6 +368,15 @@ function renderAdmin(){
 
 /* ---------- the page and the API ---------- */
 window.FTSkills = {
+  // ⬇ the grid as it is on screen (the batch, the dates, each day's three marks and the compliance line), as a .csv
+  download(){
+    const t = document.querySelector(".st-grid"); if(!t){ toast("Nothing to download yet."); return; }
+    const q = v => { const x = String(v == null ? "" : v).replace(/\s+\n/g, "\n").trim(); return `"${(/^[=+\-@\t\r]/.test(x) ? "'" + x : x).replace(/"/g, '""')}"`; };
+    const rows = [...t.querySelectorAll("tr")].map(tr => [...tr.children].map(c => q(c.innerText)).join(","));
+    const sel = document.querySelector(".st-admin select"), b = sel ? sel.value : "";
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.join("\r\n")], {type: "text/csv"}));
+    a.download = `Typing & Spelling ${b} ${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  },
   typing(){ startTyping(""); }, spelling(){ startSpelling(""); },
   makeup(kind, slot){ if(kind === "typing") startTyping(slot); else startSpelling(slot.replace(/ SP$/, " SP")); },
   type(t){
@@ -492,7 +502,8 @@ main.main-st{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;f
 .st-filters select,.st-filters input{padding:5px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;}
 .st-grid td,.st-grid th{white-space:nowrap;} .st-day span{display:inline-block;width:14px;text-align:center;}
 .st-day i{font-style:normal;font-weight:800;} .st-day i.na{color:#B8BDCB;} .st-day i.ok{color:#1E7F4F;} .st-day i.no{color:#B42318;} .st-day i.mk{color:#B5651F;}
-.st-comp{white-space:normal !important;min-width:280px;font-size:12.5px;}
+.st-comp{white-space:normal !important;min-width:360px;width:30%;font-size:13px;line-height:1.45;overflow-wrap:anywhere;}
+.st-admin .ff-scroll{overflow-x:auto;} .st-admin .st-grid{width:100%;table-layout:auto;}
 .st-shots{padding:14px 18px;display:flex;flex-direction:column;gap:8px;} .st-shots h3{margin:0;}
 .st-err{color:#B42318;font-weight:600;}
 .st-files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px;}

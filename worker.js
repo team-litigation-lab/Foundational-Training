@@ -1284,13 +1284,13 @@ const DRIVE_UNREADABLE = "The system can't open this file. Check that the link i
 async function checkDrive(env, id, D, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  if (!drive || (!drive.tracker && !drive.monitor && !drive.tam)) return null;
+  if (!drive || (!drive.tracker && !drive.monitor && !(o.tam === true && drive.tam))) return null;
   const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   if (!cur.days) cur.days = {};
   const at = new Date().toISOString(), voice = o.voice != null ? o.voice : facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
   const out = { id };
-  if (drive.tracker) {
+  if (drive.tracker && o.tracker !== false) {
     let res, review = "";
     try {
       const f = TR.googleFile(drive.tracker);
@@ -1346,7 +1346,8 @@ async function checkDrive(env, id, D, o = {}) {
   }
   // 📘 the TAM (Task Assessment Manual): its entries, by the date each is written under (tamEntries) — the day's compliance
   // counts the day's entry (dailyCompliance tam)
-  if (drive.tam && o.tam !== false) {
+  // (📘 only when a trainer asks — a shadowing activity: /api/drive/tam — never on the daily check)
+  if (drive.tam && o.tam === true) {
     let error = "", entries = {};
     try {
       const f = TR.googleFile(drive.tam);
@@ -2030,7 +2031,7 @@ async function backtrack(env, id) {
     } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
   }
   // the Monitoring Sheet (and today's tracker) as the end-of-shift check reads them, without a new AI review; the test screenshots
-  if (drive.monitor || drive.tracker || drive.tam) { try { await checkDrive(env, id, today, { ai: false }); out.monitor = "ok"; } catch (e) { out.monitor = "error"; } }
+  if (drive.monitor || drive.tracker) { try { await checkDrive(env, id, today, { ai: false }); out.monitor = "ok"; } catch (e) { out.monitor = "error"; } }
   if (drive.folder || drive.typing || drive.spelling) { try { const r = await checkShots(env, id); out.shots = r && r.error ? r.error : "ok"; } catch (e) { out.shots = "error"; } }
   // (fresh: every day worked out again from what was just read — not the Tracker's and Monitoring Sheet's parts of an earlier
   // check, which may be a 0 from before the files were linked)
@@ -2131,12 +2132,15 @@ async function dailyCompliance(env, id, D, o = {}) {
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
-    tam: tamE === undefined ? null : tamE ? (tamE.words >= 15 ? 100 : 50) : 0,
+    // (📘 the TAM isn't a daily part: it is graded when a trainer asks, for a shadowing activity — /api/drive/tam)
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved || subs.length ? 100 : 0,
     // (📧 the EOD checked against its template, TR.checkEod: its %, not 100 for anything there)
-    eod: day.eod && String(day.eod.text || "").trim() ? TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at).pct : 0
+    // (✍ a trainer's own EOD score for the day — a day before the EOD monitoring was set up, or one it missed — stands:
+    // drive:<id>.days[<date>].eodTrainer = {score, note, by, at})
+    eod: day.eodTrainer && typeof day.eodTrainer.score === "number" ? day.eodTrainer.score
+      : day.eod && String(day.eod.text || "").trim() ? TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at).pct : 0
   };
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
@@ -2146,7 +2150,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : "", cur.tam && unreadable(cur.tam.error) ? "tam" : ""].filter(Boolean), tam: tamE || null,
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tam: tamE || null, eodTrainer: day.eodTrainer || null,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
@@ -2632,6 +2636,30 @@ export default {
         const b = await request.json().catch(() => ({}));
         const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
         try { return json(await backtrack(env, id)); } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
+      // 📘 the TAM, graded when a trainer asks (a shadowing activity): its entries read by date (tamEntries); not a daily part
+      if (path === "/api/drive/tam") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
+        try { await checkDrive(env, id, TR.ptDate(), { ai: false, tam: true, monitor: false, tracker: false });
+          const cur = JSON.parse((await kvOf(env).get(`trackerreview:${id}`)) || "null") || {}; return json({ ok: true, tam: cur.tam || null }); }
+        catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
+      // ✍ a trainer's EOD score for a day (missed by the EOD monitoring, or before it was set up): kept on the day, and the day's
+      // compliance worked out again. score null takes it off.
+      if (path === "/api/eod/grade") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100), D = String(b.date || "").slice(0, 10);
+        if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(D)) return json({ error: "Missing trainee or date" }, 400);
+        const kv = kvOf(env), dk = `drive:${id}`, drive = JSON.parse((await kv.get(dk)) || "null") || {};
+        drive.days = drive.days || {}; const day = drive.days[D] = drive.days[D] || {};
+        const sc = b.score == null || b.score === "" ? null : Math.max(0, Math.min(100, Math.round(Number(b.score))));
+        if (sc == null || !isFinite(sc)) delete day.eodTrainer; else day.eodTrainer = { score: sc, note: String(b.note || "").slice(0, 500), at: new Date().toISOString() };
+        await kv.put(dk, JSON.stringify(drive));
+        const c = await dailyCompliance(env, id, D, {});
+        return json({ ok: true, day: D, eod: (c && c.parts || {}).eod, pct: c && c.pct });
       }
       if (path === "/api/drive/status") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);

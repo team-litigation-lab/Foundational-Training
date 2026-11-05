@@ -147,7 +147,8 @@ function renderMockScores(){
           return `<option value="${e(r.id)}" ${r.id === MS.va ? "selected" : ""}>${e(r.name || r.id)}${tag}</option>`; }).join("")}</select></label>
         <span class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous VA">‹ Previous</button><b>${at + 1} / ${all.length}</b><button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next VA">Next ›</button></span>` : ""}
       ${rb && rb.feedback ? `<label class="fss-check"><input type="checkbox" ${MS.notes ? "checked" : ""} onchange="FTMockScores.notes(this.checked)"> feedback notes</label>` : ""}
-      <button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button></span></div>`;
+      <button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button>
+      <button class="btn btn-ghost btn-sm" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and feedback)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></span></div>`;
   if(!batches.length) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No active batch: a batch shows here once its VAs are registered and approved.</p></div>`;
   if(!a) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p></div>`;
   if(!people.length) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No VAs registered in ${e(labelOf(MS.batch))} yet.</p></div>`;
@@ -191,6 +192,15 @@ function refreshCol(id){
   if(btn){ btn.disabled = !n || MS.saving; btn.textContent = `💾 Save ${n} VA${n === 1 ? "’s" : "s’"} scorecard${n === 1 ? "" : "s"}`; }
 }
 window.FTMockScores = {
+  // ⬇ the batch's Mock Call & Demo Scorecards (the same file as its ⬇ Records: every criterion, score and feedback)
+  async download(){
+    if(MS.dl || !MS.batch) return; MS.dl = true; render();
+    try{ const members = registered(MS.batch).filter(r => !gone(r)), rows = await gather(members), f = buildFiles(MS.batch, rows).find(x => /Scorecards\.csv$/.test(x.name));
+      if(!f){ toast("Nothing to download yet."); }
+      else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + f.text], {type: "text/csv"})); a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    }catch(err){ toast("Couldn’t prepare the download. Try again."); }
+    MS.dl = false; render();
+  },
   batch(b){ MS.batch = b; MS.va = ""; render(); },
   // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
   va(id){ MS.va = id; render(); },
