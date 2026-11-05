@@ -843,20 +843,20 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 #xlBar{flex:1 1 auto;border:0;padding:5px 8px;font:inherit;outline:none;min-width:0;}
 #xlBar[readonly]{color:#444;background:#FAFAFA;}
 .xl-wrap{overflow:auto;max-height:62vh;border:1px solid #C8C8C8;background:#fff;}
-.xl{border-collapse:separate;border-spacing:0;font:700 15.5px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
+.xl{border-collapse:separate;border-spacing:0;font:700 17px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
 /* (every trainee's row the same height, for balance: a long note scrolls inside its cell) */
 /* (every trainee's row the same height, for balance; the text columns narrower, so the sheet leaves room for the other
    scorecards — a long note or summary scrolls inside its own cell) */
 .xl-row > td,.xl-row > th{height:76px;box-sizing:border-box;}
-.xl-row .xl-txt{height:72px;overflow-y:auto;font-size:13.5px;font-weight:700;line-height:1.3;padding:3px 6px;}
+.xl-row .xl-txt{height:72px;overflow-y:auto;font-size:15px;font-weight:700;line-height:1.3;padding:3px 6px;}
 .xl-clip{max-height:66px;overflow-y:auto;}
-.xl-row td.xl-aisum{font-size:13px;font-weight:600;line-height:1.35;padding:3px 6px;}
-.xl-num{font-weight:900 !important;font-size:17px;}
-.xl-calc{font-size:17px;font-weight:900 !important;}
+.xl-row td.xl-aisum{font-size:14.5px;font-weight:600;line-height:1.35;padding:3px 6px;}
+.xl-num{font-weight:900 !important;font-size:19px;}
+.xl-calc{font-size:19px;font-weight:900 !important;}
 .t-ex{background:#CFE0FF !important;color:#0A3A9E !important;} .t-gd{background:#CDEFD8 !important;color:#0F5A2A !important;}
 .t-ok{background:#FFE9A3 !important;color:#6B4A00 !important;} .t-lo{background:#FBCFCB !important;color:#A0150C !important;}
 .t-ex .xl-in,.t-gd .xl-in,.t-ok .xl-in,.t-lo .xl-in{color:inherit;}
-.rk-legend{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14.5px;font-weight:700;margin-top:6px;} .rk-legend span{padding:2px 9px;border-radius:999px;font-weight:800;} .rk-legend small{color:var(--ink-soft);}
+.rk-legend{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:16px;font-weight:800;margin-top:6px;} .rk-legend span{padding:2px 9px;border-radius:999px;font-weight:800;} .rk-legend small{color:var(--ink-soft);}
 #rkTip{position:fixed;z-index:10080;display:none;background:#1E2340;color:#fff;font:600 13px/1.45 'Segoe UI',Arial,sans-serif;padding:9px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(20,24,50,.3);pointer-events:none;white-space:normal;}
 .xl th,.xl td{border-right:1px solid #D4D4D4;border-bottom:1px solid #D4D4D4;padding:0;}
 .xl-letters th{position:sticky;top:0;z-index:4;background:#F3F3F3;color:#555;font-weight:400;font-size:11.5px;height:20px;text-align:center;min-width:76px;}
@@ -867,14 +867,14 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl td.xl-aisum.is-plain{color:#3C4043;font-style:italic;} .xl td.xl-aisum .xl-wait{color:#80868B;font-style:italic;}
 .xl-corner,.xl-rn{position:sticky;left:0;z-index:5;background:#F3F3F3 !important;color:#555;font-weight:400 !important;font-size:11.5px;width:34px;min-width:34px !important;text-align:center;}
 .xl-corner{top:0;z-index:6;}
-.xl-title td{padding:5px 8px;font-size:14px;background:#fff;}
-.xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:800;font-size:13px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
+.xl-title td{padding:5px 8px;font-size:17px;background:#fff;}
+.xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:900;font-size:15px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
 .xl-head th.xl-h-name{min-width:150px;} .xl-head th.xl-h-notes{min-width:150px;max-width:190px;} .xl-head th.xl-h-addl{min-width:190px;}
 .xl-head th.xl-h-calc,.xl-head th.xl-h-avg,.xl-head th.xl-h-rank{background:#4A7F28;}
 .xl .xl-frz{position:sticky;left:34px;z-index:2;background:#fff;}
 .xl-head .xl-frz{z-index:4;background:#5B9A32;}
 .xl-head th.xl-rn{color:#555;font-weight:400;}
-.xl-name{padding:4px 8px !important;font-weight:900;font-size:15.5px;min-width:150px;vertical-align:middle;outline:none;}
+.xl-name{padding:4px 8px !important;font-weight:900;font-size:17.5px;min-width:150px;vertical-align:middle;outline:none;}
 .xl-td{position:relative;vertical-align:top;}
 .xl-in{display:block;width:100%;border:0;border-radius:0;background:transparent;font:inherit;color:inherit;padding:4px 6px;outline:none;resize:none;}
 .xl-num{text-align:right;min-width:76px;}
