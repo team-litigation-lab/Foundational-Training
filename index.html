@@ -7535,12 +7535,12 @@ async function adminAddFocus(id){
   await sharedSet("focus:"+id, f);
   state.traineeFocus = state.traineeFocus || {}; state.traineeFocus[id] = f;
   toast("Focus item added — the trainee will see it in 🎯 Focus.");
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
 }
 async function adminRemoveFocus(id, fid){
   const f = await loadFocusItems(id); f.items = f.items.filter(x=>x.id!==fid);
   await sharedSet("focus:"+id, f); state.traineeFocus[id] = f;
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
 }
 async function saveTraineeCertInfo(id){
   const sid = cssId(id);
@@ -13505,7 +13505,7 @@ function adminDayStats(rec){
 }
 function adminPracticeStats(rec){
   const pp = rec.practiceProgress || {};
-  const runs = Object.values(pp).reduce((a,v)=>a+(v.runs||0),0);
+  const runs = Object.values(pp).reduce((a,v)=>a+(Number(v&&v.runs)||0),0);   // (a number, never a trainee-written string)
   const scores = Object.values(pp).filter(v=>typeof v.bestScore==="number").map(v=>v.bestScore);
   const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
   return {runs, avg};
@@ -14354,13 +14354,17 @@ function tfbExportCsv(){
   saveBlob(blob, "LSH_trainee_feedback.csv");
 }
 Object.assign(window, {tfbSetStatus, tfbExportCsv, loadTraineeFeedbackAdmin});
+/* (a tfeedback record is written by the trainee: every field is escaped, the status is one of the three, a rating is a whole 0–5) */
+const tfbStatus = x=>["new","acknowledged","actioned"].includes(x.status) ? x.status : "new";
+const tfbStar = v=>{ const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(0, Math.min(5, n)) : 0; };
 function tfbItemCard(x){
-  return `<div class="card tfb-item ${x.status||"new"}">
-      <div class="tfb-item-head"><b>${esc(x.name||"Trainee")}</b>${x.batch?` · Batch ${esc(x.batch)}`:""} · ${x.dayId?`${ftName(x.dayId)}`:"Program overall"} · <span>${new Date(x.at).toLocaleString()}</span>
-        <span class="studio-badge ${x.status==="actioned"?"published":""}">${esc(x.status||"new")}</span></div>
-      <div class="tfb-item-ratings">${TFB_AREAS.filter(a=>x.ratings&&x.ratings[a.id]).map(a=>`<span>${a.icon} ${esc(a.label)}: <b>${"★".repeat(x.ratings[a.id])}${"☆".repeat(5-x.ratings[a.id])}</b></span>`).join("")}</div>
+  const st = tfbStatus(x);
+  return `<div class="card tfb-item ${st}">
+      <div class="tfb-item-head"><b>${esc(x.name||"Trainee")}</b>${x.batch?` · Batch ${esc(x.batch)}`:""} · ${x.dayId?esc(ftName(x.dayId)):"Program overall"} · <span>${esc(new Date(x.at).toLocaleString())}</span>
+        <span class="studio-badge ${st==="actioned"?"published":""}">${st}</span></div>
+      <div class="tfb-item-ratings">${TFB_AREAS.filter(a=>x.ratings&&tfbStar(x.ratings[a.id])).map(a=>`<span>${a.icon} ${esc(a.label)}: <b>${"★".repeat(tfbStar(x.ratings[a.id]))}${"☆".repeat(5-tfbStar(x.ratings[a.id]))}</b></span>`).join("")}</div>
       ${x.good?`<p><b>Worked well:</b> ${esc(x.good)}</p>`:""}${x.improve?`<p><b>Improve:</b> ${esc(x.improve)}</p>`:""}${x.facilitator?`<p><b>For facilitator:</b> ${esc(x.facilitator)}</p>`:""}
-      <div class="studio-actions">${["acknowledged","actioned"].filter(s=>s!==x.status).map(s=>`<button class="btn btn-ghost btn-sm" onclick="tfbSetStatus('${x.id}','${s}')">Mark ${s}</button>`).join("")}</div>
+      <div class="studio-actions">${["acknowledged","actioned"].filter(s=>s!==st).map(s=>`<button class="btn btn-ghost btn-sm" data-id="${esc(x.id)}" onclick="tfbSetStatus(this.dataset.id,'${s}')">Mark ${s}</button>`).join("")}</div>
     </div>`;
 }
 function renderAdminTraineeFeedback(){
@@ -14370,17 +14374,17 @@ function renderAdminTraineeFeedback(){
   const f = state.tfbFilter || {};
   if(f.day) items = items.filter(x=>String(x.dayId||"overall")===f.day);
   if(f.area) items = items.filter(x=>x.ratings && x.ratings[f.area]);
-  if(f.status) items = items.filter(x=>(x.status||"new")===f.status);
+  if(f.status) items = items.filter(x=>tfbStatus(x)===f.status);
   if(f.batch) items = items.filter(x=>(f.batch==="_anon" ? x.anonymous || !x.batch : String(x.batch||"")===f.batch));
-  const avg = (area, list)=>{ const v = list.map(x=>x.ratings&&x.ratings[area]).filter(Boolean); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null; };
+  const avg = (area, list)=>{ const v = list.map(x=>x.ratings&&tfbStar(x.ratings[area])).filter(Boolean); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null; };
   const all = state.tfbAdmin.items;
   const stars = (v)=> v===null ? "—" : `${v.toFixed(1)} ★`;
-  const perDay = DAYS.map(d=>{ const l = all.filter(x=>x.dayId===d.id); const vals = l.flatMap(x=>Object.values(x.ratings||{})); return {d, n:l.length, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null}; });
+  const perDay = DAYS.map(d=>{ const l = all.filter(x=>x.dayId===d.id); const vals = l.flatMap(x=>Object.values(x.ratings||{}).map(tfbStar).filter(Boolean)); return {d, n:l.length, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null}; });
   return `
     <p class="eyebrow">Admin Dashboard</p>
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainee Feedback</h1>
     <p style="color:var(--ink-soft);font-size:13px;max-width:75ch;margin:0 0 16px;">What trainees think of the platform, lessons, facilitator, Practice Lab and assessments. Anonymous submissions hide the trainee's name.</p>
-    <div class="tfb-summary">${TFB_AREAS.map(a=>`<div class="card stat"><div class="num">${stars(avg(a.id, all))}</div><div class="lbl">${a.icon} ${esc(a.label)}</div><div class="sub">${all.filter(x=>x.ratings&&x.ratings[a.id]).length} rating(s)</div></div>`).join("")}</div>
+    <div class="tfb-summary">${TFB_AREAS.map(a=>`<div class="card stat"><div class="num">${stars(avg(a.id, all))}</div><div class="lbl">${a.icon} ${esc(a.label)}</div><div class="sub">${all.filter(x=>x.ratings&&tfbStar(x.ratings[a.id])).length} rating(s)</div></div>`).join("")}</div>
     <div class="card" style="padding:14px 16px;margin:12px 0;"><b style="font-size:13px;color:var(--navy);">By day</b>
       <div class="tfb-days">${perDay.map(p=>`<span class="${p.avg!==null && p.avg<3.5?"low":""}">${ftName(p.d.id)}: <b>${stars(p.avg)}</b> <em>(${p.n})</em></span>`).join("")}</div></div>
     <div class="tfb-filters">
@@ -14916,13 +14920,13 @@ function renderAdminRow(rec, day, practice){
         <div style="font-size:13px;">${day.done} / ${day.total} days</div>
         <div style="font-size:13px;">${day.avg}% avg</div>
         <div style="font-size:13px;">${practice.runs} runs</div>
-        <div style="font-size:11.5px;color:var(--ink-soft);">${rec.lastActive?fmtDate(rec.lastActive):"—"}</div>
+        <div style="font-size:11.5px;color:var(--ink-soft);">${rec.lastActive?esc(fmtDate(rec.lastActive)):"—"}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:520px;">
           <button class="btn btn-sm btn-ghost" onclick="toggleAdminDetail('${rec.id}')">${expanded?"Hide":"View"} Detail</button>
           <button class="btn btn-sm btn-primary" onclick="openFeedbackFor('${rec.id}')" title="Write and send feedback to this trainee">✍ Feedback</button>
           <button class="btn btn-sm btn-ghost" onclick="adminOpenCertificate('${rec.id}')" title="Preview / download this trainee's Certificate of Completion">🎓 Certificate</button>
-          ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? `<span class="pill" style="background:var(--danger-bg);color:var(--danger);font-weight:800;" title="Asked ${fmtDate(rec.labResetRequestedAt)}${rec.labResetRequestedDay ? " (Day " + rec.labResetRequestedDay + ")" : ""}">🙋 Asked for more attempts</span>` : ""}<button class="btn btn-sm ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? "btn-primary" : "btn-ghost"}" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${rec.labAttemptsGlobal ? ` (${rec.labAttemptsGlobal} used)` : ""}</button>
-          <button class="btn btn-sm btn-ghost" style="color:var(--danger);" onclick="confirmRevokeTrainee('${rec.id}', '${esc(rec.name||"this trainee").replace(/'/g,"\\'")}')">Revoke</button>
+          ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? `<span class="pill" style="background:var(--danger-bg);color:var(--danger);font-weight:800;" title="Asked ${esc(fmtDate(rec.labResetRequestedAt))}${rec.labResetRequestedDay ? " (Day " + esc(rec.labResetRequestedDay) + ")" : ""}">🙋 Asked for more attempts</span>` : ""}<button class="btn btn-sm ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? "btn-primary" : "btn-ghost"}" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${Number(rec.labAttemptsGlobal)>0 ? ` (${Number(rec.labAttemptsGlobal)} used)` : ""}</button>
+          <button class="btn btn-sm btn-ghost" style="color:var(--danger);" data-id="${esc(rec.id)}" data-name="${esc(rec.name||"this trainee")}" onclick="confirmRevokeTrainee(this.dataset.id, this.dataset.name)">Revoke</button>
         </div>
       </div>
       ${renderAuditStrip(rec)}
@@ -14945,7 +14949,7 @@ async function resetTraineeLabAttempts(traineeId){
   if(state.adminData){
     const idx = state.adminData.findIndex(x=>x.id===traineeId);
     if(idx!==-1) state.adminData[idx] = rec;
-    const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+    refreshAdminRows();
   }
   toast(`Practice Lab attempts reset for ${rec.name||"trainee"}. Their open page updates within about 10 seconds.`);
 }
@@ -14997,11 +15001,12 @@ Return ONLY a JSON object with this exact shape, no other text:
 }`;
   try{
     const review = await callAIJson(prompt, 700, undefined, "grading");
+    if(!review || typeof review!=="object" || Array.isArray(review)) throw new Error("bad review shape");   // (nothing saved)
     review.generatedAt = new Date().toISOString();
     rec.aiReview = review;
     await sharedSet("trainee:"+traineeId, rec);
     if(btnWrap) btnWrap.innerHTML = renderAiReviewBlock(rec);
-    const idx = state.adminData.findIndex(r=>r.id===traineeId);
+    const idx = (state.adminData||[]).findIndex(r=>r.id===traineeId);
     if(idx!==-1) state.adminData[idx] = rec;
   }catch(e){
     if(btnWrap) btnWrap.innerHTML = `<div class="ai-result ai-error"><b>Couldn't generate review</b><div class="ai-result-body">Check your connection and try again.</div></div><button class="btn btn-sm btn-navy" style="margin-top:10px;" onclick="generateAiReview('${traineeId}')">Try Again</button>`;
@@ -15124,7 +15129,7 @@ async function finishDraft(id, work, dayId, fb, silent){
   work.feedback.days[dayId] = Object.assign({rating:"On Track", summary:"", strengths:[], areasToBuild:[], nextDayFocus:[], trainerNote:""}, fb, {status:"draft", draftedAt:new Date().toISOString()});
   const ok = await sharedSet("feedback:"+id, work.feedback);
   if(!ok) throw new Error("the draft was written but couldn't be saved to the server");
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
   if(!silent) toast(`${ftName(dayId)} feedback drafted — review it below.`);
 }
 async function draftAllFeedback(id){
@@ -15155,11 +15160,11 @@ async function saveDayFeedback(id, dayId, send){
   work.feedback.days[dayId] = upd;
   await sharedSet("feedback:"+id, work.feedback);
   toast(send ? `${ftName(dayId)} feedback sent to the trainee.` : "Draft saved.");
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
 }
 function startManualFeedback(id, dayId){
   state.fbManual = state.fbManual || {}; state.fbManual[id+":"+dayId] = true;
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
   setTimeout(()=>{ const el = document.getElementById(`fb_${cssId(id)}_${dayId}_summary`); if(el){ el.closest("details").open = true; el.focus(); } }, 50);
 }
 window.startManualFeedback = startManualFeedback;
@@ -15175,7 +15180,7 @@ async function sendAllDrafts(id){
   });
   await sharedSet("feedback:"+id, work.feedback);
   toast(`Sent feedback for ${drafts.length} day(s).`);
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
 }
 Object.assign(window, {draftDayFeedback, draftAllFeedback, saveDayFeedback, loadTraineeWork, sendAllDrafts});
 
@@ -15275,12 +15280,12 @@ async function fbcSave(id, send){
   if(!ok){ toast("Couldn't save — check your connection or sign in to Admin again."); return; }
   toast(send ? `✅ ${ftName(day)} feedback sent.` : `Draft saved for ${ftName(day)}.`);
   if(state.auditExtra[id]) state.auditExtra[id].fb = work.feedback.days;
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  refreshAdminRows();
 }
 function openFeedbackFor(id){
   state.adminExpandedId = id;
-  const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
-  loadTraineeWork(id).then(()=>{ const w = document.getElementById("adminRowsWrap"); if(w) w.innerHTML = renderAdminRows();
+  refreshAdminRows();
+  loadTraineeWork(id).then(()=>{ refreshAdminRows();
     setTimeout(()=>{ const c = document.getElementById("fbComposer_"+cssId(id)); if(c){ c.scrollIntoView({behavior:"smooth", block:"center"}); fbcLoad(id); const t = c.querySelector("textarea"); if(t) t.focus(); } }, 100); });
 }
 Object.assign(window, {fbcLoad, fbcSave, openFeedbackFor});
@@ -15405,7 +15410,7 @@ function renderAdminDetail(rec){
             const p = dp[d.id];
             return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--line);">
               <span>${ftName(d.id)} — ${esc(d.title)}</span>
-              <span style="color:${p&&p.done?'var(--success)':'var(--ink-soft)'};">${p?(p.done?`${p.score}% ✓`:`${p.score}% (retry needed)`):"Not started"}</span>
+              <span style="color:${p&&p.done?'var(--success)':'var(--ink-soft)'};">${p?(p.done?`${Number(p.score)||0}% ✓`:`${Number(p.score)||0}% (retry needed)`):"Not started"}</span>
             </div>`;
           }).join("")}
         </div>
@@ -15415,7 +15420,7 @@ function renderAdminDetail(rec){
             const p = pp[t.id];
             return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--line);">
               <span>${t.icon} ${esc(t.title)}</span>
-              <span style="color:${p?'var(--ink)':'var(--ink-soft)'};">${p?`${p.runs} run(s), best ${p.bestScore||0}%`:"Not attempted"}</span>
+              <span style="color:${p?'var(--ink)':'var(--ink-soft)'};">${p?`${Number(p.runs)||0} run(s), best ${Number(p.bestScore)||0}%`:"Not attempted"}</span>
             </div>`;
           }).join("")}
         </div>
@@ -15425,8 +15430,8 @@ function renderAdminDetail(rec){
         <div class="sidebar-section-lbl" style="padding-left:0;">Submitted Files (${subs.length})</div>
         ${subs.map(s=>`
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);">
-            <span>📎 ${esc(s.fileName)} <span style="color:var(--ink-soft);">— ${esc(s.toolTitle)} · ${(s.fileSize/1024).toFixed(0)}KB · ${fmtDate(s.submittedAt)}</span></span>
-            ${s.stored && s.dataUrl ? `<a href="${s.dataUrl}" download="${esc(s.fileName)}" class="btn btn-sm btn-ghost">Download</a>` : `<span style="color:var(--ink-soft);font-size:11px;">Too large to store — filename on record only</span>`}
+            <span>📎 ${esc(s.fileName)} <span style="color:var(--ink-soft);">— ${esc(s.toolTitle)} · ${((Number(s.fileSize)||0)/1024).toFixed(0)}KB · ${esc(fmtDate(s.submittedAt))}</span></span>
+            ${s.stored && typeof s.dataUrl==="string" && /^data:[\w.+-]+\/[\w.+-]+;base64,/.test(s.dataUrl) ? `<a href="${esc(s.dataUrl)}" download="${esc(s.fileName)}" class="btn btn-sm btn-ghost">Download</a>` : `<span style="color:var(--ink-soft);font-size:11px;">Too large to store — filename on record only</span>`}
           </div>`).join("")}
       </div>` : ""}
       <div style="margin-top:16px;">
@@ -15503,7 +15508,7 @@ async function assignRoleplayToTrainee(traineeId){
   if(state.adminData){
     const idx = state.adminData.findIndex(r=>r.id===traineeId);
     if(idx!==-1) state.adminData[idx] = rec;
-    const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+    refreshAdminRows();
   }
   toast(`Assigned "${topic.label}" to ${rec.name||"trainee"}.`);
 }
@@ -15516,7 +15521,7 @@ async function clearAssignedRoleplay(traineeId){
   if(state.adminData){
     const idx = state.adminData.findIndex(r=>r.id===traineeId);
     if(idx!==-1) state.adminData[idx] = rec;
-    const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+    refreshAdminRows();
   }
 }
 window.clearAssignedRoleplay = clearAssignedRoleplay;
@@ -15539,20 +15544,21 @@ async function clearSurpriseTask(dayId){
 }
 window.clearSurpriseTask = clearSurpriseTask;
 function renderAiReviewBlock(rec){
-  const r = rec.aiReview;
+  const r = rec.aiReview && typeof rec.aiReview==="object" ? rec.aiReview : null;
+  const rt = (r && r.ratings) || {};   // (a review saved without ratings shows empty stars rather than breaking the detail)
   const btnLabel = r ? "Regenerate AI Review" : "Generate AI Review";
   return `
     ${r ? `
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Generated ${fmtDate(r.generatedAt)} from Day scores and Practice Lab results.</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Generated ${esc(fmtDate(r.generatedAt))} from Day scores and Practice Lab results.</div>
       <div style="display:grid;gap:10px;">
         <div><b style="font-size:12.5px;color:var(--navy);">Strength</b><p style="font-size:12.5px;margin:4px 0 0;">${esc(r.strength)}</p></div>
         <div><b style="font-size:12.5px;color:var(--navy);">Challenges</b><p style="font-size:12.5px;margin:4px 0 0;">${esc(r.challenges)}</p></div>
         <div>
           <b style="font-size:12.5px;color:var(--navy);">General Attribute Rating</b>
           <div style="font-size:12.5px;margin:4px 0 0;">
-            Executive Triage &amp; Problem Solving: ${starString(r.ratings.triage)}<br>
-            Communication &amp; Discretion: ${starString(r.ratings.communication)}<br>
-            Technical / Workflow Execution: ${starString(r.ratings.technical)}
+            Executive Triage &amp; Problem Solving: ${starString(rt.triage)}<br>
+            Communication &amp; Discretion: ${starString(rt.communication)}<br>
+            Technical / Workflow Execution: ${starString(rt.technical)}
           </div>
         </div>
         <div><b style="font-size:12.5px;color:var(--navy);">Red Flag</b><p style="font-size:12.5px;margin:4px 0 0;">${esc(r.redFlag)}</p></div>
@@ -15569,6 +15575,9 @@ function starString(n){
 function refreshAdminRows(){
   const wrap = document.getElementById("adminRowsWrap");
   if(wrap) wrap.innerHTML = renderAdminRows();
+  // (a batch folder page draws the same rows into #batchFolderBody)
+  const b = document.getElementById("batchFolderBody");
+  if(b && state.batchFolder) b.innerHTML = renderBatchFolderBody();
 }
 function toggleAdminDetail(id){
   state.adminExpandedId = state.adminExpandedId===id ? null : id;
