@@ -426,7 +426,7 @@ function rankingHtml(){
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
   return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking</h3>${FTRankSummary.html()}
-    <details class="bs-more bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
+    <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
    🏅 THE SIMPLIFIED SCORECARD: what the Batch Sheet opens on (the facilitator's own sheet)
@@ -1114,8 +1114,8 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
 .gs .gs-group th{background:#1E2340;color:#fff;font:700 13px Arial,sans-serif;text-align:left;padding:5px 10px;border-left:2px solid #fff;white-space:nowrap;} .gs .gs-group th.gs-g2{background:#33406B;}
 .bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
-.bs-more{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
-.bs-more > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary{border-bottom:1px solid #E1E3E1;}
+.bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
+.bs-more > summary::-webkit-details-marker,.bs-rank-sheet > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary,.bs-rank-sheet[open] > summary{border-bottom:1px solid #E1E3E1;}
 .bs-ds-days, .bs-oc-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
 .bs-oc-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;padding:0 10px 6px;}
 .bs-oc-day > summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:7px 0;flex-wrap:wrap;} .bs-oc-day > summary span{color:#5F6368;font-size:12.5px;}
