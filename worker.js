@@ -852,7 +852,7 @@ async function driveToken(env, write, self) {
   const j = await res.json().catch(() => ({}));
   // (Google's own reason, kept: unauthorized_client = domain-wide delegation not authorized for this Client ID and scope;
   // invalid_grant = the subject isn't a user of the Workspace, or the key / account don't match)
-  if (!res.ok || !j.access_token) throw Object.assign(new Error("drive-auth"), { detail: `${j.error || "HTTP " + res.status}${j.error_description ? ": " + j.error_description : ""}`.slice(0, 300), asSub });
+  if (!res.ok || !j.access_token) throw Object.assign(new Error("drive-auth"), { detail: `${j.error || "HTTP " + res.status}${j.error_description ? ": " + j.error_description : ""}`.slice(0, 300), asSub, status: res.status, oauth: j.error || "" });
   SA_TOKENS[slot] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
   return j.access_token;
 }
@@ -863,11 +863,16 @@ async function driveToken(env, write, self) {
 /* GDRIVE_SA_SUBJECT refused by Google (the domain-wide delegation not authorized, or not yet): remembered for 10 minutes, so
    not every read and save asks Google again, and meanwhile the platform works as the service account itself: it reads the
    files shared with it, and saves where it can (a Shared Drive it is a member of). /api/drive/status asks afresh. */
-const SUB_DOWN = { until: 0, detail: "" };
+// (2 minutes: the memo lives in one Worker instance, so after 🔁 Test again the others catch up within that)
+const SUB_DOWN = { until: 0, detail: "" }, SUB_DOWN_MS = 2 * 60 * 1000;
+// a real refusal by Google (the delegation, the subject, the key), not a passing fault (a 5xx, a 429, an unreadable answer):
+// only a refusal is remembered; a passing fault falls back for that one call and the next call asks again
+const refused = (e) => !!e && e.message === "drive-auth" && (/^(unauthorized_client|invalid_grant|access_denied|invalid_client)$/.test(e.oauth || "") || (e.status >= 400 && e.status < 500 && e.status !== 429) || /private key/.test(e.detail || ""));
+function noteSubject(e) { if (!e) { SUB_DOWN.until = 0; SUB_DOWN.detail = ""; } else if (refused(e)) { SUB_DOWN.until = Date.now() + SUB_DOWN_MS; SUB_DOWN.detail = e.detail || ""; } }
 async function subjectToken(env) {
   if (!env.GDRIVE_SA_SUBJECT || Date.now() < SUB_DOWN.until) return null;
-  try { const tk = await driveToken(env, true); SUB_DOWN.detail = ""; return tk; }
-  catch (e) { if (e.message === "drive-auth") { SUB_DOWN.until = Date.now() + 10 * 60 * 1000; SUB_DOWN.detail = e.detail || ""; } return null; }
+  try { const tk = await driveToken(env, true); noteSubject(null); return tk; }
+  catch (e) { noteSubject(e); if (!refused(e)) SUB_DOWN.detail = e.detail || SUB_DOWN.detail; return null; }
 }
 // the address a trainee shares a file with: GDRIVE_SA_SUBJECT while the platform can work as it, else the service account
 const shareAddr = (env) => String(env.GDRIVE_SA_SUBJECT && Date.now() >= SUB_DOWN.until ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL || "");
@@ -893,8 +898,8 @@ async function driveStatus(env) {
     try { const ti = await (await fetch("https://oauth2.googleapis.com/tokeninfo?access_token=" + encodeURIComponent(tk))).json(); out.clientId = String(ti.azp || ti.issued_to || ti.aud || "").slice(0, 40); } catch (e) { /* the status without it */ }
   } catch (e) { out.saOk = false; out.saDetail = e.detail || e.message; }
   if (out.subject) {
-    try { await driveToken(env, true); out.subjectOk = true; SUB_DOWN.until = 0; SUB_DOWN.detail = ""; }
-    catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; if (e.message === "drive-auth") { SUB_DOWN.until = Date.now() + 10 * 60 * 1000; SUB_DOWN.detail = e.detail || ""; } }
+    try { await driveToken(env, true); out.subjectOk = true; noteSubject(null); }
+    catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; noteSubject(e); }
   }
   return out;
 }
@@ -1023,7 +1028,9 @@ const DRIVE_ERRORS = (env) => ({
   "no-sa": "Google Drive isn't connected on this program yet: GDRIVE_SA_EMAIL and GDRIVE_SA_KEY need to be set on its Worker.",
   "no-folder": "That isn't a Google Drive folder link. Open the folder in Drive and copy its address (…/drive/folders/…).",
   "no-access": `The folder couldn't be written. Share it with ${env.GDRIVE_SA_EMAIL || "the program's service account"} as Editor (Content manager on a Shared Drive).`,
-  "quota": "Drive refused the file: a service account has no storage of its own. Use a folder on a Shared Drive (or set GDRIVE_SA_SUBJECT for a My Drive folder).",
+  "quota": env.GDRIVE_SA_SUBJECT && Date.now() < SUB_DOWN.until
+    ? "Drive refused the file: GDRIVE_SA_SUBJECT is set, but Google refuses it (the domain-wide delegation isn't authorized: see 🔌 on the Batch Sheet), so the platform saved as the service account, which has no storage of its own. Until the delegation is fixed, use a folder on a Shared Drive the service account is a member of."
+    : "Drive refused the file: a service account has no storage of its own. Use a folder on a Shared Drive (or set GDRIVE_SA_SUBJECT for a My Drive folder).",
   "drive-auth": "The program's Google service account couldn't sign in. Check GDRIVE_SA_EMAIL and GDRIVE_SA_KEY.",
   "drive": "Google Drive didn't answer. Try again in a moment."
 });
@@ -2221,7 +2228,7 @@ export default {
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
         try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
-          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: shareAddr(env) }, r) : r); } catch (e) { return json({ error: "drive" }); }
+          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: shareAddr(env) }, env.GDRIVE_SA_SUBJECT && Date.now() < SUB_DOWN.until ? { sub: false } : {}, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */

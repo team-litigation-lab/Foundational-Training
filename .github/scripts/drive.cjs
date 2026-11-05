@@ -26,7 +26,7 @@ const failures = []; const fail = (m) => failures.push(m);
     let saveError = null;
     const META = {}, metaCalls = [];   // 🔗 the links' names, as Drive gives them (null: the account can't open it)
     let subShared = false;
-    const tokenFail = { sub: false, sa: false };   // Google refusing a sign-in: the delegation (sub), the key (sa)   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
+    const tokenFail = { sub: false, sa: false, sub503: 0 };   // Google refusing a sign-in: the delegation (sub), the key (sa)   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
         // (GDRIVE_SA_SUBJECT's token: the trainee shared their folder with the service account only, so that user can't see it
@@ -61,6 +61,7 @@ const failures = []; const fail = (m) => failures.push(m);
         if (u.startsWith('https://oauth2.googleapis.com/tokeninfo')) return new Response(JSON.stringify({ azp: '104812345678901234567', scope: 'https://www.googleapis.com/auth/drive.readonly' }));
         if (u === 'https://oauth2.googleapis.com/token') { const jwt = decodeURIComponent(String(init.body || '').split('assertion=')[1] || '');
             const claims = JSON.parse(Buffer.from((jwt.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString() || '{}');
+            if (claims.sub && tokenFail.sub503 > 0) { tokenFail.sub503--; return new Response('<html>Service Unavailable</html>', { status: 503 }); }
             if (claims.sub && tokenFail.sub) return new Response(JSON.stringify({ error: 'unauthorized_client', error_description: 'Client is unauthorized to retrieve access tokens using this method, or client not authorized for any of the scopes requested.' }), { status: 401 });
             if (!claims.sub && tokenFail.sa) return new Response(JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid JWT Signature.' }), { status: 400 });
             return new Response(JSON.stringify({ access_token: claims.sub ? 'sub-token' : 'ci-token' })); }
@@ -167,6 +168,14 @@ const failures = []; const fail = (m) => failures.push(m);
     if (v0.error !== 'drive-auth' || !/unauthorized_client/.test(v0.detail || '') || !/invalid_grant/.test(v0.detail || '') || !/invalid_grant/.test(ve.detail || '')) fail(`a link check that can't sign in should keep Google's reasons: ${JSON.stringify(v0)} / ${JSON.stringify(ve)}`);
     tokenFail.sub = false; tokenFail.sa = false;
     await call('/api/drive/status', {}, admin);
+    // a passing fault (one 503 from Google's token endpoint) is not a refusal: that one call falls back, the next one works
+    // as GDRIVE_SA_SUBJECT again (it was switched off for 10 minutes)
+    subShared = true; tokenFail.sub503 = 2;
+    const st5 = (await call('/api/drive/status', {}, admin)).body || {};   // (signs in afresh: the first 503 is its own)
+    if (st5.subjectOk !== false || !/503/.test(st5.subjectDetail || '')) fail(`the status should show the 503 as it happened: ${JSON.stringify(st5)}`);
+    const p1 = (await call('/api/drive/save', doc, trainee)).body || {}, b1 = (uploads[uploads.length - 1] || {}).bearer;
+    const p2 = (await call('/api/drive/save', doc, trainee)).body || {}, b2 = (uploads[uploads.length - 1] || {}).bearer;
+    if (!p1.ok || b1 !== 'Bearer ci-token' || !p2.ok || b2 !== 'Bearer sub-token' || p2.sub === false) fail(`one 503 shouldn't switch GDRIVE_SA_SUBJECT off: ${JSON.stringify({ p1, b1, p2, b2 })}`);
     delete env.GDRIVE_SA_SUBJECT;
     { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; delete rv.verify; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait; a link not checked yet: a ✓ is locked for its link)
     const v2 = await call('/api/drive/verify', {}, trainee), vv2 = (v2.body || {}).verify || {};
