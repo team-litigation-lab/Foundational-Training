@@ -64,8 +64,8 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
-  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are at the
-  // foot of the Batch Sheet, and the trainees' feedback is still kept)
+  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the Main Portal approves trainees,
+  // and the trainees' feedback is still kept)
   if (/Trainees & Batches|Trainee Audit|Batch Folders|Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard still has a tab the Batch Sheet replaced: ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
@@ -270,6 +270,10 @@ const failures = []; const fail = m => failures.push(m);
   if (!benRow || !/Oct 30, 2026/.test(benRow[2].v) || !/✎/.test(benRow[2].v) || !/fixed by a trainer/.test(benRow[2].f)) fail(`the fixed date isn't shown and marked: ${benRow && JSON.stringify(benRow[2])}`);
   await page.fill('#bsDateAt', '').catch(() => {});
 
+  // (📤 the trainer shared Week 1's Weekly Progress Report: each trainee's own card in their rankshare:<id>)
+  const card = (name, rank, ov) => ({ reports: { [`${BATCH}|1`]: { batch: BATCH, week: 1, range: ['2026-10-30', '2026-11-05'], sharedAt: '2026-11-05T10:00:00Z', name, rank, of: 2, overall: ov,
+    scores: { attention: ov, compliance: ov, timely: ov, communication: null, english: ov, call: null, tools: null }, comments: { attention: name + '-CARD-NOTE' }, trainer: 'Keep going.', overallComment: name + ' overall.' } } });
+  await put('rankshare:' + ids.Ada, card('Ada Active', 1, 4.2)); await put('rankshare:' + ids.Ben, card('Ben Blank', 2, 2.1));
   // 🔒 the trainee's side: Ada's 📋 My Progress is her own row and nothing about anyone else
   await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Ada Active'; state.view = 'modules'; render(); }, ids.Ada);
   await page.waitForTimeout(400);
@@ -281,7 +285,13 @@ const failures = []; const fail = m => failures.push(m);
   const MT = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, title: t.title, head: t.head, names: [...new Set(t.rows.map(r => r[t.id === 'recent' ? 1 : 0].v))] })));
   // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
   if (MT[0].id !== 'scorecard' || MT[1].id !== 'compliance' || !MT.some(x => x.title === '👤 Me')) fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
-  if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
+  // (📊 her own Weekly Progress Report, as the trainer shared it, in the report's styling: her card and nobody else's, read-only,
+  // and none of the batch's marks sheet)
+  await page.waitForFunction(() => /Ada Active-CARD-NOTE/.test((document.querySelector('.bs-mine #bs-ranking') || {}).innerText || ''), null, { timeout: 8000 }).catch(() => {});
+  const myRk = await page.evaluate(() => { const s = document.querySelector('.bs-mine #bs-ranking'); return s ? { text: s.innerText, html: s.innerHTML, cards: s.querySelectorAll('details.rks-card').length, rows: s.querySelectorAll('.rks-tbl tbody tr').length } : null; });
+  if (!myRk || !/My Weekly Progress Report/.test(myRk.text) || !/Ada Active-CARD-NOTE/.test(myRk.text) || myRk.cards !== 1 || myRk.rows !== 1) fail(`the trainee doesn't see her own Weekly Progress Report card: ${myRk && myRk.text.slice(0, 200)}`);
+  if (myRk && (/Ben/.test(myRk.text) || /Cy/.test(myRk.text))) fail('a trainee sees another trainee in her Weekly Progress Report');
+  if (myRk && /<textarea|type="number"|FTRankSummary\.(share|toggleEdit|draft)|FTRanking\./.test(myRk.html)) fail('a trainee\'s Weekly Progress Report has the trainer\'s editing, sharing or the batch\'s marks sheet');
   // (her 📤 Daily outputs with each activity's score box and its comment, in the table)
   if (!/TRAINER-NOTE/.test(await page.evaluate(() => [...document.querySelectorAll('.bs-mine #bs-outputs td.bs-ocell')].map(td => td.innerText).join(' ')))) fail('the trainee doesn\'t see her days\' comments in 📤 Daily outputs');
   // (no checklist on her page either, and no trainer's picker)
@@ -303,23 +313,33 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
   await page.waitForTimeout(600);
 
-  // 👥 Trainees & Batches at the foot of the sheet, and no tab of its own in any section (nor 💬 Trainee Feedback): Cy waits
-  // for approval there, and Approve approves her
+  // 👥 Trainees & Batches / Approvals & Batches: gone (the Main Portal approves trainees): no tab in any section, no section at
+  // the foot of the sheet, no "Go to" link; 📋 Task Trackers has no tab either. A trainee approved on this platform shows at once.
   const tabs2 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (/Trainees & Batches|Trainee Feedback/.test(tabs2) || !/Batch Sheet/.test(tabs2)) fail(`🏅 Scorecard's tabs: ${tabs2}`);
   await page.evaluate(() => { const b = [...document.querySelectorAll('.lp-admin-sec')].find(x => /Admin Master Control/.test(x.innerText)); if (b) b.click(); });
   await page.waitForTimeout(600);
   const tabs3 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (/Trainees & Batches/.test(tabs3)) fail(`🛡 Admin Master Control still has a 👥 Trainees & Batches tab: ${tabs3}`);
+  const allTabs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-sec')].map(b => { b.click(); return (document.querySelector('.lp-admin-row') || {}).innerText || ''; }).join(' | '));
+  if (/Task Trackers/.test(allTabs)) fail(`📋 Task Trackers still has a tab: ${allTabs}`);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
-  const pend = await page.evaluate(() => { const s = document.getElementById('bs-people'); return s ? { text: s.innerText, btn: !!s.querySelector('button[onclick*="approveTrainee"]') } : null; });
-  if (!pend || !/Pending Approvals/.test(pend.text) || !/Cy/.test(pend.text) || !pend.btn) fail(`the Batch Sheet has no ⏳ Pending Approvals with Cy and Approve: ${pend && pend.text.slice(0, 200)}`);
+  const foot = await page.evaluate(() => ({ people: !!document.getElementById('bs-people'), link: /Approvals &|Trainees &/.test((document.querySelector('.bs-jump') || {}).innerText || '') }));
+  if (foot.people || foot.link) fail(`the Batch Sheet still has 👥 Approvals & Batches: ${JSON.stringify(foot)}`);
+  // the batch menu: the Batch picker and 📦 Archive batch, which opens the archive dialog (js/ft-batch-admin.js) for the batch on screen
+  if (!(await page.$('.bs-batchmenu select'))) fail('the batch menu has no Batch picker');
+  if (!(await page.$('.bs-archive'))) fail('the batch menu has no 📦 Archive batch');
   else {
-    await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
-    if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('Approve on the Batch Sheet didn\'t approve Cy');
-    const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
-    if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
+    await page.click('.bs-archive'); await page.waitForTimeout(1500);
+    const dlg = await page.evaluate(() => { const o = document.querySelector('.fba-ov'); return o ? o.innerText : ''; });
+    if (!/Archive/.test(dlg) || !dlg.includes(BATCH) || !/Google Drive folder link/.test(dlg) || !/Delete the batch/.test(dlg)) fail(`📦 Archive batch doesn't open the batch's archive dialog: ${dlg.slice(0, 200)}`);
+    if (await page.$('.fba-ov [data-cancel]')) { await page.click('.fba-ov [data-cancel]'); await page.waitForTimeout(1500); }
+    if (await page.$('.fba-ov')) fail('the archive dialog didn\'t close on Cancel');
   }
+  await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
+  if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('approveTrainee didn\'t approve Cy');
+  const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
+  if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
   if (await page.evaluate(() => state.adminTab) !== 'batchsheet') { await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(2500); }
 
   // 📤 Daily outputs: in the table, each day's cell has every activity's score in a little box and its comment, two sentences
@@ -338,6 +358,20 @@ const failures = []; const fail = m => failures.push(m);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
   }
   if (await page.$('#bs-outputs .bs-oc, #bs-outputs .bs-ck-who')) fail('the 💬 Comments list is still under 📤 Daily outputs');
+  // ▸/▾ retractable by trainee and by day: Ada's row folds to each day's score and a little box per activity, the 11/2 column
+  // folds to its score alone, and both open again (kept on this browser)
+  const fold = await page.evaluate(async id => {
+    const cell = () => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'), ci = T.head.findIndex(h => /\b11\/2\b/.test(h));
+      const tr = [...document.querySelectorAll('#bs-outputs tbody tr')].find(r => /Ada/.test(r.innerText)); return { tr, c: ci > 0 && tr && tr.querySelector(`td.bs-ocell[data-c="${ci}"]`), ci }; };
+    const wait = () => new Promise(r => setTimeout(r, 300)), out = {};
+    FTBatchSheet.ofRow(id); await wait(); let x = cell();
+    out.rowFolded = !!(x.c && !x.c.querySelector('.bs-oacts') && x.c.querySelectorAll('.bs-omini .bs-sbox').length === 4 && x.tr.classList.contains('bs-orow-f'));
+    FTBatchSheet.ofRow(id); await wait(); x = cell(); out.rowOpen = !!(x.c && x.c.querySelectorAll('.bs-oacts li').length === 4);
+    const btn = document.querySelectorAll('#bs-outputs thead .gs-head th')[x.ci + 1].querySelector('.bs-ofold-btn'); if (btn) btn.click(); await wait(); x = cell();
+    out.dayFolded = !!(x.c && x.c.classList.contains('bs-ocol-f') && !x.c.querySelector('.bs-oacts') && !x.c.querySelector('.bs-omini'));
+    FTBatchSheet.ofDays(false); await wait(); x = cell(); out.dayOpen = !!(x.c && x.c.querySelector('.bs-oacts'));
+    return out; }, ids.Ada);
+  if (!fold.rowFolded || !fold.rowOpen || !fold.dayFolded || !fold.dayOpen) fail(`📤 Daily outputs doesn't fold by trainee and by day: ${JSON.stringify(fold)}`);
   // (the AI's full review stays in the cell's formula bar text, and ⬇ Download carries the comments)
   const ocF = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'); const r = T.rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => (c.f || '') + '|' + (c.csv || '')).join(' ') : ''; });
   if (!/AI-NOTES/.test(ocF) || !/Typing & Spelling 67%: Took/.test(ocF)) fail(`the day's full text (formula bar / download) is missing the AI's review or the comments: ${ocF.slice(0, 300)}`);

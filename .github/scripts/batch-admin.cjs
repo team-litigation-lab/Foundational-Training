@@ -149,13 +149,13 @@ async function workerChecks() {
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
+    // (👥 Trainees & Batches, its 📁 Batch Folders and 🚫 Offboarded VAs shelf, is gone from Admin: the old page opens the 📋 Batch
+    // Sheet, which has no Approvals & Batches section; ↩ Restore access, restoreOffboarded, still gives the access back)
     await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
     let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
-    if (!/Offboarded VAs \(1\)[\s\S]*Cara Lim/.test(shelf)) fail('Cara isn\'t under 🚫 Offboarded VAs');
-    const b1 = await page.evaluate(() => { const c = [...document.querySelectorAll('.batch-folder')].find(x => /B103026/.test(x.innerText)); return c ? c.innerText : ''; });
-    if (!/2 trainees/.test(b1)) fail(`the batch folder still counts the offboarded VA: ${b1}`);
+    if (/Offboarded VAs \(|Batch Folders/.test(shelf) || await page.$('#bs-people')) fail('👥 Trainees & Batches (Batch Folders, 🚫 Offboarded VAs) still shows in Admin');
     page.once('dialog', d => d.accept());
-    await page.click('button[data-id="cara-lim--b103026"]'); await page.waitForTimeout(1500);
+    await page.evaluate(() => restoreOffboarded('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
     // 📦 archive B103026: Drive answered by the test (the test server has no service account)
     const sent = { files: null, trainees: [] };
@@ -182,11 +182,9 @@ async function workerChecks() {
     if (!(await get('progress:old-one--b090126'))) fail('another batch was cleared');
     const bb = await get('batchbackup:B103026');
     if (!bb || bb.folder !== 'https://drive.google.com/drive/folders/F1' || bb.count !== 3 || !bb.cleared) fail(`the batch's backup isn't recorded: ${JSON.stringify(bb)}`);
-    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(2000);
-    shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
-    if ([...await page.$$eval('.batch-folder', xs => xs.map(x => x.innerText))].some(t => /B103026/.test(t))) fail('the cleared batch is still in Batch Folders');
-    if (!/Saved to Google Drive \(1\)[\s\S]*B103026[\s\S]*3 VAs/.test(shelf)) fail('the batch isn\'t under ☁ Saved to Google Drive');
-    if (!/B090126/.test(shelf)) fail('the other batch left Batch Folders');
+    // (the cleared batch's trainees: archived and cleared; the other batch untouched, as the records above show)
+    const kept = await get('trainee:old-one--b090126');
+    if (!kept || kept.archived || kept.purgedAt) fail(`the other batch was touched by B103026's archive: ${JSON.stringify(kept)}`);
     // 🗑 Delete the batch (in the 📦 Archive dialog): a wrong Batch ID typed back deletes nothing; the right one removes every
     // VA's records and their trainee record, with no Drive backup
     await page.evaluate(() => confirmArchiveBatch('B090126')); await page.waitForTimeout(400);

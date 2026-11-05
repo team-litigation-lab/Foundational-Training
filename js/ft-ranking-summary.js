@@ -137,6 +137,7 @@ async function draft(){
   Object.entries(prev.rows || {}).forEach(([id, r]) => { if(rows[id] && r.edited){ rows[id] = Object.assign(rows[id], {scores: Object.assign(rows[id].scores, r.scoresEdited || {}), comments: Object.assign(rows[id].comments, r.commentsEdited || {}), trainer: r.trainerEdited || rows[id].trainer},
     {edited: true, scoresEdited: r.scoresEdited, commentsEdited: r.commentsEdited, trainerEdited: r.trainerEdited}); } });
   S.data = {batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
+  if(prev.sharedAt){ S.data.sharedAt = prev.sharedAt; S.data.editedAt = S.data.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
   if(await sharedSet(key, S.data) === false) toast("Couldn’t save the summary. Check your connection.");
   S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
@@ -149,12 +150,15 @@ const LBL = {ex: "Excellent", gd: "Good", ok: "Developing", lo: "Needs improveme
 const fmtR = r => { if(!r) return ""; const f = d => new Date(d + "T12:00:00Z").toLocaleDateString(undefined, {month: "long", day: "numeric", year: "numeric", timeZone: "UTC"}); return `${f(r[0])} – ${f(r[1])}`; };
 
 /* ---------- the report ---------- */
-function reportHtml(forDoc){
-  const c = ctx() || {}, d = S.data, rows = ranked(), ed = S.edit && !forDoc;
+// V: a trainee's own copy (📋 My Progress, FTRankSummary.mine): {c: {batch, week}, d: {range, at, ai}, rows: [their own row]} —
+// the same report, read-only, with no one else in it
+function reportHtml(forDoc, V){
+  const c = V ? V.c : (ctx() || {}), d = V ? V.d : S.data, rows = V ? V.rows : ranked(), ed = S.edit && !forDoc && !V;
+  const fk = r => V ? `me:${c.batch}|${c.week}` : r.id;   // which card a fold is kept for
   const chip = v => `<span class="rks-chip rks-${tone(v)}">${v == null ? "—" : v.toFixed(1)}</span>`;
   const bar = v => `<span class="rks-bar"><i class="rks-${tone(v)}" style="width:${v == null ? 0 : Math.round(v / 5 * 100)}%"></i></span>`;
   return `<div class="rks${forDoc ? " rks-doc" : ""}">
-    <div class="rks-head"><div><p class="rks-k">Legal Support Help · Foundational Training</p><h2>Weekly Progress Report</h2>
+    <div class="rks-head"><div><p class="rks-k">Legal Support Help · Foundational Training</p><h2>${V ? "My Weekly Progress Report" : "Weekly Progress Report"}</h2>
       <p class="rks-sub">Batch <b>${e(c.batch)}</b> · Week <b>${e(c.week)}</b>${d && d.range ? ` · ${e(fmtR(d.range))}` : ""}</p></div>
       <div class="rks-legend">${["ex", "gd", "ok", "lo"].map(t => `<span><i class="rks-${t}"></i>${LBL[t]}</span>`).join("")}<small>Scores out of 5</small></div></div>
     <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th></tr></thead>
@@ -162,14 +166,14 @@ function reportHtml(forDoc){
     ${rows.map(r => {
       // ▸/▾ on the page each trainee's card folds to its heading (rank, name, the seven scores and the overall); ✎ Edit opens them
       // all, and the Word and Print copies are always open. Which are open is kept while the page is (S.open).
-      const head = `<span class="rks-rk">#${r.rank || "—"}</span><b>${e(r.name)}</b>${forDoc ? "" : `<span class="rks-mini">${COMP.map(([k, ic, n]) => `<span title="${e(n)}">${ic}${chip(r.scores[k])}</span>`).join("")}</span>`}<span class="rks-ov">${chip(r.overall)} ${LBL[tone(r.overall)]}</span>`;
-      const open = forDoc || ed || (S.open || {})[r.id];
-      return `${forDoc ? `<section class="rks-card"><div class="rks-card-h">${head}</div>` : `<details class="rks-card" data-id="${e(r.id)}" ontoggle="FTRankSummary.fold(this)"${open ? " open" : ""}><summary class="rks-card-h"><span class="rks-caret" aria-hidden="true">▸</span>${head}</summary>`}
+      const head = `<span class="rks-rk">#${r.rank || "—"}${V && r.rank && r.of ? `<small> of ${r.of}</small>` : ""}</span><b>${e(r.name)}</b>${forDoc ? "" : `<span class="rks-mini">${COMP.map(([k, ic, n]) => `<span title="${e(n)}">${ic}${chip(r.scores[k])}</span>`).join("")}</span>`}<span class="rks-ov">${chip(r.overall)} ${LBL[tone(r.overall)]}</span>`;
+      const was = (S.open || {})[fk(r)], open = forDoc || ed || (V ? was !== false : was);   // (a trainee's own card starts open)
+      return `${forDoc ? `<section class="rks-card"><div class="rks-card-h">${head}</div>` : `<details class="rks-card" data-id="${e(fk(r))}" ontoggle="FTRankSummary.fold(this)"${open ? " open" : ""}><summary class="rks-card-h"><span class="rks-caret" aria-hidden="true">▸</span>${head}</summary>`}
       ${r.overallComment ? `<p class="rks-ovc">${e(r.overallComment)}</p>` : ""}
       <div class="rks-grid">${COMP.map(([k, ic, n]) => `<div class="rks-comp"><div class="rks-comp-h"><span>${ic} ${e(n)}</span>${ed ? `<input type="number" min="0" max="5" step="0.1" value="${r.scores[k] == null ? "" : r.scores[k]}" onchange="FTRankSummary.set('${e(r.id)}','score','${k}',this.value)">` : chip(r.scores[k])}</div>${bar(r.scores[k])}
         ${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','comment','${k}',this.value)">${e(r.comments[k] || "")}</textarea>` : `<p>${e(r.comments[k] || "")}</p>`}</div>`).join("")}</div>
       <div class="rks-fb"><b>🧑‍🏫 Feedback from the trainer</b>${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','trainer','',this.value)">${e(r.trainer || "")}</textarea>` : `<p>${e(r.trainer || "")}</p>`}</div>${forDoc ? "</section>" : "</details>"}`; }).join("")}
-    ${d ? `<p class="rks-foot">Prepared ${e(new Date(d.at).toLocaleString())} from the platform's records of the week${d.ai ? ", summarized in the facilitator's voice" : ""}.</p>` : ""}</div>`;
+    ${d ? `<p class="rks-foot">${V ? "Shared with you" : "Prepared"} ${e(new Date(d.at).toLocaleString())} from the platform's records of the week${d.ai ? ", summarized in the facilitator's voice" : ""}.</p>` : ""}</div>`;
 }
 const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,#1E2340,#33406B);color:#fff;margin:0 0 12px;}
@@ -208,7 +212,8 @@ window.FTRankSummary = {
       (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     const d = S.data;
     return `<div class="rks-wrap"><div class="rks-bar-acts"><select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
-        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(true)">▾ Expand all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(false)">▸ Collapse all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.word()">⬇ Word</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.print()">🖨 Print</button>` : ""}
+        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(true)">▾ Expand all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(false)">▸ Collapse all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.word()">⬇ Word</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.print()">🖨 Print</button>` : ""}
+        ${d && d.sharedAt ? `<span class="rks-note">📤 Shared ${e(new Date(d.sharedAt).toLocaleString())}${d.editedAt && d.editedAt > d.sharedAt ? " — edited since: share again for the trainees to see it" : ""}.</span>` : ""}
         <span class="rks-note">Each trainee's week: seven competencies scored out of 5 with a summarized comment, and the trainer's feedback.</span></div>
       ${S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
@@ -221,11 +226,40 @@ window.FTRankSummary = {
   },
   busy: () => !!S.busy,
   draft, toggleEdit(){ S.edit = !S.edit; redraw(); },
+  // 📤 each trainee gets their own card of this week in rankshare:<id> (reports), which only they and the trainers read
+  // (worker.js canRead; a trainee can't write it): their scores, comments and the trainer's feedback, their rank and how many
+  // were ranked — no one else's name or scores
+  async share(){
+    const d = S.data; if(!d || S.sharing) return;
+    const rows = ranked(), of = rows.filter(r => r.rank).length;
+    if(!rows.length){ toast("No trainee in this summary."); return; }
+    if(!confirm(`Share Week ${d.week}'s Weekly Progress Report with the ${rows.length} trainee${rows.length === 1 ? "" : "s"} of ${d.batch}?\n\nEach sees only their own card: their scores, comments and your feedback, and their rank.`)) return;
+    S.sharing = true; redraw(); let bad = 0; const at = new Date().toISOString();
+    for(const r of rows){
+      const mine = {batch: d.batch, week: d.week, range: d.range || null, ai: !!d.ai, sharedAt: at, name: r.name, rank: r.rank || null, of, overall: r.overall,
+        scores: Object.assign({}, r.scores), comments: Object.assign({}, r.comments), trainer: r.trainer || "", overallComment: r.overallComment || ""};
+      try{ const cur = (await sharedGet("rankshare:" + r.id)) || {}; cur.reports = cur.reports || {}; cur.reports[`${d.batch}|${d.week}`] = mine;
+        if(await sharedSet("rankshare:" + r.id, cur) === false) bad++; }catch(err){ bad++; }
+    }
+    if(!bad){ d.sharedAt = at; await sharedSet(keyOf(d.batch, d.week), d); }
+    S.sharing = false; toast(bad ? `Couldn’t share with ${bad} trainee(s). Try again.` : "📤 Shared: each trainee sees their own card in 📋 My Progress."); redraw();
+  },
+  // 🔒 a trainee's own reports (📋 My Progress): read from their rankshare:<id> only
+  mine(me){
+    if(!me || !me.id) return "";
+    if(S.meFor !== me.id){ S.meFor = me.id; S.mine = null;
+      Promise.resolve(typeof sharedGet === "function" ? sharedGet("rankshare:" + me.id) : null).then(v => { S.mine = v || {}; }, () => { S.mine = {}; }).then(() => { if(typeof render === "function") render(); }); }
+    if(S.mine == null) return `<p class="sc-empty">Opening your Weekly Progress Report…</p>`;
+    const reps = Object.values(S.mine.reports || {}).filter(r => r && r.scores).sort((a, b) => Number(b.week) - Number(a.week) || String(b.sharedAt).localeCompare(String(a.sharedAt)));
+    if(!reps.length) return `<p class="sc-empty">Your trainer hasn’t shared a Weekly Progress Report with you yet. It shows up here once they do.</p>`;
+    return reps.map(r => reportHtml(false, {c: {batch: r.batch, week: r.week}, d: {range: r.range, at: r.sharedAt, ai: r.ai},
+      rows: [{id: me.id, name: r.name || me.name, rank: r.rank, of: r.of, overall: r.overall, scores: r.scores || {}, comments: r.comments || {}, trainer: r.trainer, overallComment: r.overallComment}]})).join("");
+  },
   fold(el){ (S.open = S.open || {})[el.dataset.id] = el.open; },
   foldAll(open){ S.open = {}; Object.keys((S.data || {}).rows || {}).forEach(id => { S.open[id] = open; });
     document.querySelectorAll("details.rks-card").forEach(d => { d.open = open; }); },
   async set(id, what, k, v){
-    const r = ((S.data || {}).rows || {})[id]; if(!r) return; r.edited = true;
+    const r = ((S.data || {}).rows || {})[id]; if(!r) return; r.edited = true; S.data.editedAt = new Date().toISOString();
     if(what === "score"){ const n = v === "" ? null : Math.max(0, Math.min(5, Number(v))); r.scores[k] = n == null ? null : r1(n); r.scoresEdited = Object.assign({}, r.scoresEdited, {[k]: r.scores[k]}); }
     else if(what === "comment"){ r.comments[k] = String(v).trim(); r.commentsEdited = Object.assign({}, r.commentsEdited, {[k]: r.comments[k]}); }
     else { r.trainer = String(v).trim(); r.trainerEdited = r.trainer; }
