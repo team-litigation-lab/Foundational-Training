@@ -1526,7 +1526,7 @@ const NAMING = {
   tracker: { batch: true, rule: "LSH Daily Task Tracker | BatchID Your Name" } };
 const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/.test(batch) ? batch : "BatchID").replace("Your Name", name || "Your Name");
 const GENERIC = { typing: true, spelling: true, folder: true };
-const nameWords = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+const nameWords = (t) => slugPart(t).split("-").filter(Boolean);
 // a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
 // a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
 const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
