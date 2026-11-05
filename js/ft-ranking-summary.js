@@ -167,6 +167,8 @@ async function draft(){
   const voice = typeof window.fbStyleBlock === "function" ? (window.fbStyleBlock() || "") : "";
   const rows = {}; let ai = 0;
   for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name}, sm); }catch(err){} if(S.key !== key) break; }
+  // (another week picked meanwhile: nothing is saved over this week's summary, nor shown as that week's)
+  if(S.key !== key){ S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); } redraw(); return; }
   const prev = S.data || {};
   // (what a trainer edited by hand stays)
   Object.entries(prev.rows || {}).forEach(([id, r]) => { if(rows[id] && r.edited){ rows[id] = Object.assign(rows[id], {scores: Object.assign(rows[id].scores, r.scoresEdited || {}), comments: Object.assign(rows[id].comments, r.commentsEdited || {}), trainer: r.trainerEdited || rows[id].trainer},

@@ -55,6 +55,20 @@ const failures = []; const fail = m => failures.push(m);
     if (!r || r.scores.call !== 4) fail(`without the AI, Call Handling isn't the mock call's 4.0: ${r && r.scores.call}`);
     const doc = await page.evaluate(() => FTRankSummary.doc());
     if (!/Weekly Progress Report/.test(doc) || !/Rosa Report/.test(doc) || !/Call Handling/.test(doc)) fail('⬇ Word doesn\'t give the report');
+    // another week picked while a week is being summarized: nothing is saved over the first week's summary, and the week now
+    // on screen isn't shown the first week's (the AI made slow, so Week 2 is picked mid-way)
+    await put(`rksum:${BATCH}:w2`, null);
+    const before = (await get(`rksum:${BATCH}:w1`) || {}).at;
+    await page.evaluate(() => { window.callAIJson = async () => { await new Promise(r => setTimeout(r, 2500)); throw new Error('no AI'); }; });
+    await page.evaluate(() => { FTRankSummary.draft(); }); await page.waitForTimeout(600);
+    await page.evaluate(() => FTRanking.week(2)); await idle(); await page.waitForTimeout(3000); await idle();
+    const after = (await get(`rksum:${BATCH}:w1`) || {}).at;
+    if (after !== before) fail(`Week 1's summary was saved over after Week 2 was picked mid-way: ${before} → ${after}`);
+    const w2 = await get(`rksum:${BATCH}:w2`);
+    if (w2 && Number(w2.week) !== 2) fail(`Week 2's summary is Week ${w2.week}'s`);
+    const shown = await page.evaluate(() => (document.querySelector('#bs-ranking .rks-wrap') || {}).innerText || '');
+    if (/EDITED-BY-TRAINER/.test(shown)) fail('Week 2 shows Week 1\'s summary');
+    await put(`rksum:${BATCH}:w2`, null);
     await put(`rksum:${BATCH}:w1`, null); await put('labreview:' + id, null); await put('feedback:' + id, null);
     const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   } catch (e) { fail(e.stack || String(e)); }
