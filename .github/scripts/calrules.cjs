@@ -130,6 +130,17 @@ async function workerChecks() {
   if (!/92%/.test(shown) || !/11 of 12 rules/.test(shown) || !/An email reminder a day before/.test(shown)) fail(`the booking isn't shown checked with the reminder missed: ${shown.slice(0, 300)}`);
   const rec = await get('calrules:' + id);
   if (!rec || rec.bookings.length !== 1 || rec.bookings[0].pct !== 92 || rec.bookings[0].mode !== 'trainer') fail(`the booking wasn't saved: ${JSON.stringify(rec)}`);
+  // a failed read: the page says so, shows no form, and a booking or a removal saves nothing over the log
+  await page.route('**/api/storage/get', async (route) => { if (/calrules:/.test(route.request().postData() || '')) return route.fulfill({ status: 503, body: '{}' }); return route.continue(); });
+  await page.evaluate(() => { const R = FTCalRules.state(); R.rec = null; R.recId = null; render(); }); await page.waitForTimeout(1200);
+  if (!/Couldn’t load your bookings/.test(await page.evaluate(() => document.querySelector('main').innerText)) || await page.$('#crScn')) fail('a failed read of the booking log shows an empty form');
+  if (await page.$('#crScn')) { await page.selectOption('#crScn', 'new-pi'); await page.fill('#crDate', bad.tue); await page.fill('#crStart', '10:00'); await page.fill('#crLength', '30'); }
+  await page.evaluate(async () => { FTCalRules.remove('x'); await FTCalRules.submit(); }); await page.waitForTimeout(800);
+  await page.unroute('**/api/storage/get');
+  const kept = await get('calrules:' + id);
+  if (!kept || kept.bookings.length !== 1 || kept.bookings[0].id !== (rec && rec.bookings[0].id)) fail(`a failed read let the booking log be overwritten: ${JSON.stringify(kept)}`);
+  await page.click('.cr-loadfail button').catch(() => {}); await page.waitForTimeout(1200);
+  if (!/Your bookings/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('↻ Try again doesn\'t bring the bookings back');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (on 📅 Calendar checks, one card with the Calendar activity: no card of its own)
   { const main = await page.evaluate(() => document.querySelector('main').innerText);
