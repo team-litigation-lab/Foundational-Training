@@ -398,7 +398,10 @@ function peopleHtml(){
   window[fn] = async function(){ const r = await was.apply(this, arguments); if(on() && adminOn()){ if(typeof state === "object") state.adminData = null; B.dataKey = ""; if(!B.loading) loadPeople(); } return r; }; });
 // 📊 the Weekly Ranking (js/ft-ranking.js), below the Day 1–16 scores, for the same batch
 function rankingHtml(){
-  if(meOn() || !window.FTRanking || !FTRanking.embed) return "";
+  // 🔒 a trainee: their own Weekly Progress Report, as the trainer shared it with them (rankshare:<id>: only theirs), in the
+  // report's own styling — no one else's row, no editing, no ranking sheet
+  if(meOn()) return window.FTRankSummary && FTRankSummary.mine ? `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 My Weekly Progress Report</h3>${FTRankSummary.mine(B.me)}</section>` : "";
+  if(!window.FTRanking || !FTRanking.embed) return "";
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
@@ -1104,7 +1107,7 @@ function renderMine(){
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
       <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
-    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
+    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 My Weekly Report</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
