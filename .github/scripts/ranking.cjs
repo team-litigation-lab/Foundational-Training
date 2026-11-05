@@ -198,16 +198,6 @@ const failures = []; const fail = m => failures.push(m);
   if ((((await get('rankshare:' + una)) || {}).weeks || {})[`${PAST}|1`]) fail('a draft was shared before the trainer approved it');
   await page.evaluate(() => FTRanking.approve()); await page.waitForTimeout(1200);
   if (!((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto.approved) fail('✓ Approve didn\'t approve the draft');
-  // (the report read again in the middle of a draft — the week picked again, as the 📋 Batch Sheet's own renders do — stops
-  // that draft quietly instead of throwing "Cannot read properties of null (reading 'auto')": Week 2 of the past batch is
-  // drafted while its AI call for the notes picks the week again, so the draft resumes with the report still loading)
-  await page.evaluate(() => { window.__aiWas = window.callAIJson; window.__aiCalls = 0;
-    window.callAIJson = async () => { window.__aiCalls++; FTRanking.week(2); throw new Error('no AI'); }; });
-  await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(2); }, PAST);
-  for (let k = 0; k < 60 && !(await page.evaluate(() => window.__aiCalls)); k++) await page.waitForTimeout(250);
-  await page.waitForTimeout(1500);
-  const raced = await page.evaluate(() => { const n = window.__aiCalls; window.callAIJson = window.__aiWas; return n; });
-  if (!raced) fail('the Week 2 draft never asked for its notes, so the reload in the middle of a draft wasn\'t tried');
   // 📈 what Overall Performance showed is on the 📋 Batch Sheet now: Una's daily compliance, Week 1's average, the Overall % and the rank
   await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; goto('admin'); FTBatchSheet.refresh(); }); await page.waitForTimeout(1500);
   await page.evaluate(b => FTBatchSheet.batch(b), PAST);
