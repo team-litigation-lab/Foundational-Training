@@ -10,7 +10,7 @@
      1. 👥 Trainees: everyone registered in the batch (waiting for approval too), when they registered, when they were last
         on the platform, how far they are and what they were last doing.
      2. 📚 Lessons: a column per lesson — the lesson deck (✓ finished, or how far into it), the Knowledge Check score.
-     3. 🛠 Practice Lab: the tools practised in, the attempts, the last practice, and each tool's attempts · average.
+     3. 🛠 Practice Lab: the tools practiced in, the attempts, the last practice, and each tool's attempts · average.
      4. 🏅 Scores: a column per grading system (the 🏅 Scorecard's own, js/lsh-program.js compute), the Overall and the rank.
      5. 🕒 Recent progress: everything they did, newest first: registered, opened / finished a lesson deck, Knowledge Check
         attempts, practice in the tools (Practice Lab, roleplays, random tasks), Typing & Spelling tests, Portal simulators.
@@ -844,15 +844,15 @@ function recentTable(){
       {v: x.detail, f: x.detail, cls: "gs-txt"},
       {v: pct(x.score), f: x.score == null ? "" : `${x.score}%`, cls: "gs-num " + tone(x.score)}])};
 }
-/* 🛠 Practice Lab: how much each trainee uses it — the tools they have practised in, their attempts and when they last
-   practised, then a column per tool (attempts · average). The Practice Lab's own grading systems come from the Scorecard
+/* 🛠 Practice Lab: how much each trainee uses it — the tools they have practiced in, their attempts and when they last
+   practiced, then a column per tool (attempts · average). The Practice Lab's own grading systems come from the Scorecard
    (the same items 🏅 Scorecards counts); the AI-graded practice tools and roleplays from the trainee's work log. */
 const LAB = ["sessions", "calls", "calendar", "calcheck", "calrules", "calweek", "drills", "listening", "skills", "portalsims"];
 const PRACTICE = new Set(["Practice in a tool", "Roleplay practice", "Typing test", "Spelling test", "Simulator practice"]);
 function practiceTable(){
   const ppl = people(), S = B.data.sources.filter(s => LAB.includes(s.id)), all = events();
   const cols = [{id: "ai", label: "🤖 Practice tools (AI-graded)"}, {id: "rp", label: "🎭 Roleplays"}].concat(S.map(s => ({id: s.id, label: `${s.icon || ""} ${s.label}`.trim(), s})));
-  return {id: "practice", title: "🛠 Practice Lab", note: `${meOn() ? "How much you use" : "How much each trainee uses"} the Practice Lab: the tools practised in (of ${cols.length}), every attempt, the last time, then each tool (attempts · average score). Blank: not used yet.`,
+  return {id: "practice", title: "🛠 Practice Lab", note: `${meOn() ? "How much you use" : "How much each trainee uses"} the Practice Lab: the tools practiced in (of ${cols.length}), every attempt, the last time, then each tool (attempts · average score). Blank: not used yet.`,
     head: ["Trainee", "Tools used", "Attempts", "Last practice"].concat(cols.map(c => c.label)),
     rows: ppl.map(p => {
       const R = B.data.rec[p.id] || {}, wl = Array.isArray((R.data || {})["work-log"]) ? R.data["work-log"] : [];

@@ -161,7 +161,7 @@ function caseCard(c){
     <p class="ftis-mc-facts">${e(c.facts || "")}</p>
     <p class="ftis-mc-do">${onFile(c) ? `The caller’s case is on file: <b>${e((caseDoc(c) || {}).title || c.doc)}</b> opens in the Prototype CMS. Verify the caller first, then work the call from the file.`
       : "Nothing is on file yet: open a blank intake in the Prototype CMS and enter what you gather straight into its fields as the caller talks."}</p>
-    <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 Open the Prototype CMS ↗", "btn-navy")}${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div></div>`;
+    <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 Open the Prototype CMS ↗", "btn-navy")}${linkBtn(SIM, "☎ Practice the Intake line ↗")}</div></div>`;
 }
 // the trainer's view of a case: where to pick it on Ring Channel, the caller's opening, script and goals, the CMS file
 function trainerCase(c, who){
@@ -177,21 +177,12 @@ function trainerCase(c, who){
 function mockcallHtml(el){
   const calls = mockCalls();
   const trainer = isTrainerView();
-  const head = `<div class="ftis-pk-h"><b>🎬 ${trainer ? "Intake Demo cases: the CMS’s intake calls, the same calls on Ring Channel" : "Your Intake Demo case"}</b></div>`;
+  // (no list of every case for the trainer on the slide: cases are assigned with the packets in Admin → 📦 Intake; the box hides)
+  if(trainer) return "";
+  const head = `<div class="ftis-pk-h"><b>🎬 Your Intake Demo case</b></div>`;
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
-  if(trainer){
-    freshAdmin();
-    // every batch's trainees on their case (a batch's name beside each when more than one batch has cases assigned)
-    const by = {}, rows = AD.rows || [], tagged = rows.filter(r => ((AD.recs || {})[r.id] || {}).call);
-    const several = new Set(tagged.map(r => r.batch)).size > 1;
-    tagged.forEach(r => { const c = AD.recs[r.id].call; (by[c] = by[c] || []).push(r.name.split(/\s+/)[0] + (several && r.batch ? ` (${r.batch})` : "")); });
-    return head + `<p class="ftis-pk-note">Each trainee’s demo case comes with their packet: play it from Ring Channel while they work it in the Prototype CMS and save the packet and the extracted intake documents to SA. Each trainee sees their case on this slide once their packet is assigned.</p>
-      ${calls.map(c => trainerCase(c, (by[c.id] || []).join(", "))).join("")}
-      <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📦 Assign the packets</button></div>`;
-  }
   const c = isTrainee() && K.mine && K.mine.call ? callById(K.mine.call) : null;
-  if(isTrainerView() && !trainer) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>The trainee’s demo case appears here</b><small>Each trainee sees only their own case: who calls, what they know going in and the Prototype CMS. Never the caller’s script.</small></div></div>`;
-  if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your demo case appears here</b><small>It comes with the packet your trainer assigns you, before the demo. Until then, practise on the Intake line.</small></div>${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div>`;
+  if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your demo case appears here</b><small>It comes with the packet your trainer assigns you, before the demo. Until then, practice on the Intake line.</small></div>${linkBtn(SIM, "☎ Practice the Intake line ↗")}</div>`;
   return head + caseCard(c);
 }
 // the trainer's scoring sheet: the picked trainee's case
@@ -592,6 +583,7 @@ window.FTIntake = {
 .ftis-dedit > p, .ftis-dedit > .ftis-asave{grid-column:1/-1;margin:0;} .ftis-dedit label{display:flex;flex-direction:column;font-size:12.5px;gap:2px;} .ftis-dedit input{padding:5px 8px;border:1px solid #C9D1E0;border-radius:6px;font:inherit;}
 .ftis-doc-t small{display:block;color:#8A93A6;font-weight:400;}
 .ftis-pk-link{margin:10px 0 0;text-align:left;} .ftis-pk-link small{display:block;color:#5F6368;margin:2px 0 4px;}
+.ftis-mockcall:empty{display:none;}
 .ftis-mockcall{background:#FFF8EF;border:2px dashed #DB8437;border-radius:12px;padding:12px 16px;margin:8px 0 10px;color:#1B1E2E;text-align:left;}
 .ftbf .ftis-mockcall{margin:12px auto;max-width:720px;}
 .ftis-mc-card{background:#fff;border:1px solid #DCE0EA;border-left:5px solid #262B45;border-radius:12px;padding:10px 14px;margin:6px 0 2px;}

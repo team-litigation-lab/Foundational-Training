@@ -237,12 +237,12 @@ const failures = []; const fail = m => failures.push(m);
   const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
   if (!/^\d+%$/.test(d1.v.replace('✓ ', '')) || !/Process Questions 90%/.test(d1.f) || !/ [2-9]\d* of \d+ done/.test(d1.f)) fail(`Ada's Day 1 isn't her score with the ticks counted: ${d1.v} · ${d1.f}`);
 
-  // 🛠 Practice Lab: Ada practised in a tool (82%) and took a typing test; Ben hasn't practised
+  // 🛠 Practice Lab: Ada practiced in a tool (82%) and took a typing test; Ben hasn't practiced
   const pl = by('practice'), pa = pl.rows.find(r => /Ada/.test(r[0])), pb = pl.rows.find(r => /Ben/.test(r[0]));
   if (JSON.stringify(pl.head.slice(0, 4)) !== JSON.stringify(['Trainee', 'Tools used', 'Attempts', 'Last practice'])) fail(`🛠 Practice Lab's columns: ${pl.head.slice(0, 4)}`);
   const aiCol = pl.head.findIndex(h => /AI-graded/.test(h));
   if (!pa || !/^[1-9]\d* \//.test(pa[1]) || !(Number(pa[2]) >= 2) || /Not yet/.test(pa[3]) || pa[aiCol] !== '1 · 82%') fail(`🛠 Practice Lab for Ada: ${pa}`);
-  if (!pb || !/^0 \//.test(pb[1]) || pb[3] !== 'Not yet') fail(`🛠 Practice Lab for Ben, who hasn't practised: ${pb}`);
+  if (!pb || !/^0 \//.test(pb[1]) || pb[3] !== 'Not yet') fail(`🛠 Practice Lab for Ben, who hasn't practiced: ${pb}`);
   // a time, not "just now"
   if (/ago|just now/.test(tr.map(r => r[3]).join(' ')) || !/\d{1,2}:\d{2}/.test(ada[3])) fail(`"Last on the platform" isn't a date and time: ${tr.map(r => r[3])}`);
 

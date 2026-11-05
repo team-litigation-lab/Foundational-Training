@@ -757,7 +757,7 @@ function waitBox(s, info){
   if(/data-nowait/.test(String(s.html || ""))) return "";
   const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
   const sim = SIM_OF[l], acts = [];
-  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
+  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practice ${sim[1]} on the Call Simulator</button>`);
   if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
   if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
   if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.toKC(${l})">✍️ Knowledge Check</button>`);
@@ -1429,7 +1429,7 @@ const LESSON_CARDS = {
     tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
       "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
-    dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
+    dayTools: {4: ["Call Simulator: practice reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
@@ -1911,12 +1911,12 @@ const KINDS = [["instruction", "📝", "Instruction"], ["practice", "☎", "Prac
 const kindOfX = k => KINDS.find(x => x[0] === k) || KINDS[0];
 const SIMS = "https://cm-training-activity.pages.dev/simulators/call.html?";
 const callSim = line => SIMS + new URLSearchParams({program: "FT", line});
-// one click for a mock-call day: practise on the simulators while waiting for your turn
+// one click for a mock-call day: practice on the simulators while waiting for your turn
 const PRESETS = [
-  {label: "☎ Reception calls", kind: "practice", title: "Practise reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
-  {label: "☎ Intake calls", kind: "practice", title: "Practise intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
-  {label: "☎ Calendar calls", kind: "practice", title: "Practise calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
-  {label: "🛠 Practice Lab", kind: "practice", title: "Practise in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
+  {label: "☎ Reception calls", kind: "practice", title: "Practice reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
+  {label: "☎ Intake calls", kind: "practice", title: "Practice intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
+  {label: "☎ Calendar calls", kind: "practice", title: "Practice calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
+  {label: "🛠 Practice Lab", kind: "practice", title: "Practice in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
 ];
 function loadExtras(force){
   if(X.loading) return X.loading;
@@ -1951,7 +1951,7 @@ function trainerSlide(n){
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
       <div class="ftdd-xgrid">
         <label>Type<select id="ftddXKind">${KINDS.map(k => `<option value="${k[0]}"${f.kind === k[0] ? " selected" : ""}>${k[1]} ${k[2]}</option>`).join("")}</select></label>
-        <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practise intake calls on the Call Simulator"></label>
+        <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practice intake calls on the Call Simulator"></label>
         <label class="full">Instructions<textarea id="ftddXText" rows="3" placeholder="What the trainee does, step by step">${e(f.text || "")}</textarea></label>
         <label class="full">Link (optional — a video, a document, a folder or a simulator)<input id="ftddXUrl" value="${e(f.url || "")}" placeholder="https://…"></label>
       </div><button type="button" class="btn btn-navy btn-sm" onclick="FTDayDecks.addX(${n})">➕ Add it</button></div>` : ""}`;

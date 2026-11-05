@@ -134,7 +134,6 @@ const DAYS = [
     {t:"Claims Terminology Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
-    {t:"🎧 Call Listening on the insurance communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Claim and Liability Evaluation: Assessment Activities 1 & 2", kind:"Assessment", at:"drive"},
     {t:"Policy Disclosure activity (the Dec Page for each claim)", kind:"Activity", at:"gc"},
     {t:"LOR Drafting Activity: the 1P and 3P letters", kind:"Activity", at:"tool", id:"lor"}

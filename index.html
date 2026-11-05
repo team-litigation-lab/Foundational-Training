@@ -1096,7 +1096,7 @@ rect.svg-callout-badge{animation:none;}
 /* ============================================================
    GMAIL LOOK-ALIKE (.gm-*) — the same skin the Training Portal's email
    simulators use (its simulators/gmail.css). Every email simulator in the
-   programme mimics Gmail, so a trainee practises in the client they will
+   programme mimics Gmail, so a trainee practices in the client they will
    actually use at work. Generic "M Mail" wordmark; no Google branding.
    ============================================================ */
 :root{--ft-gmail-skin:1;}   /* the update pack checks this and skips its own copy */
@@ -7570,7 +7570,7 @@ function renderFocusAdmin(rec){
         <span class="fa-state">${x.doneAt?"✓ Done by trainee":x.seenAt?"Seen":"Not seen yet"}</span>
         <button class="btn btn-ghost btn-sm" onclick="adminRemoveFocus('${rec.id}','${x.id}')">Remove</button></li>`).join("")}</ul>` : ""}
     <div class="focus-admin-form">
-      <textarea id="focusText_${sid}" rows="2" placeholder="e.g. Practise BLUF: rewrite your last two status updates so the decision needed is in the first line."></textarea>
+      <textarea id="focusText_${sid}" rows="2" placeholder="e.g. Practice BLUF: rewrite your last two status updates so the decision needed is in the first line."></textarea>
       <select id="focusDay_${sid}"><option value="0">Any day</option>${DAYS.map(d=>`<option value="${d.id}">${ftName(d.id)}</option>`).join("")}</select>
       <select id="focusPri_${sid}"><option value="normal">Normal</option><option value="high">High priority</option><option value="low">Low</option></select>
       <button class="btn btn-navy btn-sm" onclick="adminAddFocus('${rec.id}')">➕ Add to Focus</button>
@@ -18939,7 +18939,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.05-b8080f86";
+var APP_BUILD = "ft-2026.11.05-ce85aef9";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18982,7 +18982,7 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=b2451a8702"></script>
+<script src="/js/eapa-updates.js?v=376eed90bd"></script>
 <script src="/js/ft-roster.js?v=72fd8494e6"></script>
 <script src="/js/ft-updates.js?v=d598a94349"></script>
 <script src="/js/ft-slides.js?v=63f91916f2"></script>
@@ -18997,31 +18997,31 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-calendar.js?v=0f3118f02a"></script>
 <script src="/js/ft-cases-data.js?v=f8f4a08527"></script>
 <script src="/js/ft-firms.js?v=03c6f39e7b"></script>
-<script src="/js/ft-day-activities.js?v=f9613e1045"></script>
+<script src="/js/ft-day-activities.js?v=b7a3e5020d"></script>
 <script src="/js/ft-simulators.js?v=03f496123b"></script>
 <script src="/js/ft-rubrics.js?v=f7af0cc87b"></script>
-<script src="/js/ft-sessions.js?v=98abaa7ac8"></script>
-<script src="/js/ft-utilization.js?v=2b483a7834"></script>
+<script src="/js/ft-sessions.js?v=f32ae5d25a"></script>
+<script src="/js/ft-utilization.js?v=e8e4575e2f"></script>
 <script src="/js/ft-ranking.js?v=7e1c85e294"></script>
 <script src="/js/ft-ranking-summary.js?v=ba7f25e76f"></script>
 <script src="/js/ft-overall.js?v=8a08446d33"></script>
-<script src="/js/ft-batch-sheet.js?v=986ef25db3"></script>
-<script src="/js/ft-skilltests.js?v=8d4d77a4f6"></script>
-<script src="/js/ft-drills.js?v=b1a7af7657"></script>
+<script src="/js/ft-batch-sheet.js?v=ac083f8ed7"></script>
+<script src="/js/ft-skilltests.js?v=72247c189e"></script>
+<script src="/js/ft-drills.js?v=8362192230"></script>
 <script src="/js/ft-calrules.js?v=8184cf8378"></script>
 <script src="/js/ft-writing.js?v=84d5475ebf"></script>
-<script src="/js/ft-calweek-core.js?v=aa11fcb54a"></script>
-<script src="/js/ft-calweek.js?v=91865d6c8a"></script>
+<script src="/js/ft-calweek-core.js?v=d64da960e4"></script>
+<script src="/js/ft-calweek.js?v=b01581e102"></script>
 <script src="/js/ft-calcheck.js?v=ce110cce18"></script>
-<script src="/js/ft-listening.js?v=fe87bd295a"></script>
+<script src="/js/ft-listening.js?v=27a0382baf"></script>
 <script src="/js/ft-todo.js?v=54c20efd75"></script>
 <script src="/js/ft-next-step.js?v=a4448878a1"></script>
-<script src="/js/ft-day-decks.js?v=eee7d6bc98"></script>
+<script src="/js/ft-day-decks.js?v=5951057922"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=6fa36bd766"></script>
 <script src="/js/ft-transcribe.js?v=ff233abce7"></script>
-<script src="/js/ft-intake.js?v=723478b92c"></script>
+<script src="/js/ft-intake.js?v=4e7b5eded7"></script>
 <script src="/js/ft-process-guide.js?v=9a68e5c077"></script>
 <script src="/js/ft-lor.js?v=1071b3e970"></script>
 <script src="/js/ft-trainer-feedback.js?v=fb34b0e85d"></script>
@@ -19029,7 +19029,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-facilitator-dna.js?v=c883f59a8d"></script>
 <script src="/js/ft-activities.js?v=28795e65ba"></script>
 <script src="/js/ft-dna-learn.js?v=276b146f1c"></script>
-<script src="/js/ft-admin-ops.js?v=0c437c81ae"></script>
+<script src="/js/ft-admin-ops.js?v=70597c994c"></script>
 <script src="/js/ft-attendance.js?v=909c9ac081"></script>
 <script src="/js/ft-batch-admin.js?v=38122e2efc"></script>
 <script src="/js/portal-link.js?v=41a9854349"></script>
