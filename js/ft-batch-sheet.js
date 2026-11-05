@@ -393,7 +393,7 @@ function rankingHtml(){
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
-  return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking</h3>${FTRankSummary.html()}
+  return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking${updBtn("ranking")}</h3>${FTRankSummary.html()}
     <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
@@ -500,6 +500,27 @@ function foldRender(id){
   foldSave(); render();
   window.scrollTo(0, y); const w2 = document.querySelector(`#bs-${id} .bs-wrap`); if(w2) w2.scrollLeft = x;
 }
+/* 🔗 A TRAINER LINKS A TRAINEE'S FILES (under ✅ Compliance): pick a trainee, paste or change any of their six Drive links and
+   💾 Save — written to drive:<id> as the trainee's own would be (linkedBy: "trainer"), then checked at once (/api/drive/verify).
+   For a file the automatic search couldn't find or tell apart. */
+function linksEditHtml(){
+  if(!adminOn() || meOn() || !B.data) return "";
+  const ppl = people(); if(!ppl.length) return "";
+  const id = B.le && ppl.some(p => p.id === B.le) ? B.le : ppl[0].id, dv = (B.data.rec[id] || {}).drive || {}, L = (() => { try{ return linkState(ppl.find(p => p.id === id)).L; }catch(err){ return {}; } })();
+  const mark = k => { const x = L[k] || {}; return (LSTAT[x.st] || ["", ""])[0]; };
+  return `<details class="bs-le" ${B.leOpen ? "open" : ""} ontoggle="FTBatchSheet.leOpen(this.open)"><summary>🔗 Link a trainee’s files by hand</summary>
+    <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.leWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
+    <p class="bs-note">Paste each file’s or folder’s own link (open it in Drive and copy the address). 🔄 Update on ✅ Compliance finds most of them by itself; use this for any it couldn’t.</p>
+    <div class="bs-le-rows">${LINKS.map(([k, label]) => `<label class="bs-le-row"><span>${e(label)}</span><input type="url" data-k="${k}" value="${e(dv[k] || "")}" placeholder="https://${/folder|typing|spelling/.test(k) ? "drive.google.com/drive/folders/…" : "docs.google.com/…"}"><small>${e(mark(k))}${(dv.auto || {})[k] ? " · found automatically" : dv.linkedBy === "trainer" && dv[k] ? " · set by a trainer" : ""}</small></label>`).join("")}</div>
+    <div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" ${B.leBusy ? "disabled" : ""} onclick="FTBatchSheet.leSave('${e(id)}', this)">${B.leBusy ? "Saving…" : "💾 Save and check"}</button></div></details>`;
+}
+// 🔄 a section's own Update (FTBatchSheet.sync): the trainer's, and its progress while it runs
+const SYNC_OF = {scorecard: "scores", compliance: "links", outputs: "outputs", ranking: "ranking"};
+function updBtn(id){
+  const sc = SYNC_OF[id]; if(!sc || !adminOn() || meOn()) return "";
+  const S = B.sync, mine = S && (S.scope === sc || S.scope === "all");
+  return `<button type="button" class="bs-upd" ${S ? "disabled" : ""} onclick="FTBatchSheet.sync('${sc}')" title="${e({scores: "Backtrack every trainee from Day 1 (Task Tracker, Monitoring Sheet, test screenshots) and read the scores again", links: "Find and link every trainee's Drive files, then check every trainee's links", outputs: "Backtrack every trainee from Day 1 and work out each day again", ranking: "Read the Weekly Ranking again"}[sc])}">${mine ? `⏳ ${e(S.what)}${S.of ? ` ${S.n}/${S.of}` : ""}…` : "🔄 Update"}</button>`;
+}
 function groupedSheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length, F = foldOf(T.id);
   // each column's group, and whether it is folded away (a folded group keeps one column: T.keep, else its first)
@@ -507,11 +528,11 @@ function groupedSheetHtml(T, ti){
   T.groups.forEach((g, gi) => { for(let k = 0; k < g.span; k++) gOf.push([gi, k]); });
   const gone = ci => { const [gi, k] = gOf[ci] || []; return gi != null && foldable(T.groups[gi]) && F.g.includes(gi) && k !== (T.keep != null && T.keep >= 0 ? T.keep : 0); };
   const fc = ci => gone(ci) ? " gs-fold" : "";
-  const cell = (c, ri, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}"${c.tip ? ` title="${e(c.tip)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  const cell = (c, ri, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}"${c.tip || c.f ? ` title="${e(c.tip || c.f)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
   const folds = T.groups.map((g, gi) => foldable(g) ? gi : -1).filter(gi => gi >= 0), allIn = folds.length && folds.every(gi => F.g.includes(gi));
   const tid = e(T.id);
   const head = `<h3 class="bs-h"><button type="button" class="bs-fold-sec" onclick="FTBatchSheet.hideSec('${tid}')" aria-expanded="${!F.hide}" title="${F.hide ? "Show" : "Hide"} this table">${F.hide ? "▸" : "▾"}</button> ${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>
-    ${!F.hide && folds.length > 1 ? `<button type="button" class="bs-fold-all" onclick="FTBatchSheet.foldAll('${tid}', ${allIn ? "false" : "true"})">${allIn ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>` : ""}</h3>`;
+    ${updBtn(T.id)}${!F.hide && folds.length > 1 ? `<button type="button" class="bs-fold-all" onclick="FTBatchSheet.foldAll('${tid}', ${allIn ? "false" : "true"})">${allIn ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>` : ""}</h3>`;
   if(F.hide) return `<section class="bs-sec bs-sc bs-hidden" id="bs-${T.id}">${head}</section>`;
   let col = 0;
   return `<section class="bs-sec bs-sc" id="bs-${T.id}">${head}<p class="bs-note">${e(T.note)}${folds.length ? " Click a heading's ▾ to fold its columns away." : ""}</p>
@@ -573,7 +594,8 @@ function shareBanner(){
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "outputs"];
 function sectionsHtml(T){
-  const one = (x, i) => x.id === "scorecard" || x.id === "compliance" ? groupedSheetHtml(x, i)
+  const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, linksEditHtml() + "</section>")
+    : x.id === "scorecard" ? groupedSheetHtml(x, i)
     : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
     : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
     : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `)
@@ -896,11 +918,11 @@ const tables = () => [scoreCardTable(), complianceTable(), outputsTable(), daySc
 /* ---------- drawing: each table a small sheet (column letters, row numbers, the names frozen) ---------- */
 function sheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length;
-  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span></h3><p class="bs-note">${e(T.note)}</p>${T.tools || ""}
+  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>${updBtn(T.id)}</h3><p class="bs-note">${e(T.note)}</p>${T.tools || ""}
     <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
       <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
       <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${T.headHtml && T.headHtml[i] != null ? T.headHtml[i] : e(h)}</th>`).join("")}</tr></thead>
-      <tbody>${T.rows.map((r, ri) => `<tr${T.rowCls && T.rowCls[ri] ? ` class="${T.rowCls[ri]}"` : ""}><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`).join("")}</tr>`).join("")}
+      <tbody>${T.rows.map((r, ri) => `<tr${T.rowCls && T.rowCls[ri] ? ` class="${T.rowCls[ri]}"` : ""}><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}"${c.f ? ` title="${e(c.f)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">${T.id === "recent" ? "Nothing yet in this period." : "No trainee in this batch yet."}</td></tr>` : ""}</tbody></table></div></section>`;
 }
 /* ---------- ✏️ Fix the batch name: a manual override for trainees registered under the wrong batch ----------
@@ -990,10 +1012,15 @@ function renderSheet(){
   loadData();
   const ppl = people(), D = B.data, ready = !!D && !D.error && (!D.batch || D.batch === B.batch) && ppl.every(p => (D.rec || {})[p.id]) && (!B.dataLoading || !!D.batch);
   const T = ready ? tables() : null;
+  // 🔄 the sheet brings itself up to date on opening a batch (links found and checked, every trainee backtracked from Day 1,
+  // the Weekly Ranking read again): once a session, and not again within 6 hours of the last update
+  if(ready && adminOn() && !B.sync && !(B.autoSync = B.autoSync || {})[B.batch]){ B.autoSync[B.batch] = 1; let last = 0;
+    try{ last = Number(localStorage.getItem("ft_bs_sync:" + B.batch)) || 0; }catch(err){}
+    if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, backtrack every trainee from Day 1 and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>
         ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
@@ -1005,10 +1032,9 @@ function renderSheet(){
     ${sweepHtml()}
     ${fixHtml(ppl)}
     ${dateHtml(ppl)}
-    <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
-    <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
+    <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Point at a cell to see what it means. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
@@ -1032,17 +1058,43 @@ window.FTBatchSheet = {
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
-  async updateAll(){
-    if(!adminOn() || meOn() || B.upd) return;
-    const ppl = people().filter(p => p.status === "Approved"); if(!ppl.length) return;
-    B.upd = {n: 0, of: ppl.length}; render(); let bad = 0;
-    for(const p of ppl){
-      try{ await authFetch("/api/drive/verify", {id: p.id}).catch(() => null);
-        const r = await authFetch("/api/compliance/backfill", {ids: [p.id], redo: true}); const j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; }
-      B.upd.n++; render();
+  // 🔄 Update all scores: everything below, in order (FTBatchSheet.sync)
+  updateAll(){ return FTBatchSheet.sync("all"); },
+  /* 🔄 each section's Update (and Update all scores, and the sheet itself on opening a batch, at most every 6 hours):
+       links    — 🔗 the batch's Drive files found and linked by their naming convention (worker.js autoLinkBatch), then EVERY
+                  trainee's links checked (not only the ones with a link already);
+       scores / outputs — ⏪ every approved trainee backtracked from Day 1 (worker.js backtrack: the Task Tracker, the
+                  Monitoring Sheet and the test screenshots read again for every training day, each day's compliance again);
+       ranking  — 📊 the Weekly Ranking read again;
+       all      — all of it. The sheet is read again at the end. */
+  async sync(scope, quiet){
+    if(!adminOn() || meOn() || B.sync || !B.batch) return;
+    const batch = B.batch, all = people(), appr = all.filter(p => p.status === "Approved");
+    const doLinks = /^(all|links)$/.test(scope), doBack = /^(all|scores|outputs)$/.test(scope), doRank = /^(all|ranking|scores)$/.test(scope);
+    B.sync = {scope, n: 0, of: 0, what: "Starting"}; render();
+    const msgs = []; let bad = 0;
+    const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; rerender(); };
+    if(doLinks){
+      step("Finding the batch’s files in Drive");
+      try{ const r = await authFetch("/api/drive/autolink", {batch}), j = await r.json().catch(() => null);
+        if(j && j.ok){ const n = Object.keys(j.linked || {}).length, miss = Object.keys(j.missing || {}).length;
+          msgs.push(n ? `🔗 Linked files for ${n} trainee${n === 1 ? "" : "s"}` : "🔗 No new files to link");
+          if(miss) msgs.push(`${miss} trainee${miss === 1 ? " is" : "s are"} still missing a file (see ✅ Compliance)`); }
+        else msgs.push("🔗 Couldn’t search Drive" + (j && (j.detail || j.error) ? ": " + String(j.detail || j.error).slice(0, 120) : ""));
+      }catch(err){ msgs.push("🔗 Couldn’t search Drive"); }
+      step("Checking every trainee’s links", all.length);
+      for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; rerender(); }
+      msgs.push(`✓ Checked ${all.length} trainee${all.length === 1 ? "" : "s"}’ links`);
     }
-    B.upd = null; B.dataKey = ""; render();
-    if(bad && typeof toast === "function") toast(`${bad} trainee${bad === 1 ? "" : "s"} couldn't be updated. Try 🔄 Update all scores again.`);
+    if(doBack){
+      step("Backtracking from Day 1", appr.length);
+      for(const p of appr){ try{ const r = await authFetch("/api/drive/backtrack", {id: p.id}), j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; } B.sync.n++; rerender(); }
+      msgs.push(`⏪ ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"} backtracked from Day 1`);
+    }
+    if(doRank && window.FTRanking && typeof FTRanking.reload === "function"){ try{ FTRanking.reload(); }catch(err){} if(scope === "ranking") msgs.push("📊 Weekly Ranking read again"); }
+    try{ localStorage.setItem("ft_bs_sync:" + batch, String(Date.now())); }catch(err){}
+    B.sync = null; if(B.batch === batch){ B.data = null; B.dataKey = ""; } render();
+    if(!quiet || bad) toast(msgs.join(" · "), 9000);
   },
   period(v){ B.recent = Number(v) || 0; render(); },
   // ↩ the batch's trainees the tidy-up archived on its own come back to the active list; the batch is marked restored in
@@ -1110,14 +1162,25 @@ window.FTBatchSheet = {
   copyShare(){ const t = (document.getElementById("bsShareTo") || {}).textContent || ""; if(!t) return;
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: " + t), () => toast("Couldn’t copy. Select the address instead.")); },
   // 🔁 every trainee of the batch whose links can't be opened: checked again now, then the sheet read again
-  async recheckLinks(){
-    if(!adminOn() || B.rechecking || !B.data) return;
-    const ids = people().filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st !== "none" && !/ok|trainer/.test(L[k].st)); }catch(err){ return false; } }).map(p => p.id);
-    let ok = 0;
-    for(let i = 0; i < ids.length; i++){ B.rechecking = `${i + 1} of ${ids.length}`; rerender();
-      try{ const r = await authFetch("/api/drive/verify", {id: ids[i]}); if(r.ok) ok++; }catch(err){} }
-    B.rechecking = null; B.data = null; B.dataKey = ""; rerender();
-    toast(ok ? `✓ Checked ${ok} trainee${ok === 1 ? "" : "s"}’ links again.` : "Couldn’t check the links. Try again in a minute.");
+  recheckLinks(){ return FTBatchSheet.sync("links"); },
+  leOpen(o){ B.leOpen = !!o; },
+  leWho(id){ if(!adminOn()) return; B.le = id; B.leOpen = true; render(); },
+  async leSave(id, btn){
+    if(!adminOn() || B.leBusy) return;
+    const box = btn.closest(".bs-le"), vals = {};
+    box.querySelectorAll("input[data-k]").forEach(i => { vals[i.getAttribute("data-k")] = String(i.value || "").trim(); });
+    const bad = Object.entries(vals).filter(([k, v]) => v && !/^https:\/\/(drive|docs)\.google\.com\//.test(v));
+    if(bad.length){ toast("Paste Google Drive links (they start with https://drive.google.com/ or https://docs.google.com/)."); return; }
+    B.leBusy = true; B.le = id; render();
+    try{
+      const cur = (await sharedGet("drive:" + id)) || {}, at = new Date().toISOString();
+      const next = Object.assign({}, cur, vals, {linkedBy: "trainer", updatedAt: at});
+      Object.keys(vals).forEach(k => { if(vals[k] !== String(cur[k] || "").trim() && next.auto) delete next.auto[k]; });
+      if(await sharedSet("drive:" + id, next) === false) throw new Error("save");
+      await authFetch("/api/drive/verify", {id}).catch(() => null);
+      toast("✓ Saved and checked.");
+    }catch(err){ toast("Couldn’t save the links. Try again."); }
+    B.leBusy = false; B.data = null; B.dataKey = ""; render();
   },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
@@ -1285,7 +1348,6 @@ function renderMine(){
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
     <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 My Weekly Report</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
-    <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
@@ -1339,7 +1401,16 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-note{margin:0 0 8px;font:13.5px Arial,sans-serif;color:#444746;}
 .bs-period select{font:13px Arial,sans-serif;padding:3px 6px;border:1px solid #C4C7C5;border-radius:4px;margin:0 6px 0 4px;}
 .bs-wrap{max-height:none;border:1px solid #E1E3E1;border-radius:4px;}
-.bs-card .gs{font-size:14px;} .bs-card .gs th,.bs-card .gs td{height:26px;padding:5px 10px;}
+.bs-card .gs{font-size:16px;} .bs-card .gs th,.bs-card .gs td{height:30px;padding:7px 11px;}
+/* (bold and bigger: the trainer reads the scorecards on a projector and across the room) */
+.bs-card .gs td{font-weight:700;color:#141A2E;} .bs-card .gs .gs-head th{font:800 15.5px Arial,sans-serif;color:#141A2E;} .bs-card .gs td.gs-name{font-weight:800;}
+.bs-card .gs .gs-group th{font-size:14.5px;} .bs-card .bs-h{font:800 21px Arial,sans-serif;} .bs-card .bs-note{font:600 14.5px Arial,sans-serif;color:#2E3450;}
+.bs-upd{margin-left:12px;border:1px solid #1E2340;background:#1E2340;color:#fff;border-radius:999px;padding:4px 12px;font:700 13px Arial,sans-serif;cursor:pointer;vertical-align:3px;}
+.bs-upd:disabled{background:#EEF0F6;color:#3A4058;border-color:#C9CEDD;cursor:progress;}
+.bs-le{margin:10px 14px 8px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;padding:0 14px;} .bs-le > summary{cursor:pointer;padding:10px 0;font:700 15px Arial,sans-serif;color:#1E2340;}
+.bs-le[open]{padding-bottom:12px;} .bs-le-rows{display:flex;flex-direction:column;gap:8px;margin:8px 0;} .bs-le-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 12px;align-items:center;font:700 14px Arial,sans-serif;}
+.bs-le-row input{font:14px Arial,sans-serif;padding:7px 9px;border:1px solid #C4C7C5;border-radius:6px;min-width:0;} .bs-le-row small{grid-column:2;color:#5F6368;font-weight:600;}
+@media (max-width:700px){ .bs-le-row{grid-template-columns:1fr;} .bs-le-row small{grid-column:1;} }
 .bs-card .gs-head th{max-width:220px;min-width:110px;word-break:normal;overflow-wrap:normal;hyphens:none;}
 #bs-lessons .gs-head th{min-width:170px;}
 .bs-lesson{text-align:center;white-space:nowrap;}

@@ -229,8 +229,10 @@ const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)
 const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid ftdd-keep">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
 // 📅 Day 5's sample, a finished event (the guide's Deposition Meeting screenshot), drawn as Day 6's sample event: the title and
 // the date, time and time zone boxed in red, the time zone highlighted; then its location, email reminder, calendar, guests and notes
-const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="Sample: a finished event, Deposition Meeting, Feb 4, 2025, 11:00am to 1:00pm, (GMT-05:00) Eastern Standard Time - Panama; location Attorney’s Office or Zoom for Remote Attendees; email reminder 1 day before; Michelle Bernardino’s calendar, red; guests Michelle Bernardino (organizer), Martin Anthony Gan and Michelle Velarde; the Zoom link and the notes in the description">' +
-  '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title"><span class="ftdd-ev-mark">Deposition Meeting</span></span><span class="ftdd-ev-note">◀ Specific title</span><span class="ftdd-ev-save">Save</span></div>' +
+// (its title names the client, as an appointment's title should when it has one: the Calendar Activity Check counts the
+// client's name in a title as a plus, js/ft-calcheck.js KEY; Jane Doe is the training accounts' client, none of the activity's)
+const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="Sample: a finished event, Deposition Meeting – Jane Doe, Feb 4, 2025, 11:00am to 1:00pm, (GMT-05:00) Eastern Standard Time - Panama; location Attorney’s Office or Zoom for Remote Attendees; email reminder 1 day before; Michelle Bernardino’s calendar, red; guests Michelle Bernardino (organizer), Martin Anthony Gan and Michelle Velarde; the Zoom link and the notes in the description">' +
+  '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title"><span class="ftdd-ev-mark">Deposition Meeting – Jane Doe</span></span><span class="ftdd-ev-note">◀ Specific title, naming the person when there is one</span><span class="ftdd-ev-save">Save</span></div>' +
   '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 4, 2025</span><span class="ftdd-ev-f">11:00am</span><span>to</span><span class="ftdd-ev-f">1:00pm</span><span class="ftdd-ev-f">Feb 4, 2025</span><span>(GMT-05:00) <span class="ftdd-ev-hl">Eastern Standard Time - Panama</span></span><span class="ftdd-ev-link">Time zone</span></div>' +
   '<div class="ftdd-ev-sub"><span><span class="ftdd-ev-box"></span> All day</span> <span class="ftdd-ev-f">Does not repeat ▾</span></div>' +
   '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
@@ -245,15 +247,15 @@ const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="S
   '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Bernardino</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#12A4AF">M</span><span><b>Martin Anthony Gan</b></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#5B3CC4">M</span><span><b>Michelle Velarde</b></span></div>' +
   '<p class="ftdd-ev-perm">Guest permissions</p><div><span class="ftdd-ev-box"></span> Modify event</div><div><span class="ftdd-ev-box on">✓</span> Invite others</div><div><span class="ftdd-ev-box on">✓</span> See guest list</div></div></div></div>\n';
 // 🖍 Day 5's sample, with a highlighter on what each appointment must have right (what the Calendar Activity Check compares):
-// the title and time zone (already marked), the date and time, the location, the reminder, the calendar and its colour, the
-// guests and the description
+// the title and time zone (already marked), the date and time, the location, the reminder, the calendar and its colour (the
+// colour coding is graded too, so its dot is highlighted like the rest), the guests and the description
 function DEPOSITION_HL(){
   const hl = (s, a) => { if(s.indexOf(a) < 0) throw new Error("Day 5's sample event changed: " + a.slice(0, 40)); return s.replace(a, a.replace(/^<(span|div|p) class="/, '<$1 class="ftdd-ev-hlf ')); };
   let s = DEPOSITION_EV;
   s = hl(s, '<span class="ftdd-ev-f">Feb 4, 2025</span>'); s = hl(s, '<span class="ftdd-ev-f">11:00am</span>'); s = hl(s, '<span class="ftdd-ev-f">1:00pm</span>');
   s = hl(s, '<span class="ftdd-ev-f wide">Attorney’s Office or Zoom for Remote Attendees</span>');
   s = hl(s, '<span class="ftdd-ev-f">Email ▾</span>'); s = hl(s, '<span class="ftdd-ev-f">1</span>'); s = hl(s, '<span class="ftdd-ev-f">days ▾</span>');
-  s = hl(s, '<span class="ftdd-ev-f">Michelle Bernardino ▾</span>');
+  s = hl(s, '<span class="ftdd-ev-f">Michelle Bernardino ▾</span>'); s = hl(s, '<span class="ftdd-ev-f"><span class="ftdd-ev-dot" style="background:#D50000"></span> ▾</span>');
   s = hl(s, '<div class="ftdd-ev-desc">');
   s = s.replace(/<div class="ftdd-ev-guest">/g, '<div class="ftdd-ev-hlf ftdd-ev-guest">');
   return s;
@@ -326,8 +328,10 @@ const TRIM = {1: {reading: html => {
 // Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
 // Activity Items as ten cards (calItems), under each Calendar Simulator's link (CAL_HEAD); then the samples, the time zone card
 // and the 📅 Calendar Activity Check (no screenshots are taken or uploaded: the guide's whole-calendar screenshot and
-// 19-screenshot upload are off the slide), ending on its Time Zone & Submit slide (the activity is submitted on the Main Portal's Calendaring Activity calendar).
-// ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–7, 8 alone, 9–10) and s3b (from the second trainer slot).
+// 19-screenshot upload are off the slide; the activity is submitted on the Main Portal's Calendaring Activity calendar).
+// ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–7, 8 alone, 9–10) and s3b (from the second trainer
+// slot: the samples and the time zone), and shows s3b right after the Instructions, so a trainee sees what a finished event
+// must look like before plotting the items.
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
   // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
@@ -361,7 +365,7 @@ s3: html => {
     '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you submit →</small></span></button>' +
     `<button type="button" class="ftdd-tile ftdd-simbtn k-video" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')"><span class="ftdd-tile-ic">📅</span>` +
     `<span class="ftdd-tile-t"><b>${hx(CALSIM_PORTAL.label.replace(/^📅 /, ""))}</b><small>The activity on the Main Portal’s Google Calendar Simulator ↗</small></span></button></div>\n`;
-  // after the items: the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
+  // after the items here (shown before them: ROWS[5].s3): the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
   // (the activity's Instructions on one slide, as two cards side by side, in bold: 1–5 and 6–9, so the two end level; its ten Activity Items on the next
@@ -1155,9 +1159,10 @@ const ROWS = {
     // (the Instructions as two cards, then the Activity Items as sixteen cards, four to a slide, each slide with the link to
     // the Calendar Simulator's Attorney's Calendar: CAL_HEAD)
     s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},
+      // (the samples and the time zone come before the items: cut from the section's end, shown second, keeping the id s3b)
+      {id: "s3b", h: "Attorney Calendar Management Activity: Sample & Time Zone", parts: [[SLOT(5, "s3-2"), null]]},
       ...["s3i", "s3j", "s3k", "s3l"].map((id, i) => ({id, h: "Attorney Calendar Management Activity: Activity Item" + (CAL_GROUPS[i][1] - CAL_GROUPS[i][0] === 1 ? " " : "s ") + calRange(CAL_GROUPS[i]),
-        parts: [[CAL_HEAD(CAL_GROUPS[i]), i + 1 < CAL_GROUPS.length ? CAL_HEAD(CAL_GROUPS[i + 1]) : SLOT(5, "s3-2")]]})),
-      {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
+        parts: [[CAL_HEAD(CAL_GROUPS[i]), i + 1 < CAL_GROUPS.length ? CAL_HEAD(CAL_GROUPS[i + 1]) : SLOT(5, "s3-2")]]}))]
   },
   6: {
     // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos (the One-on-One slide is off the deck)
