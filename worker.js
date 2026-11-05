@@ -841,14 +841,18 @@ async function driveToken(env, write, self) {
   const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
   const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
-  const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  let key;
+  try { key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]); }
+  catch (e) { throw Object.assign(new Error("drive-auth"), { detail: "GDRIVE_SA_KEY isn't a valid private key (paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----)" }); }
   const now = Math.floor(Date.now() / 1000);
   const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok || !j.access_token) throw new Error("drive-auth");
+  // (Google's own reason, kept: unauthorized_client = domain-wide delegation not authorized for this Client ID and scope;
+  // invalid_grant = the subject isn't a user of the Workspace, or the key / account don't match)
+  if (!res.ok || !j.access_token) throw Object.assign(new Error("drive-auth"), { detail: `${j.error || "HTTP " + res.status}${j.error_description ? ": " + j.error_description : ""}`.slice(0, 300), asSub });
   SA_TOKENS[slot] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
   return j.access_token;
 }
@@ -858,8 +862,23 @@ async function driveToken(env, write, self) {
    drive scope: the one domain-wide delegation authorizes.) */
 async function readTokens(env) {
   const out = [];
-  if (env.GDRIVE_SA_SUBJECT) { try { out.push(await driveToken(env, true)); } catch (e) { /* then the account itself */ } }
-  try { out.push(await driveToken(env)); } catch (e) { if (!out.length) throw e; }
+  let subErr = null;
+  if (env.GDRIVE_SA_SUBJECT) { try { out.push(await driveToken(env, true)); } catch (e) { subErr = e; /* then the account itself */ } }
+  try { out.push(await driveToken(env)); } catch (e) { if (!out.length) { e.detail = [subErr && subErr.detail ? `as ${env.GDRIVE_SA_SUBJECT}: ${subErr.detail}` : "", e.detail ? `as the service account: ${e.detail}` : ""].filter(Boolean).join(" · ") || e.detail; throw e; } }
+  return out;
+}
+/* 🔌 Is Google Drive connected? (a trainer's: the 📋 Batch Sheet shows it above the Drive links) Each identity the platform
+   uses, signed in afresh: the service account itself, and GDRIVE_SA_SUBJECT when set; for each, ok or Google's reason. */
+async function driveStatus(env) {
+  const out = { sa: driveSA(env), email: env.GDRIVE_SA_EMAIL || "", subject: env.GDRIVE_SA_SUBJECT || "" };
+  if (!out.sa) return out;
+  Object.keys(SA_TOKENS).forEach(k => delete SA_TOKENS[k]);
+  try {
+    const tk = await driveToken(env); out.saOk = true;
+    // (the Client ID Google gives this sign-in: the number that has to be in admin.google.com's Domain-wide delegation list)
+    try { const ti = await (await fetch("https://oauth2.googleapis.com/tokeninfo?access_token=" + encodeURIComponent(tk))).json(); out.clientId = String(ti.azp || ti.issued_to || ti.aud || "").slice(0, 40); } catch (e) { /* the status without it */ }
+  } catch (e) { out.saOk = false; out.saDetail = e.detail || e.message; }
+  if (out.subject) { try { await driveToken(env, true); out.subjectOk = true; } catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; } }
   return out;
 }
 async function fetchGoogle(url, env) {
@@ -1126,11 +1145,17 @@ const LINKS_KIND = {
 const notFolder = (label) => `This isn't a folder's link. Open your ${label} and copy its address (…/drive/folders/…).`;
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
-  if (!driveSA(env)) return { error: "no-sa" };
+  if (!driveSA(env)) return { error: "no-sa", detail: "GDRIVE_SA_EMAIL and GDRIVE_SA_KEY aren't set on the Worker" };
   // (the address to share with: the Workspace user the platform reads as, when it is set; else the service account)
   const sa = String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL), at = new Date().toISOString(), out = {};
   let tokens;
-  try { tokens = await readTokens(env); } catch (e) { return { error: "drive-auth" }; }
+  try { tokens = await readTokens(env); }
+  catch (e) {
+    // (kept on the trainee's record, so the Batch Sheet says why a link is still unchecked instead of ⏳ Pending)
+    const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+    cur.verifyError = { at, error: "drive-auth", detail: String(e.detail || "").slice(0, 400) }; await kv.put(rk, JSON.stringify(cur));
+    return { error: "drive-auth", detail: e.detail || "" };
+  }
   const rk0 = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, prev = rk0.verify || {};
   for (const k of Object.keys(LINKS_KIND)) {
     const url = String(drive[k] || "").trim(), K = LINKS_KIND[k];
@@ -1161,7 +1186,7 @@ async function verifyLinks(env, id) {
     out[k] = Object.assign(r, { url: url.slice(0, 500), at });
   }
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
-  cur.verify = out; cur.verifyAt = at;
+  cur.verify = out; cur.verifyAt = at; delete cur.verifyError;
   await kv.put(rk, JSON.stringify(cur));
   return { ok: true, verify: out, share: sa };
 }
@@ -1975,6 +2000,10 @@ export default {
         return json({ ok: true, filled: out });
       }
 
+      if (path === "/api/drive/status") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        return json(await driveStatus(env));
+      }
       if (path === "/api/drive/verify") {
         const b = await request.json().catch(() => ({}));
         const id = tok.role === "a" ? String(b.id || "") : tok.id;
