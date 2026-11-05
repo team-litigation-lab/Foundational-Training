@@ -43,6 +43,8 @@ const failures = []; const fail = (m) => failures.push(m);
     // the orientation's Part 5: all six, their own copies, checked
     const src = await page.evaluate(() => fetch('/js/ft-rules.js').then(r => r.text()));
     if (!/Paste the links of your six/.test(src) || !/the system checks each link and tells you if one isn’t right/.test(src)) fail('the orientation\'s Part 5 doesn\'t name the six links and the check');
+    // the Monitoring Sheet downloads already named by its rule, with the trainee's name (so the platform's own steps pass the check)
+    if (!/download="LSH VA Training Monitoring Sheet__\$\{esc\(who/.test(src) || !/state\.traineeName/.test(src)) fail('the Monitoring Sheet doesn\'t download named for the trainee');
   } catch (err) { fail(String(err && err.stack || err)); }
   await browser.close();
   if (failures.length) { console.error('Drive link alert test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }

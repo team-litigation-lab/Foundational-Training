@@ -216,7 +216,7 @@ function alertBad(){
   if(!isTrainee() || preview() || !D.drive || document.getElementById("fdrAlert") || document.getElementById("fdrLinkModal")) return;
   const bad = VERIFIED.filter(k => D.drive[k] && vOf(k) && vOf(k).ok === false && !vOf(k).retry);
   const sig = bad.map(k => `${k}|${vOf(k).url}|${vOf(k).error}`).join("§"), key = "ft-drive-alert:" + state.traineeId;
-  let seen = ""; try{ seen = localStorage.getItem(key) || ""; }catch(err){}
+  let seen = D.alertSeen || ""; try{ seen = localStorage.getItem(key) || seen; }catch(err){}   // (no storage: this visit's Later)
   if(!sig || sig === seen) return;
   const m = document.createElement("div"); m.id = "fdrAlert"; m.className = "tfb-pop fdr-alert"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "Your Drive links need fixing");
   m.innerHTML = `<div class="tfb-pop-box"><div class="tfb-pop-h">🔔 ${bad.length === 1 ? "One of your Drive links isn’t right" : `${bad.length} of your Drive links aren’t right`}</div>
@@ -226,12 +226,23 @@ function alertBad(){
   m.dataset.sig = sig;
   document.body.appendChild(m);
 }
-setInterval(() => { if(isTrainee() && !document.hidden && !D.loading) { const p = load(true); if(p) p.then(alertBad); } }, 5 * 60000);
+// (every few minutes, only the checks are read again — never the links being typed — and nothing is redrawn while the
+// trainee is typing or has the links window open)
+const typingNow = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || !!(a && a.isContentEditable); };
+setInterval(async () => {
+  if(!isTrainee() || document.hidden || D.loading || D.id !== state.traineeId || !D.review || document.getElementById("fdrLinkModal")) return;
+  const rv = await sharedGet("trackerreview:" + state.traineeId).catch(() => null);
+  if(!rv || typeof rv !== "object" || D.id !== state.traineeId) return;
+  const was = JSON.stringify(D.review.verify || {});
+  D.review.verify = rv.verify || {}; D.review.verifyAt = rv.verifyAt;
+  if(JSON.stringify(D.review.verify) !== was && !typingNow() && ["dashboard", "modules"].includes(state.view)) render();
+  alertBad();
+}, 5 * 60000);
 // 📧 the platform's EOD address trainees CC (worker.js EOD_INBOX): read once a session
 window.FT_EOD_INBOX = window.FT_EOD_INBOX || "";
 setTimeout(() => { if(typeof authFetch === "function" && (state.traineeId || state.isAdmin)) authFetch("/api/eod/inbox", {}).then(r => r.json()).then(j => { if(j && j.address){ window.FT_EOD_INBOX = j.address; } }).catch(() => {}); }, 1500);
 window.FTDrive = {
-  alertClose(){ const m = document.getElementById("fdrAlert"); if(!m) return; try{ localStorage.setItem("ft-drive-alert:" + state.traineeId, m.dataset.sig || ""); }catch(err){} m.remove(); },
+  alertClose(){ const m = document.getElementById("fdrAlert"); if(!m) return; D.alertSeen = m.dataset.sig || ""; try{ localStorage.setItem("ft-drive-alert:" + state.traineeId, D.alertSeen); }catch(err){} m.remove(); },
   async linkMine(){
     // a trainer, or someone not signed in as a trainee, sees the window as a trainee does (the steps), but saves nothing
     if(!(isTrainee() || preview())) D.look = true;

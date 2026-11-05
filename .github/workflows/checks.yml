@@ -59,6 +59,8 @@ jobs:
         run: node .github/scripts/kc-once.cjs
       - name: The six Drive links are the trainee's own, named by their rules (the template, another batch's or trainee's, the same file twice are caught)
         run: node .github/scripts/drive-own.cjs
+      - name: GDRIVE_SA_KEY signs in however it was pasted (the PEM, with its quotes, the whole JSON file), or says what is wrong
+        run: node .github/scripts/drive-key.cjs
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)
         run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)

@@ -818,6 +818,9 @@ function linkState(p){
     // every shift), when it is the newest
     const v = (rv.verify || {})[k];
     // (✓ Mark as opening: the system opened this very link, so it stays ✓ for it, whatever a later check of its CONTENT says)
+    // (✗ not theirs — the template, another trainee's, misnamed: worker.js ownCheck — stands, whatever a later check of
+    // its content says, until the link changes)
+    if(v && v.ok === false && v.mine === false && sameLink(v.url, link)){ out[k] = {st: "bad", label, link, c: {err: v.error || "it isn't the trainee's own", at: v.at}}; return; }
     if(v && v.ok && sameLink(v.url, link)){ out[k] = {st: "ok", label, link, c: {err: "", at: v.at}, issue: c && c.err && !ACCESS(c.err) && sameLink(c.url || link, link) ? c.err : ""}; return; }
     if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", at: v.at}}; return; }
     // (not checked yet, or checked on another link: ⏳ Pending verification — or ⚠ Can't check, when the last try couldn't sign

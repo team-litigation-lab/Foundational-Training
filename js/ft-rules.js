@@ -257,8 +257,8 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // js/ft-monitoring.js FT_MONITOR_DOC, and upload it to your Drive), then keep it
 const MON_PARTS = [
   {h:"Your Monitoring Sheet", steps:[
-    "Download the Monitoring Sheet below.",
-    "Upload it to your Google Drive.",
+    "Download the Monitoring Sheet below: it comes named for you, “LSH VA Training Monitoring Sheet__Your Name”.",
+    "Upload it to your Google Drive, keeping that name.",
     "You link it in Part 5."]},
   {h:"Update It", steps:[
     "Update your Monitoring Sheet and Task Tracker after each discussion or activity.",
@@ -269,8 +269,10 @@ const MON_PARTS = [
 // ⬇ the Monitoring Sheet's own file, on the platform (ft/monitoring/): the Word file downloads straight from here, with no
 // Google sign-in or Drive access asked; its button sits under the last slide's cards, beside Link My Google Drive
 const MON_FILE = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.docx";
+// (downloaded under its naming rule, the trainee's name in it, as 📁 My Drive links checks it: worker.js NAMING)
 function monGet(){
-  return `<a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet.docx">⬇ Download the Monitoring Sheet (Word)</a>`;
+  const who = String((state.traineeId && state.traineeName) || "").replace(/[\\/:*?"<>|]+/g, " ").trim();
+  return `<a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet__${esc(who || "Your Name")}.docx">⬇ Download the Monitoring Sheet (Word)</a>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;

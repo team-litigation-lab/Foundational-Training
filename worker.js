@@ -848,6 +848,32 @@ function facilitatorVoice(saved) {
    trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
    read by their public export, as before. */
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
+/* 🔑 GDRIVE_SA_KEY, however it was pasted into Cloudflare: the PEM itself (with real line breaks or "\n"), the private_key
+   value copied from the JSON file with its quotes (and a trailing comma), the "private_key": "…" line, or the whole JSON
+   key file (whose client_email then signs in, the account the key belongs to). Returns {der, email} or {why}: why it isn't a
+   key, said plainly for the Batch Sheet's 🔌 banner. */
+function saKey(env) {
+  let raw = String(env.GDRIVE_SA_KEY || "").trim(), email = "";
+  if (raw.startsWith("{")) {
+    let j = null; try { j = JSON.parse(raw); } catch (e) { j = null; }
+    if (!j && !/"private_key"\s*:\s*"[^"]+"/.test(raw)) return { why: "GDRIVE_SA_KEY looks like the JSON key file but isn't complete JSON: paste the whole file, from { to }, or only its private_key" };
+    if (j && !j.private_key) return { why: "GDRIVE_SA_KEY is a JSON file with no private_key in it: download a new JSON key for the service account (Google Cloud → IAM → Service accounts → Keys → Add key → JSON)" };
+    if (j) { raw = String(j.private_key); email = String(j.client_email || ""); }
+  }
+  if (!email) {
+    const line = raw.match(/"private_key"\s*:\s*"([^"]+)"/); if (line) raw = line[1];
+    raw = raw.replace(/,\s*$/, "").replace(/^["']|["']$/g, "");
+  }
+  raw = raw.replace(/\\r\\n|\\n|\\r/g, "\n");
+  if (/BEGIN RSA PRIVATE KEY/.test(raw)) return { why: "GDRIVE_SA_KEY is an RSA (PKCS#1) key; the platform needs the service account's JSON key: its private_key starts -----BEGIN PRIVATE KEY-----" };
+  const body = raw.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  if (/^[0-9a-f]{40}$/i.test(body)) return { why: "GDRIVE_SA_KEY holds the private_key_id (40 letters and digits), not the private_key: paste the private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  if (!/-----BEGIN PRIVATE KEY-----/.test(raw) && body.length < 1000) return { why: "GDRIVE_SA_KEY isn't a private key: paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  if (/[^A-Za-z0-9+/=]/.test(body)) return { why: "GDRIVE_SA_KEY has characters a key can't have (a quote, a comma or a word pasted with it): paste only the private_key, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  let der; try { der = Uint8Array.from(atob(body), (c) => c.charCodeAt(0)); } catch (e) { der = null; }
+  if (!der || body.length < 1500) return { why: `GDRIVE_SA_KEY is cut short (${body.length} characters of key; a service account's is about 1,600): paste the whole private_key, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----` };
+  return { der, email };
+}
 // (one token per scope and identity: reads go through readTokens, as GDRIVE_SA_SUBJECT first when it is set; 💾 Save to Drive
 // writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
 const SA_TOKENS = {};
@@ -859,12 +885,13 @@ async function driveToken(env, write, self) {
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
   const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
-  const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  const sk = saKey(env);
+  if (sk.why) throw Object.assign(new Error("drive-auth"), { detail: sk.why });
   let key;
-  try { key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]); }
-  catch (e) { throw Object.assign(new Error("drive-auth"), { detail: "GDRIVE_SA_KEY isn't a valid private key (paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----)" }); }
+  try { key = await crypto.subtle.importKey("pkcs8", sk.der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]); }
+  catch (e) { throw Object.assign(new Error("drive-auth"), { detail: "GDRIVE_SA_KEY isn't a valid private key (it reads as a key, but not one Google issued for a service account): paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" }); }
   const now = Math.floor(Date.now() / 1000);
-  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
+  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: sk.email || env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
@@ -1192,8 +1219,11 @@ const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/
 const GENERIC = { typing: true, spelling: true, folder: true };
 const nameWords = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
 // a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
-const nameIn = (person, text) => { const P = [...new Set(nameWords(person).filter((w) => w.length >= 3))]; if (!P.length) return false;
-  const T = new Set(nameWords(text)); return P.filter((w) => T.has(w)).length >= Math.min(2, P.length); };
+// a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
+const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
+const nameHits = (person, T) => pWords(person).filter((w) => T.has(w)).length;
+// a person's name is in a text when two of its words are there (or the one it has)
+const nameIn = (person, text) => { const P = pWords(person); return !!P.length && nameHits(person, new Set(nameWords(String(text).replace(/_/g, " ")))) >= Math.min(2, P.length); };
 const TEMPLATE_RE = /\bVA\s*Name\b|your\s+full\s+name|\bBatch\s*ID\b|\[\s*batch\s*\]/i;
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
@@ -1238,25 +1268,31 @@ async function verifyLinks(env, id) {
       }
     }
     const rule = `“${ruleFor(k, myBatch, me.name)}”`;
-    if (TEMPLATE_RE.test(text.replace(/_/g, " "))) return Object.assign(base, { ok: false, mine: false, error: `This is the blank template ("${name.slice(0, 120)}"), not your own copy. Link your own: ${rule}.` });
-    const b = (String(text).match(/\bB\d{6}\b/i) || [])[0];
-    if (b && /^B\d{6}$/.test(myBatch) && b.toUpperCase() !== myBatch) return Object.assign(base, { ok: false, mine: false, error: `This is batch ${b.toUpperCase()}'s ${K.label}, not yours: your batch is ${myBatch}. Link your own: ${rule}.` });
-    const mineName = nameIn(me.name, text);
-    if (!mineName && me.name) {
-      const who = (await others()).find((o) => nameIn(o.name, text));
-      if (who) return Object.assign(base, { ok: false, mine: false, error: `This is ${who.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
-      // (a plain-named folder whose parent can't be read can't be told apart: it passes on the other checks)
-      if (!(GENERIC[k] && text === name)) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
-    }
+    // ("B073126_ Ana Cruz", "Sheet__Ana Cruz": an underscore is a space here)
+    const plain = text.replace(/_/g, " "), T = new Set(nameWords(plain)), unread = !!(GENERIC[k] && text === name);
+    if (TEMPLATE_RE.test(plain)) return Object.assign(base, { ok: false, mine: false, error: `This is the blank template ("${name.slice(0, 120)}"), not your own copy. Link your own: ${rule}.` });
+    // (their batch, or the one a trainer moved them from: their files were named before the move)
+    const b = (plain.match(/\bB\d{6}\b/i) || [])[0], mine = [myBatch, String(me.batchFrom || "").toUpperCase()].filter((x) => /^B\d{6}$/.test(x));
+    if (b && mine.length && !mine.includes(b.toUpperCase())) return Object.assign(base, { ok: false, mine: false, error: `This is batch ${b.toUpperCase()}'s ${K.label}, not yours: your batch is ${myBatch}. Link your own: ${rule}.` });
+    // whose name it carries: theirs, unless a batch-mate's name fits it better (more of their words, or all of them)
+    const myW = pWords(me.name).length, myHits = nameHits(me.name, T), mineName = myW > 0 && myHits >= Math.min(2, myW);
+    const better = (myHits || !unread) ? (await others()).map((o) => ({ o, h: nameHits(o.name, T), w: pWords(o.name).length }))
+      .filter((x) => x.w && x.h >= Math.min(2, x.w) && (x.h > myHits || (x.h === x.w && myHits < myW))).sort((x, y) => y.h - x.h)[0] : null;
+    if (better) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
+    // (a plain-named folder whose parent can't be read can't be told apart by its name: it passes on the other checks)
+    if (!mineName && me.name && !unread) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
     // (the rule's Batch ID: their own batch in the name, where the convention has one)
-    if (NAMING[k].batch && /^B\d{6}$/.test(myBatch) && !b && !(GENERIC[k] && text === name))
+    if (NAMING[k].batch && mine.length && !b && !unread)
       return Object.assign(base, { ok: false, mine: false, error: `Its name ("${name.slice(0, 120)}") doesn't follow the naming rule: it needs your Batch ID. It should be ${rule}.` });
-    // another trainee linked this very file already
-    const owner = JSON.parse((await kv.get(`drivelink:${fid}`)) || "null");
-    if (owner && owner.id && owner.id !== id) {
-      const od = JSON.parse((await kv.get(`drive:${owner.id}`)) || "null") || {}, still = Object.keys(LINKS_KIND).some((x) => String(od[x] || "").includes(fid));
-      if (still) { const ot = JSON.parse((await kv.get(`trainee:${owner.id}`)) || "null") || {};
-        return Object.assign(base, { ok: false, mine: false, error: `${ot.name || "Another trainee"} has already linked this file as theirs. Link your own: ${rule}.` }); }
+    // a folder its name can't tell apart: another active trainee linked this very one already (a named file is told by its name)
+    if (unread) {
+      const owner = JSON.parse((await kv.get(`drivelink:${fid}`)) || "null");
+      if (owner && owner.id && owner.id !== id) {
+        const ot = JSON.parse((await kv.get(`trainee:${owner.id}`)) || "null"), od = JSON.parse((await kv.get(`drive:${owner.id}`)) || "null") || {};
+        const active = ot && !ot.archived && !ot.offboarded && !ot.purgedAt && !ot.rejected && ot.name && pWords(ot.name).join(" ") !== pWords(me.name).join(" ");
+        if (active && Object.keys(LINKS_KIND).some((x) => String(od[x] || "").includes(fid)))
+          return Object.assign(base, { ok: false, mine: false, error: `${ot.name} has already linked this folder as theirs. Link your own: ${rule}.` });
+      }
     }
     await kv.put(`drivelink:${fid}`, JSON.stringify({ id, k, at: new Date().toISOString() }));
     return Object.assign(base, { ok: true, mine: true });

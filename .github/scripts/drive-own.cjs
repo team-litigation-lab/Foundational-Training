@@ -73,7 +73,7 @@ const failures = []; const fail = (m) => failures.push(m);
     tracker: /Ben Diaz's LSH Daily Task Tracker, not yours[\s\S]*“LSH Daily Task Tracker \| B103026 Ana Cruz”/,
     tam: /batch B090126's[\s\S]*your batch is B103026[\s\S]*“LSH Task Assessment Manual \(TAM\) \| B103026 Ana Cruz”/,
     typing: /Ben Diaz's Typing Tests folder, not yours/,
-    folder: /Ben Diaz has already linked this file as theirs/ };
+    folder: /Ben Diaz has already linked this folder as theirs/ };
   Object.entries(want).forEach(([k, re]) => { if (!v[k] || v[k].ok !== false || !re.test(v[k].error || '')) fail(`${k}: not ✗ with the right why: ${JSON.stringify(v[k])}`); });
   // (a Spelling Tests link to her Typing Tests folder: the name rule catches it first)
   if (!v.spelling || v.spelling.ok !== false) fail(`spelling linked to the Typing Tests folder isn't ✗: ${JSON.stringify(v.spelling)}`);
@@ -93,6 +93,31 @@ const failures = []; const fail = (m) => failures.push(m);
   F.annShared0001 = { name: 'LSH Trainee folder – B103026 Ana Cruz Typing Tests and Spelling Tests', mimeType: FOLDER };
   v = await verify(ann, six({ typing: link.folder('annShared0001'), spelling: link.folder('annShared0001') }));
   if (!v.spelling || v.spelling.ok !== false || !/same link as your Typing Tests folder/.test(v.spelling.error)) fail(`the same folder linked twice isn't ✗: ${JSON.stringify(v.spelling)}`);
+  // the review's cases: an underscore after the Batch ID (as the TAM is named) is ✓
+  F.annTamUnder001 = { name: 'LSH Task Assessment Manual (TAM) | B103026_ Ana Cruz', mimeType: DOC };
+  v = await verify(ann, six({ tam: link.doc('annTamUnder001') }));
+  if (!v.tam || !v.tam.ok) fail(`a TAM named "| B103026_ Ana Cruz" isn't ✓: ${JSON.stringify(v.tam)}`);
+  // a batch-mate whose name has hers in it (Ana Cruz Lopez): each one's file is told apart, both ways
+  const acl = 'ana-cruz-lopez--b103026';
+  store.set('ft:trainee:' + acl, JSON.stringify({ id: acl, name: 'Ana Cruz Lopez', batch: 'B103026', approved: true }));
+  F.aclTracker0001 = { name: 'LSH Daily Task Tracker | B103026 Ana Cruz Lopez', mimeType: SHEET };
+  v = await verify(ann, six({ tracker: link.sheet('aclTracker0001') }));
+  if (!v.tracker || v.tracker.ok !== false || !/Ana Cruz Lopez's/.test(v.tracker.error)) fail(`Ana Cruz took Ana Cruz Lopez's tracker as hers: ${JSON.stringify(v.tracker)}`);
+  let va = await verify(acl, { tracker: link.sheet('annTracker0001') });
+  if (!va.tracker || va.tracker.ok !== false || !/Ana Cruz's/.test(va.tracker.error)) fail(`Ana Cruz Lopez took Ana Cruz's tracker as hers: ${JSON.stringify(va.tracker)}`);
+  va = await verify(acl, { tracker: link.sheet('aclTracker0001') });
+  if (!va.tracker || !va.tracker.ok) fail(`Ana Cruz Lopez's own tracker isn't ✓: ${JSON.stringify(va.tracker)}`);
+  // a two-letter name (Bo Li): their own file is ✓
+  const bo = 'bo-li--b103026';
+  store.set('ft:trainee:' + bo, JSON.stringify({ id: bo, name: 'Bo Li', batch: 'B103026', approved: true }));
+  F.boTracker00001 = { name: 'LSH Daily Task Tracker | B103026 Bo Li', mimeType: SHEET };
+  const vbo = await verify(bo, { tracker: link.sheet('boTracker00001') });
+  if (!vbo.tracker || !vbo.tracker.ok) fail(`a two-letter name's own tracker isn't ✓: ${JSON.stringify(vbo.tracker)}`);
+  // moved by a trainer from batch B090126: her files named with the old batch are still hers
+  store.set('ft:trainee:' + ann, JSON.stringify({ id: ann, name: 'Ana Cruz', batch: 'B103026', batchFrom: 'B090126', batchMovedBy: 'trainer', approved: true }));
+  v = await verify(ann, six({ tam: link.doc('oldTam00000001') }));
+  if (!v.tam || !v.tam.ok) fail(`a trainee moved from B090126 has her old-batch TAM ✗: ${JSON.stringify(v.tam)}`);
+  store.set('ft:trainee:' + ann, JSON.stringify({ id: ann, name: 'Ana Cruz', batch: 'B103026', approved: true }));
   // a ✓ from before these checks (no v) is checked again
   const rv = JSON.parse(store.get('ft:trackerreview:' + ann));
   rv.verify.monitor = { ok: true, url: link.doc('template000001'), at: 'x' };
