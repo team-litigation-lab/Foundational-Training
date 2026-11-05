@@ -852,8 +852,8 @@ function ftLoadCurriculum(){
 }
 function renderFtCurriculum(){
   if(!FTC.data){
-    ftLoadCurriculum();
-    return `<div class="card ftc">${FTC.failed ? "Couldn’t load the curriculum — sign in again as Admin and retry." : "Loading the curriculum…"}</div>`;
+    if(!FTC.failed) ftLoadCurriculum();   // (a failed load waits for Retry: re-fetching on every render loops forever)
+    return `<div class="card ftc">${FTC.failed ? `Couldn’t load the curriculum — sign in again as Admin and retry. <button class="btn" onclick="FTC.failed=false;render()">Retry</button>` : "Loading the curriculum…"}</div>`;
   }
   const sel = state.ftcDay == null ? (FTC.data.days[0] || {}).id : state.ftcDay;
   const day = FTC.data.days.find(d=>d.id===sel) || FTC.data.days[0];

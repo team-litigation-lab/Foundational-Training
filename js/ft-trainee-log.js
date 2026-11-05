@@ -19,6 +19,8 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
+// (a link the trainee saved goes into an href only as an http(s) address, escaped: a javascript: one is shown as text)
+const safeHref = u => /^https?:\/\//i.test(String(u || "").trim()) ? e(String(u).trim()) : "";
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;
 const t = v => { const d = v ? new Date(v) : null; return d && isFinite(d) ? d : null; };
@@ -138,19 +140,19 @@ function outputsHtml(){
     ${!DV.folder ? `<p class="tl-note">No folder linked yet (📁 My Drive links).</p>` : L.filesErr ? `<p class="tl-note tl-err">The folder can’t be read right now (${e(L.filesErr)}). ${isTrainee() ? "Check your 📁 My Drive links." : "The 🔗 link check on the Batch Sheet says why."}</p>` : ""}
     ${files.length ? `<p class="tl-sum"><b class="ok">✓ ${n("ok")}</b> named right · <b class="low">✗ ${n("bad")}</b> named wrong · <b>? ${n("unknown")}</b> not a known name</p>
       <div class="tl-wrap"><table class="tl-tbl"><thead><tr><th>File</th><th>Added</th><th>What it is</th><th>Naming</th></tr></thead><tbody>
-      ${checked.map(x => `<tr><td>${x.f.link ? `<a href="${e(x.f.link)}" target="_blank" rel="noopener noreferrer">${e(x.f.name)} ↗</a>` : e(x.f.name)}</td><td>${e(when(x.f.created || x.f.modified))}</td><td>${e(x.what || "")}</td><td>${mark(x)}</td></tr>`).join("")}</tbody></table></div>`
+      ${checked.map(x => `<tr><td>${safeHref(x.f.link) ? `<a href="${safeHref(x.f.link)}" target="_blank" rel="noopener noreferrer">${e(x.f.name)} ↗</a>` : e(x.f.name)}</td><td>${e(when(x.f.created || x.f.modified))}</td><td>${e(x.what || "")}</td><td>${mark(x)}</td></tr>`).join("")}</tbody></table></div>`
       : DV.folder && !L.filesErr ? `<p class="tl-note">${L.files ? "The folder is empty." : "Reading the folder…"}</p>` : ""}
   </section>
   <section class="tl-sec"><h3>🔗 The day’s output links <span>${days.length} day${days.length === 1 ? "" : "s"}</span></h3>
     ${days.length ? `<div class="tl-wrap"><table class="tl-tbl"><thead><tr><th>Day</th><th>Links</th><th>Submitted</th></tr></thead><tbody>
-      ${days.map(([d, x]) => `<tr><td>${e(d)}</td><td>${(x.links || []).map(l => `<a href="${e(l.url)}" target="_blank" rel="noopener noreferrer">${e(l.label || "output")} ↗</a>`).join(" · ")}</td><td>${e(when(x.submittedAt))}</td></tr>`).join("")}</tbody></table></div>` : `<p class="tl-note">None submitted yet.</p>`}
+      ${days.map(([d, x]) => `<tr><td>${e(d)}</td><td>${(x.links || []).map(l => (l && safeHref(l.url) ? `<a href="${safeHref(l.url)}" target="_blank" rel="noopener noreferrer">${e(l.label || "output")} ↗</a>` : e((l && l.label) || "output"))).join(" · ")}</td><td>${e(when(x.submittedAt))}</td></tr>`).join("")}</tbody></table></div>` : `<p class="tl-note">None submitted yet.</p>`}
   </section>`;
 }
 function logHtml(){
   const ev = events();
   return `<section class="tl-sec"><h3>📜 Evaluations <span>${ev.length}</span></h3>
     ${ev.length ? `<div class="tl-wrap"><table class="tl-tbl"><thead><tr><th>When</th><th>What</th><th>Result</th><th>By</th></tr></thead><tbody>
-      ${ev.map(x => `<tr><td class="tl-when">${e(when(x.at))}</td><td>${x.icon} ${x.link ? `<a href="${e(x.link)}" target="_blank" rel="noopener noreferrer">${e(x.what)} ↗</a>` : e(x.what)}</td><td><span class="tl-res ${x.cls || ""}">${e(x.result)}</span></td><td>${e(x.by)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="tl-note">Nothing evaluated yet.</p>`}
+      ${ev.map(x => `<tr><td class="tl-when">${e(when(x.at))}</td><td>${x.icon} ${safeHref(x.link) ? `<a href="${safeHref(x.link)}" target="_blank" rel="noopener noreferrer">${e(x.what)} ↗</a>` : e(x.what)}</td><td><span class="tl-res ${x.cls || ""}">${e(x.result)}</span></td><td>${e(x.by)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="tl-note">Nothing evaluated yet.</p>`}
   </section>`;
 }
 function page(){

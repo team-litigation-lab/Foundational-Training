@@ -18,6 +18,7 @@ const etDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_Y
   const at = new Date().toISOString();
   const T = (id, name, batch, extra) => put('trainee:' + id, Object.assign({ id, name, batch, approved: true, registeredAt: at }, extra || {}));
   await T('ivy-in--b103026', 'Ivy In', 'B103026'); await T('owen-out--b103026', 'Owen Out', 'B103026');
+  await T('eve-formula--b103026', '=HYPERLINK("http://x.test","click")', 'B103026', { fullName: '=HYPERLINK("http://x.test","Zoë")' });
   await T('bea-other--b102626', 'Bea Other', 'B102626'); await T('arch-gone--b102626', 'Arch Gone', 'B102626', { archived: true });
   await put(`checkin:${etDate()}:ivy-in--b103026`, { timeIn: '08:25', at, name: 'Ivy In', batch: 'B103026', training: 'Day 1 · Virtual Assistant Essentials' });
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminTab = 'attendance'; goto('admin'); });
@@ -32,6 +33,14 @@ const etDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_Y
   if (!row('Bea Other')) fail('a trainee of another active batch is missing');
   if (row('Arch Gone')) fail('an archived trainee is listed');
   if (!r.batches.some(b => /B103026/.test(b) && /1 of 2 in|of \d+ in/.test(b))) fail(`the batch count isn't shown: ${JSON.stringify(r.batches)}`);
+  // ⬇ CSV: a UTF-8 BOM (so Zoë isn't garbled in Excel), CRLF lines, and a name that starts like a formula is kept as text
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTAttendance.csv())]);
+  const csv = require('fs').readFileSync(await dl.path(), 'utf8');
+  if (!csv.startsWith('\ufeff')) fail('the Attendance CSV has no UTF-8 BOM');
+  if (!/\r\n/.test(csv)) fail('the Attendance CSV lines are not CRLF');
+  const eve = csv.split(/\r?\n/).find(l => /HYPERLINK/.test(l)) || '';
+  if (!eve.includes(`"'=HYPERLINK(""http://x.test"",""Zoë"")"`)) fail(`a trainee name that starts like a formula isn't kept as text in the CSV: ${eve}`);
+  if (/(^|,)"[=+\-@]/.test(csv.replace(/^\ufeff/, ''))) fail('a CSV cell still starts with a formula character');
   // ✍ manual override: set Owen's Time In by hand; it goes into the Portal's attendance record and shows as ✍ Manual
   const rowSel = n => page.locator('.fat-tbl tbody tr', { hasText: n });
   await rowSel('Owen Out').locator('text=✍ Set Time In').click(); await page.waitForTimeout(300);
@@ -54,5 +63,5 @@ const etDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_Y
   if (!/Not in yet/.test(await page.evaluate(() => ([...document.querySelectorAll('.fat-tbl tbody tr')].find(tr => /Ivy In/.test(tr.innerText)) || {}).innerText || ''))) fail('the day before still shows today\'s Time In');
   await browser.close();
   if (failures.length) { console.error('Attendance tab test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Attendance tab test passed (every active trainee by batch, the day\'s Time In, ⏳ Not in yet for the rest, no archived trainee, the ✍ manual override set, saved to the attendance record and cleared, the day before).');
+  console.log('Attendance tab test passed (every active trainee by batch, the day\'s Time In, ⏳ Not in yet for the rest, no archived trainee, the ⬇ CSV keeps a formula-like name as text with a BOM, the ✍ manual override set, saved to the attendance record and cleared, the day before).');
 })().catch(e => { console.error(e); process.exit(1); });

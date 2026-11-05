@@ -167,11 +167,12 @@ function weekNow(){
   return Math.max(1, Math.min(6, Math.floor((Date.parse(ptToday() + "T00:00:00Z") - Date.parse(r[0] + "T00:00:00Z")) / (7 * 864e5)) + 1));
 }
 const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
-// a week is over once its Friday's shift has ended (the nightly check has run: 22:05 UTC), or any day after it
+// a week is over once its Friday's shift has ended (the nightly check has run: 22:30 UTC that Friday), or any day after it
+// (the moment itself, not the UTC clock against the Pacific date: that Friday's Pacific evening is already the next UTC day)
 function weekOver(){
   const r = weekRange(); if(!r) return false;
-  const fri = new Date(Date.parse(r[0] + "T00:00:00Z") + 4 * 864e5).toISOString().slice(0, 10), now = new Date();
-  return ptToday() > fri || (ptToday() === fri && now.getUTCHours() * 60 + now.getUTCMinutes() >= 22 * 60 + 30);
+  const fri = new Date(Date.parse(r[0] + "T00:00:00Z") + 4 * 864e5).toISOString().slice(0, 10);
+  return ptToday() > fri || Date.now() >= Date.parse(fri + "T22:30:00Z");
 }
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];

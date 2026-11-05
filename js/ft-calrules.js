@@ -98,15 +98,18 @@ function check(b, others){
 const score = checks => { const on = checks.filter(c => c[1] !== null), met = on.filter(c => c[1]).length; return {met, total: on.length, pct: on.length ? Math.round(met / on.length * 100) : 0}; };
 
 /* ---------- the trainee's record ---------- */
-const R = {rec: null, recId: null, open: {}, draft: null, last: null};
+const R = {rec: null, recId: null, open: {}, draft: null, last: null, failed: false};
 function load(force){
   const id = state.traineeId; if(!id) return Promise.resolve();
-  if(!force && R.recId === id && R.rec) return Promise.resolve();
+  if(R.recId !== id){ R.rec = null; R.failed = false; }   // (another trainee's log is never theirs to save over)
+  if(!force && R.recId === id && (R.rec || R.failed)) return Promise.resolve();   // (after a failed read, only ↻ Try again reads again)
   R.recId = id;
-  return Promise.all([sharedGet("calrules:" + id), sharedGet("settings:calrules").catch(() => null)]).then(([v, st]) => {
-    R.rec = v && Array.isArray(v.bookings) ? v : {bookings: []}; if(st && st.lunch !== undefined) X.lunch = st.lunch;
-    if(state.view === "calrules") render(); }).catch(() => { R.rec = R.rec || {bookings: []}; });
+  // (a failed read isn't an empty log: R.rec stays unset, so nothing is saved over the bookings)
+  return Promise.all([sharedGetStrict("calrules:" + id), sharedGet("settings:calrules").catch(() => null)]).then(([v, st]) => {
+    R.rec = v && Array.isArray(v.bookings) ? v : {bookings: []}; R.failed = false; if(st && st.lunch !== undefined) X.lunch = st.lunch;
+    if(state.view === "calrules") render(); }).catch(() => { R.failed = !R.rec; if(state.view === "calrules") render(); });
 }
+const unread = () => { if(R.rec) return false; toast("Couldn’t load your bookings, so nothing was saved. Try again."); return true; };
 const val = id => { const el = document.getElementById(id); return !el ? "" : el.type === "checkbox" ? el.checked : String(el.value || "").trim(); };
 function readForm(){
   return {mode: val("crMode"), scn: val("crScn"), client: val("crClient"), callback: val("crCallback"), dob: val("crDob"), dol: val("crDol"), tone: val("crTone"),
@@ -117,6 +120,7 @@ async function submit(){
   const b = Object.assign(readForm(), {id: "b" + Date.now().toString(36), at: new Date().toISOString(), on: todayISO()});
   if(!b.scn || !b.date || !b.start || !b.length){ toast("Pick the scenario and fill in the date, start time and length."); return; }
   await load();
+  if(unread()) return;
   const checks = check(b, R.rec.bookings), sc = score(checks);
   Object.assign(b, {checks: checks.map(c => [c[0], c[1], c[2], c[3]]), met: sc.met, total: sc.total, pct: sc.pct});
   R.rec.bookings = R.rec.bookings.concat([b]).slice(-200); R.last = b.id; R.open = {[b.id]: true}; R.draft = null;
@@ -125,7 +129,7 @@ async function submit(){
   else toast(`✓ Booking checked: ${sc.met} of ${sc.total} rules met.`);
 }
 function remove(id){
-  if(!confirm("Remove this booking from your log?")) return;
+  if(unread() || !confirm("Remove this booking from your log?")) return;
   R.rec.bookings = R.rec.bookings.filter(b => b.id !== id);
   sharedSet("calrules:" + state.traineeId, R.rec).then(ok => { if(ok === false) toast("Couldn’t save. Check your connection."); });
   render();
@@ -172,6 +176,7 @@ function formHtml(){
     <div class="cr-act"><button class="btn btn-navy" onclick="FTCalRules.submit()">✓ Check the booking</button></div></div>`;
 }
 function renderPage(){
+  if(!R.rec && R.failed) return `<div class="card cr-loadfail" style="padding:24px;"><b>Couldn’t load your bookings.</b> Nothing has been changed: check your connection, then <button class="btn btn-ghost btn-sm" type="button" onclick="FTCalRules.reload().then(render)">↻ Try again</button></div>`;
   if(!R.rec){ load(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const bs = R.rec.bookings.slice().reverse(), sc = bs.length ? Math.round(bs.reduce((n, b) => n + (b.pct || 0), 0) / bs.length) : null;
   return `<div class="cr-hero"><p class="lp-eyebrow">Day 6 · Calendar Management Mock Call Scenarios</p><h1>📅 Booking Rule Check</h1>

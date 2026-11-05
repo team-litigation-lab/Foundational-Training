@@ -41,9 +41,13 @@ function make(cfg){
   async function load(force){
     if(R.loading || (R.data && !force && R.who === state.traineeId)) return;
     R.loading = true; R.err = ""; R.who = state.traineeId;
-    try{ R.data = await call("get"); }
-    catch(err){ R.err = String(err.message || err); R.data = R.data || offline(); }
-    R.loading = false; if(state.view === cfg.view) render();
+    let j = null, bad = "";
+    try{ j = await call("get"); }catch(err){ bad = String(err.message || err); }
+    R.loading = false;
+    // (another trainee signed in while it loaded: the answer is the last trainee's, so it is dropped and theirs is loaded)
+    if(R.who !== state.traineeId){ if(state.view === cfg.view) render(); return; }
+    if(bad){ R.err = bad; R.data = R.data || offline(); } else R.data = j;
+    if(state.view === cfg.view) render();
   }
   // the page still works on the browser's clock when the server can't be reached (nothing saved)
   const offline = () => ({now: Date.now(), current: C.currentWeek(Date.now()), next: C.nextWeek(Date.now()), record: null, placed: [], review: C.review([], W)});
@@ -104,6 +108,9 @@ function make(cfg){
   }
 
   function renderPage(){
+    // (a sign-out and another trainee's sign-in in the same tab: the last trainee's calendar is dropped, so it is never
+    //  shown or saved into the new trainee's record)
+    if(R.who !== state.traineeId){ R.data = null; R.edit = null; R.err = ""; R.week = "current"; }
     if(!R.data){ load(); return `<div class="card" style="padding:24px;">Loading next week’s calendar…</div>`; }
     const d = R.data, cur = d.current, nxt = d.next, mine = events(), rv = d.review || C.review(mine, W), rec = d.record;
     const showNext = R.week === "next", wk = showNext ? nxt : cur;
