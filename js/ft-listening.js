@@ -198,7 +198,7 @@ function renderLn(){
    worker.js grade them against the key (/api/assess/grade, "recact" in assess-keys.js: the data points and the obstacle
    by the AI against the key, the VA's response out of 2). The grade goes to trackerreview:<id>.assess.recact and 🏅 My
    Performance; the pop-up marks each field with it. */
-const POP = {sid: null, sending: false, review: null, x: 0, y: 0, w: "", h: ""};
+const POP = {sid: null, sending: false, review: null, x: 0, y: 0, w: "", h: "", slow: false, err: ""};
 // 🔁 a grade saved by the broken grading (one AI request for the whole sheet, its reply cut off): the AI's reply unreadable
 // (ai false) and answers marked ✗ with no note and not left to the trainer — graded again by itself (worker.js grades in
 // batches now, and leaves to the trainer what it can't check)
@@ -212,8 +212,12 @@ async function regradeIfStale(sid){
     if(r.ok){ POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review; const n = gradedOf(sid); if(n) toast(`🔁 Your answers were graded again: ${n.score} of ${n.max} (${n.pct}%).`); } }catch(err){}
   POP.regrading = false; try{ paintPop(); }catch(err){}
 }
+// (still loading after a while, or the sheet couldn't be drawn: said so, with ↻ Try again — never "Loading…" for good)
+const popWait = () => `<div class="ln-pop-h"><div><p class="lp-eyebrow">Reception Listening Activity</p><h2>📝 Answer Sheet</h2></div><button type="button" class="ln-pop-x" onclick="FTListen.close()" title="Close (Esc)">✕</button></div>
+  <div class="ln-pop-b"><div class="card" style="padding:24px;">${POP.err ? `⚠ The answer sheet couldn’t be shown: ${e(POP.err)}` : POP.slow ? "Still loading your answer sheet… (a slow connection, or the server is busy)" : "Loading your answer sheet…"}
+    ${POP.err || POP.slow ? `<div style="margin-top:12px;"><button type="button" class="btn btn-navy btn-sm" onclick="FTListen.retry()">↻ Try again</button></div>` : ""}</div></div>`;
 function popHtml(){
-  if(!R.rec || !X.data) return `<div class="ln-pop-b"><div class="card" style="padding:24px;">Loading…</div></div>`;
+  if(!R.rec || !X.data) return popWait();
   const cur = setLive(POP.sid), g = gradedOf(POP.sid), k = countDone(R.rec, cur);
   return `<div class="ln-pop-h"><div><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h2>📝 Answer Sheet</h2></div><span class="ln-pop-grip" title="Drag the bar to move it; drag the lower-right corner to resize it">✥ Drag to move · ↘ resize</span>
       <button type="button" class="ln-pop-x" onclick="FTListen.close()" title="Close (Esc)">✕</button></div>
@@ -235,7 +239,9 @@ function paintPop(){
     const was = box.querySelector(".ln-pop-in"); if(was){ POP.w = was.style.width; POP.h = was.style.height; } }
   else { box = document.createElement("div"); box.id = "lnPop"; box.className = "ln-pop";
     box.addEventListener("click", ev => { if(ev.target === box) FTListen.close(); }); document.body.appendChild(box); }
-  box.innerHTML = `<div class="ln-pop-in" role="dialog" aria-modal="true" aria-label="Reception Listening Activity: Answer Sheet">${popHtml()}</div>`;
+  // (a sheet that can't be drawn — a record in a shape it doesn't expect — says why instead of staying on "Loading…")
+  let html; try{ html = popHtml(); POP.err = ""; }catch(err){ POP.err = String((err && err.message) || err).slice(0, 160); html = popWait(); try{ console.error("Answer Sheet", err); }catch(x){} }
+  box.innerHTML = `<div class="ln-pop-in" role="dialog" aria-modal="true" aria-label="Reception Listening Activity: Answer Sheet">${html}</div>`;
   const b = box.querySelector(".ln-pop-b"); if(b) b.scrollTop = top;
   const pin = box.querySelector(".ln-pop-in"); pin.style.width = POP.w; pin.style.height = POP.h;
   movePop(pin, POP.x, POP.y);
@@ -294,10 +300,19 @@ window.FTListen = {
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
   // 📝 the activity's answer sheet in a pop-up over the deck
-  pop(sid){ const opened = sid || "recact"; POP.sid = opened; load(); loadSets(); paintPop();
+  // (the sheet is painted again as soon as the trainee's log and the sets are in — not only through the page's redraw, which
+  // a slide's own trouble could stop — and after 8 seconds still waiting it says so, with ↻ Try again)
+  pop(sid){ const opened = sid || "recact"; POP.sid = opened; POP.slow = false; POP.err = "";
+    const again = () => { if(POP.sid === opened) try{ paintPop(); }catch(err){} };
+    Promise.all([Promise.resolve(load()).catch(() => {}), Promise.resolve(loadSets()).catch(() => {})]).then(again, again);
+    setTimeout(() => { if(POP.sid === opened && (!R.rec || !X.data)){ POP.slow = true; again(); } }, 8000);
+    paintPop();
     // (a broken grade on the sheet is graded again: the sheet it was opened on, whatever the redraw does meanwhile)
     if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; regradeIfStale(opened); try{ paintPop(); }catch(err){} }).catch(() => {}); },
-  close(){ POP.sid = null; paintPop(); }, submit: submitPop, regrade: sid => regradeIfStale(sid || POP.sid),
+  close(){ POP.sid = null; paintPop(); },
+  // ↻ the sheet read again from the start (the trainee's log and the trainer's sets)
+  retry(){ const sid = POP.sid; if(!sid) return; R.recId = null; R.rec = null; X.loading = null; X.at = 0; FTListen.pop(sid); },
+  submit: submitPop, regrade: sid => regradeIfStale(sid || POP.sid),
   // (a call of a grade, c<n>, or one of its answers, c<n>_<field>, by its name — "Call 2: Third Time Calling · Reason for the
   // call" — for what the 📋 Batch Sheet says was done best and needs to be improved)
   answerName(sid, k){ const m = /^c(\d+)(?:_(\w+))?$/.exec(String(k || "")), s = setOf(sid); if(!m || !s) return String(k || "");
