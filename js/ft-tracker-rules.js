@@ -31,7 +31,7 @@
   }
   function isWeekday(iso){ const d = new Date(iso + "T12:00:00Z").getUTCDay(); return d >= 1 && d <= 5; }
   function fmtDate(iso){
-    if(!iso) return "";
+    if(typeof iso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";   // (a trainee can write anything into a date cell)
     const [y, m, d] = iso.split("-");
     return `${m}/${d}/${y}`;
   }

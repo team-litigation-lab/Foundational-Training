@@ -47,6 +47,8 @@ const STATUS_STYLE = {"New":"st-new", "Pending for >3 days":"st-pending", "Ongoi
 const colLetter = (i)=>{ let s=""; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; };
 const today = ()=>TR.ptDate();
 const e = (s)=>esc(String(s==null?"":s));
+// a value as a JS string literal inside an onclick="…" (row ids and dates are trainee-written)
+const fttJs = (v)=> e(JSON.stringify(v));
 
 function mainCols(t){
   const dates = (t.tracker.noteDates||[]).slice().sort();
@@ -168,9 +170,9 @@ function renderMain(t){
     return `<tr class="ftt-row"><th class="ftt-rn">${rn++}</th>${cols.map(col=>{
       const v = cellVal(r, col.k), fk = r.id+"|"+col.k, fl = flags[fk];
       const sel = FTT.sel && FTT.sel.sheet==="tracker" && FTT.sel.r===r.id && FTT.sel.k===col.k;
-      const shown = col.kind==="date" ? TR.fmtDate(v) : (col.k==="status" && v ? `<span class="ftt-chip ${STATUS_STYLE[v]||""}">${e(v)}</span>` : e(v));
-      return `<td class="ftt-c ${col.kind==="list"?"is-list":""}${fl?" is-flag":""}${sel?" is-sel":""}${col.date===D?" is-day":""}" data-r="${r.id}" data-k="${col.k}" ${fl?`title="⚑ ${e(fl)}"`:""}
-        onclick="FTTracker.select('tracker','${r.id}','${col.k}')" ondblclick="FTTracker.edit()">${shown}</td>`;
+      const shown = col.kind==="date" ? e(TR.fmtDate(v)) : (col.k==="status" && v ? `<span class="ftt-chip ${STATUS_STYLE[v]||""}">${e(v)}</span>` : e(v));
+      return `<td class="ftt-c ${col.kind==="list"?"is-list":""}${fl?" is-flag":""}${sel?" is-sel":""}${col.date===D?" is-day":""}" data-r="${e(r.id)}" data-k="${e(col.k)}" ${fl?`title="⚑ ${e(fl)}"`:""}
+        onclick="FTTracker.select('tracker',${fttJs(String(r.id))},${fttJs(col.k)})" ondblclick="FTTracker.edit()">${shown}</td>`;
     }).join("")}</tr>`;
   }).join("");
   return `<table class="ftt-grid">${widths}<thead>${letters}</thead><tbody>${summary}${band}${head}${body}</tbody></table>`;
@@ -193,19 +195,19 @@ function renderCheckPanel(){
   const saved = (FTT.review && FTT.review.days && FTT.review.days[D]) || null;
   const live = liveCheck(D);
   const res = live;   // the rules run on the sheet as it is now; the daily run keeps its own copy
-  if(res.na) return `<div class="card ftt-check"><h3>Daily check · ${TR.fmtDate(D)}</h3><p class="ftt-muted">This day is before the tracker started, so it isn't checked.</p></div>`;
+  if(res.na) return `<div class="card ftt-check"><h3>Daily check · ${e(TR.fmtDate(D))}</h3><p class="ftt-muted">This day is before the tracker started, so it isn't checked.</p></div>`;
   const dates = Array.from(new Set([...(t.tracker.noteDates||[]), ...Object.keys((FTT.review&&FTT.review.days)||{})])).sort().reverse();
   const hist = dates.slice(0, 20).map(d=>{
-    const s = FTT.review.days[d]; const p = s ? s.pct : TR.checkDay(t, d).pct;
-    if(p==null) return "";
-    return `<button class="ftt-hday ${d===D?"on":""} ${p>=100?"ok":p>=60?"mid":"bad"}" onclick="FTTracker.day('${d}')">${TR.fmtDate(d).slice(0,5)}<b>${p}%</b></button>`;
+    const s = FTT.review.days[d], p0 = s ? s.pct : TR.checkDay(t, d).pct, p = Number(p0);
+    if(p0==null || p0==="" || !Number.isFinite(p)) return "";
+    return `<button class="ftt-hday ${d===D?"on":""} ${p>=100?"ok":p>=60?"mid":"bad"}" onclick="FTTracker.day(${fttJs(d)})">${e(TR.fmtDate(d).slice(0,5))}<b>${p}%</b></button>`;
   }).join("");
-  const flagRows = res.flags.map(f=>{ const r = t.tracker.rows.find(x=>x.id===f.row); return `<li><a class="ftt-link" onclick="FTTracker.select('tracker','${f.row}','${f.col}', true)">${e((r&&r.details)||"(untitled task)")}</a> — ${e(f.msg)}</li>`; }).join("");
+  const flagRows = res.flags.map(f=>{ const r = t.tracker.rows.find(x=>x.id===f.row); return `<li><a class="ftt-link" onclick="FTTracker.select('tracker',${fttJs(String(f.row))},${fttJs(String(f.col))}, true)">${e((r&&r.details)||"(untitled task)")}</a> — ${e(f.msg)}</li>`; }).join("");
   const comment = saved && saved.comment;
   return `
   <div class="card ftt-check">
     <div class="ftt-check-head">
-      <div><h3>Daily check · ${TR.fmtDate(D)}${D===today()?" (today)":""}</h3>
+      <div><h3>Daily check · ${e(TR.fmtDate(D))}${D===today()?" (today)":""}</h3>
         <p>The platform checks this tracker automatically every training day${D===today()?"; flags update as you type":""}.</p></div>
       <div class="ftt-pct ${res.pct>=100?"ok":res.pct>=60?"mid":"bad"}">${res.pct}%</div>
     </div>
@@ -342,7 +344,6 @@ async function loadAdmin(){
   if(state.view==="admin" && state.adminTab==="trackers") render();
 }
 const fttBatch = (b)=> b ? `Batch ${b}` : "No batch set";
-const fttJs = (v)=> e(JSON.stringify(v));
 function fttDays(n){ const out = [], d = new Date(today()+"T12:00:00Z"); while(out.length<n){ const iso = d.toISOString().slice(0,10); if(TR.isWeekday(iso)) out.push(iso); d.setUTCDate(d.getUTCDate()-1); } return out.reverse(); }
 // One day's result: the stored end-of-day check (with the trainer's comment) or, for today, the live check.
 function fttDay(x, d){
@@ -366,7 +367,7 @@ function fttRecords(x){
       <td><span class="ftt-pill ${r.pct>=100?"ok":r.pct>=60?"mid":"bad"}">${r.pct}%</span></td>
       <td>${r.flags.length ? `⚑ ${r.flags.length}` : '<span class="ftt-muted">none</span>'}</td>
       <td>${r.comment ? e(String(r.comment).slice(0,140)) + (String(r.comment).length>140?"…":"") : '<span class="ftt-muted">—</span>'}</td>
-      <td>${x.t ? `<button class="btn btn-ghost btn-sm" onclick="FTTracker.openAdmin('${x.id}','${d}')">Open day</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
+      <td>${x.t ? `<button class="btn btn-ghost btn-sm" onclick="FTTracker.openAdmin(${fttJs(x.id)},${fttJs(d)})">Open day</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
 }
 function fttTraineeRows(list, days){
   return list.map(x=>{
