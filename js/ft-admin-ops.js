@@ -199,7 +199,8 @@ async function dbScan(){
     const recs = rtKeys.length ? await sharedGetMany(rtKeys) : [];
     rtKeys.forEach((k, i) => {
       const r = recs[i];
-      if(!r || rtLive(r)) return;
+      // (a task still running is never swept: active and not past its end — the page's surpriseTaskIsLive, less its trainee-only check)
+      if(!r || (r.active && !(r.expiresAt && now > new Date(r.expiresAt).getTime()))) return;
       const last = Math.max(new Date(r.expiresAt || 0).getTime() || 0, new Date(r.generatedAt || 0).getTime() || 0,
         ...((r.history || []).map(h => new Date(h.expiresAt || h.generatedAt || 0).getTime() || 0)));
       if(last && now - last > 30 * DAY) old.push({key:k, why:"a stopped alert — a random task that ended over 30 days ago"});
