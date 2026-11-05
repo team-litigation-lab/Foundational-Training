@@ -1209,13 +1209,16 @@ async function saveToFolder(env, folderUrl, name, bytes, mime) {
   } catch (e) { return first; }
   return saveToFolderOnce(env, fid, name, bytes, mime);
 }
+// a Drive error as "quota" (the Drive is full), "no-access" or "drive"; a name put in a Drive query, escaped
+const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
+const driveQ = (s) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 async function saveToFolderOnce(env, fid, name, bytes, mime) {
   let token;
   try { token = await writeToken(env); } catch (e) { return { error: "drive-auth" }; }
   const auth = { Authorization: "Bearer " + token }, PDF = mime || "application/pdf";
-  const q = encodeURIComponent(`'${fid}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${PDF}' and trashed = false`);
+  const q = encodeURIComponent(`'${fid}' in parents and name = '${driveQ(name)}' and mimeType = '${PDF}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
-  if (!found.ok) return { error: found.status === 404 || found.status === 403 ? "no-access" : "drive" };
+  if (!found.ok) return { error: driveErr(found) };
   const old = ((await found.json().catch(() => ({}))).files || [])[0];
   const b = "lsh" + crypto.randomUUID().replace(/-/g, ""), enc = new TextEncoder();
   const meta = old ? { name } : { name, mimeType: PDF, parents: [fid] };
@@ -1223,17 +1226,16 @@ async function saveToFolderOnce(env, fid, name, bytes, mime) {
   const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files${old ? "/" + old.id : ""}?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,createdTime,modifiedTime`,
     { method: old ? "PATCH" : "POST", headers: Object.assign({ "Content-Type": `multipart/related; boundary=${b}` }, auth), body });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: /storageQuota/i.test(JSON.stringify(j)) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive" };
+  if (!res.ok) return { error: driveErr(res, j) };
   return { ok: true, updated: !!old, file: { name: j.name || name, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view`, created: j.createdTime || "", modified: j.modifiedTime || "" } };
 }
 /* 📦 A batch's archive in the Google Drive folder the trainer gives (js/ft-batch-admin.js): a folder of its own in it, and
    files of any size (a resumable upload, so a trainee's full records with their Process Guide screenshots fit). A file of the
    same name in that folder is replaced, so saving a batch again never leaves two copies. Needs the service account with
    Editor access to the folder (Content manager on a Shared Drive); a personal My Drive also needs GDRIVE_SA_SUBJECT. */
-const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
 async function driveFolder(env, parentId, name) {
   const auth = { Authorization: "Bearer " + await writeToken(env) }, FOLDER = "application/vnd.google-apps.folder";
-  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${FOLDER}' and trashed = false`);
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${driveQ(name)}' and mimeType = '${FOLDER}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,webViewLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
   if (!found.ok) throw new Error(driveErr(found, fj));
@@ -1247,7 +1249,7 @@ async function driveFolder(env, parentId, name) {
 }
 async function driveUpload(env, parentId, name, mime, bytes) {
   const auth = { Authorization: "Bearer " + await writeToken(env) };
-  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and trashed = false`);
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${driveQ(name)}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
   if (!found.ok) throw new Error(driveErr(found, fj));
