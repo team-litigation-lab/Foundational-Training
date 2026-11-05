@@ -386,7 +386,7 @@ function dayScoresHtml(){
 function peopleHtml(){
   if(meOn() || !adminOn() || typeof window.renderAdmin !== "function") return "";
   const was = state.adminTab; let out = "";
-  try{ state.adminTab = "audit"; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ state.adminTab = was; }
+  try{ state.adminTab = "audit"; window.__ftPeopleEmbed = true; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ window.__ftPeopleEmbed = false; state.adminTab = was; }
   const t = document.createElement("template"); t.innerHTML = out;
   t.content.querySelectorAll(".admin-tabs, #navBackSlot, .audit-page-head").forEach(x => x.remove());
   return `<section class="bs-sec bs-people" id="bs-people"><h3 class="bs-h">👥 Trainees &amp; Batches</h3>

@@ -156,7 +156,7 @@ function logHtml(){
 function page(){
   if(!L.id) return `<div class="card" style="padding:28px;">Pick a trainee first (👥 Trainees & Batches → 📜 Log).</div>`;
   if(!L.data){ load(true); return `<div class="card" style="padding:28px;">Reading ${e(L.name || "the trainee")}’s log…</div>`; }
-  const back = isTrainee() ? `<a class="back-link" onclick="goto('mysheet')">&larr; Back to 📋 My Progress</a>` : `<a class="back-link" onclick="state.adminTab='audit'; goto('admin')">&larr; Back to 👥 Trainees &amp; Batches</a>`;
+  const back = isTrainee() ? `<a class="back-link" onclick="goto('mysheet')">&larr; Back to 📋 My Progress</a>` : `<a class="back-link" onclick="state.adminTab='audit'; goto('admin')">&larr; Back to 📋 Batch Sheet · 👥 Trainees &amp; Batches</a>`;
   return `${back}<div class="card tl-card">
     <div class="tl-head"><div><p class="eyebrow">📜 ${isTrainee() ? "My log" : "Trainee log"}</p><h1>${e(L.name)}</h1>
       <p class="tl-note">Every evaluation on this account and every output submitted, read live (again every minute while this page is open). Updated ${e(new Date(L.at).toLocaleTimeString())}.</p></div>
