@@ -314,7 +314,8 @@ function slimTrainee(rec) {
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
 //   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`, `daycheck:${id}`];
+//   intakecheck:<id>  Day 8's Intake Packet, checked for accuracy and completeness (worker.js checkIntakePacket)
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`, `daycheck:${id}`, `intakecheck:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -1224,6 +1225,139 @@ async function receiveEod(env, msg) {
   return { matched: true, id, date: D, check: TR.checkEod(text, subject, D, at) };
 }
 
+
+/* 📦 DAY 8'S INTAKE PACKET, CHECKED (js/ft-intake.js): the trainee downloads their assigned packet, extracts and renames its
+   documents, uploads the renamed packet with them into a subfolder of their Assessments/Activities folder named after the
+   client, and links the packet (drive:<id>.intakePacket) and that subfolder (drive:<id>.intakeFolder). Here: the packet's
+   name and date and the subfolder's name and files, read from Drive (the service account, else their public view); the
+   documents in the packet itself, read by the AI from the PDF (canonical names from the Document Naming Convention); the
+   check (TR.checkPacket: accuracy and completeness on the Saving Intake Packet rubric) and a short feedback in the
+   facilitator's voice. Kept in intakecheck:<id> (the trainee reads it; only this Worker writes it). */
+const fileIdOf = (u) => (String(u || "").match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+const htmlDec = (t) => String(t || "").replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+async function driveItem(env, fid, folder) {
+  if (!fid) return { ok: false };
+  if (driveSA(env)) {
+    let tokens = []; try { tokens = await readTokens(env); } catch (e) { tokens = []; }
+    for (const token of tokens) {
+      try {
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,modifiedTime,size&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+        const j = await res.json().catch(() => ({}));
+        if (res.ok && (j.id || j.name)) return { ok: true, name: j.name || "", mime: j.mimeType || "", modified: j.modifiedTime || "", size: Number(j.size) || 0, token };
+      } catch (e) { /* the next token */ }
+    }
+  }
+  // (without the service account, or not shared with it: the file's or the folder's own public page, for its name)
+  try {
+    const res = await fetch(folder ? `https://drive.google.com/embeddedfolderview?id=${fid}#list` : `https://drive.google.com/file/d/${fid}/view`, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
+    if (res.ok && !/accounts\.google\.com/.test(res.url)) {
+      const h = await res.text(), t = (h.match(/<meta property="og:title" content="([^"]*)"/) || h.match(/<title>([^<]*)<\/title>/) || [])[1];
+      const name = htmlDec(t).replace(/\s+-\s+Google Drive$/i, "");
+      if (name && !/^(Google Drive|Sign-?in)/i.test(name)) return { ok: true, name, mime: /\.pdf$/i.test(name) ? "application/pdf" : "", modified: "" };
+    }
+  } catch (e) { /* not readable */ }
+  return { ok: false };
+}
+const PDF_MAX = 20e6;
+async function driveBytes(fid, token) {
+  const tries = [];
+  if (token) tries.push([`https://www.googleapis.com/drive/v3/files/${fid}?alt=media&supportsAllDrives=true`, { Authorization: "Bearer " + token }]);
+  tries.push([`https://drive.google.com/uc?export=download&id=${fid}`, {}]);
+  for (const [u, h] of tries) {
+    try {
+      const r = await fetch(u, { headers: h, redirect: "follow" });
+      if (!r.ok || /text\/html/i.test(r.headers.get("content-type") || "")) continue;
+      // (at most 20 MB, checked before and while reading: a larger file is never held in memory)
+      if ((Number(r.headers.get("content-length")) || 0) > PDF_MAX || !r.body) { try { r.body && r.body.cancel(); } catch (e) { /* closed */ } continue; }
+      const rd = r.body.getReader(), parts = []; let size = 0, big = false;
+      for (;;) { const { done, value } = await rd.read(); if (done) break; size += value.length; if (size > PDF_MAX) { big = true; try { await rd.cancel(); } catch (e) { /* closed */ } break; } parts.push(value); }
+      if (big) continue;
+      const b = new Uint8Array(size); let o = 0; for (const x of parts) { b.set(x, o); o += x.length; }
+      if (b.length > 4 && String.fromCharCode(b[0], b[1], b[2], b[3]) === "%PDF") return b;
+    } catch (e) { /* the next way */ }
+  }
+  return null;
+}
+const b64Of = (b) => { let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
+// the AI reads a PDF (Claude's document input; else Gemini's inline data) and answers in text; "" when neither can
+async function aiReadPdf(env, b64, system, prompt) {
+  if (claudeOn(env) && claudeRest <= Date.now()) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" },
+        body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }, { type: "text", text: prompt }] }] }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { const msg = String((j.error && j.error.message) || "");
+        if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000; else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
+        else if (res.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(res.headers.get("retry-after")) || 60, 5), 600) * 1000; }
+      const t = res.ok ? (j.content || []).filter((x) => x && x.type === "text").map((x) => x.text || "").join("") : "";
+      if (t.trim() && j.stop_reason !== "max_tokens") return t;
+    } catch (e) { /* Gemini next */ }
+  }
+  const model = geminiModels(env, "grading")[0];
+  for (const name of geminiKeyOrder(env).slice(0, 3)) {
+    try {
+      const r = await geminiFetch(env, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": env[name] },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ inline_data: { mime_type: "application/pdf", data: b64 } }, { text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.2 } }) });
+      const d = await r.json().catch(() => ({}));
+      const t = (((d.candidates || [])[0] || {}).content || {}).parts;
+      const txt = (t || []).filter((x) => !x.thought).map((x) => x.text || "").join("");
+      if (r.ok && txt.trim()) return txt;
+    } catch (e) { /* the next key */ }
+  }
+  return "";
+}
+async function checkIntakePacket(env, id, hint = {}) {
+  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const [rec, drive, asg, set] = await Promise.all([get(`trainee:${id}`), get(`drive:${id}`), get(`intakeassign:${id}`), get("settings:intake")]);
+  if (!rec) return { error: "Missing trainee" };
+  const n = Number((asg || {}).packet) || 0, pk = ((set || {}).packets || {})[n] || {};
+  // (the client: the packet's, else the mock call case's caller kept on the assignment; a hint only from a trainer)
+  const client = String(pk.client || (asg || {}).client || (hint.trainer ? hint.client : "") || "").slice(0, 120).trim();
+  const va = String(rec.name || [rec.firstName, rec.lastName].filter(Boolean).join(" ") || "").trim();
+  const pUrl = String((drive || {}).intakePacket || "").trim(), fUrl = String((drive || {}).intakeFolder || "").trim();
+  if (!pUrl) return { error: "Link your corrected packet first.", code: "no-link" };
+  const pid = fileIdOf(pUrl), fid = folderId(fUrl);
+  const item = pid ? await driveItem(env, pid) : { ok: false };
+  const file = { ok: !!item.ok, name: item.name || "", mime: item.mime || "", modified: item.modified || "",
+    error: !pid ? "That isn't a file's own link: open the packet in Drive and copy its link (…/file/d/…)." : item.ok ? "" : `The packet can't be opened: share it with ${driveSA(env) ? (env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) : "Anyone with the link (Viewer)"}.` };
+  let folder = { ok: false, error: fUrl ? "" : "Link the client subfolder (…/drive/folders/…) you saved the packet and its documents in." };
+  if (fUrl && !fid) folder.error = "That isn't a folder link: open the client subfolder in Drive and copy its address (…/drive/folders/…).";
+  if (fid) {
+    const [fi, ls] = await Promise.all([driveItem(env, fid, true), folderFiles(env, fUrl)]);
+    folder = ls.error ? { ok: false, name: fi.name || "", error: `The subfolder can't be opened: share it with ${driveSA(env) ? (env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) : "Anyone with the link (Viewer)"}.` }
+      : { ok: true, name: fi.name || "", files: (ls.files || []).slice(0, 80).map((f) => ({ name: f.name, modified: f.modified || f.created || "" })) };
+  }
+  // the documents in the packet, read by the AI from the PDF itself
+  let docs = null, pages = "";
+  if (file.ok && pid && (!file.mime || /pdf/i.test(file.mime)) && !(item.size > PDF_MAX)) {
+    const bytes = await driveBytes(pid, item.token);
+    if (bytes) {
+      const sys = "You identify the documents inside a personal injury law firm's client Intake Packet (a PDF). Answer with JSON only.";
+      const prompt = `List every separate document in this Intake Packet, in order, using these names when one fits (else a short title of your own):\n${TR.PACKET_DOCS.filter((d) => d !== "Intake Packet").join("; ")}\n\nReturn {"docs": ["…"], "pages": "one line: which pages hold which document"}. Count a document once even if it spans several pages; don't list the packet itself.`;
+      const raw = await aiReadPdf(env, b64Of(bytes), sys, prompt);
+      try { const j = JSON.parse((raw.match(/\{[\s\S]*\}/) || [""])[0]); if (Array.isArray(j.docs) && j.docs.length) { docs = [...new Set(j.docs.map((d) => String(d || "").trim().slice(0, 120)).filter(Boolean))].slice(0, 40); pages = String(j.pages || "").slice(0, 600); } } catch (e) { docs = null; }
+    }
+  }
+  const result = TR.checkPacket({ file, folder, client, va, assignedAt: (asg || {}).at || "", docs });
+  // a short feedback in the facilitator's voice, from the check
+  let feedback = "";
+  try {
+    const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+    const lines = result.rules.map((r) => `${r.pass === null ? "PENDING" : r.pass ? "MET" : "NOT MET"}: ${r.label}${r.detail ? " — " + r.detail : ""}`).join("\n");
+    feedback = await aiText(env, "You are the training facilitator of Legal Support Help giving a trainee Legal VA feedback on Day 8's Intake Packet activity (Saving Intake Packet and Extracted Intake Documents: document handling — extraction, renaming and organization —, document properties accuracy and attention to detail). Write 2–4 sentences: open with a verdict label (Excellent / Good / Good, with Improvements Needed / Needs Improvement), name exactly what is right and what to correct. Use only the facts given." + voice,
+      `Trainee: ${va}\nClient: ${client || "(not given)"}\nScore: ${result.pct}%\n${lines}${docs ? `\nDocuments in the packet: ${docs.join(", ")}` : "\n(The packet's own pages couldn't be read.)"}\nExtracted files: ${((folder.files) || []).map((f) => f.name).join(", ") || "(none)"}`, 400);
+  } catch (e) { feedback = ""; }
+  const out = { at: new Date().toISOString(), packet: n || null, client, pct: result.pct, pass: result.pass, rules: result.rules, missing: result.missing, wrong: result.wrong, misnamed: result.misnamed,
+    docs, pages, docsRead: !!docs, pending: !!result.pending, feedback, file: { name: file.name, link: pUrl }, folder: { name: folder.name || "", link: fUrl, files: (folder.files || []).length } };
+  // (the trainee's own last check, for their 3 minutes between checks: a trainer's check keeps it)
+  const prev = JSON.parse((await kv.get(`intakecheck:${id}`)) || "null") || {};
+  out.selfAt = hint.trainer ? (prev.selfAt || "") : out.at;
+  await kv.put(`intakecheck:${id}`, JSON.stringify(out));
+  return out;
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -1850,6 +1984,21 @@ export default {
           if (last && last.verifyAt && Date.now() - Date.parse(last.verifyAt) < 20 * 1000) return json({ error: "Checked a moment ago. Try again in a few seconds.", code: "wait" }, 429);
         }
         return json(await verifyLinks(env, id));
+      }
+
+      /* ---------- 📦 Day 8's Intake Packet: check the trainee's corrected packet and its client subfolder (the trainee's own, at
+         most every 3 minutes; an admin's for anyone): checkIntakePacket ---------- */
+      if (path === "/api/intake/check") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = JSON.parse((await kv.get(`intakecheck:${id}`)) || "null");
+          if (last && last.selfAt && Date.now() - Date.parse(last.selfAt) < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+        }
+        const r = await checkIntakePacket(env, id, { client: String(b.client || ""), trainer: tok.role === "a" });
+        if (r.error) return json(r, 400);
+        return json({ ok: true, check: r });
       }
 
       /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */

@@ -101,12 +101,14 @@ function loadK(force){
   if(K.loading) return K.loading;
   const id = isTrainee() ? state.traineeId : null;
   if(!force && K.set && K.id === id && Date.now() - K.at < 120000) return Promise.resolve();
-  K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null])
-    .then(([v, a, d, w]) => { K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
+  K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null, id ? sharedGet("intakecheck:" + id) : null])
+    .then(([v, a, d, w, ck]) => { K.check = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
       K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now();
       // (the trainee's own links to the additional intake documents: drive:<id>.intakeDocs, theirs to write)
       K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : [];
-      K.packetLink = d && /^https:\/\//.test(String(d.intakePacket || "")) ? String(d.intakePacket) : ""; })
+      K.packetLink = d && /^https:\/\//.test(String(d.intakePacket || "")) ? String(d.intakePacket) : "";
+      // (📦 the client subfolder the corrected packet and its extracted documents are in: drive:<id>.intakeFolder)
+      K.packetFolder = d && /^https:\/\//.test(String(d.intakeFolder || "")) ? String(d.intakeFolder) : ""; })
     .catch(() => { if(!K.set) K.set = {}; })
     .then(() => { K.loading = null; paint(); });
   return K.loading;
@@ -213,14 +215,41 @@ function packetHtml(){
   if(!isTrainee()) return head + ph;
   const n = K.mine && Number(K.mine.packet);
   if(!n) return head + ph;
-  const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
-  return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${pk.client ? `<small>Client: <b>${e(pk.client)}</b> · name your subfolder after them</small>` : ""}</div></div>
-    <div class="ftis-pk-act">${pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it") : `<span class="ftis-pk-note">Your trainer is adding this packet’s link.</span>`}${folderBtn()}</div>
-    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>
-    <div class="ftis-pk-link"><b>🔗 Link your packet</b> <small>Your renamed copy in your Google Drive: open it, copy its link, paste it here.</small>
-      <div class="ftis-ws-row"><input type="url" id="ftisPkLink" placeholder="https://drive.google.com/file/d/…" value="${e(K.packetLink || "")}" aria-label="The Drive link of your renamed packet">
-      <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.savePacketLink(this)">💾 ${K.packetLink ? "Save again" : "Save"}</button></div>
-      ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a></p>` : ""}</div>`;
+  const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`, client = clientOf(n);
+  // ⬇ the packet: its own file when the trainer saved one before, else the Redacted Intake Packets folder (Packet n in it)
+  const dl = pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it")
+    : btn(K.set.folder || PFOLDER, `⬇ Download Packet ${n} from the packets folder ↗`, "btn-navy");
+  return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${client ? `<small>Client: <b>${e(client)}</b> · name your subfolder after them</small>` : ""}</div></div>
+    <div class="ftis-pk-act">${dl}${folderBtn()}</div>
+    <ol class="ftis-pk-steps">
+      <li><b>Download</b> your packet and work on your own copy.</li>
+      <li><b>Rename</b> it <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</li>
+      <li><b>Extract</b> every document in it, each named under the naming convention: <code>INTAKE - Police Report (${e(who)})</code>.</li>
+      <li><b>Upload</b> the renamed packet with its documents into a subfolder of your Assessments/Activities folder named after ${client ? `<b>${e(client)}</b>` : "your client"} (the Intake Worksheet stays outside it).</li>
+      <li><b>Link</b> both below, then <b>🔎 Check my packet</b>: it’s checked for accuracy and completeness, and your trainer sees the result.</li></ol>
+    <div class="ftis-pk-link"><b>🔗 Your corrected packet</b> <small>Open it in your Drive, copy its link (…/file/d/…).</small>
+      <div class="ftis-ws-row"><input type="url" id="ftisPkLink" placeholder="https://drive.google.com/file/d/…" value="${e(K.packetLink || "")}" aria-label="The Drive link of your corrected packet"></div>
+      <b>📁 Your client subfolder</b> <small>The folder with the packet and its extracted documents (…/drive/folders/…).</small>
+      <div class="ftis-ws-row"><input type="url" id="ftisPkFolder" placeholder="https://drive.google.com/drive/folders/…" value="${e(K.packetFolder || "")}" aria-label="The Drive link of your client subfolder">
+      <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.savePacketLink(this)">💾 ${K.packetLink ? "Save again" : "Save"}</button>
+      ${K.packetLink ? `<button type="button" class="btn btn-ghost btn-sm" ${K.checking ? "disabled" : ""} onclick="FTIntake.checkPacket(this)">${K.checking ? "Checking… (about a minute)" : "🔎 Check my packet"}</button>` : ""}</div>
+      ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a>${K.packetFolder ? ` · <a href="${e(K.packetFolder)}" target="_blank" rel="noopener noreferrer">your subfolder ↗</a>` : ""}</p>` : ""}</div>
+    ${checkHtml(K.check)}`;
+}
+// 📦 the assigned client: the packet's (saved by the trainer), else the caller of the mock call case paired with it
+function clientOf(n){
+  const pk = packets()[n] || {}; if(pk.client) return pk.client; if((K.mine || {}).client) return K.mine.client;
+  if(!mockCalls() && !PK.failed) packs().catch(() => {});
+  const c = callById((K.mine || {}).call) || (mockCalls() ? pairedCall(n) : null); return c && c.name ? c.name : "";
+}
+// 🔎 the packet's check (worker.js checkIntakePacket, intakecheck:<id>): each point met or not, and the feedback
+function checkHtml(ck, mini){
+  if(!ck) return "";
+  const tone = ck.pct >= 100 ? "ok" : ck.pct >= 70 ? "mid" : "bad";
+  return `<div class="ftis-ck${mini ? " ftis-ck-mini" : ""}"><div class="ftis-ck-h"><span class="ftis-ck-pct ftis-${tone}">${ck.pct}%</span><b>Accuracy &amp; completeness</b>
+      <small>checked ${e(new Date(ck.at).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}${ck.docsRead && Array.isArray(ck.docs) ? ` · ${ck.docs.length} document${ck.docs.length === 1 ? "" : "s"} found in the packet` : " · the packet’s pages couldn’t be read"}</small></div>
+    <ul>${ck.rules.map(r => `<li class="${r.pass === null ? "pend" : r.pass ? "ok" : "miss"}">${r.pass === null ? "⏳" : r.pass ? "✓" : "✗"} <b>${e(r.label)}</b>${r.detail ? ` <span>${e(r.detail)}</span>` : ""}</li>`).join("")}</ul>
+    ${ck.feedback ? `<p class="ftis-ck-fb">🧑‍🏫 ${e(ck.feedback)}</p>` : ""}</div>`;
 }
 // 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
 function sheetHtml(el){
@@ -292,7 +321,11 @@ async function loadAdmin(){
     // (and each trainee's own packet link: drive:<id>.intakePacket)
     const dvs = []; const dkeys = people.map(r => "drive:" + r.id);
     for(let i = 0; i < dkeys.length; i += 99) dvs.push(...await sharedGetMany(dkeys.slice(i, i + 99)));
-    AD.pk = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); });
+    AD.pk = {}; AD.pf = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket, f = dvs[i] && dvs[i].intakeFolder; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); if(f && /^https:\/\//.test(String(f))) AD.pf[r.id] = String(f); });
+    // (🔎 each trainee's packet check: intakecheck:<id>, worker.js checkIntakePacket)
+    const cks = [], ckeys = people.map(r => "intakecheck:" + r.id);
+    for(let i = 0; i < ckeys.length; i += 99) cks.push(...await sharedGetMany(ckeys.slice(i, i + 99)));
+    AD.ck = {}; people.forEach((r, i) => { const c = cks[i]; if(c && Array.isArray(c.rules)) AD.ck[r.id] = c; });
     const skeys = people.map(r => "actsub:" + r.id);
     for(let i = 0; i < skeys.length; i += 99) subs.push(...await sharedGetMany(skeys.slice(i, i + 99)));
     AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
@@ -308,27 +341,29 @@ function adminHtml(){
   const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
   if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
   // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
-  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString()}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
+  // (an assignment made before the client was kept with it gets its case's client, once)
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}, c = v.call && !v.client && !AD.paired[r.id] ? callById(v.call) : null; if(c && c.name){ AD.paired[r.id] = 1; writeAssign(r.id, {client: String(c.name)}).catch(() => {}); } });
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
   const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="Paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
     : `<span class="fss-muted">${!calls ? (PK.failed ? "Cases didn’t load" : "Loading…") : AD.assign[id] ? "Pairing…" : "Follows the packet"}</span>`; };
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
-  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download. Download the packets from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>, rename each with its trainee’s name if you share them that way, and paste each packet’s link below.</p></div>
+  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>. Each trainee edits their own copy (renamed, every document extracted and named), uploads it with its documents into a subfolder named after the client and links both: 🔎 checks them for accuracy and completeness on the Saving Intake Packet rubric, the packet’s own pages read by the AI.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
     <h4>Assign the packets (each packet brings its mock call case)</h4>
     <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>🔎 Accuracy &amp; completeness</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
-        <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : `<span class="fss-muted">Not linked</span>`}</td>
+        <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>${(AD.pf || {})[r.id] ? ` · <a href="${e(AD.pf[r.id])}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : ""}` : `<span class="fss-muted">Not linked</span>`}</td>
+        <td class="ftis-ckcell">${(AD.ck || {})[r.id] ? `<details><summary><span class="ftis-ck-pct ftis-${AD.ck[r.id].pct >= 100 ? "ok" : AD.ck[r.id].pct >= 70 ? "mid" : "bad"}">${AD.ck[r.id].pct}%</span> details</summary>${checkHtml(AD.ck[r.id], true)}</details>` : `<span class="fss-muted">Not checked</span>`}
+          ${(AD.pk || {})[r.id] ? `<button type="button" class="btn btn-ghost btn-sm" ${(AD.checking || {})[r.id] ? "disabled" : ""} onclick="FTIntakeAdmin.check('${e(r.id)}')">${(AD.checking || {})[r.id] ? "Checking…" : "🔎 Check"}</button>` : ""}</td>
         <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
-    <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
-    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
     <h4>The additional intake documents</h4><p class="fss-muted">The shared default for each document (each trainee enters their own on the slide, ✏️ My document links, which takes their place): its own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
     <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
-    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets and documents</button></div></div>`;
+    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the documents</button></div></div>`;
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the mock call case never overwrite each other, whoever changed the other one and however quickly
@@ -347,30 +382,41 @@ function writeAssign(id, patch){
 window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
+  // 🔎 a trainee's corrected packet and subfolder, checked now (worker.js /api/intake/check)
+  async check(id){
+    AD.checking = AD.checking || {}; if(AD.checking[id]) return;
+    AD.checking[id] = true; render();
+    let j = null, r = null;
+    try{ const n = Number((AD.recs[id] || {}).packet) || 0, pk = packets()[n] || {}, c = callById((AD.recs[id] || {}).call);
+      r = await authFetch("/api/intake/check", {id, client: pk.client || (c && c.name) || ""}); j = await r.json().catch(() => null); }catch(err){}
+    delete AD.checking[id];
+    if(r && r.ok && j && j.check){ AD.ck = AD.ck || {}; AD.ck[id] = j.check; toast(`🔎 ${j.check.pct}%`); } else toast((j && j.error) || "The check didn’t finish. Try again in a moment.");
+    render();
+  },
   async assign(id, v){
     const n = Number(v) || 0, at = new Date().toISOString();
     // (the packet is the only pick: its mock call case pairs with it, pairedCall, and Ring Channel's Scenario Picker plays the same call)
     let c = null; if(n){ try{ await packs(); }catch(err){} c = pairedCall(n); }
-    const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at} : {});
+    const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at, client: c ? String(c.name || "") : ""} : {});
     try{ await writeAssign(id, patch); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
     toast(n ? `✓ Packet ${n} assigned${c ? ` with its mock call case, ${c.title}` : ""} — the trainee sees it within two minutes.` : "✓ Unassigned.");
   },
   async assignCall(id, v){
     const c = callById(v);
-    try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString()}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
+    try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString(), client: c ? String(c.name || "") : ""}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     paint();
     toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Mock call case unassigned.");
   },
   async save(){
     // read the form first: loading the saved settings re-renders the page and the form with it
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
-    const pk = {}; for(let n = 1; n <= NPACK; n++){ const c = v("ftisC" + n), u = v("ftisU" + n); if(c || u) pk[n] = {client: c, url: u}; }
     const docs = DOCS.map((_, i) => v("ftisD" + i));
-    const bad = [...Object.values(pk).map(x => x.url), ...docs].filter(u => u && !/^https:\/\//.test(u));
+    const bad = docs.filter(u => u && !/^https:\/\//.test(u));
     if(bad.length){ toast("A link must start with https://"); return; }
     await loadK(true);
-    const next = Object.assign({}, K.set, {packets: pk, docs, updatedAt: new Date().toISOString()});
+    // (the packets: each trainee links their own, 📁 My Drive links; the ones saved before stay for the mock call's pairing)
+    const next = Object.assign({}, K.set, {docs, updatedAt: new Date().toISOString()});
     const ok = await sharedSet("settings:intake", next);
     if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
     K.set = next; K.at = Date.now(); toast("✓ Saved — trainees see it within two minutes."); render();
@@ -425,14 +471,27 @@ window.FTIntake = {
   // 🔗 the trainee's own packet link, into drive:<id>.intakePacket (read fresh first: the record holds their other links too)
   async savePacketLink(b){
     if(!isTrainee()) return;
-    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim();
+    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim(), f = String((document.getElementById("ftisPkFolder") || {}).value || "").trim();
     if(u && !/^https:\/\/(drive|docs)\.google\.com\//.test(u)){ toast("Paste the Google Drive link of your packet: it starts with https://drive.google.com/ or https://docs.google.com/"); return; }
+    if(f && !/^https:\/\/drive\.google\.com\/.*folders\//.test(f)){ toast("Paste your client subfolder’s link: it looks like https://drive.google.com/drive/folders/…"); return; }
     b.disabled = true; let ok = false;
-    try{ const cur = (await sharedGet("drive:" + state.traineeId)) || {days: {}}; cur.intakePacket = u; cur.updatedAt = new Date().toISOString();
+    try{ const cur = (await sharedGet("drive:" + state.traineeId)) || {days: {}}; cur.intakePacket = u; cur.intakeFolder = f; cur.updatedAt = new Date().toISOString();
       ok = await sharedSet("drive:" + state.traineeId, cur) !== false; }catch(err){}
     b.disabled = false;
     if(!ok){ toast("Couldn’t save. Check your connection and try again."); return; }
-    K.packetLink = u; paint(); toast(u ? "✓ Your packet is linked: your trainer sees it." : "Link removed.");
+    K.packetLink = u; K.packetFolder = f; paint(); toast(u ? "✓ Saved. Now 🔎 Check my packet." : "Link removed.");
+  },
+  // 🔎 the corrected packet and its subfolder, checked now (worker.js /api/intake/check)
+  async checkPacket(){
+    if(!isTrainee() || K.checking) return;
+    const u = String((document.getElementById("ftisPkLink") || {}).value || "").trim(), f = String((document.getElementById("ftisPkFolder") || {}).value || "").trim();
+    if(u !== (K.packetLink || "") || f !== (K.packetFolder || "")){ toast("Click 💾 Save first, then 🔎 Check my packet."); return; }
+    K.checking = true; paint();
+    let j = null, r = null;
+    try{ r = await authFetch("/api/intake/check", {client: clientOf(Number((K.mine || {}).packet) || 0)}); j = await r.json().catch(() => null); }catch(err){}
+    K.checking = false;
+    if(r && r.ok && j && j.check){ K.check = j.check; paint(); toast(`🔎 Your packet: ${j.check.pct}%`); return; }
+    paint(); toast((j && j.error) || "The check didn’t finish. Try again in a moment.");
   },
   // 💾 the trainee's own document links, into drive:<id>.intakeDocs (read fresh first: the record holds their six links too)
   async docsSave(b){
@@ -485,6 +544,13 @@ window.FTIntake = {
 .ftis-min th{width:26%;background:#F2F2F2;} .ftis-min h5{margin:10px 0 2px;color:#262B45;font-size:13.5px;} .ftis-min p{margin:0;}
 .ftis-go{display:flex;justify-content:flex-end;}
 .ftis-wait{color:#5B6178;font-size:13.5px;}
+.ftis-pk-steps{margin:8px 0 10px 18px;padding:0;font-size:14.5px;line-height:1.55;} .ftis-pk-steps li{margin:2px 0;} .ftis-pk-steps code:not(.ftis-name){background:#fff;border:1px solid #F0D2B4;border-radius:5px;padding:0 5px;}
+.ftis-pk-link b{display:block;margin-top:6px;} .ftis-ck{margin:10px 0 2px;padding:10px 12px;border:1px solid #E1E5EE;border-radius:10px;background:#fff;color:#1E2340;}
+.ftis-ck-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .ftis-ck-h small{color:#5F6368;} .ftis-ck ul{list-style:none;margin:8px 0 0;padding:0;font-size:14px;}
+.ftis-ck li{margin:3px 0;} .ftis-ck li.ok{color:#14532D;} .ftis-ck li.miss{color:#9B1C1C;} .ftis-ck li.pend{color:#8A4A00;} .ftis-ck li span{color:#3C4043;font-weight:400;}
+.ftis-ck-pct{display:inline-block;min-width:44px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;} .ftis-ok{background:#D7F0DE;color:#14532D;} .ftis-mid{background:#FFF1D6;color:#8A4A00;} .ftis-bad{background:#FDE2E1;color:#9B1C1C;}
+.ftis-ck-fb{margin:8px 0 0;padding:8px 10px;border-left:4px solid #DB8437;background:#FFF8EF;border-radius:6px;font-size:14px;line-height:1.5;}
+.ftis-ckcell{min-width:180px;} .ftis-ckcell details summary{cursor:pointer;} .ftis-ck-mini{width:460px;max-width:60vw;font-size:13px;box-sizing:border-box;} .ftis-ck-mini, .ftis-ck-mini *{white-space:normal;}
 .ftis-packet{background:#FFF8EF;border:2px dashed #DB8437;border-radius:12px;padding:12px 16px;margin:6px 0 10px;color:#1B1E2E;}
 .ftis-pk-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;} .ftis-pk-h b{color:#262B45;font-size:15px;}
 .ftis-pk-h label{font-weight:700;font-size:14px;} .ftis-pk-h select{font:600 14px 'Inter',sans-serif;padding:4px 8px;border-radius:8px;border:1px solid #CBD2DF;margin-left:4px;}
