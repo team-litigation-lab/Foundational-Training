@@ -194,6 +194,15 @@ const failures = []; const fail = m => failures.push(m);
   await put(`ranking:${PAST}:w1`, null);
   await page.evaluate(() => { state.traineeId = null; state.isAdmin = true; state.adminPreview = false; state.adminData = null; FTRanking.reload(); state.adminTab = 'ranking'; goto('admin'); }); await page.waitForTimeout(1200);
   await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, PAST);
+  // (↻ the report read again while it drafts itself — the Batch Sheet's 🔄 Update calls FTRanking.reload —, once while its scores
+  // fill and once while its notes are written: no page error, and the draft still finishes, filled)
+  // (the report's own read made slow, as on a busy server, so the reload is still reading when the draft's next step comes)
+  await page.evaluate(() => { const g = window.sharedGet; window.__rkSlow = true;
+    window.sharedGet = function (k) { const p = g.apply(this, arguments); return window.__rkSlow && /^ranking:/.test(String(k)) ? p.then(v => new Promise(r => setTimeout(() => r(v), 1500))) : p; }; });
+  await page.waitForTimeout(150); await page.evaluate(() => FTRanking.reload());
+  for (let k = 0; k < 40 && ((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto?.state !== 'notes'; k++) await page.waitForTimeout(250);
+  await page.evaluate(() => FTRanking.reload()); await page.waitForTimeout(1800);
+  await page.evaluate(() => { window.__rkSlow = false; });
   for (let k = 0; k < 90 && !((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto.state?.startsWith('done'); k++) await page.waitForTimeout(500);   // (the test server has no AI: one try at the notes, about 20 s)
   const auto = await get(`ranking:${PAST}:w1`), cc = auto && auto.cols.find(c => c.src === 'compliance');
   if (!auto || !auto.auto || auto.auto.approved || auto.auto.state !== 'done') fail(`a week that is over didn't draft its report: ${JSON.stringify(auto && auto.auto)}`);

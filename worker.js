@@ -321,6 +321,76 @@ function renameId(v, from, into) {
     if (k === from) out[into] = mergeVals(out[into] !== undefined ? out[into] : v[into], y); else if (k === into && out[into] !== undefined) out[into] = mergeVals(y, out[into]); else out[k] = y; }
   return out;
 }
+/* 🧹 SWEEP INACTIVE ACCOUNTS (📋 Batch Sheet → 🧹 Sweep inactive accounts, admins): every account whose access is gone is
+   removed from the platform with all its records, after the trainer's browser has downloaded a backup of them:
+     • offboarded (🚫 access revoked), rejected, archived (a past batch's, an old or mistyped Batch ID's), or on the block
+       list (sweepWhy);
+     • and the leftovers of accounts deleted before (the old 🗑 Revoke & delete took only the account and its progress):
+       per-trainee records whose account no longer exists.
+   Never swept: an active trainee (approved, or waiting for approval), a cleared batch's kept record (purgedAt: the Main
+   Portal's 📊 Progress & Feedback reads it), a merged account's redirect. A swept account stays on the block list (why
+   offboarded or archived), so a sign-in can't bring it back as a new, approved account. Each call sweeps ONE account, so
+   no call runs past the Worker's limits; /api/batch/sweep-list finds them. */
+const SWEEP_PREFIXES = () => [...new Set(BACKUP_KEYS("\u0000").concat(MERGE_EXTRA("\u0000")).map((k) => k.split("\u0000")[0]))];
+function sweepWhy(rec, blocked) {
+  if (!rec || typeof rec !== "object" || rec.purgedAt) return "";
+  if (rec.offboarded) return "offboarded"; if (rec.rejected) return "rejected"; if (rec.archived) return "archived";
+  if (blocked && blocked[rec.id]) return "blocked";
+  return "";
+}
+// every record a trainee id has (its keys, the records named by a prefix, its attendance check-ins)
+async function idKeys(kv, id, checkins) {
+  const keys = [];
+  for (const k of [...new Set(BACKUP_KEYS(id).concat(MERGE_EXTRA(id)))]) if ((await kv.get(k)) != null) keys.push(k);
+  for (const pre of PURGE_PREFIXES(id)) ((await kv.list({ prefix: pre })).keys || []).forEach((x) => keys.push(x.name));
+  (checkins || []).filter((n) => n.endsWith(":" + id)).forEach((n) => keys.push(n));
+  return keys;
+}
+async function listKeys(kv, prefix) {
+  const out = []; let cursor;
+  do { const r = await kv.list(Object.assign({ prefix }, cursor ? { cursor } : {})); (r.keys || []).forEach((x) => out.push(x.name)); cursor = r.list_complete === false ? r.cursor : null; } while (cursor);
+  return out;
+}
+async function sweepList(env) {
+  const kv = kvOf(env), blocked = await blockedIds(env, true), accounts = [], known = new Set();
+  const tkeys = await listKeys(kv, "trainee:");
+  for (const k of tkeys) {
+    const id = k.slice("trainee:".length); known.add(id);
+    let rec = null; try { rec = JSON.parse((await kv.get(k)) || "null"); } catch (e) { rec = null; }
+    if (rec && !rec.id) rec.id = id;
+    const why = sweepWhy(rec, blocked); if (!why) continue;
+    accounts.push({ id, name: rec.name || id, batch: rec.batch || "", why, registeredAt: rec.registeredAt || "", lastActive: rec.lastActive || "",
+      done: Object.values(rec.dayProgress || {}).filter((x) => x && x.done).length });
+  }
+  // the leftovers: per-trainee records whose account is gone (no trainee:<id>, not a merged account's redirect)
+  const orphans = {};
+  // (an ID in a trainee's form only, name--batch: never a shared record that happens to share a prefix)
+  const add = (id, k) => { if (!id || !/^[a-z0-9-]+--[a-z0-9-]+$/.test(id) || known.has(id)) return; (orphans[id] = orphans[id] || []).push(k.split(":")[0]); };
+  for (const pre of SWEEP_PREFIXES().concat(["actup:", "guide:"])) {
+    if (pre === "trainee:") continue;
+    for (const k of await listKeys(kv, pre)) add(k.slice(pre.length).split(":")[0], k);
+  }
+  for (const k of await listKeys(kv, "checkin:")) add(k.split(":").pop(), k);
+  const leftovers = [];
+  for (const [id, kinds] of Object.entries(orphans)) { if ((await kv.get(`merged:${id}`)) != null) continue; leftovers.push({ id, kinds: [...new Set(kinds)] }); }
+  return { accounts, leftovers };
+}
+async function sweepOne(env, id, dry) {
+  const kv = kvOf(env), blocked = await blockedIds(env, true);
+  let rec = null; try { rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"); } catch (e) { rec = null; }
+  if (rec && !rec.id) rec.id = id;
+  const why = rec ? sweepWhy(rec, blocked) : "leftover";
+  // (never an active trainee, a cleared batch's kept record, or a merged account's redirect)
+  if (!why) return { error: rec && rec.purgedAt ? "A cleared batch's record is kept for the Main Portal" : "This trainee is active: only inactive accounts are swept", status: 409 };
+  if (!rec && (await kv.get(`merged:${id}`)) != null) return { error: "This is a merged account's redirect", status: 409 };
+  if (!rec && !/^[a-z0-9-]+--[a-z0-9-]+$/.test(id)) return { error: "Not a trainee's ID", status: 400 };
+  const checkins = await listKeys(kv, "checkin:"), keys = await idKeys(kv, id, checkins);
+  if (dry) { const records = {}; for (const k of keys) { const v = await kv.get(k); try { records[k] = JSON.parse(v); } catch (e) { records[k] = v; } } return { ok: true, id, why, records }; }
+  for (const k of keys) await kv.delete(k);
+  // (kept off the platform: a sign-in can't bring the swept account back as a new, approved one)
+  if (rec && !blocked[id]) await setBlocked(env, { [id]: { why: rec.offboarded || rec.rejected ? "offboarded" : "archived", at: new Date().toISOString(), swept: true } });
+  return { ok: true, id, why, deleted: keys.length };
+}
 async function mergeAccounts(env, from, into) {
   const kv = kvOf(env), at = new Date().toISOString();
   const get = async (k) => { const v = await kv.get(k); if (v == null) return undefined; try { return JSON.parse(v); } catch (e) { return v; } };
@@ -1718,6 +1788,154 @@ async function backfillCompliance(env, id, o = {}) {
   return want.length;
 }
 
+/* 🔗 AUTO-LINK A BATCH (📋 Batch Sheet → 🔄 Update, an admin's): every trainee's six Drive files found by the platform itself,
+   so no trainee has to paste a link for the scorecard to be right. The six are made per trainee and named by convention
+   (NAMING: "LSH Daily Task Tracker | B103026 Ana Cruz", "LSH Trainee folder – B103026 Ana Cruz" holding Typing Tests,
+   Spelling Tests and Assessments/Activities, "LSH VA Training Monitoring Sheet__Ana Cruz"), so one Drive search for the
+   Batch ID (and one for the Monitoring Sheets) finds them, read as GDRIVE_SA_SUBJECT when it works, else the service
+   account. A file goes to the trainee of the batch whose name it carries (the most name words; a tie with another trainee
+   assigns it to nobody). A link is filled in where the trainee has none, or where theirs isn't ✓ (trackerreview.verify);
+   a trainee's own ✓ link is never replaced. drive:<id>.auto[k] = when it was linked this way. */
+const driveUrl = (f) => f.mimeType === "application/vnd.google-apps.folder" ? `https://drive.google.com/drive/folders/${f.id}`
+  : f.mimeType === "application/vnd.google-apps.spreadsheet" ? `https://docs.google.com/spreadsheets/d/${f.id}/edit`
+  : f.mimeType === "application/vnd.google-apps.document" ? `https://docs.google.com/document/d/${f.id}/edit` : (f.webViewLink || `https://drive.google.com/file/d/${f.id}/view`);
+const FOLDER_MIME = "application/vnd.google-apps.folder";
+async function driveSearch(tokens, q, max = 3000) {
+  const seen = new Map();
+  for (const token of tokens) {
+    let page = "", n = 0;
+    do {
+      const u = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,parents,webViewLink,modifiedTime)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives${page ? "&pageToken=" + page : ""}`;
+      const res = await fetch(u, { headers: { Authorization: "Bearer " + token } }).catch(() => null);
+      if (!res || !res.ok) break;
+      const j = await res.json().catch(() => ({}));
+      (j.files || []).forEach((f) => { if (!seen.has(f.id)) seen.set(f.id, f); });
+      page = j.nextPageToken || ""; n++;
+    } while (page && n < 6 && seen.size < max);
+  }
+  return [...seen.values()];
+}
+async function autoLinkBatch(env, batch) {
+  const kv = kvOf(env), B = String(batch || "").trim().toUpperCase();
+  if (!/^B\d{6}$/.test(B)) return { error: "That isn't a Batch ID (B + MMDDYY)." };
+  if (!driveSA(env)) return { error: "no-sa" };
+  let tokens;
+  try { tokens = await readTokens(env); } catch (e) { return { error: "drive-auth", detail: e.detail || "" }; }
+  // the batch's trainees (approved or waiting, not rejected, purged or offboarded)
+  const roster = [];
+  for (const k of await listAll(env, "trainee:")) {
+    const r = JSON.parse((await kv.get(k)) || "null");
+    if (!r || !r.id || !r.name || r.rejected || r.purgedAt || r.offboarded) continue;
+    if (String(r.batch || "").replace(/\s+/g, "").toUpperCase() !== B) continue;
+    roster.push(r);
+  }
+  if (!roster.length) return { ok: true, batch: B, trainees: 0, linked: {}, missing: {} };
+  const tagged = await driveSearch(tokens, `name contains '${B}' and trashed = false`);
+  const monitors = await driveSearch(tokens, `name contains 'Monitoring' and trashed = false`);
+  // the trainees' own folders ("LSH Trainee folder – B103026 Ana Cruz"), and what is inside them (two levels)
+  // whose file is it: the trainee of the batch with the most name words in it (a tie: nobody's)
+  const owner = (text) => {
+    const T = new Set(nameWords(String(text).replace(/_/g, " ")));
+    let best = null, hits = 0, tie = false;
+    for (const r of roster) { if (!nameIn(r.name, text)) continue; const h = nameHits(r.name, T); if (h > hits) { best = r; hits = h; tie = false; } else if (h === hits) tie = true; }
+    return tie ? null : best;
+  };
+  // (only the folders that are a trainee's of this batch are opened, and a level deeper only when a subfolder wasn't there:
+  // a Worker request has a limited number of fetches)
+  const folders = tagged.filter((f) => f.mimeType === FOLDER_MIME && !TEMPLATE_RE.test(f.name) && owner(f.name)).slice(0, 60);
+  const inside = new Map();
+  for (const f of folders) {
+    const kids = await driveSearch(tokens, `'${f.id}' in parents and trashed = false`, 400);
+    const has = (re) => kids.some((x) => x.mimeType === FOLDER_MIME && re.test(x.name));
+    const deeper = [];
+    if (!(has(/typing/i) && has(/spelling/i) && has(/assessment|activit/i)))
+      for (const c of kids.filter((x) => x.mimeType === FOLDER_MIME).slice(0, 4)) (await driveSearch(tokens, `'${c.id}' in parents and trashed = false and mimeType = '${FOLDER_MIME}'`, 100)).forEach((g) => deeper.push(g));
+    inside.set(f.id, kids.concat(deeper));
+  }
+  const found = new Map(roster.map((r) => [r.id, {}]));
+  const take = (r, k, f) => { if (r && !found.get(r.id)[k]) found.get(r.id)[k] = f; };
+  for (const f of tagged) {
+    if (TEMPLATE_RE.test(f.name)) continue;
+    const r = owner(f.name); if (!r) continue;
+    if (f.mimeType === FOLDER_MIME) {
+      // the trainee folder's own subfolders: Typing Tests, Spelling Tests, Assessments/Activities (and a Monitoring Sheet kept there)
+      for (const c of inside.get(f.id) || []) {
+        if (c.mimeType === FOLDER_MIME) { for (const k of ["typing", "spelling", "folder"]) if (LINKS_KIND[k].re.test(c.name) && !(k === "folder" && /typing|spelling/i.test(c.name))) take(r, k, c); }
+        else if (LINKS_KIND.monitor.re.test(c.name) && /google-apps\.(document|spreadsheet)$/.test(c.mimeType)) take(r, "monitor", c);
+      }
+      if (/assessment|activit/i.test(f.name) && !/trainee folder/i.test(f.name)) take(r, "folder", f);
+      continue;
+    }
+    if (LINKS_KIND.tracker.re.test(f.name) && f.mimeType === "application/vnd.google-apps.spreadsheet") take(r, "tracker", f);
+    else if (LINKS_KIND.tam.re.test(f.name)) take(r, "tam", f);
+    else if (LINKS_KIND.monitor.re.test(f.name) && /google-apps\.(document|spreadsheet)$/.test(f.mimeType)) take(r, "monitor", f);
+  }
+  for (const f of monitors) {
+    if (TEMPLATE_RE.test(f.name) || !/google-apps\.(document|spreadsheet)$/.test(f.mimeType)) continue;
+    const b = (f.name.match(/\bB\d{6}\b/i) || [])[0]; if (b && b.toUpperCase() !== B) continue;
+    take(owner(f.name), "monitor", f);
+  }
+  // fill in each trainee's links: where they have none, or theirs isn't ✓
+  const at = new Date().toISOString(), linked = {}, missing = {};
+  for (const r of roster) {
+    const got = found.get(r.id), dk = `drive:${r.id}`, drive = JSON.parse((await kv.get(dk)) || "null") || {};
+    const ver = ((JSON.parse((await kv.get(`trackerreview:${r.id}`)) || "null") || {}).verify) || {};
+    const okNow = (k) => drive[k] && ver[k] && ver[k].ok && String(ver[k].url || "").trim() === String(drive[k]).trim().slice(0, 500);
+    const set = [];
+    for (const k of Object.keys(LINKS_KIND)) {
+      const f = got[k]; if (!f || okNow(k)) continue;
+      const url = driveUrl(f); if (String(drive[k] || "").trim() === url) continue;
+      drive[k] = url; (drive.auto = drive.auto || {})[k] = at; set.push(k);
+    }
+    if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(B); if (m) drive.startDate = `20${m[3]}-${m[1]}-${m[2]}`; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
+    const none = Object.keys(LINKS_KIND).filter((k) => !drive[k]); if (none.length) missing[r.id] = none;
+  }
+  return { ok: true, batch: B, trainees: roster.length, searched: tagged.length + monitors.length, linked, missing, as: tokens.subOk ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL };
+}
+
+/* ⏪ BACKTRACK A TRAINEE FROM DAY 1 (📋 Batch Sheet → 🔄 Update): every past training day checked again against what is in
+   their Drive now — the Daily Task Tracker read once and checked for each day since the batch started (a day's trainer
+   score, comment and notes review are kept), the Monitoring Sheet and the test screenshots read again — and then each day's
+   compliance worked out again (redoCompliance), so 📤 Daily outputs, 📊 Weekly Ranking and the Score Card count the whole
+   training from what was actually submitted. */
+async function backtrack(env, id) {
+  const kv = kvOf(env), rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+  if (!rec) return { error: "gone" };
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
+  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
+  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const today = TR.ptDate(), days = [];
+  if (start) for (let t = Date.parse(start + "T12:00:00Z"); days.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) days.push(d); }
+  const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
+  if (drive.tracker && days.length && driveSA(env)) {
+    try {
+      const f = TR.googleFile(drive.tracker);
+      if (f.kind !== "sheet") throw new Error("kind");
+      const csv = await fetchGoogle(f.exportUrl, env);
+      const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+      if (!cur.days) cur.days = {};
+      const at = new Date().toISOString();
+      for (const D of days) {
+        const t = TR.fromSheetCsv(csv, { today: D, startDate: drive.startDate || start });
+        if (!t) throw new Error("layout");
+        t.drive = drive;
+        const res = TR.checkDay(t, D); if (res.na) continue;
+        const prev = cur.days[D] || {};
+        cur.days[D] = Object.assign({}, res, { source: "drive", url: String(drive.tracker).slice(0, 500), review: prev.review || "", checkedAt: at, backtracked: true,
+          comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+        out.days++;
+      }
+      await kv.put(rk, JSON.stringify(cur));
+      out.tracker = "ok";
+    } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
+  }
+  // the Monitoring Sheet (and today's tracker) as the end-of-shift check reads them, without a new AI review; the test screenshots
+  if (drive.monitor || drive.tracker) { try { await checkDrive(env, id, today, { ai: false }); out.monitor = "ok"; } catch (e) { out.monitor = "error"; } }
+  if (drive.folder || drive.typing || drive.spelling) { try { const r = await checkShots(env, id); out.shots = r && r.error ? r.error : "ok"; } catch (e) { out.shots = "error"; } }
+  try { out.redone = await redoCompliance(env, id); } catch (e) { out.redone = 0; }
+  return Object.assign({ ok: true }, out);
+}
+
 /* 🔄 Update all scores (📋 Batch Sheet, an admin): a trainee's every training day, from the batch's start (as backfillCompliance
    counts it) to today, worked out again from what the platform keeps now — their progress included — so 📤 Daily outputs, 📊
    Weekly Ranking's Daily Compliance and 🏅 Scores match it. The records are read once and trackerreview written once. Returns the
@@ -2141,6 +2359,12 @@ export default {
           return json({ ok: true, trainee: rec });
         }
         if (path === "/api/batch/blocked") return json({ ids: await blockedIds(env, true) });
+        // 🧹 the inactive accounts and leftovers to sweep; one account swept (dry: its records, for the backup, first)
+        if (path === "/api/batch/sweep-list") return json(await sweepList(env));
+        if (path === "/api/batch/sweep") {
+          const r = await sweepOne(env, String(b.id || "").slice(0, 160), !!b.dry);
+          return json(r.error ? { error: r.error } : r, r.error ? r.status || 400 : 200);
+        }
         // 📦 the batch's folder in the trainer's Drive folder: "Batch <id> — Archive <date>", and "Full records" in it
         if (path === "/api/batch/drive-folder") {
           if (!driveSA(env)) return driveFail(env, new Error("no-sa"));
@@ -2282,6 +2506,18 @@ export default {
         return json({ ok: true, filled: out });
       }
 
+      /* ---------- 🔗 auto-link a batch's Drive files, and ⏪ backtrack a trainee from Day 1 (admins: the Batch Sheet's 🔄 Update) ---------- */
+      if (path === "/api/drive/autolink") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        try { return json(await autoLinkBatch(env, b.batch)); } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
+      if (path === "/api/drive/backtrack") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
+        try { return json(await backtrack(env, id)); } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
       if (path === "/api/drive/status") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         return json(await driveStatus(env));

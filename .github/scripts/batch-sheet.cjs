@@ -112,7 +112,7 @@ const failures = []; const fail = m => failures.push(m);
   if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
   // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
   if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗ Wrong' || ca[3] !== '✓ Correct' || ca[4] !== '⏳ Pending' || ca.slice(5, 8).some(v => v !== '✓ Correct')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
-  if (await page.$('#bs-compliance select')) fail('the compliance table still has a dropdown');
+  if (await page.$('#bs-compliance table select')) fail('the compliance table still has a dropdown');   // (🔗 Link a trainee's files by hand, under it, picks a trainee)
   // (why a link is wrong: on a hover, the cell's title, and on a click, the formula bar)
   const why = await page.evaluate(() => { const r = [...document.querySelectorAll('#bs-compliance tbody tr')].find(tr => /Ada/.test(tr.innerText)); const td = r && r.querySelector('td[data-c="2"]'); return td ? td.title : ''; });
   if (!/Monitoring Sheet/.test(why) || !/can.t open/.test(why)) fail(`a wrong link doesn't say why on a hover: ${why}`);
@@ -125,6 +125,22 @@ const failures = []; const fail = m => failures.push(m);
   if (!/Batch B\d{6}’s files can’t be opened yet/.test(sb) || !/Ada Active/.test(sb) || !/lsh-training-drive@ci\.iam\.gserviceaccount\.com/.test(sb) || !/One share covers all its trainees/.test(sb)) fail(`no one-share-per-batch prompt naming the batch, the trainee and the address: ${sb.slice(0, 300)}`);
   await page.evaluate(() => FTBatchSheet.recheckLinks()); await page.waitForTimeout(1500);
   if (!verified.includes(ids.Ada)) fail(`🔁 check them now didn't check Ada's links again: ${verified}`);
+  // 🔁 Test again: the connection, then every link that isn't ✓ checked again now, and a toast with what it found
+  verified.length = 0;
+  await page.evaluate(() => { window.__toasts = []; const t = window.toast; window.toast = (m, ...a) => { window.__toasts.push(String(m)); return t(m, ...a); }; });
+  await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(2500);
+  const said = await page.evaluate(() => window.__toasts.join(' | '));
+  if (!verified.includes(ids.Ada) || !/Google Drive is connected\. Checked 1 trainee’s links again/.test(said)) fail(`🔁 Test again didn't check the links that aren't ✓ again, or didn't say what it found: ${verified} / ${said}`);
+  // when the rest of the batch opens, the prompt names the trainee whose own files are elsewhere, not the batch folder
+  const okV = () => ({ ok: true, mine: true, v: 2, url: '' });
+  for (const who of ['Ben', 'Cy']) {
+    const dl = { monitor: 'https://docs.google.com/document/d/' + who + 'Mon000000001/edit', tam: 'https://docs.google.com/document/d/' + who + 'Tam000000001/edit' };
+    await put('drive:' + ids[who], Object.assign({ days: {} }, dl));
+    await put('trackerreview:' + ids[who], { days: {}, verify: { monitor: Object.assign(okV(), { url: dl.monitor }), tam: Object.assign(okV(), { url: dl.tam }) }, verifyAt: new Date().toISOString() });
+  }
+  await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
+  const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
+  if (!/Ada Active’s files can’t be opened/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/move the files into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's own files: ${sb2.slice(0, 300)}`);
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
@@ -146,15 +162,18 @@ const failures = []; const fail = m => failures.push(m);
   if (!ben || ben[1] !== 'Approved' || !ben[2]) fail(`a trainee with no progress isn't listed with their registration: ${ben}`);
   if (!ada || !/^1 \//.test(ada[4]) || !/^1 \//.test(ada[5]) || !/Lesson deck/.test(ada[6])) fail(`Ada's decks / Knowledge Checks / last opened: ${ada}`);
 
-  // 🔄 Update all scores: one call per approved trainee (redo), then the sheet is read again
-  { const asked = []; const watch = r => { if (/\/api\/compliance\/backfill/.test(r.url()) && /"redo":true/.test(r.postData() || '')) asked.push(JSON.parse(r.postData()).ids[0]); };
+  // 🔄 Update all scores: the batch's files looked for once, every trainee's links checked, every approved trainee backtracked
+  // from Day 1 (one call each), then the sheet is read again. (The sheet updates itself on opening: that run finishes first.)
+  await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd-all'); return b && !b.disabled; }, null, { timeout: 60000 }).catch(() => fail('the update the sheet runs on opening never finished'));
+  { const asked = [], linked = []; const watch = r => { if (/\/api\/drive\/backtrack/.test(r.url())) asked.push(JSON.parse(r.postData()).id); if (/\/api\/drive\/autolink/.test(r.url())) linked.push(JSON.parse(r.postData()).batch); };
     page.on('request', watch);
-    await page.click('button.bs-upd');
-    await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd'); return b && !b.disabled && /Update all scores/.test(b.textContent); }, null, { timeout: 30000 }).catch(() => fail('🔄 Update all scores never finished'));
+    await page.click('button.bs-upd-all');
+    await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd-all'); return b && !b.disabled && /Update all scores/.test(b.textContent); }, null, { timeout: 60000 }).catch(() => fail('🔄 Update all scores never finished'));
     await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet wasn\'t read again after 🔄 Update all scores'));
     page.off('request', watch);
     const want = tr.filter(r => r[1] === 'Approved').length;
-    if (asked.length !== want) fail(`🔄 Update all scores asked for ${asked.length} trainees, not the ${want} approved: ${asked}`); }
+    if (asked.length !== want) fail(`🔄 Update all scores backtracked ${asked.length} trainees, not the ${want} approved: ${asked}`);
+    if (linked.length !== 1) fail(`🔄 Update all scores looked for the batch's Drive files ${linked.length} times, not once`); }
 
   // 📁 Drive links: Ada 3 / 3 with the Monitoring Sheet flagged; Ben none
   const dlinks = by('drive'), da = dlinks.rows.find(r => /Ada/.test(r[0])), db = dlinks.rows.find(r => /Ben/.test(r[0]));
@@ -210,11 +229,12 @@ const failures = []; const fail = m => failures.push(m);
   const evs = await page.evaluate(() => FTBatchSheet.events().map(x => +x.at));
   if (evs.some((t, i) => i && t > evs[i - 1])) fail('🕒 Recent progress is not newest first');
 
-  // the page is wide, and a cell explains itself in the bar
+  // the page is wide, and a cell explains itself when pointed at (its title: the formula bar is gone)
   const wide = await page.evaluate(() => document.body.classList.contains('bs-wide') && getComputedStyle(document.querySelector('main')).maxWidth);
   if (wide !== 'none') fail(`the page isn't widened for the sheet: ${wide}`);
-  await page.click('#bs-lessons td[data-c="1"]');
-  if (!/90%.*2 attempts.*passed/.test(await page.inputValue('#bsBar'))) fail(`the bar doesn't explain the Knowledge Check cell: ${await page.inputValue('#bsBar')}`);
+  const tip = await page.evaluate(() => (document.querySelector('#bs-lessons td[data-c="1"]') || {}).title || '');
+  if (!/90%.*2 attempts.*passed/.test(tip)) fail(`the Knowledge Check cell doesn't explain itself: ${tip}`);
+  if (await page.$('#bsBar, .gs-fbar')) fail('the formula bar is still on the sheet');
   const sideways = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
   if (sideways) fail('the page scrolls sideways');
 
