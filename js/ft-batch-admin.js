@@ -73,7 +73,7 @@ const registered = b => (state.adminData || []).filter(r => r.approved === true 
 /* ============================================================
    📋 Admin → Mock Call Scorecards
    ============================================================ */
-const MS = {batch:"", act:"", rv:{}, loadedFor:"", loading:false, draft:{}, notes:true, saving:false};
+const MS = {batch:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, notes:true, saving:false};
 const cellOf = (id, act) => ((((MS.rv[id] || {}).acts) || {})[act]) || {};
 const dkey = id => MS.act + "|" + id;
 function draftOf(id){
@@ -102,6 +102,25 @@ async function msLoad(force){
   MS.loading = false;
   if(state.view === "admin" && state.adminTab === "mockscores" && !isTyping()) render();
 }
+/* 🧾 Score summary (the Calendar Management Mock Call's scorecard): the score's rationale in words, from what the trainer
+   entered — the weighted average from each criterion's score and weight, the % it makes, the strongest criteria and those
+   to improve with their feedback notes, any criterion not scored yet, the result and the comment. Worked out, not written by
+   an AI, so it always says exactly what the sheet holds; it follows each score as it is typed. */
+function whyHtml(id){
+  const a = curAct(), rb = a ? RUB().forAct(a) : null; if(!rb || rb.key !== "calendar") return "";
+  const d = valOf(id) || draftOf(id), sc = rb.criteria.map((k, i) => ({n: k.n, w: k.w || 1, v: d.scores[i] == null || d.scores[i] === "" ? null : Number(d.scores[i]), fb: String(d.feedback[i] || "").trim()}));
+  const got = sc.filter(x => x.v != null && isFinite(x.v)), avg = RUB().average(rb, d.scores);
+  if(!got.length) return `<h4>🧾 Score summary</h4><p class="fss-muted">Score the criteria above: the summary of why the trainee gets their score is written here as you go.</p>`;
+  const wsum = got.reduce((n, x) => n + x.w, 0), pts = got.reduce((n, x) => n + x.v * x.w, 0), pctv = d.score !== "" ? Number(d.score) : Math.round(avg / 5 * 100);
+  const top = got.filter(x => x.v >= 4).sort((p, q) => q.v - p.v || q.w - p.w).slice(0, 4), low = got.filter(x => x.v < 3).sort((p, q) => p.v - q.v || q.w - p.w).slice(0, 4), left = sc.filter(x => x.v == null);
+  const line = x => `<li><b>${e(x.n)}</b>: ${x.v}/5${x.w !== 1 ? ` (weighs ×${x.w})` : ""}${x.fb ? ` — ${e(x.fb)}` : ""}</li>`;
+  return `<h4>🧾 Score summary</h4>
+    <p><b>${isFinite(pctv) ? pctv + "%" : "—"}</b>${d.scoreTyped ? " (typed by the trainer)" : ""} from a weighted average of <b>${avgTxt(avg)}</b>: ${got.length} of ${sc.length} criteria scored, ${Math.round(pts * 100) / 100} points out of ${wsum * 5} possible (each criterion 0–5 × its weight), ÷ 5 × 100.</p>
+    ${top.length ? `<p class="fms-why-ok">⭐ Strongest</p><ul>${top.map(line).join("")}</ul>` : ""}
+    ${low.length ? `<p class="fms-why-imp">🔧 To improve</p><ul>${low.map(line).join("")}</ul>` : `<p class="fms-why-ok">No criterion below 3/5.</p>`}
+    ${left.length ? `<p class="fss-muted">Not scored yet (the average counts only what is scored): ${left.map(x => e(x.n)).join(", ")}.</p>` : ""}
+    <p>Result: <b>${e(d.status || "Not yet")}</b>${d.comment ? ` · Comment: ${e(String(d.comment).slice(0, 400))}` : ""}</p>`;
+}
 function renderMockScores(){
   if(state.adminLoading || !state.adminData){
     if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(() => loadAdminLedger(), 0);
@@ -110,14 +129,21 @@ function renderMockScores(){
   const batches = activeBatches(), acts = scoredActs();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = batches[0] || "";
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
-  const a = curAct(), rb = a ? RUB().forAct(a) : null, people = registered(MS.batch);
-  const sig = MS.batch + "|" + people.map(r => r.id).join(",");
+  const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
+  // one VA's scorecard at a time, picked from the VA dropdown (the batch's first by name until one is picked)
+  if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
+  const people = all.filter(r => r.id === MS.va), at = all.findIndex(r => r.id === MS.va);
+  const sig = MS.batch + "|" + all.map(r => r.id).join(",");
   if(MS.loadedFor !== sig) setTimeout(() => msLoad(), 0);
   const nDirty = dirtyIds().length;
   const head = `<div class="ff-bar"><div><h3>📋 Mock Call &amp; Demo Scorecards</h3>
-      <p class="fss-muted">Score one Mock Call or Demo for every VA registered in the batch: the Training Guide’s scorecard down the side, a column per VA. Each criterion 0–5 (half points allowed); the weighted average becomes the score. Saved scores go to each VA’s Practice Lab page, their 🏅 My Performance, the Scorecards and the Main Portal — the same record as 🧑‍🏫 Trainer Inputs.</p></div>
+      <p class="fss-muted">Score one Mock Call or Demo, one VA at a time: pick the activity and the VA (‹ Previous / Next › to go through the batch). Each criterion 0–5 (half points allowed) with its feedback note; the weighted average becomes the score. Saved scores go to the VA’s Practice Lab page, their 🏅 My Performance, the Scorecards and the Main Portal.</p></div>
       <span class="fms-ctl"><label>Batch <select onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select></label>
       <label>Activity <select onchange="FTMockScores.act(this.value)">${acts.map(x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select></label>
+      ${all.length ? `<label>VA <select class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(r => { const d = MS.draft[MS.act + "|" + r.id], c = a ? cellOf(r.id, a.id) : {};
+          const tag = d && d.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : " · not scored";
+          return `<option value="${e(r.id)}" ${r.id === MS.va ? "selected" : ""}>${e(r.name || r.id)}${tag}</option>`; }).join("")}</select></label>
+        <span class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous VA">‹ Previous</button><b>${at + 1} / ${all.length}</b><button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next VA">Next ›</button></span>` : ""}
       ${rb && rb.feedback ? `<label class="fss-check"><input type="checkbox" ${MS.notes ? "checked" : ""} onchange="FTMockScores.notes(this.checked)"> feedback notes</label>` : ""}
       <button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button></span></div>`;
   if(!batches.length) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No active batch: a batch shows here once its VAs are registered and approved.</p></div>`;
@@ -133,7 +159,8 @@ function renderMockScores(){
   const avgRow = rb ? `<tr class="fms-avg"><th scope="row">WEIGHTED AVERAGE</th>${people.map(r => col(r, `<b data-avg>${avgTxt(RUB().average(rb, v(r.id).scores))}</b>`)).join("")}</tr>` : "";
   return `<div class="card fss-admin fms">${head}
     ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
-    <div class="fms-scroll"><table class="fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}<span>${people.length} VA${people.length === 1 ? "" : "s"} · ${e(labelOf(MS.batch))}</span></th>
+    ${rb && rb.key === "calendar" && people[0] && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(people[0], a)}</div>` : ""}
+    <div class="fms-scroll fms-one"><table class="fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}<span>VA ${at + 1} of ${all.length} · ${e(labelOf(MS.batch))}</span></th>
       ${people.map(r => `<th data-va="${e(r.id)}"><b>${e(r.name || r.id)}</b>${savedTag(r)}</th>`).join("")}</tr></thead><tbody>
       ${crit}${avgRow}
       <tr class="fms-sum"><th scope="row">Score (%)</th>${people.map(r => col(r, `<input type="number" min="0" max="100" data-score value="${e(v(r.id).score)}" oninput="FTMockScores.score('${e(r.id)}',this.value)">`)).join("")}</tr>
@@ -141,6 +168,7 @@ function renderMockScores(){
       <tr class="fms-sum"><th scope="row">Date</th>${people.map(r => col(r, `<input type="date" value="${e(v(r.id).date)}" onchange="FTMockScores.field('${e(r.id)}','date',this.value)">`)).join("")}</tr>
       <tr class="fms-sum"><th scope="row">Comment<span>the VA sees it</span></th>${people.map(r => col(r, `<textarea rows="4" oninput="FTMockScores.field('${e(r.id)}','comment',this.value)" placeholder="What went well, what to improve">${e(v(r.id).comment)}</textarea>`)).join("")}</tr>
     </tbody></table></div>
+    ${people[0] && rb && rb.key === "calendar" ? `<div class="fms-why" data-why="${e(people[0].id)}">${whyHtml(people[0].id)}</div>` : ""}
     <div class="fp-actions fms-save"><button class="btn btn-navy btn-sm" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)">💾 Save ${nDirty ? nDirty + " VA" + (nDirty === 1 ? "’s" : "s’") + " scorecard" + (nDirty === 1 ? "" : "s") : "the scorecards"}</button>
       <span class="fss-muted">Only the VAs you changed are saved. A score typed in % stays as typed; otherwise it follows the weighted average.</span></div></div>`;
 }
@@ -156,11 +184,19 @@ function refreshCol(id){
     const dt = td.querySelector('input[type="date"]'); if(dt && !dt.value) dt.value = d.date;
     const tag = td.querySelector(".fms-tag"); if(tag){ tag.className = "fms-tag dirty"; tag.textContent = "● not saved"; }
   });
+  const w = document.querySelector(`.fms-why[data-why="${CSS.escape(id)}"]`); if(w) w.innerHTML = whyHtml(id);
   const n = dirtyIds().length, btn = document.querySelector("[data-ms-save]");
   if(btn){ btn.disabled = !n || MS.saving; btn.textContent = `💾 Save ${n} VA${n === 1 ? "’s" : "s’"} scorecard${n === 1 ? "" : "s"}`; }
 }
 window.FTMockScores = {
-  batch(b){ MS.batch = b; render(); },
+  batch(b){ MS.batch = b; MS.va = ""; render(); },
+  // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
+  va(id){ MS.va = id; render(); },
+  // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
+  fillCrit(vals){ const id = MS.va, d = draftOf(id); let n = 0; Object.entries(vals || {}).forEach(([i, v]) => { if(d.scores[i] == null || d.scores[i] === ""){ d.scores[i] = v; n++; } });
+    if(n){ d.dirty = true; if(!d.date) d.date = today(); if(!d.scoreTyped){ const avg = RUB().average(RUB().forAct(curAct()), d.scores); d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); } }
+    render(); return n; },
+  step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
   notes(on){ MS.notes = on; render(); },
   refresh(){ MS.loadedFor = ""; if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
@@ -424,6 +460,21 @@ window.FTBatchAdmin = {archive:archiveDialog, gather, buildFiles, startOf, activ
 .fms-tbl textarea{min-width:180px;resize:vertical;}
 .fms-avg th, .fms-avg td{background:#E3EED6 !important;font-weight:800;color:#2F4A14;}
 .fms-sum th{background:#F3F4F8 !important;color:var(--navy) !important;}
+.fms-why{margin:12px 0 4px;padding:12px 16px;border:1px solid #C9D9B8;border-radius:10px;background:#F7FAF2;font-size:15px;line-height:1.5;color:#1B1E2E;}
+.fms-why h4{margin:0 0 6px;font-size:16px;color:#2F4A14;} .fms-why p{margin:0 0 6px;} .fms-why ul{margin:0 0 8px;padding-left:20px;} .fms-why li{margin:2px 0;}
+.fms-why-ok{color:#1E6B3A;font-weight:700;} .fms-why-imp{color:#8A3B12;font-weight:700;} .fms-assist{margin-top:8px;}
+/* one VA at a time, drawn bigger */
+.fms-step{display:inline-flex;align-items:center;gap:8px;} .fms-step b{font-size:13px;color:var(--navy);min-width:48px;text-align:center;}
+.fms-ctl select.fms-va{min-width:260px;font-size:14px;font-weight:700;}
+.fms-one{max-height:none;} .fms-one .fms-tbl{width:100%;font-size:16px;}
+.fms-one .fms-tbl th, .fms-one .fms-tbl td{padding:9px 14px;}
+.fms-one .fms-tbl thead th{font-size:15px;} .fms-one .fms-tbl thead th b{font-size:17px;} .fms-one .fms-tbl thead th > span{font-size:13px;}
+.fms-one .fms-tbl tbody th{min-width:320px;max-width:420px;font-size:16px;} .fms-one .fms-tbl tbody th span{font-size:13px;}
+.fms-one .fms-tbl td{width:100%;}
+.fms-one .fms-tbl input, .fms-one .fms-tbl select, .fms-one .fms-tbl textarea{font-size:16px;padding:7px 10px;border-radius:8px;}
+.fms-one .fms-tbl input[type=number]{width:96px;} .fms-one .fms-tbl .fms-fb{margin-top:6px;font-size:15px;}
+.fms-one .fms-tbl textarea{min-height:110px;} .fms-one .fms-tbl select{max-width:240px;} .fms-one .fms-tbl input[type=date]{max-width:220px;}
+.fms-one .fms-tag{font-size:12.5px;}
 .fms-tag{display:inline-block;margin-top:3px;font-size:11px;font-weight:800;border-radius:999px;padding:1px 8px;background:rgba(255,255,255,.85);color:#4A5070;}
 .fms-tag.ok{color:#1E7F4F;} .fms-tag.mid{color:#7a5d00;} .fms-tag.dirty{background:#FEF7C3;color:#7a5d00;}
 .fms-save{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;}

@@ -446,14 +446,17 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
-  // Day 9's Intake Mock Calls Metrics: the metrics with no heading over the table, the Call Simulator and CMS Intake links and
-  // the trainee's case beside them; the mock calls' own slide is off the deck
+  // Day 9's Intake Mock Calls Metrics: the metrics with no heading over the table, the Call Simulator and CMS Intake links
+  // beside them, and no case (the packet's case is the Day 8 demo's); the mock calls' own slide is off the deck
   await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
   if (!/Intake Mock Calls Metrics/.test(d9.h)) fail(`Day 9's metrics slide is "${d9.h}"`);
-  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Simulator: Intake Line/.test(d9.text) || !(await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Simulator: Intake Line/.test(d9.text) || (await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
+  // the packet's case is the Day 8 demo's: its preparation slide (s3p) carries the case box
+  await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(1500);
+  if (!(await page.$('.ftdd-sheet .ftis-mockcall'))) fail("Day 8's demo preparation slide has no case box");
 
   // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are removed:
   // no 🎮 button anywhere, and #/kcgames is no page of the platform

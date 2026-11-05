@@ -116,10 +116,9 @@ function traineePanel(h){
   // (a mock call: its heading only, no Done: the trainer's saved scoresheet makes it done, above)
   if(a.plain) return `<p class="ftbf-plain">${e(a.plain)}</p>`;
   // (a mock call: no "Mock Calls Ongoing" box; the trainee reads the slide itself, Day 4's Reception metrics, read only)
-  if(a.simple && a.noTracker) return a.act === "intake-live" ? `<div class="ftbf"><div class="ftis-mockcall"></div></div>` : "";
+  if(a.simple && a.noTracker) return "";
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
-    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -196,8 +195,8 @@ function paint(){
   const sheet = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${h.i}"] .ftdd-sheet`) || document.querySelector("main.main-ftdd .ftdd-sheet");
   if(!sheet || sheet.querySelector(".ftbf")) return;
   sheet.querySelectorAll(".ftdd-wait").forEach(x => x.remove());
-  // (the trainer's slide has no panel; Day 9's Intake mock calls list every case with its script in the slide itself:
-  // build/day-decks.cjs PREP_KEEP, js/ft-intake.js .ftis-mockcall)
+  // (the trainer's slide has no panel; Day 8's demo preparation slide lists every intake case with its script in the slide itself:
+  // build/day-decks.cjs TRIM[8].s3, js/ft-intake.js .ftis-mockcall)
   if(isAdminView()) return;
   const box = document.createElement("div"); box.className = "ftbf-slot";
   // (a gate's panel heads the slide: its content, below, is read once the Done is in)

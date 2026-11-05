@@ -109,8 +109,12 @@ async function workerChecks() {
     // the current batch (started last), a column per registered VA, the Reception scorecard down the side
     const sel = await page.evaluate(() => { const s = document.querySelector('.fms-ctl select'); return s.options[s.selectedIndex].text; });
     if (!/B103026.*current/.test(sel)) fail(`the sheet didn't open on the current batch: ${sel}`);
+    // one VA's scorecard at a time: the VA dropdown lists the batch's VAs, the sheet shows the one picked (the first by name)
+    const vas = await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent.split(' · ')[0]));
+    if (vas.join() !== 'Ana Cruz,Ben Diaz,Cara Lim') fail(`the VA dropdown isn't the batch's VAs: ${vas}`);
     const cols = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th b')].map(b => b.textContent));
-    if (cols.join() !== 'Ana Cruz,Ben Diaz,Cara Lim') fail(`the columns aren't the batch's VAs: ${cols}`);
+    if (cols.join() !== 'Ana Cruz') fail(`the sheet doesn't show one VA at a time (the first): ${cols}`);
+    if (!(await page.$('.fms-one'))) fail('the one-VA sheet isn\'t drawn bigger (.fms-one)');
     const rows = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody th')].map(t => t.textContent));
     if (!rows[0].startsWith('Introduction of Law Firm') || !rows.includes('WEIGHTED AVERAGE') || !rows.some(r => r.startsWith('Score'))) fail(`the scorecard rows aren't there: ${rows.slice(0, 3)}`);
     const nCrit = await page.evaluate(() => FT_RUBRICS.list.reception.criteria.length);
@@ -122,6 +126,14 @@ async function workerChecks() {
     const avg = await text('.fms-avg td[data-va="ana-cruz--b103026"]'), sc = await page.inputValue('td[data-va="ana-cruz--b103026"] [data-score]');
     if (avg !== '4.00/5' || sc !== '80') fail(`the average and the score don't follow the scores: ${avg} ${sc}`);
     if (!/Save 1 VA/.test(await text('[data-ms-save]'))) fail(`Save doesn't count the VA changed: ${await text('[data-ms-save]')}`);
+    // Next ›: Ben's scorecard; Ana's unsaved scores stay (● not saved in the dropdown) and Save still counts her
+    await page.evaluate(() => FTMockScores.step(1)); await page.waitForTimeout(300);
+    const now = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th b')].map(b => b.textContent).join());
+    if (now !== 'Ben Diaz') fail(`Next › didn't show the next VA: ${now}`);
+    if (!/Ana Cruz · ● not saved/.test(await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|')))) fail('the dropdown doesn\'t mark Ana\'s unsaved scorecard');
+    if (!/Save 1 VA/.test(await text('[data-ms-save]'))) fail('switching VA lost the unsaved scorecard');
+    await page.evaluate(() => FTMockScores.va('ana-cruz--b103026')); await page.waitForTimeout(300);
+    if ((await page.inputValue('td[data-va="ana-cruz--b103026"] [data-score]')) !== '80') fail('Ana\'s typed scores are gone after switching back');
     await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
     const lr = await get('labreview:ana-cruz--b103026'), c = ((lr || {}).acts || {})['reception-live'] || {};
     if (c.status !== 'Passed' || c.score !== 80 || !c.rubric || c.rubric.avg !== 4 || c.rubric.feedback[0] !== 'Clear intro' || !/improvements/.test(c.comment)) fail(`the scorecard wasn't saved as Trainer Inputs saves it: ${JSON.stringify(c)}`);
@@ -132,7 +144,7 @@ async function workerChecks() {
     const cara = await get('trainee:cara-lim--b103026');
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'mockscores'; render(); }); await page.waitForTimeout(1200);
-    if ((await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th b')].map(b => b.textContent))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
+    if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
     await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
     let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
     if (!/Offboarded VAs \(1\)[\s\S]*Cara Lim/.test(shelf)) fail('Cara isn\'t under 🚫 Offboarded VAs');

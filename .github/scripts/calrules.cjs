@@ -138,7 +138,9 @@ async function workerChecks() {
   await page.waitForTimeout(2500);
   await page.evaluate(b => FTCalRulesAdmin.batch(b), BATCH); await page.waitForTimeout(400);
   const tab = await page.evaluate(() => (document.querySelector('.cr-admin') || {}).innerText || '');
-  if (!/Cara Calendar[\s\S]*92%/.test(tab) || !/An email reminder a day before \(1\)/.test(tab)) fail(`the 📅 Booking Rules tab doesn't list the booking: ${tab.slice(0, 400)}`);
+  if (!/Cara Calendar[\s\S]*92%/.test(tab) || !/An email reminder a day before \(1 of 1\)/.test(tab)) fail(`the 📅 Booking Rules tab doesn't list the booking: ${tab.slice(0, 400)}`);
+  // 🧾 Why this score: how the average is reached, the latest booking, the rule missed and why
+  if (!/Why this score/i.test(tab) || !/92% = the average of 1 booking/.test(tab) || !/met 11 of 12 rules/.test(tab) || !/Missed most/.test(tab)) fail(`the 📅 Booking Rules tab doesn't explain the score: ${tab.slice(0, 600)}`);
   await page.evaluate(() => { state.adminTab = 'trainerinputs'; FTSessionsAdmin.reload && FTSessionsAdmin.reload(); render(); }); await page.waitForTimeout(2500);
   await page.evaluate(b => FTSessionsAdmin.batch(b), BATCH); await page.waitForTimeout(600);
   await page.evaluate(id => FTInputs.cell(id, 'calendar-live'), id); await page.waitForTimeout(1800);
@@ -155,6 +157,27 @@ async function workerChecks() {
   if (v('Alternative Time') !== '') fail('the alternatives criterion was filled though the slot wasn\'t taken');
   if (v('Professional Introduction') !== '') fail('a call criterion was filled from the booking check');
   if (!/\d/.test(await page.evaluate(() => (document.querySelector('[data-avg]') || {}).innerText || ''))) fail('the weighted average didn\'t follow the filled criteria');
+
+  // 📋 Mock Call Scorecards (🧑‍🏫 Graders), the Calendar Management Mock Call, one VA: the booking check fills its rule
+  // criteria there too, and 🧾 Score summary explains the score from what is entered
+  await page.evaluate(([b, id]) => { state.adminTab = 'mockscores'; render(); FTMockScores.batch(b); FTMockScores.act('calendar-live'); FTMockScores.va(id); }, [BATCH, id]); await page.waitForTimeout(2500);
+  const fa = await page.evaluate(() => (document.querySelector('.fms-assist') || {}).innerText || '');
+  if (!/11 of 12 rules met/.test(fa)) fail(`the Calendar Mock Call scorecard doesn't show the booking check: ${fa}`);
+  if (!/Score the criteria above/.test(await page.evaluate(() => (document.querySelector('.fms-why') || {}).innerText || ''))) fail('the 🧾 Score summary isn\'t there before any score');
+  await page.evaluate(() => document.querySelector('.fms-assist button').click()); await page.waitForTimeout(600);
+  const why = await page.evaluate(() => (document.querySelector('.fms-why') || {}).innerText || '');
+  if (!/Score summary/.test(why) || !/weighted average of \d/.test(why) || !/Strongest/.test(why) || !/Information Verification/.test(why) || !/Not scored yet/.test(why)) fail(`the 🧾 Score summary doesn't explain the score: ${why.slice(0, 500)}`);
+  // (it follows a score as it is typed: a low one shows under 🔧 To improve, with its feedback note)
+  const introIdx = await page.evaluate(() => FT_RUBRICS.list.calendar.criteria.findIndex(k => /Professional Introduction/.test(k.n)));
+  await page.evaluate(([i, id]) => { FTMockScores.crit(id, i, '2'); FTMockScores.fb(id, i, 'No firm name in the greeting'); }, [introIdx, id]); await page.waitForTimeout(300);
+  const why2 = await page.evaluate(() => (document.querySelector('.fms-why') || {}).innerText || '');
+  if (!/To improve[\s\S]*Professional Introduction[\s\S]*2\/5[\s\S]*No firm name/.test(why2)) fail(`a low score isn't explained under To improve with its note: ${why2.slice(0, 500)}`);
+  // (only the calendaring scorecard has it)
+  await page.evaluate(() => FTMockScores.act('reception-live')); await page.waitForTimeout(800);
+  if (await page.$('.fms-why')) fail('the 🧾 Score summary shows on a scorecard other than calendaring');
+  await page.evaluate(() => { state.adminTab = 'trainerinputs'; render(); }); await page.waitForTimeout(1200);
+  await page.evaluate(b => FTSessionsAdmin.batch(b), BATCH); await page.waitForTimeout(600);
+  await page.evaluate(id => FTInputs.cell(id, 'calendar-live'), id); await page.waitForTimeout(1800);
 
   // ✍️ Writing skills (js/ft-writing.js): the scorecard ends with the Writing criterion, and under it the check of the
   // trainee's pasted writing suggests a score that ⤓ Use this score puts in (the AI answer is stubbed: no AI on the test server)

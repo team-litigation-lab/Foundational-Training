@@ -66,7 +66,7 @@ const MAP = [
      `For anyone under 70%: set a 🎯 Focus item and book a retake before the next segment.`]},
   {stage:"6 · Practice Lab", trainee:"Runs the simulators, mock calls, calendaring and Practice Sessions.",
    steps:[`Review and score Practice Sessions: ${SEC.lab} → ${go("sessions","🟢 Practice Sessions")}.`,
-     `Record live demos and mock calls with you: ${go("trainerinputs","🧑‍🏫 Trainer Inputs")} and ${go("mockscores","📋 Mock Call Scorecards")}.`,
+     `Score live demos and mock calls with you in ${go("graders","🧑‍🏫 Graders: Mock Calls & Demos")}: pick the activity and the VA, score each criterion with its feedback, and 💾 Save.`,
      `Calendaring work: ${go("calweek","📅 Calendaring Activity")}, ${go("calcheck","✅ Calendar Activity Check")}, ${go("calrules","📅 Booking Rules")} and ${go("calscores","📅 Calendar Scores")}.`,
      `Call Listening: ${go("listening","🎧 Call Listening")}.`,
      `Is a trainee out of repeat attempts because of a technical problem? Use Trainee Audit → ↺ Reset Attempts. A trainee who asked for more shows "🙋 asked for more attempts".`]},
