@@ -189,7 +189,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (!(await page.$('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock')) || await page.$('.ftdd-slides > .ftdd-deck .ftlc, .ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])')) fail('a trainee opened Day 2 before the trainer opened it');
   // once its lesson is open (the test server opens every day's steps, server.mjs), every day opens on its card
   await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }); await page.evaluate(() => ftLoadOpenDays());
-  const dayCards = []; let d1zoom = 1;
+  const dayCards = [];
   for (let n = 1; n <= 16; n++) {
     await page.evaluate(n => FTDayDecks.open(n), n); await page.waitForTimeout(500);
     dayCards.push(await page.evaluate(() => { const c = document.querySelector('.ftdd-lcslide .ftlc');
@@ -207,14 +207,16 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     const r = await page.evaluate(n => {
       const rows = FTDayDecks.dayRows(n), list = FTDayDecks.list(n);
       const card = [...document.querySelectorAll('.ftdd-lcslide .ftlc-row .ftlc-t > b')].map(b => b.textContent.trim());
-      const z = parseFloat((document.querySelector('.ftdd-lcslide .ftlc') || { style: {} }).style.zoom) || 1;
-      return { ids: list.map(s => s.id), rowOf: list.map(s => s.agenda || s.divider ? null : s.row), rows: rows.map(r => FTDayDecks.rowLabel(n, r)), card, z,
+      const z = parseFloat((document.querySelector('.ftdd-lcslide .ftlc') || { style: {} }).style.zoom) || 1, box = document.querySelector('.ftdd-lcslide');
+      const base = box ? FTDayDecks.cardScale(box) : 1, over = box ? box.scrollHeight - box.clientHeight : 0;
+      return { ids: list.map(s => s.id), rowOf: list.map(s => s.agenda || s.divider ? null : s.row), rows: rows.map(r => FTDayDecks.rowLabel(n, r)), card, z, base, over,
         end: !!(list[list.length - 1] || {}).end, steps: n > 1 ? FTDayLocks.steps(n).map(s => s.label) : null,
         title: (document.querySelector('.ftdd-dtitle') || {}).textContent || '' };
     }, n);
     if (n === 1) {
       if (r.ids.join() !== 'agenda,reading,reading-2,reading-3,reading-4,reading-5,reading-6,reading-7,reading-8,go-1,go-2,go-3,pm,end-day') fail(`Day 1's deck changed: ${r.ids.join()}`);
-      d1zoom = r.z; continue;
+      if (r.over > 2) fail(`Day 1's card runs past its slide by ${r.over}px`);
+      continue;
     }
     if (JSON.stringify(r.card) !== JSON.stringify(r.rows)) fail(`Day ${n}'s card doesn't show its rows: ${JSON.stringify(r.card)}`);
     const seq = r.rowOf.filter(x => x != null);
@@ -222,8 +224,11 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     if (seq.some((x, i) => i && x < seq[i - 1])) fail(`Day ${n}'s slides don't run in its card's order: ${JSON.stringify(r.ids.map((id, i) => id + ':' + r.rowOf[i]))}`);
     if (!r.end || r.ids[r.ids.length - 1] !== 'end-day') fail(`Day ${n}'s deck doesn't end on End of Module`);
     if (JSON.stringify(r.steps) !== JSON.stringify(r.rows)) fail(`Day ${n}'s steps aren't its card's rows: ${JSON.stringify(r.steps)}`);
-    // the card's rows read at about Day 1's size (a fuller card lays them in two columns rather than shrink them)
-    if (r.z < d1zoom * 0.85 - 0.001) fail(`Day ${n}'s card is drawn at ${r.z}, below 85% of Day 1's ${d1zoom}`);
+    // the card's rows read at about Day 1's size: every card starts from the scale Day 1's card fits at (cardScale) and a
+    // fuller one lays its rows in two columns rather than shrink well below it; a lighter one then grows to fill the slide
+    // (so the grown sizes differ from day to day: Day 1's, the lightest, grows the most), never past its slide
+    if (r.z < r.base * 0.85 - 0.001) fail(`Day ${n}'s card is drawn at ${r.z}, below 85% of the scale every card starts from (${r.base})`);
+    if (r.over > 2) fail(`Day ${n}'s card runs past its slide by ${r.over}px`);
     // every slide has something on it (a launch, its button)
     for (let i = 1; i < r.ids.length - 1; i++) {
       await page.evaluate(i => FTDayDecks.to(i), i); await page.waitForTimeout(150);
