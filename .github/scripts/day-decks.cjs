@@ -207,14 +207,15 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     const r = await page.evaluate(n => {
       const rows = FTDayDecks.dayRows(n), list = FTDayDecks.list(n);
       const card = [...document.querySelectorAll('.ftdd-lcslide .ftlc-row .ftlc-t > b')].map(b => b.textContent.trim());
-      const z = parseFloat((document.querySelector('.ftdd-lcslide .ftlc') || { style: {} }).style.zoom) || 1;
-      return { ids: list.map(s => s.id), rowOf: list.map(s => s.agenda || s.divider ? null : s.row), rows: rows.map(r => FTDayDecks.rowLabel(n, r)), card, z,
+      const lc = document.querySelector('.ftdd-lcslide .ftlc') || { style: {}, dataset: {} };
+      const z = parseFloat(lc.style.zoom) || 1, base = parseFloat(lc.dataset.base) || z;
+      return { ids: list.map(s => s.id), rowOf: list.map(s => s.agenda || s.divider ? null : s.row), rows: rows.map(r => FTDayDecks.rowLabel(n, r)), card, z, base,
         end: !!(list[list.length - 1] || {}).end, steps: n > 1 ? FTDayLocks.steps(n).map(s => s.label) : null,
         title: (document.querySelector('.ftdd-dtitle') || {}).textContent || '' };
     }, n);
     if (n === 1) {
       if (r.ids.join() !== 'agenda,reading,reading-2,reading-3,reading-4,reading-5,reading-6,reading-7,reading-8,go-1,go-2,go-3,pm,end-day') fail(`Day 1's deck changed: ${r.ids.join()}`);
-      d1zoom = r.z; continue;
+      d1zoom = r.base; continue;   // (Day 1's standard size on this screen; a card with room may grow past it to fill its slide)
     }
     if (JSON.stringify(r.card) !== JSON.stringify(r.rows)) fail(`Day ${n}'s card doesn't show its rows: ${JSON.stringify(r.card)}`);
     const seq = r.rowOf.filter(x => x != null);
@@ -222,8 +223,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     if (seq.some((x, i) => i && x < seq[i - 1])) fail(`Day ${n}'s slides don't run in its card's order: ${JSON.stringify(r.ids.map((id, i) => id + ':' + r.rowOf[i]))}`);
     if (!r.end || r.ids[r.ids.length - 1] !== 'end-day') fail(`Day ${n}'s deck doesn't end on End of Module`);
     if (JSON.stringify(r.steps) !== JSON.stringify(r.rows)) fail(`Day ${n}'s steps aren't its card's rows: ${JSON.stringify(r.steps)}`);
-    // the card's rows read at about Day 1's size (a fuller card lays them in two columns rather than shrink them)
-    if (r.z < d1zoom * 0.85 - 0.001) fail(`Day ${n}'s card is drawn at ${r.z}, below 85% of Day 1's ${d1zoom}`);
+    // the card's rows read at about Day 1's standard size (a fuller card lays them in two columns rather than shrink them)
+    if (r.z < d1zoom * 0.85 - 0.001) fail(`Day ${n}'s card is drawn at ${r.z}, below 85% of Day 1's standard ${d1zoom}`);
     // every slide has something on it (a launch, its button)
     for (let i = 1; i < r.ids.length - 1; i++) {
       await page.evaluate(i => FTDayDecks.to(i), i); await page.waitForTimeout(150);

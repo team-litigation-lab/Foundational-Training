@@ -30,7 +30,7 @@ const failures = []; const fail = m => failures.push(m);
 
   const lab = await page.evaluate(() => ({
     days: [...document.querySelectorAll('.fts-day')].map(d => d.id),
-    cards: [...document.querySelectorAll('.fts-day')].map(d => ({ day: d.id, open: d.open, cards: [...d.querySelectorAll('.fts-card')].map(c => ({ h: c.querySelector('h3').innerText, st: c.dataset.status, btn: ((c.querySelector('.fts-tool-act .btn') || {}).innerText || '') })) }))
+    cards: [...document.querySelectorAll('.fts-day')].map(d => ({ day: d.id, open: d.open, cards: [...d.querySelectorAll('.fts-card')].map(c => ({ h: c.querySelector('h3').innerText, text: c.textContent, st: c.dataset.status, btn: ((c.querySelector('.fts-tool-act .btn') || {}).innerText || '') })) }))
   }));
   const nums = lab.days.map(d => Number(d.replace('fts-day-', ''))).filter(Boolean);
   if (!nums.length) fail('the Practice Lab has no day sections');
@@ -39,7 +39,9 @@ const failures = []; const fail = m => failures.push(m);
   const day = n => (lab.cards.find(x => x.day === 'fts-day-' + n) || { cards: [] });
   const find = (n, re) => day(n).cards.find(c => re.test(c.h));
   if (!find(4, /Reception Mock Calls/)) fail('Reception Mock Calls is not under Day 4');
-  if (!find(5, /Calendar Activity Check/)) fail('the Calendar Activity Check is not under Day 5');
+  // (Day 5's calendaring is one card, the Attorney Calendar Management Activity, its ✅ Calendar Activity Check a step of it)
+  const att = find(5, /Attorney Calendar Management Activity/);
+  if (!att || !/Calendar Activity Check/.test(att.text || '')) fail(`the Calendar Activity Check is not under Day 5: ${JSON.stringify(att)}`);
   if (!find(3, /Reception calls/)) fail('the Reception Call Listening set is not under Day 3');
   const g = find(8, /Process Guide/), dr = find(8, /Drill: Intake Packet/), tr = find(9, /Transcription Activity/);
   if (!g || g.st !== 'done' || !/Review/.test(g.btn)) fail(`Day 8's submitted Process Guide isn't ✓ Done with 👁 Review: ${JSON.stringify(g)}`);

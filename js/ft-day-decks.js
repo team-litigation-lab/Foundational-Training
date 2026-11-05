@@ -1083,7 +1083,8 @@ function cardScale(box){
     probe.className = "ftdd-onnavy ftdd-lcslide"; probe.style.cssText = `position:absolute;left:-99999px;top:0;width:${w}px;height:auto;visibility:hidden;`;
     probe.innerHTML = dayCard(1, (X.data && X.data.days) || {}); box.parentNode.appendChild(probe);
     const nat = probe.scrollHeight; probe.remove();
-    // (a card with room to spare is drawn bigger, up to 1.3: fitSheets shrinks it back if the wider text runs over)
+    // (a card with room to spare is drawn bigger, up to 1.3: fitSheets shrinks it back if the wider text runs over. This is the
+    // standard size every day's card is held to; fitCards may then grow a card past it to fill its slide)
     cardScales[key] = nat > h ? Math.max(0.5, Math.floor(h / nat * 100) / 100) : Math.min(1.3, Math.floor(h / nat * 100) / 100);
   }
   return cardScales[key];
@@ -1174,7 +1175,7 @@ function fitCards(){
     const c = box.matches(".ftdd-lcslide") ? box.querySelector(":scope > .ftlc") : null;
     // (the Training Agenda: shrunk to fit, or, with room to spare, drawn bigger to fill the slide)
     if(!c){ if(!zoomToFit(box, 0.35)) box.scrollTop = 0; else zoomUp(box, 1.8); return; }
-    const base = cardScale(box); let z = base; c.style.zoom = String(z); box.scrollTop = 0;
+    const base = cardScale(box); let z = base; c.style.zoom = String(z); box.scrollTop = 0; c.dataset.base = String(base);
     const shrink = () => { while(box.clientHeight && box.scrollHeight > box.clientHeight + 2 && z > 0.35){ z = Math.round((z - 0.05) * 100) / 100; c.style.zoom = String(z); } };
     shrink();
     // a day's card (never Day 1's) whose rows would read smaller than about 85% of Day 1's on this screen lays them in two
