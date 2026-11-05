@@ -174,18 +174,31 @@ const failures = []; const fail = m => failures.push(m);
   if (!ben || ben[1] !== 'Approved' || !ben[2]) fail(`a trainee with no progress isn't listed with their registration: ${ben}`);
   if (!ada || !/^1 \//.test(ada[4]) || !/^1 \//.test(ada[5]) || !/Lesson deck/.test(ada[6])) fail(`Ada's decks / Knowledge Checks / last opened: ${ada}`);
 
-  // 🔄 Update all scores: the batch's files looked for once, every trainee's links checked, every approved trainee backtracked
-  // from Day 1 (one call each), then the sheet is read again. (The sheet updates itself on opening: that run finishes first.)
+  // 🔄 Update all scores: the batch's files looked for once, every trainee's links checked, today's daily check run for every
+  // approved trainee (one call each; no backtrack from Day 1: that was a one-time catch-up), then the sheet is read again.
+  // (The sheet updates itself on opening: that run finishes first.)
   await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd-all'); return b && !b.disabled; }, null, { timeout: 60000 }).catch(() => fail('the update the sheet runs on opening never finished'));
-  { const asked = [], linked = []; const watch = r => { if (/\/api\/drive\/backtrack/.test(r.url())) asked.push(JSON.parse(r.postData()).id); if (/\/api\/drive\/autolink/.test(r.url())) linked.push(JSON.parse(r.postData()).batch); };
+  { const asked = [], linked = [], back = []; const watch = r => { if (/\/api\/drive\/check$/.test(r.url())) asked.push(JSON.parse(r.postData()).id); if (/\/api\/drive\/backtrack/.test(r.url())) back.push(1); if (/\/api\/drive\/autolink/.test(r.url())) linked.push(JSON.parse(r.postData()).batch); };
     page.on('request', watch);
     await page.click('button.bs-upd-all');
     await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd-all'); return b && !b.disabled && /Update all scores/.test(b.textContent); }, null, { timeout: 60000 }).catch(() => fail('🔄 Update all scores never finished'));
     await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet wasn\'t read again after 🔄 Update all scores'));
     page.off('request', watch);
     const want = tr.filter(r => r[1] === 'Approved').length;
-    if (asked.length !== want) fail(`🔄 Update all scores backtracked ${asked.length} trainees, not the ${want} approved: ${asked}`);
+    if (asked.length !== want) fail(`🔄 Update all scores ran today's check for ${asked.length} trainees, not the ${want} approved: ${asked}`);
+    if (back.length) fail(`🔄 Update all scores still backtracks from Day 1 (${back.length} calls)`);
     if (linked.length !== 1) fail(`🔄 Update all scores looked for the batch's Drive files ${linked.length} times, not once`); }
+  // ⏪ the Day 1 backtrack, kept per trainee: ✅ Compliance → ⏪ Backtrack this trainee from Day 1 calls it for that trainee alone
+  { const back = []; const watch = r => { if (/\/api\/drive\/backtrack/.test(r.url())) back.push(JSON.parse(r.postData()).id); };
+    page.on('request', watch);
+    await page.evaluate(id => { FTBatchSheet.ttWho(id); }, ids.Ada); await page.waitForTimeout(600);
+    const btn = await page.evaluate(() => { const b = [...document.querySelectorAll('.bs-tt button')].find(x => /Backtrack this trainee from Day 1/.test(x.textContent)); return !!b; });
+    if (!btn) fail('✅ Compliance has no ⏪ Backtrack this trainee from Day 1');
+    await page.evaluate(id => FTBatchSheet.backtrack(id), ids.Ada); await page.waitForTimeout(2500);
+    page.off('request', watch);
+    if (back.length !== 1 || back[0] !== ids.Ada) fail(`⏪ Backtrack this trainee didn't backtrack Ada alone: ${JSON.stringify(back)}`);
+    const said = await page.evaluate(() => ((document.querySelector('.bs-tt') || {}).innerText || ''));
+    if (!/⏪ Ada/.test(said)) fail(`the backtrack didn't say what it did: ${said.slice(0, 300)}`); }
 
   // 📁 Drive links: Ada 3 / 3 with the Monitoring Sheet flagged; Ben none
   const dlinks = by('drive'), da = dlinks.rows.find(r => /Ada/.test(r[0])), db = dlinks.rows.find(r => /Ben/.test(r[0]));

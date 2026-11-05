@@ -129,7 +129,9 @@ async function workerChecks() {
   // 📊 the Weekly Ranking's Spelling & Typing column fills from the log
   await put(`ranking:${BATCH}:w1`, null);
   await page.evaluate(() => { state.adminTab = 'ranking'; FTRanking.reload(); render(); }); await page.waitForTimeout(2500);
+  // (Week 1 itself: the ranking opens on the batch's current week, which depends on today's date)
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
+  await page.evaluate(() => FTRanking.week(1)); await page.waitForTimeout(1200);
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(600);
   await page.evaluate(sub => FTRanking.col(0, 'sub', sub), `${oldMD} to ${md(new Date())}`); await page.waitForTimeout(400);
   await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);

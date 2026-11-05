@@ -532,8 +532,12 @@ function trainerToolsHtml(){
   const today = new Date().toISOString().slice(0, 10), t = rv.tam;
   const tamOut = B.tamBusy ? "Reading the TAM…" : !t ? "Not graded yet." : t.error ? "✗ " + t.error : Object.keys(t.entries || {}).length
     ? Object.entries(t.entries).sort().slice(-8).map(([d, x]) => `${d}: ${x.words} words`).join(" · ") : "No dated entry found in the TAM.";
-  return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
+  const bt = B.btOut && B.btOut.id === id ? B.btOut : null;
+  return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>⏪ Backtrack a trainee · ✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
     <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.ttWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
+    <div class="bs-tt-row"><b>⏪ Backtrack</b> <button class="btn btn-ghost btn-sm" type="button" ${B.btBusy ? "disabled" : ""} onclick="FTBatchSheet.backtrack('${e(id)}')">${B.btBusy ? "Backtracking…" : "⏪ Backtrack this trainee from Day 1"}</button>
+      <span class="bs-note">${bt ? e(bt.text) : "Reads their Task Tracker, Monitoring Sheet and test screenshots again for every training day since the batch started, and works each day out again (a day’s trainer score and comment are kept)."}</span></div>
+    <p class="bs-note">The daily check runs at the end of every shift (and 🔄 Update runs today’s now); backtrack one trainee when their days need catching up — files linked late, a file fixed after the fact.</p>
     <div class="bs-tt-row"><b>✍ EOD</b> <input type="date" id="bsEodD" value="${e(B.ttDay || today)}" max="${today}"> <input type="number" id="bsEodS" min="0" max="100" placeholder="Score %" style="width:90px">
       <input type="text" id="bsEodN" placeholder="Note (optional)" style="flex:1;min-width:160px"> <button class="btn btn-navy btn-sm" type="button" onclick="FTBatchSheet.eodGrade('${e(id)}')">💾 Save the EOD score</button></div>
     <p class="bs-note">For a day the EOD monitoring missed, or before it was set up. It replaces the automatic check for that day; an empty score takes it off.</p>
@@ -558,7 +562,7 @@ const dlBtn = id => `<button type="button" class="bs-dl" onclick="FTBatchSheet.c
 function updBtn(id){
   const sc = SYNC_OF[id]; if(!sc || !adminOn() || meOn()) return "";
   const S = B.sync, mine = S && (S.scope === sc || S.scope === "all");
-  return `<button type="button" class="bs-upd" ${S ? "disabled" : ""} onclick="FTBatchSheet.sync('${sc}')" title="${e({scores: "Backtrack every trainee from Day 1 (Task Tracker, Monitoring Sheet, test screenshots) and read the scores again", links: "Find and link every trainee's Drive files, then check every trainee's links", outputs: "Backtrack every trainee from Day 1 and work out each day again", ranking: "Read the Weekly Ranking again"}[sc])}">${mine ? `⏳ ${e(S.what)}${S.of ? ` ${S.n}/${S.of}` : ""}…` : "🔄 Update"}</button>`;
+  return `<button type="button" class="bs-upd" ${S ? "disabled" : ""} onclick="FTBatchSheet.sync('${sc}')" title="${e({scores: "Run today's check for every trainee now (Monitoring Sheet, Task Tracker, Typing & Spelling, EOD) and read the scores again", links: "Find and link every trainee's Drive files, then check every trainee's links", outputs: "Run today's check for every trainee now (Monitoring Sheet, Task Tracker, Typing & Spelling, EOD)", ranking: "Read the Weekly Ranking again"}[sc])}">${mine ? `⏳ ${e(S.what)}${S.of ? ` ${S.n}/${S.of}` : ""}…` : "🔄 Update"}</button>`;
 }
 function groupedSheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length, F = foldOf(T.id);
@@ -1084,15 +1088,15 @@ function renderSheet(){
   loadData();
   const ppl = people(), D = B.data, ready = !!D && !D.error && (!D.batch || D.batch === B.batch) && ppl.every(p => (D.rec || {})[p.id]) && (!B.dataLoading || !!D.batch);
   const T = ready ? tables() : null;
-  // 🔄 the sheet brings itself up to date on opening a batch (links found and checked, every trainee backtracked from Day 1,
-  // the Weekly Ranking read again): once a session, and not again within 6 hours of the last update
+  // 🔄 the sheet brings itself up to date on opening a batch (links found and checked, today's daily check run for every
+  // trainee, the Weekly Ranking read again): once a session, and not again within 6 hours of the last update
   if(ready && adminOn() && !B.sync && !(B.autoSync = B.autoSync || {})[B.batch]){ B.autoSync[B.batch] = 1; let last = 0;
     try{ last = Number(localStorage.getItem("ft_bs_sync:" + B.batch)) || 0; }catch(err){}
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, backtrack every trainee from Day 1 and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>
         ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
@@ -1135,8 +1139,10 @@ window.FTBatchSheet = {
   /* 🔄 each section's Update (and Update all scores, and the sheet itself on opening a batch, at most every 6 hours):
        links    — 🔗 the batch's Drive files found and linked by their naming convention (worker.js autoLinkBatch), then EVERY
                   trainee's links checked (not only the ones with a link already);
-       scores / outputs — ⏪ every approved trainee backtracked from Day 1 (worker.js backtrack: the Task Tracker, the
-                  Monitoring Sheet and the test screenshots read again for every training day, each day's compliance again);
+       scores / outputs — ✅ today's daily check, now, for every approved trainee: the test screenshots (/api/drive/shots), then
+                  the Task Tracker and the Monitoring Sheet with the day's compliance (/api/drive/check: the Monitoring Sheet,
+                  the Task Tracker, the Typing & Spelling Tests and the EOD). Past days keep what their end-of-shift check
+                  found. (⏪ worker.js backtrack, re-reading every day from Day 1, was the one-time catch-up: not run from here.)
        ranking  — 📊 the Weekly Ranking read again;
        all      — all of it. The sheet is read again at the end. */
   async sync(scope, quiet){
@@ -1159,9 +1165,13 @@ window.FTBatchSheet = {
       msgs.push(`✓ Checked ${all.length} trainee${all.length === 1 ? "" : "s"}’ links`);
     }
     if(doBack){
-      step("Backtracking from Day 1", appr.length);
-      for(const p of appr){ try{ const r = await authFetch("/api/drive/backtrack", {id: p.id}), j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; } B.sync.n++; rerender(); }
-      msgs.push(`⏪ ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"} backtracked from Day 1`);
+      step("Running today’s check", appr.length);
+      for(const p of appr){
+        try{ await authFetch("/api/drive/shots", {id: p.id}); }catch(err){}
+        try{ const r = await authFetch("/api/drive/check", {id: p.id, ai: false}), j = await r.json().catch(() => null);
+          if(!r.ok && !(j && j.code === "no-links")) bad++; }catch(err){ bad++; }
+        B.sync.n++; rerender(); }
+      msgs.push(`✅ Today’s check run for ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"}`);
     }
     try{ localStorage.setItem("ft_bs_sync:" + batch, String(Date.now())); }catch(err){}
     B.sync = null; if(B.batch === batch){ B.data = null; B.dataKey = ""; } render();
@@ -1260,6 +1270,21 @@ window.FTBatchSheet = {
       toast(sc === "" ? `EOD score taken off for ${d}.` : `✍ EOD for ${d} scored ${j.eod}% (the day: ${j.pct}%).`);
     }catch(err){ toast("Couldn’t save the EOD score. Try again."); }
     B.data = null; B.dataKey = ""; render();
+  },
+  // ⏪ one trainee from Day 1 (worker.js backtrack): every training day read and worked out again — the catch-up, per trainee
+  async backtrack(id){
+    if(!adminOn() || B.btBusy) return; B.btBusy = true; B.tt = id; B.ttOpen = true; render();
+    const nm = (people().find(p => p.id === id) || {}).name || "The trainee";
+    try{ const r = await authFetch("/api/drive/backtrack", {id}), j = await r.json().catch(() => null);
+      if(!r.ok || !j || !j.ok) throw new Error((j && (j.detail || j.error)) || "backtrack");
+      const bits = [j.days ? `${j.days} Task Tracker day${j.days === 1 ? "" : "s"} read again` : j.tracker && j.tracker !== "ok" ? "Task Tracker: " + j.tracker : "",
+        j.monitor === "ok" ? "Monitoring Sheet read again" : "", j.shots === "ok" ? "test screenshots read again" : j.shots ? "test screenshots: " + j.shots : "",
+        j.redone ? `${j.redone} day${j.redone === 1 ? "" : "s"} worked out again` : ""].filter(Boolean);
+      B.btOut = {id, text: `⏪ ${nm}: ${bits.join(" · ") || "nothing to read yet (no Drive links)"}.`}; toast(B.btOut.text, 9000);
+    }catch(err){ B.btOut = {id, text: `⏪ Couldn’t backtrack ${nm}: ${String(err && err.message || err).slice(0, 140)}`}; toast(B.btOut.text); }
+    B.btBusy = false; B.data = null; B.dataKey = "";
+    try{ if(window.FTRanking && FTRanking.reload) FTRanking.reload(); }catch(err){}
+    render();
   },
   async tamGrade(id){
     if(!adminOn() || B.tamBusy) return; B.tamBusy = true; B.tt = id; render();

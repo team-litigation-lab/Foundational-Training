@@ -2702,7 +2702,8 @@ export default {
           if (Date.now() - t < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
         }
         const critRaw = await kv.get("settings:trackercriteria");
-        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), { criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA });
+        // (a trainer's 🔄 Update on the 📋 Batch Sheet runs it for the whole batch without the AI review: ai false)
+        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
         if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
         // (and the day's compliance, with the new checks in: dailyCompliance)
         try { await dailyCompliance(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate()); } catch (e) { /* the checks above still stand */ }
