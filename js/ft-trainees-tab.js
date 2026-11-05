@@ -44,12 +44,12 @@ if(typeof __row === "function") window.renderAdminRow = function(){
   return t.innerHTML;
 };
 
-// a batch's card (and an archived batch on the shelf): the trainee list, filtered to that batch
+// a batch's card (on 🛡 Admin Master Control → 📁 Batches, and an archived batch on its shelf): that batch on the 📋 Batch Sheet
 const listTo = (k, archived) => {
   state.adminTab = "batchsheet"; state.batchFolder = null; state.adminBatchFilter = k;
   if(archived) state.adminShowArchived = true;
+  if(window.FTBatchSheet && typeof FTBatchSheet.batch === "function"){ FTBatchSheet.batch(k); return; }
   render();
-  setTimeout(() => { const el = document.getElementById("adminRowsWrap") || document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
 };
 window.openBatchFolder = function(k){
   // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
@@ -61,13 +61,13 @@ const __admin = window.renderAdmin;
 // The old Trainee Audit / 📁 Batch Folders page never shows on its own any more: what it held that a trainer DOES is the
 // 👥 Trainees & Batches section at the foot of the 📋 Batch Sheet (js/ft-batch-sheet.js peopleHtml, which draws it with
 // window.__ftPeopleEmbed set). Anything that asks for the page — the Admin screen's default tab, an old link or redirect
-// (cues, rankings, sop, studio → audit), 'batches' — opens the Batch Sheet at that section instead.
+// (cues, rankings, sop, studio → audit) — opens the Batch Sheet instead. ('batches' is a tab of its own: 🛡 Admin Master
+// Control → 📁 Batches, js/ft-batch-admin.js.)
 const toPeople = () => setTimeout(() => { const el = document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
 window.renderAdmin = function(){
-  if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit" || state.adminTab === "batches")){
+  if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit")){
     const asked = !!state.adminTab; state.adminTab = "batchsheet"; if(asked) toPeople();
   }
-  if(state.adminTab === "batches") state.adminTab = "audit";
   const html = __admin.apply(this, arguments);
   if(state.adminTab !== "audit" || !state.isAdmin || state.traineeId || !state.adminData || state.adminLoading) return html;
   const t = frag(html), c = t.content;
@@ -109,9 +109,6 @@ window.renderAdmin = function(){
   }
   return t.innerHTML;
 };
-// the 📁 Batches part redraws when its Drive backups come in (js/ft-batch-admin.js loads them while 'batches' is open)
-const __tab = window.setAdminTab;
-if(typeof __tab === "function") window.setAdminTab = function(tab){ return __tab.call(this, tab === "batches" ? "audit" : tab); };
 
 const st = document.createElement("style"); st.id = "ft-trainees-tab"; st.textContent = `
 .tt-settings{padding:10px 16px;margin:0 0 14px;} .tt-settings > summary{cursor:pointer;font-weight:800;color:var(--navy);}
