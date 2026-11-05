@@ -330,7 +330,8 @@ async function loadAdmin(){
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    // (revoked, offboarded or blocked trainees drop off, js/ft-roster.js)
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const keys = people.map(r => "listening:" + r.id), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].logs ? vals[i] : {logs: {}}}))
@@ -339,6 +340,8 @@ async function loadAdmin(){
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "listening") render();
 }
+// (the roster changed: read the trainees again)
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 function adminLogs(r, s){
   const l = (r.rec.logs || {})[s.id] || {};
   return `<div class="ln-alogs">${s.recs.map(x => { const g = l[x.n]; if(!g || !Object.keys(g).length) return "";

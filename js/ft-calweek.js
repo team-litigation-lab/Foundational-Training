@@ -171,12 +171,14 @@ make({view: "calpractice", api: "/api/calpractice/", week: C.PRACTICE, global: "
 /* ---------- Admin → 🛠 Practice Lab → 📅 Calendaring Activity (the graded activity only: practice has no trainer view) ---------- */
 const W = C.WEEK, call = (p, b) => FTCalWeek.api(p, b), now = () => FTCalWeek.now();
 const AD = {rows: null, loading: false, batch: "", open: {}, next: null};
+// a revoked or offboarded trainee leaves the roster: drop the cached rows so the next look reloads
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 async function loadAdmin(){
   AD.loading = true;
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const got = {};
     for(let i = 0; i < people.length; i += 300){ const j = await call("list", {ids: people.slice(i, i + 300).map(r => r.id)}); AD.next = j.next; (j.rows || []).forEach(r => { got[r.id] = r; }); }
     AD.rows = people.map(r => Object.assign({name: r.name || r.id, batch: r.batch || ""}, got[r.id] || {id: r.id})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));

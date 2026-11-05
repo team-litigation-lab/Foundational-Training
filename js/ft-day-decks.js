@@ -2203,8 +2203,9 @@ function toolsSlide(){
 }
 
 root.FTDayDecks = {open, go, next: nextKC,
-  // (the scale every day's card starts from on this slide box, Day 1's card fitted to it: for the Day decks test)
-  cardScale: box => cardScale(box),
+  // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
+  // Day decks test)
+  cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
   // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
   tsheet(btn){
     const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;
