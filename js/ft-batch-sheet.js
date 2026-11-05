@@ -620,35 +620,50 @@ function driveBanner(){
    trainees (✗ "can't open it": not shared with the account it reads as), the Batch Sheet says so once for the batch, with the
    address to share its folder with (📋 Copy): one share of the batch folder, as Editor, covers every trainee in it. 🔁 Check
    them now opens each trainee's links again (worker.js /api/drive/verify). It goes away once the links open. */
+/* 🔗 EVERY TRAINEE WITH A LINK ISSUE, said exactly: each of their six Drive links that isn't right — not linked, not in their
+   Drive, can't be opened, not theirs, misnamed, the wrong kind — with why and the trainer's fixes there (↗ Open, ✓ Mark as
+   opening, ✎ Re-link). It follows the VA's fixes by itself: while the sheet is open, the flagged trainees' files are looked for
+   and their links checked again every few minutes (autoLinkBatch, then /api/drive/verify for them alone), so a link the VA has
+   fixed drops off the list without anyone pressing a button. When most of the batch can't be opened at all, it says the batch
+   folder isn't shared yet, with the address to share it with. */
+const ISSUE_ST = /^(bad|fix|none|unchecked)$/;
+function linkIssues(p){
+  let L = {}; try{ L = linkState(p).L; }catch(err){ return []; }
+  return LINKS.filter(([k]) => L[k] && ISSUE_ST.test(L[k].st)).map(([k, l]) => ({k, l, x: L[k]}));
+}
+function issueWhy(p, it){
+  const x = it.x, c = x.c || {};
+  if(x.nf) return `<b class="bs-nf">not in their Drive</b> — the batch’s Drive was searched${x.nf !== true ? " " + e(when(x.nf)) : ""} and has no ${e(it.l)} with ${e(p.name)}’s name. They need to make it from the template and link it.${c.err ? ` <small>(The check said: ${e(c.err)})</small>` : ""}`;
+  if(x.st === "none") return "not linked yet";
+  return e(c.err || "the system can’t open it") + (c.why ? ` <small>(Google: ${e(c.why)})</small>` : "");
+}
+function autoRecheck(flagged){
+  // (at most every 5 minutes a session, never while an update runs; the sheet is read again once it's done)
+  const now = Date.now(); if(!flagged.length || B.sync || B.autoChk || now - (B.autoChkAt || 0) < 5 * 60e3) return;
+  B.autoChk = true; B.autoChkAt = now; const batch = B.batch;
+  (async () => {
+    try{ await authFetch("/api/drive/autolink", {batch}); }catch(err){}
+    for(const p of flagged){ if(B.batch !== batch) break; try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} }
+    B.autoChk = false; if(B.batch === batch && !B.sync){ B.data = null; B.dataKey = ""; render(); }
+  })();
+}
 function shareBanner(){
   if(!adminOn() || meOn() || !B.data) return "";
   const S = B.dstat; if(!S || S.err || !S.sa || !S.saOk) return "";   // (not connected: the 🔌 banner above says what to fix)
   const who = S.subject && S.subjectOk ? S.subject : S.email; if(!who) return "";
-  const ppl = people(), stuck = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); }catch(err){ return false; } });
-  if(!stuck.length) return "";
-  const names = stuck.slice(0, 6).map(p => p.name).join(", ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
-  // which of their links: "Liseny Castillo’s 📒 Monitoring Sheet", not "files" (one link can't be opened, the other five may)
-  const badOf = p => { try{ const {L} = linkState(p); return LINKS.filter(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)).map(([, l]) => l); }catch(err){ return []; } };
-  const whatOf = p => { const b = badOf(p); return b.length === LINKS.length ? "files" : b.join(", "); };
-  // 🔎 each failing link, said exactly — the link, why it fails (and Google's own words), when it was checked — with what a
-  // trainer can do about it right there: ↗ open it, ✓ Mark as opening (the trainer's override, for a link that does open for
-  // them), ✎ Re-link (🔗 Link a trainee's files by hand, on that trainee)
-  const detail = `<ul class="bs-share-list">${stuck.map(p => { let L = {}; try{ L = linkState(p).L; }catch(err){}
-    return LINKS.filter(([k]) => L[k] && L[k].st === "bad" && ACCESS((L[k].c || {}).err)).map(([k, l]) => { const x = L[k], c = x.c || {};
-      const cause = x.nf ? `<b class="bs-nf">not in their Drive</b> — the batch’s Drive was searched${x.nf !== true ? " " + e(when(x.nf)) : ""} and has no ${e(l)} with ${e(p.name)}’s name: the saved link points to nothing they own. They need to make it from the template and link it. <small>(The check said: ${e(c.err || "the system can’t open it")})</small>` : e(c.err || "the system can’t open it");
-      return `<li><b>${e(p.name)} · ${e(l)}</b>: ${cause}${c.why ? ` <small>(Google: ${e(c.why)})</small>` : ""}${c.at ? ` <small>· checked ${e(when(c.at))}</small>` : ""}
-        <span class="bs-share-acts">${x.link ? `<a class="btn btn-ghost btn-sm" href="${e(x.link)}" target="_blank" rel="noopener">↗ Open the link</a>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button><button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ Re-link</button></span></li>`; }).join(""); }).join("")}</ul>`;
-  const nfOf = p => { try{ const {L} = linkState(p); const b = LINKS.filter(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); return b.length && b.every(([k]) => L[k].nf); }catch(err){ return false; } };
-  const named = stuck.slice(0, 6).map(p => `${e(p.name)}’s <b>${e(whatOf(p))}</b>${nfOf(p) ? " isn’t in their Drive and" : ""}`).join("; ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
-  // (the rest of the batch's files open: the batch's folder is shared, so these trainees' files are somewhere else — their own
-  // My Drive — and it's theirs to move or share, not a folder for the trainer to share)
-  const opens = ppl.filter(p => !stuck.includes(p) && (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
-  if(opens > stuck.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 ${named} can’t be opened (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}). The rest of batch ${e(B.batch)} opens, so its folder is shared: the saved link points to a file the system can’t open — one that doesn’t exist (yet), was deleted, or sits somewhere else, such as their own My Drive.</div>${detail}
-    <span class="bs-share-do">Ask ${stuck.length === 1 ? "them" : "each of them"} to make the file from its template or move it into their LSH Trainee folder and link it again, or share it with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>. Their 🔔 already tells them which link and how.</span>
-    <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button></div>`;
-  return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>${detail}
-    <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>
-    <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 I’ve shared it: check them now"}</button></div>`;
+  const ppl = people(), withIssues = ppl.map(p => ({p, its: linkIssues(p)})).filter(r => r.its.length);
+  if(!withIssues.length) return "";
+  autoRecheck(withIssues.filter(r => r.its.some(it => it.x.st !== "none" || it.x.nf)).map(r => r.p));
+  const access = withIssues.filter(r => r.its.some(it => it.x.st === "bad" && ACCESS((it.x.c || {}).err)));
+  const opens = ppl.filter(p => (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
+  const fixes = (p, it) => `<span class="bs-share-acts">${it.x.link ? `<a class="btn btn-ghost btn-sm" href="${e(it.x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></span>`;
+  const list = `<ul class="bs-share-list">${withIssues.map(({p, its}) => `<li><b>${e(p.name)}</b> <small>(${LINKS.length - its.length} of ${LINKS.length} links right)</small><ul>${its.map(it => `<li><b>${e(it.l)}</b>: ${issueWhy(p, it)}${(it.x.c || {}).at ? ` <small>· checked ${e(when(it.x.c.at))}</small>` : ""} ${fixes(p, it)}</li>`).join("")}</ul></li>`).join("")}</ul>`;
+  const recheck = `<button class="btn btn-navy btn-sm" type="button" ${B.rechecking || B.sync ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button>
+    <small class="bs-share-auto">${B.autoChk ? "🔁 Checking the flagged links again…" : B.autoChkAt ? `Checked again by itself ${e(when(new Date(B.autoChkAt).toISOString()))}; it checks again every few minutes while this page is open, so a link the VA fixes drops off.` : ""}</small>`;
+  // (most of the batch can't be opened at all: the batch's folder isn't shared yet — one share covers everyone)
+  if(access.length && opens <= access.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${access.length} of ${ppl.length} trainees).</div>
+    <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>${list}${recheck}</div>`;
+  return `<div class="bs-warn bs-share"><div class="bs-share-h">🔗 <b>${withIssues.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"} ${withIssues.length === 1 ? "has" : "have"} Drive link issues</b> in batch ${e(B.batch)}. Each link that isn’t right is below, with why; it drops off once the VA fixes it. Their 🔔 already tells them which link and how.${access.length ? ` For a file the system can’t open, they can also share it with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>.` : ""}</div>${list}${recheck}</div>`;
 }
 // the page: the Score Card and the compliance first, then the Weekly Ranking and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
@@ -1622,7 +1637,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
 .bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-dl{margin-left:8px;font:inherit;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #C9D3E6;background:#fff;color:var(--navy);cursor:pointer;vertical-align:middle;} .bs-dl:hover{background:#EEF2FA;}
 .bs-tt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 2px;} .bs-tt-row input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;}
-.bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
+.bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-share-list ul{margin:2px 0 6px;padding-left:18px;} .bs-share-auto{flex:1 1 100%;color:var(--ink-soft);} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}

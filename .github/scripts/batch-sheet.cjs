@@ -140,19 +140,28 @@ const failures = []; const fail = m => failures.push(m);
   }
   await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
   const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
-  // (it names the very link that fails — her 📒 Monitoring Sheet — not "files": the other five may open)
-  // (and lists it, with why and what to do there: ↗ open it, ✓ Mark as opening, ✎ Re-link)
-  { const li = await page.evaluate(() => { const l = document.querySelector('.bs-share-list li'); return l ? { t: l.innerText, open: !!l.querySelector('a[href*="docs.google.com"]'), mark: /lkMark\(/.test(l.innerHTML), relink: /leWho\(/.test(l.innerHTML) } : null; });
-    if (!li || !/Ada Active · 📒 Monitoring Sheet/.test(li.t) || !/can.t open/i.test(li.t) || !li.open || !li.mark || !li.relink) fail(`the failing link isn't listed with why and the trainer's fixes: ${JSON.stringify(li)}`); }
-  if (!/Ada Active’s 📒 Monitoring Sheet can’t be opened/.test(sb2) || /files can’t/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/doesn’t exist \(yet\)/.test(sb2) || !/move it into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's failing link: ${sb2.slice(0, 300)}`);
+  // 🔗 every trainee with a link issue is listed, each link that isn't right with why and the trainer's fixes (↗ Open, ✓ Mark as
+  // opening, ✎ Re-link): Ada's Monitoring Sheet that can't be opened, and Ben's and Cy's links not linked yet
+  { const li = await page.evaluate(() => [...document.querySelectorAll('.bs-share-list > li')].map(l => ({ t: l.innerText, open: !!l.querySelector('a[href*="docs.google.com"]'), mark: /lkMark\(/.test(l.innerHTML), relink: /leWho\(/.test(l.innerHTML) })));
+    const ada = li.find(x => /Ada Active/.test(x.t)), ben = li.find(x => /Ben/.test(x.t));
+    if (!ada || !/📒 Monitoring Sheet/.test(ada.t) || !/can.t open/i.test(ada.t) || !ada.open || !ada.mark || !ada.relink) fail(`Ada's failing link isn't listed with why and the trainer's fixes: ${JSON.stringify(ada)}`);
+    if (!ben || !/not linked yet/.test(ben.t) || !/2 of 6 links right/.test(ben.t)) fail(`a trainee with links not saved yet isn't listed: ${JSON.stringify(li.map(x => x.t.slice(0, 120)))}`); }
+  if (!/trainees have Drive link issues/.test(sb2) || /files can’t be opened yet/.test(sb2)) fail(`the issues list doesn't say how many trainees have link issues: ${sb2.slice(0, 300)}`);
   // 🔎 not in their Drive (the batch's Drive searched, no Monitoring Sheet with her name: worker.js autoLinkBatch notFound): said so
   { const rv = (await get('trackerreview:' + ids.Ada)) || { days: {} }; rv.notFound = { keys: ['monitor'], at: new Date().toISOString(), batch: BATCH }; await put('trackerreview:' + ids.Ada, rv);
     await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     const sb3 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
     const cell = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'compliance').rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => c.v).join(' | ') : ''; });
-    if (!/Ada Active’s 📒 Monitoring Sheet isn’t in their Drive/.test(sb3) || !/not in their Drive — the batch’s Drive was searched/.test(sb3) || !/make it from the template/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
+    if (!/not in their Drive — the batch’s Drive was searched/.test(sb3) || !/make it from the template/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
     if (!/✗ Not in Drive/.test(cell)) fail(`✅ Compliance doesn't show her Monitoring Sheet as ✗ Not in Drive: ${cell}`);
     delete rv.notFound; await put('trackerreview:' + ids.Ada, rv); }
+  // ✓ fixed by the VA (her link now opens): she drops off the list by herself
+  { const rv = (await get('trackerreview:' + ids.Ada)) || { days: {} }, dv = (await get('drive:' + ids.Ada)) || {};
+    const was = JSON.stringify(rv.verify || {}); rv.verify = rv.verify || {}; Object.keys(rv.verify).forEach(k => { if (dv[k]) rv.verify[k] = { ok: true, mine: true, v: 2, url: String(dv[k]).slice(0, 500), at: new Date().toISOString() }; });
+    await put('trackerreview:' + ids.Ada, rv); await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
+    const after = await page.evaluate(() => [...document.querySelectorAll('.bs-share-list > li')].map(l => l.innerText).join(' | '));
+    if (/Ada Active[^|]*Monitoring Sheet[^|]*can.t open/i.test(after)) fail(`a link the VA fixed stays on the issues list: ${after.slice(0, 300)}`);
+    rv.verify = JSON.parse(was); await put('trackerreview:' + ids.Ada, rv); }
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with

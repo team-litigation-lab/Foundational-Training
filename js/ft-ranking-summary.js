@@ -67,7 +67,9 @@ async function evidence(p, range){
     communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i), pct5(avg(eodOn.map(x => x.pct)))])),
     english: r1(avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))])),
     call: r1(avg(use.filter(x => x.mock).map(x => x.avg5))),
-    tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i)]))};
+    // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
+    // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
+    tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
   return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell};
 }
 // the evidence as the AI reads it
@@ -89,7 +91,7 @@ function plainComment(k, ev, s){
   const mocks = ev.sheets.filter(x => x.mock), demos = ev.sheets.filter(x => !x.mock);
   const remarks = xs => xs.map(x => x.comment).filter(has).slice(0, 2).join(" ");
   if(k === "call") return `${sc} ${mocks.length ? `Mock calls: ${mocks.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(mocks.concat(demos))}`.trim();
-  if(k === "tools") return `${sc} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(demos)}`.trim();
+  if(k === "tools"){ const pl = ev.comp.filter(c => c.parts.platform != null); return `${sc} ${pl.length ? `Worked on the platform's tools on ${pl.filter(c => c.parts.platform >= 100).length} of ${pl.length} days checked.` : ""} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}.` : ""}`.trim(); }
   if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
     return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 2).join("; ")}.` : ev.comp.some(c => c.instr) ? "Every Drive link as the course asks." : ""}`.trim(); }
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
