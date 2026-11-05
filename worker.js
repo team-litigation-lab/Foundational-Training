@@ -1612,7 +1612,7 @@ async function verifyLinks(env, id) {
     if (!url) continue;
     // (✓ Mark as opening: locked for this very link)
     if (prev[k] && prev[k].ok && prev[k].v === VERIFY_V && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; seen.set(prev[k].fid || url, k); continue; }
-    const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || [])[1]);
+    const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(FILE_ID_RE) || [])[1]);
     let r;
     if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : K.folder ? notFolder(K.label) : k === "tracker" ? VERIFY_WHY.sheet : k === "monitor" ? VERIFY_WHY.doc : `This isn't a file's own link. Open your ${K.label} and copy its address from the address bar.` };
     else if (k === "tracker" && f.kind !== "sheet") r = { ok: false, error: VERIFY_WHY.sheet };
@@ -1738,7 +1738,9 @@ async function receiveEod(env, msg) {
    documents in the packet itself, read by the AI from the PDF (canonical names from the Document Naming Convention); the
    check (TR.checkPacket: accuracy and completeness on the Saving Intake Packet rubric) and a short feedback in the
    facilitator's voice. Kept in intakecheck:<id> (the trainee reads it; only this Worker writes it). */
-const fileIdOf = (u) => (String(u || "").match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+// a Drive file id in a /file/d/, /document/d/, /spreadsheets/d/ or /presentation/d/ link
+const FILE_ID_RE = /\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/;
+const fileIdOf = (u) => (String(u || "").match(FILE_ID_RE) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
 const htmlDec = (t) => String(t || "").replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 async function driveItem(env, fid, folder) {
   if (!fid) return { ok: false };
