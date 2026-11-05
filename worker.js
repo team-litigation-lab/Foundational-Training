@@ -70,6 +70,10 @@ const criteriaOf = async (kv) => { const raw = await kv.get("settings:trackercri
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
+// whose records a route works on (a trainee: their own; an admin: the one they name), and the 429 a trainee gets when they
+// ask again within ms of the last time (iso: when that was; an admin is never held back)
+const subjectOf = (tok, b) => tok.role === "a" ? String(b.id || "") : tok.id;
+const tooSoon = (tok, iso, ms, msg) => tok.role !== "a" && iso && Date.now() - Date.parse(iso) < ms ? json({ error: msg, code: "wait" }, 429) : null;
 const enc = new TextEncoder();
 // bytes as base64url (no padding)
 const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -2865,11 +2869,11 @@ export default {
       /* ---------- 🔗 the trainee's six Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       if (path === "/api/drive/verify") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
-          if (last && last.verifyAt && Date.now() - Date.parse(last.verifyAt) < 20 * 1000) return json({ error: "Checked a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.verifyAt, 20 * 1000, "Checked a moment ago. Try again in a few seconds."); if (w) return w;
         }
         return json(await verifyLinks(env, id));
       }
@@ -2878,11 +2882,11 @@ export default {
          most every 3 minutes; an admin's for anyone): checkIntakePacket ---------- */
       if (path === "/api/intake/check") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`intakecheck:${id}`)) || "null");
-          if (last && last.selfAt && Date.now() - Date.parse(last.selfAt) < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.selfAt, 3 * 60 * 1000, "Checked a moment ago. Try again in a few minutes."); if (w) return w;
         }
         const r = await checkIntakePacket(env, id, { client: String(b.client || ""), trainer: tok.role === "a" });
         if (r.error) return json(r, 400);
@@ -2892,12 +2896,11 @@ export default {
       /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */
       if (path === "/api/drive/check") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
-          const t = last && last.selfCheckAt ? Date.parse(last.selfCheckAt) : 0;
-          if (Date.now() - t < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.selfCheckAt, 3 * 60 * 1000, "Checked a moment ago. Try again in a few minutes."); if (w) return w;
         }
         // (a trainer's 🔄 Update on the 📋 Batch Sheet runs it for the whole batch without the AI review: ai false)
         const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: await criteriaOf(kv) }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
@@ -2916,14 +2919,13 @@ export default {
          trainee's own, at most once a minute; the result goes to trackerreview:<id>.items["5-7"] (trainees read it) ---------- */
       if (path === "/api/monitor/items") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         const nums = (Array.isArray(b.items) ? b.items : []).map(Number).filter(n => Number.isInteger(n) && n > 0 && n < 100).slice(0, 10);
         if (!nums.length) return json({ error: "Which items?" }, 400);
         const key = nums.join("-"), rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
         cur.items = cur.items || {};
-        const last = cur.items[key] && cur.items[key].at ? Date.parse(cur.items[key].at) : 0;
-        if (tok.role !== "a" && Date.now() - last < 60 * 1000) return json({ error: "Submitted a moment ago. Try again in a minute.", code: "wait" }, 429);
+        const w = tooSoon(tok, cur.items[key] && cur.items[key].at, 60 * 1000, "Submitted a moment ago. Try again in a minute."); if (w) return w;
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         if (!drive || !drive.monitor) return json({ error: "Link your Monitoring Sheet first: 📁 Link My Google Drive, on your 📚 Dashboard.", code: "no-link" }, 400);
         let text = "";
@@ -2960,13 +2962,12 @@ export default {
          trainer). The trainee's own, at most every 30 seconds; the result goes to trackerreview:<id>.assess["<doc id>"] ---------- */
       if (path === "/api/assess/grade") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id, doc = String(b.doc || ""), K = ASSESS_KEYS[doc];
+        const id = subjectOf(tok, b), doc = String(b.doc || ""), K = ASSESS_KEYS[doc];
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (!K) return json({ error: "No such assessment" }, 400);
         const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
         cur.assess = cur.assess || {};
-        const last = cur.assess[doc] && cur.assess[doc].at ? Date.parse(cur.assess[doc].at) : 0;
-        if (tok.role !== "a" && Date.now() - last < 30 * 1000) return json({ error: "Graded a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+        const w = tooSoon(tok, cur.assess[doc] && cur.assess[doc].at, 30 * 1000, "Graded a moment ago. Try again in a few seconds."); if (w) return w;
         // (an activity logged in the 🎧 Call Listening log, js/ft-listening.js: its answers are that log's, c<n>_<field>)
         let ans = {};
         if (K.source === "listening") {
@@ -3030,7 +3031,7 @@ export default {
         if (!ids.length) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots;
-          if (last && last.checkedAt && Date.now() - Date.parse(last.checkedAt) < 60 * 1000) return json({ error: "Checked a moment ago. Try again in a minute.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.checkedAt, 60 * 1000, "Checked a moment ago. Try again in a minute."); if (w) return w;
         }
         const results = [];
         for (const id of ids) { try { results.push((await checkShots(env, id)) || { id, error: "no-folder" }); } catch (e) { results.push({ id, error: "drive" }); } }
@@ -3041,7 +3042,7 @@ export default {
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
       if (path === "/api/drive/answers") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
