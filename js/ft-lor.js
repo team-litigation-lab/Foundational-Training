@@ -354,7 +354,7 @@ async function loadAdmin(){
     const keys = (await sharedList("trainee:")) || [];
     const ids = keys.map(k => String(k).replace(/^trainee:/, ""));
     const people = await (window.ftGetMany ? ftGetMany(ids.map(id => "trainee:" + id)) : sharedGetMany(ids.map(id => "trainee:" + id)));
-    const rows = ids.map((id, i) => ({id, rec: people[i] || {}})).filter(x => x.rec && !x.rec.archived && x.rec.approved)
+    const rows = ids.map((id, i) => ({id, rec: people[i] || {}})).filter(x => x.rec && !x.rec.archived && x.rec.approved && (!window.ftActiveTrainee || ftActiveTrainee(x.rec)))
       .map(x => ({id:x.id, name:x.rec.name || x.id, batch:x.rec.batch || ""}));
     const assigns = await (window.ftGetMany ? ftGetMany(rows.map(x => "lorassign:" + x.id)) : sharedGetMany(rows.map(x => "lorassign:" + x.id)));
     rows.forEach((x, i) => { x.a = assigns[i] || null; });
@@ -363,6 +363,7 @@ async function loadAdmin(){
   A.loading = false;
   if(state.view === "lor") render();
 }
+window.addEventListener("ft-roster-changed", () => { A.rows = null; });   // a revoked trainee drops off the list
 function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
   useScratch();                       // draft on the test copy, never on a trainee's

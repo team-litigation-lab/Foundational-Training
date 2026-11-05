@@ -214,10 +214,11 @@ async function loadAdmin(){
     const ids = ((await sharedList("trainee:")) || []).map(k => String(k).replace(/^trainee:/, ""));
     const get = window.ftGetMany || sharedGetMany;
     const people = await get(ids.map(id => "trainee:" + id));
-    G.admin.rows = ids.map((id, i) => ({id, p: people[i] || {}})).filter(x => x.p.approved && !x.p.archived).sort((a, b) => String(a.p.name || "").localeCompare(String(b.p.name || "")));
+    G.admin.rows = ids.map((id, i) => ({id, p: people[i] || {}})).filter(x => x.p.approved && !x.p.archived && (!window.ftActiveTrainee || ftActiveTrainee(x.p))).sort((a, b) => String(a.p.name || "").localeCompare(String(b.p.name || "")));
   }catch(err){ G.admin.rows = []; }
   if(state.view === "guide") render();
 }
+window.addEventListener("ft-roster-changed", () => { G.admin = null; });   // a revoked trainee drops off the picker
 function renderAdmin(){
   if(!G.admin) loadAdmin();
   const rows = G.admin && G.admin.rows, v = G.view;

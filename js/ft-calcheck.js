@@ -439,12 +439,14 @@ window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = r
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 📅 Calendar Activity ---------- */
 const AD = {rows: null, loading: false, batch: "", open: {}};
+// a revoked or offboarded trainee leaves the roster: drop the cached rows so the next look reloads
+window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 async function loadAdmin(){
   AD.loading = true;
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const vals = []; const keys = people.map(r => "calcheck:" + r.id);
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].entries && typeof vals[i].entries === "object" ? clean(vals[i]) : null}))

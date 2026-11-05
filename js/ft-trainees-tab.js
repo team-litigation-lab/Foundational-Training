@@ -52,7 +52,8 @@ const listTo = (k, archived) => {
   setTimeout(() => { const el = document.getElementById("adminRowsWrap"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 50);
 };
 window.openBatchFolder = function(k){
-  const all = (state.adminData || []).filter(r => (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
+  // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
+  const all = (state.adminData || []).filter(r => (r.archived || !window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})) && (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
   listTo(k, all.length > 0 && all.every(r => r.archived));
 };
 

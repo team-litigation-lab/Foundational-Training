@@ -211,7 +211,7 @@ async function loadAdmin(){
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const keys = people.map(r => "shadow:" + r.id), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].logs ? vals[i] : {logs: {}}}))
@@ -220,6 +220,7 @@ async function loadAdmin(){
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "shadowing") render();
 }
+window.addEventListener("ft-roster-changed", () => { AD.rows = null; });   // a revoked trainee drops off the table
 function adminHtml(){
   if(!AD.rows || !X.data){ if(!AD.loading) loadAdmin(); loadTodo(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);

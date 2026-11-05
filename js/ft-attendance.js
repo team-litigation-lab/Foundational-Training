@@ -24,7 +24,7 @@ const nice = d => new Date(d + "T12:00:00Z").toLocaleDateString(undefined, {week
 const t12 = hm => { const m = /^(\d{1,2}):(\d{2})/.exec(String(hm || "")); if(!m) return ""; let h = Number(m[1]); const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${m[2]} ${ap}`; };
 const keyOf = r => typeof batchKey === "function" ? batchKey(r) : String((r && r.batch) || "");
 const labelOf = b => typeof batchLabel === "function" ? batchLabel(b) : b;
-const active = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt;
+const active = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt && (!window.ftActiveTrainee || ftActiveTrainee(r));
 
 const A = {day: null, people: null, ins: {}, man: {}, loading: false, err: "", edit: null, saving: false};
 // the Portal's batch key for the attendance record (functions/_attendance.js batchKeyOf), "_none" for no batch
@@ -113,6 +113,8 @@ window.FTAttendance = {
   state: () => A
 };
 ftAdminTab("attendance", "🕘 Attendance", render_);
+// a trainee approved, revoked or offboarded elsewhere: read the roster again
+window.addEventListener("ft-roster-changed", () => { A.people = null; });
 (function(){ const s = document.createElement("style"); s.id = "ft-attendance"; s.textContent = `
 .fat-admin{padding:20px 22px;}
 .fat-bar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
