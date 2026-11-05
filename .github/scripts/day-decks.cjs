@@ -50,6 +50,8 @@ if (D[11] && D[11].slides.some(s => /Shadowing/i.test(s.h))) fail("Day 11 still 
 // Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
+// its help is Ivan's (the SA plug-ins): no Sanders card or ID (Sanders was the Nitro Pro help)
+if (sa && (/discord-sanders|sndrrsss|Sanders/.test(sa.html) || !/discord-ivan\.png/.test(sa.html))) fail('Day 1\'s Installation of SA still shows Sanders\' Discord card, or lost Ivan\'s');
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 // Days 7–16 like Days 1–5: no Process Questions or lesson deck pointer on a slide (the card's ✍️ Process Questions: Submit and
 // 💬 Classroom Discussion stops are those), and no slide left with only that: Day 10's classroom discussion slide is off
