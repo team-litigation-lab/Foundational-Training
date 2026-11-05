@@ -860,11 +860,25 @@ async function driveToken(env, write, self) {
    trainer, an Editor on every trainee's Drive): no trainee has to share anything with the service account. Then as the
    service account itself (files a trainee did share with it, Shared Drives it is a member of). (The subject's token has the
    drive scope: the one domain-wide delegation authorizes.) */
+/* GDRIVE_SA_SUBJECT refused by Google (the domain-wide delegation not authorized, or not yet): remembered for 10 minutes, so
+   not every read and save asks Google again, and meanwhile the platform works as the service account itself: it reads the
+   files shared with it, and saves where it can (a Shared Drive it is a member of). /api/drive/status asks afresh. */
+const SUB_DOWN = { until: 0, detail: "" };
+async function subjectToken(env) {
+  if (!env.GDRIVE_SA_SUBJECT || Date.now() < SUB_DOWN.until) return null;
+  try { const tk = await driveToken(env, true); SUB_DOWN.detail = ""; return tk; }
+  catch (e) { if (e.message === "drive-auth") { SUB_DOWN.until = Date.now() + 10 * 60 * 1000; SUB_DOWN.detail = e.detail || ""; } return null; }
+}
+// the address a trainee shares a file with: GDRIVE_SA_SUBJECT while the platform can work as it, else the service account
+const shareAddr = (env) => String(env.GDRIVE_SA_SUBJECT && Date.now() >= SUB_DOWN.until ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL || "");
+// a write's token: as GDRIVE_SA_SUBJECT when that works, else the service account itself, with the drive scope
+async function writeToken(env) { return (await subjectToken(env)) || driveToken(env, true, true); }
 async function readTokens(env) {
-  const out = [];
-  let subErr = null;
-  if (env.GDRIVE_SA_SUBJECT) { try { out.push(await driveToken(env, true)); } catch (e) { subErr = e; /* then the account itself */ } }
-  try { out.push(await driveToken(env)); } catch (e) { if (!out.length) { e.detail = [subErr && subErr.detail ? `as ${env.GDRIVE_SA_SUBJECT}: ${subErr.detail}` : "", e.detail ? `as the service account: ${e.detail}` : ""].filter(Boolean).join(" · ") || e.detail; throw e; } }
+  const out = [], sub = await subjectToken(env);
+  if (sub) out.push(sub);
+  try { out.push(await driveToken(env)); }
+  catch (e) { if (!out.length) { e.detail = [env.GDRIVE_SA_SUBJECT && SUB_DOWN.detail ? `as ${env.GDRIVE_SA_SUBJECT}: ${SUB_DOWN.detail}` : "", e.detail ? `as the service account: ${e.detail}` : ""].filter(Boolean).join(" · ") || e.detail; throw e; } }
+  out.subOk = !!sub;
   return out;
 }
 /* 🔌 Is Google Drive connected? (a trainer's: the 📋 Batch Sheet shows it above the Drive links) Each identity the platform
@@ -878,7 +892,10 @@ async function driveStatus(env) {
     // (the Client ID Google gives this sign-in: the number that has to be in admin.google.com's Domain-wide delegation list)
     try { const ti = await (await fetch("https://oauth2.googleapis.com/tokeninfo?access_token=" + encodeURIComponent(tk))).json(); out.clientId = String(ti.azp || ti.issued_to || ti.aud || "").slice(0, 40); } catch (e) { /* the status without it */ }
   } catch (e) { out.saOk = false; out.saDetail = e.detail || e.message; }
-  if (out.subject) { try { await driveToken(env, true); out.subjectOk = true; } catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; } }
+  if (out.subject) {
+    try { await driveToken(env, true); out.subjectOk = true; SUB_DOWN.until = 0; SUB_DOWN.detail = ""; }
+    catch (e) { out.subjectOk = false; out.subjectDetail = e.detail || e.message; if (e.message === "drive-auth") { SUB_DOWN.until = Date.now() + 10 * 60 * 1000; SUB_DOWN.detail = e.detail || ""; } }
+  }
   return out;
 }
 async function fetchGoogle(url, env) {
@@ -938,7 +955,8 @@ async function saveToFolder(env, folderUrl, name, bytes, mime) {
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return { error: "no-sa" };
   const first = await saveToFolderOnce(env, fid, name, bytes, mime);
-  if (first.error !== "no-access" || !env.GDRIVE_SA_SUBJECT) return first;
+  // (adding GDRIVE_SA_SUBJECT to the folder only helps while the platform can work as it)
+  if (first.error !== "no-access" || !env.GDRIVE_SA_SUBJECT || Date.now() < SUB_DOWN.until) return first;
   try {
     const auth = { Authorization: "Bearer " + await driveToken(env, true, true) };
     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}/permissions?sendNotificationEmail=false&supportsAllDrives=true`, { method: "POST",
@@ -949,7 +967,7 @@ async function saveToFolder(env, folderUrl, name, bytes, mime) {
 }
 async function saveToFolderOnce(env, fid, name, bytes, mime) {
   let token;
-  try { token = await driveToken(env, true); } catch (e) { return { error: "drive-auth" }; }
+  try { token = await writeToken(env); } catch (e) { return { error: "drive-auth" }; }
   const auth = { Authorization: "Bearer " + token }, PDF = mime || "application/pdf";
   const q = encodeURIComponent(`'${fid}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${PDF}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
@@ -970,7 +988,7 @@ async function saveToFolderOnce(env, fid, name, bytes, mime) {
    Editor access to the folder (Content manager on a Shared Drive); a personal My Drive also needs GDRIVE_SA_SUBJECT. */
 const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
 async function driveFolder(env, parentId, name) {
-  const auth = { Authorization: "Bearer " + await driveToken(env, true) }, FOLDER = "application/vnd.google-apps.folder";
+  const auth = { Authorization: "Bearer " + await writeToken(env) }, FOLDER = "application/vnd.google-apps.folder";
   const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${FOLDER}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,webViewLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
@@ -984,7 +1002,7 @@ async function driveFolder(env, parentId, name) {
   return { id: j.id, link: j.webViewLink || `https://drive.google.com/drive/folders/${j.id}` };
 }
 async function driveUpload(env, parentId, name, mime, bytes) {
-  const auth = { Authorization: "Bearer " + await driveToken(env, true) };
+  const auth = { Authorization: "Bearer " + await writeToken(env) };
   const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
@@ -1146,8 +1164,7 @@ const notFolder = (label) => `This isn't a folder's link. Open your ${label} and
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
   if (!driveSA(env)) return { error: "no-sa", detail: "GDRIVE_SA_EMAIL and GDRIVE_SA_KEY aren't set on the Worker" };
-  // (the address to share with: the Workspace user the platform reads as, when it is set; else the service account)
-  const sa = String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL), at = new Date().toISOString(), out = {};
+  const at = new Date().toISOString(), out = {};
   let tokens;
   try { tokens = await readTokens(env); }
   catch (e) {
@@ -1156,6 +1173,8 @@ async function verifyLinks(env, id) {
     cur.verifyError = { at, error: "drive-auth", detail: String(e.detail || "").slice(0, 400) }; await kv.put(rk, JSON.stringify(cur));
     return { error: "drive-auth", detail: e.detail || "" };
   }
+  // (the address to share with: GDRIVE_SA_SUBJECT when the platform could work as it just now, else the service account)
+  const sa = String(tokens.subOk ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL);
   const rk0 = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, prev = rk0.verify || {};
   for (const k of Object.keys(LINKS_KIND)) {
     const url = String(drive[k] || "").trim(), K = LINKS_KIND[k];
@@ -1346,12 +1365,12 @@ async function checkIntakePacket(env, id, hint = {}) {
   const pid = fileIdOf(pUrl), fid = folderId(fUrl);
   const item = pid ? await driveItem(env, pid) : { ok: false };
   const file = { ok: !!item.ok, name: item.name || "", mime: item.mime || "", modified: item.modified || "",
-    error: !pid ? "That isn't a file's own link: open the packet in Drive and copy its link (…/file/d/…)." : item.ok ? "" : `The packet can't be opened: share it with ${driveSA(env) ? (env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) : "Anyone with the link (Viewer)"}.` };
+    error: !pid ? "That isn't a file's own link: open the packet in Drive and copy its link (…/file/d/…)." : item.ok ? "" : `The packet can't be opened: share it with ${driveSA(env) ? shareAddr(env) : "Anyone with the link (Viewer)"}.` };
   let folder = { ok: false, error: fUrl ? "" : "Link the client subfolder (…/drive/folders/…) you saved the packet and its documents in." };
   if (fUrl && !fid) folder.error = "That isn't a folder link: open the client subfolder in Drive and copy its address (…/drive/folders/…).";
   if (fid) {
     const [fi, ls] = await Promise.all([driveItem(env, fid, true), folderFiles(env, fUrl)]);
-    folder = ls.error ? { ok: false, name: fi.name || "", error: `The subfolder can't be opened: share it with ${driveSA(env) ? (env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) : "Anyone with the link (Viewer)"}.` }
+    folder = ls.error ? { ok: false, name: fi.name || "", error: `The subfolder can't be opened: share it with ${driveSA(env) ? shareAddr(env) : "Anyone with the link (Viewer)"}.` }
       : { ok: true, name: fi.name || "", files: (ls.files || []).slice(0, 80).map((f) => ({ name: f.name, modified: f.modified || f.created || "" })) };
   }
   // the documents in the packet, read by the AI from the PDF itself
@@ -2202,7 +2221,7 @@ export default {
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
         try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
-          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: String(env.GDRIVE_SA_SUBJECT || env.GDRIVE_SA_EMAIL) }, r) : r); } catch (e) { return json({ error: "drive" }); }
+          return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: shareAddr(env) }, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
