@@ -35,6 +35,21 @@ const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
 const redraw = () => { const c = ctx(); if(c && c.rerender) c.rerender(); else if(typeof render === "function") render(); };
 
 /* ---------- the week's evidence for one trainee ---------- */
+async function progOf(p, range){
+  const out = {calls: null, written: null, callsN: 0, writtenN: 0};
+  try{
+    if(!window.lshProgram || typeof lshProgram.compute !== "function") return out;
+    const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
+    const vals = await sharedGetMany(S.map(s => s.key + p.id).concat(shared)), rec = {}, sh = {};
+    S.forEach((s, i) => { rec[s.key] = vals[i] || null; }); shared.forEach((k, i) => { sh[k] = vals[S.length + i] || null; });
+    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since}, range ? {range} : {}));
+    const row = id => (sc.rows || []).find(r => r.s.id === id), graded = it => (it || []).filter(x => typeof x.pct === "number" && isFinite(x.pct));
+    const calls = graded(((row("calls") || {}).items || []).concat(((row("portalsims") || {}).items || []).filter(x => /call|recept|intake|phone|voice/i.test(x.name || ""))));
+    const written = graded(((row("drive") || {}).items || []).filter(x => /^📄/.test(x.name || "")).concat((row("listening") || {}).items || [], (row("process") || {}).items || [], (row("transcribe") || {}).items || [], (row("lor") || {}).items || []));
+    const mean = xs => xs.length ? xs.reduce((a, x) => a + x.pct, 0) / xs.length : null;
+    return {calls: mean(calls), written: mean(written), callsN: calls.length, writtenN: written.length};
+  }catch(err){ return out; }
+}
 async function evidence(p, range){
   const [lab, proc, kcr, rv, fb, tfb, ses, sk] = await sharedGetMany(["labreview:", "process:", "kcreview:", "trackerreview:", "feedback:", "trainerfb:", "sessions:", "skills:"].map(k => k + p.id));
   const inW = at => !range || (String(at || "").slice(0, 10) >= range[0] && String(at || "").slice(0, 10) <= range[1]);
@@ -57,6 +72,9 @@ async function evidence(p, range){
   // the base scores, out of 5, from the evidence
   const critAvg = re => avg(use.flatMap(x => x.crit.filter(c => re.test(c.n)).map(c => Number(c.s))));
   const pct5 = v => v == null ? null : v / 20;
+  // (the Scorecard's own grading systems for the week — js/ft-program.js through lshProgram.compute: the practice calls in the
+  // simulators and the written output graded on the platform)
+  const prog = await progOf(p, range);
   const eodOn = comp.map(c => c.eod).filter(Boolean), timeRules = eodOn.map(x => (x.rules || []).find(r => r.id === "time")).filter(Boolean);
   const base = {
     attention: r1(avg([critAvg(/attention|detail|authenticat|comprehension|accura/i), pct5(avg(kcs.map(k => k.pct))), pct5(avg(assess.map(a => a.pct))), pct5(avg(comp.map(c => c.parts.tracker).filter(v => v != null)))])),
@@ -64,13 +82,17 @@ async function evidence(p, range){
     // 📏 strictly: each day's six Drive links as the course asks, as found that day (worker.js dailyCompliance instr)
     instructions: r1(pct5(avg(comp.map(c => c.parts.instructions).filter(v => v != null)))),
     timely: r1(avg([timeRules.length ? 5 * timeRules.filter(r => r.pass).length / timeRules.length : null, items.length ? 5 * items.filter(x => x.onTime).length / items.length : null, pct5(avg(comp.map(c => c.parts.outputs).filter(v => v != null)))])),
-    communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i), pct5(avg(eodOn.map(x => x.pct)))])),
+    // 💬 communication: the mock calls' and demos' communication criteria and their overall scores, the practice calls in the
+    // simulators (🎯 graded calls, 🧰 the Portal's call simulators), the written output graded on the platform (the assessments and
+    // answer sheets, the listening activity) and the EOD emails
+    communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i),
+      avg(use.map(x => x.avg5)), pct5(avg(eodOn.map(x => x.pct))), pct5(prog.calls), pct5(prog.written)])),
     english: r1(avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))])),
     call: r1(avg(use.filter(x => x.mock).map(x => x.avg5))),
     // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
     // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
     tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
-  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell};
+  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell, prog};
 }
 // the evidence as the AI reads it
 function brief(ev){
@@ -80,6 +102,8 @@ function brief(ev){
   ev.assess.forEach(a => L.push(`[Assessment] ${a.title}: ${a.score}/${a.max} (${a.pct}%)`));
   if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, following instructions ${c.parts.instructions ?? "–"}${c.instr && (c.instr.issues || []).length ? " [not followed: " + c.instr.issues.map(x => x.k + ": " + clip(x.why, 60)).join("; ") + "]" : ""}, TAM (shadowing) ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
   if(ev.runs.length) L.push(`[Practice Sessions] ${ev.runs.map(v => v + "%").join(", ")}`);
+  if(ev.prog && ev.prog.callsN) L.push(`[Practice calls in the simulators] ${ev.prog.callsN} graded, average ${Math.round(ev.prog.calls)}%`);
+  if(ev.prog && ev.prog.writtenN) L.push(`[Written output graded on the platform] ${ev.prog.writtenN} graded, average ${Math.round(ev.prog.written)}%`);
   if(ev.spell.length) L.push(`[Spelling tests] ${ev.spell.map(v => Math.round(v) + "%").join(", ")}`);
   ev.days.forEach(d => L.push(`[Trainer's day-by-day feedback] lesson ${d.l}: ${d.rating} · ${d.summary}`));
   ev.sent.forEach(x => L.push(`[Trainer's feedback] ${x.title}: ${x.verdict}${x.score != null ? " " + x.score + "%" : ""} · ${x.comment}`));
@@ -91,6 +115,11 @@ function plainComment(k, ev, s){
   const mocks = ev.sheets.filter(x => x.mock), demos = ev.sheets.filter(x => !x.mock);
   const remarks = xs => xs.map(x => x.comment).filter(has).slice(0, 2).join(" ");
   if(k === "call") return `${sc} ${mocks.length ? `Mock calls: ${mocks.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(mocks.concat(demos))}`.trim();
+  if(k === "communication"){ const P = ev.prog || {}, bits = [];
+    if(ev.sheets.length) bits.push(`${ev.sheets.length} mock call/demo scoresheet${ev.sheets.length === 1 ? "" : "s"}`);
+    if(P.callsN) bits.push(`${P.callsN} practice call${P.callsN === 1 ? "" : "s"} in the simulators (${Math.round(P.calls)}%)`);
+    if(P.writtenN) bits.push(`${P.writtenN} graded written output${P.writtenN === 1 ? "" : "s"} (${Math.round(P.written)}%)`);
+    return `${sc} ${bits.length ? "From " + bits.join(", ") + "." : ""}`.trim(); }
   if(k === "tools"){ const pl = ev.comp.filter(c => c.parts.platform != null); return `${sc} ${pl.length ? `Worked on the platform's tools on ${pl.filter(c => c.parts.platform >= 100).length} of ${pl.length} days checked.` : ""} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}.` : ""}`.trim(); }
   if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
     return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 2).join("; ")}.` : ev.comp.some(c => c.instr) ? "Every Drive link as the course asks." : ""}`.trim(); }
