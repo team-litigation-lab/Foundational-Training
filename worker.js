@@ -1410,7 +1410,7 @@ async function checkShots(env, id) {
   }
   if (errs.length === srcs.length) res = { error: "no-access" };
   const files = all.map(({ f, kind }) => { const nm = String(f.name || ""), as = kind && !/typing|wpm|spell/i.test(nm) ? (kind === "typing" ? "Typing " : "Spelling ") + nm : nm;
-      const p = TR.parseTestShot(as, f.created || f.modified); return p && Object.assign(p, { name: nm.slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
+      const p = TR.parseTestShot(as, f.created || f.modified); return p && Object.assign(p, { name: nm.slice(0, 160), link: f.link || "", created: f.created || f.modified || "", in: kind || "folder" }); })
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
@@ -2130,27 +2130,70 @@ async function dailyCompliance(env, id, D, o = {}) {
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
   const tamG = (cur.tamGrades || {})[D] || null, eodRaw = (cur.eodTrainer || {})[D] || null;
-  // 📏 FOLLOWING INSTRUCTIONS, strictly: the six monitored Drive links as the course asks — each linked, the trainee's own,
-  // the right kind, named by the convention, where it belongs (worker.js verifyLinks, trackerreview:<id>.verify; a trainer's
-  // ✓ Mark as opening counts). Recorded for the day it is checked; a day already over keeps what was found then, so a trainee
-  // who fixes a link afterwards is still marked down for the days it was wrong — a backtrack doesn't undo it — and the days
-  // after the fix score in full. (A link not checked yet, or Drive busy, isn't held against them.)
-  const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr;
-  let instr = wasI || null;
-  if (D >= TR.ptDate() || (!wasI && !o.redo && !o.backfill)) {
-    const dc = (pre && pre.daycheck) || (await get(`daycheck:${id}`)) || {};
-    const ver = cur.verify || {}, ov = dc.links || {}, issues = [];
-    let ok = 0, judged = 0;
-    for (const k of Object.keys(LINKS_KIND)) {
-      const url = String((drive || {})[k] || "").trim(), v = ver[k];
-      if (!url) { judged++; issues.push({ k, why: "not linked" }); continue; }
-      if (ov[k] && ov[k].ok && String(ov[k].url || "").trim() === url) { judged++; ok++; continue; }
-      if (!v || v.retry || String(v.url || "").trim() !== url.slice(0, 500)) continue;
-      judged++; if (v.ok) ok++; else issues.push({ k, why: String(v.error || "not as the course asks").slice(0, 200) });
-    }
-    instr = judged ? { pct: Math.round(100 * ok / Object.keys(LINKS_KIND).length), ok, of: Object.keys(LINKS_KIND).length, issues, at: new Date().toISOString() } : wasI || null;
-  }
   const eodT = eodRaw && pctOf(eodRaw.score) != null ? Object.assign({}, eodRaw, { score: pctOf(eodRaw.score) }) : null;
+  // 📏 FOLLOWING INSTRUCTIONS, strictly — each training day, everything the course asks that the platform can see:
+  //   • the naming convention: the day's answer sheets (process:<id>, ft-process.js nameOk) and test screenshots (named with
+  //     their date and AM/PM);
+  //   • the folder structure and saving route: the screenshots saved in the Typing Tests / Spelling Tests folder, not elsewhere;
+  //     the six monitored Drive links — linked, the trainee's own, the right kind, named by the convention, where they belong
+  //     (verifyLinks; a trainer's ✓ Mark as opening counts) — for the day they are checked (no record of past days' links);
+  //   • the deliverables on time: the day's answer sheets saved by their due time, the three tests taken that day (not made up
+  //     later), the EOD sent before the end of the shift, the Task Tracker updated that day.
+  // Kept for the day: a day already over keeps what was found then (v2), so fixing something afterwards — or a backtrack —
+  // doesn't undo the days it was wrong, and the days after the fix score in full. A day not over yet isn't marked down for
+  // what can still be done today.
+  const todayPT = TR.ptDate(), dcRec = (pre && pre.daycheck) || (await get(`daycheck:${id}`)) || {};
+  const instrOf = (Dx, keptLinks) => {
+    const overX = Dx < todayPT, dayX = ((drive || {}).days || {})[Dx] || {}, tkX = (cur.days || {})[Dx];
+    const eodX = (cur.eodTrainer || {})[Dx] && pctOf(cur.eodTrainer[Dx].score) != null;
+    const checks = [], add = (k, ok, why) => checks.push({ k, ok: !!ok, why: ok ? "" : String(why || "").slice(0, 200) });
+    // the six links: checked now, for today; a past day keeps the links it was checked with, if any
+    let linkChecks = [];
+    if (!overX) {
+      const ver = cur.verify || {}, ov = dcRec.links || {};
+      for (const k of Object.keys(LINKS_KIND)) {
+        const url = String((drive || {})[k] || "").trim(), v = ver[k];
+        if (!url) { linkChecks.push({ k, ok: false, why: "not linked" }); continue; }
+        if (ov[k] && ov[k].ok && String(ov[k].url || "").trim() === url) { linkChecks.push({ k, ok: true, why: "" }); continue; }
+        if (!v || v.retry || String(v.url || "").trim() !== url.slice(0, 500)) continue;
+        linkChecks.push({ k, ok: !!v.ok, why: v.ok ? "" : String(v.error || "not as the course asks").slice(0, 200) });
+      }
+    } else if (Array.isArray(keptLinks)) linkChecks = keptLinks;
+    checks.push(...linkChecks);
+    // the test screenshots of the day: named, and saved where they belong
+    (((cur.shots || {}).files) || []).filter((f) => f && f.date === Dx).forEach((f) => {
+      const what = f.kind === "spelling" ? "Spelling Test" : `Typing Test (${f.slot || "AM"})`;
+      add("name", f.named, `${what} screenshot not named with its date and AM/PM (“${String(f.name || "").slice(0, 60)}”)`);
+      if (f.in) add("route", f.in === f.kind, `${what} screenshot saved in the ${f.in === "folder" ? "Assessments/Activities" : f.in === "typing" ? "Typing Tests" : "Spelling Tests"} folder, not ${f.kind === "spelling" ? "Spelling Tests" : "Typing Tests"}`);
+    });
+    // the day's answer sheets: named by the convention, saved by their due time
+    Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { const f = x && x.file; if (!f || !f.at || TR.ptDate(new Date(f.at)) !== Dx) return;
+      add("name", f.nameOk, `answer sheet not named by the convention (“${String(f.name || sid).slice(0, 60)}”)`);
+      add("late", f.onTime, `answer sheet (“${String(f.name || sid).slice(0, 60)}”) saved after its due time`); });
+    // the deliverables on time (a day that is over: the day's three tests, the EOD, the Task Tracker)
+    if (overX) {
+      const taken = { AM: 0, PM: 0, SP: 0 };   // 1 on the day, 2 made up later
+      const mark = (sl, v) => { if (!taken[sl] || v < taken[sl]) taken[sl] = v; };
+      ((skills || {}).typing || []).forEach((t) => { if (t.makeup && String(t.makeup).split(" ")[0] === Dx) mark(String(t.makeup).split(" ")[1] === "PM" ? "PM" : "AM", 2); else if (!t.makeup && t.date === Dx) mark(t.slot === "PM" ? "PM" : "AM", 1); });
+      ((skills || {}).spelling || []).forEach((x) => { if (x.makeup && String(x.makeup).split(" ")[0] === Dx) mark("SP", 2); else if (!x.makeup && x.date === Dx) mark("SP", 1); });
+      (((cur.shots || {}).files) || []).forEach((f) => { if (f && f.date === Dx) mark(f.kind === "spelling" ? "SP" : f.slot === "PM" ? "PM" : "AM", f.up && f.up > f.date ? 2 : 1); });
+      [["AM", "AM Typing Test"], ["PM", "PM Typing Test"], ["SP", "Spelling Test"]].forEach(([sl, nm]) => add("late", taken[sl] === 1, taken[sl] === 2 ? `${nm} made up on a later day` : `${nm} not taken that day`));
+      if (eodX) add("eod", true, "");
+      else if (dayX.eod && String(dayX.eod.text || "").trim()) { const ch = TR.checkEod(dayX.eod.text, dayX.eod.subject || "", Dx, dayX.eod.at), tr = (ch.rules || []).find((r) => r.id === "time"); add("eod", !tr || tr.pass, "EOD sent after the end of the shift"); }
+      else add("eod", false, "no EOD sent that day");
+      const trR = tkX && (tkX.rules || []).find((r) => r.id === "sheet" && !r.pass), unr = trR && /can't open|can.t be read|not shared|sign.?in/i.test(String(trR.detail || ""));
+      if (drive && drive.tracker && !unr) add("tracker", !!(tkX && typeof tkX.pct === "number" && tkX.pct > 0), "Task Tracker not updated that day");
+    }
+    const okN = checks.filter((c) => c.ok).length;
+    return checks.length ? { v: 2, pct: Math.round(100 * okN / checks.length), ok: okN, of: checks.length, issues: checks.filter((c) => !c.ok).map((c) => ({ k: c.k, why: c.why })).slice(0, 20), links: linkChecks, at: new Date().toISOString() } : null;
+  };
+  const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr, over = D < todayPT;
+  let instr = wasI || null;
+  if (!over || !wasI || wasI.v !== 2) instr = instrOf(D, wasI && wasI.links) || wasI || null;
+  // (the past days this trainee has no mark for yet — checked before it was kept — get theirs from what is on record for them)
+  Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
+    const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {}; x.parts.instructions = I.pct;
+    const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
@@ -2169,7 +2212,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
-  if (was && was.instr && D < TR.ptDate()) parts.instructions = was.instr.pct;
+  if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
   if (o.redo && !o.fresh && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;

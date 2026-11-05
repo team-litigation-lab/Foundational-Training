@@ -754,9 +754,10 @@ function dayActs(R, d){
     out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
       : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
       sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
-  // 📏 following instructions (strict): the day's six Drive links as the course asks, as found that day
-  if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 3), LB = Object.fromEntries(LINKS);
-    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `${I.ok} of ${I.of} Drive links as the course asks that day. Not followed: ${iss.map(x => `${(LB[x.k] || x.k).replace(/^\S+\s/, "")} (${x.why})`).join("; ")}.` : `All ${I.of || 6} Drive links as the course asks that day.`, iss.length ? "Fixing them later doesn’t undo the day." : "")}); }
+  // 📏 following instructions (strict): the naming convention, the saving route and folders, the deliverables on time and the
+  // six Drive links, as found that day (worker.js dailyCompliance instr)
+  if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 4), LB = Object.fromEntries(LINKS);
+    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `${I.ok} of ${I.of} instructions followed that day. Not followed: ${iss.map(x => LB[x.k] ? `${LB[x.k].replace(/^\S+\s/, "")} (${x.why})` : x.why).join("; ")}.` : `All ${I.of} instructions followed that day.`, iss.length ? "Fixing them later doesn’t undo the day." : "")}); }
   // 📘 the TAM, on a day a trainer graded it for shadowing
   if(P.tam != null) out.push({k: "tam", icon: "📘", label: "TAM (shadowing)", pct: P.tam, text: sent2(P.tam >= 100 ? "A full entry for the day, graded for the shadowing activity." : P.tam > 0 ? "A short entry for the day: 15 words or more count in full." : "No TAM entry dated that day.")});
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);

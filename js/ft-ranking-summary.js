@@ -79,7 +79,7 @@ async function evidence(p, range){
   const base = {
     attention: r1(avg([critAvg(/attention|detail|authenticat|comprehension|accura/i), pct5(avg(kcs.map(k => k.pct))), pct5(avg(assess.map(a => a.pct))), pct5(avg(comp.map(c => c.parts.tracker).filter(v => v != null)))])),
     compliance: r1(pct5(avg(comp.map(c => c.pct)))),
-    // 📏 strictly: each day's six Drive links as the course asks, as found that day (worker.js dailyCompliance instr)
+    // 📏 strictly: each day's naming convention, saving route and folders, deliverables on time and Drive links (worker.js dailyCompliance instr)
     instructions: r1(pct5(avg(comp.map(c => c.parts.instructions).filter(v => v != null)))),
     timely: r1(avg([timeRules.length ? 5 * timeRules.filter(r => r.pass).length / timeRules.length : null, items.length ? 5 * items.filter(x => x.onTime).length / items.length : null, pct5(avg(comp.map(c => c.parts.outputs).filter(v => v != null)))])),
     // 💬 communication: the mock calls' and demos' communication criteria and their overall scores, the practice calls in the
@@ -122,7 +122,7 @@ function plainComment(k, ev, s){
     return `${sc} ${bits.length ? "From " + bits.join(", ") + "." : ""}`.trim(); }
   if(k === "tools"){ const pl = ev.comp.filter(c => c.parts.platform != null); return `${sc} ${pl.length ? `Worked on the platform's tools on ${pl.filter(c => c.parts.platform >= 100).length} of ${pl.length} days checked.` : ""} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}.` : ""}`.trim(); }
   if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
-    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 2).join("; ")}.` : ev.comp.some(c => c.instr) ? "Every Drive link as the course asks." : ""}`.trim(); }
+    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 3).join("; ")}.` : ev.comp.some(c => c.instr) ? "Naming, saving route and deliverables all as instructed." : ""}`.trim(); }
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
   return sc;
 }

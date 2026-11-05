@@ -55,6 +55,8 @@ const failures = []; const fail = (m) => failures.push(m);
         { id: id25('otherBatch'), name: 'LSH Daily Task Tracker | B090126 Ana Cruz', mimeType: S },
         // 🧪 a typing test's screenshot in her Typing Tests folder, its name without "typing" (the folder says so)
         { id: id25('anaShot1'), name: '10-30 AM.png', mimeType: 'image/png', parents: [id25('anaTyping')], createdTime: '2026-10-30T15:00:00Z', modifiedTime: '2026-10-30T15:00:00Z' },
+        // (a Spelling Test screenshot saved in the Assessments/Activities folder, its name without its date: the wrong route and name)
+        { id: id25('anaShot2'), name: 'Spelling Test.png', mimeType: 'image/png', parents: [id25('anaAssess')], createdTime: '2026-10-30T16:00:00Z', modifiedTime: '2026-10-30T16:00:00Z' },
     ];
     const [y, m, d] = TR.ptDate().split('-'), us = `${+m}/${+d}/${y}`;
     let trackerReads = 0, asked = [];
@@ -129,7 +131,10 @@ const failures = []; const fail = (m) => failures.push(m);
       // (📘 the TAM isn't a daily part: only graded when a trainer asks, for a shadowing activity)
       if (c1.tam != null || c2.tam != null || c3.tam != null || cur.tam) fail(`the TAM is still read or scored daily: ${JSON.stringify({ c1, tam: cur.tam })}`);
       const old = cur.compliance['2026-10-28'] || {};
-      if (!old.parts || 'tam' in old.parts || old.pct !== 100) fail(`a day worked out while the TAM was a daily part keeps it: ${JSON.stringify(old)}`); }
+      const oldV = Object.values(old.parts || {}).filter(v => typeof v === 'number'), oldAvg = oldV.length ? Math.round(oldV.reduce((a, v) => a + v, 0) / oldV.length) : null;
+      if (!old.parts || 'tam' in old.parts || old.pct !== oldAvg) fail(`a day worked out while the TAM was a daily part keeps it: ${JSON.stringify(old)}`);
+      // (and a past day with no following-instructions mark yet gets one from what is on record for it: nothing sent that day)
+      if (!old.instr || old.instr.v !== 2 || old.parts.instructions !== 0) fail(`a past day checked before the mark was kept didn't get one: ${JSON.stringify(old.instr)}`); }
     // 📘 a trainer grades the TAM for a shadowing day: that day's entry, and that day's compliance counts it (no other day)
     { const tg = (await call('/api/drive/tam', { id: ana, date: '2026-10-30' }, admin)).body || {};
       if ((await call('/api/drive/tam', { id: ana }, trainee)).status !== 403) fail('a trainee graded the TAM');
@@ -142,7 +147,7 @@ const failures = []; const fail = (m) => failures.push(m);
     // ✍ a trainer's EOD score for a day the EOD monitoring missed: the day's EOD part (its other parts as they were), kept where a
     // trainee can't write it, and taken off again; a future or weekend day is refused
     { const before = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).parts || {};
-      const g = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80, note: 'Sent to the team lead' }, admin)).body || {};
+      const g = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80, note: 'Sent to the team lead' }, admin)).body || {}; if (process.env.SHOW) console.log('EODG', JSON.stringify(g));
       if ((await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80 }, trainee)).status !== 403) fail('a trainee scored an EOD');
       const c = (get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {};
       if (!g.ok || g.eod !== 80 || (c.parts || {}).eod !== 80 || !c.eodTrainer || c.eodTrainer.note !== 'Sent to the team lead' || !(get('trackerreview:' + ana).eodTrainer || {})['2026-10-30']) fail(`a trainer's EOD score isn't the day's EOD part: ${JSON.stringify(g)} / ${JSON.stringify(c.parts)}`);
@@ -156,21 +161,26 @@ const failures = []; const fail = (m) => failures.push(m);
       if ((await call('/api/eod/grade', { id: ana, date: '2026-10-31', score: 80 }, admin)).status !== 400) fail('an EOD score was saved for a weekend day');
       const g2 = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: null }, admin)).body || {};
       if (!g2.ok || g2.eod !== 0) fail(`taking the EOD score off didn't put the day back to its own check: ${JSON.stringify(g2)}`); }
-    // 📏 following instructions, strictly: a day checked while her Monitoring Sheet link was wrong is marked down (5 of 6); she
-    // fixes it, a backtrack re-reads the day, and the day keeps its mark; a day checked after the fix scores in full
-    { const rv = get('trackerreview:' + ana), A2 = get('drive:' + ana), at = new Date().toISOString();
-      rv.verify = {}; for (const k of ['monitor', 'tam', 'typing', 'spelling', 'folder', 'tracker']) rv.verify[k] = { ok: k !== 'monitor', url: A2[k], at, v: 2, error: k === 'monitor' ? "It opens, but it isn't yours." : '' };
-      delete (rv.compliance || {})['2026-11-04']; put('trackerreview:' + ana, rv);
-      await call('/api/drive/check', { id: ana, date: '2026-11-04', ai: false }, admin);
-      let d4 = (get('trackerreview:' + ana).compliance || {})['2026-11-04'] || {};
-      if (!d4.instr || d4.parts.instructions !== 83 || !(d4.instr.issues || []).some(x => x.k === 'monitor')) fail(`a day with a wrong link isn't marked down for following instructions: ${JSON.stringify(d4.instr)} / ${JSON.stringify(d4.parts)}`);
-      const rv2 = get('trackerreview:' + ana); rv2.verify.monitor = Object.assign({}, rv2.verify.monitor, { ok: true, error: '' }); put('trackerreview:' + ana, rv2);
+    // 📏 following instructions, strictly: the naming convention and saving route of the day's screenshots, the deliverables on time
+    // (tests, EOD, Task Tracker) for a day that is over, and today's six Drive links; a day over keeps its mark after a fix or a backtrack
+    { const C = get('trackerreview:' + ana).compliance || {}, d30 = C['2026-10-30'] || {}, iss = ((d30.instr || {}).issues || []).map(x => x.k + ': ' + x.why).join(' | ');
+      if (!d30.instr || d30.instr.v !== 2 || typeof d30.parts.instructions !== 'number' || d30.parts.instructions >= 100) fail(`10/30 isn't marked down for following instructions: ${JSON.stringify(d30.instr)}`);
+      if (!/route: Spelling Test screenshot saved in the Assessments\/Activities folder/.test(iss) || !/name: Spelling Test screenshot not named/.test(iss)) fail(`a screenshot saved in the wrong folder and misnamed isn't marked: ${iss}`);
+      if (/route: Typing Test \(AM\)/.test(iss)) fail(`the AM typing screenshot, in the Typing Tests folder, was marked as the wrong route: ${iss}`);
+      if (!/no EOD sent that day/.test(iss) || !/PM Typing Test not taken that day/.test(iss)) fail(`10/30's missing deliverables aren't marked: ${iss}`);
+      const before = d30.parts.instructions;
       await call('/api/drive/backtrack', { id: ana }, admin);
-      d4 = (get('trackerreview:' + ana).compliance || {})['2026-11-04'] || {};
-      if (d4.parts.instructions !== 83) fail(`fixing the link afterwards undid the day's mark for following instructions: ${JSON.stringify(d4.parts)}`);
-      if (TR.isWeekday(TR.ptDate())) { await call('/api/drive/check', { id: ana, ai: false }, admin);
+      const after = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).parts || {};
+      if (after.instructions !== before) fail(`a backtrack changed a past day's following instructions mark: ${before} → ${after.instructions}`);
+      if (TR.isWeekday(TR.ptDate())) {
+        const rv = get('trackerreview:' + ana), A2 = get('drive:' + ana), at = new Date().toISOString();
+        rv.verify = {}; for (const k of ['monitor', 'tam', 'typing', 'spelling', 'folder', 'tracker']) rv.verify[k] = { ok: k !== 'monitor', url: A2[k], at, v: 2, error: k === 'monitor' ? "It opens, but it isn't yours." : '' };
+        delete (rv.compliance || {})[TR.ptDate()]; put('trackerreview:' + ana, rv);
+        await call('/api/drive/check', { id: ana, ai: false }, admin);
         const dT = (get('trackerreview:' + ana).compliance || {})[TR.ptDate()] || {};
-        if ((dT.parts || {}).instructions !== 100) fail(`a day checked after the fix isn't scored in full for following instructions: ${JSON.stringify(dT.parts)}`); } }
+        if (!dT.instr || !(dT.instr.issues || []).some(x => x.k === 'monitor') || (dT.instr.links || []).length !== 6) fail(`today's wrong Monitoring Sheet link isn't marked: ${JSON.stringify(dT.instr)}`);
+        if ((dT.instr.issues || []).some(x => /not taken that day|no EOD/.test(x.why))) fail(`today, not over yet, was marked for deliverables it can still send: ${JSON.stringify(dT.instr.issues)}`);
+      } }
     // 🔁 the Monitoring Sheet read through the Drive API when the docs.google.com export gives a sign-in page
     if (!apiReads || !cur.monitor || cur.monitor.error || cur.monitor.found !== 1) fail(`the Monitoring Sheet wasn't read through the Drive API: ${apiReads} reads, ${JSON.stringify(cur.monitor && { error: cur.monitor.error, found: cur.monitor.found })}`);
     // 🧪 the Typing Tests folder is read: "10-30 AM.png" in it is her 10/30 AM typing test, and counts on the day
