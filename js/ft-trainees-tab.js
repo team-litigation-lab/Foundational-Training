@@ -1,5 +1,5 @@
 /* ============================================================
-   👥 TRAINEES & BATCHES: Trainee Audit and 📁 Batch Folders as one tab, in 🏅 Scorecard
+   👥 TRAINEES & BATCHES: Trainee Audit and 📁 Batch Folders as one tab, in 🛡 Admin Master Control (not in 🏅 Scorecard)
    ------------------------------------------------------------
    The 📋 Batch Sheet (js/ft-batch-sheet.js) already shows every trainee's progress, lessons, Knowledge Checks, Practice
    Lab, scores and recent activity, so this tab keeps only what the sheet doesn't have, the things a trainer DOES:

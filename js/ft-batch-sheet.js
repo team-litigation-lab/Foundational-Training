@@ -155,7 +155,7 @@ function traineesTable(){
       const st = p.status;
       return [
         {v: p.name, f: `${p.name} · ${B.batch}`, cls: "gs-name"},
-        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 🏅 Scorecard → Trainee Audit" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
+        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 🛡 Admin Master Control → 👥 Trainees & Batches" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
         {v: (when(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? when(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
@@ -402,21 +402,7 @@ function dayScoresHtml(){
             ${rich ? `<div class="bs-ctx bs-why"><b>🧾 Why this score</b><p>${e(x.why || "—")}</p></div>${li("⭐ What they did best", x.best, "bs-best")}${li("🔧 What needs to be improved", x.improve, "bs-imp")}
               ${!x.best.length && !x.improve.length && x.pct != null ? `<p class="bs-ctx-none">No criterion-level notes were recorded for this score.</p>` : ""}` : `<p class="bs-ctx-none">${e(x.why || "")}</p>`}</div>`; }).join("")}</details>`; }).join("")}</div></div>`;
 }
-/* 👥 Trainees & Batches, at the foot of the sheet: what the old tab held that a trainer DOES (js/ft-trainees-tab.js) —
-   ⏳ Pending Approvals (approve / reject), each trainee's actions (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard),
-   and the batches (📦 Archive, ⬇ Records, the Archive shelf, 🚫 Offboarded VAs, ☁ Saved to Drive). Drawn by the Admin screen's
-   own 'audit' page, without its tab bar; the tab itself has no button any more (LSH_PROGRAM.adminHidden). */
-function peopleHtml(){
-  if(meOn() || !adminOn() || typeof window.renderAdmin !== "function") return "";
-  const was = state.adminTab; let out = "";
-  try{ state.adminTab = "audit"; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ state.adminTab = was; }
-  const t = document.createElement("template"); t.innerHTML = out;
-  t.content.querySelectorAll(".admin-tabs, #navBackSlot, .audit-page-head").forEach(x => x.remove());
-  return `<section class="bs-sec bs-people" id="bs-people"><h3 class="bs-h">👥 Trainees &amp; Batches</h3>
-    <p class="bs-note">Approve new trainees, act on a trainee (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard), and archive or restore a batch.</p>
-    <div class="bs-people-b">${t.innerHTML}</div></section>`;
-}
-// (an approval or rejection made there: the sheet reads its trainees again, so the 👥 Trainees table shows it at once)
+// (an approval or rejection made in 🛡 Admin Master Control → 👥 Trainees & Batches: the sheet reads its trainees again, so the 👥 Trainees table shows it at once)
 ["approveTrainee", "rejectTrainee"].forEach(fn => { const was = window[fn]; if(typeof was !== "function") return;
   window[fn] = async function(){ const r = await was.apply(this, arguments); if(on() && adminOn()){ if(typeof state === "object") state.adminData = null; B.people = null; B.data = null; B.dataKey = ""; render(); } return r; }; });
 // 📊 the Weekly Ranking (js/ft-ranking.js), below the Day 1–16 scores, for the same batch
@@ -916,7 +902,6 @@ function renderSheet(){
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
-    ${ready ? peopleHtml() : ""}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 

@@ -104,8 +104,12 @@ async function workerChecks() {
       await put('trainee:' + id, { id, name, batch, approved: true, registeredAt: '2026-10-30T12:00:00Z', dayProgress: { 1: { done: true, score: 88 } } });
       await put('progress:' + id, { data: { notes: name } });
     }
-    await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'mockscores'; goto('admin'); });
+    // (opened where a trainer finds it: 🧑‍🏫 Graders: Mock Calls & Demos, which draws the scorecards under its graders; the
+    // sheet must leave "Loading …’s scorecards…" there once the scores are read)
+    await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'graders'; goto('admin'); });
     await page.waitForFunction(() => document.querySelectorAll('.fms-tbl thead th').length > 1, null, { timeout: 20000 });
+    // (no 🧑‍🏫 Trainer Inputs on the Graders tab: the feedback is written on the scorecard itself)
+    if (await page.evaluate(() => [...document.querySelectorAll('main h3')].some(h => /Trainer Inputs/.test(h.textContent)))) fail('🧑‍🏫 Trainer Inputs is still on 🧑‍🏫 Graders');
     // the current batch (started last), a column per registered VA, the Reception scorecard down the side
     const sel = await page.evaluate(() => { const s = document.querySelector('.fms-ctl select'); return s.options[s.selectedIndex].text; });
     if (!/B103026.*current/.test(sel)) fail(`the sheet didn't open on the current batch: ${sel}`);
@@ -143,7 +147,7 @@ async function workerChecks() {
     await page.evaluate(() => confirmRevokeTrainee('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);
     const cara = await get('trainee:cara-lim--b103026');
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
-    await page.evaluate(() => { state.adminTab = 'mockscores'; render(); }); await page.waitForTimeout(1200);
+    await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
     await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
     let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
