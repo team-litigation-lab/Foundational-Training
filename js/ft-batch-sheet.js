@@ -58,6 +58,7 @@ async function loadPeople(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
+    B.all = list.filter(r => r && r.id);   // (every account, archived too: 👥 Duplicate accounts looks through them)
     // trainees the tidy-up archived on its own (js/ft-admin-tidy.js), not a trainer: offered back with ↩ Bring them back
     B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
       .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
@@ -385,7 +386,10 @@ function dayScoresHtml(){
   window[fn] = async function(){ const r = await was.apply(this, arguments); if(on() && adminOn()){ if(typeof state === "object") state.adminData = null; B.dataKey = ""; if(!B.loading) loadPeople(); } return r; }; });
 // 📊 the Weekly Ranking (js/ft-ranking.js), below the Day 1–16 scores, for the same batch
 function rankingHtml(){
-  if(meOn() || !window.FTRanking || !FTRanking.embed) return "";
+  // 🔒 a trainee: their own Weekly Progress Report, as the trainer shared it with them (rankshare:<id>: only theirs), in the
+  // report's own styling — no one else's row, no editing, no ranking sheet
+  if(meOn()) return window.FTRankSummary && FTRankSummary.mine ? `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 My Weekly Progress Report</h3>${FTRankSummary.mine(B.me)}</section>` : "";
+  if(!window.FTRanking || !FTRanking.embed) return "";
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
@@ -576,20 +580,40 @@ function sectionsHtml(T){
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
+/* ▸/▾ retractable by trainee and by day: a trainee's row folds to each day's score and a little box per activity (icon and %),
+   a day's column folds to its score alone. Everything starts open; what a viewer folds is kept on this browser (OFOLD_KEY). */
+const OFOLD_KEY = "lsh_bs_ofold";
+function ofold(){
+  if(B.ofold) return B.ofold;
+  try{ B.ofold = JSON.parse(localStorage.getItem(OFOLD_KEY) || "{}") || {}; }catch(err){ B.ofold = {}; }
+  B.ofold.rows = B.ofold.rows || {}; B.ofold.days = B.ofold.days || {}; return B.ofold;
+}
+function ofoldSave(){ try{ localStorage.setItem(OFOLD_KEY, JSON.stringify(B.ofold || {})); }catch(err){} }
+const rowOpen = id => { const v = ofold().rows[id]; return v == null ? true : !!v; };
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC"}); };
+  const F = ofold(), dayShut = d => !!F.days[d];
+  const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
   return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
-    rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs);
-      return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
-        .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num"};
+    headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
+    tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
+    rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
+    rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
+      return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
+        {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
           return {v: pct(vs[i]), csv: `${pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
-            f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`, cls: "bs-ocell",
-            html: `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
+            f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
+            // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
+            cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
+            html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
+              : !open ? `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
+              : `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
     })};
 }
 /* 📤 each activity of a checked day, in the Daily outputs table's cell: its score in a little box and the trainee's
@@ -866,17 +890,42 @@ const tables = () => [scoreCardTable(), complianceTable(), outputsTable(), daySc
 /* ---------- drawing: each table a small sheet (column letters, row numbers, the names frozen) ---------- */
 function sheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length;
-  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span></h3><p class="bs-note">${e(T.note)}</p>
+  return `<section class="bs-sec" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span></h3><p class="bs-note">${e(T.note)}</p>${T.tools || ""}
     <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
       <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
-      <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${e(h)}</th>`).join("")}</tr></thead>
-      <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`).join("")}</tr>`).join("")}
+      <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${T.headHtml && T.headHtml[i] != null ? T.headHtml[i] : e(h)}</th>`).join("")}</tr></thead>
+      <tbody>${T.rows.map((r, ri) => `<tr${T.rowCls && T.rowCls[ri] ? ` class="${T.rowCls[ri]}"` : ""}><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">${T.id === "recent" ? "Nothing yet in this period." : "No trainee in this batch yet."}</td></tr>` : ""}</tbody></table></div></section>`;
 }
 /* ---------- ✏️ Fix the batch name: a manual override for trainees registered under the wrong batch ----------
    The trainer ticks the trainees (all of the batch by default) and types the right Batch ID; each one's trainee:<id> gets
    batch = that ID, batchFrom (the old one), batchMovedAt and batchMovedBy: "trainer". worker.js keeps that batch on every
    save the trainee makes afterwards (an open tab can't write the old one back), and index.html takes it on their next save. */
+/* 👥 DUPLICATE ACCOUNTS: one person with two accounts (an older Batch ID change made a second one), where one of them is in
+   this batch. Each account shows its batch, when it registered and was last on, and how much progress it holds; the
+   trainer keeps the one on the right Batch ID (the one in this batch, with the most progress, is picked first) and 👥 Merge
+   moves everything of the other into it and deletes it (worker.js mergeAccounts), so the Scorecard reads one profile. */
+const slugOf = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+function dupGroups(){
+  if(!adminOn() || meOn() || !Array.isArray(B.all)) return [];
+  const live = B.all.filter(r => r.name && !r.purgedAt && !r.rejected && !r.mergedInto), by = {};
+  live.forEach(r => { (by[slugOf(r.name)] = by[slugOf(r.name)] || []).push(r); });
+  const done = r => Object.values(r.dayProgress || {}).filter(x => x && x.done).length;
+  return Object.values(by).filter(g => g.length > 1 && g.some(r => bLabel(r.batch || "") === B.batch))
+    .map(g => g.map(r => ({id: r.id, name: r.name, batch: r.batch || "", reg: r.registeredAt || "", last: r.lastActive || "", done: done(r),
+      st: r.offboarded ? "offboarded" : r.archived ? "archived" : r.approved === true ? "approved" : "waiting"}))
+      .sort((a, b) => (bLabel(b.batch) === B.batch) - (bLabel(a.batch) === B.batch) || b.done - a.done || String(b.last).localeCompare(String(a.last))));
+}
+function dupHtml(){
+  const G = dupGroups(); if(!G.length) return "";
+  B.dupKeep = B.dupKeep || {};
+  return `<div class="bs-warn bs-dup"><b>👥 ${G.length === 1 ? `${e(G[0][0].name)} has ${G[0].length} accounts` : `${G.length} trainees have more than one account`}</b> — the Scorecard can read only one. Keep the one on the right Batch ID; 👥 Merge moves everything of the other into it and deletes it.
+    ${G.map(g => { const key = slugOf(g[0].name), keep = B.dupKeep[key] && g.some(a => a.id === B.dupKeep[key]) ? B.dupKeep[key] : g[0].id;
+      return `<table class="bs-dup-t"><thead><tr><th>Keep</th><th>Account</th><th>Batch</th><th>Registered</th><th>Last on</th><th>Lessons done</th><th>Status</th></tr></thead><tbody>
+        ${g.map(a => `<tr${a.id === keep ? ' class="bs-dup-keep"' : ""}><td><input type="radio" name="dup-${e(key)}" ${a.id === keep ? "checked" : ""} onchange="FTBatchSheet.dupKeep('${e(key)}', '${e(a.id)}')" aria-label="Keep ${e(a.id)}"></td>
+          <td><code>${e(a.id)}</code></td><td>${e(a.batch)}${bLabel(a.batch) === B.batch ? " (this batch)" : ""}</td><td>${a.reg ? e(when(a.reg)) : "—"}</td><td>${a.last ? e(ago(a.last)) : "—"}</td><td>${a.done}</td><td>${e(a.st)}</td></tr>`).join("")}</tbody></table>
+        <button class="btn btn-navy btn-sm" type="button" ${B.dupBusy ? "disabled" : ""} onclick="FTBatchSheet.dupMerge('${e(key)}')">${B.dupBusy === key ? "Merging…" : `👥 Merge into ${e(keep)}`}</button>`; }).join("")}</div>`;
+}
 function fixHtml(ppl){
   const F = B.fix; if(!F) return "";
   const others = batches().filter(b => b !== B.batch);
@@ -922,6 +971,7 @@ function renderSheet(){
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
+    ${dupHtml()}
     ${fixHtml(ppl)}
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
@@ -1063,6 +1113,20 @@ window.FTBatchSheet = {
     }catch(err){ toast("Couldn't save the tick. Try again."); }
     render();
   },
+  dupKeep(key, id){ (B.dupKeep = B.dupKeep || {})[key] = id; render(); },
+  // 👥 every other account of that person merged into the one kept (worker.js /api/batch/merge), then the batch read again
+  async dupMerge(key){
+    if(!adminOn() || B.dupBusy) return;
+    const g = dupGroups().find(x => slugOf(x[0].name) === key); if(!g) return;
+    const keep = (B.dupKeep || {})[key] && g.some(a => a.id === B.dupKeep[key]) ? B.dupKeep[key] : g[0].id, other = g.filter(a => a.id !== keep);
+    const k = g.find(a => a.id === keep);
+    if(!confirm(`Keep ${k.name}'s account ${keep} (batch ${k.batch}) and merge ${other.map(a => `${a.id} (batch ${a.batch})`).join(", ")} into it?\n\nEverything the other account holds (progress, Knowledge Checks, Drive links, scores, feedback) moves into the one kept, and the other account is deleted. A sign-in to it opens the kept one.`)) return;
+    B.dupBusy = key; render(); let ok = 0, err = "";
+    for(const a of other){ try{ const r = await authFetch("/api/batch/merge", {from: a.id, into: keep}), j = await r.json().catch(() => ({})); if(r.ok && j.ok) ok++; else err = j.error || "the server refused"; }catch(e2){ err = "no connection"; } }
+    B.dupBusy = null; state.adminData = null; B.people = null; B.all = null; B.data = null; B.dataKey = "";
+    try{ window.dispatchEvent(new Event("ft-roster-changed")); }catch(e2){}
+    toast(ok === other.length ? `✓ Merged into ${keep}: one account for ${k.name}.` : `Couldn’t merge every account (${err}). Try again.`, 7000); render();
+  },
   fixOpen(){ if(!adminOn()) return; B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
   fixClose(){ B.fix = null; render(); },
   fixPick(id, on){ if(B.fix) B.fix.skip[id] = !on; },
@@ -1088,6 +1152,11 @@ window.FTBatchSheet = {
     B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
   },
   open(){ state.adminTab = TAB; goto("admin"); },
+  // ▸/▾ Daily outputs: a trainee's row, a day's column, all of them
+  ofRow(id){ const F = ofold(); F.rows[id] = !rowOpen(id); ofoldSave(); rerender(); },
+  ofDay(d){ const F = ofold(); if(F.days[d]) delete F.days[d]; else F.days[d] = true; ofoldSave(); rerender(); },
+  ofAll(open){ const F = ofold(); people().forEach(p => { F.rows[p.id] = open; }); ofoldSave(); rerender(); },
+  ofDays(shut){ const F = ofold(); F.days = {}; if(shut){ const ds = new Set(); people().forEach(p => Object.keys(((((B.data || {}).rec || {})[p.id] || {}).src || {})["trackerreview:"]?.compliance || {}).forEach(d => ds.add(d))); ds.forEach(d => { F.days[d] = true; }); } ofoldSave(); rerender(); },
   go(id){ const el = document.getElementById("bs-" + id); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); return false; },
   pick(td){
     if(!B.data) return; const T = tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
@@ -1131,7 +1200,7 @@ function renderMine(){
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
       <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
-    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
+    <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 My Weekly Report</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
@@ -1209,6 +1278,13 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-more > summary::-webkit-details-marker,.bs-rank-sheet > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary,.bs-rank-sheet[open] > summary{border-bottom:1px solid #E1E3E1;}
 .gs td.bs-ocell{min-width:300px;max-width:340px;white-space:normal;vertical-align:top;text-align:left;padding:8px 9px;font-size:12.5px;line-height:1.4;}
 .bs-oday{display:flex;align-items:center;gap:7px;margin-bottom:6px;} .bs-oday span{color:#5F6368;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+.bs-ofold-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:inherit;color:inherit;border-radius:6px;padding:1px 3px;}
+.bs-ofold-btn:hover{background:rgba(26,115,232,.08);} .bs-ofold-btn:focus-visible{outline:3px solid #DB8437;outline-offset:1px;}
+.bs-ocaret{font-size:11px;color:#1A73E8;width:10px;display:inline-block;} .bs-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+.gs td.bs-oname{vertical-align:top;} .bs-oname-btn{font-weight:700;}
+.gs td.bs-ocell.bs-ocell-f{min-width:170px;max-width:230px;} .gs td.bs-ocol-f{min-width:58px !important;max-width:70px !important;}
+.bs-omini{display:flex;flex-wrap:wrap;gap:4px 6px;} .bs-omini > span{display:inline-flex;align-items:center;gap:2px;font-size:12px;} .bs-omini .bs-sbox{font-size:10.5px;padding:0 4px;min-width:0;}
+.bs-otools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px;} .bs-otools small{color:#5F6368;font-size:12px;}
 .bs-oacts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
 .bs-oacts li{display:flex;gap:7px;align-items:flex-start;border-top:1px dashed #E1E3E1;padding-top:5px;}
 .bs-oacts li > div{display:flex;flex-direction:column;min-width:0;} .bs-oacts li b{font-weight:700;color:#202124;font-size:12px;} .bs-oacts li span{color:#3C4043;}
@@ -1239,6 +1315,8 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
+.bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
 .bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
