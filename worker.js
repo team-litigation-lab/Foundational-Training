@@ -290,6 +290,8 @@ const BLOCK_MSG = {
   archived: "Your batch's training has ended and its records were archived. Contact your trainer if you need anything from it.",
   merged: "This account was merged into your current one. Open the program again from the LSH Training Portal."
 };
+// the 403 a blocked trainee gets (blockedIds' entry: why it is blocked)
+const blockedRes = (b) => json({ error: BLOCK_MSG[b.why] || BLOCK_MSG.offboarded, code: "access-" + (b.why || "offboarded") }, 403);
 // Clearing a batch from the platform (POST /api/batch/purge): the trainee's working records go (they are in the Drive
 // backup first). Kept for the Main Portal's 📊 Progress & Feedback and its scorecard, which read this program's records
 // from the shared KV: the trainee record (slimmed, with the scorecard snapshot), the trainer's daily feedback, the
@@ -2503,7 +2505,7 @@ export default {
         if (kept) chosen = kept;
         else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
-        if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
+        if (blocked) return blockedRes(blocked);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, SESSION_HOURS), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
       if (path === "/api/auth/trainee") {
@@ -2557,7 +2559,7 @@ export default {
         if (moved) {
           await withFull(moved.id, moved.rec);
           const blockedM = (await blockedIds(env))[moved.id];
-          if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
+          if (blockedM) return blockedRes(blockedM);
           return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
             name: who.name, first: who.first, last: who.last });
         }
@@ -2603,7 +2605,7 @@ export default {
             if (blocked.why === "merged") return json({ value: JSON.stringify({ id: tok.id, approved: false, mergedInto: blocked.into || "" }) });
             return json({ value: rec ? JSON.stringify(Object.assign({}, rec, { approved: false })) : null });
           }
-          return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
+          return blockedRes(blocked);
         }
       }
 
