@@ -75,13 +75,16 @@ function mergeCase(nav){
 }
 // "← Back to Documents" on the Case File page is the tab next to it: hidden. A way back anywhere else stays.
 function hideBack(page, tabs){
-  var slot = page.querySelector(":scope > #navBackSlot"), back = slot && slot.querySelector(".nav-back");
+  var slot = page.querySelector(":scope > #navBackSlot"), back = slot && slot.querySelector(".nav-back:not(.nav-progress)");
   if(!slot) return;
   var to = back ? back.textContent.replace(/^.*Back to\s*/, "").trim().toLowerCase() : "";
   var names = tabs.map(function(b){ return b.textContent.replace(/^[^A-Za-z]+/, "").trim().toLowerCase(); });
   var sibling = !!to && names.some(function(n){ return n && (to.indexOf(n) >= 0 || n.indexOf(to) >= 0); });
   var want = sibling ? "none" : "";
-  if(slot.style.display !== want) slot.style.display = want;
+  // (only the ← Back button gives way: ↩ Back to my progress beside it stays; the slot goes when nothing is left)
+  if(back && back.style.display !== want) back.style.display = want;
+  var gone = sibling && !slot.querySelector(".nav-progress") ? "none" : "";
+  if(slot.style.display !== gone) slot.style.display = gone;
 }
 
 var css = document.createElement("style");
