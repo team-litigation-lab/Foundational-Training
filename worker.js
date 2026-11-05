@@ -1143,6 +1143,29 @@ const LINKS_KIND = {
   folder: { folder: true, label: "Assessments/Activities folder", re: /assessment|activit/i },
   tracker: { folder: false, label: "LSH Daily Task Tracker", re: /task tracker/i } };
 const notFolder = (label) => `This isn't a folder's link. Open your ${label} and copy its address (…/drive/folders/…).`;
+/* 🔎 IS IT THEIRS: a link that opens and is the right kind of file is also checked to be the trainee's OWN copy. The six
+   are made per trainee and named with the Batch ID and the VA's name ("LSH Daily Task Tracker | B103026 Ana Cruz"; the
+   Typing Tests, Spelling Tests and Assessments/Activities folders sit in "LSH Trainee folder – B103026 Ana Cruz", so a
+   folder with a plain name is read by its parent's). ✗ with why when: it is the blank template ("VA Name", "BatchID"); it
+   names another batch; it names another trainee of the batch; it doesn't carry the trainee's name; it is the same file as
+   another of their six; or another trainee already linked it (drivelink:<file id> = {id, k}). VERIFY_V: a ✓ from before
+   these checks is checked once more. */
+const VERIFY_V = 2;
+// each link's naming convention, as 📁 My Drive links states it (js/ft-drive.js MONITORED): batch: its name carries the Batch ID
+const NAMING = {
+  monitor: { batch: false, rule: "LSH VA Training Monitoring Sheet__Your Name" },
+  tam: { batch: true, rule: "LSH Task Assessment Manual (TAM) | BatchID Your Name" },
+  typing: { batch: true, rule: "LSH Trainee folder – BatchID Your Name/Typing Tests" },
+  spelling: { batch: true, rule: "BatchID Your Name/Spelling Tests" },
+  folder: { batch: true, rule: "LSH Trainee folder – BatchID Your Name Assessments/Activities" },
+  tracker: { batch: true, rule: "LSH Daily Task Tracker | BatchID Your Name" } };
+const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/.test(batch) ? batch : "BatchID").replace("Your Name", name || "Your Name");
+const GENERIC = { typing: true, spelling: true, folder: true };
+const nameWords = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+// a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
+const nameIn = (person, text) => { const P = [...new Set(nameWords(person).filter((w) => w.length >= 3))]; if (!P.length) return false;
+  const T = new Set(nameWords(text)); return P.filter((w) => T.has(w)).length >= Math.min(2, P.length); };
+const TEMPLATE_RE = /\bVA\s*Name\b|your\s+full\s+name|\bBatch\s*ID\b|\[\s*batch\s*\]/i;
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
   if (!driveSA(env)) return { error: "no-sa" };
@@ -1151,11 +1174,63 @@ async function verifyLinks(env, id) {
   let tokens;
   try { tokens = await readTokens(env); } catch (e) { return { error: "drive-auth" }; }
   const rk0 = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, prev = rk0.verify || {};
+  const me = JSON.parse((await kv.get(`trainee:${id}`)) || "null") || {}, myBatch = String(me.batch || "").toUpperCase();
+  const seen = new Map();   // file id → the link of theirs that has it (the same file twice)
+  let roster = null;        // the batch's other trainees, read once, when a name has to be told apart
+  const others = async () => {
+    if (roster) return roster;
+    const suffix = id.includes("--") ? "--" + id.split("--").pop() : "";
+    const keys = [];
+    if (suffix) { let cursor; do { const r = await kv.list(Object.assign({ prefix: "trainee:" }, cursor ? { cursor } : {}));
+      (r.keys || []).forEach((x) => { if (x.name.endsWith(suffix) && x.name !== `trainee:${id}`) keys.push(x.name); });
+      cursor = r.list_complete === false ? r.cursor : null; } while (cursor); }
+    roster = (await Promise.all(keys.slice(0, 200).map((n) => kv.get(n)))).map((v) => { try { return JSON.parse(v); } catch (e) { return null; } })
+      .filter((r) => r && r.name && !r.purgedAt && !r.rejected);
+    return roster;
+  };
+  const label = (k) => LINKS_KIND[k].label;
+  async function ownCheck(k, K, fid, name, parents, tokens) {
+    const base = { name: name.slice(0, 200) };
+    // the same file as another of their six
+    if (seen.has(fid)) return Object.assign(base, { ok: false, mine: false, error: `This is the same link as your ${label(seen.get(fid))}. Link your ${K.label} itself.` });
+    seen.set(fid, k);
+    // a folder with a plain name ("Typing Tests"): read with its parent's, "LSH Trainee folder – B103026 Ana Cruz"
+    let text = name;
+    if (GENERIC[k] && !nameIn(me.name, name) && Array.isArray(parents) && parents[0]) {
+      for (const token of tokens) {
+        const pr = await fetch(`https://www.googleapis.com/drive/v3/files/${parents[0]}?fields=name&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } }).catch(() => null);
+        if (pr && pr.ok) { const pj = await pr.json().catch(() => ({})); if (pj.name) text = `${pj.name} ${name}`; break; }
+      }
+    }
+    const rule = `“${ruleFor(k, myBatch, me.name)}”`;
+    if (TEMPLATE_RE.test(text.replace(/_/g, " "))) return Object.assign(base, { ok: false, mine: false, error: `This is the blank template ("${name.slice(0, 120)}"), not your own copy. Link your own: ${rule}.` });
+    const b = (String(text).match(/\bB\d{6}\b/i) || [])[0];
+    if (b && /^B\d{6}$/.test(myBatch) && b.toUpperCase() !== myBatch) return Object.assign(base, { ok: false, mine: false, error: `This is batch ${b.toUpperCase()}'s ${K.label}, not yours: your batch is ${myBatch}. Link your own: ${rule}.` });
+    const mineName = nameIn(me.name, text);
+    if (!mineName && me.name) {
+      const who = (await others()).find((o) => nameIn(o.name, text));
+      if (who) return Object.assign(base, { ok: false, mine: false, error: `This is ${who.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
+      // (a plain-named folder whose parent can't be read can't be told apart: it passes on the other checks)
+      if (!(GENERIC[k] && text === name)) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
+    }
+    // (the rule's Batch ID: their own batch in the name, where the convention has one)
+    if (NAMING[k].batch && /^B\d{6}$/.test(myBatch) && !b && !(GENERIC[k] && text === name))
+      return Object.assign(base, { ok: false, mine: false, error: `Its name ("${name.slice(0, 120)}") doesn't follow the naming rule: it needs your Batch ID. It should be ${rule}.` });
+    // another trainee linked this very file already
+    const owner = JSON.parse((await kv.get(`drivelink:${fid}`)) || "null");
+    if (owner && owner.id && owner.id !== id) {
+      const od = JSON.parse((await kv.get(`drive:${owner.id}`)) || "null") || {}, still = Object.keys(LINKS_KIND).some((x) => String(od[x] || "").includes(fid));
+      if (still) { const ot = JSON.parse((await kv.get(`trainee:${owner.id}`)) || "null") || {};
+        return Object.assign(base, { ok: false, mine: false, error: `${ot.name || "Another trainee"} has already linked this file as theirs. Link your own: ${rule}.` }); }
+    }
+    await kv.put(`drivelink:${fid}`, JSON.stringify({ id, k, at: new Date().toISOString() }));
+    return Object.assign(base, { ok: true, mine: true });
+  }
   for (const k of Object.keys(LINKS_KIND)) {
     const url = String(drive[k] || "").trim(), K = LINKS_KIND[k];
     if (!url) continue;
     // (✓ Mark as opening: locked for this very link)
-    if (prev[k] && prev[k].ok && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; continue; }
+    if (prev[k] && prev[k].ok && prev[k].v === VERIFY_V && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; seen.set(prev[k].fid || url, k); continue; }
     const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || [])[1]);
     let r;
     if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : K.folder ? notFolder(K.label) : k === "tracker" ? VERIFY_WHY.sheet : k === "monitor" ? VERIFY_WHY.doc : `This isn't a file's own link. Open your ${K.label} and copy its address from the address bar.` };
@@ -1164,7 +1239,7 @@ async function verifyLinks(env, id) {
       try {
         let res, j = {};
         for (const token of tokens) {
-          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
           j = await res.json().catch(() => ({}));
           if (res.ok) break;
         }
@@ -1174,12 +1249,15 @@ async function verifyLinks(env, id) {
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "")) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
         else if (j.name && !K.re.test(String(j.name))) r = { ok: false, error: `It opens, but it isn't your ${K.label} (its name is "${String(j.name).slice(0, 120)}"). Link the right one.`, name: String(j.name).slice(0, 200) };
-        else r = { ok: true, name: String(j.name || "").slice(0, 200) };
+        else r = await ownCheck(k, K, fid, String(j.name || ""), j.parents, tokens);
       } catch (e) { r = { ok: false, error: "Google Drive didn't answer. Check again in a minute." , retry: true }; }
     }
-    out[k] = Object.assign(r, { url: url.slice(0, 500), at });
+    out[k] = Object.assign(r, { url: url.slice(0, 500), at, v: VERIFY_V }, fid ? { fid } : {});
   }
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  // 🔔 the trainee is told (js/ft-drive.js): verifyAlert names the links that are ✗ now and weren't, as they are saved now
+  const newBad = Object.keys(out).filter((k) => out[k].ok === false && !out[k].retry && !(prev[k] && prev[k].ok === false && prev[k].url === out[k].url && prev[k].error === out[k].error));
+  if (newBad.length) cur.verifyAlert = { at, keys: newBad };
   cur.verify = out; cur.verifyAt = at;
   await kv.put(rk, JSON.stringify(cur));
   return { ok: true, verify: out, share: sa };

@@ -53,6 +53,10 @@ jobs:
         run: node .github/scripts/sheet-access.cjs
       - name: A Knowledge Check is taken once (a second attempt isn't saved; a trainer's retry lets one more through)
         run: node .github/scripts/kc-once.cjs
+      - name: The six Drive links are the trainee's own, named by their rules (the template, another batch's or trainee's, the same file twice are caught)
+        run: node .github/scripts/drive-own.cjs
+      - name: Every deploy stamps the page's scripts and APP_BUILD by themselves (build/stamp-assets.cjs)
+        run: node build/stamp-assets.cjs --check
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)
         run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)
