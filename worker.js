@@ -1638,10 +1638,21 @@ async function verifyLinks(env, id) {
    matches is kept for the trainer (admin:eod-unmatched, the last 50). A pasted EOD (📋 Task Tracker) is checked the same way. */
 function mimeText(raw) {
   const text = String(raw || "");
-  const decodeQP = (s) => s.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16)));
-  const decodeB64 = (s) => { try { return decodeURIComponent(escape(atob(s.replace(/\s+/g, "")))); } catch (e) { try { return atob(s.replace(/\s+/g, "")); } catch (e2) { return ""; } } };
+  // (a quoted-printable or base64 part is bytes: read them in the part's charset, UTF-8 unless it says otherwise; a latin1 /
+  // windows-1252 one, or bytes that aren't valid UTF-8, read one byte per character as before)
+  const bytesOf = (bin) => Uint8Array.from(bin, (c) => c.charCodeAt(0) & 255);
+  const inCharset = (bin, cs) => {
+    cs = String(cs || "utf-8").toLowerCase();
+    try { return new TextDecoder(cs, { fatal: true }).decode(bytesOf(bin)); } catch (e) {
+      try { if (!/^(utf-?8|us-ascii|ascii)$/.test(cs)) return new TextDecoder("windows-1252").decode(bytesOf(bin)); } catch (e2) { /* below */ }
+      return bin;
+    }
+  };
+  const decodeQP = (s, cs) => inCharset(s.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16))), cs);
+  const decodeB64 = (s, cs) => { try { return inCharset(atob(s.replace(/\s+/g, "")), cs); } catch (e) { return ""; } };
   const body = (part) => { const i = part.search(/\r?\n\r?\n/); if (i < 0) return { h: part, b: "" }; return { h: part.slice(0, i), b: part.slice(i).replace(/^\r?\n\r?\n/, "") }; };
-  const decode = (h, b) => /content-transfer-encoding:\s*base64/i.test(h) ? decodeB64(b) : /content-transfer-encoding:\s*quoted-printable/i.test(h) ? decodeQP(b) : b;
+  const decode = (h, b) => { const cs = (/charset="?([^";\s]+)/i.exec(h) || [])[1];
+    return /content-transfer-encoding:\s*base64/i.test(h) ? decodeB64(b, cs) : /content-transfer-encoding:\s*quoted-printable/i.test(h) ? decodeQP(b, cs) : b; };
   const walk = (part) => {
     const { h, b } = body(part), bm = /boundary="?([^";\r\n]+)"?/i.exec(h);
     if (/content-type:\s*multipart\//i.test(h) && bm) {
@@ -1650,7 +1661,11 @@ function mimeText(raw) {
       for (const p of parts) { const t = walk(p.replace(/^\r?\n/, "")); if (t && t.html) return t; }
       return null;
     }
-    if (/content-type:\s*text\/html/i.test(h)) return { html: decode(h, b) };
+    // (an attachment — a PDF, a screenshot, even a .txt file — is never the EOD: only the text of the email itself is read;
+    // a part with no Content-Type, a plain email, is text)
+    const uh = h.replace(/\r?\n[ \t]+/g, " "), ct = (/^content-type:([^\r\n]*)/im.exec(uh) || [])[1], cd = (/^content-disposition:([^\r\n]*)/im.exec(uh) || [])[1] || "";
+    if (/^\s*attachment/i.test(cd) || /\b(file)?name\*?=/i.test(cd + ";" + (ct || "")) || (ct !== undefined && !/^\s*text\/(plain|html)\b/i.test(ct))) return null;
+    if (/^\s*text\/html/i.test(ct || "")) return { html: decode(h, b) };
     return { plain: decode(h, b) };
   };
   const r = walk(text) || {};

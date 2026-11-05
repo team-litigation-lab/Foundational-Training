@@ -289,6 +289,22 @@ const failures = []; const fail = (m) => failures.push(m);
       await worker.email({ from: 'dee.drive@gmail.com', raw: new Response(raw).body, headers: { get: k => hdr.get(k) || null } }, env, { waitUntil() {} });
       const e1 = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[D2] || {}).eod || {};
       if (e1.via !== 'email' || !/warm transfer/.test(e1.text || '')) fail(`the emailed EOD wasn't kept as the day's EOD: ${JSON.stringify(e1).slice(0, 200)}`);
+      // an EOD's text read right (worker.js mimeText): an HTML-only EOD with a screenshot attached is read from its HTML, not
+      // the screenshot's bytes; an attached .txt file isn't the EOD either; quoted-printable and base64 UTF-8 (curly quotes,
+      // dashes, accents) and a windows-1252 part read as written (sent from an address no trainee has: admin:eod-unmatched)
+      const mimeEod = async (mime) => { const h = new Map([['from', 'Mime Tester <mime@x.com>'], ['subject', 'Daily Report']]);
+        await worker.email({ from: 'mime@x.com', raw: new Response('From: Mime Tester <mime@x.com>\r\nSubject: Daily Report\r\n' + mime).body, headers: { get: k => h.get(k) || null } }, env, { waitUntil() {} });
+        return (JSON.parse(store.get('ft:admin:eod-unmatched') || '{"items":[]}').items[0] || {}).text || ''; };
+      const att = await mimeEod('Content-Type: multipart/mixed; boundary="m1"\r\n\r\n--m1\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Accomplishments/Completed Tasks:</p><li>the HTML EOD</li>\r\n--m1\r\nContent-Type: image/png; name="shot.png"\r\nContent-Disposition: attachment; filename="shot.png"\r\nContent-Transfer-Encoding: base64\r\n\r\n' + Buffer.from('\x89PNG\r\n\x1a\nBINARYDATA', 'latin1').toString('base64') + '\r\n--m1--\r\n');
+      if (!/the HTML EOD/.test(att) || /PNG|BINARY/.test(att)) fail(`an attachment was read as the EOD instead of its HTML: ${JSON.stringify(att).slice(0, 120)}`);
+      const txt = await mimeEod('Content-Type: multipart/mixed; boundary="m2"\r\n\r\n--m2\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Disposition: attachment; filename="notes.txt"\r\n\r\nnot the EOD\r\n--m2\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nthe real EOD\r\n--m2--\r\n');
+      if (!/the real EOD/.test(txt) || /not the EOD/.test(txt)) fail(`an attached text file was read as the EOD: ${JSON.stringify(txt).slice(0, 120)}`);
+      const qp = await mimeEod('Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nI=E2=80=99ve learned =E2=80=94 caf=C3=A9\r\n');
+      if (qp.trim() !== 'I’ve learned — café') fail(`a quoted-printable UTF-8 EOD came out garbled: ${JSON.stringify(qp)}`);
+      const b64 = await mimeEod('Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n' + Buffer.from('I’ve learned — café').toString('base64') + '\r\n');
+      if (b64.trim() !== 'I’ve learned — café') fail(`a base64 UTF-8 EOD came out garbled: ${JSON.stringify(b64)}`);
+      const w1252 = await mimeEod('Content-Type: text/plain; charset=windows-1252\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nI=92ve learned =97 caf=E9\r\n');
+      if (w1252.trim() !== 'I’ve learned — café') fail(`a windows-1252 EOD came out garbled: ${JSON.stringify(w1252)}`);
       const cc = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {})[D2] || {};
       if (!cc.eodCheck || cc.parts.eod !== 100 || cc.eodCheck.via !== 'email') fail(`the emailed EOD wasn't checked (100%): ${JSON.stringify(cc.eodCheck || cc.parts)}`);
       // an EOD missing its learnings: its % and what is missing
