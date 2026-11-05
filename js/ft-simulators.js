@@ -142,12 +142,21 @@ const CAL_CARDS = [
       b: [["Open the activity", "goto('calsim','attorney-activity')"], ["📅 Standard Training - Calendar Management Activity ↗", "window.ftsCalsim ? ftsCalsim('activity') : 0", "Opens on the Main Portal’s Google Calendar Simulator, in its own tab"]]},
      {id: "calcheck", t: "Check your calendar", n: "Enter what each event holds: every field is checked against the activity, then submit it.", b: [["Check my calendar", "goto('calcheck')"]]},
      {id: "calweek", t: "Book next week’s calendar", n: "The Standard Training - Calendaring Activity: the tasks booked on the attorney’s calendar for next week.", b: [["Open the calendar", "goto('calweek')"]]}]},
-  {kicker: "Day 6 · Calendar Management", title: "📅 Calendar Management Mock Calls",
-   note: "Book each mock call’s appointment on the Google Calendar Simulator, then record the booking so it is checked against the scheduling rules.",
-   steps: [
-     {id: "calsim", t: "Book on the Google Calendar Simulator", n: "The time zone set on every appointment.", b: [["📅 Open the Google Calendar Simulator ↗", "window.ftsCalsim ? ftsCalsim('standard') : 0", "Opens on the Main Portal, in its own tab"]], free: true},
-     {id: "calrules", t: "Check each booking", n: "Consult days, phone hours, buffers, length limits, EST, the reminder: checked on the spot.", b: [["Check a booking", "goto('calrules')"]]}]}
 ];
+// Day 6's Booking Rule Check, folded into its Practice Session's card (📅 Standard Training - Appointment Setting Mock
+// Calls, session "calendaring"): after each mock call, the booking is recorded and checked against the scheduling rules
+const RULES_STEP = {id: "calrules", t: "After each call: check the booking", n: "Record the booking you made on the call: consult days, phone hours, buffers, length limits, EST, the reminder, checked on the spot.", b: [["📅 Check a booking", "goto('calrules')"]]};
+function foldRules(html){
+  if(!html || !toolOn("calrules")) return html;
+  const t = document.createElement("template"); t.innerHTML = html;
+  const c = t.content.querySelector('.fts-card[data-sid="calendaring"]:not(.fts-locked)'); if(!c) return html;
+  c.classList.add("fts-calcard");
+  // (the session's days and the check's, so the card is filed under each)
+  const ds = new Set(String(c.dataset.days || "").split(",").map(Number).filter(Boolean).concat(window.FTDays ? FTDays.forTool("calrules") : []));
+  c.dataset.days = [...ds].sort((a, b) => a - b).join(",");
+  c.insertAdjacentHTML("beforeend", `<ol class="fts-calsteps">${stepsHtml([RULES_STEP], 0)}</ol>`);
+  return t.innerHTML;
+}
 const STEP_CHIP = {done: "✓ Done", live: "🟢 In progress", todo: "Not started"};
 function calCard(c){
   const days = id => window.FTDays ? FTDays.forTool(id) : [];
@@ -159,10 +168,13 @@ function calCard(c){
   const all = [...new Set(steps.flatMap(x => days(x.id)))].sort((a, b) => a - b);
   const h = `<div class="card fts-card fts-calcard"><div class="fts-kicker">${esc(c.kicker)}</div><h3>${c.title}</h3>
     <p class="fts-note">${esc(c.note)}</p>
-    <ol class="fts-calsteps">${steps.map((x, i) => { const s1 = isTrainee() && TOOL_STATUS[x.id] ? TOOL_STATUS[x.id]() : "";
-      return `<li class="fts-calstep${s1 ? " is-" + s1 : ""}"><div class="fts-calstep-h"><b>${i + 1}. ${esc(x.t)}</b>${s1 ? `<span class="fts-chip fts-chip-${s1}">${STEP_CHIP[s1]}</span>` : ""}</div>
-        <p>${esc(x.n)}</p><div class="fts-calstep-b">${x.b.map(([l, on, tt], j) => `<button class="btn ${j ? "btn-ghost" : s1 === "done" ? "btn-ghost" : "btn-navy"} btn-sm" type="button"${tt ? ` title="${esc(tt)}"` : ""} onclick="${on}">${s1 === "done" && !j ? "👁 Review" : esc(l)}</button>`).join(" ")}</div></li>`; }).join("")}</ol></div>`;
+    <ol class="fts-calsteps">${stepsHtml(steps, 1)}</ol></div>`;
   return {h, days: all, status};
+}
+function stepsHtml(steps, from){
+  return steps.map((x, i) => { const s1 = isTrainee() && TOOL_STATUS[x.id] ? TOOL_STATUS[x.id]() : "";
+    return `<li class="fts-calstep${s1 ? " is-" + s1 : ""}"><div class="fts-calstep-h"><b>${from ? `${i + from}. ` : ""}${esc(x.t)}</b>${s1 ? `<span class="fts-chip fts-chip-${s1}">${STEP_CHIP[s1]}</span>` : ""}</div>
+      <p>${esc(x.n)}</p><div class="fts-calstep-b">${x.b.map(([l, on, tt], j) => `<button class="btn ${j ? "btn-ghost" : s1 === "done" ? "btn-ghost" : "btn-navy"} btn-sm" type="button"${tt ? ` title="${esc(tt)}"` : ""} onclick="${on}">${s1 === "done" && !j ? "👁 Review" : esc(l)}</button>`).join(" ")}</div></li>`; }).join("");
 }
 
 /* ---------- the cards, filed by training day ---------- */
@@ -201,7 +213,7 @@ const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([
 function labItems(){
   const out = [], push = (html, meta) => out.push(...mark(html, meta));
   const tool = (fn, id, type) => typeof window[fn] === "function" && toolOn(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type}) : 0;
-  if(window.FTSessions){ push(FTSessions.cards()); push(FTSessions.trainerCards()); }
+  if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
   // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
   // Google Calendar Simulator, each recorded on the Booking Rule Check). Each step keeps its own page and its own state.
