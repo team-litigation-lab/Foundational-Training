@@ -963,8 +963,9 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button onclick="FTBatchSheet.archive()" title="Archive ${e(B.batch)} when its training is finished: it leaves the active batches; nothing is deleted">📦 Archive this batch</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
-      <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+      <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>
+        ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
@@ -983,6 +984,19 @@ function renderSheet(){
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; B.sel = null; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
+  // 📦 Archive batch (the batch menu): the archive dialog for the batch on screen (js/ft-batch-admin.js confirmArchiveBatch: Google
+  // Drive backup, then the clear, or 🗑 Delete the batch), on the trainee list it reads; the sheet reads its trainees again after
+  async archive(){
+    if(!adminOn() || meOn() || typeof window.confirmArchiveBatch !== "function") return;
+    if(!(state.adminDataAll || state.adminData) && typeof window.loadAdminLedger === "function"){ try{ await window.loadAdminLedger(); }catch(err){ /* the dialog says if nothing is there */ } }
+    const p = (B.people || []).find(x => bLabel(x.batch) === B.batch);
+    const key = p && typeof window.batchKey === "function" ? window.batchKey(p) : (p ? p.batch : B.batch);
+    window.confirmArchiveBatch(key);
+    // (when the dialog closes, archived or not: read the batches again)
+    const ov = document.querySelector(".fba-ov"); if(!ov || typeof MutationObserver !== "function") return;
+    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.picked = false; render(); } });
+    mo.observe(document.body, {childList: true});
+  },
   batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
@@ -1142,13 +1156,6 @@ window.FTBatchSheet = {
   linksPct(id){ try{ if(!B.data || !B.data.rec || !B.data.rec[id]) return null; const p = people().find(x => x.id === id); if(!p) return null;
     const {L} = linkState(p); if(LINKS.every(([q]) => L[q].st === "none")) return null;
     return Math.round(LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length / LINKS.length * 100); }catch(err){ return null; } },
-  // 📦 Archive this batch (the menu bar): the archive dialog (js/ft-batch-admin.js) reads the whole roster, read first if needed
-  async archive(){
-    if(!adminOn() || typeof window.confirmArchiveBatch !== "function") return;
-    if(typeof state === "object" && !state.adminData && typeof loadAdminLedger === "function"){ try{ await loadAdminLedger(); }catch(err){} }
-    const p = (B.people || []).find(x => bLabel(x.batch) === B.batch), key = p && typeof batchKey === "function" ? batchKey({batch: p.batch}) : B.batch;
-    return window.confirmArchiveBatch(key);
-  },
   // ▸/▾ Daily outputs: a trainee's row, a day's column, all of them
   ofRow(id){ const F = ofold(); F.rows[id] = !rowOpen(id); ofoldSave(); rerender(); },
   ofDay(d){ const F = ofold(); if(F.days[d]) delete F.days[d]; else F.days[d] = true; ofoldSave(); rerender(); },
@@ -1248,6 +1255,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-sum b{font-size:16px;} .bs-wait{color:#B06000;} .bs-at{margin-left:auto;color:#5F6368;font-size:12.5px;}
 .bs-jump a{color:#1A73E8;text-decoration:none;font-weight:700;} .bs-jump a:hover{text-decoration:underline;}
 .bs-sec{padding:14px 14px 4px;border-top:1px solid #E1E3E1;scroll-margin-top:12px;}
+.gs-batch.bs-batchmenu{gap:8px;flex-wrap:wrap;} .bs-batchmenu label{display:inline-flex;align-items:center;gap:6px;} .bs-archive{white-space:nowrap;}
 .bs-h{margin:0 0 2px;font:700 18px Arial,sans-serif;color:#1F1F1F;} .bs-h span{font:400 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-note{margin:0 0 8px;font:13.5px Arial,sans-serif;color:#444746;}
 .bs-period select{font:13px Arial,sans-serif;padding:3px 6px;border:1px solid #C4C7C5;border-radius:4px;margin:0 6px 0 4px;}

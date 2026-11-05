@@ -49,7 +49,7 @@ const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Open Lessons", lab:"🛠
 const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
-     `Check the new batch is the only active one; older batches are archived automatically, and one still active can be archived with 📦 Archive this batch in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} (pick it in the Batch dropdown).`,
+     `Check the new batch is the only active one; older batches are archived automatically, and one still active can be archived with 📦 Archive batch, beside the Batch picker in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")}.`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
    steps:[`Approve each new registration on the Main Portal: Master Control → Registrations. Approve only names on the batch list: a trainee the Portal approves is approved here when they open the program.`,
@@ -80,7 +80,7 @@ const MAP = [
      `See every grade in one table in ${go("batchsheet","📋 Batch Sheet")} → 🏅 Scores. Coach anyone in the red before the next week.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
    steps:[`The certificate uses the name the trainee registered with on the Main Portal: fix a misspelling there.`,
-     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⬇ Download; 📦 Archive this batch also saves a backup to Google Drive.`,
+     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⬇ Download; 📦 Archive batch also saves a backup to Google Drive.`,
      `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
