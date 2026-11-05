@@ -504,6 +504,26 @@ function canRead(tok, key) {
 // a Monday, on or after the activity's own July 6, 2026; anchorsOk keeps only those of a record's anchors.
 const okAnchor = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= "2026-07-06" && (() => { const d = new Date(iso + "T00:00:00Z"); return !isNaN(d) && d.toISOString().slice(0, 10) === iso && d.getUTCDay() === 1; })();
 const anchorsOk = (a) => Object.fromEntries(Object.entries(a && typeof a === "object" && !Array.isArray(a) ? a : {}).filter(([k, v]) => /^[a-z0-9-]{1,40}$/.test(k) && okAnchor(v)));
+// A trainee's own records that are kept as sent (a plain object, at most so many characters): <kind>:<id> → [max, message]
+const PLAIN_RECORDS = {
+  // The trainee's Google Drive links (js/ft-drive.js): their Assessment and Activities Folder, Task Tracker sheet, Monitoring Sheet
+  // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
+  drive: [200000, "The links are too large to save"],
+  // LOR Drafting Activity (js/ft-lor.js): the trainee's own drafts of the two letters. The case they
+  // were assigned is in lorassign:<id>, which only admins write.
+  lor: [300000, "The drafts are too large to save"],
+  // 📄 the assessments answered on the platform (js/ft-assess.js): the trainee's own answers. The grades are the Worker's
+  // (/api/assess/grade), in trackerreview:<id>, which a trainee never writes.
+  assess: [200000, "The answers are too large to save"],
+  // Transcription Activity (js/ft-transcribe.js): the trainee's own minutes, file name, link and report-back for
+  // the two interview recordings. The trainer's score is in labreview:<id> (Trainer Inputs), which only admins write.
+  transcribe: [300000, "The minutes are too large to save"],
+  // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
+  learn: [400000, "The notes are too large to save"],
+  // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
+  // reviews are in labreview:<id>, which only admins write.
+  sessions: [400000, "The sessions record is too large to save"]
+};
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
   const id = tok.id;
@@ -572,31 +592,9 @@ async function traineeWrite(env, tok, key, value) {
     }
     await kv.put(key, JSON.stringify(incoming)); return null;
   }
-  if (key === `drive:${id}`) {
-    // The trainee's Google Drive links (js/ft-drive.js): their Assessment and Activities Folder, Task Tracker sheet, Monitoring Sheet
-    // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
-    if (value.length > 200000) return "The links are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `lor:${id}`) {
-    // LOR Drafting Activity (js/ft-lor.js): the trainee's own drafts of the two letters. The case they
-    // were assigned is in lorassign:<id>, which only admins write.
-    if (value.length > 300000) return "The drafts are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `assess:${id}`) {
-    // 📄 the assessments answered on the platform (js/ft-assess.js): the trainee's own answers. The grades are the Worker's
-    // (/api/assess/grade), in trackerreview:<id>, which a trainee never writes.
-    if (value.length > 200000) return "The answers are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `transcribe:${id}`) {
-    // Transcription Activity (js/ft-transcribe.js): the trainee's own minutes, file name, link and report-back for
-    // the two interview recordings. The trainer's score is in labreview:<id> (Trainer Inputs), which only admins write.
-    if (value.length > 300000) return "The minutes are too large to save";
+  for (const [kind, [max, msg]] of Object.entries(PLAIN_RECORDS)) {
+    if (key !== `${kind}:${id}`) continue;
+    if (value.length > max) return msg;
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }
@@ -694,24 +692,11 @@ async function traineeWrite(env, tok, key, value) {
     if (!incoming || typeof incoming !== "object" || !Array.isArray(incoming.plays)) return "Invalid record";
     await kv.put(key, value); return null;
   }
-  if (key === `learn:${id}`) {
-    // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
-    if (value.length > 400000) return "The notes are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
   if (key.startsWith(`guide:${id}:`)) {
     // Process Guide (js/ft-process-guide.js): one guide per demo, guide:<id>:<guide id>, with its pasted
     // screenshots (shrunk in the browser). The page cleans the HTML before it shows it.
     if (!/^guide:[^:]+:[a-z0-9-]{1,40}$/.test(key)) return "Not allowed";
     if (value.length > 5000000) return "The guide is too large to save: use fewer or smaller screenshots";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `sessions:${id}`) {
-    // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
-    // reviews are in labreview:<id>, which only admins write.
-    if (value.length > 400000) return "The sessions record is too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }
