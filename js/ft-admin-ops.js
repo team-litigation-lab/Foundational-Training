@@ -3,7 +3,7 @@
      📋 SOPs                 the program's standard operating procedures, written and kept by trainers
      🗄 Database Maintenance clear the data that is only needed for a while; the records are kept
    The spec's other two are already their own tabs: the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
-   Trainee Audit, 📋 Task Trackers and 📒 Monitoring Sheets; attendance is taken on the Training
+   📋 Batch Sheet's ✅ Compliance and 📤 Daily outputs, and 📒 Monitoring Sheets; attendance is taken on the Training
    Portal, Master Control → 🕘 Attendance, per program per batch).
    Loaded after js/ft-firms.js (window.ftAdminTab) and before js/ft-program.js, which puts these
    three in the Admin section of the Admin screen's tab bar.
@@ -49,7 +49,7 @@ const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Open Lessons", lab:"🛠
 const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
-     `Check the new batch is the only active one; older batches are archived automatically.`,
+     `Check the new batch is the only active one; older batches are archived automatically, and one still active can be archived with 📦 Archive batch, beside the Batch picker in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")}.`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
    steps:[`Approve each new registration on the Main Portal: Master Control → Registrations. Approve only names on the batch list: a trainee the Portal approves is approved here when they open the program.`,
@@ -70,7 +70,7 @@ const MAP = [
      `Calendaring work, the two activities (Attorney Calendar and Calendar Mock Calls): ${go("calendaring","📅 Calendaring")}.`,
      `Call Listening: ${go("listening","🎧 Call Listening")}.`]},
   {stage:"7 · Daily records", trainee:"Fills in the Daily Task Tracker and the Monitoring Sheet, and takes the typing and spelling tests.",
-   steps:[`They are checked by themselves at the end of every training day; see the results in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 📤 Daily outputs, and the sheets in ${go("monitor","📒 Monitoring Sheets")} and ${go("drivetrackers","📁 Drive Trackers")}.`,
+   steps:[`They are checked by themselves at the end of every training day; see the results in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 📤 Daily outputs, and ✅ Compliance (the six Drive links), and the sheets in ${go("monitor","📒 Monitoring Sheets")}.`,
      `Typing and spelling compliance: ${SEC.sc} → ${go("skilltests","🧪 Typing & Spelling")}.`]},
   {stage:"8 · Feedback, the same day", trainee:"Sees only the feedback a trainer has sent.",
    steps:[     `Score transcriptions, video notes, process guides and letters in ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")}. Write it in the house voice set in ${go("fbstyle","🗣 Feedback Style")}.`,
@@ -80,7 +80,7 @@ const MAP = [
      `See every grade in one table in ${go("batchsheet","📋 Batch Sheet")} → 🏅 Scores. Coach anyone in the red before the next week.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
    steps:[`The certificate uses the name the trainee registered with on the Main Portal: fix a misspelling there.`,
-     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⬇ Download.`,
+     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⬇ Download; 📦 Archive batch also saves a backup to Google Drive.`,
      `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
