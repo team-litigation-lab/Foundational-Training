@@ -125,6 +125,22 @@ const failures = []; const fail = m => failures.push(m);
   if (!/Batch B\d{6}’s files can’t be opened yet/.test(sb) || !/Ada Active/.test(sb) || !/lsh-training-drive@ci\.iam\.gserviceaccount\.com/.test(sb) || !/One share covers all its trainees/.test(sb)) fail(`no one-share-per-batch prompt naming the batch, the trainee and the address: ${sb.slice(0, 300)}`);
   await page.evaluate(() => FTBatchSheet.recheckLinks()); await page.waitForTimeout(1500);
   if (!verified.includes(ids.Ada)) fail(`🔁 check them now didn't check Ada's links again: ${verified}`);
+  // 🔁 Test again: the connection, then every link that isn't ✓ checked again now, and a toast with what it found
+  verified.length = 0;
+  await page.evaluate(() => { window.__toasts = []; const t = window.toast; window.toast = (m, ...a) => { window.__toasts.push(String(m)); return t(m, ...a); }; });
+  await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(2500);
+  const said = await page.evaluate(() => window.__toasts.join(' | '));
+  if (!verified.includes(ids.Ada) || !/Google Drive is connected\. Checked 1 trainee’s links again/.test(said)) fail(`🔁 Test again didn't check the links that aren't ✓ again, or didn't say what it found: ${verified} / ${said}`);
+  // when the rest of the batch opens, the prompt names the trainee whose own files are elsewhere, not the batch folder
+  const okV = () => ({ ok: true, mine: true, v: 2, url: '' });
+  for (const who of ['Ben', 'Cy']) {
+    const dl = { monitor: 'https://docs.google.com/document/d/' + who + 'Mon000000001/edit', tam: 'https://docs.google.com/document/d/' + who + 'Tam000000001/edit' };
+    await put('drive:' + ids[who], Object.assign({ days: {} }, dl));
+    await put('trackerreview:' + ids[who], { days: {}, verify: { monitor: Object.assign(okV(), { url: dl.monitor }), tam: Object.assign(okV(), { url: dl.tam }) }, verifyAt: new Date().toISOString() });
+  }
+  await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
+  const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
+  if (!/Ada Active’s files can’t be opened/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/move the files into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's own files: ${sb2.slice(0, 300)}`);
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
