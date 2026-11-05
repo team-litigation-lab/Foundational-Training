@@ -102,6 +102,9 @@ function adminPassStatus(env) {
   return "MASTER_ADMIN_PASSWORD" + (ignored.length ? ` (had ${ignored.join(", ")}: ignored)` : "") + odd;
 }
 function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
+// (a sign-in — a trainer's or a trainee's — lasts a year: no one is signed out by the clock, only by 🚪 Log out, a revoked access
+// or offboarding, which the Worker checks on every request)
+const SESSION_HOURS = 24 * 365;
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
   const body = `${role}.${encodeURIComponent(subject)}.${exp}`;
@@ -2418,7 +2421,7 @@ export default {
         await new Promise((r) => setTimeout(r, 400)); // slow down guessing
         const given = normPass(passphrase), want = normPass(adminPass(env));
         if (!given || !want || !safeEqual(given, want)) return json({ error: "Incorrect password" }, 401);
-        return json({ token: await makeToken(env, "a", "admin", 12) });
+        return json({ token: await makeToken(env, "a", "admin", SESSION_HOURS) });
       }
       // The trainee's session for a name + batch: their record id (new or legacy form) and token.
       const traineeSession = async (name, batch, id) => {
@@ -2449,7 +2452,7 @@ export default {
         else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
         if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
-        return json({ id: chosen, token: await makeToken(env, "t", chosen, 24 * 30), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
+        return json({ id: chosen, token: await makeToken(env, "t", chosen, SESSION_HOURS), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
       if (path === "/api/auth/trainee") {
         if (!secure) return json({ error: "not-configured" }, 501);
@@ -2483,7 +2486,7 @@ export default {
         if (!who) return json({ error: why.r === "signature"
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
-        if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
+        if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", SESSION_HOURS) });
         if (who.admin) {
           // Single sign-on for trainers too: an administrator signed in on the Main Portal opens every program as a
           // trainer, with no second password here. Their ticket works once, so a copy of the link (browser history,
@@ -2491,7 +2494,7 @@ export default {
           if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
           // (the token keeps the trainer's name, hub:<name>: a trainer who came from the main Hub gets the Portal's simulators
           // signed in too, /api/auth/tool-ticket)
-          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), 12) });
+          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), SESSION_HOURS) });
         }
         // 🔁 a Batch ID changed on the Portal: the trainee's ID is their name + batch, so the new batch would be a second,
         // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
@@ -2503,7 +2506,7 @@ export default {
           await withFull(moved.id, moved.rec);
           const blockedM = (await blockedIds(env))[moved.id];
           if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
-          return json({ id: moved.id, token: await makeToken(env, "t", moved.id, 24 * 30), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
+          return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
             name: who.name, first: who.first, last: who.last });
         }
         const res = await traineeSession(who.name, who.batch, "");

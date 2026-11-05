@@ -104,7 +104,8 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   if (!/Week 1 · rank 2 of 9/.test(mf) || !/4\.32\/5/.test(mf) || !/35\/40 → 4\.38\/5/.test(mf)) fail(`📬 My Feedback doesn't show the shared Weekly Ranking row: ${mf.slice(0, 600)}`);
   const pages = await page.evaluate(() => JSON.stringify((window.LSH_PROGRAM || {}).modules || []));
   if (/"myfeedback"/.test(pages)) fail('📬 My Feedback still has its own page in the menu');
-  if (await page.evaluate(() => state.view) !== 'scorecard' || !/My Focus/.test(mf)) fail('📬 My Feedback is not on 🏅 My Performance with 🎯 My Focus');
+  // (🏅 My Performance is part of 📋 My Progress & Performance, #/mysheet)
+  if (!['scorecard', 'mysheet'].includes(await page.evaluate(() => state.view)) || !/My Focus/.test(mf) || !/My Performance/.test(mf)) fail('📬 My Feedback is not on 🏅 My Performance with 🎯 My Focus');
   // 🏅 My Performance
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   const sc = await page.evaluate(() => document.querySelector('main').innerText);

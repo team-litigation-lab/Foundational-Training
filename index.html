@@ -5706,13 +5706,14 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
    MASTER_ADMIN_PASSWORD set, the portal runs in the old open mode.
    ============================================================ */
 state.authToken = (()=>{ try{ return localStorage.getItem("lsh_auth_token")||""; }catch(e){ return ""; } })();
-state.adminToken = (()=>{ try{ return sessionStorage.getItem("lsh_admin_token")||""; }catch(e){ return ""; } })();
+// (a trainer stays signed in on this browser — closing it doesn't sign them out — until 🚪 Log out)
+state.adminToken = (()=>{ try{ return localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||""; }catch(e){ return ""; } })();
 function authHeaders(){
   const t = (state.isAdmin && state.adminToken) || state.authToken;
   return Object.assign({"Content-Type":"application/json"}, t ? {"Authorization":"Bearer "+t} : {});
 }
 function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setItem("lsh_auth_token", t) : localStorage.removeItem("lsh_auth_token"); }catch(e){} }
-function setAdminToken(t){ state.adminToken = t||""; try{ t ? sessionStorage.setItem("lsh_admin_token", t) : sessionStorage.removeItem("lsh_admin_token"); }catch(e){} }
+function setAdminToken(t){ state.adminToken = t||""; try{ if(t){ localStorage.setItem("lsh_admin_token", t); sessionStorage.removeItem("lsh_admin_token"); } else { localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); } }catch(e){} }
 // General rule: a trainee sign-in is never an admin session. A leftover admin token in this browser
 // (a trainer who signed in on the same machine, an earlier test) used to leave 🏅 Scorecards, 👁 Switch
 // View and 🛡 Admin in a trainee's top bar. Whenever a trainee is signed in, the admin session is dropped.
@@ -18938,7 +18939,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.05-f0a4bd76";
+var APP_BUILD = "ft-2026.11.05-b193bc42";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -19012,7 +19013,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-calweek-core.js?v=aa11fcb54a"></script>
 <script src="/js/ft-calweek.js?v=91865d6c8a"></script>
 <script src="/js/ft-calcheck.js?v=ce110cce18"></script>
-<script src="/js/ft-listening.js?v=c5a4d82ad7"></script>
+<script src="/js/ft-listening.js?v=fe87bd295a"></script>
 <script src="/js/ft-todo.js?v=54c20efd75"></script>
 <script src="/js/ft-next-step.js?v=a4448878a1"></script>
 <script src="/js/ft-day-decks.js?v=4befa55af0"></script>

@@ -430,7 +430,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!oc) fail('📤 Daily outputs has no day cell with the activities for Ada');
   else {
     const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
-    if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
+    // (📏 following instructions too: the day's naming, saving route and deliverables on time)
+    if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
     if (by('tracker').box !== '50%' || !/0 of 1 checks met; to fix: Every open task has its Daily Note/.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
     if (by('tests').box !== '67%' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
     if (by('outputs').box !== '0%' || !/No output link submitted/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
@@ -445,8 +446,8 @@ const failures = []; const fail = m => failures.push(m);
       const tr = [...document.querySelectorAll('#bs-outputs tbody tr')].find(r => /Ada/.test(r.innerText)); return { tr, c: ci > 0 && tr && tr.querySelector(`td.bs-ocell[data-c="${ci}"]`), ci }; };
     const wait = () => new Promise(r => setTimeout(r, 300)), out = {};
     FTBatchSheet.ofRow(id); await wait(); let x = cell();
-    out.rowFolded = !!(x.c && !x.c.querySelector('.bs-oacts') && x.c.querySelectorAll('.bs-omini .bs-sbox').length === 4 && x.tr.classList.contains('bs-orow-f'));
-    FTBatchSheet.ofRow(id); await wait(); x = cell(); out.rowOpen = !!(x.c && x.c.querySelectorAll('.bs-oacts li').length === 4);
+    out.rowFolded = !!(x.c && !x.c.querySelector('.bs-oacts') && x.c.querySelectorAll('.bs-omini .bs-sbox').length === 5 && x.tr.classList.contains('bs-orow-f'));
+    FTBatchSheet.ofRow(id); await wait(); x = cell(); out.rowOpen = !!(x.c && x.c.querySelectorAll('.bs-oacts li').length === 5);
     const btn = document.querySelectorAll('#bs-outputs thead .gs-head th')[x.ci + 1].querySelector('.bs-ofold-btn'); if (btn) btn.click(); await wait(); x = cell();
     out.dayFolded = !!(x.c && x.c.classList.contains('bs-ocol-f') && !x.c.querySelector('.bs-oacts') && !x.c.querySelector('.bs-omini'));
     FTBatchSheet.ofDays(false); await wait(); x = cell(); out.dayOpen = !!(x.c && x.c.querySelector('.bs-oacts'));
