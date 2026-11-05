@@ -9,7 +9,7 @@
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
        (js/lsh-tool-links.js). The Call Simulator is ☎ LSH Ring Channel's (the training phone) and the Calendaring
        Simulators are the Main Portal's: both open in their own tab, on the trainee's Portal sign-in. New tab ↗: its own tab.
-     • 🗓 Attorney Calendar Management Activity (Day 5): a card among the Practice Sessions (window.ftCalActivityCard,
+     • 🗓 Attorney Calendar Management Activity (Day 5): one card with its three steps (CAL_CARDS; was window.ftCalActivityCard,
        js/ft-calendar.js) that opens this platform's own 📅 Calendaring Simulators on the activity (goto('calsim','attorney-activity')),
        where it is checked, submitted and graded.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
@@ -133,6 +133,38 @@ const guideStatus = gid => { const g = R("guide:" + gid) || {}; return st(!!g.su
 const drillStatus = sid => { const runs = (((R("drills:") || {}).runs) || []).filter(r => r.set === sid);
   return st(runs.some(r => r.total && r.score / r.total * 100 >= PASS_PCT), runs.length > 0); };
 
+/* ---------- 📅 the calendaring cards: one per day, its steps in order ---------- */
+const CAL_CARDS = [
+  {kicker: "Day 5 · Calendar Management", title: "🗓 Attorney Calendar Management Activity",
+   note: "Manage the attorney’s Google Calendar in Pacific Time, check every event you entered, then book next week’s calendar under the attorney’s rules. Three steps, in this order:",
+   steps: [
+     {id: "calactivity", t: "Do the activity", n: "The ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes.",
+      b: [["Open the activity", "goto('calsim','attorney-activity')"], ["📅 Standard Training - Calendar Management Activity ↗", "window.ftsCalsim ? ftsCalsim('activity') : 0", "Opens on the Main Portal’s Google Calendar Simulator, in its own tab"]]},
+     {id: "calcheck", t: "Check your calendar", n: "Enter what each event holds: every field is checked against the activity, then submit it.", b: [["Check my calendar", "goto('calcheck')"]]},
+     {id: "calweek", t: "Book next week’s calendar", n: "The Standard Training - Calendaring Activity: the tasks booked on the attorney’s calendar for next week.", b: [["Open the calendar", "goto('calweek')"]]}]},
+  {kicker: "Day 6 · Calendar Management", title: "📅 Calendar Management Mock Calls",
+   note: "Book each mock call’s appointment on the Google Calendar Simulator, then record the booking so it is checked against the scheduling rules.",
+   steps: [
+     {id: "calsim", t: "Book on the Google Calendar Simulator", n: "The time zone set on every appointment.", b: [["📅 Open the Google Calendar Simulator ↗", "window.ftsCalsim ? ftsCalsim('standard') : 0", "Opens on the Main Portal, in its own tab"]], free: true},
+     {id: "calrules", t: "Check each booking", n: "Consult days, phone hours, buffers, length limits, EST, the reminder: checked on the spot.", b: [["Check a booking", "goto('calrules')"]]}]}
+];
+const STEP_CHIP = {done: "✓ Done", live: "🟢 In progress", todo: "Not started"};
+function calCard(c){
+  const days = id => window.FTDays ? FTDays.forTool(id) : [];
+  // (a step shows once its day is open; the simulator step, kept on no record here, with the card's other steps)
+  const steps = c.steps.filter(x => x.free ? c.steps.some(y => !y.free && toolOn(y.id)) : toolOn(x.id));
+  if(!steps.length) return null;
+  const graded = steps.filter(x => TOOL_STATUS[x.id]), sts = graded.map(x => isTrainee() ? TOOL_STATUS[x.id]() : "todo");
+  const status = sts.length && sts.every(x => x === "done") ? "done" : sts.some(x => x !== "todo") ? "live" : "todo";
+  const all = [...new Set(steps.flatMap(x => days(x.id)))].sort((a, b) => a - b);
+  const h = `<div class="card fts-card fts-calcard"><div class="fts-kicker">${esc(c.kicker)}</div><h3>${c.title}</h3>
+    <p class="fts-note">${esc(c.note)}</p>
+    <ol class="fts-calsteps">${steps.map((x, i) => { const s1 = isTrainee() && TOOL_STATUS[x.id] ? TOOL_STATUS[x.id]() : "";
+      return `<li class="fts-calstep${s1 ? " is-" + s1 : ""}"><div class="fts-calstep-h"><b>${i + 1}. ${esc(x.t)}</b>${s1 ? `<span class="fts-chip fts-chip-${s1}">${STEP_CHIP[s1]}</span>` : ""}</div>
+        <p>${esc(x.n)}</p><div class="fts-calstep-b">${x.b.map(([l, on, tt], j) => `<button class="btn ${j ? "btn-ghost" : s1 === "done" ? "btn-ghost" : "btn-navy"} btn-sm" type="button"${tt ? ` title="${esc(tt)}"` : ""} onclick="${on}">${s1 === "done" && !j ? "👁 Review" : esc(l)}</button>`).join(" ")}</div></li>`; }).join("")}</ol></div>`;
+  return {h, days: all, status};
+}
+
 /* ---------- the cards, filed by training day ---------- */
 const typeTag = {session: "🟢 Practice Session", trainer: "🧑‍🏫 With your trainer", tool: "🧰 Activity", listening: "🎧 Call Listening", calendar: "📅 Calendar", drafting: "🧰 Drafting Tools", any: "📚 Any day"};
 // a card's root gets its days, its type and its state: ✓ Done relabels its first button 👁 Review (the same page, on the work handed in)
@@ -170,8 +202,10 @@ function labItems(){
   const out = [], push = (html, meta) => out.push(...mark(html, meta));
   const tool = (fn, id, type) => typeof window[fn] === "function" && toolOn(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type}) : 0;
   if(window.FTSessions){ push(FTSessions.cards()); push(FTSessions.trainerCards()); }
-  tool("ftCalActivityCard", "calactivity", "calendar"); tool("ftCalCheckCard", "calcheck", "calendar");
-  tool("ftCalWeekCard", "calweek", "calendar"); tool("ftCalRulesCard", "calrules", "calendar");
+  // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
+  // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
+  // Google Calendar Simulator, each recorded on the Booking Rule Check). Each step keeps its own page and its own state.
+  CAL_CARDS.forEach(c => { const html = calCard(c); if(html) push(html.h, {days: html.days, status: html.status, type: "calendar"}); });
   tool("ftTranscribeCard", "transcribe", "drafting"); tool("ftLorCard", "lor", "drafting");
   const DAYMAX = window.FTDays ? FTDays.COUNT : 16;
   // the MedLOR + HIPAA packet (Day 14) and the Lien Balance Verification (Day 16): the same Portal tool, on their own day
@@ -377,12 +411,20 @@ main.main-sims .fts-card h3{font-size:15.5px;}
 main.main-sims .fts-note{font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 main.main-sims .fts-tool-act{margin-top:auto;padding-top:4px;}
 .fts-type{font-size:11px;font-weight:700;color:var(--navy);opacity:.75;letter-spacing:.02em;}
+.fts-calsteps{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.fts-calstep{border:1px solid var(--line,#e5e7eb);border-left:4px solid #DB8437;border-radius:10px;padding:8px 10px;background:#fff;}
+.fts-calstep.is-done{border-left-color:#16a34a;} .fts-calstep.is-live{border-left-color:#2563eb;}
+.fts-calstep-h{display:flex;align-items:center;gap:8px;} .fts-calstep-h b{color:var(--navy);font-size:14px;}
+.fts-calstep p{margin:3px 0 7px;font-size:13px;color:var(--ink-soft);line-height:1.4;}
+.fts-calstep-b{display:flex;flex-wrap:wrap;gap:6px;}
 .fts-chip{margin-left:auto;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;background:#f1f5f9;color:var(--ink-soft);white-space:nowrap;}
 .fts-chip-done{background:#16a34a;color:#fff;} .fts-chip-live{background:#dbeafe;color:#1e40af;} .fts-chip-redo{background:#fef3c7;color:#92400e;}
 main.main-sims .fts-card.fts-st-done{border-color:#86efac;box-shadow:inset 4px 0 0 #16a34a;}
 /* a card says what it is and opens it: its long lists (templates, guides, recordings) and samples are inside the tool */
 main.main-sims .fts-card ul, main.main-sims .fts-card ol, main.main-sims .fts-label, main.main-sims .fts-sample, main.main-sims .fts-file{display:none !important;}
 main.main-sims .fts-card details.ti-rub-card ul{display:block !important;}
+main.main-sims .fts-card ol.fts-calsteps{display:flex !important;}
+@media(min-width:760px){ main.main-sims .fts-card.fts-calcard{grid-column:span 2;} }
 /* the same line on every trainer card (the section says it once): hidden here; the trainer's own comment still shows */
 main.main-sims .fts-note-std{display:none !important;}
 @media(max-width:640px){ .fts-jumps{justify-content:flex-start;} .fts-bar{position:static;} main.main-sims{padding:12px 16px 32px;} }
