@@ -28,6 +28,8 @@
 if(typeof window.ftAdminTab !== "function") return;
 const TAB = "batchsheet";
 const e = v => esc(String(v == null ? "" : v));
+// (a link the trainee saved goes into an href only as an http(s) address, escaped: a javascript: one is never a link)
+const safeHref = u => /^https?:\/\//i.test(String(u || "").trim()) ? e(String(u).trim()) : "";
 const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", sel: null, recent: 14, fix: null};
 const canon = v => typeof canonicalBatch === "function" ? canonicalBatch(v) : "";
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
@@ -61,7 +63,7 @@ async function loadPeople(){
     B.all = list.filter(r => r && r.id);   // (every account, archived too: 👥 Duplicate accounts looks through them)
     // trainees the tidy-up archived on its own (js/ft-admin-tidy.js), not a trainer: offered back with ↩ Bring them back
     B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
-      .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
+      .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || ""), key: typeof batchKey === "function" ? batchKey(r) : (r.batch || "")}));   // (key: the tidy-up's own batch key, cleaned)
     // (👥 a revoked trainee — offboarded, rejected, on the block list — leaves the sheet: js/ft-roster.js)
     B.people = list.filter(r => r && r.id && !r.archived && !r.rejected && !r.purgedAt && (r.batch || r.registeredAt) && (!window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})))
       .map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", status: statusOf(r), registeredAt: r.registeredAt || "", registeredAtWas: r.registeredAtFixedAt ? r.registeredAtWas || "" : null, lastActive: r.lastActive || "",
@@ -704,7 +706,7 @@ function shareBanner(){
   autoRecheck(withIssues.filter(r => r.its.some(it => it.x.st !== "none" || it.x.nf)).map(r => r.p));
   const access = withIssues.filter(r => r.its.some(it => it.x.st === "bad" && ACCESS((it.x.c || {}).err)));
   const opens = ppl.filter(p => (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
-  const fixes = (p, it) => `<span class="bs-share-acts">${it.x.link ? `<a class="btn btn-ghost btn-sm" href="${e(it.x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></span>`;
+  const fixes = (p, it) => `<span class="bs-share-acts">${safeHref(it.x.link) ? `<a class="btn btn-ghost btn-sm" href="${safeHref(it.x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></span>`;
   const list = `<ul class="bs-share-list">${withIssues.map(({p, its}) => `<li><b>${e(p.name)}</b> <small>(${LINKS.length - its.length} of ${LINKS.length} links right)</small><ul>${its.map(it => `<li><b>${e(it.l)}</b>: ${issueWhy(p, it)}${(it.x.c || {}).at ? ` <small>· checked ${e(when(it.x.c.at))}</small>` : ""} ${fixes(p, it)}</li>`).join("")}</ul></li>`).join("")}</ul>`;
   const recheck = `<button class="btn btn-navy btn-sm" type="button" ${B.rechecking || B.sync ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button>
     <small class="bs-share-auto">${B.autoChk ? "🔁 Checking the flagged links again…" : B.autoChkAt ? `Checked again by itself ${e(when(new Date(B.autoChkAt).toISOString()))}; it checks again every few minutes while this page is open, so a link the VA fixes drops off.` : ""}</small>`;
@@ -1277,7 +1279,10 @@ window.FTBatchSheet = {
         const next = Object.assign({}, rec, {archived: false, restoredAt: new Date().toISOString()}); delete next.archivedAt; delete next.autoArchived;
         if(await sharedSet("trainee:" + p.id, next) !== false) n++; }catch(err){ /* the next trainee */ }
     }
-    try{ const k = "settings:autoarchive", cur = (await sharedGet(k)) || {}; cur.done = Object.assign({}, cur.done || {}, {[B.batch]: cur.done && cur.done[B.batch] || new Date().toISOString()}); cur.updatedAt = new Date().toISOString(); await sharedSet(k, cur); }catch(err){}
+    // (marked under the tidy-up's cleaned key too: a batch spelt "b103026" is checked as done["B103026"], so it isn't archived again)
+    try{ const k = "settings:autoarchive", cur = (await sharedGet(k)) || {}, now = new Date().toISOString(), done = Object.assign({}, cur.done || {});
+      for(const bk of new Set([B.batch, ...back.map(p => p.key).filter(Boolean)])) done[bk] = done[bk] || now;
+      cur.done = done; cur.updatedAt = now; await sharedSet(k, cur); }catch(err){}
     B.backBusy = false;
     toast(`✓ ${n} trainee${n === 1 ? " is" : "s are"} back in ${B.batch}.`);
     if(typeof state === "object") state.adminData = null;
