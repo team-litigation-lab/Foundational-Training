@@ -280,6 +280,20 @@ const failures = []; const fail = (m) => failures.push(m);
       if (!r2.body || !r2.body.matched || r2.body.check.pct >= 100 || !r2.body.check.rules.some(r => r.id === 'learn' && !r.pass)) fail(`a partial EOD isn't marked down with what's missing: ${JSON.stringify(r2.body).slice(0, 300)}`);
       const r3 = await call('/api/eod/receive', { from: 'Someone Else <x@y.com>', subject: 'Daily Report', text: 'hello' }, admin);
       if (!r3.body || r3.body.matched !== false || !((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Someone Else/.test(x.from))) fail('an EOD no trainee matches isn\'t kept for the trainer');
+      // 📧 EOD Inbox: the trainer counts an unmatched EOD as a trainee's (kept for the day it was sent), or dismisses one
+      const un = (await call('/api/eod/unmatched', {}, admin)).body.items || [], it = un.find(x => /Someone Else/.test(x.from));
+      if ((await call('/api/eod/settle', { at: it && it.at, from: it && it.from, id }, trainee)).status !== 403) fail('a trainee could settle an unmatched EOD');
+      const s1 = await call('/api/eod/settle', { at: it && it.at, from: it && it.from, id, remember: true }, admin);
+      const sd = it ? new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date(it.at)) : '';
+      const se = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[s1.body && s1.body.date] || {}).eod || {};
+      if (!s1.body || !s1.body.matched || s1.body.id !== id || se.from !== 'x@y.com' || se.text !== 'hello') fail(`an assigned EOD wasn't kept as the trainee's: ${JSON.stringify(s1.body).slice(0, 200)} ${JSON.stringify(se).slice(0, 120)} ${sd}`);
+      if (((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Someone Else/.test(x.from))) fail('an assigned EOD is still in the inbox');
+      if (JSON.parse(store.get('ft:drive:' + id)).eodFrom !== 'dee.drive@gmail.com') fail('remembering an address replaced the one the trainee gave');
+      await call('/api/eod/receive', { from: 'Nobody <n@o.com>', subject: 'Spam', text: 'z' }, admin);
+      const it2 = ((await call('/api/eod/unmatched', {}, admin)).body.items || []).find(x => /Nobody/.test(x.from));
+      const s2 = await call('/api/eod/settle', { at: it2 && it2.at, from: it2 && it2.from, dismiss: true }, admin);
+      if (!s2.body || !s2.body.dismissed || ((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Nobody/.test(x.from))) fail('a dismissed EOD is still in the inbox');
+      if ((await call('/api/eod/settle', { at: 'gone', from: 'gone', id }, admin)).status !== 400) fail('settling an EOD no longer in the inbox didn\'t refuse');
       if ((await call('/api/eod/receive', { from: 'x', text: 'y' }, trainee)).status !== 403) fail('a trainee could post an EOD as the platform'); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }

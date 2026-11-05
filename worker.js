@@ -1251,11 +1251,38 @@ async function receiveEod(env, msg) {
     await kv.put("admin:eod-unmatched", JSON.stringify(un));
     return { matched: false };
   }
+  return storeEod(env, id, { text, subject, at, from: addr });
+}
+// an EOD kept as its trainee's for the day it was sent, and that day's compliance worked out again
+async function storeEod(env, id, { text, subject, at, from, remember }) {
+  const kv = kvOf(env), D = TR.ptDate(new Date(at));
   const dv = JSON.parse((await kv.get(`drive:${id}`)) || "null") || { days: {} }; dv.days = dv.days || {};
-  dv.days[D] = Object.assign({}, dv.days[D] || {}, { eod: { text, subject, at, via: "email", from: addr } });
+  dv.days[D] = Object.assign({}, dv.days[D] || {}, { eod: { text, subject, at, via: "email", from } });
+  // (a trainer who assigned an unmatched EOD can keep its address as the trainee's: their next EODs match by it)
+  if (remember && from && !String(dv.eodFrom || "").trim()) dv.eodFrom = from;
   await kv.put(`drive:${id}`, JSON.stringify(dv));
   try { await dailyCompliance(env, id, D); } catch (e) { /* the end of the shift works it out */ }
   return { matched: true, id, date: D, check: TR.checkEod(text, subject, D, at) };
+}
+/* 📧 an EOD no trainee matched, settled by a trainer (Admin → 📧 EOD Inbox): assigned to a trainee (kept as theirs, as if
+   it had matched, optionally remembering the address it came from) or dismissed. The item is named by its time and sender,
+   so a list read before another EOD arrived still points at the right one. */
+async function settleEod(env, { at, from, id, remember, dismiss }) {
+  const kv = kvOf(env);
+  const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }; un.items = un.items || [];
+  const i = un.items.findIndex((x) => x.at === at && x.from === from);
+  if (i < 0) return { error: "That EOD is no longer in the inbox." };
+  const item = un.items[i];
+  let res = { dismissed: true };
+  if (!dismiss) {
+    const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+    if (!id || !rec) return { error: "Pick a trainee." };
+    const addr = ((/<([^>]+)>/.exec(item.from || "") || [])[1] || item.from || "").trim().toLowerCase();
+    res = await storeEod(env, id, { text: item.text || "", subject: item.subject || "", at: item.at, from: addr, remember: !!remember });
+  }
+  un.items.splice(i, 1);
+  await kv.put("admin:eod-unmatched", JSON.stringify(un));
+  return res;
 }
 
 
@@ -2013,6 +2040,8 @@ export default {
       /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
       if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || "").trim() });
       if (path === "/api/eod/unmatched") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); return json(JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }); }
+      // (a trainer settles one: assigned to a trainee, or dismissed — settleEod)
+      if (path === "/api/eod/settle") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); const b = await request.json().catch(() => ({})); const r = await settleEod(env, b); return json(r, r.error ? 400 : 200); }
       // (a trainer's test of the intake without an email: the same as an email arriving)
       if (path === "/api/eod/receive") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); const b = await request.json().catch(() => ({})); return json(await receiveEod(env, b)); }
 
