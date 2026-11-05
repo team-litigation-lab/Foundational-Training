@@ -260,7 +260,7 @@ async function loadAdmin(){
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
   }catch(err){ AD.rows = AD.rows || []; }
-  AD.loading = false; if(state.view === "admin" && state.adminTab === "calrules") render();
+  AD.loading = false; if(state.view === "admin" && ftTabOn("calrules")) render();
 }
 function adminHtml(){
   if(!AD.rows){ if(!AD.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
