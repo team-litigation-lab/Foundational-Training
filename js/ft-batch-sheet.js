@@ -165,7 +165,7 @@ function traineesTable(){
       const st = p.status;
       return [
         {v: p.name, f: `${p.name} · ${B.batch}`, cls: "gs-name"},
-        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 👥 Trainees & Batches, at the foot of this sheet" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
+        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in ⏳ Pending Approvals, at the top of this sheet" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
         {v: (when(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? when(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
@@ -380,19 +380,14 @@ function dayScoresHtml(){
             ${rich ? `<div class="bs-ctx bs-why"><b>🧾 Why this score</b><p>${e(x.why || "—")}</p></div>${li("⭐ What they did best", x.best, "bs-best")}${li("🔧 What needs to be improved", x.improve, "bs-imp")}
               ${!x.best.length && !x.improve.length && x.pct != null ? `<p class="bs-ctx-none">No criterion-level notes were recorded for this score.</p>` : ""}` : `<p class="bs-ctx-none">${e(x.why || "")}</p>`}</div>`; }).join("")}</details>`; }).join("")}</div></div>`;
 }
-/* 👥 Trainees & Batches, at the foot of the sheet: what the old tab held that a trainer DOES (js/ft-trainees-tab.js) —
-   ⏳ Pending Approvals (approve / reject), each trainee's actions (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard),
-   and the batches (📦 Archive, ⬇ Records, the Archive shelf, 🚫 Offboarded VAs, ☁ Saved to Drive). Drawn by the Admin screen's
-   own 'audit' page, without its tab bar; the tab itself has no button (LSH_PROGRAM.adminHidden). */
-function peopleHtml(){
-  if(meOn() || !adminOn() || typeof window.renderAdmin !== "function") return "";
-  const was = state.adminTab; let out = "";
-  try{ state.adminTab = "audit"; window.__ftPeopleEmbed = true; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ window.__ftPeopleEmbed = false; state.adminTab = was; }
-  const t = document.createElement("template"); t.innerHTML = out;
-  t.content.querySelectorAll(".admin-tabs, #navBackSlot, .audit-page-head").forEach(x => x.remove());
-  return `<section class="bs-sec bs-people" id="bs-people"><h3 class="bs-h">👥 Trainees &amp; Batches</h3>
-    <p class="bs-note">Approve new trainees, act on a trainee (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard), and archive or restore a batch.</p>
-    <div class="bs-people-b">${t.innerHTML}</div></section>`;
+/* ⏳ Pending Approvals, at the top of the sheet: only while someone in the batch waits (no 👥 Trainees & Batches section any
+   more — its per-trainee actions are gone; 📦 Archive this batch is in the sheet's menu bar). */
+function approvalsHtml(ppl){
+  if(meOn() || !adminOn()) return "";
+  const w = ppl.filter(p => p.status === "Waiting for approval"); if(!w.length) return "";
+  return `<section class="bs-pending" id="bs-people"><h3 class="bs-h">⏳ Pending Approvals <span class="bs-n">${w.length}</span></h3>
+    <div class="bs-appr">${w.map(p => `<div class="bs-appr-r"><b>${e(p.name)}</b><small>${p.registeredAt ? "Registered " + e(new Date(p.registeredAt).toLocaleString()) : ""}</small>
+      <span><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="rejectTrainee('${e(p.id)}')">Reject</button><button class="btn btn-navy btn-sm" onclick="approveTrainee('${e(p.id)}')">Approve</button></span></div>`).join("")}</div></section>`;
 }
 // (an approval or rejection made there: the sheet reads its trainees again, so the 👥 Trainees table shows it at once)
 ["approveTrainee", "rejectTrainee"].forEach(fn => { const was = window[fn]; if(typeof was !== "function") return;
@@ -928,19 +923,19 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button onclick="FTBatchSheet.archive()" title="Archive ${e(B.batch)} when its training is finished: it leaves the active batches; nothing is deleted">📦 Archive this batch</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
-      <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a></span>
+      <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
+    ${approvalsHtml(ppl)}
     ${fixHtml(ppl)}
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
-    ${ready ? peopleHtml() : ""}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 
@@ -1089,6 +1084,17 @@ window.FTBatchSheet = {
     B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
   },
   open(){ state.adminTab = TAB; goto("admin"); },
+  // 🔗 a trainee's Drive links compliance, % of the six ✓ Correct (📊 the Weekly Ranking's Drive Links Compliance column)
+  linksPct(id){ try{ if(!B.data || !B.data.rec || !B.data.rec[id]) return null; const p = people().find(x => x.id === id); if(!p) return null;
+    const {L} = linkState(p); if(LINKS.every(([q]) => L[q].st === "none")) return null;
+    return Math.round(LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length / LINKS.length * 100); }catch(err){ return null; } },
+  // 📦 Archive this batch (the menu bar): the archive dialog (js/ft-batch-admin.js) reads the whole roster, read first if needed
+  async archive(){
+    if(!adminOn() || typeof window.confirmArchiveBatch !== "function") return;
+    if(typeof state === "object" && !state.adminData && typeof loadAdminLedger === "function"){ try{ await loadAdminLedger(); }catch(err){} }
+    const p = (B.people || []).find(x => bLabel(x.batch) === B.batch), key = p && typeof batchKey === "function" ? batchKey({batch: p.batch}) : B.batch;
+    return window.confirmArchiveBatch(key);
+  },
   go(id){ const el = document.getElementById("bs-" + id); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); return false; },
   pick(td){
     if(!B.data) return; const T = tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
@@ -1180,6 +1186,8 @@ window.render = function(){
 body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px;}
 .bs-card .gs-file b{font-size:20px;}
 .bs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 14px 10px;background:#F9FBFD;font:14px Arial,sans-serif;color:#1F1F1F;}
+.bs-pending{margin:0 14px 10px;padding:10px 12px;border:1px solid #F3D19C;background:#FFF8EC;border-radius:10px;scroll-margin-top:12px;} .bs-pending .bs-h{margin:0 0 8px;}
+.bs-appr{display:grid;gap:6px;} .bs-appr-r{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;} .bs-appr-r small{color:#5F6368;font-size:12px;} .bs-appr-r span{margin-left:auto;display:flex;gap:8px;}
 .bs-sum b{font-size:16px;} .bs-wait{color:#B06000;} .bs-at{margin-left:auto;color:#5F6368;font-size:12.5px;}
 .bs-jump a{color:#1A73E8;text-decoration:none;font-weight:700;} .bs-jump a:hover{text-decoration:underline;}
 .bs-sec{padding:14px 14px 4px;border-top:1px solid #E1E3E1;scroll-margin-top:12px;}

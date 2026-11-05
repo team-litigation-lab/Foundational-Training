@@ -197,6 +197,34 @@ async function loadAdmin(){
   A.loading = false; if(state.view === "admin" && state.adminTab === "sendfeedback") render();
 }
 const batchesOf = () => [...new Set((A.people || []).map(p => bLabel(p.batch)).filter(Boolean))].sort();
+/* 📊 a manual activity (a Knowledge Check, a day's activity, a side activity) has no work of its own in this list: what the
+   platform already recorded for the trainee — every grading system's items (lshProgram.compute, the same as 🏅 My Performance)
+   — is read when the row is opened, shown under "Their work" and given to ✨ Draft, so the draft scores what was detected
+   instead of calling it NO SUBMISSION. */
+const EV = {};
+async function evidenceOf(p){
+  if(EV[p.id] && Date.now() - EV[p.id].at < 120000) return EV[p.id].sc;
+  const CFG = window.LSH_PROGRAM || {}, ks = (CFG.sources || []).filter(x => x.key), shared = CFG.shared || [];
+  if(!window.lshProgram || !lshProgram.compute || !ks.length) return null;
+  const tr = ((typeof state === "object" && state.adminData) || []).find(x => x && x.id === p.id) || await sharedGet("trainee:" + p.id).catch(() => null) || {};
+  const vals = await sharedGetMany(ks.map(x => x.key + p.id).concat(shared)), rec = {}, sh = {};
+  ks.forEach((x, i) => { rec[x.key] = vals[i] || null; }); shared.forEach((k, i) => { sh[k] = vals[ks.length + i] || null; });
+  const sc = lshProgram.compute({id: p.id, progress: tr.dayProgress || {}, rec, shared: sh, since: String(tr.registeredAt || "").slice(0, 10)});
+  EV[p.id] = {sc, at: Date.now()}; return sc;
+}
+const norm = v => String(v || "").toLowerCase().replace(/^(day \d+ · |knowledge check: )/, "").replace(/[^a-z0-9]+/g, " ").trim();
+// the recorded items that are this activity
+function matchOf(r, sc){
+  if(!sc) return [];
+  const all = sc.rows.flatMap(x => x.items.map(it => Object.assign({src: x.s}, it)));
+  const id = String(r.item || ""), t = norm(r.title);
+  const bySrc = {"side-typing": "skills", "side-monitor": "drive", "side-tracker": "drive", "side-links": "drive"}[id];
+  if(bySrc) return all.filter(it => it.src.id === bySrc);
+  if(/^kc-/.test(id)){ const d = (window.DAYS || (typeof DAYS !== "undefined" ? DAYS : [])).find(x => "kc-" + x.id === id); return all.filter(it => it.src.id === "kc" && d && norm(it.name) === norm(d.title)); }
+  if(/^reading-/.test(id)) return all.filter(it => it.src.id === "kc" && /reading/i.test(it.name));
+  return t ? all.filter(it => { const n = norm(it.name); return n && (n === t || n.includes(t) || t.includes(n)); }) : [];
+}
+const evLine = it => `${it.src.icon} ${it.src.label} · ${it.name}: ${typeof it.pct === "number" ? it.pct + "%" : "not scored"}${it.note ? " (" + it.note + ")" : ""}`;
 async function openRow(i){
   const r = A.rows[i]; if(!r) return;
   A.open = i; A.drafting = false;
@@ -205,11 +233,18 @@ async function openRow(i){
     try{ const v = await sharedGet(r.lazyKey); const it = ACTS.guide.items({[r.item]: v})[0]; if(it) Object.assign(r, it); }catch(err){}
     r.loaded = true;
   }
+  if(r.manual && !r.ev){ render(); try{ const sc = await evidenceOf(r.p); r.ev = {all: sc, hit: matchOf(r, sc)}; }catch(err){ r.ev = {all: null, hit: []}; } }
   render();
   const el = document.getElementById("tfbForm"); if(el) el.scrollIntoView({block: "nearest"});
 }
 function workHtml(r){
-  if(r.manual) return `<p class="fss-muted">✍️ Your own feedback on this activity: write what they did well, what to improve and why. The trainee gets a notification as soon as you send it, and it stays in their 📬 My Feedback.</p>`;
+  if(r.manual){
+    const ev = r.ev, hit = ev ? ev.hit : null;
+    return `${!ev ? `<p class="fss-muted">Reading what the platform recorded…</p>` : hit.length
+        ? `<p class="tfb-sub">📊 What the platform recorded</p><ul class="tfb-ev">${hit.map(it => `<li><b>${e(it.name)}</b> <span class="fss-pill ${typeof it.pct === "number" ? (it.pct >= 70 ? "ok" : "mid") : ""}">${typeof it.pct === "number" ? e(it.pct) + "%" : "not scored"}</span>${it.note ? `<small>${e(it.note)}</small>` : ""}<small>${it.src.icon} ${e(it.src.label)}</small></li>`).join("")}</ul>`
+        : `<p class="fss-muted">📊 Nothing the platform scores matches this activity: ✨ Draft works from the trainee's other recorded scores.</p>`}
+      <p class="fss-muted">✍️ Your own feedback on this activity: write what they did well, what to improve and why. The trainee gets a notification as soon as you send it, and it stays in their 📬 My Feedback.</p>`;
+  }
   if(r.lazyKey && !r.loaded) return `<p class="fss-muted">Opening the guide…</p>`;
   if(r.act === "guide") return r.html ? `<div class="tfb-guide">${window.FTGuide ? FTGuide.clean(r.html) : ""}</div>` : `<p class="fss-muted">The guide is empty.</p>`;
   return `<div class="tfb-work">${String(r.text ? r.text() : "").split("\n").map(l => { const m = /^([^:]{2,60}):\s?(.*)$/.exec(l); return m ? `<p><b>${e(m[1])}:</b> ${e(m[2])}</p>` : `<p>${e(l)}</p>`; }).join("")}</div>`;
@@ -262,10 +297,18 @@ window.FTFeedback = {
     const r = A.rows[A.open]; if(!r) return; const box = btn.closest(".tfb-form");
     A.drafting = true; btn.disabled = true; btn.textContent = "Writing…";
     try{
+      if(r.manual && !r.ev){ try{ const sc = await evidenceOf(r.p); r.ev = {all: sc, hit: matchOf(r, sc)}; }catch(err){ r.ev = {all: null, hit: []}; } }
+      const hit = (r.ev && r.ev.hit) || [], rest = r.ev && r.ev.all ? r.ev.all.rows.flatMap(x => x.items.filter(it => typeof it.pct === "number").map(it => Object.assign({src: x.s}, it))).filter(it => !hit.some(h => h.name === it.name && h.src.id === it.src.id)) : [];
+      const work = r.manual ? (hit.length ? `What the platform recorded for this activity (the trainee DID this work; never call it NO SUBMISSION when a score or a completion is recorded here):\n${hit.map(evLine).join("\n")}`
+          : "The platform has no score of its own for this activity.") + (rest.length ? `\n\nThe trainee's other recorded scores, for context:\n${rest.slice(0, 40).map(evLine).join("\n")}` : "")
+        : String(r.text ? r.text() : "").slice(0, 7000);
+      const scored = hit.filter(it => typeof it.pct === "number");
       const prompt = `You are the training facilitator of Legal Support Help writing your feedback on a trainee Legal VA's work in the ${r.manual ? r.group.replace(/^\S+\s/, "") : actInfo(r.act).label}: ${r.title}.
 Trainee's first name: ${String(r.p.name).split(/\s+/)[0]}
 THEIR WORK:
-${String(r.text ? r.text() : "").slice(0, 7000)}
+${work}
+${scored.length ? `Use the recorded score (${Math.round(scored.reduce((n, it) => n + it.pct, 0) / scored.length)}%) as the score, and pick the verdict that fits it.` : ""}
+${r.manual && !hit.length ? `Only use "NO SUBMISSION" if nothing at all is recorded for this activity; otherwise base the feedback on what is recorded.` : ""}
 ${r.auto != null ? `The automated checks: ${r.auto}%` : ""}
 ${r.ai ? `The AI's earlier evaluation: ${r.ai}` : ""}
 
@@ -279,6 +322,7 @@ Return ONLY JSON: {"verdict":"...","score":0,"comment":"..."}`;
       if(out && out.comment){
         box.querySelector("[data-comment]").value = String(out.comment).slice(0, 4000);
         if(out.verdict){ const v = VERDICTS.find(x => x.toLowerCase().replace(/\W/g, "") === String(out.verdict).toLowerCase().replace(/\W/g, "")); if(v) box.querySelector("[data-verdict]").value = v; }
+        if(scored.length) box.querySelector("[data-score]").value = Math.round(scored.reduce((n, it) => n + it.pct, 0) / scored.length);
         if(isFinite(Number(out.score)) && !box.querySelector("[data-score]").value) box.querySelector("[data-score]").value = Math.max(0, Math.min(100, Math.round(Number(out.score))));
       } else toast("The AI returned nothing. Try again.");
     }catch(err){ toast("The AI isn’t available right now. Write it yourself."); }
@@ -363,6 +407,7 @@ main.main-tfb{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tfb-panel-h{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;}
 .tfb-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);gap:16px;}
 @media(max-width:900px){.tfb-cols{grid-template-columns:1fr;}}
+.tfb-ev{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px;} .tfb-ev li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;padding:8px 10px;border:1px solid var(--line,#E1E3E1);border-radius:8px;} .tfb-ev small{color:var(--ink-soft);font-size:11.5px;}
 .tfb-sub{margin:0 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
 .tfb-work,.tfb-guide{background:#fff;border:1px solid #E3E7F0;border-radius:10px;padding:10px 12px;max-height:46vh;overflow:auto;font-size:13.5px;margin-bottom:10px;}
 .tfb-work p{margin:0 0 5px;white-space:pre-wrap;} .tfb-guide img{max-width:100%;}

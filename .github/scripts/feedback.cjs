@@ -68,6 +68,15 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.evaluate(() => FTFeedback.status('sent')); await page.waitForTimeout(300);
   if (!/Sent/.test(await page.evaluate(() => (document.querySelector('.tfb-tbl tbody tr') || {}).innerText || ''))) fail('"Sent" doesn\'t list the feedback just sent');
   await page.evaluate(() => FTFeedback.status('todo')); await page.waitForTimeout(300);
+  // ✍️ a Knowledge Check picked from every activity: the trainee's recorded score is shown under "Their work" (what ✨ Draft
+  // is given), not an empty panel that drafts NO SUBMISSION
+  const kl = await page.evaluate(() => (DAYS.find(d => typeof ftKcQuestions === 'function' && ftKcQuestions(d.id).length) || {}).id);
+  const tr = await get('trainee:' + id); tr.dayProgress = Object.assign({}, tr.dayProgress, { [kl]: { done: true, score: 85, kcAttempts: 1 } }); await put('trainee:' + id, tr);
+  await page.evaluate(() => { state.adminData = null; }); await page.evaluate(k => FTFeedback.act('m|kc-' + k), kl); await page.waitForTimeout(500);
+  await page.click('.tfb-tbl tbody tr:has-text("Fey")'); await page.waitForTimeout(2000);
+  const kw = await page.evaluate(() => (document.querySelector('.tfb-panel') || {}).innerText || '');
+  if (!/What the platform recorded/i.test(kw) || !/85%/.test(kw)) fail(`a Knowledge Check's recorded score isn't shown for the feedback: ${kw.slice(0, 300)}`);
+  await page.evaluate(() => { FTFeedback.close(); FTFeedback.act(''); FTFeedback.status('todo'); }); await page.waitForTimeout(300);
   // the guide: read when opened, nothing in it runs
   await page.click('.tfb-tbl tbody tr:has-text("Sending the MedLOR")'); await page.waitForTimeout(1500);
   if (!(await page.$('.tfb-guide ol li'))) fail('the guide wasn\'t shown to the trainer');

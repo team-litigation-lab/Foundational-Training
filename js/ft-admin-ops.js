@@ -3,7 +3,7 @@
      📋 SOPs                 the program's standard operating procedures, written and kept by trainers
      🗄 Database Maintenance clear the data that is only needed for a while; the records are kept
    The spec's other two are already their own tabs: the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
-   Trainee Audit, 📋 Task Trackers and 📒 Monitoring Sheets; attendance is taken on the Training
+   📋 Batch Sheet's ✅ Compliance and 📤 Daily outputs, and 📒 Monitoring Sheets; attendance is taken on the Training
    Portal, Master Control → 🕘 Attendance, per program per batch).
    Loaded after js/ft-firms.js (window.ftAdminTab) and before js/ft-program.js, which puts these
    three in the Admin section of the Admin screen's tab bar.
@@ -49,11 +49,10 @@ const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Open Lessons", lab:"🛠
 const MAP = [
   {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
    steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
-     `Set the certificate signatories once: ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches.`,
-     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches.`,
+     `Check the new batch is the only active one; older batches are archived automatically, and an older batch still active can be archived with 📦 Archive this batch in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} (pick it in the Batch dropdown).`,
      `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
   {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
-   steps:[`Approve each new registration: ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches. Approve only names on the batch list.`,
+   steps:[`Approve each new registration: ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⏳ Pending Approvals, at the top of the sheet. Approve only names on the batch list.`,
      `Fix the spelling of the name now: the certificate uses the registered name exactly.`]},
   {stage:"3 · Opening each segment", trainee:"Sees only the lessons a trainer has opened.",
    steps:[`Open the day's lesson before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
@@ -70,30 +69,29 @@ const MAP = [
      `Score live demos and mock calls with you in ${go("graders","🧑‍🏫 Graders: Mock Calls & Demos")}: pick the activity and the VA, score each criterion with its feedback, and 💾 Save.`,
      `Calendaring work, the two activities (Attorney Calendar and Calendar Mock Calls): ${go("calendaring","📅 Calendaring")}.`,
      `Call Listening: ${go("listening","🎧 Call Listening")}.`,
-     `Is a trainee out of repeat attempts because of a technical problem? Use Trainee Audit → ↺ Reset Attempts. A trainee who asked for more shows "🙋 asked for more attempts".`]},
+     `Is a trainee's attempt spoiled by a technical problem? Top bar → ✍️ Knowledge Check → the trainee → the lesson → ↺ Grant a retry.`]},
   {stage:"7 · Daily records", trainee:"Fills in the Daily Task Tracker and the Monitoring Sheet, and takes the typing and spelling tests.",
-   steps:[`Check them every day: ${SEC.seg} → ${go("trackers","📋 Task Trackers")}, ${go("monitor","📒 Monitoring Sheets")} and ${go("drivetrackers","📁 Drive Trackers")}.`,
+   steps:[`Check them every day: ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ✅ Compliance and 📤 Daily outputs (the end-of-shift check), and ${SEC.seg} → ${go("monitor","📒 Monitoring Sheets")}.`,
      `Typing and spelling compliance: ${SEC.sc} → ${go("skilltests","🧪 Typing & Spelling")}.`]},
   {stage:"8 · Feedback, the same day", trainee:"Sees only the feedback a trainer has sent.",
-   steps:[`Write and send the Day-by-Day Feedback: ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches → View Detail → ✍ Write feedback → Send to trainee.`,
+   steps:[`Write and send the Day-by-Day Feedback: ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")} → ✍ Write feedback → Send to the trainee.`,
      `Score transcriptions, video notes, process guides and letters in ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")}. Write it in the house voice set in ${go("fbstyle","🗣 Feedback Style")}.`,
      `Give one clear next step as a 🎯 Focus item. The trainee works on it and you see when they have acted on it.`]},
   {stage:"9 · Weekly review", trainee:"Gets their weekly average and rank.",
    steps:[`Build and share the week's results in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 📊 Weekly Ranking.`,
      `See every grade in one table in ${go("batchsheet","📋 Batch Sheet")} → 🏅 Scores. Coach anyone in the red before the next week.`]},
   {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
-   steps:[`Check names and the trainer on the certificate in Trainee Audit → View Detail → Certificate details.`,
-     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
+   steps:[     `Download the batch's records in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")}: ⬇ Download, and 📦 Archive this batch saves a backup to Google Drive.`,
      `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
      `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
 ];
 const HELP = [
   ["“I can’t see today’s lesson.”", `Check it is open in ${go("opendays","📅 Open Lessons")}, or open it for that trainee only (📅 Open Lessons → 👤 Open for one trainee).`],
-  ["“My registration is still pending.”", `Approve them in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → 👥 Trainees & Batches.`],
-  ["“I’m out of attempts.”", `If it was a technical problem, use Trainee Audit → ↺ Reset Attempts. If not, coach them first.`],
+  ["“My registration is still pending.”", `Approve them in ${SEC.sc} → ${go("batchsheet","📋 Batch Sheet")} → ⏳ Pending Approvals.`],
+  ["“I’m out of attempts.”", `If it was a technical problem, grant a retry: top bar → ✍️ Knowledge Check → the trainee → the lesson → ↺ Grant a retry. If not, coach them first.`],
   ["“Can I take the Knowledge Check again?”", `It is taken once. If a technical problem affected their attempt, grant a retry: top bar → ✍️ Knowledge Check → the trainee → the lesson → ↺ Grant a retry. If not, go over your feedback with them instead.`],
   ["“My score didn’t update.”", `Click ↻ Refresh in ${go("batchsheet","📋 Batch Sheet")}. A Knowledge Check uses your final score once you have given one.`],
-  ["“I don’t know what to work on.”", `Add a 🎯 Focus item in Trainee Audit → View Detail.`],
+  ["“I don’t know what to work on.”", `Send them one clear next step: ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")} → 💬 General feedback.`],
   ["“Something looks wrong on my screen.”", `Use 👁 Switch View to see their view, then compare.`]
 ];
 function renderTrainerMap(){

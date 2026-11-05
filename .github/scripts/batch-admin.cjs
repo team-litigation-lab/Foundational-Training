@@ -5,10 +5,10 @@
 //     trainee record kept (slim, archived, with the scorecard snapshot) with the trainer's reviews, and the access closed;
 //   - the page: 📋 Mock Call Scorecards opens on the current batch (the one that started last) with a column per registered
 //     VA, the Reception scorecard's criteria down the side, the weighted average and the % following the scores, and Save
-//     writing labreview:<id> as Trainer Inputs does; 🚫 Offboard removes a VA from the sheet and the batch folders and lists
-//     them under 🚫 Offboarded VAs, ↩ Restore access brings them back; 📦 Archive asks for the Drive folder, saves the
+//     writing labreview:<id> as Trainer Inputs does; 🚫 Offboard removes a VA from the sheet, ↩ Restore access brings them
+//     back; 📦 Archive asks for the Drive folder, saves the
 //     summaries (Scorecard Summary, Mock Call & Demo Scorecards, Progress Matrix, the batch summary) and each VA's records,
-//     then clears the batch: it leaves Batch Folders and shows under ☁ Saved to Google Drive.
+//     then clears the batch (its batchbackup:<batch> record kept).
 // Usage: NODE_PATH=…/node_modules node .github/scripts/batch-admin.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const path = require('path');
@@ -149,13 +149,9 @@ async function workerChecks() {
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
-    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
-    let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
-    if (!/Offboarded VAs \(1\)[\s\S]*Cara Lim/.test(shelf)) fail('Cara isn\'t under 🚫 Offboarded VAs');
-    const b1 = await page.evaluate(() => { const c = [...document.querySelectorAll('.batch-folder')].find(x => /B103026/.test(x.innerText)); return c ? c.innerText : ''; });
-    if (!/2 trainees/.test(b1)) fail(`the batch folder still counts the offboarded VA: ${b1}`);
+    // (no 👥 Trainees & Batches section with its 🚫 Offboarded VAs shelf any more: ↩ Restore access, called as its button did)
     page.once('dialog', d => d.accept());
-    await page.click('button[data-id="cara-lim--b103026"]'); await page.waitForTimeout(1500);
+    await page.evaluate(() => restoreOffboarded('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
     // 📦 archive B103026: Drive answered by the test (the test server has no service account)
     const sent = { files: null, trainees: [] };
@@ -182,11 +178,6 @@ async function workerChecks() {
     if (!(await get('progress:old-one--b090126'))) fail('another batch was cleared');
     const bb = await get('batchbackup:B103026');
     if (!bb || bb.folder !== 'https://drive.google.com/drive/folders/F1' || bb.count !== 3 || !bb.cleared) fail(`the batch's backup isn't recorded: ${JSON.stringify(bb)}`);
-    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(2000);
-    shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
-    if ([...await page.$$eval('.batch-folder', xs => xs.map(x => x.innerText))].some(t => /B103026/.test(t))) fail('the cleared batch is still in Batch Folders');
-    if (!/Saved to Google Drive \(1\)[\s\S]*B103026[\s\S]*3 VAs/.test(shelf)) fail('the batch isn\'t under ☁ Saved to Google Drive');
-    if (!/B090126/.test(shelf)) fail('the other batch left Batch Folders');
     // 🗑 Delete the batch (in the 📦 Archive dialog): a wrong Batch ID typed back deletes nothing; the right one removes every
     // VA's records and their trainee record, with no Drive backup
     await page.evaluate(() => confirmArchiveBatch('B090126')); await page.waitForTimeout(400);
