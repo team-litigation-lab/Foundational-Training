@@ -1106,7 +1106,7 @@ window.FTBatchSheet = {
   async sync(scope, quiet){
     if(!adminOn() || meOn() || B.sync || !B.batch) return;
     const batch = B.batch, all = people(), appr = all.filter(p => p.status === "Approved");
-    const doLinks = /^(all|links)$/.test(scope), doBack = /^(all|scores|outputs)$/.test(scope), doRank = /^(all|ranking|scores)$/.test(scope);
+    const doLinks = /^(all|links)$/.test(scope), doBack = /^(all|scores|outputs)$/.test(scope), doRank = /^(all|ranking|scores|outputs|links)$/.test(scope);
     B.sync = {scope, n: 0, of: 0, what: "Starting"}; render();
     const msgs = []; let bad = 0;
     const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; rerender(); };
@@ -1127,9 +1127,21 @@ window.FTBatchSheet = {
       for(const p of appr){ try{ const r = await authFetch("/api/drive/backtrack", {id: p.id}), j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; } B.sync.n++; rerender(); }
       msgs.push(`⏪ ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"} backtracked from Day 1`);
     }
-    if(doRank && window.FTRanking && typeof FTRanking.reload === "function"){ try{ FTRanking.reload(); }catch(err){} if(scope === "ranking") msgs.push("📊 Weekly Ranking read again"); }
     try{ localStorage.setItem("ft_bs_sync:" + batch, String(Date.now())); }catch(err){}
     B.sync = null; if(B.batch === batch){ B.data = null; B.dataKey = ""; } render();
+    // 📊 then the Weekly Ranking, once the sheet has read the new scores and links back: its platform-filled cells follow them
+    // (js/ft-ranking.js fillFromPortal — a NO SUBMISSION from before the files were linked becomes the trainee's compliance)
+    if(doRank && window.FTRanking && typeof FTRanking.reload === "function"){
+      for(let i = 0; i < 40 && B.batch === batch && !(B.data && B.data.rec); i++) await new Promise(ok => setTimeout(ok, 250));
+      try{ FTRanking.reload(); }catch(err){} if(scope === "ranking") msgs.push("📊 Weekly Ranking read again");
+      // 📑 and the week's summary for management (its ✅ Compliance, ⏱ Timely Submission… from each day's checks): drafted again
+      // from the new scores — a trainer's ✎ edits stay (js/ft-ranking-summary.js draft)
+      if(window.FTRankSummary && typeof FTRankSummary.draft === "function"){
+        const ready = () => { try{ const c = FTRanking.ctx && FTRanking.ctx(); return c && c.batch && (c.people || []).length ? c : null; }catch(err){ return null; } };
+        for(let i = 0; i < 40 && B.batch === batch && !ready(); i++) await new Promise(ok => setTimeout(ok, 250));
+        if(ready()){ try{ FTRankSummary.draft(); }catch(err){} msgs.push("📑 Weekly summary updated"); }
+      }
+    }
     if(!quiet || bad) toast(msgs.join(" · "), 9000);
   },
   period(v){ B.recent = Number(v) || 0; render(); },

@@ -52,6 +52,8 @@ const NOTES = ["Initial feedback implemented.", "Initial feedback was not fully 
   "Expected corrections from the initial feedback have not been fully implemented.", "Complete", "Complied; however, lacking 1 entry ()"];
 
 const num = v => { const n = parseFloat(String(v == null ? "" : v).replace(/,/g, "")); return isFinite(n) ? n : null; };
+// a score the trainer typed (the platform's own, auto, is filled again as the scorecards change)
+const typed = cur => !!(cur && num(cur.raw) != null && !cur.auto);
 const fmt = n => (Math.round(n * 100) / 100).toString();
 const fix2 = n => (Math.round(n * 100) / 100).toFixed(2);
 // a cell's mark out of 5 (null when there is no score)
@@ -185,16 +187,19 @@ async function fillFromPortal(quiet){
     if(cols.some(c => c.period === "week") && !range && !quiet) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
     const inWeek = x => !!(range && x.at && String(x.at).slice(0, 10) >= range[0] && String(x.at).slice(0, 10) <= range[1]);
     let n = 0, undated = 0;
+    // 🔄 a cell the platform filled (auto) follows the scorecards: filled again each time, with what they say now — a 0 or a
+    // NO SUBMISSION from before the trainee's files were linked becomes their score. A trainer's own score or note is kept.
+    const put = (row, c, cur, v) => { const nx = Object.assign({}, cur || {}, v, {auto: true}); if(cur && cur.auto && Object.keys(v).every(k => String(cur[k]) === String(nx[k]))) return; row.cells[c.id] = nx; n++; };
     ppl.forEach((p, i) => {
       const rec = {}; S.forEach((s, j) => { rec[s.key] = vals[i * S.length + j] || null; });
       const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since});
       const scW = range ? lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since, range}) : null;
       const row = rowOf(p.id);
       cols.forEach(c => {
-        const cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;          // never over what the trainer typed
+        const cur = row.cells[c.id]; if(typed(cur)) return;          // never over what the trainer typed
         const week = c.period === "week"; if(week && !scW) return;
         if(c.src === "overall"){ const o = (week ? scW : sc).overall; if(o == null) return;
-          row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(o / 100 * (num(c.max) || 5)), auto: true, period: week ? "week" : "all"}); n++; return; }
+          put(row, c, cur, {raw: fmt(o / 100 * (num(c.max) || 5)), period: week ? "week" : "all"}); return; }
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
         const src = (week ? scW : sc).rows.find(r => r.s.id === sid); if(!src) return;
         // this week's: only the grades dated in it (a source that keeps no dates can't say which week a grade was)
@@ -211,7 +216,7 @@ async function fillFromPortal(quiet){
         }
         if(pct == null) return;
         const max = num(c.max) || 5;
-        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), auto: true, period: week ? "week" : "all"}); n++;
+        put(row, c, cur, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), period: week ? "week" : "all"});
       });
     });
     // ✅ the Daily Compliance column: the average of the nightly check's days (trackerreview:<id>.compliance, worker.js
@@ -220,19 +225,19 @@ async function fillFromPortal(quiet){
       const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
       if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
-        const row = rowOf(p.id), cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length) return;
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
-        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * max), auto: true, period: c.period === "week" ? "week" : "all", days: days.length}); n++;
+        put(row, c, cur, {raw: fmt(pct / 100 * max), period: c.period === "week" ? "week" : "all", days: days.length});
       }));
     }
     // 🔗 the Drive Links Compliance column: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance)
     if(linkCols.length && window.FTBatchSheet && FTBatchSheet.linksPct){
       linkCols.forEach(c => ppl.forEach(p => {
-        const row = rowOf(p.id), cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
         const pct = FTBatchSheet.linksPct(p.id); if(pct == null) return;
-        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * (num(c.max) || 5)), auto: true, period: "all"}); n++;
+        put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: "all"});
       }));
     }
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
@@ -243,13 +248,13 @@ async function fillFromPortal(quiet){
         const range = parseRange(c.sub) || weekRange();
         if(!range){ if(!quiet) toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
         ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
-          if(cur && String(cur.note || "").trim()) return;                                  // never over what the trainer typed
+          if(cur && String(cur.note || "").trim() && !(cur.auto && !cur.noteBy)) return;      // never over what the trainer typed
           const rec = FTSkills.withShots(recs[i], (rvs[i] || {}).shots);   // 📷 the screenshots in Drive count too
-          row.cells[c.id] = Object.assign({}, cur || {}, {note: FTSkills.complianceText(rec, range[0], range[1], p.since), auto: true}); n++; });
+          put(row, c, cur, {note: FTSkills.complianceText(rec, range[0], range[1], p.since)}); });
       });
     }
     if(n) save();
-    if(quiet){ if(n) toast(`🔄 ${n} score${n === 1 ? "" : "s"} filled in from the trainees’ progress.`); } else toast((n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform${range ? ` (this week: ${range[0]} to ${range[1]})` : ""}. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.")
+    if(quiet){ if(n) toast(`🔄 ${n} score${n === 1 ? "" : "s"} updated from the scorecards.`); } else toast((n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform${range ? ` (this week: ${range[0]} to ${range[1]})` : ""}. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.")
       + (undated ? " Some weekly columns’ sources keep no dates (Knowledge Checks, graded calls, games), so only their dated grades were counted." : ""));
   }catch(err){ if(!quiet) toast("Couldn’t read the trainees’ grades. Try again."); }
   R.fill = false; rerender();
@@ -627,7 +632,7 @@ window.FTRanking = {
   addCol(t){ R.data.cols.push(t === "notes" ? {id: uid(), label: "Notes", sub: "", type: "notes"} : COL("New activity", "", 5)); save(); render(); },
   delCol(i){ if(!confirm("Remove this column and its scores?")) return; const c = R.data.cols.splice(i, 1)[0]; Object.values(R.data.rows).forEach(r => { if(r.cells) delete r.cells[c.id]; }); save(); render(); },
   moveCol(i, d){ const l = R.data.cols, j = i + d; if(j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; save(); render(); },
-  cell(id, cid, f, v){ const r = rowOf(id); const c = r.cells[cid] = r.cells[cid] || {}; c[f] = String(v).trim(); if(f === "raw") delete c.auto; save(); if(f === "raw") paintFigures(id, cid); },
+  cell(id, cid, f, v){ const r = rowOf(id); const c = r.cells[cid] = r.cells[cid] || {}; c[f] = String(v).trim(); if(f === "raw") delete c.auto; if(f === "note") c.noteBy = "trainer"; save(); if(f === "raw") paintFigures(id, cid); },
   focus: focusCell,
   key(ev, el){
     const txt = el.tagName === "TEXTAREA", k = ev.key;
