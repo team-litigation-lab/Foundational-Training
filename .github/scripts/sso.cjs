@@ -95,6 +95,11 @@ async function ticketFor(payloadObj, secret) {
         const asAdmin = await call(env, '/api/storage/delete', { key: 'sso-test-nothing' }, { Authorization: 'Bearer ' + adminTicket.body.token });
         if (asAdmin.status !== 200) fail(`the token from an administrator's ticket isn't a trainer's: ${JSON.stringify(asAdmin)}`);
     }
+    // (an administrator whose name has a dot in it — "Ma. Theresa", "Jr." — signs in too: the dot doesn't break the token)
+    { const dTicket = await ticketFor({ r: 'a', n: 'Ma. Theresa Cruz Jr.', exp: Date.now() + 60000 }, SECRET);
+      const dot = await call(env, '/api/auth/portal', { ticket: dTicket });
+      const used = dot.body && dot.body.token ? await call(env, '/api/storage/delete', { key: 'sso-test-nothing' }, { Authorization: 'Bearer ' + dot.body.token }) : { status: 0 };
+      if (dot.status !== 200 || used.status !== 200) fail(`an administrator named with a dot can't use their sign-in: ${JSON.stringify(dot)} / ${used.status}`); }
     const again = await call(env, '/api/auth/portal', { ticket: aTicket });
     if (again.status !== 401 || !again.body || again.body.code !== 'used') fail(`an administrator's ticket should work only once, got ${JSON.stringify(again)}`);
 
