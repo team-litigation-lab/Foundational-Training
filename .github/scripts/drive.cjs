@@ -17,7 +17,7 @@ const failures = []; const fail = (m) => failures.push(m);
     const store = new Map(), id = 'dee-drive--b9';
     // PORTAL_ONLY=off so this test can mint a trainee token by name + batch; trainees really come in from
     // the LSH Training Portal (sso.cjs). What's checked here is the Drive trackers, not the sign-in.
-    const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off',
+    const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off', EOD_KEY: 'ci-eod-key',
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
     store.set('ft:trainee:' + id, JSON.stringify({ id, name: 'Dee Drive', batch: 'B9', approved: true }));
     const SHEET = 'https://docs.google.com/spreadsheets/d/1TrackerSheetIdForTheCiTest0001/edit#gid=7', DOC = 'https://docs.google.com/document/d/1MonitorDocIdForTheCiTest000001/edit';
@@ -287,6 +287,17 @@ const failures = []; const fail = (m) => failures.push(m);
       if (!r2.body || !r2.body.matched || r2.body.check.pct >= 100 || !r2.body.check.rules.some(r => r.id === 'learn' && !r.pass)) fail(`a partial EOD isn't marked down with what's missing: ${JSON.stringify(r2.body).slice(0, 300)}`);
       const r3 = await call('/api/eod/receive', { from: 'Someone Else <x@y.com>', subject: 'Daily Report', text: 'hello' }, admin);
       if (!r3.body || r3.body.matched !== false || !((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(x => /Someone Else/.test(x.from))) fail('an EOD no trainee matches isn\'t kept for the trainer');
+      // 📧 an EOD from the trainers' Gmail (docs/eod-gmail-script.gs → /api/eod/inbound): with the Worker's EOD_KEY it is matched
+      // and kept like an emailed one; without the key, or with another, it is refused; the address trainees CC is team-litigation@
+      const inb = (body, key) => worker.fetch(new Request('http://x/api/eod/inbound', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, key ? { 'X-EOD-Key': key } : {}), body: JSON.stringify(body) }), env, { waitUntil() {} }).then(async r => ({ status: r.status, body: await r.json().catch(() => null) }));
+      const D3 = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date(Date.now() - 86400000));
+      const gm = { from: 'Dee Drive <dee.drive@gmail.com>', subject: `Daily Report ${D3.slice(5, 7)}/${D3.slice(8)}/${D3.slice(2, 4)}`, date: new Date(D3 + 'T20:00:00Z').toISOString(), text: 'Accomplishments/Completed Tasks:\n- the Gmail EOD\n' };
+      if ((await inb(gm)).status !== 403 || (await inb(gm, 'wrong-key')).status !== 403) fail('an EOD without the Worker\'s key was taken');
+      const g1 = await inb(gm, 'ci-eod-key');
+      const ge = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[D3] || {}).eod || {};
+      if (g1.status !== 200 || !g1.body.matched || g1.body.id !== id || !/the Gmail EOD/.test(ge.text || '')) fail(`the Gmail EOD wasn't kept as the trainee's: ${JSON.stringify(g1.body).slice(0, 200)}`);
+      if ((await inb({ from: '', text: '' }, 'ci-eod-key')).status !== 400) fail('an empty EOD wasn\'t refused');
+      if ((await call('/api/eod/inbox', {}, trainee)).body.address !== 'team-litigation@legalsupporthelp.com') fail('the EOD address trainees CC isn\'t team-litigation@');
       if ((await call('/api/eod/receive', { from: 'x', text: 'y' }, trainee)).status !== 403) fail('a trainee could post an EOD as the platform'); }
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }

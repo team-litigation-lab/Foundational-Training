@@ -1382,6 +1382,8 @@ function mimeText(raw) {
   return String(r.html || "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h\d)>/gi, "\n").replace(/<li[^>]*>/gi, "- ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'");
 }
 const normName = (v) => String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim();
+// the address the trainees CC on their EOD: the trainers' Gmail, read by docs/eod-gmail-script.gs (EOD_INBOX overrides it)
+const EOD_ADDRESS = "team-litigation@legalsupporthelp.com";
 async function receiveEod(env, msg) {
   const kv = kvOf(env);
   const fromH = String(msg.from || ""), addr = ((/<([^>]+)>/.exec(fromH) || [])[1] || fromH).trim().toLowerCase(), name = fromH.replace(/<[^>]*>/, "").replace(/"/g, "").trim();
@@ -2000,6 +2002,18 @@ export default {
         return json(Object.assign(out, { name: who.name, first: who.first, last: who.last, batch: who.batch }));
       }
 
+      /* ---------- 📧 an EOD from the trainers' Gmail (docs/eod-gmail-script.gs): the trainees CC team-litigation@ on their EOD and
+         a Google Apps Script in that mailbox sends each one here every few minutes, with the key the Worker keeps as EOD_KEY.
+         It goes the way an emailed EOD goes (receiveEod): matched to its trainee, kept as that day's EOD, checked. Sent again,
+         it is the same day's EOD again, so a repeat changes nothing. ---------- */
+      if (path === "/api/eod/inbound") {
+        const key = String(env.EOD_KEY || ""), got = String(request.headers.get("x-eod-key") || "");
+        if (!key || !got || !safeEqual(key, got)) return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        if (!b || !String(b.from || "").trim() || !String(b.text || "").trim()) return json({ error: "An EOD needs its sender and text." }, 400);
+        return json(await receiveEod(env, { from: String(b.from), subject: String(b.subject || ""), date: String(b.date || ""), text: String(b.text) }));
+      }
+
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 
@@ -2163,7 +2177,8 @@ export default {
 
       /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
-      if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || "").trim() });
+      // (the trainers' Gmail, team-litigation@, unless the Worker names another: EOD_INBOX)
+      if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || EOD_ADDRESS).trim() });
       if (path === "/api/eod/unmatched") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); return json(JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }); }
       // (a trainer's test of the intake without an email: the same as an email arriving)
       if (path === "/api/eod/receive") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); const b = await request.json().catch(() => ({})); return json(await receiveEod(env, b)); }
