@@ -48,6 +48,11 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
   if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
+  // 🔗 connected to every scorecard: the Daily Compliance, the Drive links' compliance and 🏅 the Scorecard's overall, at the end
+  const conn = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
+  for (const c of ['Daily Compliance (5/5)', 'Drive Links Compliance (5/5)', '🏅 Scorecard overall (5/5) every grading system']) if (!conn.includes(c)) fail(`the report isn't connected to "${c}": ${JSON.stringify(conn)}`);
+  // (the sheet's own arithmetic below is on the Week 1 columns alone: the three connected ones taken off again)
+  for (let k = 0; k < 3; k++) { await page.evaluate(() => FTRanking.delCol(8)); await page.waitForTimeout(250); }
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
   const heads = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
   const want = ['2', 'Trainee Name', 'Spelling & Typing Tests', 'Monitoring Sheet (5/5)', 'Tracker (5/5)', 'PI Reading Task (40/40)', 'PI Reading Task ÷ 5', 'Ass: Common Terms (27/27)', 'Ass: Common Terms ÷ 5',
@@ -154,7 +159,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => FTRanking.week(2)); await page.waitForTimeout(1200);
   await page.evaluate(() => FTRanking.start('last')); await page.waitForTimeout(800);
   const h2 = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
-  if (h2.length !== want.length || !h2.includes('W2 Final Average')) fail(`Week 2 didn't start from Week 1's columns: ${JSON.stringify(h2)}`);
+  if (h2.length !== want.length + 3 || !h2.includes('W2 Final Average') || !h2.includes('Drive Links Compliance (5/5)')) fail(`Week 2 didn't start from Week 1's columns: ${JSON.stringify(h2)}`);
   if (await page.$$eval('.xl .xl-num', t => t.filter(x => x.value).length)) fail('Week 2 came with Week 1\'s scores');
 
   // ⤓ Fill, this week only: Tom's tracker has a day in Week 1 (100%) and one in Week 2 (40%); Week 2's Tracker column set to
@@ -189,6 +194,15 @@ const failures = []; const fail = m => failures.push(m);
   await put(`ranking:${PAST}:w1`, null);
   await page.evaluate(() => { state.traineeId = null; state.isAdmin = true; state.adminPreview = false; state.adminData = null; FTRanking.reload(); state.adminTab = 'ranking'; goto('admin'); }); await page.waitForTimeout(1200);
   await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, PAST);
+  // (↻ the report read again while it drafts itself — the Batch Sheet's 🔄 Update calls FTRanking.reload —, once while its scores
+  // fill and once while its notes are written: no page error, and the draft still finishes, filled)
+  // (the report's own read made slow, as on a busy server, so the reload is still reading when the draft's next step comes)
+  await page.evaluate(() => { const g = window.sharedGet; window.__rkSlow = true;
+    window.sharedGet = function (k) { const p = g.apply(this, arguments); return window.__rkSlow && /^ranking:/.test(String(k)) ? p.then(v => new Promise(r => setTimeout(() => r(v), 1500))) : p; }; });
+  await page.waitForTimeout(150); await page.evaluate(() => FTRanking.reload());
+  for (let k = 0; k < 40 && ((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto?.state !== 'notes'; k++) await page.waitForTimeout(250);
+  await page.evaluate(() => FTRanking.reload()); await page.waitForTimeout(1800);
+  await page.evaluate(() => { window.__rkSlow = false; });
   for (let k = 0; k < 90 && !((await get(`ranking:${PAST}:w1`)) || { auto: {} }).auto.state?.startsWith('done'); k++) await page.waitForTimeout(500);   // (the test server has no AI: one try at the notes, about 20 s)
   const auto = await get(`ranking:${PAST}:w1`), cc = auto && auto.cols.find(c => c.src === 'compliance');
   if (!auto || !auto.auto || auto.auto.approved || auto.auto.state !== 'done') fail(`a week that is over didn't draft its report: ${JSON.stringify(auto && auto.auto)}`);
