@@ -77,7 +77,8 @@ const batches = () => [...new Set((B.people || []).map(p => bLabel(p.batch)).con
 // the latest batch: the newest Batch ID date (B + MMDDYY), else the batch with the newest registration
 function latestBatch(){
   const bs = batches(); if(!bs.length) return "";
-  const dt = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; };
+  // (the batch's first day, B + MMDDYY — or a B + DDMMYY one, read as its day: index.html batchStartDate)
+  const dt = b => typeof batchStartDate === "function" ? batchStartDate(b) : "";
   const dated = bs.filter(dt).sort((a, b) => dt(b).localeCompare(dt(a)));
   if(dated.length) return dated[0];
   const newest = (B.people || []).slice().sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)))[0];
@@ -475,8 +476,9 @@ function lessonDays(){
 }
 // training day n's date: the nth weekday from the batch's first day (its Batch ID, B + MMDDYY)
 function dayDate(n){
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(B.batch || "").trim()); if(!m) return null;
-  let t = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T12:00:00Z`), k = 0;
+  // (a B + DDMMYY Batch ID reads as its day: index.html batchStartDate)
+  const s0 = typeof batchStartDate === "function" ? batchStartDate(B.batch) : ""; if(!s0) return null;
+  let t = Date.parse(`${s0}T12:00:00Z`), k = 0;
   while(true){ const wd = new Date(t).getUTCDay(); if(wd >= 1 && wd <= 5){ k++; if(k >= n) return new Date(t).toISOString().slice(0, 10); } t += 864e5; if(k > 40) return null; }
 }
 function lessonScore(p, l){

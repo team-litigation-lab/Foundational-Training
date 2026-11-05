@@ -21,6 +21,9 @@ const failures = []; const fail = m => failures.push(m);
   const get = key => page.evaluate(async key => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json())).value || 'null'), key);
   await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
 
+  // (a batch's first day from its Batch ID, in the page as on the server: B + MMDDYY, a B + DDMMYY one read as its day, "" for no real date)
+  { const got = await page.evaluate(() => ['B100926', 'b 10-09-26', 'B300926', 'B131326', 'B1', ''].map(b => batchStartDate(b)));
+    if (JSON.stringify(got) !== JSON.stringify(['2026-10-09', '2026-10-09', '2026-09-30', '', '', ''])) fail(`batchStartDate in the page: ${JSON.stringify(got)}`); }
   // three trainees register in a new batch: Ada (approved, busy), Ben (approved, nothing done yet), Cy (waiting for approval)
   const ids = {};
   for (const [f, l] of [['Ada', 'Active'], ['Ben', 'Blank'], ['Cy', 'Waiting']]) {

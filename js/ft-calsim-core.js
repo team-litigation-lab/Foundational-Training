@@ -276,7 +276,9 @@ const pacDate = ms => { try{ return new Intl.DateTimeFormat("en-CA", {timeZone:C
 // the first Monday on or after a date
 const mondayOnOrAfter = iso => { const d = new Date(isoMs(iso)).getUTCDay(); return new Date(isoMs(iso) + ((8 - d) % 7) * 864e5).toISOString().slice(0, 10); };
 // a batch's start date, from its ID (B + MMDDYY: B102826 → 2026-10-28), else null
-const batchStart = batch => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(batch || "").trim()); const iso = m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; return isIso(iso) ? iso : null; };
+// (in the portal, index.html batchStartDate: a B + DDMMYY Batch ID reads as its day; on its own, B + MMDDYY)
+const batchStart = batch => { if(typeof batchStartDate === "function") return batchStartDate(batch) || null;
+  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(batch || "").trim()); const iso = m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; return isIso(iso) ? iso : null; };
 // the activity's anchor for a batch that starts on `start`: its Day 5 is the fifth weekday from the start (a weekend start
 // counts from the Monday after), and the activity's Monday is the first on or after Day 5, so no item is in the past
 function anchorForStart(start){

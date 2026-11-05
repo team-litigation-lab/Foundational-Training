@@ -62,7 +62,8 @@ if(typeof __quiet === "function") window.loadAdminLedgerQuiet = async function()
 const everyone = () => state.adminDataAll || state.adminData || [];
 
 /* ---------- the batches: a Batch ID is B + MMDDYY, the day it started, so the current batch is the active one that started last ---------- */
-const startOf = b => { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(String(b || "")); return m ? Date.UTC(2000 + Number(m[3]), Number(m[1]) - 1, Number(m[2])) : 0; };
+// (a batch's first day as a time, for ordering: index.html batchStartDate — a B + DDMMYY Batch ID reads as its day; 0 when not a date)
+const startOf = b => { const d = typeof batchStartDate === "function" ? batchStartDate(b) : ""; return d ? Date.parse(d + "T00:00:00Z") : 0; };
 function activeBatches(){
   const ks = new Set((state.adminData || []).filter(r => r.approved === true && !r.archived && !r.rejected).map(keyOf));
   if(typeof NO_BATCH !== "undefined") ks.delete(NO_BATCH);

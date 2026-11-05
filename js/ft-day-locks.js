@@ -227,7 +227,8 @@ const at = n => unlockedFor(n, state.traineeBatch);
 // and nothing below holds a trainee inside a day (no 🔒 slide, tool, video or Knowledge Check waiting for a step)
 const enforced = () => false;
 // the day a batch started, from its code (B + MMDDYY: B102826 → 2026-10-28), else null
-function batchStart(batch){ const m = /^b(\d{2})(\d{2})(\d{2})$/.exec(key(batch)); return m ? Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00`) : null; }
+// (a B + DDMMYY one reads as its day, and a code that isn't a real date gives null: index.html batchStartDate)
+function batchStart(batch){ const d = typeof batchStartDate === "function" ? batchStartDate(batch) : ""; return d ? Date.parse(`${d}T00:00:00`) : null; }
 function legacyOpen(n, batch){
   const g = (state.ftDaySteps || {}).legacy || {}, l = lessonOf(n), k = key(batch); if(l == null) return false;
   if((g.except || []).includes(k)) return false;   // the trainer applied the locks to this batch too
