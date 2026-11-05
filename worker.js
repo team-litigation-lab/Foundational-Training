@@ -822,14 +822,15 @@ export class GeminiRelay {
 // and draws from the Portal's one master key pool and one shared budget (module "standard") with the other programs, the CMS and the
 // Portal's simulators. Without the secret this Worker still uses its own GEMINI_API_KEY pool, as before.
 const gatewayOn = (env) => !!String((env && env.AI_GATEWAY_SECRET) || "").trim();
+// a message's content (a string, or a list of parts) as plain text
+const msgText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
 async function viaGateway(env, req, user) {
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
-  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: toText(m.content) }));
+  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: msgText(m.content) }));
   let r, data = null;
   try {
     r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
-      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: msgText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
     });
     data = await r.json().catch(() => null);
   } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
@@ -851,11 +852,10 @@ const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUD
 let claudeRest = 0;
 async function callClaude(env, req) {
   if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   // alternating turns that start and end with the user (an opening line from the model gets a short user turn before it)
   const turns = [];
   for (const m of req.messages || []) {
-    const role = m.role === "assistant" ? "assistant" : "user", text = toText(m.content).trim();
+    const role = m.role === "assistant" ? "assistant" : "user", text = msgText(m.content).trim();
     if (!text) continue;
     const prev = turns[turns.length - 1];
     if (prev && prev.role === role) prev.content += "\n\n" + text; else turns.push({ role, content: text });
@@ -865,7 +865,7 @@ async function callClaude(env, req) {
   const grading = claudeGrading(req.feature), model = claudeModel(env, req.feature);
   // max_tokens covers thinking as well as the answer, so it has room above the page's max_tokens (only what's used is billed)
   const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
-  const sys = toText(req.system).trim();
+  const sys = msgText(req.system).trim();
   if (sys) body.system = sys;
   const headers = { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" };
   // Sonnet 5.5: a request its safety classifier declines is answered by a fallback model the server picks, instead of failing
@@ -906,14 +906,13 @@ async function callGemini(env, rawBody, user) {
   const keys = geminiKeyOrder(env);
   if (!keys.length && claudeFail) return json({ error: { message: (claudeFail.status === 429 ? "rate limit (Claude): " : "Claude: ") + claudeFail.msg } }, claudeFail.status === 429 ? 429 : 502);
   if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
-  const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
+  const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: msgText(m.content) }] }));
   const payload = {
     contents,
     // extra headroom: newer Gemini models may spend part of the budget "thinking" before answering
     generationConfig: { maxOutputTokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, 2048), 16384), temperature: 0.7 }
   };
-  if (req.system) payload.systemInstruction = { parts: [{ text: toText(req.system) }] };
+  if (req.system) payload.systemInstruction = { parts: [{ text: msgText(req.system) }] };
   // Google limits the 2.5 models to accounts that already used them; new projects use 3.8 Flash / 3.5 Flash-Lite.
   // Free tier: each model has its own quota. Flash-Lite allows about 500 requests a day and 15 a
   // minute; the Flash models only 20 a day and 5 a minute. So live chat (high volume) starts on
