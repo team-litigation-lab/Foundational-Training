@@ -537,11 +537,15 @@ function trainerToolsHtml(){
   const tamOut = B.tamBusy ? "Reading the TAM…" : t && t.error ? "✗ " + t.error : Object.keys(tg).length
     ? "Graded: " + Object.entries(tg).sort().slice(-6).map(([d, x]) => `${d} ${x.pct}% (${x.words} words)`).join(" · ") : "No shadowing day graded yet.";
   const bt = B.btOut && B.btOut.id === id ? B.btOut : null;
-  return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>⏪ Backtrack a trainee · ✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
+  return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>⏪ Backtrack a trainee · ↺ Knowledge Check retry · ✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
     <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.ttWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
     <div class="bs-tt-row"><b>⏪ Backtrack</b> <button class="btn btn-ghost btn-sm" type="button" ${B.btBusy ? "disabled" : ""} onclick="FTBatchSheet.backtrack('${e(id)}')">${B.btBusy ? "Backtracking…" : "⏪ Backtrack this trainee from Day 1"}</button>
       <span class="bs-note">${bt ? e(bt.text) : "Reads their Task Tracker, Monitoring Sheet and test screenshots again for every training day since the batch started, and works each day out again (a day’s trainer score and comment are kept)."}</span></div>
     <p class="bs-note">The daily check runs at the end of every shift (and 🔄 Update runs today’s now); backtrack one trainee when their days need catching up — files linked late, a file fixed after the fact.</p>
+    ${window.FTKCRetry ? `<div class="bs-tt-row"><b>↺ Knowledge Check</b> <select id="bsKcL" onchange="FTBatchSheet.ttKeep('kl', this.value)">${FTKCRetry.lessons().flatMap(x => [`<option value="${x.l}|0" ${TD.kl === x.l + "|0" ? "selected" : ""}>Lesson ${x.l}: ${e(x.title)}</option>`].concat(x.read ? [`<option value="${x.l}|1" ${TD.kl === x.l + "|1" ? "selected" : ""}>Lesson ${x.l}: Reading Task</option>`] : [])).join("")}</select>
+      <input type="text" id="bsKcWhy" maxlength="300" placeholder="The technical problem (e.g. the connection dropped while grading)" style="flex:1;min-width:220px" value="${e(TD.kw || "")}" oninput="FTBatchSheet.ttKeep('kw', this.value)">
+      <button class="btn btn-ghost btn-sm" type="button" ${B.kcBusy ? "disabled" : ""} onclick="FTBatchSheet.kcRetry('${e(id)}')">${B.kcBusy ? "Granting…" : "↺ Grant one more attempt"}</button></div>
+    <p class="bs-note">A Knowledge Check (and its Reading Task) is taken once. For a system issue, grant one more attempt here, with the reason: it is kept with the trainee's record (also on ✍️ Knowledge Check, in the trainee's row).</p>` : ""}
     <div class="bs-tt-row"><b>✍ EOD</b> <input type="date" id="bsEodD" value="${e(TD.d || B.ttDay || today)}" max="${today}" oninput="FTBatchSheet.ttKeep('d', this.value)"> <input type="number" id="bsEodS" min="0" max="100" placeholder="Score %" style="width:90px" value="${e(TD.s || "")}" oninput="FTBatchSheet.ttKeep('s', this.value)">
       <input type="text" id="bsEodN" placeholder="Note (optional)" style="flex:1;min-width:160px" value="${e(TD.n || "")}" oninput="FTBatchSheet.ttKeep('n', this.value)"> <button class="btn btn-navy btn-sm" type="button" onclick="FTBatchSheet.eodGrade('${e(id)}')">💾 Save the EOD score</button></div>
     <p class="bs-note">For a day the EOD monitoring missed, or before it was set up. It replaces the automatic check for that day; an empty score takes it off.</p>
@@ -1315,6 +1319,19 @@ window.FTBatchSheet = {
     B.btBusy = false; B.data = null; B.dataKey = "";
     try{ if(window.FTRanking && FTRanking.reload) FTRanking.reload(); }catch(err){}
     render();
+  },
+  // ↺ one more attempt at a Knowledge Check, for a system issue (js/ft-process.js FTKCRetry.grant)
+  async kcRetry(id){
+    if(!adminOn() || B.kcBusy || !window.FTKCRetry) return;
+    const v = (document.getElementById("bsKcL") || {}).value || "", why = ((document.getElementById("bsKcWhy") || {}).value || "").trim(), [l, rd] = v.split("|");
+    if(!l){ toast("Pick the Knowledge Check."); return; }
+    if(!why){ toast("Write the system issue first: it is kept with the retry."); return; }
+    B.kcBusy = true; render();
+    const nm = (people().find(p => p.id === id) || {}).name || "The trainee";
+    try{ const r = await FTKCRetry.grant(id, Number(l), rd === "1", why);
+      if(r.ok){ toast(`✓ ${nm} can submit Lesson ${l}’s ${rd === "1" ? "Reading Task" : "Knowledge Check"} once more (${r.used} of ${r.allowed} attempts used).`); B.ttD = Object.assign({}, B.ttD, {kw: ""}); }
+      else toast(r.error); }catch(err){ toast("Couldn’t grant the retry. Check your connection."); }
+    B.kcBusy = false; render();
   },
   async tamGrade(id){
     if(!adminOn() || B.tamBusy) return;

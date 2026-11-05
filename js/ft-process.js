@@ -750,6 +750,23 @@ function kcAdmin(x){
           ${retryBox(x, l, read, rec)}
         </div>` : ""}</div>`; }).join("")}</div>`;
 }
+// ↺ one more attempt at a Knowledge Check (l) or its Reading Task (read), for a technical problem (why, kept with it):
+// kcreview:<id>.retries/.retryLog. Read strictly, so a failed read never writes over the trainer's reviews. Also used by the
+// 📋 Batch Sheet's trainer tools. Returns {ok, allowed} or {error}.
+async function grantRetry(id, l, read, why){
+  why = String(why || "").trim().slice(0, 300); if(!why) return {error: "Write the technical problem first: it is kept with the retry."};
+  const got = await readStrict("kcreview:" + id); if(!got.ok) return {error: "Couldn’t read the trainee’s record. Check your connection."};
+  const pr = await readStrict("process:" + id); if(!pr.ok) return {error: "Couldn’t read the trainee’s record. Check your connection."};
+  const cur = got.value || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
+  const k = retryKey(l, read), used = ((((pr.value || {})[read ? "kcRead" : "kc"] || {})[l]) || {}).attempts || 0;
+  cur.retries = cur.retries || {};
+  // (one attempt more than they have used: a trainee who took it several times before the once-only rule gets one more too)
+  cur.retries[k] = Math.max((Number(cur.retries[k]) || 0) + 1, used);
+  cur.retryLog = (Array.isArray(cur.retryLog) ? cur.retryLog : []).concat([{key:k, lesson:l, read:!!read, why, at:new Date().toISOString()}]).slice(-200);
+  if(await sharedSet("kcreview:" + id, cur) === false) return {error: "Couldn’t grant the retry. Check your connection."};
+  return {ok: true, review: cur, allowed: kcAllowed(cur, l, read), used};
+}
+window.FTKCRetry = {grant: grantRetry, lessons: () => [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a, b) => a - b).filter(l => DAYS.find(d => d.id === l)).map(l => ({l, title: (DAYS.find(d => d.id === l) || {}).title || "Lesson " + l, read: !!readSetOf(l)}))};
 window.FTProcessAdmin = {
   kc(id, l, read){ const k = id + "|" + l + (read ? "|read" : ""); FPA.kcOpen[k] = !FPA.kcOpen[k]; render(); },
   async saveKc(id, l, btn, read){
@@ -775,17 +792,9 @@ window.FTProcessAdmin = {
     const why = String((btn.parentElement.querySelector("[data-retry-why]") || {}).value || "").trim().slice(0, 300);
     if(!why){ toast("Write the technical problem first: it is kept with the retry."); return; }
     btn.disabled = true;
-    try{
-      const got = await readStrict("kcreview:" + id); if(!got.ok) throw new Error("read");   // (never over the reviews on a failed read)
-      const cur = got.value || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
-      const k = retryKey(l, read), used = ((((x.p || {})[read ? "kcRead" : "kc"] || {})[l]) || {}).attempts || 0;
-      cur.retries = cur.retries || {};
-      // (one attempt more than they have used: a trainee who took it several times before the once-only rule gets one more too)
-      cur.retries[k] = Math.max((Number(cur.retries[k]) || 0) + 1, used);
-      cur.retryLog = (Array.isArray(cur.retryLog) ? cur.retryLog : []).concat([{key:k, lesson:l, read:!!read, why, at:new Date().toISOString()}]).slice(-200);
-      if(await sharedSet("kcreview:" + id, cur) === false) throw new Error("save");
-      x.rv = cur; toast(`✓ Retry granted. ${x.name || "The trainee"} can submit the ${read ? "Reading Task" : "Knowledge Check"} once more.`);
-    }catch(err){ toast("Couldn’t grant the retry. Check your connection."); }
+    const r = await grantRetry(id, l, read, why);
+    if(r.ok){ x.rv = r.review; toast(`✓ Retry granted. ${x.name || "The trainee"} can submit the ${read ? "Reading Task" : "Knowledge Check"} once more.`); }
+    else toast(r.error);
     btn.disabled = false; render();
   },
   row(id){ FPA.open[id] = !FPA.open[id]; render(); if(FPA.open[id]) checkTraineeFolder(id); },
