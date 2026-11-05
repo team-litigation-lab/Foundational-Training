@@ -253,6 +253,25 @@ const failures = []; const fail = m => failures.push(m);
   if (!(await page.evaluate(() => /Grades in detail/.test(document.getElementById('bs-scores').innerText)))) fail('🏅 Scores has no grades in detail');
   if (!(await page.evaluate(() => /Scorecard overall: .*= the average of/.test(document.getElementById('bs-scores').innerText)))) fail('🔎 Grades in detail has no breakdown of the overall');
 
+  // ✍️ Knowledge Checks in detail, under 🏅 Score Card: each answer with its grade out of 10, the feedback and the trainer's
+  // comment on it, the trainer's overall comment, and the Process Questions report line — as on the ✍️ Knowledge Check page
+  { const qs = await page.evaluate(l => ftKcQuestions(l).filter(q => !q.set.open).slice(0, 2).map(q => ({ sid: q.set.id, i: q.i, n: q.set.questions.length })), lesson);
+    if (qs.length) {
+      const sid = qs[0].sid, answers = []; qs.forEach(q => { answers[q.i] = 'Answer ' + (q.i + 1) + ' from Ada'; });
+      await put('process:' + ids.Ada, { sets: { [sid]: { answers, submittedAt: iso(now - 2 * 3600e3) } }, kc: { [lesson]: { attempts: 1, best: 90, last: { at: iso(now - 2 * 3600e3), summary: 'Clear on the intake steps.',
+        items: [{ sid, i: qs[0].i, score: 9, feedback: 'Named every step in order.' }].concat(qs[1] ? [{ sid, i: qs[1].i, score: 5, feedback: 'Missed the conflict check.' }] : []) } } } });
+      await put('kcreview:' + ids.Ada, { lessons: { [lesson]: { comment: 'Good start; review the conflict check.', notes: { [sid + '|' + qs[0].i]: 'Spot on.' } } } });
+      await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
+      await page.evaluate(id => FTBatchSheet.kdWho(id), ids.Ada); await page.waitForTimeout(400);
+      const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).innerText || '');
+      if (!/Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
+        || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
+        fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
+      await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
+      await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
+    } else fail('no Knowledge Check questions for the first lesson');
+  }
+
   // 📝 Ada's Day 3 Reception Listening Activity, graded on its Answer Sheet (32 of 40, 80%: Call 1 all right, Call 2's reason
   // marked down): ✓ done and scored on Day 3 (📅 Day by Day, 📅 Day 1–16 with what she did best and what to improve), 🛠 Practice
   // of Lessons 3 and 4 on the 🏅 Score Card (Lesson 4's with her 76% mock call), and in 🏅 Scores under 🎧 Call Listening only
