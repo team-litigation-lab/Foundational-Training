@@ -1156,7 +1156,7 @@ async function googleApiText(url, tokens) {
    the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
    else through the folder's own link (publicFolderFiles). */
 async function folderFiles(env, folderUrl) {
-  const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
+  const fid = folderId(folderUrl);
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return publicFolderFiles(fid);
   let tokens;
