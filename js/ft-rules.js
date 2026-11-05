@@ -257,8 +257,8 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // js/ft-monitoring.js FT_MONITOR_DOC, and upload it to your Drive), then keep it
 const MON_PARTS = [
   {h:"Your Monitoring Sheet", steps:[
-    "Download the Monitoring Sheet below.",
-    "Upload it to your Google Drive.",
+    "Download the Monitoring Sheet below: it comes named for you, “LSH VA Training Monitoring Sheet__Your Name”.",
+    "Upload it to your Google Drive, keeping that name.",
     "You link it in Part 5."]},
   {h:"Update It", steps:[
     "Update your Monitoring Sheet and Task Tracker after each discussion or activity.",
@@ -269,8 +269,10 @@ const MON_PARTS = [
 // ⬇ the Monitoring Sheet's own file, on the platform (ft/monitoring/): the Word file downloads straight from here, with no
 // Google sign-in or Drive access asked; its button sits under the last slide's cards, beside Link My Google Drive
 const MON_FILE = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.docx";
+// (downloaded under its naming rule, the trainee's name in it, as 📁 My Drive links checks it: worker.js NAMING)
 function monGet(){
-  return `<a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet.docx">⬇ Download the Monitoring Sheet (Word)</a>`;
+  const who = String((state.traineeId && state.traineeName) || "").replace(/[\\/:*?"<>|]+/g, " ").trim();
+  return `<a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet__${esc(who || "Your Name")}.docx">⬇ Download the Monitoring Sheet (Word)</a>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -455,7 +457,8 @@ const SLIDES = [
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
       ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><div><b>${esc(h)}</b><span>${esc(t)}</span></div></li>`).join("")}</ol></div>`],
-  // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
+  // the last step of the orientation, in its order (Part 5 names all six links, js/ft-drive.js MONITORED, and that each is checked
+  // as the trainee's own, worker.js verifyLinks): once the tracker, the Monitoring Sheet and the answer sheets have all
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js). Only the Task Tracker is
   // given at onboarding: the Monitoring Sheet is downloaded here (MON_PARTS, the sheet in js/ft-monitoring.js), put in
   // the trainee's own Drive and linked with the rest
@@ -463,7 +466,7 @@ const SLIDES = [
       {h:"Your Task Tracker", steps:["It is in the Google Drive you got during onboarding."]},
       MON_PARTS[0], MON_PARTS[1],
       {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
-      {h:"Link Them Once", steps:["Paste the link of your Task Tracker.", "Paste the link of your Monitoring Sheet (the copy in your Drive).", "Paste the link of your folder, then save."], link:true},
+      {h:"Link Them Once", steps:["Paste the links of your six: Monitoring Sheet, TAM, Typing Tests and Spelling Tests folders, Assessments/Activities folder and Task Tracker.", "Use your own copies: each has your Batch ID and name in its name.", "Save: the system checks each link and tells you if one isn’t right."], link:true},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>

@@ -39,7 +39,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);
 
-    // 🧑‍🏫 Admin → 📦 Intake Packets: a Mock call case column beside the packet, with the CMS's intake calls only
+    // 🧑‍🏫 Admin → 📦 Intake Packets: a Demo case column beside the packet, with the CMS's intake calls only
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'intake'; goto('admin'); });
     await page.waitForTimeout(2500);
     await page.evaluate(b => FTIntakeAdmin.batch(b), BATCH); await page.waitForTimeout(800);
@@ -47,7 +47,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (await page.evaluate(() => [...document.querySelectorAll('.ftis-admin select')].some(x => /assignCall/.test(x.getAttribute('onchange') || '')))) fail('the Mock call case is still a dropdown of its own');
     await page.evaluate(id => FTIntakeAdmin.assign(id, '2'), id); await page.waitForTimeout(800);
     let rec = await get('intakeassign:' + id);
-    if (!rec || rec.packet !== 2 || rec.call !== 'ft_in_nicole') fail(`packet 2 didn't bring its mock call case: ${JSON.stringify(rec)}`);
+    if (!rec || rec.packet !== 2 || rec.call !== 'ft_in_nicole') fail(`packet 2 didn't bring its demo case: ${JSON.stringify(rec)}`);
     const cell = await page.evaluate(() => (document.querySelector('.ftis-admin .ftis-case-auto') || {}).textContent || '');
     if (!/New Intake With a Deadline Close/.test(cell)) fail(`the case column doesn't show the paired case: ${cell}`);
     await page.evaluate(id => FTIntakeAdmin.assign(id, '4'), id); await page.waitForTimeout(800);
@@ -60,28 +60,28 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (((await get('intakeassign:' + id)) || {}).call !== 'ft_in_nicole') fail('a packet whose client is a caller didn\'t pair with their call');
     await page.evaluate(id => FTIntakeAdmin.assign(id, '2'), id); await page.waitForTimeout(800);
 
-    // Day 8's Practice Intake Calls has no cases box (and no Sample Intake Forms): the cases are on Day 9's preparation slide
+    // Day 8's Practice Intake Calls has no cases box (and no Sample Intake Forms): the cases are the Day 8 demo's, on its preparation slide (s3p)
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);
     if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall, .ftdd-sheet .ftis-forms'))) fail('Day 8\'s Practice Intake Calls still has the cases box or the sample forms');
-    // the trainer's Day 9 Intake Mock Calls Metrics slide: beside the metrics, every intake case, where to pick it on Ring
-    // Channel, its script; the trainee's name on theirs (the Mock Calls Ongoing slide is off the deck)
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2500);
+    // Day 9's Intake Mock Calls Metrics slide carries no case: the packet's case is the Day 8 demo's
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall'))) fail('Day 9\'s Intake Mock Calls slide still has a case box (the case is the Day 8 demo\'s)');
+    // the trainer's Day 8 demo preparation slide: every intake case, where to pick it on Ring Channel, its script; the
+    // trainee's name on theirs
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2500);
     const tv = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { cases: el.querySelectorAll('.ftis-mc-t').length, html: el.innerHTML,
       tag: [...el.querySelectorAll('.ftis-mc-t')].map(d => (d.querySelector('.ftis-mc-n') || {}).textContent || '') } : null; });
-    if (!tv) fail('Day 9\'s Intake Mock Calls slide has no mock call case section for the trainer');
-    if (await page.evaluate(() => document.querySelectorAll('.ftdd-sheet .ftis-mockcall').length) !== 1) fail('the trainer\'s Intake Mock Calls slide doesn\'t list the cases exactly once');
+    if (!tv) fail('Day 8\'s demo slide has no demo case section for the trainer');
+    if (await page.evaluate(() => document.querySelectorAll('.ftdd-sheet .ftis-mockcall').length) !== 1) fail('the trainer\'s Day 8 demo slide doesn\'t list the cases exactly once');
     else {
       if (tv.cases !== 3) fail(`the trainer's slide lists ${tv.cases} cases, not the CMS's 3 intake calls`);
       if (!/Scenario Picker/.test(tv.html) || !/SCRIPT-ft_in_nicole/.test(tv.html) || !/CASEFILE-MC-13/.test(tv.html)) fail('the trainer\'s case doesn\'t say where to pick it on Ring Channel, or lacks the script or the CMS file');
       if (tv.tag[1] !== 'Ivy' || tv.tag[0]) fail(`the trainer's slide doesn't mark the trainee on their case: ${JSON.stringify(tv.tag)}`);
     }
 
-    // the trainer's scoring sheet: the picked trainee's case, kept with the score
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
-    // (the slide has the 🧑‍🏫 button; the scoresheet opens over it, a pop-up on one screen)
-    const key = await page.evaluate(() => (document.querySelector('.ftms-launch[data-act="intake-live"]') || {}).getAttribute?.('data-ms') || '');
-    if (!key) fail('Day 9\'s Intake Mock Calls metrics have no button to open the trainer\'s scoresheet');
-    else {
+    // the trainer's Day 8 demo scoring sheet (as 🧑‍🏫 Graders opens it): the picked trainee's case, kept with the demo's score
+    const key = 'intake-packet';
+    {
       await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1500);
       const sheet = await page.evaluate(() => (document.querySelector('.ftms-trainer .ftis-mcase') || {}).innerHTML || '');
       if (!/New Intake With a Deadline Close/.test(sheet) || !/SCRIPT-ft_in_nicole/.test(sheet)) fail(`the scoring sheet doesn't show the trainee's case: ${sheet.slice(0, 200)}`);
@@ -89,21 +89,20 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
       await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '4'; i.dispatchEvent(new Event('input', { bubbles: true }));
         FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });
       await page.waitForTimeout(1500);
-      const lr = await get('labreview:' + id), a = ((lr || {}).acts || {})['intake-live'] || {};
+      const lr = await get('labreview:' + id), a = ((lr || {}).acts || {})['intake-packet-demo'] || {};
       if (!a.case || a.case.id !== 'ft_in_nicole' || !a.rubric) fail(`the score wasn't saved with the case it was played on: ${JSON.stringify(a)}`);
     }
 
     // the trainer's slide has no "👁 What trainees see" preview of the trainee's panel
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
     if (await page.evaluate(() => !!document.querySelector('.ftbf-pv'))) fail('the trainer\'s slide still shows the "What trainees see" preview');
     // a score saved after the case is unassigned doesn't keep the old case
     await page.evaluate(id => FTIntakeAdmin.assignCall(id, ''), id); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
     await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1200);
     await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '3'; i.dispatchEvent(new Event('input', { bubbles: true }));
       FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });
     await page.waitForTimeout(1500);
-    const lr2 = ((((await get('labreview:' + id)) || {}).acts) || {})['intake-live'] || {};
+    const lr2 = ((((await get('labreview:' + id)) || {}).acts) || {})['intake-packet-demo'] || {};
     if (lr2.case !== null) fail(`a score saved with no case assigned kept the earlier case: ${JSON.stringify(lr2.case)}`);
     if (((await get('intakeassign:' + id)) || {}).packet !== 2) fail('unassigning the case lost the packet');
 
@@ -113,12 +112,12 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     await put('intakeassign:' + id, { packet: 4, call: 'ft_in_nicole' });
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; }, id);
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    // (on the metrics slide, beside the metrics: the trainee's own case, never the trainer's list of every case)
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
-    if (await page.evaluate(() => /Intake Mock Call cases:/.test((document.querySelector('.ftdd-sheet .ftis-mockcall') || {}).innerText || ''))) fail('a trainee sees the trainer\'s list of every case');
+    // (on the Day 8 demo slide: the trainee's own case, never the trainer's list of every case)
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
+    if (await page.evaluate(() => /Intake Demo cases:/.test((document.querySelector('.ftdd-sheet .ftis-mockcall') || {}).innerText || ''))) fail('a trainee sees the trainer\'s list of every case');
     let mine = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText, html: el.innerHTML,
       cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
-    if (!mine || !/Your Intake Mock Call case/.test(mine.text) || !/New Intake With a Deadline Close/.test(mine.text)) fail(`the trainee doesn't see their case: ${JSON.stringify(mine)}`);
+    if (!mine || !/Your Intake Demo case/.test(mine.text) || !/New Intake With a Deadline Close/.test(mine.text)) fail(`the trainee doesn't see their case: ${JSON.stringify(mine)}`);
     else {
       if (/SCRIPT-|Goal of|CASEFILE|Scenario Picker/.test(mine.html) || (mine.html.match(/ftis-mc-card/g) || []).length !== 1) fail('the trainee sees more than their own case (the script, the goals, the file or the other cases)');
       if (!/program=intake/.test(mine.cms) || /mock=/.test(mine.cms)) fail(`a first call's CMS link isn't a blank intake: ${mine.cms}`);
@@ -126,22 +125,22 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     // a call back opens the case file in the CMS
     await put('intakeassign:' + id, { packet: 4, call: 'ft_in_retainer' });
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    // (Day 9's metrics slide shows it beside the metrics)
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
+    // (the Day 8 demo slide shows it)
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
     mine = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText, cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
-    if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`Day 9's metrics slide doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
+    if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`the Day 8 demo slide doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
     // unassigned: the placeholder and the Intake line to practise on
     await put('intakeassign:' + id, { packet: 4 });
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(1500);
     const ph = await page.evaluate(() => (document.querySelector('.ftdd-sheet .ftis-mockcall') || {}).innerText || '');
-    if (!/Your mock call case appears here/.test(ph)) fail(`an unassigned trainee doesn't see the placeholder: ${ph.slice(0, 200)}`);
+    if (!/Your demo case appears here/.test(ph)) fail(`an unassigned trainee doesn't see the placeholder: ${ph.slice(0, 200)}`);
 
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);
     const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
     await put('settings:opendays', openWas || { all: [], batches: {} }); await put('settings:intake', intakeWas);
   } catch (e) { fail(e.stack || String(e)); }
   await browser.close();
-  if (failures.length) { console.error('Intake Mock Call case test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Intake Mock Call case test passed (the CMS\'s intake calls as the cases, assigned beside the packet and kept by both writes; the trainer\'s slide with every case, where to pick it on Ring Channel, the script and the trainee on their case; the scoring sheet showing the case and saving it with the score; the trainee seeing only their own case, the CMS blank for a first call and on the file for a call back, on Day 8, Day 9\'s preparation and the Mock Calls Ongoing panel; the placeholder until assigned).');
+  if (failures.length) { console.error('Intake Demo case test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
+  console.log('Intake Demo case test passed (the case is the Day 8 demo\'s, not on Day 9\'s mock call; the CMS\'s intake calls as the cases, assigned beside the packet and kept by both writes; the trainer\'s slide with every case, where to pick it on Ring Channel, the script and the trainee on their case; the scoring sheet showing the case and saving it with the score; the trainee seeing only their own case, the CMS blank for a first call and on the file for a call back, on Day 8, Day 9\'s preparation and the Mock Calls Ongoing panel; the placeholder until assigned).');
 })();

@@ -107,13 +107,15 @@ const failures = []; const fail = m => failures.push(m);
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
   if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
-  // Compliance and Platform Utilization: the Drive link's dropdown, Correct / Wrong for the one picked, how many are correct, the progress
+  // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
-  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Assessment (dropdown)', 'Correct / Wrong', 'Links correct', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
-  if (!ca || ca[1] !== '📒 Monitoring Sheet' || !/Wrong/.test(ca[2]) || ca[3] !== '4 / 6') fail(`Ada's compliance (her Monitoring Sheet wrong; 4 of 6 correct): ${ca}`);
-  await page.evaluate(id => FTBatchSheet.dlPick(id, 'tam'), ids.Ada); await page.waitForTimeout(300);
-  const ca2 = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'compliance'); const r = t.rows.find(r => /Ada/.test(r[0].v)); return [r[1].v, r[2].v]; });
-  if (ca2[0] !== '📘 TAM' || !/Correct/.test(ca2[1])) fail(`picking Ada's TAM in the dropdown: ${ca2}`);
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
+  if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗ Wrong' || ca[3] !== '✓ Correct' || ca[4] !== '⏳ Pending' || ca.slice(5, 8).some(v => v !== '✓ Correct')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
+  if (await page.$('#bs-compliance select')) fail('the compliance table still has a dropdown');
+  // (why a link is wrong: on a hover, the cell's title, and on a click, the formula bar)
+  const why = await page.evaluate(() => { const r = [...document.querySelectorAll('#bs-compliance tbody tr')].find(tr => /Ada/.test(tr.innerText)); const td = r && r.querySelector('td[data-c="2"]'); return td ? td.title : ''; });
+  if (!/Monitoring Sheet/.test(why) || !/can.t open/.test(why)) fail(`a wrong link doesn't say why on a hover: ${why}`);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
@@ -265,8 +267,8 @@ const failures = []; const fail = m => failures.push(m);
   // (her own 📅 Day 1–16 scores first, with her days in detail; no Weekly Ranking: that is the batch's)
   if (MT[0].id !== 'scorecard' || MT[1].id !== 'compliance' || !MT.some(x => x.title === '👤 Me')) fail(`the trainee's first tables are ${MT.slice(0, 2).map(x => x.title)}`);
   if (await page.$('.bs-mine #bs-ranking')) fail('a trainee sees the batch\'s Weekly Ranking');
-  // (her 📤 Daily outputs with the day's comments: the platform's check and the AI's review)
-  if (!/AI-NOTES/.test(await page.evaluate(() => (document.querySelector('.bs-mine #bs-outputs .bs-oc') || {}).innerText || ''))) fail('the trainee doesn\'t see her days\' comments under 📤 Daily outputs');
+  // (her 📤 Daily outputs with each activity's score box and its comment, in the table)
+  if (!/TRAINER-NOTE/.test(await page.evaluate(() => [...document.querySelectorAll('.bs-mine #bs-outputs td.bs-ocell')].map(td => td.innerText).join(' ')))) fail('the trainee doesn\'t see her days\' comments in 📤 Daily outputs');
   // (no checklist on her page either, and no trainer's picker)
   if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
@@ -305,11 +307,25 @@ const failures = []; const fail = m => failures.push(m);
   }
   if (await page.evaluate(() => state.adminTab) !== 'batchsheet') { await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(2500); }
 
-  // 📤 Daily outputs: under the table, a day's summarized comments (the platform's check and the AI's review), for the trainer
-  await page.evaluate(id => FTBatchSheet.ocWho(id), ids.Ada); await page.waitForTimeout(500);
-  const oc = await page.evaluate(() => (document.querySelector('#bs-outputs .bs-oc') || {}).innerText || '');
-  if (!/afternoon typing test/.test(oc) || !/No output link submitted/.test(oc) || !/AI-NOTES/.test(oc) || !/TRAINER-NOTE/.test(oc) || !/Common Terms Used/.test(oc) || !/Every open task has its Daily Note/.test(oc))
-    fail(`📤 Daily outputs' comments for Ada don't summarize the day (the check, what to fix, the AI's review, the trainer): ${oc.slice(0, 300)}`);
+  // 📤 Daily outputs: in the table, each day's cell has every activity's score in a little box and its comment, two sentences
+  // at most (no 💬 Comments list under the table any more)
+  const oc = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'), ci = T.head.findIndex(h => /\b11\/2\b/.test(h));
+    const tr = [...document.querySelectorAll('#bs-outputs tbody tr')].find(r => /Ada/.test(r.innerText)); const c = ci > 0 && tr && tr.querySelector(`td.bs-ocell[data-c="${ci}"]`);
+    return c ? { text: c.innerText, acts: [...c.querySelectorAll('.bs-oacts li')].map(li => ({ k: li.dataset.act, box: li.querySelector('.bs-sbox').innerText, say: li.querySelector('span').innerText })) } : null; });
+  if (!oc) fail('📤 Daily outputs has no day cell with the activities for Ada');
+  else {
+    const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
+    if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
+    if (by('tracker').box !== '50%' || !/0 of 1 checks met; to fix: Every open task has its Daily Note/.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
+    if (by('tests').box !== '67%' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
+    if (by('outputs').box !== '0%' || !/No output link submitted/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
+    if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
+  }
+  if (await page.$('#bs-outputs .bs-oc, #bs-outputs .bs-ck-who')) fail('the 💬 Comments list is still under 📤 Daily outputs');
+  // (the AI's full review stays in the cell's formula bar text, and ⬇ Download carries the comments)
+  const ocF = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'); const r = T.rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => (c.f || '') + '|' + (c.csv || '')).join(' ') : ''; });
+  if (!/AI-NOTES/.test(ocF) || !/Typing & Spelling 67%: Took/.test(ocF)) fail(`the day's full text (formula bar / download) is missing the AI's review or the comments: ${ocF.slice(0, 300)}`);
 
   // 👥 a trainee revoked (🚫 Offboard) leaves the scorecards at once, and comes back when restored (js/ft-roster.js)
   await page.evaluate(id => confirmRevokeTrainee(id, 'Ben Blank'), ids.Ben); await page.waitForTimeout(3000);

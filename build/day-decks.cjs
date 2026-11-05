@@ -587,7 +587,11 @@ s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
   const to = html.indexOf('<div class="trainer-slot" data-slot="8:s3-1"></div>');
   if(from !== 0 || to < 0 || !/Give each trainee 10-15 minutes/.test(html.slice(from, to)) || !html.includes("Demo Metrics</b></p>")) throw new Error("Day 8's demo slide is no longer where the build looks for it");
-  return DEMO_SLIDE + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
+  // (the trainee's Day 8 demo case, paired with their packet, on page 1 under the instructions: js/ft-intake.js .ftis-mockcall;
+  // a trainer sees every case with where to play it on Ring Channel)
+  const brk = DEMO_SLIDE.lastIndexOf('<div class="ftdd-pgbreak"></div>');
+  if(brk < 0) throw new Error("Day 8's demo instructions no longer end on a page break");
+  return DEMO_SLIDE.slice(0, brk) + `<div class="ftis-mockcall"></div>\n` + DEMO_SLIDE.slice(brk) + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
@@ -1443,12 +1447,11 @@ const EX_RENAME = {
   // (Day 13: the breakout's section keeps only the HIPAA homework: the breakout is the Call Listening slide's)
   13: {s3: {h: "HOMEWORK: HIPAA Training 101"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
-// what an activity slide emptied by PREP still carries: Day 9's Intake Mock Calls, every intake case for the trainer
-// (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
-// Day 8's slides or Day 9's metrics slide
-const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
+// what an activity slide emptied by PREP still carries (none now: the packet's paired intake case is the Day 8 demo's, on its
+// preparation slide s3p, TRIM[8].s3; Day 9's Intake Mock Call carries no case)
+const PREP_KEEP = {};
 // a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 8, 12,
-// 14 and 16; Day 9's Intake Mock Calls, whose case and practice links are on its metrics slide, s2, build/days/day09.js)
+// 14 and 16; Day 9's Intake Mock Calls, whose practice links are on its metrics slide, s2, build/days/day09.js)
 const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},

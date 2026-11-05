@@ -355,7 +355,26 @@ async function traineeWrite(env, tok, key, value) {
   if (key === `process:${id}`) {
     // Process Questions (js/ft-process.js): the trainee's own answer sheets.
     if (value.length > 400000) return "The answers are too large to save";
-    await kv.put(key, value); return null;
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    // 🔒 a Knowledge Check is taken once (js/ft-process.js kcAllowed): kc[lesson] / kcRead[lesson] = {attempts, best, last}.
+    // A trainee's attempts are 1 plus the retries the trainer granted for a technical problem (kcreview:<id>.retries,
+    // "<lesson>" / "read<lesson>"). A graded attempt can't be changed or taken away, and one past the count isn't saved.
+    const rvRaw = await kv.get(`kcreview:${id}`);
+    let rv = null; try { rv = rvRaw ? JSON.parse(rvRaw) : null; } catch (e) { rv = null; }
+    const allowed = (slot, l) => 1 + Math.max(0, Math.floor(Number(((rv && rv.retries) || {})[(slot === "kcRead" ? "read" : "") + l]) || 0));
+    const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+    // (a count is a whole number from 1: a stored record of any other shape still counts as taken, and none is accepted)
+    const n = (r) => { const v = r && r.attempts; return typeof v === "number" && Number.isInteger(v) && v >= 1 ? v : 0; };
+    for (const slot of ["kc", "kcRead"]) {
+      const was = obj(existing && existing[slot]), now = obj(incoming[slot]), out = {};
+      for (const l of new Set([...Object.keys(was), ...Object.keys(now)])) {
+        const w = was[l], v = now[l];
+        if (w) out[l] = v && n(v) > n(w) && n(w) < allowed(slot, l) && n(v) <= allowed(slot, l) ? v : w;   // a new attempt, if one is left
+        else if (v && n(v) >= 1 && n(v) <= allowed(slot, l)) out[l] = v;   // the first attempt
+      }
+      if (Object.keys(out).length || slot in incoming || (existing && slot in existing)) incoming[slot] = out;
+    }
+    await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `calsim:${id}`) {
     // Calendar Scheduler (js/ft-calendar.js): the trainee's draft calendars and submissions. The trainer's reviews
@@ -827,6 +846,32 @@ function facilitatorVoice(saved) {
    trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
    read by their public export, as before. */
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
+/* 🔑 GDRIVE_SA_KEY, however it was pasted into Cloudflare: the PEM itself (with real line breaks or "\n"), the private_key
+   value copied from the JSON file with its quotes (and a trailing comma), the "private_key": "…" line, or the whole JSON
+   key file (whose client_email then signs in, the account the key belongs to). Returns {der, email} or {why}: why it isn't a
+   key, said plainly for the Batch Sheet's 🔌 banner. */
+function saKey(env) {
+  let raw = String(env.GDRIVE_SA_KEY || "").trim(), email = "";
+  if (raw.startsWith("{")) {
+    let j = null; try { j = JSON.parse(raw); } catch (e) { j = null; }
+    if (!j && !/"private_key"\s*:\s*"[^"]+"/.test(raw)) return { why: "GDRIVE_SA_KEY looks like the JSON key file but isn't complete JSON: paste the whole file, from { to }, or only its private_key" };
+    if (j && !j.private_key) return { why: "GDRIVE_SA_KEY is a JSON file with no private_key in it: download a new JSON key for the service account (Google Cloud → IAM → Service accounts → Keys → Add key → JSON)" };
+    if (j) { raw = String(j.private_key); email = String(j.client_email || ""); }
+  }
+  if (!email) {
+    const line = raw.match(/"private_key"\s*:\s*"([^"]+)"/); if (line) raw = line[1];
+    raw = raw.replace(/,\s*$/, "").replace(/^["']|["']$/g, "");
+  }
+  raw = raw.replace(/\\r\\n|\\n|\\r/g, "\n");
+  if (/BEGIN RSA PRIVATE KEY/.test(raw)) return { why: "GDRIVE_SA_KEY is an RSA (PKCS#1) key; the platform needs the service account's JSON key: its private_key starts -----BEGIN PRIVATE KEY-----" };
+  const body = raw.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  if (/^[0-9a-f]{40}$/i.test(body)) return { why: "GDRIVE_SA_KEY holds the private_key_id (40 letters and digits), not the private_key: paste the private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  if (!/-----BEGIN PRIVATE KEY-----/.test(raw) && body.length < 1000) return { why: "GDRIVE_SA_KEY isn't a private key: paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  if (/[^A-Za-z0-9+/=]/.test(body)) return { why: "GDRIVE_SA_KEY has characters a key can't have (a quote, a comma or a word pasted with it): paste only the private_key, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" };
+  let der; try { der = Uint8Array.from(atob(body), (c) => c.charCodeAt(0)); } catch (e) { der = null; }
+  if (!der || body.length < 1500) return { why: `GDRIVE_SA_KEY is cut short (${body.length} characters of key; a service account's is about 1,600): paste the whole private_key, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----` };
+  return { der, email };
+}
 // (one token per scope and identity: reads go through readTokens, as GDRIVE_SA_SUBJECT first when it is set; 💾 Save to Drive
 // writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
 const SA_TOKENS = {};
@@ -838,12 +883,13 @@ async function driveToken(env, write, self) {
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
   const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
-  const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  const sk = saKey(env);
+  if (sk.why) throw Object.assign(new Error("drive-auth"), { detail: sk.why });
   let key;
-  try { key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]); }
-  catch (e) { throw Object.assign(new Error("drive-auth"), { detail: "GDRIVE_SA_KEY isn't a valid private key (paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----)" }); }
+  try { key = await crypto.subtle.importKey("pkcs8", sk.der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]); }
+  catch (e) { throw Object.assign(new Error("drive-auth"), { detail: "GDRIVE_SA_KEY isn't a valid private key (it reads as a key, but not one Google issued for a service account): paste the whole private_key from the JSON file, -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----" }); }
   const now = Math.floor(Date.now() / 1000);
-  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
+  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: sk.email || env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, asSub ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
@@ -1169,6 +1215,32 @@ const LINKS_KIND = {
   folder: { folder: true, label: "Assessments/Activities folder", re: /assessment|activit/i },
   tracker: { folder: false, label: "LSH Daily Task Tracker", re: /task tracker/i } };
 const notFolder = (label) => `This isn't a folder's link. Open your ${label} and copy its address (…/drive/folders/…).`;
+/* 🔎 IS IT THEIRS: a link that opens and is the right kind of file is also checked to be the trainee's OWN copy. The six
+   are made per trainee and named with the Batch ID and the VA's name ("LSH Daily Task Tracker | B103026 Ana Cruz"; the
+   Typing Tests, Spelling Tests and Assessments/Activities folders sit in "LSH Trainee folder – B103026 Ana Cruz", so a
+   folder with a plain name is read by its parent's). ✗ with why when: it is the blank template ("VA Name", "BatchID"); it
+   names another batch; it names another trainee of the batch; it doesn't carry the trainee's name; it is the same file as
+   another of their six; or another trainee already linked it (drivelink:<file id> = {id, k}). VERIFY_V: a ✓ from before
+   these checks is checked once more. */
+const VERIFY_V = 2;
+// each link's naming convention, as 📁 My Drive links states it (js/ft-drive.js MONITORED): batch: its name carries the Batch ID
+const NAMING = {
+  monitor: { batch: false, rule: "LSH VA Training Monitoring Sheet__Your Name" },
+  tam: { batch: true, rule: "LSH Task Assessment Manual (TAM) | BatchID Your Name" },
+  typing: { batch: true, rule: "LSH Trainee folder – BatchID Your Name/Typing Tests" },
+  spelling: { batch: true, rule: "BatchID Your Name/Spelling Tests" },
+  folder: { batch: true, rule: "LSH Trainee folder – BatchID Your Name Assessments/Activities" },
+  tracker: { batch: true, rule: "LSH Daily Task Tracker | BatchID Your Name" } };
+const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/.test(batch) ? batch : "BatchID").replace("Your Name", name || "Your Name");
+const GENERIC = { typing: true, spelling: true, folder: true };
+const nameWords = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+// a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
+// a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
+const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
+const nameHits = (person, T) => pWords(person).filter((w) => T.has(w)).length;
+// a person's name is in a text when two of its words are there (or the one it has)
+const nameIn = (person, text) => { const P = pWords(person); return !!P.length && nameHits(person, new Set(nameWords(String(text).replace(/_/g, " ")))) >= Math.min(2, P.length); };
+const TEMPLATE_RE = /\bVA\s*Name\b|your\s+full\s+name|\bBatch\s*ID\b|\[\s*batch\s*\]/i;
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
   if (!driveSA(env)) return { error: "no-sa", detail: "GDRIVE_SA_EMAIL and GDRIVE_SA_KEY aren't set on the Worker" };
@@ -1184,11 +1256,69 @@ async function verifyLinks(env, id) {
   // (the address to share with: GDRIVE_SA_SUBJECT when the platform could work as it just now, else the service account)
   const sa = String(tokens.subOk ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL);
   const rk0 = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, prev = rk0.verify || {};
+  const me = JSON.parse((await kv.get(`trainee:${id}`)) || "null") || {}, myBatch = String(me.batch || "").toUpperCase();
+  const seen = new Map();   // file id → the link of theirs that has it (the same file twice)
+  let roster = null;        // the batch's other trainees, read once, when a name has to be told apart
+  const others = async () => {
+    if (roster) return roster;
+    const suffix = id.includes("--") ? "--" + id.split("--").pop() : "";
+    const keys = [];
+    if (suffix) { let cursor; do { const r = await kv.list(Object.assign({ prefix: "trainee:" }, cursor ? { cursor } : {}));
+      (r.keys || []).forEach((x) => { if (x.name.endsWith(suffix) && x.name !== `trainee:${id}`) keys.push(x.name); });
+      cursor = r.list_complete === false ? r.cursor : null; } while (cursor); }
+    roster = (await Promise.all(keys.slice(0, 200).map((n) => kv.get(n)))).map((v) => { try { return JSON.parse(v); } catch (e) { return null; } })
+      .filter((r) => r && r.name && !r.purgedAt && !r.rejected);
+    return roster;
+  };
+  const label = (k) => LINKS_KIND[k].label;
+  async function ownCheck(k, K, fid, name, parents, tokens) {
+    const base = { name: name.slice(0, 200) };
+    // the same file as another of their six
+    if (seen.has(fid)) return Object.assign(base, { ok: false, mine: false, error: `This is the same link as your ${label(seen.get(fid))}. Link your ${K.label} itself.` });
+    seen.set(fid, k);
+    // a folder with a plain name ("Typing Tests"): read with its parent's, "LSH Trainee folder – B103026 Ana Cruz"
+    let text = name;
+    if (GENERIC[k] && !nameIn(me.name, name) && Array.isArray(parents) && parents[0]) {
+      for (const token of tokens) {
+        const pr = await fetch(`https://www.googleapis.com/drive/v3/files/${parents[0]}?fields=name&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } }).catch(() => null);
+        if (pr && pr.ok) { const pj = await pr.json().catch(() => ({})); if (pj.name) text = `${pj.name} ${name}`; break; }
+      }
+    }
+    const rule = `“${ruleFor(k, myBatch, me.name)}”`;
+    // ("B073126_ Ana Cruz", "Sheet__Ana Cruz": an underscore is a space here)
+    const plain = text.replace(/_/g, " "), T = new Set(nameWords(plain)), unread = !!(GENERIC[k] && text === name);
+    if (TEMPLATE_RE.test(plain)) return Object.assign(base, { ok: false, mine: false, error: `This is the blank template ("${name.slice(0, 120)}"), not your own copy. Link your own: ${rule}.` });
+    // (their batch, or the one a trainer moved them from: their files were named before the move)
+    const b = (plain.match(/\bB\d{6}\b/i) || [])[0], mine = [myBatch, String(me.batchFrom || "").toUpperCase()].filter((x) => /^B\d{6}$/.test(x));
+    if (b && mine.length && !mine.includes(b.toUpperCase())) return Object.assign(base, { ok: false, mine: false, error: `This is batch ${b.toUpperCase()}'s ${K.label}, not yours: your batch is ${myBatch}. Link your own: ${rule}.` });
+    // whose name it carries: theirs, unless a batch-mate's name fits it better (more of their words, or all of them)
+    const myW = pWords(me.name).length, myHits = nameHits(me.name, T), mineName = myW > 0 && myHits >= Math.min(2, myW);
+    const better = (myHits || !unread) ? (await others()).map((o) => ({ o, h: nameHits(o.name, T), w: pWords(o.name).length }))
+      .filter((x) => x.w && x.h >= Math.min(2, x.w) && (x.h > myHits || (x.h === x.w && myHits < myW))).sort((x, y) => y.h - x.h)[0] : null;
+    if (better) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
+    // (a plain-named folder whose parent can't be read can't be told apart by its name: it passes on the other checks)
+    if (!mineName && me.name && !unread) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
+    // (the rule's Batch ID: their own batch in the name, where the convention has one)
+    if (NAMING[k].batch && mine.length && !b && !unread)
+      return Object.assign(base, { ok: false, mine: false, error: `Its name ("${name.slice(0, 120)}") doesn't follow the naming rule: it needs your Batch ID. It should be ${rule}.` });
+    // a folder its name can't tell apart: another active trainee linked this very one already (a named file is told by its name)
+    if (unread) {
+      const owner = JSON.parse((await kv.get(`drivelink:${fid}`)) || "null");
+      if (owner && owner.id && owner.id !== id) {
+        const ot = JSON.parse((await kv.get(`trainee:${owner.id}`)) || "null"), od = JSON.parse((await kv.get(`drive:${owner.id}`)) || "null") || {};
+        const active = ot && !ot.archived && !ot.offboarded && !ot.purgedAt && !ot.rejected && ot.name && pWords(ot.name).join(" ") !== pWords(me.name).join(" ");
+        if (active && Object.keys(LINKS_KIND).some((x) => String(od[x] || "").includes(fid)))
+          return Object.assign(base, { ok: false, mine: false, error: `${ot.name} has already linked this folder as theirs. Link your own: ${rule}.` });
+      }
+    }
+    await kv.put(`drivelink:${fid}`, JSON.stringify({ id, k, at: new Date().toISOString() }));
+    return Object.assign(base, { ok: true, mine: true });
+  }
   for (const k of Object.keys(LINKS_KIND)) {
     const url = String(drive[k] || "").trim(), K = LINKS_KIND[k];
     if (!url) continue;
     // (✓ Mark as opening: locked for this very link)
-    if (prev[k] && prev[k].ok && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; continue; }
+    if (prev[k] && prev[k].ok && prev[k].v === VERIFY_V && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; seen.set(prev[k].fid || url, k); continue; }
     const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || [])[1]);
     let r;
     if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : K.folder ? notFolder(K.label) : k === "tracker" ? VERIFY_WHY.sheet : k === "monitor" ? VERIFY_WHY.doc : `This isn't a file's own link. Open your ${K.label} and copy its address from the address bar.` };
@@ -1197,7 +1327,7 @@ async function verifyLinks(env, id) {
       try {
         let res, j = {};
         for (const token of tokens) {
-          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+          res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
           j = await res.json().catch(() => ({}));
           if (res.ok) break;
         }
@@ -1207,12 +1337,15 @@ async function verifyLinks(env, id) {
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
         else if (j.name && !K.re.test(String(j.name))) r = { ok: false, error: `It opens, but it isn't your ${K.label} (its name is "${String(j.name).slice(0, 120)}"). Link the right one.`, name: String(j.name).slice(0, 200) };
-        else r = { ok: true, name: String(j.name || "").slice(0, 200) };
+        else r = await ownCheck(k, K, fid, String(j.name || ""), j.parents, tokens);
       } catch (e) { r = { ok: false, error: "Google Drive didn't answer. Check again in a minute." , retry: true }; }
     }
-    out[k] = Object.assign(r, { url: url.slice(0, 500), at });
+    out[k] = Object.assign(r, { url: url.slice(0, 500), at, v: VERIFY_V }, fid ? { fid } : {});
   }
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  // 🔔 the trainee is told (js/ft-drive.js): verifyAlert names the links that are ✗ now and weren't, as they are saved now
+  const newBad = Object.keys(out).filter((k) => out[k].ok === false && !out[k].retry && !(prev[k] && prev[k].ok === false && prev[k].url === out[k].url && prev[k].error === out[k].error));
+  if (newBad.length) cur.verifyAlert = { at, keys: newBad };
   cur.verify = out; cur.verifyAt = at; delete cur.verifyError;
   await kv.put(rk, JSON.stringify(cur));
   return { ok: true, verify: out, share: sa };

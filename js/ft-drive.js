@@ -43,6 +43,7 @@ function load(force){
   }).catch(() => {}).then(() => { D.loading = null;
     // 🔁 once a session, quietly: the system's address to share with, and any link not yet checked as it is saved now
     if(isTrainee() && D.drive && !D.autoV){ D.autoV = true; if(!D.share || VERIFIED.some(k => D.drive[k] && !vOf(k))) setTimeout(() => FTDrive.verify("auto"), 0); }
+    setTimeout(alertBad, 1500);   // 🔔 a link that isn't right, told on signing in
     if(["tracker", "monitoring", "dashboard", "modules"].includes(state.view)) render(); });
   return D.loading;
 }
@@ -86,16 +87,16 @@ function verifyBox(){
   const sa = D.share || "";
   const tip = sa ? `<div class="fdr-share">Share each file and the folder with <code id="fdrSa">${e(sa)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTDrive.copySa()">📋 Copy</button> as <b>Editor</b> (Share → paste the address → Editor → Send).</div>` : "";
   if(!VERIFIED.some(k => x[k])) return tip;
-  const head = bad.length ? `<div class="fdr-vbad">✗ ${bad.length} link${bad.length === 1 ? "" : "s"} can’t be opened by the system yet: fix ${bad.length === 1 ? "it" : "them"} below, then 🔁 Check again.</div>`
+  const head = bad.length ? `<div class="fdr-vbad">✗ ${bad.length} link${bad.length === 1 ? " isn’t" : "s aren’t"} right yet: fix ${bad.length === 1 ? "it" : "them"} below (each says why), then 🔁 Check again.</div>`
     : missing.length ? `<div class="fdr-vmid">Paste the ${missing.length === 1 ? "missing link" : missing.length + " missing links"} below.</div>`
-    : linksOk() ? `<div class="fdr-vok">✓ All six links open. They’re checked automatically from now on.</div>` : "";
+    : linksOk() ? `<div class="fdr-vok">✓ All six links open and are yours. They’re checked automatically from now on.</div>` : "";
   return `${head}${tip}<div class="fp-actions"><button class="btn btn-ghost btn-sm" type="button" ${D.verifying ? "disabled" : ""} onclick="FTDrive.verify()">${D.verifying ? "Checking…" : "🔁 Check again"}</button></div>`;
 }
 function linksCard(auto = true){
   const x = D.drive, row = (k, label, ph, hint) => { const v = VERIFIED.includes(k) && x[k] ? vOf(k) : null;
     return `<label class="fdr-l"><span>${label} ${linkBadge(k)}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
-      ${v ? (v.ok ? `<small class="fdr-v ok">✓ Opens${v.name ? ": " + e(v.name) : ""}</small>` : `<small class="fdr-v bad">✗ ${e(v.error || "The system can’t open it.")}</small>`) : ""}
+      ${v ? (v.ok ? `<small class="fdr-v ok">✓ ${v.mine ? "Yours, and it opens" : "Opens"}${v.name ? ": " + e(v.name) : ""}</small>` : `<small class="fdr-v bad">✗ ${e(v.error || "The system can’t open it.")}</small>`) : ""}
       ${hint ? `<small>${hint}</small>` : ""}</label>`; };
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
     ${stepsHtml(auto)}
@@ -202,14 +203,46 @@ function paintLinkModal(){
   if(linksOk()) return "";
   const x = D.drive, missing = VERIFIED.filter(k => !x[k]).length, bad = VERIFIED.filter(k => x[k] && vOf(k) && !vOf(k).ok).length;
   if(!missing && !bad) return "";
-  return `<div class="card fdr-notice"><b>📁 ${missing ? `Link your Drive files (${missing} of ${VERIFIED.length} missing)` : `${bad} Drive link${bad === 1 ? "" : "s"} can’t be opened by the system`}</b>
-    <span>Your folder, Task Tracker and Monitoring Sheet are checked automatically once they’re linked and shared.</span>
+  return `<div class="card fdr-notice"><b>📁 ${missing ? `Link your Drive files (${missing} of ${VERIFIED.length} missing)` : `${bad} Drive link${bad === 1 ? " isn’t" : "s aren’t"} right`}</b>
+    <span>${missing ? "Each link is checked automatically: that it opens, and that it is your own copy, named by its rule." : "The system checked them: each says why under it. Link your own copies, named by their rules."}</span>
     <button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Fix my links</button></div>`;
 });
+/* 🔔 THE TRAINEE IS TOLD: a link that isn't right (it doesn't open, or isn't their own copy named by its rule: worker.js
+   verifyLinks) pops up over the page, each with why, and 📁 Fix my links: on signing in, after a check (theirs, or the one
+   at the end of every shift) and every few minutes while they use the platform. Shown once for the same links and reasons
+   (✓ Later), until something changes; the 📚 Dashboard notice stays until the links are right. */
+const LABEL = k => ((MONITORED.find(x => x[0] === k) || [])[1] || k).replace(/^\d+\.\s*/, "");
+function alertBad(){
+  if(!isTrainee() || preview() || !D.drive || document.getElementById("fdrAlert") || document.getElementById("fdrLinkModal")) return;
+  const bad = VERIFIED.filter(k => D.drive[k] && vOf(k) && vOf(k).ok === false && !vOf(k).retry);
+  const sig = bad.map(k => `${k}|${vOf(k).url}|${vOf(k).error}`).join("§"), key = "ft-drive-alert:" + state.traineeId;
+  let seen = D.alertSeen || ""; try{ seen = localStorage.getItem(key) || seen; }catch(err){}   // (no storage: this visit's Later)
+  if(!sig || sig === seen) return;
+  const m = document.createElement("div"); m.id = "fdrAlert"; m.className = "tfb-pop fdr-alert"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "Your Drive links need fixing");
+  m.innerHTML = `<div class="tfb-pop-box"><div class="tfb-pop-h">🔔 ${bad.length === 1 ? "One of your Drive links isn’t right" : `${bad.length} of your Drive links aren’t right`}</div>
+    <div class="tfb-pop-b"><p class="fdr-alert-why">The system checked your links: each must open, and be <b>your own copy</b>, named by its rule.</p>
+      <ul class="fdr-alert-list">${bad.map(k => `<li><b>${e(LABEL(k))}</b><span>✗ ${e(vOf(k).error)}</span></li>`).join("")}</ul></div>
+    <div class="tfb-pop-f"><button type="button" class="btn btn-ghost btn-sm" onclick="FTDrive.alertClose()">Later</button><button type="button" class="btn btn-navy btn-sm" onclick="FTDrive.alertClose(); FTDrive.linkMine()">📁 Fix my links</button></div></div>`;
+  m.dataset.sig = sig;
+  document.body.appendChild(m);
+}
+// (every few minutes, only the checks are read again — never the links being typed — and nothing is redrawn while the
+// trainee is typing or has the links window open)
+const typingNow = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || !!(a && a.isContentEditable); };
+setInterval(async () => {
+  if(!isTrainee() || document.hidden || D.loading || D.id !== state.traineeId || !D.review || document.getElementById("fdrLinkModal")) return;
+  const rv = await sharedGet("trackerreview:" + state.traineeId).catch(() => null);
+  if(!rv || typeof rv !== "object" || D.id !== state.traineeId) return;
+  const was = JSON.stringify(D.review.verify || {});
+  D.review.verify = rv.verify || {}; D.review.verifyAt = rv.verifyAt;
+  if(JSON.stringify(D.review.verify) !== was && !typingNow() && ["dashboard", "modules"].includes(state.view)) render();
+  alertBad();
+}, 5 * 60000);
 // 📧 the platform's EOD address trainees CC (worker.js EOD_INBOX): read once a session
 window.FT_EOD_INBOX = window.FT_EOD_INBOX || "";
 setTimeout(() => { if(typeof authFetch === "function" && (state.traineeId || state.isAdmin)) authFetch("/api/eod/inbox", {}).then(r => r.json()).then(j => { if(j && j.address){ window.FT_EOD_INBOX = j.address; } }).catch(() => {}); }, 1500);
 window.FTDrive = {
+  alertClose(){ const m = document.getElementById("fdrAlert"); if(!m) return; D.alertSeen = m.dataset.sig || ""; try{ localStorage.setItem("ft-drive-alert:" + state.traineeId, D.alertSeen); }catch(err){} m.remove(); },
   async linkMine(){
     // a trainer, or someone not signed in as a trainee, sees the window as a trainee does (the steps), but saves nothing
     if(!(isTrainee() || preview())) D.look = true;
@@ -267,7 +300,8 @@ window.FTDrive = {
     try{ const r = await authFetch("/api/drive/verify", {}); j = await r.json().catch(() => ({})); if(!r.ok && !j.error) j.error = "send"; }catch(err){ j = {error: "offline"}; }
     D.verifying = false;
     if(j.ok){ D.review = D.review || {days:{}}; D.review.verify = j.verify || {}; D.share = j.share || D.share;
-      if(quiet !== "auto") toast(linksOk() ? "✓ All six links open. They’re checked automatically from now on." : "Some links can’t be opened yet: see the ✗ under each one.", 7000); }
+      if(quiet !== "auto") toast(linksOk() ? "✓ All six links open and are yours. They’re checked automatically from now on." : "Some links aren’t right yet: see the ✗ under each one.", 7000);
+      alertBad(); }
     else if(quiet !== "auto" && (!quiet || j.code !== "wait")) toast(j.error === "no-sa" ? "Link checking isn’t set up on this program yet: tell your trainer." : j.error && j.code === "wait" ? j.error : "Couldn’t check the links. Try again in a minute.");
     render(); paintLinkModal();
   },
@@ -492,6 +526,10 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-v{display:block;margin-top:4px;font-weight:700;} .fdr-v.ok{color:#15703A;} .fdr-v.bad{color:#B42318;}
 .fdr-vok,.fdr-vbad,.fdr-vmid{margin:4px 0 8px;padding:9px 12px;border-radius:10px;font-weight:700;font-size:14px;} .fdr-vok{background:#E8F6EE;color:#15703A;} .fdr-vbad{background:#FDECEA;color:#B42318;} .fdr-vmid{background:#FFF4E5;color:#8A4A00;}
 .fdr-share{margin:0 0 8px;font-size:14px;line-height:1.6;} .fdr-share code{background:#EEF0F6;padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all;}
+.fdr-alert{position:fixed;inset:0;z-index:10060;background:rgba(15,18,40,.5);display:flex;align-items:center;justify-content:center;padding:14px;}
+.fdr-alert-why{margin:4px 0 8px;font-size:14px;} .fdr-alert-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.fdr-alert-list li{border:1px solid #F5C2BC;background:#FFF6F5;border-radius:10px;padding:8px 11px;display:flex;flex-direction:column;gap:2px;font-size:13.5px;}
+.fdr-alert-list li span{color:#9B2F1C;}
 .fdr-notice{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 16px;margin:0 0 12px;border-left:5px solid var(--orange);} .fdr-notice span{flex:1 1 260px;color:var(--ink);font-size:13.5px;}
 .fdr-linked{margin:8px 0 0 !important;font-size:13.5px;} .fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}

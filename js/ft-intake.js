@@ -12,11 +12,12 @@
        .ftis-sheet    the Intake Documents Worksheet as the trainee's own editable copy in their Google Drive;
        .ftis-docs     the 14 additional intake documents, each shown in the slide and bigger on a click;
        .ftis-forms    the sample intake forms, the same way (for reference: the Prototype CMS holds the form).
-     • .ftis-mockcall Days 8–9, the Intake Mock Call: the case the trainer assigned the trainee (Admin → 📦 Intake Packets),
+     • .ftis-mockcall Day 8, the Intake Demo (Saving Intake Packet and Extracted Intake Documents to SA): the case that came with
+                      the trainee's packet (Admin → 📦 Intake Packets),
                       one of the CMS's Intake Mock Calls, which Ring Channel plays too, so the trainer's call and the
                       trainee's CMS are on the same case; a trainer sees every case with where to pick it on Ring Channel
                       and the caller's script.
-       .ftis-mcase    on the trainer's Intake Mock Calls scoring sheet (js/ft-sessions.js FTMetrics): the picked
+       .ftis-mcase    on the trainer's Day 8 demo scoring sheet (intake-packet-demo, js/ft-sessions.js FTMetrics): the picked
                       trainee's case, which 💾 Save keeps with the score.
    The recordings and transcripts are js/ft-intake-samples.js (build/audio/make_audio.py, from
    build/audio/intake_samples.json): fictional people and cases, written for training. It loads the first time a
@@ -82,7 +83,7 @@ function consultHtml(d){
    (📁 My Drive links, drive:<id>.folder) to save it in. */
 const PFOLDER = "https://drive.google.com/drive/folders/1JbAieyhJ6XVsRvNXMUUtVfRwY_0KNymT?usp=sharing";   // the Redacted Intake Packets
 const DFOLDER = "https://drive.google.com/drive/folders/1fC8iixgMEVV3cDrtU0sFa0N325uVB4mb?usp=drive_link"; // the Additional Intake Documents
-const NPACK = 10;
+const NPACK = 20;   // Intake Packets 1–20 (their clients and Drive links are set in Admin → 📦 Intake Packets)
 const DOCS = ["Client Communication Disclosure", "Signature Certificate", "CM Notes", "Police Report", "TAR/Traffic Accident Report",
   "TAR/Traffic Accident Report with Labels", "Traffic Ticket (accomplished)", "Traffic Ticket with Labels.1", "Traffic Ticket with Labels.2",
   "DMV", "ISO Claim Search", "Insurance vs Lien Disclaimer (newly added)", "Affidavit of Communication (newly added)",
@@ -115,7 +116,7 @@ function loadK(force){
 }
 const packets = () => (K.set && K.set.packets) || {};
 
-/* ---------- Days 8–9: the Intake Mock Call's case, shared by the CMS and Ring Channel ----------
+/* ---------- Day 8: the Intake Demo's case, shared by the CMS and Ring Channel ----------
    The calls are the CMS's own (its call-packs.js, the Call Simulator's 📋 Intake Mock Calls line), read from the CMS
    itself so they are never a copy that drifts: Ring Channel mirrors the same file (lshringchannel src/cms/call-packs.js),
    so the call a trainer plays from Ring Channel's Scenario Picker is the call, the caller and the case the trainee works
@@ -138,7 +139,7 @@ function packs(){
 const PK = {failed: false};
 const mockCalls = () => window.CALL_PACKS && window.CALL_PACKS.CALLS ? window.CALL_PACKS.CALLS.filter(c => c.program === "FT" && c.line === LINE && c.dir !== "out") : null;
 const callById = id => (mockCalls() || []).find(c => c.id === id) || null;
-// 📞 the packet's mock call case, paired automatically (the packet is the trainer's only pick): the intake call whose caller is
+// 🎬 the packet's demo case, paired automatically (the packet is the trainer's only pick): the intake call whose caller is
 // the packet's client (a first call before a call back), otherwise packet n's is the CMS's n-th Intake Mock Call (round the list)
 function pairedCall(n){
   const calls = mockCalls(); n = Number(n) || 0; if(!n || !calls || !calls.length) return null;
@@ -176,7 +177,7 @@ function trainerCase(c, who){
 function mockcallHtml(el){
   const calls = mockCalls();
   const trainer = isTrainerView();
-  const head = `<div class="ftis-pk-h"><b>📞 ${trainer ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
+  const head = `<div class="ftis-pk-h"><b>🎬 ${trainer ? "Intake Demo cases: the CMS’s intake calls, the same calls on Ring Channel" : "Your Intake Demo case"}</b></div>`;
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
   if(trainer){
     freshAdmin();
@@ -184,13 +185,13 @@ function mockcallHtml(el){
     const by = {}, rows = AD.rows || [], tagged = rows.filter(r => ((AD.recs || {})[r.id] || {}).call);
     const several = new Set(tagged.map(r => r.batch)).size > 1;
     tagged.forEach(r => { const c = AD.recs[r.id].call; (by[c] = by[c] || []).push(r.name.split(/\s+/)[0] + (several && r.batch ? ` (${r.batch})` : "")); });
-    return head + `<p class="ftis-pk-note">Play the trainee’s assigned case from Ring Channel while they work it in the Prototype CMS. Each trainee sees their case on this slide once it is assigned.</p>
+    return head + `<p class="ftis-pk-note">Each trainee’s demo case comes with their packet: play it from Ring Channel while they work it in the Prototype CMS and save the packet and the extracted intake documents to SA. Each trainee sees their case on this slide once their packet is assigned.</p>
       ${calls.map(c => trainerCase(c, (by[c.id] || []).join(", "))).join("")}
       <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📦 Assign the packets</button></div>`;
   }
   const c = isTrainee() && K.mine && K.mine.call ? callById(K.mine.call) : null;
-  if(isTrainerView() && !trainer) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>The trainee’s mock call case appears here</b><small>Each trainee sees only their own case: who calls, what they know going in and the Prototype CMS. Never the caller’s script.</small></div></div>`;
-  if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your mock call case appears here</b><small>Your trainer assigns it before your turn. Until then, practise on the Intake line.</small></div>${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div>`;
+  if(isTrainerView() && !trainer) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>The trainee’s demo case appears here</b><small>Each trainee sees only their own case: who calls, what they know going in and the Prototype CMS. Never the caller’s script.</small></div></div>`;
+  if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your demo case appears here</b><small>It comes with the packet your trainer assigns you, before the demo. Until then, practise on the Intake line.</small></div>${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div>`;
   return head + caseCard(c);
 }
 // the trainer's scoring sheet: the picked trainee's case
@@ -199,7 +200,7 @@ function mcaseHtml(el){
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
   if(!freshAdmin()) return "";
   const c = callById(((AD.recs || {})[id] || {}).call);
-  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">📞 No mock call case for this trainee yet: it comes with their packet, <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
+  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">🎬 No demo case for this trainee yet: it comes with their packet, <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
 }
 const btn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 // (a button, not a viewer link: the deck draws a link in a slide as a tile)
@@ -236,7 +237,7 @@ function packetHtml(){
       ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a>${K.packetFolder ? ` · <a href="${e(K.packetFolder)}" target="_blank" rel="noopener noreferrer">your subfolder ↗</a>` : ""}</p>` : ""}</div>
     ${checkHtml(K.check)}`;
 }
-// 📦 the assigned client: the packet's (saved by the trainer), else the caller of the mock call case paired with it
+// 📦 the assigned client: the packet's (saved by the trainer), else the caller of the demo case paired with it
 function clientOf(n){
   const pk = packets()[n] || {}; if(pk.client) return pk.client; if((K.mine || {}).client) return K.mine.client;
   if(!mockCalls() && !PK.failed) packs().catch(() => {});
@@ -344,15 +345,15 @@ function adminHtml(){
   // (an assignment made before the client was kept with it gets its case's client, once)
   if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}, c = v.call && !v.client && !AD.paired[r.id] ? callById(v.call) : null; if(c && c.name){ AD.paired[r.id] = 1; writeAssign(r.id, {client: String(c.name)}).catch(() => {}); } });
   if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
-  const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="Paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
+  const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="The Day 8 demo case, paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
     : `<span class="fss-muted">${!calls ? (PK.failed ? "Cases didn’t load" : "Loading…") : AD.assign[id] ? "Pairing…" : "Follows the packet"}</span>`; };
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
   return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>. Each trainee edits their own copy (renamed, every document extracted and named), uploads it with its documents into a subfolder named after the client and links both: 🔎 checks them for accuracy and completeness on the Saving Intake Packet rubric, the packet’s own pages read by the AI.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <h4>Assign the packets (each packet brings its mock call case)</h4>
-    <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>🔎 Accuracy &amp; completeness</th><th>Mock call case</th><th>Worksheet</th></tr></thead><tbody>
+    <h4>Assign the packets (each packet brings its demo case)</h4>
+    <p class="ftis-banner">🎬 <b>Demo case</b>: the call for the trainee’s Day 8 Intake Demo (<i>Saving the Intake Packet and Extracted Intake Documents to SA</i>), one of the CMS’s intake calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the demo slide and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.</p>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>🔎 Accuracy &amp; completeness</th><th>Demo case</th><th>Worksheet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
         <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
         <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>${(AD.pf || {})[r.id] ? ` · <a href="${e(AD.pf[r.id])}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : ""}` : `<span class="fss-muted">Not linked</span>`}</td>
@@ -361,12 +362,12 @@ function adminHtml(){
         <td>${caseCell(r.id)}</td>
         <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
-    <h4>The additional intake documents</h4><p class="fss-muted">The shared default for each document (each trainee enters their own on the slide, ✏️ My document links, which takes their place): its own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
-    <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
-    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the documents</button></div></div>`;
+    <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
+    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
+    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets</button></div></div>`;
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
-// so the packet and the mock call case never overwrite each other, whoever changed the other one and however quickly
+// so the packet and the demo case never overwrite each other, whoever changed the other one and however quickly
 const chain = {};
 function writeAssign(id, patch){
   const run = (chain[id] || Promise.resolve()).catch(() => {}).then(async () => {
@@ -395,28 +396,28 @@ window.FTIntakeAdmin = {
   },
   async assign(id, v){
     const n = Number(v) || 0, at = new Date().toISOString();
-    // (the packet is the only pick: its mock call case pairs with it, pairedCall, and Ring Channel's Scenario Picker plays the same call)
+    // (the packet is the only pick: its demo case pairs with it, pairedCall, and Ring Channel's Scenario Picker plays the same call)
     let c = null; if(n){ try{ await packs(); }catch(err){} c = pairedCall(n); }
     const patch = Object.assign({packet: n, at}, c || !n ? {call: c ? c.id : "", callAt: at, client: c ? String(c.name || "") : ""} : {});
     try{ await writeAssign(id, patch); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
-    toast(n ? `✓ Packet ${n} assigned${c ? ` with its mock call case, ${c.title}` : ""} — the trainee sees it within two minutes.` : "✓ Unassigned.");
+    toast(n ? `✓ Packet ${n} assigned${c ? ` with its demo case, ${c.title}` : ""} — the trainee sees it within two minutes.` : "✓ Unassigned.");
   },
   async assignCall(id, v){
     const c = callById(v);
     try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString(), client: c ? String(c.name || "") : ""}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     paint();
-    toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Mock call case unassigned.");
+    toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Demo case unassigned.");
   },
   async save(){
     // read the form first: loading the saved settings re-renders the page and the form with it
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
-    const docs = DOCS.map((_, i) => v("ftisD" + i));
-    const bad = docs.filter(u => u && !/^https:\/\//.test(u));
+    const pk = {}; for(let n = 1; n <= NPACK; n++){ const c = v("ftisC" + n), u = v("ftisU" + n); if(c || u) pk[n] = {client: c, url: u}; }
+    const bad = Object.values(pk).map(x => x.url).filter(u => u && !/^https:\/\//.test(u));
     if(bad.length){ toast("A link must start with https://"); return; }
     await loadK(true);
-    // (the packets: each trainee links their own, 📁 My Drive links; the ones saved before stay for the mock call's pairing)
-    const next = Object.assign({}, K.set, {docs, updatedAt: new Date().toISOString()});
+    // (the additional intake documents' shared links are no longer edited here: the saved ones are kept as they are)
+    const next = Object.assign({}, K.set, {packets: pk, updatedAt: new Date().toISOString()});
     const ok = await sharedSet("settings:intake", next);
     if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
     K.set = next; K.at = Date.now(); toast("✓ Saved — trainees see it within two minutes."); render();
@@ -584,7 +585,9 @@ window.FTIntake = {
 .ftis-form{display:block;background:#fff;border:1px solid #DCE0EA;border-left:5px solid #DB8437;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;margin:8px 0;}
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
 .ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
+.ftis-admin{padding:18px 20px;margin-bottom:16px;}
 .ftis-admin h4{margin:16px 0 6px;color:#262B45;}
+.ftis-banner{margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#FDF0E1;border:1px solid #F0C99A;color:#3A2A14;font-size:14px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box;}
 .ftis-dedit{background:#F6F8FC;border:1px solid #D9DFEA;border-radius:10px;padding:10px 14px;margin:8px 0;text-align:left;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px;}
 .ftis-dedit > p, .ftis-dedit > .ftis-asave{grid-column:1/-1;margin:0;} .ftis-dedit label{display:flex;flex-direction:column;font-size:12.5px;gap:2px;} .ftis-dedit input{padding:5px 8px;border:1px solid #C9D1E0;border-radius:6px;font:inherit;}
 .ftis-doc-t small{display:block;color:#8A93A6;font-weight:400;}
@@ -601,7 +604,7 @@ window.FTIntake = {
 .ftis-mc-t summary{cursor:pointer;color:#262B45;font-size:14.5px;padding:2px 0;} .ftis-mc-t p{margin:6px 0;} .ftis-mc-t ul{margin:2px 0 6px;padding-left:20px;}
 .ftis-mc-ring{background:#F6F7FB;border-radius:8px;padding:6px 10px;}
 .ftms .ftis-mcase{margin:6px 0;}
-.ftis-aedit{display:grid;grid-template-columns:auto 1fr 2fr;gap:6px 10px;align-items:center;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
+.ftis-aedit{display:grid;grid-template-columns:84px minmax(0,300px) minmax(0,520px);gap:6px 12px;align-items:center;justify-content:start;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
 .ftis-aedit input{box-sizing:border-box;width:100%;font:inherit;padding:6px 9px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
 .ftis-aedit b{font-size:13px;color:var(--ink-soft,#5B6178);} .ftis-asave{margin-top:12px;}
 @media(max-width:800px){.ftis-aedit,.ftis-aedit-d{grid-template-columns:1fr;}}

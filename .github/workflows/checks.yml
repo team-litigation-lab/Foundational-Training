@@ -29,7 +29,7 @@ jobs:
       # (js/ft-day-decks-data.js isn't committed: it is built here, as wrangler.json's "build" builds it on deploy)
       - name: Build the Day decks' slides (build/day-decks.cjs → js/ft-day-decks-data.js)
         run: node build/day-decks.cjs
-      - name: Every script's version follows its content (build/script-versions.cjs, run at every deploy)
+      - name: Every script's version and APP_BUILD follow their content (build/script-versions.cjs, run at every deploy)
         run: node build/script-versions.cjs --check
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
@@ -55,6 +55,12 @@ jobs:
         run: node .github/scripts/intake-packet.cjs
       - name: Who sees what of the Batch Sheet and My Progress (a trainee only their own; only a trainer moves a batch)
         run: node .github/scripts/sheet-access.cjs
+      - name: A Knowledge Check is taken once (a second attempt isn't saved; a trainer's retry lets one more through)
+        run: node .github/scripts/kc-once.cjs
+      - name: The six Drive links are the trainee's own, named by their rules (the template, another batch's or trainee's, the same file twice are caught)
+        run: node .github/scripts/drive-own.cjs
+      - name: GDRIVE_SA_KEY signs in however it was pasted (the PEM, with its quotes, the whole JSON file), or says what is wrong
+        run: node .github/scripts/drive-key.cjs
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)
         run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)

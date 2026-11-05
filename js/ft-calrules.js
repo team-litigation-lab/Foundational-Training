@@ -235,6 +235,12 @@ window.ftRubricAssist = (r, a) => {
     <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fill(this, ${JSON.stringify(g)})'>⤓ Fill the rule criteria (${Object.keys(g).map(k => `${k === "info" ? "Information" : k === "slot" ? "Slot & rules" : k === "alt" ? "Alternatives" : "Calendar entry"} ${g[k]}`).join(", ")})</button></div>`;
 };
 FTCalRules.fill = (btn, g) => {
+  // (on 📋 Mock Call Scorecards, the one-VA sheet: its criteria by index, through FTMockScores, never over a typed score)
+  if(btn.closest(".fms") && window.FTMockScores && FTMockScores.fillCrit){
+    const vals = {}; FT_RUBRICS.list.calendar.criteria.forEach((k, i) => { const grp = Object.keys(CRIT).find(x => CRIT[x].test(k.n)); if(grp && g[grp] != null) vals[i] = g[grp]; });
+    const n = FTMockScores.fillCrit(vals);
+    toast(n ? `⤓ ${n} criteri${n === 1 ? "on" : "a"} filled from the booking check` : "Those criteria already have scores: nothing typed was changed."); return;
+  }
   const box = btn.closest(".fss-rvform"), el = box && box.querySelector("[data-rubric]"); if(!el) return;
   const rb = FT_RUBRICS.list[el.getAttribute("data-rubric")]; let n = 0, last = null;
   rb.criteria.forEach((k, i) => { const grp = Object.keys(CRIT).find(x => CRIT[x].test(k.n)); const inp = el.querySelector(`[data-crit="${i}"]`);
@@ -262,20 +268,35 @@ async function loadAdmin(){
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && ftTabOn("calrules")) render();
 }
+/* 🧾 Why this score: the calendaring score's rationale, in words, from the bookings themselves — how the average is reached
+   (each booking scores the rules it met out of the rules that applied to it), the rules missed most with why, the rules
+   always met, and how the latest booking did against the one before. */
+function whyScore(bs){
+  if(!bs.length) return `<span class="fss-muted">No booking recorded yet: the score starts with the first calendar mock-call booking.</span>`;
+  const avg = Math.round(bs.reduce((n, b) => n + (b.pct || 0), 0) / bs.length), last = bs[bs.length - 1], prev = bs[bs.length - 2];
+  const miss = {}, met = {}, why = {}, seen = {};
+  bs.forEach(b => (b.checks || []).forEach(c => { if(c[1] === null) return; seen[c[0]] = (seen[c[0]] || 0) + 1;
+    if(c[1] === false){ miss[c[0]] = (miss[c[0]] || 0) + 1; if(c[2]) why[c[0]] = c[2]; } else met[c[0]] = (met[c[0]] || 0) + 1; }));
+  const missed = Object.entries(miss).sort((a, b) => b[1] - a[1]).slice(0, 3), always = Object.keys(seen).filter(k => !miss[k]);
+  const trend = prev ? (last.pct > prev.pct ? `up from ${prev.pct}%` : last.pct < prev.pct ? `down from ${prev.pct}%` : `the same as the one before`) : "";
+  return `<p><b>${avg}%</b> = the average of ${bs.length} booking${bs.length === 1 ? "" : "s"}, each scored on the scheduling rules it met out of those that applied.</p>`
+    + `<p>Latest: <b>${e(last.title || "booking")}</b> met ${last.met} of ${last.total} rules (${last.pct}%)${trend ? `, ${trend}` : ""}.</p>`
+    + (missed.length ? `<p class="cr-why-miss">🔧 Missed most: ${missed.map(([k, n]) => `<b>${e(k)}</b> (${n} of ${seen[k]})${why[k] ? ` — ${e(why[k])}` : ""}`).join("; ")}.</p>` : `<p class="cr-why-ok">⭐ No rule missed in any booking.</p>`)
+    + (always.length && missed.length ? `<p class="cr-why-ok">⭐ Always met: ${always.slice(0, 4).map(k => e(k)).join(", ")}${always.length > 4 ? ` and ${always.length - 4} more` : ""}.</p>` : "");
+}
 function adminHtml(){
   if(!AD.rows){ if(!AD.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const lunch = lunchOf();
-  return `<div class="card cr-admin"><div class="ff-bar"><div><h3>📅 Booking Rules</h3><p class="fss-muted">Each trainee’s calendar mock-call bookings, checked against the guide’s scheduling rules as they record them. You score the call itself in 🧑‍🏫 Trainer Inputs, where the scorecard can fill its rule criteria from the latest booking.</p></div>
+  return `<div class="card cr-admin"><div class="ff-bar"><div><h3>📅 Booking Rules</h3><p class="fss-muted">Each trainee’s calendar mock-call bookings, checked against the guide’s scheduling rules as they record them. You score the call itself in 🧑‍🏫 Graders: Mock Calls &amp; Demos, where the scorecard can fill its rule criteria from the latest booking.</p></div>
       <span><select onchange="FTCalRulesAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
-      <label class="fss-muted">Attorney’s lunch <input type="time" id="crLunchA" value="${lunch ? `${String(Math.floor(lunch[0] / 60)).padStart(2, "0")}:${String(lunch[0] % 60).padStart(2, "0")}` : ""}"> – <input type="time" id="crLunchB" value="${lunch ? `${String(Math.floor(lunch[1] / 60)).padStart(2, "0")}:${String(lunch[1] % 60).padStart(2, "0")}` : ""}"></label>
+      <label class="fss-muted cr-lunch">Attorney’s lunch <input type="time" id="crLunchA" value="${lunch ? `${String(Math.floor(lunch[0] / 60)).padStart(2, "0")}:${String(lunch[0] % 60).padStart(2, "0")}` : ""}"> – <input type="time" id="crLunchB" value="${lunch ? `${String(Math.floor(lunch[1] / 60)).padStart(2, "0")}:${String(lunch[1] % 60).padStart(2, "0")}` : ""}"></label>
       <button class="btn btn-ghost btn-sm" onclick="FTCalRulesAdmin.saveLunch()">💾 Save</button></span></div>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl cr-atbl"><thead><tr><th>Trainee</th><th>Bookings</th><th>Average</th><th>Latest</th><th>Most missed</th></tr></thead><tbody>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl cr-atbl"><colgroup><col class="cr-c-who"><col class="cr-c-n"><col class="cr-c-n"><col class="cr-c-last"><col class="cr-c-why"></colgroup><thead><tr><th>Trainee</th><th>Bookings</th><th>Average</th><th>Latest</th><th>🧾 Why this score</th></tr></thead><tbody>
       ${rows.map(r => { const bs = r.rec.bookings, avg = bs.length ? Math.round(bs.reduce((n, b) => n + (b.pct || 0), 0) / bs.length) : null, last = bs[bs.length - 1];
-        const miss = {}; bs.forEach(b => (b.checks || []).filter(c => c[1] === false).forEach(c => { miss[c[0]] = (miss[c[0]] || 0) + 1; }));
-        const top = Object.entries(miss).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, n]) => `${k} (${n})`).join("; ");
+        const why = whyScore(bs);
         return `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td><td>${bs.length ? `<button class="btn btn-ghost btn-sm" onclick="FTCalRulesAdmin.open('${e(r.id)}')">${bs.length} ${AD.open[r.id] ? "▾" : "▸"}</button>` : "—"}</td>
-          <td>${avg != null ? avg + "%" : "—"}</td><td>${last ? `${e(last.title || "")} · ${last.pct}%` : "—"}</td><td>${e(top || "—")}</td></tr>
+          <td>${avg != null ? avg + "%" : "—"}</td><td>${last ? `${e(last.title || "")} · ${last.pct}%` : "—"}</td><td class="cr-why">${why}</td></tr>
           ${AD.open[r.id] ? `<tr class="cr-aopen"><td colspan="5">${bs.slice().reverse().map(b => `<div class="cr-abook"><b>${e(b.title || "")}</b> · ${e(b.date)} ${e(hhmm(mins(b.start) || 0))} · ${e(b.length)} min · ${e(b.format || "")} · ${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1])} · <b>${b.met}/${b.total}</b>${checksHtml(b)}</div>`).join("")}</td></tr>` : ""}`; }).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
 }
@@ -306,7 +327,15 @@ main.main-cr{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;f
 .cr-checks small{display:block;color:var(--ink-soft);} .cr-checks tr.na{opacity:.55;} .cr-checks tr.miss b{color:#B42318;}
 .cr-ok{color:#1E6B40;font-weight:800;} .cr-no{color:#B42318;font-weight:800;} .cr-na{color:var(--ink-soft);}
 .cr-assist{margin:6px 0;padding:8px 12px;border-radius:8px;background:#EEF3FF;color:#1F2A44;font-size:13px;line-height:1.5;} .cr-assist .btn{margin-left:6px;}
-.cr-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:8px;align-items:center;} .cr-admin label input{width:auto;}
+.cr-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;} .cr-admin label input{width:auto;}
+.cr-admin .cr-lunch{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--navy);}
+.cr-admin .cr-lunch input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
+.cr-atbl{table-layout:fixed;width:100%;} .cr-atbl th, .cr-atbl td{padding:10px 12px;vertical-align:middle;}
+.cr-atbl col.cr-c-who{width:20%;} .cr-atbl col.cr-c-n{width:9%;} .cr-atbl col.cr-c-last{width:18%;} .cr-atbl col.cr-c-why{width:44%;}
+.cr-why p{margin:0 0 4px;font-size:13px;line-height:1.45;} .cr-why p:last-child{margin:0;} .cr-why-miss{color:#8A3B12;} .cr-why-ok{color:#1E6B3A;}
+.cr-atbl td.cr-why{vertical-align:top;}
+.cr-atbl td:nth-child(2), .cr-atbl td:nth-child(3), .cr-atbl th:nth-child(2), .cr-atbl th:nth-child(3){text-align:center;}
+.cr-atbl td{overflow-wrap:anywhere;}
 .cr-abook{padding:8px 0;border-top:1px solid var(--line,#eceef2);}
 @media (max-width:720px){ .cr-grid{grid-template-columns:repeat(2,minmax(0,1fr));} .cr-grid label.ck{grid-column:1/-1;} .cr-bhead{grid-template-columns:54px 1fr 18px;} .cr-met{display:none;} }
 @media (max-width:460px){ .cr-grid{grid-template-columns:1fr;} }

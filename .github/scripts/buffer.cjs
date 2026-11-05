@@ -104,13 +104,14 @@ async function workerChecks() {
       fail("Day 8's demo still has a slide of its own, or lost its preparation slide");
     if (!(await t.evaluate(() => ['9:s3b', '8:s3', '12:s1d', '14:s1e', '15:s1b', '16:s2'].every(k => FTBuffer.ACTS[k].simple)))) fail('a Days 8–16 mock call or demo is not in Day 4\'s format (simple)');
 
-    // ☎ Day 9's Intake mock calls: no slide of their own (build/day-decks.cjs PREP_OFF): the trainee's case and the Call
-    // Simulator and CMS Intake links sit beside the metrics on the Intake Mock Calls Metrics slide, s2; no panel, no Done
+    // ☎ Day 9's Intake mock calls: no slide of their own (build/day-decks.cjs PREP_OFF): the Call Simulator and CMS Intake
+    // links sit beside the metrics on the Intake Mock Calls Metrics slide, s2; no panel, no Done, and no case (the packet's
+    // case is the Day 8 demo's, on its preparation slide)
     if (await t.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
     await open(t, 9, 's2');
     const m9 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), metrics: !!s.querySelector('.ftdd-score .ftms-tbl'), cas: !!s.querySelector('.ftis-mockcall'),
       sim: !!s.querySelector('a[href*="call.html"][href*="track=intake"]'), cms: !!s.querySelector('a[href*="program=intake"]') }; });
-    if (m9.panel || !m9.metrics || !m9.cas || !m9.sim || !m9.cms) fail(`Day 9's metrics slide isn't the metrics with the case and the two practice links beside them: ${JSON.stringify(m9)}`);
+    if (m9.panel || !m9.metrics || m9.cas || !m9.sim || !m9.cms) fail(`Day 9's metrics slide isn't the metrics with the two practice links beside them (and no case): ${JSON.stringify(m9)}`);
 
     // ☎ Day 4's Reception mock calls: no "Mock Calls Ongoing" box; the trainee reads the slide's metrics, read only
     await open(t, 4, 's3');

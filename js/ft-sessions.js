@@ -16,8 +16,8 @@
                                     firm's calendar rules. Beside it, its own card: 📅 Standard Training - Calendaring
                                     Activity (js/ft-calweek.js), the standalone next-week calendar.
      📋 Intake Mock Calls           lesson 6 (Days 8–9): Ring Channel's Intake Line, the details entered in the Prototype
-                                    CMS; the intake recorded here. The graded call with the trainer is played on the case
-                                    the trainer assigned (js/ft-intake.js .ftis-mockcall), the same call on Ring Channel and in the CMS
+                                    CMS; the intake recorded here. (The case that comes with the trainee's Intake Packet is the
+                                    Day 8 demo's, Saving Intake Packet and Extracted Intake Documents to SA: js/ft-intake.js .ftis-mockcall)
      (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
       LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
       templates, with no CMS case file.)
@@ -476,6 +476,7 @@ function renderAdminSessions(){
   return `<div class="card fss-admin"><div class="ff-bar"><div><h3>📡 Live now</h3><p class="fss-muted">Trainees with a Practice Session in progress. ${AD.live ? "Updates every 20 seconds while this tab is open." : ""}</p></div>
       <span><label class="fss-check"><input type="checkbox" ${AD.live ? "checked" : ""} onchange="FTSessionsAdmin.live(this.checked)"> update on its own</label><button class="btn btn-ghost btn-sm" onclick="FTSessionsAdmin.refresh()">↻</button></span></div>
       ${live.length ? `<div class="fss-live">${live.map(r => { const s = sessionById(r.s.live.sid); return `<div class="fss-liverow">🟢 <b>${e(r.name)}</b> <span>${s ? s.icon + " " + e(s.title) : ""}</span><span class="fss-muted">${e(r.batch)} · started ${e(new Date(r.s.live.startedAt).toLocaleTimeString())} · ${Math.round((Date.now() - new Date(r.s.live.startedAt)) / 60000)} min</span></div>`; }).join("")}</div>` : `<p class="fss-muted">No session in progress.</p>`}</div>
+    ${window.FTUtil ? FTUtil.card(rows, batches, AD.batch) : ""}
     <div class="card fss-admin"><div class="ff-bar"><div><h3>🟢 Practice Sessions</h3><p class="fss-muted">Every session a trainee submitted: what they recorded, the automated checks against their case and firm, the AI’s evaluation in the facilitator’s voice, and your review.</p></div>
       <span><select onchange="FTSessionsAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
       ${rows.length ? rows.map(r => { const runs = Object.entries((r.s && r.s.runs) || {}).filter(([k, v]) => v && v.startedAt).sort((a, b) => String(b[1].submittedAt || b[1].startedAt).localeCompare(String(a[1].submittedAt || a[1].startedAt)));
@@ -625,14 +626,15 @@ Return ONLY JSON: {"comment":"..."}`;
   }
 };
 ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
-// 🧑‍🏫 Graders: Mock Calls & Demos, the one tab: every grader's button, then 📋 Mock Call Scorecards and 🧑‍🏫 Trainer Inputs
-// (drawn by their own pages, without the tab bar)
+// 🧑‍🏫 Graders: Mock Calls & Demos, the one tab: 📋 Mock Call Scorecards first (one VA at a time, each criterion with its
+// feedback), then every grader's button at the bottom (drawn by their own pages, without the tab bar). 🧑‍🏫 Trainer Inputs is
+// off this page: the scorecards record the same result (labreview:<id> acts[<activity>]) with the feedback on each score.
 const tabBody = tab => { if(typeof window.renderAdmin !== "function") return ""; const was = state.adminTab; let out = "";
   try{ state.adminTab = tab; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ state.adminTab = was; }
   const t = document.createElement("template"); t.innerHTML = out; t.content.querySelectorAll(".admin-tabs, #navBackSlot").forEach(x => x.remove()); return t.innerHTML; };
-ftAdminTab("graders", "🧑‍🏫 Graders: Mock Calls & Demos", () => `<div class="card" style="padding:18px 20px;margin-bottom:14px;"><h3 style="margin:0 0 4px;">🧑‍🏫 Graders: Mock Calls &amp; Demos</h3>
-  <p class="fss-muted" style="margin:0 0 10px;">Every mock call and demo scoresheet in one place. The same list opens from 🧑‍🏫 Graders under every slide of your deck.</p>${gradersHtml()}</div>
-  <section style="margin-top:8px;">${tabBody("mockscores")}</section><section style="margin-top:8px;">${tabBody("trainerinputs")}</section>`);
+ftAdminTab("graders", "🧑‍🏫 Graders: Mock Calls & Demos", () => `<section style="margin-bottom:14px;">${tabBody("mockscores")}</section>
+  <div class="card" style="padding:18px 20px;margin-top:8px;"><h3 style="margin:0 0 4px;">🧑‍🏫 Graders: Mock Calls &amp; Demos</h3>
+  <p class="fss-muted" style="margin:0 0 10px;">Every mock call and demo scoresheet in one place. The same list opens from 🧑‍🏫 Graders under every slide of your deck.</p>${gradersHtml()}</div>`);
 
 /* 📋 The metrics on a mock-call or demo slide (js/ft-day-decks.js): the Training Guide's table, criterion | Score, and its
    WEIGHTED AVERAGE. A trainee reads it as the guide prints it. A trainer scores on it during the mock calls and the demos:
@@ -711,7 +713,7 @@ function metricsSheet(key){
       <label>Result <select data-status ${row ? "" : "disabled"} onchange="FTMetrics.calc(this)">${STATUSES.map(x => `<option ${x === status ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
-    ${a.id === "intake-live" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
+    ${a.id === "intake-packet-demo" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
       ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
         <td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td></tr>`).join("")}
@@ -777,8 +779,8 @@ window.FTMetrics = {
     const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
     if(!rr.scores.some(v => v != null)){ toast("Score at least one criterion first."); return; }
     btn.disabled = true;
-    // (the Intake Mock Call: the case it was played on, read fresh; undefined keeps the saved one when it can't be known)
-    const played = act === "intake-live" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
+    // (the Day 8 Intake Demo: the case that came with the trainee's packet, read fresh; undefined keeps the saved one when it can't be known)
+    const played = act === "intake-packet-demo" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
     try{
       await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
         cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
