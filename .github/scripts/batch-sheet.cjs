@@ -116,6 +116,17 @@ const failures = []; const fail = m => failures.push(m);
   // (why a link is wrong: on a hover, the cell's title, and on a click, the formula bar)
   const why = await page.evaluate(() => { const r = [...document.querySelectorAll('#bs-compliance tbody tr')].find(tr => /Ada/.test(tr.innerText)); const td = r && r.querySelector('td[data-c="2"]'); return td ? td.title : ''; });
   if (!/Monitoring Sheet/.test(why) || !/can.t open/.test(why)) fail(`a wrong link doesn't say why on a hover: ${why}`);
+  // 📁 one share per batch: connected as the service account, a link the system can't open names the batch, the trainee and the
+  // address to share the batch folder with; 🔁 check them now opens their links again
+  await page.route('**/api/drive/status', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ sa: true, saOk: true, email: 'lsh-training-drive@ci.iam.gserviceaccount.com', subject: '' }) }));
+  const verified = []; await page.route('**/api/drive/verify', r => { verified.push(JSON.parse(r.request().postData() || '{}').id); r.fulfill({ contentType: 'application/json', body: '{"ok":true,"verify":{}}' }); });
+  await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(1500);
+  const sb = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
+  if (!/Batch B\d{6}’s files can’t be opened yet/.test(sb) || !/Ada Active/.test(sb) || !/lsh-training-drive@ci\.iam\.gserviceaccount\.com/.test(sb) || !/One share covers all its trainees/.test(sb)) fail(`no one-share-per-batch prompt naming the batch, the trainee and the address: ${sb.slice(0, 300)}`);
+  await page.evaluate(() => FTBatchSheet.recheckLinks()); await page.waitForTimeout(1500);
+  if (!verified.includes(ids.Ada)) fail(`🔁 check them now didn't check Ada's links again: ${verified}`);
+  await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
+  await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));

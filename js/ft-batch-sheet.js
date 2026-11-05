@@ -58,6 +58,7 @@ async function loadPeople(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
+    B.all = list.filter(r => r && r.id);   // (every account, archived too: 👥 Duplicate accounts looks through them)
     // trainees the tidy-up archived on its own (js/ft-admin-tidy.js), not a trainer: offered back with ↩ Bring them back
     B.auto = list.filter(r => r && r.id && r.archived && r.autoArchived && !r.rejected && !r.purgedAt && !r.offboarded)
       .map(r => ({id: r.id, name: r.name || r.id, batch: bLabel(r.batch || "")}));
@@ -130,10 +131,11 @@ async function loadData(){
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
         if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
-    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table), checked now (worker.js verifyLinks, /api/drive/verify:
+    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table) or whose last check couldn't sign in to Google
+    // (⚠ Can't check: a key or setting fixed since), checked now (worker.js verifyLinks, /api/drive/verify:
     // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
     if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
-      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked/.test(L[k].st)); }catch(err){ return false; } });
+      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked|unchecked/.test(L[k].st)); }catch(err){ return false; } });
       if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
         if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
@@ -560,6 +562,21 @@ function driveBanner(){
     <div class="bs-dstat-id">The Worker signs in as <code>${e(S.email)}</code>${S.clientId ? `, Client ID <code>${e(S.clientId)}</code>: this exact number has to be in the Domain-wide delegation list, with the scope <code>https://www.googleapis.com/auth/drive</code>` : ""}.<br><small>Google said: ${e(S.subjectDetail || "")}</small></div>`);
   return box("ok", `🔌 ✓ <b>Google Drive is connected</b>${S.subject ? ` and reads as <b>${e(S.subject)}</b>` : ` as the service account <b>${e(S.email)}</b> (files must be shared with it)`}.`);
 }
+/* 📁 ONE SHARE PER BATCH: each batch's files sit in a folder of its own, so when the system can't open the links of a batch's
+   trainees (✗ "can't open it": not shared with the account it reads as), the Batch Sheet says so once for the batch, with the
+   address to share its folder with (📋 Copy): one share of the batch folder, as Editor, covers every trainee in it. 🔁 Check
+   them now opens each trainee's links again (worker.js /api/drive/verify). It goes away once the links open. */
+function shareBanner(){
+  if(!adminOn() || meOn() || !B.data) return "";
+  const S = B.dstat; if(!S || S.err || !S.sa || !S.saOk) return "";   // (not connected: the 🔌 banner above says what to fix)
+  const who = S.subject && S.subjectOk ? S.subject : S.email; if(!who) return "";
+  const ppl = people(), stuck = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); }catch(err){ return false; } });
+  if(!stuck.length) return "";
+  const names = stuck.slice(0, 6).map(p => p.name).join(", ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
+  return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>
+    <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>
+    <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 I’ve shared it: check them now"}</button></div>`;
+}
 // the page: the Score Card and the compliance first, then the Weekly Ranking and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "outputs"];
@@ -571,7 +588,7 @@ function sectionsHtml(T){
     : sheetHtml(x, i);
   const at = id => T.findIndex(x => x.id === id), main = id => one(T[at(id)], at(id));
   const rest = T.map((x, i) => [x, i]).filter(([x]) => !MAIN.includes(x.id));
-  return main("scorecard") + driveBanner() + main("compliance") + rankingHtml() + main("outputs")
+  return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
@@ -898,6 +915,31 @@ function sheetHtml(T, ti){
    The trainer ticks the trainees (all of the batch by default) and types the right Batch ID; each one's trainee:<id> gets
    batch = that ID, batchFrom (the old one), batchMovedAt and batchMovedBy: "trainer". worker.js keeps that batch on every
    save the trainee makes afterwards (an open tab can't write the old one back), and index.html takes it on their next save. */
+/* 👥 DUPLICATE ACCOUNTS: one person with two accounts (an older Batch ID change made a second one), where one of them is in
+   this batch. Each account shows its batch, when it registered and was last on, and how much progress it holds; the
+   trainer keeps the one on the right Batch ID (the one in this batch, with the most progress, is picked first) and 👥 Merge
+   moves everything of the other into it and deletes it (worker.js mergeAccounts), so the Scorecard reads one profile. */
+const slugOf = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+function dupGroups(){
+  if(!adminOn() || meOn() || !Array.isArray(B.all)) return [];
+  const live = B.all.filter(r => r.name && !r.purgedAt && !r.rejected && !r.mergedInto), by = {};
+  live.forEach(r => { (by[slugOf(r.name)] = by[slugOf(r.name)] || []).push(r); });
+  const done = r => Object.values(r.dayProgress || {}).filter(x => x && x.done).length;
+  return Object.values(by).filter(g => g.length > 1 && g.some(r => bLabel(r.batch || "") === B.batch))
+    .map(g => g.map(r => ({id: r.id, name: r.name, batch: r.batch || "", reg: r.registeredAt || "", last: r.lastActive || "", done: done(r),
+      st: r.offboarded ? "offboarded" : r.archived ? "archived" : r.approved === true ? "approved" : "waiting"}))
+      .sort((a, b) => (bLabel(b.batch) === B.batch) - (bLabel(a.batch) === B.batch) || b.done - a.done || String(b.last).localeCompare(String(a.last))));
+}
+function dupHtml(){
+  const G = dupGroups(); if(!G.length) return "";
+  B.dupKeep = B.dupKeep || {};
+  return `<div class="bs-warn bs-dup"><b>👥 ${G.length === 1 ? `${e(G[0][0].name)} has ${G[0].length} accounts` : `${G.length} trainees have more than one account`}</b> — the Scorecard can read only one. Keep the one on the right Batch ID; 👥 Merge moves everything of the other into it and deletes it.
+    ${G.map(g => { const key = slugOf(g[0].name), keep = B.dupKeep[key] && g.some(a => a.id === B.dupKeep[key]) ? B.dupKeep[key] : g[0].id;
+      return `<table class="bs-dup-t"><thead><tr><th>Keep</th><th>Account</th><th>Batch</th><th>Registered</th><th>Last on</th><th>Lessons done</th><th>Status</th></tr></thead><tbody>
+        ${g.map(a => `<tr${a.id === keep ? ' class="bs-dup-keep"' : ""}><td><input type="radio" name="dup-${e(key)}" ${a.id === keep ? "checked" : ""} onchange="FTBatchSheet.dupKeep('${e(key)}', '${e(a.id)}')" aria-label="Keep ${e(a.id)}"></td>
+          <td><code>${e(a.id)}</code></td><td>${e(a.batch)}${bLabel(a.batch) === B.batch ? " (this batch)" : ""}</td><td>${a.reg ? e(when(a.reg)) : "—"}</td><td>${a.last ? e(ago(a.last)) : "—"}</td><td>${a.done}</td><td>${e(a.st)}</td></tr>`).join("")}</tbody></table>
+        <button class="btn btn-navy btn-sm" type="button" ${B.dupBusy ? "disabled" : ""} onclick="FTBatchSheet.dupMerge('${e(key)}')">${B.dupBusy === key ? "Merging…" : `👥 Merge into ${e(keep)}`}</button>`; }).join("")}</div>`;
+}
 function fixHtml(ppl){
   const F = B.fix; if(!F) return "";
   const others = batches().filter(b => b !== B.batch);
@@ -942,6 +984,7 @@ function renderSheet(){
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
+    ${dupHtml()}
     ${fixHtml(ppl)}
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
@@ -1020,6 +1063,18 @@ window.FTBatchSheet = {
   rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   dstat(){ B.dstat = undefined; B.verified = {}; B.dataKey = ""; render(); },
+  copyShare(){ const t = (document.getElementById("bsShareTo") || {}).textContent || ""; if(!t) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: " + t), () => toast("Couldn’t copy. Select the address instead.")); },
+  // 🔁 every trainee of the batch whose links can't be opened: checked again now, then the sheet read again
+  async recheckLinks(){
+    if(!adminOn() || B.rechecking || !B.data) return;
+    const ids = people().filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st !== "none" && !/ok|trainer/.test(L[k].st)); }catch(err){ return false; } }).map(p => p.id);
+    let ok = 0;
+    for(let i = 0; i < ids.length; i++){ B.rechecking = `${i + 1} of ${ids.length}`; rerender();
+      try{ const r = await authFetch("/api/drive/verify", {id: ids[i]}); if(r.ok) ok++; }catch(err){} }
+    B.rechecking = null; B.data = null; B.dataKey = ""; rerender();
+    toast(ok ? `✓ Checked ${ok} trainee${ok === 1 ? "" : "s"}’ links again.` : "Couldn’t check the links. Try again in a minute.");
+  },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
@@ -1058,6 +1113,20 @@ window.FTBatchSheet = {
       if(B.data && B.data.rec[id]) B.data.rec[id].daycheck = cur;
     }catch(err){ toast("Couldn't save the tick. Try again."); }
     render();
+  },
+  dupKeep(key, id){ (B.dupKeep = B.dupKeep || {})[key] = id; render(); },
+  // 👥 every other account of that person merged into the one kept (worker.js /api/batch/merge), then the batch read again
+  async dupMerge(key){
+    if(!adminOn() || B.dupBusy) return;
+    const g = dupGroups().find(x => slugOf(x[0].name) === key); if(!g) return;
+    const keep = (B.dupKeep || {})[key] && g.some(a => a.id === B.dupKeep[key]) ? B.dupKeep[key] : g[0].id, other = g.filter(a => a.id !== keep);
+    const k = g.find(a => a.id === keep);
+    if(!confirm(`Keep ${k.name}'s account ${keep} (batch ${k.batch}) and merge ${other.map(a => `${a.id} (batch ${a.batch})`).join(", ")} into it?\n\nEverything the other account holds (progress, Knowledge Checks, Drive links, scores, feedback) moves into the one kept, and the other account is deleted. A sign-in to it opens the kept one.`)) return;
+    B.dupBusy = key; render(); let ok = 0, err = "";
+    for(const a of other){ try{ const r = await authFetch("/api/batch/merge", {from: a.id, into: keep}), j = await r.json().catch(() => ({})); if(r.ok && j.ok) ok++; else err = j.error || "the server refused"; }catch(e2){ err = "no connection"; } }
+    B.dupBusy = null; state.adminData = null; B.people = null; B.all = null; B.data = null; B.dataKey = "";
+    try{ window.dispatchEvent(new Event("ft-roster-changed")); }catch(e2){}
+    toast(ok === other.length ? `✓ Merged into ${keep}: one account for ${k.name}.` : `Couldn’t merge every account (${err}). Try again.`, 7000); render();
   },
   fixOpen(){ if(!adminOn()) return; B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
   fixClose(){ B.fix = null; render(); },
@@ -1246,6 +1315,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
+.bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
+.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
