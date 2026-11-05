@@ -449,7 +449,7 @@ async function loadAdmin(quiet){
   const typing = document.activeElement && /TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName);
   // (the scoresheet pop-up redraws on its own, unless the trainer is typing in it)
   if(MS.open){ if(!(typing && document.activeElement.closest("#ftmsModal"))) drawSheet(); return; }
-  if(state.view === "daydeck" ? !(typing && document.activeElement.closest(".ftms")) : state.view === "admin" && ["sessions", "trainerinputs"].includes(state.adminTab) && !(quiet && typing)) render();
+  if(state.view === "daydeck" ? !(typing && document.activeElement.closest(".ftms")) : state.view === "admin" && ["sessions", "trainerinputs", "graders"].includes(state.adminTab) && !(quiet && typing)) render();   // (graders: 🧑‍🏫 Graders draws Trainer Inputs too)
 }
 function liveRows(){
   return (AD.rows || []).filter(r => r.s && r.s.live && Date.now() - new Date(r.s.live.startedAt) < 4 * 3600000);
