@@ -104,7 +104,12 @@ function load(force){
   }).catch(() => { S.data = S.data || empty(); S.loading = null; return S.data; });
   return S.loading;
 }
-const recOf = (day, id) => ((S.data || {}).days || {})[String(day)] && ((S.data || {}).days || {})[String(day)][String(id)] || null;
+/* Every edit saved before RESET_AT is set aside: the slides read as the build made them again (all trainer edits removed,
+   5 Nov 2026). They stay stored in settings:dayslides, untouched, so moving RESET_AT back brings them back; an edit saved
+   after it shows as usual. */
+const RESET_AT = Date.parse("2026-11-05T01:30:00Z");
+const recOf = (day, id) => { const r = ((S.data || {}).days || {})[String(day)] && ((S.data || {}).days || {})[String(day)][String(id)] || null;
+  const t = r && Date.parse(r.at || ""); return r && t >= RESET_AT ? r : null; };
 // the slide's HTML as the trainer has it, or null where they have not touched it
 function htmlOf(day, id){ const r = recOf(day, id); return r && typeof r.html === "string" ? clean(r.html) : null; }
 function noteOf(day, id){
