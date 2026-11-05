@@ -87,65 +87,9 @@ function loadDecks(){
   return DD.loading;
 }
 const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons: []};
-/* A slide's own HTML, as the trainer has it. js/ft-slide-editor.js lets a trainer rewrite any slide of any day
-   (settings:dayslides); the edit stands in for what build/day-decks.cjs built, for trainers and trainees alike, and
+/* A slide's own HTML: what build/day-decks.cjs built (there is no slide editor: a trainer's edits are not read), and
    everything downstream — the agenda, the slide's buttons — reads the slide through here. */
-const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : plainHeads(evlInline(v)); }catch(err){ return (s || {}).html; } };
-/* A slide's headings are the deck's navy bar with white text: a highlight or a text colour a trainer's edit put on a heading
-   (Day 7's "What to collect about insurance on an intake call", in yellow) is dropped, on the heading and inside it */
-/* (and a heading is never inside the slide editor's 📦 Card, the dashed .ftdd-ph box: a card holding a heading, Day 7's
-   insurance heading, gives way to what it holds, without its 📌 icon; a card left empty is dropped) */
-function plainHeads(html){
-  const h = String(html || "");
-  const heads = /<h[1-6][\s>]/i.test(h), card = /ftdd-ph\b/.test(h);
-  if(!heads || (!card && !/(background|color)\s*:/i.test(h))) return h;
-  const t = document.createElement("template"); t.innerHTML = h;
-  if(card){
-    // (innermost first, so a card inside a card is handled before the one holding it)
-    [...t.content.querySelectorAll(".ftdd-ph")].reverse().forEach(c => {
-      const empty = !c.textContent.replace(/📌/g, "").trim() && !c.querySelector("img, iframe, video, audio, table");
-      if(empty){ c.remove(); return; }
-      if(!c.querySelector("h1, h2, h3, h4, h5, h6")) return;
-      c.querySelectorAll(":scope > .ftdd-ph-ic").forEach(x => x.remove());
-      const kids = [...c.childNodes].flatMap(k => k.nodeType === 1 && k.tagName === "DIV" && !k.className ? [...k.childNodes] : [k]);
-      c.replaceWith(...kids);
-    });
-  }
-  t.content.querySelectorAll(":is(h1,h2,h3,h4,h5,h6), :is(h1,h2,h3,h4,h5,h6) [style]").forEach(el => {
-    if(!el.style) return;
-    ["background", "background-color", "color"].forEach(p => el.style.removeProperty(p));
-    if(!el.getAttribute("style")) el.removeAttribute("style");
-  });
-  return t.innerHTML;
-}
-/* The Accident or Injury Claim Documents and Evidence Checklist is read on the platform, never as a Drive file: a slide a
-   trainer saved while it was still a Drive preview or link (its file id below) shows the checklist itself, as Day 7 builds
-   it (build/days/day07.js: the ftdd-evl title and cards), in place of the preview, the link and the heading over them. */
-const EVL_FILE = "1-a8jF7dTZxdoYv4brVSe9GwGrT9MGFnV";
-function evlCards(){
-  const d = decks(), s = d && d[7] && (d[7].slides || []).find(x => /class="ftdd-evl"/.test(x.html || ""));
-  const m = s && s.html.match(/<div class="ftdd-evl-title">[^]*?<\/div>\s*<div class="ftdd-evl">(?:<div class="ftdd-evl-card">[^]*?<\/div><\/div>)+<\/div>/);
-  return m ? m[0] : "";
-}
-function evlInline(html){
-  const h = String(html || "");
-  if(h.indexOf(EVL_FILE) < 0) return h;
-  const cards = evlCards(); if(!cards) return h;
-  const t = document.createElement("template"); t.innerHTML = h;
-  let done = false;
-  t.content.querySelectorAll(`a[href*="${EVL_FILE}"], iframe[src*="${EVL_FILE}"]`).forEach(a => {
-    // the block it sits in: the preview card, or the line holding the link
-    const box = a.closest(".ftdd-shot, .ftdd-inline, figure, p, li") || a;
-    if(!box.parentNode) return;
-    // (the heading or name line just before it, "📄 Accident or Injury Claim …", goes with it: the cards carry their own title)
-    const prev = box.previousElementSibling;
-    if(prev && /accident or injury claim|evidence checklist/i.test(prev.textContent) && !prev.querySelector("a, iframe")) prev.remove();
-    if(done){ box.remove(); return; }
-    const w = document.createElement("div"); w.className = "ftdd-keep"; w.innerHTML = cards;
-    box.replaceWith(w); done = true;
-  });
-  return t.innerHTML;
-}
+const slideSrc = (n, s) => (s || {}).html;
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
 /* ✓ Finished: a lesson runs over one day or several (Reception, Days 3–5; Intake, Days 7–9), so its cards say Finished and
@@ -870,8 +814,6 @@ function renderDeck(){
     return `${back}<div class="ftdd-deck ftdd-msg"><p>${DD.failed ? "The day decks couldn’t load. Check your connection and open the deck again." : "Loading the day deck…"}</p></div>`;
   }
   const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for this session.</p></div>`;
-  // the trainer's own edits of these slides (js/ft-slide-editor.js), so a trainee opens the deck as it now reads
-  if(root.FTSlideEdit) FTSlideEdit.load();
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
   setLastAt(DD.day, DD.i);
@@ -3226,7 +3168,7 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 /* a page break the build puts in a slide (sheetPages): nothing to see */
 .ft-body .ftdd-pgbreak{display:none !important;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
-   three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
+   three to a row, 360px tall. On every slide's .shots. */
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
