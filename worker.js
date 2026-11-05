@@ -978,12 +978,7 @@ async function callGemini(env, rawBody, user) {
   return json({ error: { message: (status === 502 && /API key/i.test(last.msg) ? "invalid x-api-key (Gemini): " : status === 429 ? "rate limit (Gemini free tier): " : "") + last.msg } }, status);
 }
 
-async function listAll(env, prefix) {
-  const kv = kvOf(env);
-  const keys = []; let cursor;
-  do { const r = await kv.list({ prefix, cursor }); r.keys.forEach((k) => keys.push(k.name)); cursor = r.list_complete ? null : r.cursor; } while (cursor);
-  return keys;
-}
+const listAll = (env, prefix) => listKeys(kvOf(env), prefix);
 
 /* ---------- Daily Task Tracker: the daily check ----------
    For every approved trainee with a tracker: run the rules for the day, write a notes review
@@ -1567,9 +1562,7 @@ async function verifyLinks(env, id) {
     if (roster) return roster;
     const suffix = id.includes("--") ? "--" + id.split("--").pop() : "";
     const keys = [];
-    if (suffix) { let cursor; do { const r = await kv.list(Object.assign({ prefix: "trainee:" }, cursor ? { cursor } : {}));
-      (r.keys || []).forEach((x) => { if (x.name.endsWith(suffix) && x.name !== `trainee:${id}`) keys.push(x.name); });
-      cursor = r.list_complete === false ? r.cursor : null; } while (cursor); }
+    if (suffix) keys.push(...(await listKeys(kv, "trainee:")).filter((n) => n.endsWith(suffix) && n !== `trainee:${id}`));
     roster = (await Promise.all(keys.slice(0, 200).map((n) => kv.get(n)))).map((v) => { try { return JSON.parse(v); } catch (e) { return null; } })
       .filter((r) => r && r.name && !r.purgedAt && !r.rejected);
     return roster;
