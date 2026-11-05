@@ -299,7 +299,7 @@ function formsHtml(el){
 const PAINT = {".ftis-packet": packetHtml, ".ftis-sheet": sheetHtml, ".ftis-wsub": wsubHtml, ".ftis-docs": docsHtml, ".ftis-forms": formsHtml, ".ftis-mockcall": mockcallHtml, ".ftis-mcase": mcaseHtml};
 function paint(){
   let any = false;
-  Object.keys(PAINT).forEach(sel => document.querySelectorAll(sel).forEach(el => { if(el.closest("#ftseBody")) return;
+  Object.keys(PAINT).forEach(sel => document.querySelectorAll(sel).forEach(el => { 
     // (an open case stays open when it is drawn again)
     const open = [...el.querySelectorAll("details[open] > summary b")].map(b => b.textContent);
     el.setAttribute("data-on", "1"); el.innerHTML = PAINT[sel](el); any = true;
@@ -429,13 +429,13 @@ if(typeof window.ftAdminTab === "function") ftAdminTab("intake", "📦 Intake Pa
 function refit(){ try{ if(window.FTDayDecks && FTDayDecks.refit) FTDayDecks.refit(); else window.dispatchEvent(new Event("resize")); }catch(err){} }
 function fill(){
   // (Day 8: the assigned packet, the worksheet, the additional documents and the sample forms, drawn again once the trainer's settings load)
-  const fresh = [...document.querySelectorAll(Object.keys(PAINT).map(x => x + ":not([data-on])").join(", "))].filter(el => !el.closest("#ftseBody"));
+  const fresh = [...document.querySelectorAll(Object.keys(PAINT).map(x => x + ":not([data-on])").join(", "))];
   if(fresh.length){
     // (a mock call slot opened again after the CMS's cases failed to load tries once more)
     if(PK.failed && fresh.some(el => el.matches(".ftis-mockcall, .ftis-mcase"))) PK.failed = false;
     paint(); loadK();
   }
-  const want = [...document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])")].filter(el => !el.closest("#ftseBody"));
+  const want = [...document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])")];
   if(!want.length) return;
   want.forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = `<p class="ftis-wait">Loading the recordings…</p>`; });
   data().then(d => {

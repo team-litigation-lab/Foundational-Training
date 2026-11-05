@@ -133,7 +133,7 @@ window.LSH_BLUEPRINT = {
         shot: '/img/blueprint/opendays.jpg',
         shotAlt: 'The Open Lessons tab: a Batch chooser set to All batches, a tick box for each of the eight lessons, and an Unlock Videos card with the same lessons.' },
       { icon: '📋', title: 'The day decks: your trainer panel', points: [
-          'Every day has its deck, the same slides your trainees see. The trainer panel beside it holds the 🔒 Segment lock, the slide\'s 🧑\u200d🏫 Facilitator notes and ✏️ Edit this slide.',
+          'Every day has its deck, the same slides your trainees see. The trainer panel beside it holds the 🔒 Segment lock and the slide\'s 🧑\u200d🏫 Facilitator notes.',
           'Unlock a step for All batches or one batch; trainees can\'t go past a locked step. 🔓 Unlock lets a single slide open early.',
           'Facilitator notes open in a drawer beside the slide (on a scoring slide, on the left, clear of 💾 Save), never on the trainees\' screen. Hide panel ⇥ gives the slide its full width.',
           'Digital Handouts open when the slide reads Open to trainees.'],
