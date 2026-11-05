@@ -132,9 +132,12 @@ function parseRange(s){
 // own week N: a Batch ID is the day it started (B + MMDDYY), and week N is the seven days from start + 7 × (N − 1)
 function weekRange(){
   const named = ((R.data || {}).cols || []).map(c => parseRange(c.sub)).find(Boolean); if(named) return named;
-  const startOf = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : null; };
+  // (a Batch ID that isn't a real date — an old or mistyped one, "B250926" — gives no start, instead of a crash)
+  const startOf = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); if(!m) return null;
+    const d = `20${m[3]}-${m[1]}-${m[2]}`, t = Date.parse(d + "T00:00:00Z"); return isFinite(t) && new Date(t).toISOString().slice(0, 10) === d ? d : null; };
   const start = [R.batch].concat(people().map(p => p.batch)).map(startOf).find(Boolean); if(!start) return null;
   const t = Date.parse(start + "T00:00:00Z") + (R.week - 1) * 7 * 864e5, iso = ms => new Date(ms).toISOString().slice(0, 10);
+  if(!isFinite(t)) return null;
   return [iso(t), iso(t + 6 * 864e5)];
 }
 const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
