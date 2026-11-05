@@ -322,7 +322,7 @@ function loadMine(force){
 const mineCtx = () => ({id:state.traineeId, progress:state.progress || {}, rec:SC.id === state.traineeId ? SC.rec : {}, shared:SC.shared, since:String(state.traineeRegisteredAt || "").slice(0, 10)});
 window.addEventListener("focus", () => { if(isTrainee() && SC.id && state.view === "scorecard") loadMine(); });
 function detail(sc){
-  return `<div class="sc-grid">${sc.rows.map(r => `<div class="card sc-src">
+  return `<div class="sc-grid">${sc.rows.filter(r => !r.s.hidden).map(r => `<div class="card sc-src">
       <div class="sc-src-h"><span class="sc-src-ic">${r.s.icon}</span><b>${e(r.s.label)}</b><span class="sc-pill t-${tier(r.avg)}">${pctTxt(r.avg)}</span></div>
       ${r.s.about ? `<p class="sc-about">${e(r.s.about)}</p>` : ""}
       ${r.items.length ? `<table class="sc-tbl"><tbody>${r.items.map(x => `<tr><td>${e(x.name)}${x.note ? `<span>${e(x.note)}</span>` : ""}</td><td class="sc-n t-${tier(x.pct)}">${pctTxt(x.pct)}</td></tr>`).join("")}</tbody></table>`
@@ -333,15 +333,17 @@ function ring(pct){
   const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
   return `<div class="sc-ring t-${tier(pct)}" style="--p:${p}"><span>${pctTxt(pct)}</span><small>overall</small></div>`;
 }
+// (a source marked hidden has no card or column of its own: its items are shown on another's, js/ft-program.js)
+const shown = () => CFG.sources.filter(s => !s.hidden);
 const HOW = "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same." +
-  (CFG.sources.some(s => s.noOverall) ? ` (${CFG.sources.filter(s => s.noOverall).map(s => s.label).join(", ")}: shown, but not counted again in the overall, as its marks come from the other systems.)` : "");
+  (shown().some(s => s.noOverall) ? ` (${shown().filter(s => s.noOverall).map(s => s.label).join(", ")}: shown, but not counted again in the overall, as its marks come from the other systems.)` : "");
 function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
   return `<div class="card sc-hero">
       ${ring(loaded ? sc.overall : null)}
       <div class="sc-hero-t"><p class="lp-eyebrow">📚 Dashboard · My Performance</p><h1>🏅 My Performance</h1>
-        <p>Every grade the platform gives you, collected from all of its grading systems: ${CFG.sources.map(s => e(s.label)).join(", ")}.</p>
-        <div class="sc-facts"><span><b>${sc.done} / ${sc.total}</b> lessons finished</span><span><b>${sc.graded}</b> graded item${sc.graded === 1 ? "" : "s"}</span><span><b>${sc.systems} / ${CFG.sources.length}</b> grading systems with a score</span></div></div>
+        <p>Every grade the platform gives you, collected from all of its grading systems: ${shown().map(s => e(s.label)).join(", ")}.</p>
+        <div class="sc-facts"><span><b>${sc.done} / ${sc.total}</b> lessons finished</span><span><b>${sc.graded}</b> graded item${sc.graded === 1 ? "" : "s"}</span><span><b>${sc.systems} / ${shown().length}</b> grading systems with a score</span></div></div>
       <div class="sc-hero-acts"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button></div>
     </div>
     ${loaded ? detail(sc) : `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting your grades…</div>`}
@@ -401,9 +403,9 @@ function renderAdminScores(){
     <div class="sc-admin-bar"><div><h2>🏅 Scorecards</h2><p class="sc-about">Each trainee’s grades, collected from all of the platform’s grading systems. Click a trainee for the details.</p></div>
       <span><select onchange="lshProgram.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="lshProgram.refresh()">↻ Refresh</button></span></div>
-    ${rows.length ? `<div class="sc-scroll"><table class="sc-tbl sc-admin-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Lessons</th>${CFG.sources.map(s => `<th>${s.icon} ${e(s.label)}</th>`).join("")}<th>Overall</th></tr></thead><tbody>
-      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.map(x => cell(x.avg)).join("")}${cell(r.sc.overall)}</tr>
-        ${AS.open[r.id] ? `<tr class="sc-open"><td colspan="${CFG.sources.length + 4}">${detail(r.sc)}</td></tr>` : ""}`).join("")}
+    ${rows.length ? `<div class="sc-scroll"><table class="sc-tbl sc-admin-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Lessons</th>${shown().map(s => `<th>${s.icon} ${e(s.label)}</th>`).join("")}<th>Overall</th></tr></thead><tbody>
+      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.filter(x => !x.s.hidden).map(x => cell(x.avg)).join("")}${cell(r.sc.overall)}</tr>
+        ${AS.open[r.id] ? `<tr class="sc-open"><td colspan="${shown().length + 4}">${detail(r.sc)}</td></tr>` : ""}`).join("")}
     </tbody></table></div>` : `<p class="sc-empty">No approved trainees${AS.batch ? " in this batch" : ""} yet.</p>`}
     <p class="sc-how">${HOW}</p></div>`;
 }

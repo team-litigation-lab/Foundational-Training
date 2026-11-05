@@ -220,7 +220,7 @@ function fbCell(p){
     f: sent.map(([l, v]) => `${lessonName(Number(l))}: ${v.rating || "—"}${v.sentAt ? " (" + day(v.sentAt) + ")" : ""}${v.summary ? " — " + String(v.summary).replace(/\s+/g, " ").slice(0, 220) : ""}`).join("  ·  ") + (drafts ? `  ·  ${drafts} draft${drafts === 1 ? "" : "s"} not sent yet` : "")};
 }
 function scoresTable(){
-  const ppl = people(), S = B.data.sources, reps = B.data.reps || [], weeks = reps.map((r, i) => r ? i + 1 : null).filter(Boolean), me = meOn();
+  const ppl = people(), S = B.data.sources.filter(s => !s.hidden), reps = B.data.reps || [], weeks = reps.map((r, i) => r ? i + 1 : null).filter(Boolean), me = meOn();
   const rows = ppl.map(p => { const sc = (B.data.rec[p.id] || {}).score, comp = compOf(p), ws = weeks.map(w => weekMark(reps[w - 1], p.id)), wavg = avgOf(ws);
     const overall = avgOf([sc && sc.overall, comp.pct, wavg == null ? null : wavg / 5 * 100]); return {p, sc, comp, ws, wavg, overall}; });
   const order = rows.filter(r => r.overall != null).sort((a, b) => b.overall - a.overall);
@@ -267,7 +267,7 @@ function gradesHtml(){
     const sys = sc.rows.filter(r => r.avg != null && !(r.s && r.s.noOverall));
     return `<div class="bs-rat">${who.length > 1 ? `<h5>${e(p.name)}</h5>` : ""}
       <div class="bs-rat-avg">Scorecard overall: <b class="${tone(sc.overall)}">${pct(sc.overall) || "—"}</b>${sys.length ? ` <span>= the average of ${sys.length} grading system${sys.length === 1 ? "" : "s"}: (${sys.map(r => `${r.s.label} ${Math.round(r.avg)}`).join(" + ")}) / ${sys.length}</span>` : ""}</div>
-      <div class="bs-days">${sc.rows.filter(r => r.items && r.items.length).map(r => { const g = r.items.filter(it => typeof it.pct === "number");
+      <div class="bs-days">${sc.rows.filter(r => r.items && r.items.length && !r.s.hidden).map(r => { const g = r.items.filter(it => typeof it.pct === "number");
         return `<div class="bs-day"><div class="bs-day-h"><b>${e(r.s.icon || "")} ${e(r.s.label)}</b><em class="${tone(r.avg)}">${pct(r.avg) || "—"}</em></div>
         ${g.length ? `<p class="bs-rat-how">Average = (${g.map(it => Math.round(it.pct)).join(" + ")}) / ${g.length} = ${pct(r.avg)}${r.s.noOverall ? " · not counted again in the overall" : ""}</p>` : ""}
         ${r.items.map(it => `<div class="bs-gr"><span>${e(it.name)}</span><b class="${tone(it.pct)}">${typeof it.pct === "number" ? pct(it.pct) : "—"}</b>${it.note ? `<small>${e(it.note)}</small>` : ""}</div>`).join("")}</div>`; }).join("")}</div></div>`; };
@@ -854,7 +854,7 @@ function recentTable(){
 const LAB = ["sessions", "calls", "calendar", "calcheck", "calrules", "calweek", "drills", "listening", "skills", "portalsims"];
 const PRACTICE = new Set(["Practice in a tool", "Roleplay practice", "Typing test", "Spelling test", "Simulator practice"]);
 function practiceTable(){
-  const ppl = people(), S = B.data.sources.filter(s => LAB.includes(s.id)), all = events();
+  const ppl = people(), S = B.data.sources.filter(s => LAB.includes(s.id) && !s.hidden), all = events();
   const cols = [{id: "ai", label: "🤖 Practice tools (AI-graded)"}, {id: "rp", label: "🎭 Roleplays"}].concat(S.map(s => ({id: s.id, label: `${s.icon || ""} ${s.label}`.trim(), s})));
   return {id: "practice", title: "🛠 Practice Lab", note: `${meOn() ? "How much you use" : "How much each trainee uses"} the Practice Lab: the tools practiced in (of ${cols.length}), every attempt, the last time, then each tool (attempts · average score). Blank: not used yet.`,
     head: ["Trainee", "Tools used", "Attempts", "Last practice"].concat(cols.map(c => c.label)),

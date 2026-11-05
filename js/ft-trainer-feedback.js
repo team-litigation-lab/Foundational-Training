@@ -216,7 +216,7 @@ const norm = v => String(v || "").toLowerCase().replace(/^(day \d+ · |knowledge
 // the recorded items that are this activity
 function matchOf(r, sc){
   if(!sc) return [];
-  const all = sc.rows.flatMap(x => x.items.map(it => Object.assign({src: x.s}, it)));
+  const all = sc.rows.filter(x => !x.s.hidden).flatMap(x => x.items.map(it => Object.assign({src: x.s}, it)));
   const id = String(r.item || ""), t = norm(r.title);
   const bySrc = {"side-typing": "skills", "side-monitor": "drive", "side-tracker": "drive", "side-links": "drive"}[id];
   if(bySrc) return all.filter(it => it.src.id === bySrc);

@@ -295,17 +295,18 @@ async function gather(members){
 const snapshot = (g, acts) => {
   const mine = ((g.rec["labreview:"] || {}).acts) || {};
   return {at:new Date().toISOString(), overall:g.sc ? g.sc.overall : null, lessons:g.sc ? {done:g.sc.done, total:g.sc.total} : null,
-    systems:g.sc ? g.sc.rows.map(x => ({id:x.s.id, label:x.s.label, avg:x.avg, graded:x.graded})) : [],
+    systems:g.sc ? g.sc.rows.filter(x => !x.s.hidden).map(x => ({id:x.s.id, label:x.s.label, avg:x.avg, graded:x.graded})) : [],
     trainerActs:Object.fromEntries(acts.filter(a => mine[a.id]).map(a => { const c = mine[a.id];
       return [a.id, {title:a.title, status:c.status || "", score:tScore(c), avg:c.rubric ? c.rubric.avg : null, date:c.date || "", comment:String(c.comment || "").slice(0, 1500)}]; }))};
 };
 function buildFiles(batch, rows){
-  const acts = trainerActs(), srcs = rows.length && rows[0].sc ? rows[0].sc.rows.map(x => x.s) : ((window.LSH_PROGRAM || {}).sources || []);
+  // (a hidden grading system has no column of its own: its items are on another's, js/ft-program.js)
+  const acts = trainerActs(), srcs = (rows.length && rows[0].sc ? rows[0].sc.rows.map(x => x.s) : ((window.LSH_PROGRAM || {}).sources || [])).filter(s => !s.hidden);
   const lab = g => ((g.rec["labreview:"] || {}).acts) || {};
   const name = g => g.r.name || g.r.id, B = labelOf(batch);
   const summary = [["Trainee", "Batch", "Status", "Lessons finished", ...srcs.map(s => s.label + " (%)"), "Overall (%)", ...acts.map(a => a.title + " (%)")]]
     .concat(rows.map(g => [name(g), B, g.r.archived ? "Archived" : "Active", g.sc ? `${g.sc.done}/${g.sc.total}` : "",
-      ...(g.sc ? g.sc.rows.map(x => pct(x.avg)) : srcs.map(() => "")), g.sc ? pct(g.sc.overall) : "",
+      ...(g.sc ? g.sc.rows.filter(x => !x.s.hidden).map(x => pct(x.avg)) : srcs.map(() => "")), g.sc ? pct(g.sc.overall) : "",
       ...acts.map(a => { const c = lab(g)[a.id]; return c ? (tScore(c) != null ? tScore(c) : c.status || "") : ""; })]));
   const cards = [["Trainee", "Batch", "Activity", "Kind", "Result", "Score (%)", "Weighted average (/5)", "Date", "Criterion", "Criterion score (/5)", "Criterion feedback", "Trainer's comment"]];
   rows.forEach(g => acts.forEach(a => {

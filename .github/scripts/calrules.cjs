@@ -131,7 +131,10 @@ async function workerChecks() {
   const rec = await get('calrules:' + id);
   if (!rec || rec.bookings.length !== 1 || rec.bookings[0].pct !== 92 || rec.bookings[0].mode !== 'trainer') fail(`the booking wasn't saved: ${JSON.stringify(rec)}`);
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!/Calendar booking rules[\s\S]*Mock call with the trainer[\s\S]*92%/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the booking check');
+  // (on 📅 Calendar checks, one card with the Calendar activity: no card of its own)
+  { const main = await page.evaluate(() => document.querySelector('main').innerText);
+    if (!/Calendar checks[\s\S]*Booking rules · Mock call with the trainer[\s\S]*92%/.test(main)) fail('🏅 My Performance doesn\'t show the booking check on 📅 Calendar checks');
+    if (/Calendar booking rules/.test(main) || /Calendar activity check/.test(main)) fail('🏅 My Performance still has a separate calendar card'); }
 
   // the trainer: 📅 Booking Rules, and Trainer Inputs filling the scorecard's rule criteria
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'calrules'; FTCalRulesAdmin.reload(); goto('admin'); });
