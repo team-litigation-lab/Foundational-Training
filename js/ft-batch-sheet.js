@@ -155,7 +155,7 @@ function traineesTable(){
       const st = p.status;
       return [
         {v: p.name, f: `${p.name} · ${B.batch}`, cls: "gs-name"},
-        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 🏅 Scorecard → Trainee Audit" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
+        {v: st, f: st === "Waiting for approval" ? "Registered, not approved yet: approve them in 🛡 Admin Master Control → 👥 Trainees & Batches" : st, cls: st === "Approved" ? "gs-hi" : "gs-mid"},
         {v: (when(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? when(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
@@ -402,27 +402,17 @@ function dayScoresHtml(){
             ${rich ? `<div class="bs-ctx bs-why"><b>🧾 Why this score</b><p>${e(x.why || "—")}</p></div>${li("⭐ What they did best", x.best, "bs-best")}${li("🔧 What needs to be improved", x.improve, "bs-imp")}
               ${!x.best.length && !x.improve.length && x.pct != null ? `<p class="bs-ctx-none">No criterion-level notes were recorded for this score.</p>` : ""}` : `<p class="bs-ctx-none">${e(x.why || "")}</p>`}</div>`; }).join("")}</details>`; }).join("")}</div></div>`;
 }
-/* 👥 Trainees & Batches, at the foot of the sheet: what the old tab held that a trainer DOES (js/ft-trainees-tab.js) —
-   ⏳ Pending Approvals (approve / reject), each trainee's actions (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard),
-   and the batches (📦 Archive, ⬇ Records, the Archive shelf, 🚫 Offboarded VAs, ☁ Saved to Drive). Drawn by the Admin screen's
-   own 'audit' page, without its tab bar; the tab itself has no button any more (LSH_PROGRAM.adminHidden). */
-function peopleHtml(){
-  if(meOn() || !adminOn() || typeof window.renderAdmin !== "function") return "";
-  const was = state.adminTab; let out = "";
-  try{ state.adminTab = "audit"; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ state.adminTab = was; }
-  const t = document.createElement("template"); t.innerHTML = out;
-  t.content.querySelectorAll(".admin-tabs, #navBackSlot, .audit-page-head").forEach(x => x.remove());
-  return `<section class="bs-sec bs-people" id="bs-people"><h3 class="bs-h">👥 Trainees &amp; Batches</h3>
-    <p class="bs-note">Approve new trainees, act on a trainee (✍ Feedback, 🎓 Certificate, ↺ Reset Attempts, 🚫 Offboard), and archive or restore a batch.</p>
-    <div class="bs-people-b">${t.innerHTML}</div></section>`;
-}
-// (an approval or rejection made there: the sheet reads its trainees again, so the 👥 Trainees table shows it at once)
+// (an approval or rejection made in 🛡 Admin Master Control → 👥 Trainees & Batches: the sheet reads its trainees again, so the 👥 Trainees table shows it at once)
 ["approveTrainee", "rejectTrainee"].forEach(fn => { const was = window[fn]; if(typeof was !== "function") return;
   window[fn] = async function(){ const r = await was.apply(this, arguments); if(on() && adminOn()){ if(typeof state === "object") state.adminData = null; B.people = null; B.data = null; B.dataKey = ""; render(); } return r; }; });
 // 📊 the Weekly Ranking (js/ft-ranking.js), below the Day 1–16 scores, for the same batch
 function rankingHtml(){
   if(meOn() || !window.FTRanking || !FTRanking.embed) return "";
-  return `<section class="bs-sec bs-rank" id="bs-ranking">${FTRanking.embed(B.batch)}</section>`;
+  // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
+  const sheet = FTRanking.embed(B.batch);
+  if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
+  return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking</h3>${FTRankSummary.html()}
+    <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
    🏅 THE SIMPLIFIED SCORECARD: what the Batch Sheet opens on (the facilitator's own sheet)
@@ -910,7 +900,6 @@ function renderSheet(){
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
     ${!D || B.dataLoading ? `<p class="sc-empty">Reading the batch's progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
-    ${ready ? peopleHtml() : ""}
     <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Click a cell to see what it means in the bar above. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
 }
 
@@ -979,6 +968,7 @@ window.FTBatchSheet = {
     F.g = on ? T.groups.map((g, gi) => g.label && g.span > 1 ? gi : -1).filter(gi => gi >= 0) : []; foldRender(id); },
   hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
+  rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
@@ -1161,8 +1151,8 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-hidden{padding-bottom:12px;}
 .gs .gs-group th{background:#1E2340;color:#fff;font:700 13px Arial,sans-serif;text-align:left;padding:5px 10px;border-left:2px solid #fff;white-space:nowrap;} .gs .gs-group th.gs-g2{background:#33406B;}
 .bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
-.bs-more{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
-.bs-more > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary{border-bottom:1px solid #E1E3E1;}
+.bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
+.bs-more > summary::-webkit-details-marker,.bs-rank-sheet > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary,.bs-rank-sheet[open] > summary{border-bottom:1px solid #E1E3E1;}
 .bs-ds-days, .bs-oc-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
 .bs-oc-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;padding:0 10px 6px;}
 .bs-oc-day > summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:7px 0;flex-wrap:wrap;} .bs-oc-day > summary span{color:#5F6368;font-size:12.5px;}
