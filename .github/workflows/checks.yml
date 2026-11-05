@@ -53,6 +53,8 @@ jobs:
         run: node .github/scripts/autolink.cjs
       - name: A day's compliance counts from the batch's first day, a passing Drive fault isn't a 0, and a B + DDMMYY Batch ID starts on its day (worker.js dailyCompliance)
         run: node .github/scripts/compliance-start.cjs
+      - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)
+        run: node .github/scripts/cron-checks.cjs
       - name: A Monitoring Sheet kept as a Word file (.docx) in Drive read and checked
         run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)

@@ -1425,7 +1425,7 @@ function tamEntries(text, D) {
    day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
    deleted from it stops counting. Into trackerreview:<id>.shots = {files: [{kind, date, slot, up, named, name, link,
    created}], checkedAt, error}; js/ft-skilltests.js counts them with the tests taken on the platform. */
-async function checkShots(env, id) {
+async function checkShots(env, id, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
   if (!drive || !(drive.folder || drive.typing || drive.spelling)) return null;
@@ -1434,7 +1434,8 @@ async function checkShots(env, id) {
   const srcs = [["typing", drive.typing], ["spelling", drive.spelling], ["", drive.folder]].filter(([, u]) => u);
   const seen = new Set(), all = []; let res = { files: [] }, errs = [];
   for (const [kind, u] of srcs) {
-    const r = await folderFiles(env, u);
+    // (o.listFolder: the nightly check's one listing of each folder a run)
+    const r = await (o.listFolder ? o.listFolder(u) : folderFiles(env, u));
     if (r.error) { errs.push(kind || "folder"); continue; }
     (r.files || []).forEach((f) => { const key = f.link || f.name + "|" + (f.created || ""); if (seen.has(key)) return; seen.add(key); all.push({ f, kind }); });
   }
@@ -1899,7 +1900,13 @@ async function runTrackerChecks(env, opts) {
   const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
   const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
   const done = [];
-  for (const k of keys) {
+  // (each trainee's Assessments/Activities folder is listed once a run: the screenshots, the day's compliance and the backfill
+  // all read that one listing, so a night of many trainees stays inside Drive's and the Worker's limits)
+  const listed = new Map();
+  const listFolder = (u) => { if (!listed.has(u)) listed.set(u, folderFiles(env, u).catch(() => ({ error: "drive" }))); return listed.get(u); };
+  const folderOf = async (id) => { const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null"); return drive && drive.folder ? listFolder(drive.folder) : undefined; };
+  // (a trainee whose records can't be read is passed over: the next trainee is still checked)
+  for (const k of keys) { try {
     const id = k.slice("tracker:".length);
     const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
@@ -1917,15 +1924,15 @@ async function runTrackerChecks(env, opts) {
     cur.updatedAt = new Date().toISOString();
     await kv.put(rk, JSON.stringify(cur));
     done.push({ id, pct: res.pct, flags: res.flags.length });
-  }
+  } catch (e) { /* the next trainee */ } }
   // the trainees whose tracker and Monitoring Sheet are in Google Drive
   const driveKeys = o.id ? [`drive:${o.id}`] : await listAll(env, "drive:");
   for (const k of driveKeys) {
     const id = k.slice("drive:".length);
-    const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+    let rec = null; try { rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"); } catch (e) { continue; }
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
-    try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
+    try { const r = await checkShots(env, id, { listFolder }); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
     // (the six monitored links, checked again at the end of the shift: a ✓ stays for its link, verifyLinks)
     if (driveSA(env)) { try { const r = await verifyLinks(env, id); if (r && r.ok) done.push({ id, links: true }); } catch (e) { /* the next trainee */ } }
   }
@@ -1933,11 +1940,12 @@ async function runTrackerChecks(env, opts) {
   const people = o.id ? [`trainee:${o.id}`] : await listAll(env, "trainee:");
   for (const k of people) {
     const id = k.slice("trainee:".length);
-    const rec = JSON.parse((await kv.get(k)) || "null");
+    let rec = null, files; try { rec = JSON.parse((await kv.get(k)) || "null"); } catch (e) { continue; }
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
-    try { const r = await dailyCompliance(env, id, D, { rec }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    try { files = await folderOf(id); } catch (e) { files = undefined; }
+    try { const r = await dailyCompliance(env, id, D, { rec, files }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
     // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
-    if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
+    if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec, files }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
   return { date: D, checked: done.length, results: done };
 }
@@ -1959,7 +1967,8 @@ async function backfillCompliance(env, id, o = {}) {
   }
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
+  // (the nightly check hands over the folder it already listed: o.files)
+  let files = o.files || null; if (!files && drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
   for (const d of want) await dailyCompliance(env, id, d, { backfill: true, rec, files: files || undefined });
   return want.length;
 }
