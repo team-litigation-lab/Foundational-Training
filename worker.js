@@ -1422,6 +1422,14 @@ async function checkShots(env, id) {
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
+  // (some folders read, some not, e.g. Google failing on the Typing Tests folder just now: the screenshots already found in the
+  // folders that failed are kept with the ones read now, so a day's tests don't drop out of compliance until the next check)
+  if (!res.error && errs.length) {
+    const have = new Set(files.map((f) => f.link || f.name + "|" + f.created));
+    (prev.files || []).forEach((p) => { if (p && errs.includes(p.in || "") && !have.has(p.link || p.name + "|" + p.created)) files.push(p); });
+    files.sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created)));
+    if (files.length > 400) files.splice(0, files.length - 400);
+  }
   // 🔢 THE SCORE ON EACH SCREENSHOT, read once by the AI from the image (a typing test: its WPM and accuracy; a spelling test: its
   // score out of its total), kept with the file so the 🧪 Typing & Spelling page and the scorecards count it like a test taken on
   // the platform. At most 8 new screenshots a check (the rest on the next), each read once, a failed read tried again next time.
@@ -1448,7 +1456,7 @@ async function checkShots(env, id) {
       } catch (e) { /* tried again on the next check */ }
     }
   }
-  // a folder that can't be read this time keeps the screenshots already found
+  // a folder that can't be read this time keeps the screenshots already found (all of them failing: the whole record kept)
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: url0, checkedAt: new Date().toISOString() }) : { files, url: url0, checkedAt: new Date().toISOString(), error: "", unread: errs };
