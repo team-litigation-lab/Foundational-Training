@@ -242,6 +242,14 @@ function batchStartDate(batch) {
   const [mm, dd] = batchRealDay(+m[1], +m[2], +m[3]) ? [m[1], m[2]] : [m[2], m[1]];
   return `20${m[3]}-${mm}-${dd}`;
 }
+// A trainee's first training day: their batch's start, else the day they registered (PT); "" when neither is known.
+// And the weekdays from that day to today (at most max of them).
+const batchStart = (rec) => batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+function weekdaysSince(start, today, max = 120) {
+  const out = [];
+  if (start) for (let t = Date.parse(start + "T12:00:00Z"); out.length < max; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) out.push(d); }
+  return out;
+}
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
 const batchKey = (s) => slugPart(canonicalBatch(s) || s);
@@ -1962,7 +1970,7 @@ async function runTrackerChecks(env, opts) {
 async function backfillCompliance(env, id, o = {}) {
   const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return 0;
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+  const start = batchStart(rec);
   if (!start) return 0;
   const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
   const want = [];
@@ -2097,9 +2105,8 @@ async function backtrack(env, id) {
   const kv = kvOf(env), rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return { error: "gone" };
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
-  const today = TR.ptDate(), days = [];
-  if (start) for (let t = Date.parse(start + "T12:00:00Z"); days.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) days.push(d); }
+  const start = batchStart(rec);
+  const today = TR.ptDate(), days = weekdaysSince(start, today);
   const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
   if (drive.tracker && days.length && driveSA(env)) {
     try {
@@ -2140,10 +2147,9 @@ async function redoCompliance(env, id, ro = {}) {
   const kv = kvOf(env), get = (k) => getJSON(kv, k);
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+  const start = batchStart(rec);
   if (!start) return 0;
-  const today = TR.ptDate(), want = [];
-  for (let t = Date.parse(start + "T12:00:00Z"); want.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) want.push(d); }
+  const today = TR.ptDate(), want = weekdaysSince(start, today);
   if (!want.length) return 0;
   const [drive, skills, proc, tr, prog, ses, cur] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`), get(`trackerreview:${id}`)]);
   let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
