@@ -48,16 +48,16 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["attendance", "sops", "dbmaint", "orientation"],   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders in one tab, js/ft-trainees-tab.js — and 💬 Trainee Feedback are in 🏅 Scorecard)   // (no 🏛 Law Firms tab)
+    admin: ["audit", "attendance", "sops", "dbmaint", "orientation"],   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders in one tab, js/ft-trainees-tab.js — here, not in 🏅 Scorecard; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["graders", "calscores", "sessions", "calcheck", "calrules", "calweek", "listening", "trainerinputs", "mockscores"],
-    scorecard: ["batchsheet", "sendfeedback", "skilltests", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
+    scorecard: ["batchsheet", "sendfeedback", "skilltests", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
-  // (👥 Trainees & Batches: its approvals, trainee actions and batches at the foot of 📋 Batch Sheet; 💬 Trainee Feedback: removed)
+  // (💬 Trainee Feedback: removed)
   // (📋 Mock Call Scorecards and 🧑‍🏫 Trainer Inputs: in 🧑‍🏫 Graders: Mock Calls & Demos, the one button for them)
-  adminHidden: ["ranking", "audit", "tfeedback", "mockscores", "trainerinputs"],
+  adminHidden: ["ranking", "tfeedback", "mockscores", "trainerinputs"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet", lab: "graders"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
