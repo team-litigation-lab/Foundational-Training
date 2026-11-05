@@ -29,6 +29,8 @@ jobs:
       # (js/ft-day-decks-data.js isn't committed: it is built here, as wrangler.json's "build" builds it on deploy)
       - name: Build the Day decks' slides (build/day-decks.cjs → js/ft-day-decks-data.js)
         run: node build/day-decks.cjs
+      - name: Every script's version follows its content (build/script-versions.cjs, run at every deploy)
+        run: node build/script-versions.cjs --check
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
       - name: No builder notes on the site (the Training Guide's instructions for building the platform aren't content)
