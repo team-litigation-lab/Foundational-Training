@@ -50,7 +50,7 @@ window.LSH_PROGRAM = {
   adminGroups: {
     admin: ["attendance", "sops", "dbmaint", "orientation"],   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
-    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
+    modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["calendaring", "sessions", "listening", "trainerinputs", "mockscores", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     scorecard: ["batchsheet", "skilltests", "sendfeedback", "graders", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
@@ -59,8 +59,9 @@ window.LSH_PROGRAM = {
   // (💬 Trainee Feedback: removed)
   // (📋 Mock Call Scorecards and 🧑‍🏫 Trainer Inputs: in 🧑‍🏫 Graders: Mock Calls & Demos, the one button for them)
   // (👥 Trainees & Batches: removed: the Main Portal approves trainees, and one it signs in is approved here; 📋 Task Trackers:
-  // no button, the end-of-day check runs by itself and its results are in 📋 Batch Sheet's 📤 Daily outputs)
-  adminHidden: ["ranking", "audit", "trackers", "tfeedback", "mockscores", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
+  // no button, the end-of-day check runs by itself and its results are in 📋 Batch Sheet's 📤 Daily outputs; 📁 Drive Trackers:
+  // no button either, set up already, its checks in 📋 Batch Sheet's ✅ Compliance)
+  adminHidden: ["ranking", "audit", "trackers", "drivetrackers", "tfeedback", "mockscores", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own

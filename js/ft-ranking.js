@@ -35,6 +35,18 @@ const TEMPLATES = {
     COL("Ass: Auto Liability Insurance", "", 45, "drive:Auto Liability"), COL("RC: Data Extraction", "", 125), COL("Reception Mock Calls", "", 5, "trainer:Reception Mock Call")])},
   blank: {label: "Only the trackers", cols: BASE}
 };
+/* 🔗 every report is connected to every scorecard: the Daily Compliance (the nightly check), the Drive links' compliance
+   (📋 Batch Sheet → ✅ Compliance: links correct of six) and 🏅 the Scorecard's overall (every grading system of js/ft-program.js,
+   averaged — the same Overall as 🏅 My Performance). A column already there for one is kept as it is; only the missing ones are
+   added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
+function connectAll(cols){
+  const out = cols.slice(), has = src => out.some(c => c.src === src);
+  let n = 0;
+  if(!has("compliance")){ out.push(COL("Daily Compliance", "", 5, "compliance", "week")); n++; }
+  if(!has("links")){ out.push(COL("Drive Links Compliance", "", 5, "links")); n++; }
+  if(!has("overall")){ out.push(COL("🏅 Scorecard overall", "every grading system", 5, "overall")); n++; }
+  out.added = n; return out;
+}
 // the facilitator's usual notes under a score (her feedback DNA's compliance wording)
 const NOTES = ["Initial feedback implemented.", "Initial feedback was not fully implemented.", "Initial feedback was not implemented.",
   "Expected corrections from the initial feedback have not been fully implemented.", "Complete", "Complied; however, lacking 1 entry ()"];
@@ -85,6 +97,8 @@ async function loadWeek(){
   R.data = v && Array.isArray(v.cols) ? Object.assign({rows: {}}, v) : null;
   let named = 0;
   if(R.data) R.data.cols.forEach(c => { if(c.src) return; const k = Object.keys(KNOWN_SRC).find(x => String(c.label || "").toLowerCase().includes(x)); if(k && (KNOWN_SRC[k] === "skills") === (c.type === "notes")){ c.src = KNOWN_SRC[k]; named++; } });
+  // (🔗 a report not approved yet gets the scorecards it doesn't have a column for yet: connectAll)
+  if(R.data && !(R.data.auto && R.data.auto.approved)){ const cc = connectAll(R.data.cols); if(cc.added){ R.data.cols = cc.map(c => c.id ? c : Object.assign(c, {id: uid()})); named++; } }
   if(named && !(R.data.auto && R.data.auto.approved)) save();
   R.dataLoading = false; rerender();
   // 🔄 the report follows the trainees' progress: each time it is opened (until it is approved), its empty cells fill from
@@ -94,7 +108,7 @@ async function loadWeek(){
 // a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
 const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
   "monitoring sheet": "drive:Monitoring Sheet", "tracker": "drive:Tracker", "reception mock call": "trainer:Reception Mock Call",
-  "spelling & typing": "skills", "daily compliance": "compliance"};
+  "spelling & typing": "skills", "daily compliance": "compliance", "drive links compliance": "links", "scorecard overall": "overall"};
 function save(){
   if(!R.data) return; R.saved = false; R.data.updatedAt = new Date().toISOString();
   clearTimeout(R.saveT); const key = R.key, data = R.data;
@@ -140,7 +154,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -149,8 +163,8 @@ function srcOptions(){
 async function fillFromPortal(quiet){
   if(!R.data || R.fill) return;
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
-  const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance");
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance"); if(!cols.length && !notesCols.length && !compCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance"), linkCols = R.data.cols.filter(c => c.type === "score" && c.src === "links");
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links"); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   try{
@@ -171,6 +185,8 @@ async function fillFromPortal(quiet){
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;          // never over what the trainer typed
         const week = c.period === "week"; if(week && !scW) return;
+        if(c.src === "overall"){ const o = (week ? scW : sc).overall; if(o == null) return;
+          row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(o / 100 * (num(c.max) || 5)), auto: true, period: week ? "week" : "all"}); n++; return; }
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
         const src = (week ? scW : sc).rows.find(r => r.s.id === sid); if(!src) return;
         // this week's: only the grades dated in it (a source that keeps no dates can't say which week a grade was)
@@ -200,6 +216,14 @@ async function fillFromPortal(quiet){
         if(!days.length) return;
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
         row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * max), auto: true, period: c.period === "week" ? "week" : "all", days: days.length}); n++;
+      }));
+    }
+    // 🔗 the Drive Links Compliance column: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance)
+    if(linkCols.length && window.FTBatchSheet && FTBatchSheet.linksPct){
+      linkCols.forEach(c => ppl.forEach(p => {
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;
+        const pct = FTBatchSheet.linksPct(p.id); if(pct == null) return;
+        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * (num(c.max) || 5)), auto: true, period: "all"}); n++;
       }));
     }
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
@@ -491,7 +515,7 @@ function renderRanking(){
   if(!R.people){ if(!R.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
   if(R.batch && R.key !== keyOf(R.batch, R.week)) loadWeek();
-  const top = `<div class="rk-bar"><div><h2>📊 Weekly Ranking Report</h2><p class="sc-about">The facilitator’s weekly progress report and ranking for a batch: each activity’s score converted to a mark out of 5, the week’s final average, and the trainees ranked by it.</p></div>
+  const top = `<div class="rk-bar"><div><h2>📊 Weekly Ranking Report</h2><p class="sc-about">The facilitator’s weekly progress report and ranking for a batch: each activity’s score converted to a mark out of 5, the week’s final average, and the trainees ranked by it. Connected to every scorecard: the Daily Compliance, the Drive links’ compliance and 🏅 the Scorecard’s overall (every grading system), filled from the platform.</p></div>
     <span class="rk-pick"><select onchange="FTRanking.batch(this.value)">${bs.length ? bs.map(b => `<option ${b === R.batch ? "selected" : ""}>${e(b)}</option>`).join("") : `<option>No batches</option>`}</select>
       <select onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${w === R.week ? "selected" : ""}>Week ${w}</option>`).join("")}</select></span></div>`;
   if(!R.batch) return `<div class="card rk">${top}<p class="sc-empty">No approved trainees yet.</p></div>`;
@@ -529,6 +553,7 @@ async function autoDraft(){
   if(R.key !== key || R.data) return;
   cols = (cols || (R.week === 1 ? TEMPLATES.week1.cols() : BASE())).map(c => Object.assign({}, c, {id: uid()}));
   if(!cols.some(c => c.src === "compliance")) cols.splice(1, 0, COL("Daily Compliance", "", 5, "compliance", "week"));
+  cols = connectAll(cols);
   const r = weekRange();
   // (the week's own dates on the Spelling & Typing column, not last week's)
   if(r) cols.forEach(c => { if(c.src === "skills") c.sub = `${md(r[0])} to ${md(r[1])}`; });
@@ -570,7 +595,7 @@ window.FTRanking = {
   async start(k){
     let cols = k === "last" ? await prevWeek() : (TEMPLATES[k] || TEMPLATES.blank).cols();
     if(!cols){ toast(`Week ${R.week - 1} has no report for ${R.batch} yet.`); return; }
-    cols = cols.map(c => Object.assign({}, c, {id: uid()}));
+    cols = connectAll(cols.map(c => Object.assign({}, c, {id: uid()})));
     R.data = {batch: R.batch, week: R.week, cols, rows: {}, createdAt: new Date().toISOString()}; R.edit = k !== "last"; save(); render();
   },
   toggleEdit(){ R.edit = !R.edit; render(); },

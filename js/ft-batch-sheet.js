@@ -1152,6 +1152,10 @@ window.FTBatchSheet = {
     B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
   },
   open(){ state.adminTab = TAB; goto("admin"); },
+  // 🔗 a trainee's Drive links compliance, % of the six ✓ Correct (📊 the Weekly Ranking's Drive Links Compliance column)
+  linksPct(id){ try{ if(!B.data || !B.data.rec || !B.data.rec[id]) return null; const p = people().find(x => x.id === id); if(!p) return null;
+    const {L} = linkState(p); if(LINKS.every(([q]) => L[q].st === "none")) return null;
+    return Math.round(LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length / LINKS.length * 100); }catch(err){ return null; } },
   // ▸/▾ Daily outputs: a trainee's row, a day's column, all of them
   ofRow(id){ const F = ofold(); F.rows[id] = !rowOpen(id); ofoldSave(); rerender(); },
   ofDay(d){ const F = ofold(); if(F.days[d]) delete F.days[d]; else F.days[d] = true; ofoldSave(); rerender(); },
