@@ -783,9 +783,11 @@ function geminiKeyOrder(env) {
   return [...pool.slice(start), ...pool.slice(0, start), ...spare];
 }
 const GEMINI_FLASH = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"], GEMINI_LITE = "gemini-3.5-flash-lite";
-const geminiModels = (env, feature) => (feature === "chat" || feature === "tracker" || !feature   // high-volume features start on Flash-Lite
-  ? [GEMINI_LITE, ...GEMINI_FLASH]
-  : [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]).filter((v, i, a) => v && a.indexOf(v) === i);
+// grading and trainer tools (anything but the high-volume chat and tracker) get the stronger models
+const isGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
+const geminiModels = (env, feature) => (isGrading(feature)   // high-volume features start on Flash-Lite
+  ? [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]
+  : [GEMINI_LITE, ...GEMINI_FLASH]).filter((v, i, a) => v && a.indexOf(v) === i);
 
 /* Gemini refuses some regions ("User location is not supported for the API use"). The Worker is placed in
    the US (wrangler.json), but placement is best-effort: a request can still run near the trainee. A refused
@@ -830,7 +832,7 @@ async function viaGateway(env, req, user) {
   try {
     r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
-      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: msgText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: msgText(req.system), messages, tier: isGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
     });
     data = await r.json().catch(() => null);
   } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
@@ -847,8 +849,7 @@ const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
 // (AI is on with a Gemini key, a Claude key, or the Portal's shared gateway alone — AI_GATEWAY_SECRET, which callGemini
 //  sends everything through first: the server-side reviews and grading run with any of the three)
 const aiOn = (env) => hasGemini(env) || claudeOn(env) || gatewayOn(env);
-const claudeGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
-const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (claudeGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
+const claudeModel = (env, feature) => String((isGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (isGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
 let claudeRest = 0;
 async function callClaude(env, req) {
   if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
@@ -862,7 +863,7 @@ async function callClaude(env, req) {
   }
   if (!turns.length || turns[0].role !== "user") turns.unshift({ role: "user", content: "(Begin.)" });
   if (turns[turns.length - 1].role !== "user") turns.push({ role: "user", content: "(Continue.)" });
-  const grading = claudeGrading(req.feature), model = claudeModel(env, req.feature);
+  const grading = isGrading(req.feature), model = claudeModel(env, req.feature);
   // max_tokens covers thinking as well as the answer, so it has room above the page's max_tokens (only what's used is billed)
   const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
   const sys = msgText(req.system).trim();
