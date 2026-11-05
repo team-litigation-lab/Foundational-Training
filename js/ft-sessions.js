@@ -100,7 +100,7 @@ const SESSIONS = [
   // detail an intake needs, dates that hold together, the statute of limitations under the firm's rule, a conflict
   // check and a decision.
   {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, program:"intake",
-    about:"Take an intake call (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel). Ask the intake questions, enter what you gather straight into the Prototype CMS’s fields — not the fillable intake forms — then record the intake here. Between your turns, practise intake calls on the Call Simulator.",
+    about:"Take an intake call (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel). Ask the intake questions, enter what you gather straight into the Prototype CMS’s fields — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Simulator.",
     tools: () => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")],
       ["🗂 The Prototype CMS (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
       ["📄 Fillable intake forms (what to ask)", "https://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view?usp=sharing"]],

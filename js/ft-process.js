@@ -766,6 +766,8 @@ async function grantRetry(id, l, read, why){
   if(await sharedSet("kcreview:" + id, cur) === false) return {error: "Couldn’t grant the retry. Check your connection."};
   return {ok: true, review: cur, allowed: kcAllowed(cur, l, read), used};
 }
+// (the 📋 Batch Sheet's ✍️ Knowledge Checks in detail shows the same report line: p is a trainee's process:<id>)
+window.FTProcessReport = p => reportLine({p: p || {sets: {}}});
 window.FTKCRetry = {grant: grantRetry, lessons: () => [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a, b) => a - b).filter(l => DAYS.find(d => d.id === l)).map(l => ({l, title: (DAYS.find(d => d.id === l) || {}).title || "Lesson " + l, read: !!readSetOf(l)}))};
 window.FTProcessAdmin = {
   kc(id, l, read){ const k = id + "|" + l + (read ? "|read" : ""); FPA.kcOpen[k] = !FPA.kcOpen[k]; render(); },

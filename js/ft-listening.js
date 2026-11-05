@@ -32,9 +32,7 @@ const SETS = [
     titles:["Intake Call: MVA", "Intake Call: Premise Liability", "Intake Call: Dog Bite", "Intake Call: Medical Malpractice"],
     folder:"https://drive.google.com/drive/folders/16o9xsbY9dRIl8-fSBN2B3fNWuEXmo52q?usp=sharing",
     about:"The sample intake audio recordings from Day 7’s Intake Training discussion."},
-  {id:"claims", icon:"📣", title:"Insurance communication calls", day:11, lesson:7, n:5,
-    folder:"https://drive.google.com/drive/folders/14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU?usp=sharing",
-    about:"The VA recordings from Day 11’s Insurance Communication discussion."},
+  // (no 📣 Insurance communication calls: Day 11 has no call listening activity)
   {id:"records", icon:"🩺", title:"Provider communication calls", day:13, lesson:8, n:7,
     titles:["Insurance Call: Obtain PIP Log", "Insurance Call: Obtain PD Estimate", "Inquiry: Hospital", "Inquiry: Where to Send the Records Request",
       "Follow-Up on a Records Request", "Recorded Call: Feb 23, 2023", "Recorded Call: Feb 27, 2023"],

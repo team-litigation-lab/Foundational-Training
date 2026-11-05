@@ -275,7 +275,7 @@ function runHtml(){
   }
   if(r.done) return `<div class="card st-run"><h2>🔤 Your result</h2><div class="st-big"><b>${r.done.score}</b><span>of ${r.done.total}</span></div>
       ${r.done.missed.length ? `<table class="st-miss"><thead><tr><th>You typed</th><th>Correct spelling</th></tr></thead><tbody>${r.done.missed.map(m => `<tr><td class="bad">${e(m.typed)}</td><td class="ok">${e(m.word)}</td></tr>`).join("")}</tbody></table>
-        <p class="st-note">Add the words you missed to your notes, and practise them in your idle time.</p>` : `<p class="st-note">Every word right. Well done.</p>`}
+        <p class="st-note">Add the words you missed to your notes, and practice them in your idle time.</p>` : `<p class="st-note">Every word right. Well done.</p>`}
       <div class="st-acts"><button class="btn btn-ghost btn-sm" onclick="FTSkills.close()">Done</button></div></div>`;
   const [w, s] = r.words[r.i];
   return `<div class="card st-run"><div class="st-runh"><h2>🔤 Spelling Test</h2><span class="st-clock">${r.i + 1} / ${r.words.length}</span></div>

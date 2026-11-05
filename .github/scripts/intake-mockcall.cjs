@@ -1,7 +1,7 @@
 // 📞 The Intake Mock Call on the same case in the CMS and on Ring Channel (js/ft-intake.js .ftis-mockcall / .ftis-mcase): the
 // cases are the CMS's own Intake Mock Calls (its call-packs.js, which Ring Channel mirrors); the trainer assigns each trainee
 // a packet in Admin → 📦 Intake Packets and the case pairs with it, in the same intakeassign:<id> record (each write keeps the other);
-// the trainer's slide lists every case with where to pick it on Ring Channel and the caller's script; the trainee's slide
+// the trainer's slide has no list of every case (assigned in Admin → 📦 Intake; each case is on the scoring sheet); the trainee's slide
 // shows only their own case (never the script) with the Prototype CMS opened blank for a first call, on the case file for a
 // call back; the trainer's scoring sheet shows the picked trainee's case and 💾 Save keeps it with the score.
 // The CMS's file is served here from a stub, so the test doesn't depend on the network.
@@ -66,18 +66,11 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     // Day 9's Intake Mock Calls Metrics slide carries no case: the packet's case is the Day 8 demo's
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
     if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall'))) fail('Day 9\'s Intake Mock Calls slide still has a case box (the case is the Day 8 demo\'s)');
-    // the trainer's Day 8 demo preparation slide: every intake case, where to pick it on Ring Channel, its script; the
-    // trainee's name on theirs
+    // the trainer's Day 8 demo preparation slide: no list of every case (removed: cases are assigned with the packets in
+    // Admin → 📦 Intake, and each case is on the trainer's scoring sheet) — the box is empty and hidden
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2500);
-    const tv = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { cases: el.querySelectorAll('.ftis-mc-t').length, html: el.innerHTML,
-      tag: [...el.querySelectorAll('.ftis-mc-t')].map(d => (d.querySelector('.ftis-mc-n') || {}).textContent || '') } : null; });
-    if (!tv) fail('Day 8\'s demo slide has no demo case section for the trainer');
-    if (await page.evaluate(() => document.querySelectorAll('.ftdd-sheet .ftis-mockcall').length) !== 1) fail('the trainer\'s Day 8 demo slide doesn\'t list the cases exactly once');
-    else {
-      if (tv.cases !== 3) fail(`the trainer's slide lists ${tv.cases} cases, not the CMS's 3 intake calls`);
-      if (!/Scenario Picker/.test(tv.html) || !/SCRIPT-ft_in_nicole/.test(tv.html) || !/CASEFILE-MC-13/.test(tv.html)) fail('the trainer\'s case doesn\'t say where to pick it on Ring Channel, or lacks the script or the CMS file');
-      if (tv.tag[1] !== 'Ivy' || tv.tag[0]) fail(`the trainer's slide doesn't mark the trainee on their case: ${JSON.stringify(tv.tag)}`);
-    }
+    const tv = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText.trim(), shown: el.offsetParent !== null } : null; });
+    if (tv && (tv.text || tv.shown)) fail(`the trainer's Day 8 demo slide still shows the demo cases box: ${tv.text.slice(0, 200)}`);
 
     // the trainer's Day 8 demo scoring sheet (as 🧑‍🏫 Graders opens it): the picked trainee's case, kept with the demo's score
     const key = 'intake-packet';
@@ -129,7 +122,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
     mine = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText, cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
     if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`the Day 8 demo slide doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
-    // unassigned: the placeholder and the Intake line to practise on
+    // unassigned: the placeholder and the Intake line to practice on
     await put('intakeassign:' + id, { packet: 4 });
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(1500);

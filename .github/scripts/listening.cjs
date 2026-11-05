@@ -48,15 +48,17 @@ async function workerChecks() {
   await put('listening:' + id, null);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
 
-  // the day map points to it on all four Call Listening days
-  const steps = await page.evaluate(() => [3, 7, 11, 13].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'listening')));
+  // the day map points to it on the three Call Listening days
+  const steps = await page.evaluate(() => [3, 7, 13].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'listening')));
+  if (await page.evaluate(() => (FTDays.of(11).items || []).some(x => x.at === 'tool' && x.id === 'listening'))) fail('Day 11 still has a Call Listening step (it has no listening activity)');
   if (steps.some(x => !x)) fail(`not every Call Listening day points to the log: ${JSON.stringify(steps)}`);
 
-  // the Practice Lab: all four sets, in day order (this platform locks no lesson)
+  // the Practice Lab: the three Call Listening sets, in day order (this platform locks no lesson)
   await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });   // the trainer has opened the lessons (the Practice Lab goes by the day)
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
   const cards = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(s => s.innerText).filter(t => /Call Listening/.test(t)).join('\n'));
-  ['Reception calls', 'Intake calls', 'Insurance communication calls', 'Provider communication calls'].forEach(t => { if (!cards.includes(t)) fail(`the Practice Lab has no Call Listening card for ${t}`); });
+  ['Reception calls', 'Intake calls', 'Provider communication calls'].forEach(t => { if (!cards.includes(t)) fail(`the Practice Lab has no Call Listening card for ${t}`); });
+  if (cards.includes('Insurance communication calls')) fail('the Practice Lab still has a Call Listening card for Insurance communication calls (Day 11 has no listening activity)');
 
   await page.click('text=Open the log'); await page.waitForTimeout(1000);
   if (await page.evaluate(() => state.view) !== 'listening') fail('the card doesn\'t open #/listening');
@@ -169,5 +171,5 @@ async function workerChecks() {
   await put('settings:opendays', openWas || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Call Listening Log test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Call Listening Log test passed (the four sets on their days and the day map\'s steps; a part-filled log saved but not counted, a full one counted, saved and on My Performance, with the Reception Listening Activity by its grade, once; the trainer reads a log and changes a set\'s recordings, which the trainee then sees; the worker\'s rules).');
+  console.log('Call Listening Log test passed (the three sets on their days and the day map\'s steps; a part-filled log saved but not counted, a full one counted, saved and on My Performance, with the Reception Listening Activity by its grade, once; the trainer reads a log and changes a set\'s recordings, which the trainee then sees; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });

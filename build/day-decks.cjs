@@ -439,7 +439,7 @@ s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
     '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
-    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n") + MOCK_RUN;
+    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n") + MOCK_RUN;
 },
 // Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored); the slide is only the
 // trainee's "Hit Done when you are done with your Mock Call" and Done (js/ft-buffer.js ACTS["4:s3"], simple)
@@ -492,12 +492,12 @@ s3: html => {
     '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><p class="ftdd-ev-note ftdd-ev-noteup">▼ Add guests</p><div class="ftdd-ev-mark ftdd-ev-markin"><div class="ftdd-ev-f wide">Add guests</div>' +
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
-  // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
+  // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practice on the Calendaring Tool, before the reminders
   // (the three links are buttons in one row, ftdd-linkbtns: a new tab each; the six steps two to a row, ftdd-steps2, so the
   // links, the steps and the reminders are one page; the sample event is the next: ftdd-pgbreak)
   const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<a class="ftdd-linkbtn" href="${url}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
   // (the heading, the buttons, the steps and the reminders are one block, ftdd-one: one page, scaled to fit a short screen)
-  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n' +
+  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practice on the Calendaring Tool</b></p>\n' +
     '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
     // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
@@ -774,7 +774,7 @@ function DAY8_INS(x){
   return x.replace("please use your idle time to practice handling intake calls through the Call Simulator.", "please use your idle time to practice handling intake calls: see <b>Practice Intake Calls</b>, after the video.");
 }
 const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
-  '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practise intake calls with these tools. Each opens in a new tab.</p>\n' +
+  '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practice intake calls with these tools. Each opens in a new tab.</p>\n' +
   '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 Prototype CMS: Intake</a>' +
   '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ Ring Channel: Intake Calls</a></div>\n' +
   '<p>On Ring Channel, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in the Prototype CMS, as in the mock call.</p>\n';
@@ -812,7 +812,7 @@ const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_
 const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}` +
   `${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
 // Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
-const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Simulator, the Ring Channel and the CMS</b></p>\n<p class="ftdd-warm-lead">Practise on the Call Simulator, log in to the Ring Channel, where your mock call rings, and open the CMS with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Simulator, the Ring Channel and the CMS</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Simulator, log in to the Ring Channel, where your mock call rings, and open the CMS with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
   MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
@@ -823,14 +823,14 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
-  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
+  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practice the same flow on the case files.</p>\n" +
   "") + PGBREAK;
 // Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
 // where Day 6's metrics start: the Instructions end there and the Metrics slide begins (ROWS[6].s1)
 const MOCK_METRICS_CAL = '<hr class="stars">\n<p><b>Calendar Management Mock Calls Metrics</b></p>';
 const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
-  "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
+  "<p>Step 1 - While waiting for your turn, keep practicing on the Call Simulator’s Reception line.</p>\n" +
   "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
   "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
@@ -1167,7 +1167,7 @@ const ROWS = {
   6: {
     // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos (the One-on-One slide is off the deck)
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
-    // (the instructions open on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
+    // (the instructions open on how to reach the Call Simulator and practice, #322's six steps: TRIM[6].s1)
     s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [['<div class="ftdd-one">', MOCK_METRICS_CAL]]},
       {id: "s1m", h: "Entire Day: Calendar Management Mock Calls Metrics", parts: [[MOCK_METRICS_CAL, null]]},
       // the Calendar Management Training Videos after the mock calls (the card puts them last, after the Mock Call Scenarios)

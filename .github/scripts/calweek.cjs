@@ -190,7 +190,7 @@ async function workerChecks({ perfect, practice }) {
   await page.evaluate(() => FTCalPractice.reset()); await page.waitForTimeout(1200);
   if (await page.evaluate(() => FTCalPractice.state().data.record) !== null) fail('↺ Start over left the practice calendar');
   await page.evaluate(() => { FTCalWeek.state().data = null; FTCalWeek.open(); }); await page.waitForTimeout(1200);
-  if (await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events)) !== graded) fail('practising changed the graded calendar');
+  if (await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events)) !== graded) fail('practicing changed the graded calendar');
 
   await browser.close();
   if (failures.length) { console.error('✗ ' + failures.join('\n✗ ')); process.exit(1); }

@@ -97,7 +97,7 @@ function renderTrainerMap(){
   return `
     <div class="card ops-card ops-map">
       <h3>🧭 Trainer Assistance Map: how to support a trainee on this platform</h3>
-      <p class="ops-lead">Use one rhythm with every trainee: <b>open → teach → check → practise → review → feed back → follow up</b>. Each row lists what the trainee is doing at that stage, what you do, and where to do it. Click a tab name to open it.</p>
+      <p class="ops-lead">Use one rhythm with every trainee: <b>open → teach → check → practice → review → feed back → follow up</b>. Each row lists what the trainee is doing at that stage, what you do, and where to do it. Click a tab name to open it.</p>
       <div class="ops-scroll"><table class="ops-table ops-maptbl"><thead><tr><th>Stage</th><th>The trainee</th><th>You, the trainer: where and what</th></tr></thead><tbody>
         ${MAP.map(m => `<tr><td class="ops-stage">${m.stage}</td><td>${m.trainee}</td><td><ol>${m.steps.map(x => `<li>${x}</li>`).join("")}</ol></td></tr>`).join("")}
       </tbody></table></div>

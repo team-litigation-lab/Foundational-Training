@@ -108,9 +108,9 @@ function make(cfg){
     const d = R.data, cur = d.current, nxt = d.next, mine = events(), rv = d.review || C.review(mine, W), rec = d.record;
     const showNext = R.week === "next", wk = showNext ? nxt : cur;
     return `<div class="cw-hero"><h1>${cfg.icon} ${e(W.title)}</h1>
-        ${cfg.practice ? `<p class="cw-practice">🧪 <b>VA Practice Only.</b> Your trainer doesn’t grade or see this calendar, and it counts nowhere. Practise as often as you like, then do the graded ${window.FTCalWeek && (!window.ftsToolOn || ftsToolOn("calweek")) ? `<a onclick="FTCalWeek.open()">Standard Training - Calendaring Activity</a>` : "Standard Training - Calendaring Activity"}.</p>` : ""}
+        ${cfg.practice ? `<p class="cw-practice">🧪 <b>VA Practice Only.</b> Your trainer doesn’t grade or see this calendar, and it counts nowhere. Practice as often as you like, then do the graded ${window.FTCalWeek && (!window.ftsToolOn || ftsToolOn("calweek")) ? `<a onclick="FTCalWeek.open()">Standard Training - Calendaring Activity</a>` : "Standard Training - Calendaring Activity"}.</p>` : ""}
         <p>${e(W.brief)}</p>
-        <p class="cw-links">${cfg.practice ? "" : `${window.FTCalPractice ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTCalPractice.open()">🧪 Practise first (VA Practice Only)</button>` : ""}`}<button class="btn btn-ghost btn-sm" type="button" onclick="${G}.attorneyActivity()">📎 Attorney Calendar Management Activity (Day 5)</button>
+        <p class="cw-links">${cfg.practice ? "" : `${window.FTCalPractice ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTCalPractice.open()">🧪 Practice first (VA Practice Only)</button>` : ""}`}<button class="btn btn-ghost btn-sm" type="button" onclick="${G}.attorneyActivity()">📎 Attorney Calendar Management Activity (Day 5)</button>
           <a class="btn btn-ghost btn-sm" href="${ATTORNEY_ACTIVITY}" target="_blank" rel="noopener">The activity sheet ↗</a>
           <a class="btn btn-ghost btn-sm" href="${ATTORNEY_SAMPLES}" target="_blank" rel="noopener">Samples ↗</a>
           ${window.FTSessions ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTSessions.open('calendaring')">☎ Standard Training - Appointment Setting Mock Calls</button>` : ""}</p></div>
@@ -166,7 +166,7 @@ window.ftCalWeekItems = ctx => { const r = ctx.rec["calweek:"]; if(!r || !r.subm
     note: `${Number(r.done) || 0} of ${C.WEEK.tasks.length} tasks booked right · submitted ${new Date(String(r.submittedAt)).toLocaleDateString()}`}]; };
 // 🧪 VA Practice Only: the clone for practice (Week 2 · Attorney Chen), never graded or seen by the trainer
 make({view: "calpractice", api: "/api/calpractice/", week: C.PRACTICE, global: "FTCalPractice", card: "ftCalPracticeCard", icon: "🧪", practice: true,
-  kicker: "Any time · VA Practice Only", note: `Practise booking ${C.PRACTICE.tasks.length} tasks on ${C.PRACTICE.attorney}’s calendar for next week. Nothing here is graded or sent to your trainer, and you can start over any time.`});
+  kicker: "Any time · VA Practice Only", note: `Practice booking ${C.PRACTICE.tasks.length} tasks on ${C.PRACTICE.attorney}’s calendar for next week. Nothing here is graded or sent to your trainer, and you can start over any time.`});
 
 /* ---------- Admin → 🛠 Practice Lab → 📅 Calendaring Activity (the graded activity only: practice has no trainer view) ---------- */
 const W = C.WEEK, call = (p, b) => FTCalWeek.api(p, b), now = () => FTCalWeek.now();

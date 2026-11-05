@@ -121,7 +121,7 @@ const WEEK = deepFreeze({
 });
 // 🧪 VA Practice Only: a second frozen clone, of the Standard Training's other week (Week 2 · Attorney Chen, the trial week),
 // for the trainee's own practice. Nothing on it is graded or sent to the trainer (js/ft-calweek.js, calweek-api.js), and it
-// is a different week from the graded activity's, so practising never hands out that week's answers.
+// is a different week from the graded activity's, so practicing never hands out that week's answers.
 const PRACTICE = deepFreeze({
   id: "std-calpractice", version: 1, title: "Standard Training - Calendar Practice (VA Practice Only)", attorney: "Attorney Chen", gap: 15, w: ANCHOR_WEEK, practice: true,
   brief: "Practice only: nothing here is graded or sent to your trainer. Attorney Chen’s trial week for next week already has a deposition, a motion hearing, a protected trial-prep block and a mediation. Book each task on next week’s calendar around them, prep always before the event it prepares for, 15 minutes between events, and fill in each event’s details. Check it as often as you like, and start over whenever you want.",

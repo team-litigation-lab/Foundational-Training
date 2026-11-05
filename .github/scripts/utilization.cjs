@@ -51,7 +51,7 @@ const failures = []; const fail = m => failures.push(m);
     // drafts and the trainer's review not counted)
     if (rows[0][col('Practice attempts')] !== '10') fail(`Eve's practice attempts: ${rows[0][col('Practice attempts')]}`);
     if (rows[0][col('Tools used')] !== '5 / 13') fail(`Eve's tools used: ${rows[0][col('Tools used')]}`);
-    if (rows[0][col('Practised again')] !== '5') fail(`Eve's practised again: ${rows[0][col('Practised again')]}`);
+    if (rows[0][col('Practiced again')] !== '5') fail(`Eve's practiced again: ${rows[0][col('Practiced again')]}`);
     if (!/\+30/.test(rows[0][col('Getting better')])) fail(`Eve's improvement: ${rows[0][col('Getting better')]}`);
     if (rows[0][col('Decks')] !== '1 · 2') fail(`Eve's decks · KC tries: ${rows[0][col('Decks')]}`);
     // the day strip back to the first day

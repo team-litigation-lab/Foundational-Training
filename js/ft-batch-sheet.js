@@ -10,7 +10,7 @@
      1. 👥 Trainees: everyone registered in the batch (waiting for approval too), when they registered, when they were last
         on the platform, how far they are and what they were last doing.
      2. 📚 Lessons: a column per lesson — the lesson deck (✓ finished, or how far into it), the Knowledge Check score.
-     3. 🛠 Practice Lab: the tools practised in, the attempts, the last practice, and each tool's attempts · average.
+     3. 🛠 Practice Lab: the tools practiced in, the attempts, the last practice, and each tool's attempts · average.
      4. 🏅 Scores: a column per grading system (the 🏅 Scorecard's own, js/lsh-program.js compute), the Overall and the rank.
      5. 🕒 Recent progress: everything they did, newest first: registered, opened / finished a lesson deck, Knowledge Check
         attempts, practice in the tools (Practice Lab, roleplays, random tasks), Typing & Spelling tests, Portal simulators.
@@ -274,6 +274,39 @@ function gradesHtml(){
   return `<div class="bs-ck">${meOn() ? `<h4>🔎 My grades in detail</h4>` : `<label class="bs-ck-who">🔎 Grades in detail for <select onchange="FTBatchSheet.grWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     ${who.map(one).join("")}</div>`;
 }
+/* ✍️ Knowledge Checks in detail, under 🏅 Score Card: what the ✍️ Knowledge Check page shows the trainer, here too — the
+   Process Questions report line (js/ft-process.js FTProcessReport), then each Knowledge Check: its score and how it was scored
+   (the trainer's final, else the graded best, the attempts), when it was graded and the graded summary, the trainer's overall
+   comment, and every question with the answer, its grade out of 10 with the feedback, and the trainer's comment on it. */
+function kcRows(p){
+  return kcSheets().map(k => { const g = sheetGrade(p, k); return {k, g}; });
+}
+function kcDetailHtml(){
+  const ppl = people(); if(!ppl.length || !B.data || !kcSheets().length) return "";
+  const id = meOn() ? ppl[0].id : B.kd === ALL ? ALL : (B.kd && ppl.some(p => p.id === B.kd) ? B.kd : ppl[0].id);
+  const who = id === ALL ? ppl : ppl.filter(p => p.id === id);
+  const fbTone = v => typeof v !== "number" ? "" : v >= 8 ? "gs-hi" : v >= 7 ? "gs-mid" : "gs-lo";
+  const one = p => { const rows = kcRows(p), R = B.data.rec[p.id] || {};
+    let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}) : ""; }catch(err){}
+    const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
+    return `<div class="bs-kd-p">${who.length > 1 || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${rows.length} graded</small></h5>` : ""}
+      ${rep ? `<pre class="bs-kd-rep">${e(rep)}</pre>` : ""}
+      ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
+        // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
+        return `<details class="bs-kd"${who.length === 1 && (g.pct != null || g.subm) ? " open" : ""}><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+            ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}</summary>
+          ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
+          ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
+          ${its.length ? `<ol class="bs-kd-q">${its.map(it => `<li><b>${e(it.q)}</b>
+              <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
+              ${typeof it.score === "number" ? `<div class="bs-kd-fb ${fbTone(Number(it.score))}"><b>${e(String(it.score))}/10</b> ${e(it.feedback || "")}</div>` : it.answer && g.subm ? `<div class="bs-kd-fb"><b>—</b> not graded yet</div>` : ""}
+              ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
+        </details>`; }).join("")}</div>`; };
+  return `<div class="bs-ck bs-kdw">${meOn() ? `<h4>✍️ My Knowledge Checks in detail</h4>` : `<label class="bs-ck-who">✍️ Knowledge Checks in detail for <select onchange="FTBatchSheet.kdWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
+    <button type="button" class="bs-dl" onclick="FTBatchSheet.kdCsv()" title="Every trainee's Knowledge Checks, answer by answer: the grade, the feedback and the trainer's comments (.csv)">⬇ Download the breakdown</button>
+    <p class="bs-note">Each Knowledge Check answer by answer: the grade out of 10 with its feedback, the trainer’s comment on it, the trainer’s overall comment and final score — as on the ✍️ Knowledge Check page.</p>
+    ${who.map(one).join("")}</div>`;
+}
 /* 📅 Day 1–16: Detailed Scores — each training day's deliverables (js/ft-day-activities.js, the Training Guide's list),
    each with its score and the summarized context of that score: 🧾 why it was scored that way, 🔧 what needs to be improved
    and ⭐ what they did best. Read from what the graders already wrote: the trainer's rubric (each criterion's score and remark)
@@ -312,11 +345,14 @@ function kcCtx(R, p, l){
   const dp = (R.data || {})["day-progress"] || p.progress || {}, x = dp[l] || {}, rv = (((R.src["kcreview:"] || {}).lessons) || {})[l] || {};
   const g = (((R.process || {}).kc) || {})[l] || null, last = g && g.last, t = num100(rv.score), sc = t != null ? t : typeof x.score === "number" ? x.score : g && typeof g.best === "number" ? g.best : null;
   if(sc == null) return null;
-  const items = (last && last.items) || [];
-  const best = items.filter(q => q.score >= 8).sort((a, b) => b.score - a.score).slice(0, 2).map(q => `Answer ${(q.i != null ? q.i + 1 : "")} (${q.score}/10): ${clip(q.feedback, 220)}`.replace("Answer  ", "An answer "));
-  const low = items.filter(q => q.score <= 6).sort((a, b) => a.score - b.score).slice(0, 3).map(q => `Answer ${(q.i != null ? q.i + 1 : "")} (${q.score}/10): ${clip(q.feedback, 220)}`.replace("Answer  ", "An answer "));
+  // (every graded answer, not a sample: 8/10 or more under ⭐, the rest under 🔧 — each with its feedback and the trainer's comment)
+  const items = (last && last.items) || [], note = q => (rv.notes || {})[q.sid + "|" + q.i] || "";
+  const line = q => `Answer ${q.i != null ? q.i + 1 : "?"} (${q.score}/10): ${clip(q.feedback, 400)}${note(q) ? ` — 🧑‍🏫 ${clip(note(q), 300)}` : ""}`;
+  const best = items.filter(q => q.score >= 8).sort((a, b) => (a.i || 0) - (b.i || 0)).map(line);
+  const low = items.filter(q => q.score < 8).sort((a, b) => (a.i || 0) - (b.i || 0)).map(line);
   const why = [`${sc}%${t != null ? " (the trainer's final score)" : ""}, ${sc >= 70 ? "passed" : "not passed yet: 70% passes"}${(x.kcAttempts || (g && g.attempts)) ? `, ${x.kcAttempts || g.attempts} attempt${(x.kcAttempts || g.attempts) === 1 ? "" : "s"}` : ""}`,
-    rv.comment ? clip(rv.comment, 300) : last && last.summary ? clip(last.summary, 300) : ""].filter(Boolean).join(". ");
+    items.length ? `${items.length} answers graded: ${items.reduce((a, q) => a + (Number(q.score) || 0), 0)}/${items.length * 10}` : "",
+    last && last.summary ? clip(last.summary, 600) : "", rv.comment ? "Trainer: " + clip(rv.comment, 600) : ""].filter(Boolean).join(". ");
   return {name: `✍️ Knowledge Check: ${lessonName(l)}`, pct: sc, status: sc >= 70 ? "Passed" : "Not yet", why, best, improve: low, by: "✍️ Graded"};
 }
 // 📝 an activity answered on the platform and graded by its 📝 Submit for Grading (the day item's assess: Day 3's Reception
@@ -642,8 +678,10 @@ function issueWhy(p, it){
   return e(c.err || "the system can’t open it") + (c.why ? ` <small>(Google: ${e(c.why)})</small>` : "");
 }
 function autoRecheck(flagged){
-  // (at most every 5 minutes a session, never while an update runs; the sheet is read again once it's done)
-  const now = Date.now(); if(!flagged.length || B.sync || B.autoChk || now - (B.autoChkAt || 0) < 5 * 60e3) return;
+  // (at most every 5 minutes, never while an update runs; the sheet is read again once it's done)
+  // (the first a minute after the batch was opened — not while the trainer is just arriving, or the sheet updates itself on opening)
+  const now = Date.now(); if(B.autoChkFor !== B.batch){ B.autoChkFor = B.batch; B.autoChkSince = now; B.autoChkAt = 0; }
+  if(!flagged.length || B.sync || B.autoChk || now - (B.autoChkSince || now) < 60e3 || now - (B.autoChkAt || 0) < 5 * 60e3) return;
   B.autoChk = true; B.autoChkAt = now; const batch = B.batch;
   (async () => {
     try{ await authFetch("/api/drive/autolink", {batch}); }catch(err){}
@@ -674,7 +712,7 @@ function shareBanner(){
 const MAIN = ["scorecard", "compliance", "outputs"];
 function sectionsHtml(T){
   const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, linksEditHtml() + trainerToolsHtml() + "</section>")
-    : x.id === "scorecard" ? groupedSheetHtml(x, i)
+    : x.id === "scorecard" ? groupedSheetHtml(x, i).replace(/<\/section>$/, kcDetailHtml() + "</section>")
     : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
     : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
     : x.id === "recent" ? sheetHtml(x, i).replace('<p class="bs-note">', `<p class="bs-note"><label class="bs-period">Show <select onchange="FTBatchSheet.period(this.value)">${[[1, "today"], [7, "the last 7 days"], [14, "the last 14 days"], [30, "the last 30 days"], [0, "everything"]].map(([v, l]) => `<option value="${v}" ${B.recent === v ? "selected" : ""}>${l}</option>`).join("")}</select></label> `)
@@ -806,15 +844,15 @@ function recentTable(){
       {v: x.detail, f: x.detail, cls: "gs-txt"},
       {v: pct(x.score), f: x.score == null ? "" : `${x.score}%`, cls: "gs-num " + tone(x.score)}])};
 }
-/* 🛠 Practice Lab: how much each trainee uses it — the tools they have practised in, their attempts and when they last
-   practised, then a column per tool (attempts · average). The Practice Lab's own grading systems come from the Scorecard
+/* 🛠 Practice Lab: how much each trainee uses it — the tools they have practiced in, their attempts and when they last
+   practiced, then a column per tool (attempts · average). The Practice Lab's own grading systems come from the Scorecard
    (the same items 🏅 Scorecards counts); the AI-graded practice tools and roleplays from the trainee's work log. */
 const LAB = ["sessions", "calls", "calendar", "calcheck", "calrules", "calweek", "drills", "listening", "skills", "portalsims"];
 const PRACTICE = new Set(["Practice in a tool", "Roleplay practice", "Typing test", "Spelling test", "Simulator practice"]);
 function practiceTable(){
   const ppl = people(), S = B.data.sources.filter(s => LAB.includes(s.id)), all = events();
   const cols = [{id: "ai", label: "🤖 Practice tools (AI-graded)"}, {id: "rp", label: "🎭 Roleplays"}].concat(S.map(s => ({id: s.id, label: `${s.icon || ""} ${s.label}`.trim(), s})));
-  return {id: "practice", title: "🛠 Practice Lab", note: `${meOn() ? "How much you use" : "How much each trainee uses"} the Practice Lab: the tools practised in (of ${cols.length}), every attempt, the last time, then each tool (attempts · average score). Blank: not used yet.`,
+  return {id: "practice", title: "🛠 Practice Lab", note: `${meOn() ? "How much you use" : "How much each trainee uses"} the Practice Lab: the tools practiced in (of ${cols.length}), every attempt, the last time, then each tool (attempts · average score). Blank: not used yet.`,
     head: ["Trainee", "Tools used", "Attempts", "Last practice"].concat(cols.map(c => c.label)),
     rows: ppl.map(p => {
       const R = B.data.rec[p.id] || {}, wl = Array.isArray((R.data || {})["work-log"]) ? R.data["work-log"] : [];
@@ -1258,6 +1296,19 @@ window.FTBatchSheet = {
     }catch(err){ F.busy = false; F.err = "Couldn't save the date. Try again."; render(); }
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
+  kdWho(id){ if(!adminOn()) return; B.kd = id; render(); },
+  // ⬇ the Knowledge Checks' breakdown: a row per answer
+  kdCsv(){
+    if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
+    const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const lines = [["Trainee", "Knowledge Check", "Score", "How it was scored", "Graded summary", "Trainer's overall comment", "#", "Question", "Answer", "Grade /10", "Feedback", "Trainer's comment"].map(q).join(",")];
+    people().forEach(p => kcRows(p).forEach(({k, g}) => { const base = [p.name, k.title, g.pct != null ? g.pct + "%" : "", g.how, (g.last && g.last.summary) || "", (g.rv || {}).comment || ""];
+      if(!g.items.length) lines.push(base.map(q).join(","));
+      g.items.forEach((it, n) => lines.push(base.concat([n + 1, it.q, it.answer, typeof it.score === "number" ? it.score : "", it.feedback, it.note]).map(q).join(","))); }));
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\r\n")], {type: "text/csv"}));
+    a.download = meOn() ? `My Knowledge Checks ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Knowledge Checks ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  },
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
   // (the compliance table's Drive link picked for a trainee; ▸ More detail open or shut)
   // ▾/▸ the Score Card's (and the compliance table's) folds: a group of columns, all of them, the whole table
@@ -1571,10 +1622,21 @@ const __render = window.render;
 window.render = function(){
   // (the Scorecard left: it opens on the latest batch again next time)
   try{ if(!on() && B.picked && !meOn()){ B.picked = false; B.batch = ""; B.data = null; B.dataKey = ""; } }catch(err){}
-  const out = __render.apply(this, arguments);
+  // (a redraw of the same page keeps its place: a background update empties the sheet for a moment — "Loading…" — and the
+  //  browser would jump to the top; only opening another page, tab or batch starts at the top)
+  let key = "", y = 0;
+  try{ key = on() ? [state.view, state.adminTab, B.batch].join("|") : ""; y = B.keepY || 0; }catch(err){}
+  const same = key && key === B.keepKey;
+  B.drawing = true;
+  let out; try{ out = __render.apply(this, arguments); } finally { B.drawing = false; }
   try{ document.body.classList.toggle("bs-wide", on()); }catch(err){}
+  B.keepKey = key;
+  if(!same) B.keepY = key ? window.scrollY : 0;
+  else if(y && Math.abs(window.scrollY - y) > 2){ window.scrollTo(0, y); requestAnimationFrame(() => { if(B.keepKey === key && B.data && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }); }
   return out;
 };
+// (where the page is: remembered while the sheet is on screen — not while it's being redrawn or still loading)
+window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.data || (meOn() && B.me)) && on()) B.keepY = window.scrollY; }catch(err){} }, {passive: true});
 
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-sheet"; s.textContent = `
 body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px;}
@@ -1592,6 +1654,13 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 /* (bold and bigger: the trainer reads the scorecards on a projector and across the room) */
 .bs-card .gs td{font-weight:700;color:#141A2E;} .bs-card .gs .gs-head th{font:800 15.5px Arial,sans-serif;color:#141A2E;} .bs-card .gs td.gs-name{font-weight:800;}
 .bs-card .gs .gs-group th{font-size:14.5px;} .bs-card .bs-h{font:800 21px Arial,sans-serif;} .bs-card .bs-note{font:600 14.5px Arial,sans-serif;color:#2E3450;}
+.bs-kdw .bs-dl{margin-left:10px;} .bs-kd-p{margin:12px 0 18px;} .bs-kd-p h5{margin:0 0 6px;font:800 17px Arial,sans-serif;color:#141A2E;} .bs-kd-p h5 em{font-style:normal;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:14px;} .bs-kd-p h5 small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
+.bs-kd-rep{white-space:pre-wrap;margin:6px 0 10px;padding:10px 14px;background:#EEF1F8;border-radius:8px;font:700 14px Arial,sans-serif;color:#141A2E;}
+.bs-kd{margin:8px 0;border:1px solid #E1E3E1;border-radius:10px;background:#fff;padding:0 14px;} .bs-kd > summary{cursor:pointer;padding:10px 0;font:700 15.5px Arial,sans-serif;color:#1E2340;} .bs-kd > summary small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
+.bs-kd-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font:800 14px Arial,sans-serif;background:#EEF0F6;}
+.bs-kd-q{margin:6px 0 12px;padding-left:22px;font:14px Arial,sans-serif;color:#1F1F1F;} .bs-kd-q > li{margin:0 0 12px;} .bs-kd-q > li > b{font-weight:800;}
+.bs-kd-a{margin:4px 0;padding:6px 10px;background:#F7F8FA;border-radius:6px;} .bs-kd-fb{margin:4px 0;padding:6px 10px;border-radius:6px;background:#F1F3F4;border-left:4px solid #9AA0A6;} .bs-kd-fb.gs-hi{border-left-color:#1A73E8;} .bs-kd-fb.gs-mid{border-left-color:#E8A400;} .bs-kd-fb.gs-lo{border-left-color:#D93025;}
+.bs-kd-note{margin:4px 0;padding:6px 10px;border-radius:6px;background:#FFF8E1;font-weight:700;}
 .bs-upd{margin-left:12px;border:1px solid #1E2340;background:#1E2340;color:#fff;border-radius:999px;padding:4px 12px;font:700 13px Arial,sans-serif;cursor:pointer;vertical-align:3px;}
 .bs-upd:disabled{background:#EEF0F6;color:#3A4058;border-color:#C9CEDD;cursor:progress;}
 .bs-le{margin:10px 14px 8px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;padding:0 14px;} .bs-le > summary{cursor:pointer;padding:10px 0;font:700 15px Arial,sans-serif;color:#1E2340;}

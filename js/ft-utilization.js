@@ -8,8 +8,8 @@
      skills:<id>     Typing & Spelling tests          simresults:<id>  the Portal simulators
      sessions:<id>   the Practice Sessions            callsim: calsim: drills: listening: calcheck: calrules: calweek:
                                                       the Practice Lab tools' own records (each timestamped attempt)
-   Per trainee: 📈 Utilization (the tools used of all of them, and the training days they practised on), 🔥 Eagerness
-   (showing up every day, practising more than the batch, going back to practise again, getting better), the active
+   Per trainee: 📈 Utilization (the tools used of all of them, and the training days they practiced on), 🔥 Eagerness
+   (showing up every day, practicing more than the batch, going back to practice again, getting better), the active
    days, the attempts, a day-by-day strip back to the first day of the batch, and ▸ the full history on a click.
    Read-only: a trainer's own reviews (labreview:, kcreview:, …) are not counted as the trainee's activity.
    ============================================================ */
@@ -125,9 +125,9 @@ function measure(rows){
     m.eager = Math.min(100, m.eager);
     m.why = [`showed up on ${m.active} of ${m.days.length} training day${m.days.length === 1 ? "" : "s"} (${Math.round(100 * m.consistency)}%)`,
       `${m.pr.length} practice attempt${m.pr.length === 1 ? "" : "s"}${top > 1 ? ` (the batch's most: ${top})` : ""}`,
-      `went back to practise again ${m.again} time${m.again === 1 ? "" : "s"}`,
+      `went back to practice again ${m.again} time${m.again === 1 ? "" : "s"}`,
       m.imp == null ? "no repeated scored practice yet to see improvement" : `scores ${m.imp >= 0 ? "up" : "down"} ${Math.abs(m.imp)} points from first try to latest`]
-      .concat(m.extra ? [`practised on ${m.extra} weekend day${m.extra === 1 ? "" : "s"} too`] : []);
+      .concat(m.extra ? [`practiced on ${m.extra} weekend day${m.extra === 1 ? "" : "s"} too`] : []);
   });
   return ms;
 }
@@ -165,13 +165,13 @@ function card(rows, batches, batch){
         return `<td class="ut-day ${before ? "ut-pre" : n === 0 ? "ut-d0" : n < 3 ? "ut-d1" : n < 8 ? "ut-d2" : "ut-d3"}" title="${e(md(k))}: ${before ? "before they registered" : x ? `${x.p} practice, ${x.l} lesson / Knowledge Check` : "nothing"}">${n || ""}</td>`; }).join("")}</tr>
 `; };
   return `<div class="card fss-admin ut-card">${head}${sum}
-    <div class="ff-scroll"><table class="ut-tbl"><thead><tr><th>Trainee</th><th title="The Practice Lab tools used (of ${TOOLS.length}) and the training days they practised on, half each">📈 Utilization</th><th title="Showing up every day, practising more, going back to practise again and getting better">🔥 Eagerness</th>
-      <th title="Training days with any activity, of the training days since they registered">Active days</th><th title="Practice Lab tools used">Tools used</th><th>Practice attempts</th><th title="Attempts on something they had already practised">Practised again</th><th title="Latest score less the first, on what they practised more than once">Getting better</th><th title="Lesson decks finished · Knowledge Check attempts">Decks · KC tries</th><th>Last active</th>
+    <div class="ff-scroll"><table class="ut-tbl"><thead><tr><th>Trainee</th><th title="The Practice Lab tools used (of ${TOOLS.length}) and the training days they practiced on, half each">📈 Utilization</th><th title="Showing up every day, practicing more, going back to practice again and getting better">🔥 Eagerness</th>
+      <th title="Training days with any activity, of the training days since they registered">Active days</th><th title="Practice Lab tools used">Tools used</th><th>Practice attempts</th><th title="Attempts on something they had already practiced">Practiced again</th><th title="Latest score less the first, on what they practiced more than once">Getting better</th><th title="Lesson decks finished · Knowledge Check attempts">Decks · KC tries</th><th>Last active</th>
       ${cols.map(k => `<th class="ut-dayh">${e(md(k))}</th>`).join("")}</tr></thead><tbody>${ms.map(row).join("")}</tbody></table></div>
     ${(() => { const m = ms.find(x => x.r.id === U.sel); return m ? `<div class="ut-hist"><div class="ut-hist-h"><b>🕘 ${e(m.r.name)}: everything since they registered${m.reg ? " (" + e(m.reg.toLocaleDateString()) + ")" : ""}</b><button class="btn btn-ghost btn-sm" onclick="FTUtil.open('${e(m.r.id)}')">Close</button></div>${hist(m)}</div>` : ""; })()}
     <details class="ut-how"><summary>How it's measured</summary><ul>
       <li><b>📈 Utilization</b>: half the Practice Lab tools used (of ${TOOLS.length}: ${TOOLS.map(x => x.label).join(", ")}), half the training days since they registered with any activity.</li>
-      <li><b>🔥 Eagerness</b> (of 100): showing up every training day 35%, practice attempts against the batch's most 25%, going back to practise something again 20%, scores getting better from first try to latest 20%; a few points more for weekend practice. 75+ 🔥 Very eager · 50+ 👍 Engaged · 25+ ⚠ Needs a nudge · below 🛑 Inactive.</li>
+      <li><b>🔥 Eagerness</b> (of 100): showing up every training day 35%, practice attempts against the batch's most 25%, going back to practice something again 20%, scores getting better from first try to latest 20%; a few points more for weekend practice. 75+ 🔥 Very eager · 50+ 👍 Engaged · 25+ ⚠ Needs a nudge · below 🛑 Inactive.</li>
       <li><b>The day strip</b>: one square per training day (weekdays, the last 20), the number of things done that day; grey before they registered.</li>
       <li>Nothing is entered here: it is all read from the trainee's own records, back to the day they registered. A trainer's reviews are not counted as the trainee's activity.</li></ul></details></div>`;
 }

@@ -232,7 +232,7 @@ function renderPage(){
   if(D.round) return roundHtml();
   const rec = state.traineeId ? (D.rec || (load(), {runs: []})) : {runs: []};
   return `<div class="dr-hero"><p class="lp-eyebrow">🛠 Practice Lab · Drafting Tools</p><h1>🏷 Naming &amp; Reporting Drills</h1>
-      <p>Every demo is scored on your file names, your Notes and Tasks entries and your email subjects. Practise them here on made-up cases, 10 at a time, and see the exact convention for anything you miss. Dashes, spacing and capitals are forgiven; the rest must match the guide.</p></div>
+      <p>Every demo is scored on your file names, your Notes and Tasks entries and your email subjects. Practice them here on made-up cases, 10 at a time, and see the exact convention for anything you miss. Dashes, spacing and capitals are forgiven; the rest must match the guide.</p></div>
     <div class="dr-sets">${SETS.map(s => { const b = best(rec, s.id); return `<div class="card dr-set"><div class="dr-set-h"><span>${s.icon}</span><b>${e(s.title)}</b>${s.day > 1 ? `<small>Day ${s.day}</small>` : ""}</div>
       <p>${s.items.length} kinds of question</p>${b >= 0 ? `<span class="dr-best ${b >= 90 ? "top" : ""}">Best: ${b}%</span>` : ""}
       <button class="btn btn-navy btn-sm" onclick="FTDrills.start('${s.id}')">Start a round</button></div>`; }).join("")}
