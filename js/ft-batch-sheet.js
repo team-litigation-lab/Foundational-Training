@@ -281,10 +281,14 @@ function gradesHtml(){
 function kcRows(p){
   return kcSheets().map(k => { const g = sheetGrade(p, k); return {k, g}; });
 }
+// (who the breakdown is for: the trainee picked, or every trainee; a trainee: only themself)
+function kdPick(){
+  const ppl = people(), id = meOn() ? (ppl[0] || {}).id : B.kd === ALL ? ALL : (B.kd && ppl.some(p => p.id === B.kd) ? B.kd : (ppl[0] || {}).id);
+  return {ppl, id, who: id === ALL ? ppl : ppl.filter(p => p.id === id)};
+}
 function kcDetailHtml(){
-  const ppl = people(); if(!ppl.length || !B.data || !kcSheets().length) return "";
-  const id = meOn() ? ppl[0].id : B.kd === ALL ? ALL : (B.kd && ppl.some(p => p.id === B.kd) ? B.kd : ppl[0].id);
-  const who = id === ALL ? ppl : ppl.filter(p => p.id === id);
+  if(!people().length || !B.data || !kcSheets().length) return "";
+  const {ppl, id, who} = kdPick();
   const fbTone = v => typeof v !== "number" ? "" : v >= 8 ? "gs-hi" : v >= 7 ? "gs-mid" : "gs-lo";
   const one = p => { const rows = kcRows(p), R = B.data.rec[p.id] || {};
     let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}) : ""; }catch(err){}

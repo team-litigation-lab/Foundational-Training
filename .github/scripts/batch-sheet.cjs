@@ -255,12 +255,15 @@ const failures = []; const fail = m => failures.push(m);
 
   // ✍️ Knowledge Checks in detail, under 🏅 Score Card: each answer with its grade out of 10, the feedback and the trainer's
   // comment on it, the trainer's overall comment, and the Process Questions report line — as on the ✍️ Knowledge Check page
-  { const qs = await page.evaluate(l => ftKcQuestions(l).filter(q => !q.set.open).slice(0, 2).map(q => ({ sid: q.set.id, i: q.i, n: q.set.questions.length })), lesson);
-    if (qs.length) {
-      const sid = qs[0].sid, answers = []; qs.forEach(q => { answers[q.i] = 'Answer ' + (q.i + 1) + ' from Ada'; });
-      await put('process:' + ids.Ada, { sets: { [sid]: { answers, submittedAt: iso(now - 2 * 3600e3) } }, kc: { [lesson]: { attempts: 1, best: 90, last: { at: iso(now - 2 * 3600e3), summary: 'Clear on the intake steps.',
+  const kcSeed = async () => { const qs = await page.evaluate(l => ftKcQuestions(l).filter(q => !q.set.open).slice(0, 2).map(q => ({ sid: q.set.id, i: q.i, n: q.set.questions.length })), lesson);
+    if (!qs.length) return qs;
+    const sid = qs[0].sid, answers = []; qs.forEach(q => { answers[q.i] = 'Answer ' + (q.i + 1) + ' from Ada'; });
+    await put('process:' + ids.Ada, { sets: { [sid]: { answers, submittedAt: iso(now - 2 * 3600e3) } }, kc: { [lesson]: { attempts: 1, best: 90, last: { at: iso(now - 2 * 3600e3), summary: 'Clear on the intake steps.',
         items: [{ sid, i: qs[0].i, score: 9, feedback: 'Named every step in order.' }].concat(qs[1] ? [{ sid, i: qs[1].i, score: 5, feedback: 'Missed the conflict check.' }] : []) } } } });
-      await put('kcreview:' + ids.Ada, { lessons: { [lesson]: { comment: 'Good start; review the conflict check.', notes: { [sid + '|' + qs[0].i]: 'Spot on.' } } } });
+    await put('kcreview:' + ids.Ada, { lessons: { [lesson]: { comment: 'Good start; review the conflict check.', notes: { [sid + '|' + qs[0].i]: 'Spot on.' } } } });
+    return qs; };
+  { const qs = await kcSeed();
+    if (qs.length) {
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
       await page.evaluate(id => FTBatchSheet.kdWho(id), ids.Ada); await page.waitForTimeout(400);
       const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).innerText || '');
@@ -395,6 +398,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!/TRAINER-NOTE/.test(await page.evaluate(() => [...document.querySelectorAll('.bs-mine #bs-outputs td.bs-ocell')].map(td => td.innerText).join(' ')))) fail('the trainee doesn\'t see her days\' comments in 📤 Daily outputs');
   // (no checklist on her page either, and no trainer's picker)
   if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
+  // (✍️ her Knowledge Checks in detail, shared to her page: each answer with its grade and feedback, the trainer's comments)
+  { await kcSeed(); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(3000);
+    const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).innerText || '');
+    if (!/My Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
+      fail(`the trainee doesn't see her Knowledge Checks in detail on 📋 My Progress: ${kd.slice(0, 400)}`);
+    if (/Ben Blank|Cy Waiting|Dee Glitch/.test(kd)) fail('a trainee sees another trainee\'s Knowledge Checks');
+    await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(2500); }
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
   if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
