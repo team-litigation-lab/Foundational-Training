@@ -559,7 +559,6 @@ function groupedSheetHtml(T, ti){
 const MAIN = ["scorecard", "compliance", "process", "outputs"];
 function sectionsHtml(T){
   const one = (x, i) => x.id === "scorecard" || x.id === "compliance" ? groupedSheetHtml(x, i)
-    : x.id === "outputs" ? sheetHtml(x, i).replace(/<\/section>$/, outputsNotesHtml() + "</section>")
     : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
     : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
     : x.id === "process" ? sheetHtml(x, i).replace(/<\/section>$/, rationaleHtml() + "</section>")
@@ -573,58 +572,57 @@ function sectionsHtml(T){
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
    Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
-const PART = {tracker: "Task Tracker", monitor: "Monitoring Sheet", platform: "Platform work", tests: "Typing & Spelling", outputs: "Day's outputs", eod: "EOD email"};
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC"}); };
-  return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Click a day for its parts. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs);
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num"};
-          const parts = Object.entries(x.parts || {}).filter(([, v]) => v != null).map(([k, v]) => `${PART[k] || k} ${v}%`).join(" · ");
-          const tests = x.tests ? ` (typing AM ${x.tests.AM ? "✓" : "✗"}, PM ${x.tests.PM ? "✓" : "✗"}, spelling ${x.tests.SP ? "✓" : "✗"})` : "";
-          return {v: pct(vs[i]), f: `${md(d)}: ${parts}${tests}${(x.submissions || []).length ? ` · submitted: ${x.submissions.join(", ")}` : ""} = ${pct(vs[i])}`, cls: "gs-num " + tone(vs[i])}; }));
+          // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
+          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
+          return {v: pct(vs[i]), csv: `${pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
+            f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`, cls: "bs-ocell",
+            html: `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
     })};
 }
-/* 📤 under the Daily outputs table: each checked day's summarized comments — what the platform's end-of-shift check found
-   (each part, what is missing) and the AI's review of the tracker's notes and of the Monitoring Sheet, with the trainer's
-   comment where there is one. For one trainee (a trainer picks; a trainee reads their own, on 📋 My Progress). */
-function outputsNotesHtml(){
-  const ppl = people(); if(!ppl.length || !B.data) return "";
-  const id = meOn() ? ppl[0].id : (B.oc && ppl.some(p => p.id === B.oc) ? B.oc : ppl[0].id);
-  const R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {}, comp = rv.compliance || {};
-  const dates = Object.keys(comp).sort().reverse().slice(0, 14);
-  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", timeZone: "UTC"}); };
-  const clip = (v, n) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
-  const mon = rv.monitor || null;
-  const day = d => { const c = comp[d] || {}, P = c.parts || {}, tk = (rv.days || {})[d] || null, plat = [], todo = [];
-    // the platform's check, part by part
-    if(P.tracker != null){ const miss = tk ? (tk.rules || []).filter(r => !r.pass) : [];
-      plat.push(`📋 Task Tracker ${P.tracker}%`); miss.slice(0, 3).forEach(r => todo.push(`Task Tracker: ${r.label}${r.detail ? " — " + clip(r.detail, 160) : ""}`)); }
-    if(P.monitor != null){ plat.push(`📒 Monitoring Sheet ${P.monitor}%`); if(mon && mon.error) todo.push("Monitoring Sheet: " + clip(mon.error, 160)); }
-    (c.unreadable || []).forEach(k => todo.push(`${k === "tracker" ? "Task Tracker" : "Monitoring Sheet"}: the system can't open it, so it isn't counted: share it with the program's account (📁 My Drive links)`));
-    if(P.platform != null){ plat.push(`🖥 Platform ${P.platform}%`); if(!P.platform) todo.push("Nothing done on the platform that day"); else if(P.platform < 100) todo.push("Lessons opened, but nothing finished or submitted that day"); }
-    if(c.tests){ const t = c.tests, miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
-      plat.push(`🧪 Tests ${P.tests}%`); if(miss.length) todo.push("Not found for the day: " + miss.join(", ")); }
-    if(P.outputs != null){ plat.push(`📤 Outputs ${P.outputs}%`); if(!P.outputs) todo.push(c.folderError ? "The day's outputs: the folder couldn't be read" : "No output link submitted and no file saved in the folder that day"); }
-    if(P.eod != null){ plat.push(`✉️ EOD ${P.eod}%`); if(!P.eod && !c.eodCheck) todo.push("No EOD email for the day");
-      (c.eodCheck ? c.eodCheck.rules || [] : []).filter(r => !r.pass).forEach(r => todo.push(`EOD: ${r.label}${r.detail ? " — " + r.detail : ""}`)); }
-    const did = [...(c.platform || []).slice(0, 6), (c.links ? `${c.links} output link${c.links === 1 ? "" : "s"} submitted` : ""), (c.saved ? `${c.saved} file${c.saved === 1 ? "" : "s"} saved in the folder` : ""),
-      ...(c.submissions || []).slice(0, 4)].filter(Boolean);
-    // the AI's review (the tracker's notes) and the trainer's comment
-    const ai = tk && tk.review ? clip(tk.review, 420) : "", tr = tk && tk.comment ? clip(tk.comment, 300) : "";
-    return `<details class="bs-oc-day"${d === dates[0] ? " open" : ""}><summary><b>${e(md(d))}</b><em class="${tone(c.pct)}">${pct(c.pct) || "—"}</em><span>${e(plat.join(" · "))}</span></summary>
-      ${did.length ? `<div class="bs-ctx bs-best"><b>✅ Done</b><p>${e(did.join(" · "))}</p></div>` : ""}
-      ${todo.length ? `<div class="bs-ctx bs-imp"><b>🔧 To fix</b><ul>${todo.map(x => `<li>${e(x)}</li>`).join("")}</ul></div>` : ""}
-      ${ai ? `<div class="bs-ctx bs-why"><b>🤖 AI review of the tracker's notes</b><p>${e(ai)}</p></div>` : ""}
-      ${tr ? `<div class="bs-ctx bs-why"><b>🧑‍🏫 Trainer</b><p>${e(tr)}</p></div>` : ""}
-      ${!did.length && !todo.length && !ai && !tr ? `<p class="bs-ctx-none">Nothing more recorded for this day.</p>` : ""}</details>`; };
-  return `<div class="bs-ck bs-oc">${meOn() ? `<h4>💬 My days: comments</h4>` : `<label class="bs-ck-who">💬 Comments for <select onchange="FTBatchSheet.ocWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
-    <p class="bs-note">Each day as the end-of-shift check found it, summarized: what was done, what to fix, and the AI's review of the Task Tracker's notes${mon && mon.review ? "; the Monitoring Sheet's review is first" : ""}.</p>
-    ${mon && (mon.review || mon.comment) ? `<div class="bs-ctx bs-why"><b>📒 Monitoring Sheet${typeof mon.pct === "number" ? ` · ${mon.pct}%` : ""}${mon.checkedAt ? ` · checked ${e(when(mon.checkedAt))}` : ""}</b>${mon.review ? `<p>🤖 ${e(clip(mon.review, 500))}</p>` : ""}${mon.comment ? `<p>🧑‍🏫 ${e(clip(mon.comment, 300))}</p>` : ""}</div>` : ""}
-    ${dates.length ? `<div class="bs-oc-days">${dates.map(day).join("")}</div>` : `<p class="bs-ctx-none">No day checked yet: the check runs at the end of every shift.</p>`}</div>`;
+/* 📤 each activity of a checked day, in the Daily outputs table's cell: its score in a little box and the trainee's
+   performance on it in two sentences at most — what the end-of-shift check found (each part, what is missing), with the
+   trainer's comment, else the AI's review of the Task Tracker's notes / the Monitoring Sheet. (It was a 💬 Comments list
+   under the table; it is now in the table itself.) */
+const sent2 = (...xs) => { const out = [];
+  xs.filter(Boolean).forEach(x => String(x).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=[A-Z0-9🤖🧑‍🏫"“(])/).forEach(y => { y = y.trim(); if(y) out.push(/[.!?…]$/.test(y) ? y : y + "."); }));
+  return out.slice(0, 2).map(y => y.length > 230 ? y.slice(0, 228).replace(/\s+\S*$/, "") + "…" : y).join(" "); };
+const first = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = /^.+?[.!?](?=\s|$)/.exec(t); return m ? m[0] : t; };
+function dayActs(R, d){
+  const rv = (R.src || {})["trackerreview:"] || {}, c = (rv.compliance || {})[d] || {}, P = c.parts || {}, tk = (rv.days || {})[d] || null, mon = rv.monitor || null, out = [];
+  const unread = k => (c.unreadable || []).includes(k), share = "The system can't open it, so it isn't counted. Share it with the program's account (📁 My Drive links).";
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  if(P.tracker != null || unread("tracker")){
+    const rules = tk ? tk.rules || [] : [], miss = rules.filter(r => !r.pass), voice = tk && (tk.comment ? "🧑‍🏫 " + first(tk.comment) : tk.review ? "🤖 " + first(tk.review) : "");
+    out.push({k: "tracker", icon: "📋", label: "Task Tracker", pct: P.tracker, text: unread("tracker") ? sent2(share)
+      : sent2(rules.length ? `${rules.length - miss.length} of ${rules.length} checks met${miss.length ? `; to fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}` : ", nothing to fix"}.` : P.tracker ? "Updated for the day." : "Not updated for the day.", voice),
+      more: [tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
+  }
+  if(P.monitor != null || unread("monitor")){
+    out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
+      : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : mon && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", mon && (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "")),
+      more: mon && mon.review ? "AI review: " + mon.review : ""});
+  }
+  if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
+    out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
+  if(c.tests || P.tests != null){ const t = c.tests || {}, took = [t.AM && "the morning typing test", t.PM && "the afternoon typing test", t.SP && "the spelling test"].filter(Boolean),
+      miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
+    out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(took.length ? `Took ${took.join(" and ")}.` : "No test found for the day.", took.length && miss.length ? `Not found: ${miss.join(", ")}.` : took.length ? "All three tests done." : "")}); }
+  if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
+    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
+      : [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + ".", sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
+  if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
+    out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
+      miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
+  return out;
 }
 /* Everything each trainee did, from what the platform keeps, newest first. */
 function events(){
@@ -858,7 +856,7 @@ function sheetHtml(T, ti){
     <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
       <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
       <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${e(h)}</th>`).join("")}</tr></thead>
-      <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`).join("")}</tr>`).join("")}
+      <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 && T.id !== "recent" ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">${T.id === "recent" ? "Nothing yet in this period." : "No trainee in this batch yet."}</td></tr>` : ""}</tbody></table></div></section>`;
 }
 /* ---------- ✏️ Fix the batch name: a manual override for trainees registered under the wrong batch ----------
@@ -984,7 +982,6 @@ window.FTBatchSheet = {
   hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
   rkSheet(open){ B.rkSheet = !!open; },
-  ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   raWho(id){ if(!adminOn()) return; B.ra = id; render(); },
   lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
@@ -1062,7 +1059,7 @@ window.FTBatchSheet = {
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
     const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
     const lines = [];
-    tables().forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.v)).join(","))); lines.push(""); });
+    tables().forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.csv != null ? c.csv : c.v)).join(","))); lines.push(""); });
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv"}));
     a.download = meOn() ? `My Progress ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Batch Sheet ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1168,10 +1165,14 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
 .bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
 .bs-more > summary::-webkit-details-marker,.bs-rank-sheet > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary,.bs-rank-sheet[open] > summary{border-bottom:1px solid #E1E3E1;}
-.bs-ds-days, .bs-oc-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
-.bs-oc-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;padding:0 10px 6px;}
-.bs-oc-day > summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:7px 0;flex-wrap:wrap;} .bs-oc-day > summary span{color:#5F6368;font-size:12.5px;}
-.bs-oc-day > summary em{font-style:normal;font-weight:700;padding:1px 8px;border-radius:9px;}
+.gs td.bs-ocell{min-width:300px;max-width:340px;white-space:normal;vertical-align:top;text-align:left;padding:8px 9px;font-size:12.5px;line-height:1.4;}
+.bs-oday{display:flex;align-items:center;gap:7px;margin-bottom:6px;} .bs-oday span{color:#5F6368;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+.bs-oacts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.bs-oacts li{display:flex;gap:7px;align-items:flex-start;border-top:1px dashed #E1E3E1;padding-top:5px;}
+.bs-oacts li > div{display:flex;flex-direction:column;min-width:0;} .bs-oacts li b{font-weight:700;color:#202124;font-size:12px;} .bs-oacts li span{color:#3C4043;}
+.bs-sbox{flex:0 0 auto;display:inline-block;min-width:40px;text-align:center;border:1px solid #DADCE0;border-radius:6px;padding:2px 4px;font:700 12px Arial,sans-serif;background:#F8F9FA;color:#202124;}
+.bs-sbox.gs-hi{background:#E6F4EA;border-color:#B7DFC2;color:#137333;} .bs-sbox.gs-mid{background:#FEF7E0;border-color:#F3DC8F;color:#8A5A00;} .bs-sbox.gs-lo{background:#FCE8E6;border-color:#F5C2BC;color:#B3261E;}
+.bs-ds-days{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
 .bs-ds-day{border:1px solid #E1E3E1;border-radius:8px;background:#fff;font:13.5px Arial,sans-serif;}
 .bs-ds-day > summary{cursor:pointer;display:flex;gap:8px;align-items:center;padding:7px 10px;list-style:none;} .bs-ds-day > summary::-webkit-details-marker{display:none;}
 .bs-ds-day > summary::before{content:"▸";color:#5F6368;} .bs-ds-day[open] > summary::before{content:"▾";}
