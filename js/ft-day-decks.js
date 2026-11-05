@@ -880,7 +880,6 @@ function renderDeck(){
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
-        ${tr && root.FTMetrics && FTMetrics.graders ? `<button type="button" class="btn ftdd-graders" onclick="FTMetrics.graders()" title="Every mock call and demo scoresheet, in one list">🧑‍🏫 Graders</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`

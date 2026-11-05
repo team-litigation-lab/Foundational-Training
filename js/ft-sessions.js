@@ -737,7 +737,7 @@ document.addEventListener("keydown", ev => {
 }, true);
 /* 🧑‍🏫 THE GRADERS, in one place: every mock call and demo scoresheet (FT_RUBRICS, not the transcription's, graded on its own
    page), each opening its scoresheet pop-up (FTMetrics.open). The one 🧑‍🏫 Graders button: Admin → 🛠 Practice Lab →
-   🧑‍🏫 Graders: Mock Calls & Demos, and the bar under every slide of the trainer's deck (js/ft-day-decks.js). */
+   🧑‍🏫 Graders: Mock Calls & Demos (no longer on the bar under the deck's slides). */
 const GRADER_SKIP = ["transcription"];
 const graderKeys = () => Object.keys(RUB().list || {}).filter(k => !GRADER_SKIP.includes(k));
 const isMockKey = k => /mock call/i.test((RUB().list[k] || {}).title || "");
