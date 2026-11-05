@@ -64,8 +64,8 @@ const failures = []; const fail = m => failures.push(m);
   if (tab !== 'batchsheet') fail(`🏅 Scorecard opens on "${tab}", not the Batch Sheet`);
   const row = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()));
   if (!/Batch Sheet/.test(row[0] || '')) fail(`the Batch Sheet isn't the first Scorecard tab: ${row.join(' | ')}`);
-  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the approvals and batches are at the
-  // foot of the Batch Sheet, and the trainees' feedback is still kept)
+  // (no 👥 Trainees & Batches, Trainee Audit, 📁 Batch Folders or 💬 Trainee Feedback tab: the Main Portal approves trainees,
+  // and the trainees' feedback is still kept)
   if (/Trainees & Batches|Trainee Audit|Batch Folders|Trainee Feedback/.test(row.join(' '))) fail(`🏅 Scorecard still has a tab the Batch Sheet replaced: ${row.join(' | ')}`);
   if (/Overall Performance|🏅 Scorecards/.test(row.join(' '))) fail(`🏅 Scorecards / 📈 Overall Performance still have tabs (they are on the Batch Sheet): ${row.join(' | ')}`);
   await put('tfeedback:keep-me', { id: 'keep-me', at: iso(now), dayId: 1, ratings: { lessons: 5 }, good: 'Kept after the move', improve: '', facilitator: '', anonymous: false, name: 'Ada Active', batch: BATCH, status: 'new' });
@@ -299,23 +299,23 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); });
   await page.waitForTimeout(600);
 
-  // 👥 Trainees & Batches at the foot of the sheet, and no tab of its own in any section (nor 💬 Trainee Feedback): Cy waits
-  // for approval there, and Approve approves her
+  // 👥 Trainees & Batches / Approvals & Batches: gone (the Main Portal approves trainees): no tab in any section, no section at
+  // the foot of the sheet, no "Go to" link; 📋 Task Trackers has no tab either. A trainee approved on this platform shows at once.
   const tabs2 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (/Trainees & Batches|Trainee Feedback/.test(tabs2) || !/Batch Sheet/.test(tabs2)) fail(`🏅 Scorecard's tabs: ${tabs2}`);
   await page.evaluate(() => { const b = [...document.querySelectorAll('.lp-admin-sec')].find(x => /Admin Master Control/.test(x.innerText)); if (b) b.click(); });
   await page.waitForTimeout(600);
   const tabs3 = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (/Trainees & Batches/.test(tabs3)) fail(`🛡 Admin Master Control still has a 👥 Trainees & Batches tab: ${tabs3}`);
+  const allTabs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-sec')].map(b => { b.click(); return (document.querySelector('.lp-admin-row') || {}).innerText || ''; }).join(' | '));
+  if (/Task Trackers/.test(allTabs)) fail(`📋 Task Trackers still has a tab: ${allTabs}`);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
-  const pend = await page.evaluate(() => { const s = document.getElementById('bs-people'); return s ? { text: s.innerText, btn: !!s.querySelector('button[onclick*="approveTrainee"]') } : null; });
-  if (!pend || !/Pending Approvals/.test(pend.text) || !/Cy/.test(pend.text) || !pend.btn) fail(`the Batch Sheet has no ⏳ Pending Approvals with Cy and Approve: ${pend && pend.text.slice(0, 200)}`);
-  else {
-    await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
-    if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('Approve on the Batch Sheet didn\'t approve Cy');
-    const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
-    if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
-  }
+  const foot = await page.evaluate(() => ({ people: !!document.getElementById('bs-people'), link: /Approvals &|Trainees &/.test((document.querySelector('.bs-jump') || {}).innerText || '') }));
+  if (foot.people || foot.link) fail(`the Batch Sheet still has 👥 Approvals & Batches: ${JSON.stringify(foot)}`);
+  await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
+  if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('approveTrainee didn\'t approve Cy');
+  const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });
+  if (cyRow !== 'Approved') fail(`the 👥 Trainees table doesn't show Cy approved: ${cyRow}`);
   if (await page.evaluate(() => state.adminTab) !== 'batchsheet') { await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(2500); }
 
   // 📤 Daily outputs: in the table, each day's cell has every activity's score in a little box and its comment, two sentences
