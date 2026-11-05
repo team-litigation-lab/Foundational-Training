@@ -488,7 +488,9 @@ window.FTTracker = {
   closeAdmin(){ FTT.admin = null; FTT.id = null; FTT.data = null; state.adminTab = "trackers"; FTA.rows = null; FTA.archived = null; goto("admin"); },
   async saveComment(){
     const D = FTT.day || today(), v = (document.getElementById("fttComment")||{}).value || "";
-    const cur = (await sharedGet("trackerreview:"+FTT.id)) || {days:{}};
+    // (strict: a failed read is never taken for an empty record and saved over the trainee's checks and grades)
+    let cur; try{ cur = (await sharedGetStrict("trackerreview:"+FTT.id)) || {days:{}}; }catch(err){ toast("Couldn't save — check your connection and try again."); return; }
+    if(!cur.days) cur.days = {};
     cur.days[D] = Object.assign({}, cur.days[D] || TR.checkDay(FTT.data, D), {comment: v.trim(), commentAt: new Date().toISOString()});
     cur.updatedAt = new Date().toISOString();
     const ok = await sharedSet("trackerreview:"+FTT.id, cur);

@@ -31,6 +31,10 @@ const ready = () => {
 };
 const today = () => TR.ptDate();
 const isGoogle = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || "").trim());
+// a link the trainee typed, only when it is http(s) ("" else: a javascript: link is never put in an href)
+const safeUrl = u => { u = String(u == null ? "" : u).trim(); return /^https?:\/\//i.test(u) ? u : ""; };
+// a day key as the page writes it (YYYY-MM-DD): any other key in a trainee's drive:<id>.days is left out
+const isDay = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
 const tScore = r => r && r.trainerScore != null && r.trainerScore !== "" && isFinite(Number(r.trainerScore)) ? Math.round(Number(r.trainerScore)) : null;
 const D = {id:null, drive:null, review:null, loading:null, at:0, day:null, busy:false, saving:null};
 function load(force){
@@ -95,7 +99,7 @@ function verifyBox(){
 function linksCard(auto = true){
   const x = D.drive, row = (k, label, ph, hint) => { const v = VERIFIED.includes(k) && x[k] ? vOf(k) : null;
     return `<label class="fdr-l"><span>${label} ${linkBadge(k)}</span>
-      <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
+      <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${safeUrl(x[k]) ? `<a class="btn btn-ghost btn-sm" href="${e(safeUrl(x[k]))}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${v ? (v.ok ? `<small class="fdr-v ok">✓ ${v.mine ? "Yours, and it opens" : "Opens"}${v.name ? ": " + e(v.name) : ""}</small>` : `<small class="fdr-v bad">✗ ${e(v.error || "The system can’t open it.")}</small>`) : ""}
       ${hint ? `<small>${hint}</small>` : ""}</label>`; };
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
@@ -135,12 +139,12 @@ function rulesHtml(res){
 function renderTrackerPage(){
   if(!ready()) return `<div class="card fdr-card">Loading your tracker links…</div>`;
   const d = day(), links = dayLinks(d), res = D.review.days[d];
-  const days = [...new Set([today()].concat(Object.keys(D.drive.days), Object.keys(D.review.days)))].sort().reverse().slice(0, 15);
+  const days = [...new Set([today()].concat(Object.keys(D.drive.days), Object.keys(D.review.days)))].filter(isDay).sort().reverse().slice(0, 15);
   return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
       <p>Keep your LSH Daily Task Tracker in your main Google Drive and update it before the end of every shift. Each day, add the links to that day’s outputs. The system checks your tracker automatically at the end of every shift: every open task needs its Daily Note for the day, and the day needs its output links. Your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>🗓 ${e(TR.fmtDate(d))}</h2>
-        <select onchange="FTDrive.day(this.value)">${days.map(x => `<option value="${x}" ${x === d ? "selected" : ""}>${TR.fmtDate(x)}${x === today() ? " (today)" : ""}</option>`).join("")}</select></div>
+        <select onchange="FTDrive.day(this.value)">${days.map(x => `<option value="${e(x)}" ${x === d ? "selected" : ""}>${e(TR.fmtDate(x))}${x === today() ? " (today)" : ""}</option>`).join("")}</select></div>
       <h3>🔗 The day’s output links</h3>
       <p class="fdr-muted">The files you made or updated today, from your Assessment and Activities Folder (typing and spelling test screenshots, documents, recordings …).</p>
       <div id="fdrLinks">${(links.length ? links : [{label:"", url:""}]).map((l, i) => linkRow(l, i)).join("")}</div>
@@ -167,7 +171,7 @@ function eodHtml(d){
 }
 function linkRow(l, i){
   return `<div class="fdr-row fdr-link" data-i="${i}"><input class="fdr-label" placeholder="What it is (e.g. Typing Test AM)" value="${e(l.label || "")}"><input class="fdr-url" type="url" placeholder="https://drive.google.com/file/d/…" value="${e(l.url || "")}">
-    ${l.url ? `<a class="btn btn-ghost btn-sm" href="${e(l.url)}" target="_blank" rel="noopener noreferrer">↗</a>` : ""}</div>`;
+    ${safeUrl(l.url) ? `<a class="btn btn-ghost btn-sm" href="${e(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">↗</a>` : ""}</div>`;
 }
 function renderMonitorPage(){
   if(!ready()) return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`;
@@ -410,14 +414,14 @@ function linksEditor(rows){
 function renderAdminDrive(){
   if(!DA.rows){ if(!DA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the trainees’ Drive links…</div>`; }
   const batches = [...new Set(DA.rows.map(r => r.batch).filter(Boolean))].sort(), rows = DA.rows.filter(r => !DA.batch || r.batch === DA.batch);
-  const lk = (u, t) => u ? `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${t} ↗</a>` : `<span class="fdr-muted">${t}: —</span>`;
+  const lk = (u, t) => safeUrl(u) ? `<a href="${e(safeUrl(u))}" target="_blank" rel="noopener noreferrer">${t} ↗</a>` : `<span class="fdr-muted">${t}: —</span>`;
   return `<div class="card fss-admin"><div class="ff-bar"><div><h3>📁 Drive Trackers</h3><p class="fdr-muted">Each trainee’s Task Tracker and Monitoring Sheet, kept in their main Google Drive: the links, the automated checks (automatically at the end of every shift, or ✅ Check now) and your score and comment for each day and for the Monitoring Sheet.</p></div>
       <span><select onchange="FTDriveAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === DA.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select><button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.refresh()">↻</button></span></div>
     <div class="fp-actions"><button class="btn ${DA.edit ? "btn-ghost" : "btn-navy"} btn-sm" onclick="FTDriveAdmin.edit()">🔗 ${DA.edit ? "Close the links editor" : "Set the batch’s links"}</button>
       <span class="fdr-muted">${rows.filter(r => (r.drive || {}).folder).length} of ${rows.length} with a folder linked</span></div>
     ${DA.edit ? linksEditor(rows) : ""}
     ${rows.length ? rows.map(r => { const dv = r.drive || {}, t = (r.rv.days || {})[today()], m = r.rv.monitor, open = !!DA.open[r.id];
-      const days = [...new Set(Object.keys(dv.days || {}).concat(Object.keys(r.rv.days || {})))].sort().reverse().slice(0, 10);
+      const days = [...new Set(Object.keys(dv.days || {}).concat(Object.keys(r.rv.days || {})))].filter(isDay).sort().reverse().slice(0, 10);
       return `<div class="fss-arow"><div class="fss-arow-h" onclick="FTDriveAdmin.open('${e(r.id)}')">${open ? "▾" : "▸"} <b>${e(r.name)}</b> <span class="fdr-muted">${e(r.batch)}</span>
           ${t ? `<span class="fss-pill ${t.pct >= 100 ? "ok" : "mid"}">📋 today ${t.pct}%</span>` : `<span class="fss-pill">📋 today —</span>`}
           ${m && !m.error ? `<span class="fss-pill">📒 ${m.found}/${m.total} · ${m.pct}%</span>` : m && m.error ? `<span class="fss-pill mid">📒 can’t read</span>` : ""}
@@ -425,7 +429,7 @@ function renderAdminDrive(){
         ${open ? `<div class="fss-abody"><p class="fdr-links">${lk(dv.folder, "📁 Assessment and Activities Folder")} · ${lk(dv.tracker, "📋 Task Tracker")} · ${lk(dv.monitor, "📒 Monitoring Sheet")}
             <button class="btn btn-ghost btn-sm" ${DA.busy[r.id] ? "disabled" : ""} onclick="FTDriveAdmin.check('${e(r.id)}')">${DA.busy[r.id] ? "Checking…" : "✅ Check now"}</button></p>
           <h4>📋 Task Tracker, by day</h4>${days.length ? days.map(d => { const res = (r.rv.days || {})[d], ls = ((dv.days || {})[d] || {}).links || [];
-            return `<div class="fdr-aday"><b>${TR.fmtDate(d)}</b> ${ls.map(l => `<a href="${e(l.url)}" target="_blank" rel="noopener noreferrer">${e(l.label || "output")} ↗</a>`).join(" · ") || `<span class="fdr-muted">no output links</span>`}
+            return `<div class="fdr-aday"><b>${e(TR.fmtDate(d))}</b> ${ls.map(l => safeUrl(l.url) ? `<a href="${e(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">${e(l.label || "output")} ↗</a>` : `<span>${e(l.label || "output")}</span>`).join(" · ") || `<span class="fdr-muted">no output links</span>`}
               ${rulesHtml(res)}${res ? scoreForm(r.id, "day:" + d, res) : ""}</div>`; }).join("") : `<p class="fdr-muted">No days yet.</p>`}
           <h4>📒 Monitoring Sheet</h4>${m ? (m.error ? `<p class="fdr-err">⚠ ${e(m.error)}</p>` : `<p class="fdr-muted">${m.found} of ${m.total} discussions found · ${m.pct}% · checked ${e(new Date(m.checkedAt).toLocaleString())}</p>
               ${(m.entries || []).map(x => `<span class="fss-pill ${x.pct >= 100 ? "ok" : "mid"}" title="${e(x.checks.filter(c => !c.ok).map(c => c.label).join(", "))}">${e(x.topic)} ${x.pct}%</span>`).join(" ")}
@@ -485,7 +489,8 @@ window.FTDriveAdmin = {
     if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)){ toast("The score is a number from 0 to 100."); return; }
     btn.disabled = true;
     try{
-      const cur = (await sharedGet("trackerreview:" + id)) || {days:{}}; if(!cur.days) cur.days = {};
+      // (strict: a failed read throws, never taken for an empty record and saved over the trainee's checks and grades)
+      const cur = (await sharedGetStrict("trackerreview:" + id)) || {days:{}}; if(!cur.days) cur.days = {};
       const target = which === "monitor" ? (cur.monitor = cur.monitor || {}) : (cur.days[which.slice(4)] = cur.days[which.slice(4)] || {});
       target.trainerScore = sv === "" ? null : Math.round(Number(sv)); target.comment = String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000); target.commentAt = new Date().toISOString();
       if(await sharedSet("trackerreview:" + id, cur) === false) throw new Error("save");
