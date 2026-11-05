@@ -490,24 +490,27 @@ function scoreCardTable(){
 const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], none: ["— Not linked", ""]};
 function complianceTable(){
   const ppl = people();
-  return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links — pick one in the dropdown: Correct (the system opened it and it is the right file or folder) or Wrong (and why, on a click) — and progress on the platform.`,
-    groups: [{label: "", span: 1}, {label: "Drive Links", span: 3}, {label: "Progress", span: 3}],
-    head: ["Trainee", "Assessment (dropdown)", "Correct / Wrong", "Links correct", "Lesson decks", "Knowledge Checks passed", "Last on the platform"],
-    rows: ppl.map(p => { const {L} = linkState(p), k = (B.dl || {})[p.id] && L[(B.dl || {})[p.id]] ? B.dl[p.id] : (LINKS.find(([k]) => !/ok|trainer/.test(L[k].st)) || LINKS[0])[0];
-      const x = L[k], st = LSTAT[x.st] || ["—", ""], okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
+  // the six links side by side, each its own column (no dropdown to go through): ✓ Correct, ✗ Wrong (why: on a hover or a
+  // click, in the formula bar), ⏳ Pending or — Not linked; how many of the six are correct first
+  return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links side by side — ✓ Correct (the system opened it and it is ${meOn() ? "your" : "their"} own, right file or folder), ✗ Wrong (why: hover over it, or click it), ⏳ Pending (not checked yet) or — Not linked — and progress on the platform.`,
+    groups: [{label: "", span: 1}, {label: "Drive Links", span: 1 + LINKS.length}, {label: "Progress", span: 3}],
+    head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
+    rows: ppl.map(p => { const {L} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
       const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
+      const linkCol = k => { const x = L[k], st = x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""];
+        const f = `${x.label}: ${x.link ? x.link + " · " : ""}${x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`;
+        return {v: st[0], f, tip: f, cls: "bs-lesson bs-lk " + st[1]}; };
       return [{v: p.name, f: p.name, cls: "gs-name"},
-        {v: x.label, f: x.link || "", cls: "gs-txt bs-dl", dl: {id: p.id, k, L}},
-        {v: st[0], f: `${x.label}: ${x.link ? x.link + " · " : ""}${x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`, cls: "bs-lesson " + st[1]},
-        {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["—"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")},
+        {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["— Not linked"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")}]
+        .concat(LINKS.map(([k]) => linkCol(k)), [
         {v: `${decks} / ${ls.length}`, f: `${decks} of the ${ls.length} lesson decks finished`, cls: "gs-num"},
         {v: `${kcs} / ${kl.length}`, f: `${kcs} of the ${kl.length} lessons' Knowledge Checks passed (${kl.map(d => "Lesson " + d.id).join(", ")})`, cls: "gs-num"},
-        {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}];
+        {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}]);
     })};
 }
-// a table with a row of grouped headings over its own (the lessons over their five columns) and, in the compliance
-// table, the Drive link's dropdown in its cell
+// a table with a row of grouped headings over its own (the lessons over their five columns; the compliance table's six
+// Drive links); a cell with a tip shows it on a hover (a Drive link's why)
 /* ▾/▸ retractable: a lesson's group of columns folds to its Average alone (a click on its heading), all of them at once
    (Collapse all / Expand all), and the whole table hides under its title. Kept per viewer on this browser. */
 const FOLD_KEY = "lsh_bs_fold";
@@ -531,8 +534,7 @@ function groupedSheetHtml(T, ti){
   T.groups.forEach((g, gi) => { for(let k = 0; k < g.span; k++) gOf.push([gi, k]); });
   const gone = ci => { const [gi, k] = gOf[ci] || []; return gi != null && foldable(T.groups[gi]) && F.g.includes(gi) && k !== (T.keep != null && T.keep >= 0 ? T.keep : 0); };
   const fc = ci => gone(ci) ? " gs-fold" : "";
-  const cell = (c, ri, ci) => c.dl ? `<td class="${c.cls || ""}${fc(ci)}" data-t="${ti}" data-r="${ri}" data-c="${ci}"><select class="bs-dl-sel" aria-label="Drive link" onchange="FTBatchSheet.dlPick('${e(c.dl.id)}', this.value)">${LINKS.map(([k, label]) => `<option value="${k}" ${k === c.dl.k ? "selected" : ""}>${e(label)}</option>`).join("")}</select></td>`
-    : `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  const cell = (c, ri, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}"${c.tip ? ` title="${e(c.tip)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
   const folds = T.groups.map((g, gi) => foldable(g) ? gi : -1).filter(gi => gi >= 0), allIn = folds.length && folds.every(gi => F.g.includes(gi));
   const tid = e(T.id);
   const head = `<h3 class="bs-h"><button type="button" class="bs-fold-sec" onclick="FTBatchSheet.hideSec('${tid}')" aria-expanded="${!F.hide}" title="${F.hide ? "Show" : "Hide"} this table">${F.hide ? "▸" : "▾"}</button> ${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>
@@ -974,7 +976,6 @@ window.FTBatchSheet = {
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
   // (the compliance table's Drive link picked for a trainee; ▸ More detail open or shut)
-  dlPick(id, k){ B.dl = B.dl || {}; B.dl[id] = k; render(); },
   // ▾/▸ the Score Card's (and the compliance table's) folds: a group of columns, all of them, the whole table
   fold(id, gi){ const F = foldOf(id), i = F.g.indexOf(gi); if(i >= 0) F.g.splice(i, 1); else F.g.push(gi); foldRender(id); },
   foldAll(id, on){ if(!B.data || B.dataLoading) return; const T = tables().find(x => x.id === id); if(!T) return; const F = foldOf(id);
@@ -1162,7 +1163,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-fold-all{margin-left:10px;border:1px solid #C4C7C5;background:#fff;border-radius:999px;padding:3px 10px;font:700 12px Arial,sans-serif;color:#1E2340;cursor:pointer;vertical-align:2px;} .bs-fold-all:hover{border-color:#DB8437;color:#B5651F;}
 .bs-hidden{padding-bottom:12px;}
 .gs .gs-group th{background:#1E2340;color:#fff;font:700 13px Arial,sans-serif;text-align:left;padding:5px 10px;border-left:2px solid #fff;white-space:nowrap;} .gs .gs-group th.gs-g2{background:#33406B;}
-.bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
+.gs td.bs-lk{white-space:nowrap;text-align:center;cursor:help;}
 .bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}
 .bs-more > summary::-webkit-details-marker,.bs-rank-sheet > summary::-webkit-details-marker{display:none;} .bs-more[open] > summary,.bs-rank-sheet[open] > summary{border-bottom:1px solid #E1E3E1;}
 .gs td.bs-ocell{min-width:300px;max-width:340px;white-space:normal;vertical-align:top;text-align:left;padding:8px 9px;font-size:12.5px;line-height:1.4;}

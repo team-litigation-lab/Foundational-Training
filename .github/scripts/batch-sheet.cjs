@@ -107,13 +107,15 @@ const failures = []; const fail = m => failures.push(m);
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
   if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
-  // Compliance and Platform Utilization: the Drive link's dropdown, Correct / Wrong for the one picked, how many are correct, the progress
+  // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
-  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Assessment (dropdown)', 'Correct / Wrong', 'Links correct', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
-  if (!ca || ca[1] !== '📒 Monitoring Sheet' || !/Wrong/.test(ca[2]) || ca[3] !== '4 / 6') fail(`Ada's compliance (her Monitoring Sheet wrong; 4 of 6 correct): ${ca}`);
-  await page.evaluate(id => FTBatchSheet.dlPick(id, 'tam'), ids.Ada); await page.waitForTimeout(300);
-  const ca2 = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'compliance'); const r = t.rows.find(r => /Ada/.test(r[0].v)); return [r[1].v, r[2].v]; });
-  if (ca2[0] !== '📘 TAM' || !/Correct/.test(ca2[1])) fail(`picking Ada's TAM in the dropdown: ${ca2}`);
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
+  if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗ Wrong' || ca[3] !== '✓ Correct' || ca[4] !== '⏳ Pending' || ca.slice(5, 8).some(v => v !== '✓ Correct')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
+  if (await page.$('#bs-compliance select')) fail('the compliance table still has a dropdown');
+  // (why a link is wrong: on a hover, the cell's title, and on a click, the formula bar)
+  const why = await page.evaluate(() => { const r = [...document.querySelectorAll('#bs-compliance tbody tr')].find(tr => /Ada/.test(tr.innerText)); const td = r && r.querySelector('td[data-c="2"]'); return td ? td.title : ''; });
+  if (!/Monitoring Sheet/.test(why) || !/can.t open/.test(why)) fail(`a wrong link doesn't say why on a hover: ${why}`);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
