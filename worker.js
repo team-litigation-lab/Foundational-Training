@@ -1527,7 +1527,6 @@ const NAMING = {
 const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/.test(batch) ? batch : "BatchID").replace("Your Name", name || "Your Name");
 const GENERIC = { typing: true, spelling: true, folder: true };
 const nameWords = (t) => slugPart(t).split("-").filter(Boolean);
-// a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
 // a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
 const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
 const nameHits = (person, T) => pWords(person).filter((w) => T.has(w)).length;
@@ -2763,7 +2762,6 @@ export default {
         return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
       }
 
-      /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
       // (the trainers' Gmail, team-litigation@, unless the Worker names another: EOD_INBOX)
       if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || EOD_ADDRESS).trim() });
@@ -2847,6 +2845,7 @@ export default {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         return json(await driveStatus(env));
       }
+      /* ---------- 🔗 the trainee's six Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       if (path === "/api/drive/verify") {
         const b = await request.json().catch(() => ({}));
         const id = tok.role === "a" ? String(b.id || "") : tok.id;
