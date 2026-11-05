@@ -5,10 +5,10 @@
 //     trainee record kept (slim, archived, with the scorecard snapshot) with the trainer's reviews, and the access closed;
 //   - the page: 📋 Mock Call Scorecards opens on the current batch (the one that started last) with a column per registered
 //     VA, the Reception scorecard's criteria down the side, the weighted average and the % following the scores, and Save
-//     writing labreview:<id> as Trainer Inputs does; 🚫 Offboard removes a VA from the sheet, ↩ Restore access brings them
-//     back; 📦 Archive asks for the Drive folder, saves the
+//     writing labreview:<id> as Trainer Inputs does; 🚫 Offboard removes a VA from the sheet and the batch folders and lists
+//     them under 🚫 Offboarded VAs, ↩ Restore access brings them back; 📦 Archive asks for the Drive folder, saves the
 //     summaries (Scorecard Summary, Mock Call & Demo Scorecards, Progress Matrix, the batch summary) and each VA's records,
-//     then clears the batch (its batchbackup:<batch> record kept).
+//     then clears the batch: it leaves Batch Folders and shows under ☁ Saved to Google Drive.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/batch-admin.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const path = require('path');
@@ -149,7 +149,11 @@ async function workerChecks() {
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
-    // (no 👥 Trainees & Batches section with its 🚫 Offboarded VAs shelf any more: ↩ Restore access, called as its button did)
+    // (👥 Trainees & Batches, its 📁 Batch Folders and 🚫 Offboarded VAs shelf, is gone from Admin: the old page opens the 📋 Batch
+    // Sheet, which has no Approvals & Batches section; ↩ Restore access, restoreOffboarded, still gives the access back)
+    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
+    let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
+    if (/Offboarded VAs \(|Batch Folders/.test(shelf) || await page.$('#bs-people')) fail('👥 Trainees & Batches (Batch Folders, 🚫 Offboarded VAs) still shows in Admin');
     page.once('dialog', d => d.accept());
     await page.evaluate(() => restoreOffboarded('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
@@ -178,6 +182,9 @@ async function workerChecks() {
     if (!(await get('progress:old-one--b090126'))) fail('another batch was cleared');
     const bb = await get('batchbackup:B103026');
     if (!bb || bb.folder !== 'https://drive.google.com/drive/folders/F1' || bb.count !== 3 || !bb.cleared) fail(`the batch's backup isn't recorded: ${JSON.stringify(bb)}`);
+    // (the cleared batch's trainees: archived and cleared; the other batch untouched, as the records above show)
+    const kept = await get('trainee:old-one--b090126');
+    if (!kept || kept.archived || kept.purgedAt) fail(`the other batch was touched by B103026's archive: ${JSON.stringify(kept)}`);
     // 🗑 Delete the batch (in the 📦 Archive dialog): a wrong Batch ID typed back deletes nothing; the right one removes every
     // VA's records and their trainee record, with no Drive backup
     await page.evaluate(() => confirmArchiveBatch('B090126')); await page.waitForTimeout(400);

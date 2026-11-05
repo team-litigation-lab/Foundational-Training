@@ -19,7 +19,8 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
-const R = {sort: "name", act: null, people: null, loading: false, batch: "", week: 1, data: null, key: "", dataLoading: false, saveT: null, saved: true, fill: false, drafting: {}, edit: false, auto: null, weekSet: false};
+const R = {sort: "rank",   // (highest final average first; ↕ switches to A–Z)
+   act: null, people: null, loading: false, batch: "", week: 1, data: null, key: "", dataLoading: false, saveT: null, saved: true, fill: false, drafting: {}, edit: false, auto: null, weekSet: false};
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const keyOf = (b, w) => `ranking:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -530,7 +531,7 @@ function renderRanking(){
       <span class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.toggleEdit()">✎ Columns</button>
         <button class="btn btn-ghost btn-sm" ${R.fill ? "disabled" : ""} onclick="FTRanking.fill()" title="Fill the empty score cells of the columns that have a source, from the trainees' grades on the platform">${R.fill ? "Filling…" : "⤓ Fill from the platform"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.foldAll()" title="Fold every column away but the marks out of 5, the average, the rank and the AI summary (a column's letter folds or shows it alone)">${sheetCols().some(folded) ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="Order the rows by name or by rank">↕ ${R.sort === "rank" ? "By rank" : "By name"}</button>
+        <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="${R.sort === "rank" ? "Sorted by the final average, highest first. Click for A–Z by name." : "Sorted A–Z by name. Click for highest to lowest."}">↕ ${R.sort === "rank" ? "Highest to lowest" : "A–Z"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.copy()">📋 Copy</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.print()">🖨 Print</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
