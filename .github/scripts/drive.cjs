@@ -230,7 +230,21 @@ const failures = []; const fail = (m) => failures.push(m);
       if (wk[2] && c2.parts.platform !== 0) fail(`a day with nothing on the platform isn't 0: ${JSON.stringify(c2)}`);
       if ((await call('/api/compliance/backfill', { ids: [id] }, trainee)).status !== 403) fail('a trainee could run the backfill');
       const again = await call('/api/compliance/backfill', { ids: [id] }, admin);
-      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again'); }
+      if (again.body.filled[id] !== 0) fail('the backfill worked out a day again');
+      // 🔄 Update all scores (redo, redoCompliance): every training day again from what the platform keeps now — a lesson
+      // finished and a Knowledge Check taken on a past day count as that day's progress; a tracker checked on the day keeps its %
+      const w1 = wk[1], at1 = new Date(w1 + 'T17:00:00Z').toISOString();
+      store.set('ft:progress:' + id, JSON.stringify({ data: { 'day-progress': { 3: { studied: true, studiedAt: at1, history: [{ score: 90, passed: true, date: at1 }] } } } }));
+      { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); rv.compliance[w1].parts.tracker = 80; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+      const before = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {}).pct;
+      if ((await call('/api/compliance/backfill', { ids: [id], redo: true }, trainee)).status !== 403) fail('a trainee could update all scores');
+      const rd = await call('/api/compliance/backfill', { ids: [id], redo: true }, admin);
+      if (!rd.body || !rd.body.ok || rd.body.redone[id] !== wk.length + (TR.isWeekday(today) ? 1 : 0)) fail(`Update all scores didn't work out every training day: ${JSON.stringify(rd.body)}`);
+      const cRedo = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[w1] || {};
+      if (cRedo.parts.platform !== 100 || !(cRedo.platform || []).some(x => /Lesson 3 deck finished/.test(x)) || !(cRedo.platform || []).some(x => /Knowledge Check/.test(x))) fail(`a day's progress on the platform isn't counted: ${JSON.stringify(cRedo)}`);
+      if (cRedo.parts.tracker !== 80 || !cRedo.backfilled || !(cRedo.pct > before)) fail(`Update all scores lost the day's tracker check or the backfilled mark, or the score didn't go up: ${JSON.stringify(cRedo)} (was ${before})`);
+      const cOther = JSON.parse(store.get('ft:trackerreview:' + id)).compliance[wk[2]] || {};
+      if (wk[2] && cOther.parts.platform !== 0) fail(`a day with no progress on the platform counts it: ${JSON.stringify(cOther.parts)}`); }
 
     // 📧 EOD monitoring: an EOD emailed to the platform's address (worker.js email → receiveEod) is matched to the trainee by the
     // address they send from, kept as the day's EOD and checked against its template; one no trainee matches is kept for the trainer
