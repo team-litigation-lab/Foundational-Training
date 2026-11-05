@@ -18,7 +18,8 @@
       record stays, slimmed, with a snapshot of the scorecard, for the Main Portal's 📊 Progress & Feedback, which reads
       this program's records. The batch then shows on the Archive shelf as ☁ Saved to Drive, with the folder's link
       (batchbackup:<batch>, admins only). A batch archived earlier gets ☁ Save to Drive & clear on its card.
-   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the tab in 🛠 Practice Lab.
+   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the 📋 Mock Call Scorecards tab in
+   🛠 Practice Lab and the 📁 Batches tab (batchesTab, below) in 🛡 Admin Master Control.
    ============================================================ */
 (function(){
 "use strict";
@@ -449,6 +450,11 @@ if(typeof __folders === "function") window.renderAdminBatchFolders = function(){
    picker, for the batch on screen.) Registered here, before js/lsh-program.js groups the tabs. */
 function batchesTab(){
   if(state.adminLoading || !state.adminData){ if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(loadAdminLedger, 0); return `<div class="card" style="padding:24px;">Loading the batches…</div>`; }
+  // (a batch the 📋 Batch Sheet doesn't list — no batch, all archived — opens its own folder page here: its 🗂 Registry, its
+  // records and ⬇ Full backup (JSON); ← All batch folders comes back to the cards. js/ft-trainees-tab.js openBatchFolder)
+  if(state.batchFolder && typeof window.renderBatchFolder === "function"){
+    try{ return `<div class="fba-batches">${window.renderBatchFolder(state.batchFolder)}</div>`; }catch(err){ state.batchFolder = null; }
+  }
   const keep = state.batchFolder; state.batchFolder = null;
   let html = "";
   try{ html = window.renderAdminBatchFolders(); }catch(err){ html = ""; } finally{ state.batchFolder = keep; }

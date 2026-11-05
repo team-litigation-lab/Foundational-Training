@@ -44,17 +44,22 @@ if(typeof __row === "function") window.renderAdminRow = function(){
   return t.innerHTML;
 };
 
-// a batch's card (on 🛡 Admin Master Control → 📁 Batches, and an archived batch on its shelf): that batch on the 📋 Batch Sheet
-const listTo = (k, archived) => {
-  state.adminTab = "batchsheet"; state.batchFolder = null; state.adminBatchFilter = k;
-  if(archived) state.adminShowArchived = true;
-  if(window.FTBatchSheet && typeof FTBatchSheet.batch === "function"){ FTBatchSheet.batch(k); return; }
-  render();
-};
-window.openBatchFolder = function(k){
+/* a batch's card (🛡 Admin Master Control → 📁 Batches, and an archived batch's 📂 Open records on its shelf): a batch the
+   📋 Batch Sheet lists opens there; any other — no batch, a batch whose trainees are all archived, a card whose trainees sit
+   under more than one spelling of the Batch ID — opens its own folder page inside 📁 Batches (its 🗂 Registry and
+   ⬇ Full backup), so a card never opens an empty Batch Sheet. (The sheet lists the active trainees by the Batch ID as
+   written, batchLabel(r.batch); a card groups them by the cleaned one, batchKey(r).) */
+window.openBatchFolder = function(k, sub){
   // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
   const all = (state.adminData || []).filter(r => (r.archived || !window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})) && (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
-  listTo(k, all.length > 0 && all.every(r => r.archived));
+  const none = typeof NO_BATCH !== "undefined" ? NO_BATCH : "__none__", live = all.filter(r => !r.archived);
+  const label = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
+  const raw = [...new Set(live.map(r => label(r.batch)).filter(Boolean))];
+  if(k !== none && raw.length === 1 && window.FTBatchSheet && typeof FTBatchSheet.batch === "function"){
+    state.adminTab = "batchsheet"; state.batchFolder = null; FTBatchSheet.batch(raw[0]); return; }
+  state.adminTab = "batches"; state.batchFolder = k; state.batchSub = sub || "registry";
+  if(live.length === 0 && all.length) state.batchShowArchived = true;
+  render();
 };
 
 const __admin = window.renderAdmin;
