@@ -71,6 +71,8 @@ function refTermsInto(box){
   const em = box.querySelector(".ftdd-embed");
   em.className = "ftdd-embed ftdd-embed-terms"; em.innerHTML = refTermsHtml(DD.refTab || 0);
   box.classList.add("is-terms");
+  // (no name bar over it: the slide's ribbon names the sheet, and the table gets the room)
+  const h = box.querySelector(".ftdd-inline-h"); if(h) h.remove();
   return true;
 }
 function loadDecks(){
@@ -878,7 +880,6 @@ function renderDeck(){
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
-        ${tr && root.FTMetrics && FTMetrics.graders ? `<button type="button" class="btn ftdd-graders" onclick="FTMetrics.graders()" title="Every mock call and demo scoresheet, in one list">🧑‍🏫 Graders</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
@@ -1139,12 +1140,26 @@ function fitSheets(){
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
-  // the day card (and the Training Agenda) on navy is one card, not pages: scaled to fit, further if it must
-  // a day's card is drawn at Day 1's card's scale on this screen (full size where Day 1's fits, all of them smaller
-  // together where it doesn't), so every day's card reads the same; a fuller card still shrinks further to fit
+  // the day card (and the Training Agenda) on navy is one card, not pages: fitted to the slide (fitCards)
+  fitCards();
+  paintPageMark();
+}
+// a slide's box can change size after it was fitted (the bar under it, the notes rail, the presenter): its card is
+// fitted again then, so a card grown to fill the slide never runs past it
+const cardBoxH = new WeakMap();
+const cardRO = typeof ResizeObserver === "function" ? new ResizeObserver(list => {
+  if(!list.some(r => cardBoxH.get(r.target) !== r.target.clientHeight)) return;
+  clearTimeout(cardRO.t); cardRO.t = setTimeout(fitCards, 60);
+}) : null;
+function fitCards(){
   document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => {
+    // a day's card starts at Day 1's card's scale on this screen, shrinks further if it must, and grows to fill the slide
+    // where there is room
+    if(cardRO && !cardBoxH.has(box)) cardRO.observe(box);
+    cardBoxH.set(box, box.clientHeight);
     const c = box.matches(".ftdd-lcslide") ? box.querySelector(":scope > .ftlc") : null;
-    if(!c){ if(!zoomToFit(box, 0.35)) box.scrollTop = 0; return; }
+    // (the Training Agenda: shrunk to fit, or, with room to spare, drawn bigger to fill the slide)
+    if(!c){ if(!zoomToFit(box, 0.35)) box.scrollTop = 0; else zoomUp(box, 1.8); return; }
     const base = cardScale(box); let z = base; c.style.zoom = String(z); box.scrollTop = 0;
     const shrink = () => { while(box.clientHeight && box.scrollHeight > box.clientHeight + 2 && z > 0.35){ z = Math.round((z - 0.05) * 100) / 100; c.style.zoom = String(z); } };
     shrink();
@@ -1156,8 +1171,14 @@ function fitSheets(){
       z = base; c.style.zoom = String(z); shrink();
       if(z < was){ ol.classList.remove("ftlc-2col"); c.classList.remove("ftlc-wide"); z = was; c.style.zoom = String(z); }
     }
+    // a card with room to spare below it (a lighter day, a tall screen) is drawn bigger until it fills the slide, so no
+    // day's Agenda sits small at the top of an empty slide
+    while(z < 1.8 && box.clientHeight && box.scrollHeight <= box.clientHeight + 2){
+      const up = Math.round((z + 0.05) * 100) / 100; c.style.zoom = String(up);
+      if(box.scrollHeight > box.clientHeight + 2){ c.style.zoom = String(z); break; }
+      z = up;
+    }
   });
-  paintPageMark();
 }
 // the slide bar says which page of the slide this is, once there is more than one (the slide number itself is
 // the Step N of M under the slide, so it isn't repeated up here)
@@ -2512,14 +2533,16 @@ main.main-dash .module-grid > .ftli .mc-grid > .ftli-vids > button{white-space:n
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc{flex:1 0 auto;display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
-/* Days 2–16: the rows stretch to fill the card, and the focus panel beside them, as Day 1's five rows fill its card
-   (Day 1's card is drawn as it always was: it sets the scale every day's card is drawn at, cardScale) */
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) > .ftlc-body{align-items:stretch;}
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) .ftlc-seq{display:flex;flex-direction:column;min-height:0;}
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) .ftlc-seq > ol{flex:1 1 auto;}
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) .ftlc-seq > ol > li{flex:1 1 auto;display:flex;min-width:0;}
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) .ftlc-row{flex:1 1 auto;}
-main.main-ftdd .ftdd-lcslide > .ftlc:not([data-day="1"]) > .ftlc-body > .ftlc-focus{align-self:stretch;}
+/* every day (Day 1 too): the rows stretch to fill the card, and the focus panel beside them (Day 1's card, measured
+   unstretched, still sets the scale every day's card starts from, cardScale; fitSheets then grows a card to fill the slide) */
+main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{align-items:stretch;}
+main.main-ftdd .ftdd-lcslide > .ftlc .ftlc-seq{display:flex;flex-direction:column;min-height:0;}
+main.main-ftdd .ftdd-lcslide > .ftlc .ftlc-seq > ol{flex:1 1 auto;}
+main.main-ftdd .ftdd-lcslide > .ftlc .ftlc-seq > ol > li{flex:1 1 auto;display:flex;min-width:0;}
+main.main-ftdd .ftdd-lcslide > .ftlc .ftlc-row{flex:1 1 auto;}
+main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body > .ftlc-focus{align-self:stretch;}
+/* (a stretched row is taller than its text: its number sits level with the title, not at the row's top) */
+main.main-ftdd .ftdd-lcslide .ftlc-row .ftlc-n{align-self:center;padding-top:0;}
 /* a card of more than six rows lays them in two columns (down the first, then the second), and its rows take the wider
    share of the card, so their text stays at Day 1's size instead of shrinking to fit */
 main.main-ftdd .ftdd-lcslide .ftlc-seq > ol.ftlc-2col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--rows),auto);grid-auto-flow:column;gap:7px 10px;}
@@ -3126,7 +3149,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
 /* 📊 the reference sheet as a table (refTerms): the page's full height, its tabs above, the rows scrolling under the header */
-.ft-body .ftdd-embed.ftdd-embed-terms{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));display:flex;flex-direction:column;margin-top:10px;border:2px solid #343C66;border-radius:8px;background:#fff;}
+.ft-body .ftdd-embed.ftdd-embed-terms{height:max(320px, calc(var(--ftdd-room, 70vh) - 56px));display:flex;flex-direction:column;margin-top:0;border:2px solid #343C66;border-radius:8px;background:#fff;}
 .ft-body .ftdd-inline.is-terms{margin:0;}
 .ft-body .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid #D9DCE8;background:#F4F5FA;}
 .ft-body .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:600 13px/1.3 'Inter',sans-serif;cursor:pointer;}

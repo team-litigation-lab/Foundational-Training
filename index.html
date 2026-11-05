@@ -2421,7 +2421,8 @@ body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--or
 .di-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 12px;}
 .di-strip > div{background:#F3F5FB;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;} .di-strip span{font-size:22px;} .di-strip b{color:var(--navy);font-size:14px;} .di-strip em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
 .di-warm{background:rgba(255,248,239,.66);border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;} .di-warm > span{font-size:12.5px;color:var(--ink-soft);}
-.nav-back-row{margin:0 0 12px;} .nav-back{font:inherit;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(20,30,60,.06);} .nav-back:hover{border-color:var(--orange);color:var(--orange);}
+.nav-back-row{margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.nav-back.nav-progress{background:var(--orange);border-color:var(--orange);color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .nav-back.nav-progress span{font-weight:600;opacity:.9;} .nav-back.nav-progress:hover{background:#fff;color:var(--orange);border-color:var(--orange);} .nav-back{font:inherit;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(20,30,60,.06);} .nav-back:hover{border-color:var(--orange);color:var(--orange);}
 .quiz-key-locked{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;font-size:14px;color:var(--ink);margin:0 0 14px;}
 .di-wq{margin-top:10px;} .di-wq-q{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:6px;} .di-wq-opts{display:flex;flex-direction:column;gap:6px;} .di-wq-opt{display:flex;gap:8px;align-items:flex-start;text-align:left;font:inherit;font-size:13.5px;background:#fff;border:1px solid #E6D6C2;border-radius:9px;padding:7px 10px;cursor:pointer;color:var(--ink);} .di-wq-opt span{font-weight:800;color:var(--ink-soft);min-width:14px;} .di-wq-opt:hover:not([disabled]){border-color:var(--orange);background:#FFFDF9;} .di-wq-opt[disabled]{cursor:default;} .di-wq-opt.ok{border-color:#3F7D58;background:#EEF7F1;color:#2E6546;font-weight:700;} .di-wq-opt.no{border-color:#C9544A;background:#FCEFEE;color:#9B3A32;} .di-wq-opt.dim{opacity:.6;} .di-wq-fb{font-size:13px;margin-top:6px;color:var(--ink-soft);} .di-wq-fb.ok b{color:#3F7D58;} .di-wq-fb.no b{color:#9B3A32;} .di-wq-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:italic;}
 .di-warm details{margin-top:8px;} .di-warm summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy);} .di-warm ol{margin:6px 0 0;padding-left:22px;} .di-warm li{font-size:13.5px;} .di-warm li.ok{font-weight:800;color:#3F7D58;} .di-warm p{font-size:13px;color:var(--ink-soft);margin:6px 0 0;}
@@ -3244,7 +3245,7 @@ const DAY3 = {
 const DAY4 = {
   id: 4,
   title: "Receptionist Training",
-  video: "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+  video: "https://drive.google.com/file/d/1fTmhMFC7qHrZcfTrPSCjKwj3ObSbaYXf/view",
   deck: "The_Receptionist_Role.pdf (sent in chat)",
   heading: "Receptionist Training",
   sections: [
@@ -8450,10 +8451,29 @@ function navBackTarget(){
 }
 // Filled in after the page's history entry is recorded (afterRender), so it names the right page.
 function fillNavBack(){
-  const slot = document.getElementById("navBackSlot"); if(!slot) return;
-  const prev = ["login","pendingApproval","registrationDenied","dashboard"].includes(state.view) ? "" : navBackTarget();
+  let slot = document.getElementById("navBackSlot");
+  const prog = navProgressButton();
+  // A page drawn by its own script (the Practice Lab, the simulators, the trackers …) has no slot: it gets one for
+  // ↩ Back to my progress only (its own ← back link, if any, stays as it is)
+  if(!slot){
+    const main = prog && document.querySelector("#app > main"); if(!main) return;
+    slot = document.createElement("div"); slot.id = "navBackSlot"; slot.className = "nav-slot-added"; main.insertBefore(slot, main.firstChild);
+  }
+  const prev = slot.classList.contains("nav-slot-added") || ["login","pendingApproval","registrationDenied","dashboard"].includes(state.view) ? "" : navBackTarget();
   const label = prev && routeLabel(prev);
-  slot.innerHTML = label ? `<div class="nav-back-row"><button type="button" class="nav-back" onclick="navBack()" title="Go back to the page you were on">← Back to ${esc(label)}</button></div>` : "";
+  const back = label ? `<button type="button" class="nav-back" onclick="navBack()" title="Go back to the page you were on">← Back to ${esc(label)}</button>` : "";
+  slot.innerHTML = (back || prog) ? `<div class="nav-back-row">${back}${prog}</div>` : "";
+}
+/* ↩ Back to my progress: a trainee who has wandered off the training flow (a stray click, a link to another page, a
+   menu) is one click from the slide, Activity deck step or Practice Lab tool they were on (their bookmark, lastView).
+   Not on the flow's own pages (they ARE the progress) or on 📚 Dashboard (it has ▶ Resume where you left off). */
+const FLOW_VIEWS = ["day","tool","daydeck","knowtools"];
+function navProgressButton(){
+  if(!state.traineeId || state.isAdmin || state.adminPreview) return "";
+  if(FLOW_VIEWS.includes(state.view) || ["login","pendingApproval","registrationDenied","dashboard","modules","home"].includes(state.view)) return "";
+  const lv = state.lastView; if(!lv || !FLOW_VIEWS.includes(lv.view)) return "";
+  const where = resumeLabel();
+  return `<button type="button" class="nav-back nav-progress" onclick="resumeWhereLeftOff()" title="${esc(where ? "Back to " + where : "Back to where you left off in the training")}">↩ Back to my progress${where ? ` <span>· ${esc(where)}</span>` : ""}</button>`;
 }
 function navBack(){ if(routeDepth()>0) history.back(); else goto("dashboard"); }
 window.navBack = navBack;

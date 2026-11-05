@@ -477,7 +477,7 @@ function scoreCardTable(){
   const ppl = people(), L = lessons().filter(d => (lessonDays()[d.id] || []).length || kcSheets().some(k => Number(k.l) === Number(d.id)));
   const P = ["✍️ Knowledge Checks", "🛠 Practice", "Classroom & outputs", "Average", "Remarks / Trainer Feedback"];
   const T = {id: "scorecard", title: "🏅 Score Card", note: `${meOn() ? "Your" : "Each trainee's"} scores, lesson by lesson: ✍️ the lesson's Knowledge Checks, 🛠 the practice, mock calls and demos scored in its days, Classroom & outputs (the end-of-shift check of its days), their Average, and the trainer's feedback. Click a cell for how it was worked out. Blank: nothing scored yet.`,
-    groups: [{label: "", span: 2}].concat(L.map(d => ({label: `${d.id}. ${lessonName(d.id)}`, span: P.length}))),
+    groups: [{label: "", span: 2}].concat(L.map(d => ({label: `${d.id}. ${lessonName(d.id)}`, span: P.length}))), keep: P.indexOf("Average"),
     head: ["Trainee", "Overall"].concat(...L.map(() => P)),
     rows: ppl.map(p => { const S = L.map(d => lessonScore(p, d.id)), all = avgOf(S.map(x => x.avg));
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(all), f: all == null ? "Nothing scored yet" : `Overall = the average of the lessons' averages (${S.map((x, i) => x.avg == null ? null : `${L[i].id}: ${Math.round(x.avg)}%`).filter(Boolean).join(", ")}) = ${Math.round(all)}%`, cls: "gs-num gs-calc gs-bold " + tone(all)}]
@@ -513,16 +513,44 @@ function complianceTable(){
 }
 // a table with a row of grouped headings over its own (the lessons over their five columns) and, in the compliance
 // table, the Drive link's dropdown in its cell
+/* ▾/▸ retractable: a lesson's group of columns folds to its Average alone (a click on its heading), all of them at once
+   (Collapse all / Expand all), and the whole table hides under its title. Kept per viewer on this browser. */
+const FOLD_KEY = "lsh_bs_fold";
+function foldState(){
+  if(B.fold) return B.fold;
+  try{ B.fold = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}") || {}; }catch(err){ B.fold = {}; }
+  return B.fold;
+}
+function foldSave(){ try{ localStorage.setItem(FOLD_KEY, JSON.stringify(B.fold || {})); }catch(err){} }
+const foldOf = id => { const F = foldState(); return F[id] = F[id] || {g: [], hide: false}; };
+// redraw keeping the page and the table where they were scrolled to
+function foldRender(id){
+  const y = window.scrollY, w = document.querySelector(`#bs-${id} .bs-wrap`), x = w ? w.scrollLeft : 0;
+  foldSave(); render();
+  window.scrollTo(0, y); const w2 = document.querySelector(`#bs-${id} .bs-wrap`); if(w2) w2.scrollLeft = x;
+}
 function groupedSheetHtml(T, ti){
-  const n = T.head.length, empty = !T.rows.length;
-  const cell = (c, ri, ci) => c.dl ? `<td class="${c.cls || ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}"><select class="bs-dl-sel" aria-label="Drive link" onchange="FTBatchSheet.dlPick('${e(c.dl.id)}', this.value)">${LINKS.map(([k, label]) => `<option value="${k}" ${k === c.dl.k ? "selected" : ""}>${e(label)}</option>`).join("")}</select></td>`
-    : `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  const n = T.head.length, empty = !T.rows.length, F = foldOf(T.id);
+  // each column's group, and whether it is folded away (a folded group keeps one column: T.keep, else its first)
+  const gOf = [], foldable = g => !!g.label && g.span > 1;
+  T.groups.forEach((g, gi) => { for(let k = 0; k < g.span; k++) gOf.push([gi, k]); });
+  const gone = ci => { const [gi, k] = gOf[ci] || []; return gi != null && foldable(T.groups[gi]) && F.g.includes(gi) && k !== (T.keep != null && T.keep >= 0 ? T.keep : 0); };
+  const fc = ci => gone(ci) ? " gs-fold" : "";
+  const cell = (c, ri, ci) => c.dl ? `<td class="${c.cls || ""}${fc(ci)}" data-t="${ti}" data-r="${ri}" data-c="${ci}"><select class="bs-dl-sel" aria-label="Drive link" onchange="FTBatchSheet.dlPick('${e(c.dl.id)}', this.value)">${LINKS.map(([k, label]) => `<option value="${k}" ${k === c.dl.k ? "selected" : ""}>${e(label)}</option>`).join("")}</select></td>`
+    : `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}" data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  const folds = T.groups.map((g, gi) => foldable(g) ? gi : -1).filter(gi => gi >= 0), allIn = folds.length && folds.every(gi => F.g.includes(gi));
+  const tid = e(T.id);
+  const head = `<h3 class="bs-h"><button type="button" class="bs-fold-sec" onclick="FTBatchSheet.hideSec('${tid}')" aria-expanded="${!F.hide}" title="${F.hide ? "Show" : "Hide"} this table">${F.hide ? "▸" : "▾"}</button> ${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>
+    ${!F.hide && folds.length > 1 ? `<button type="button" class="bs-fold-all" onclick="FTBatchSheet.foldAll('${tid}', ${allIn ? "false" : "true"})">${allIn ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>` : ""}</h3>`;
+  if(F.hide) return `<section class="bs-sec bs-sc bs-hidden" id="bs-${T.id}">${head}</section>`;
   let col = 0;
-  return `<section class="bs-sec bs-sc" id="bs-${T.id}"><h3 class="bs-h">${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span></h3><p class="bs-note">${e(T.note)}</p>
+  return `<section class="bs-sec bs-sc" id="bs-${T.id}">${head}<p class="bs-note">${e(T.note)}${folds.length ? " Click a heading's ▾ to fold its columns away." : ""}</p>
     <div class="gs-wrap bs-wrap"><table class="gs" role="grid"><thead>
-      <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${letter(i)}</th>`).join("")}</tr>
-      <tr class="gs-group"><th class="gs-rn"></th>${T.groups.map((g, gi) => { const c0 = col; col += g.span; return `<th colspan="${g.span}" class="${c0 === 0 ? "gs-frz" : ""}${gi % 2 ? " gs-g2" : ""}">${e(g.label)}</th>`; }).join("")}</tr>
-      <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}">${e(h)}</th>`).join("")}</tr></thead>
+      <tr class="gs-letters"><th class="gs-corner"></th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}${fc(i)}">${letter(i)}</th>`).join("")}</tr>
+      <tr class="gs-group"><th class="gs-rn"></th>${T.groups.map((g, gi) => { const c0 = col; col += g.span; const shut = foldable(g) && F.g.includes(gi);
+        const lab = foldable(g) ? `<button type="button" class="bs-fold-g" onclick="FTBatchSheet.fold('${tid}', ${gi})" aria-expanded="${!shut}" title="${shut ? "Show all of its columns" : "Fold it to " + e(T.head[c0 + (T.keep != null && T.keep >= 0 ? T.keep : 0)]) + " alone"}">${shut ? "▸" : "▾"} ${e(g.label)}</button>` : e(g.label);
+        return `<th colspan="${shut ? 1 : g.span}" class="${c0 === 0 ? "gs-frz" : ""}${gi % 2 ? " gs-g2" : ""}${shut ? " gs-shut" : ""}">${lab}</th>`; }).join("")}</tr>
+      <tr class="gs-head"><th class="gs-rn">1</th>${T.head.map((h, i) => `<th class="${i === 0 ? "gs-frz" : ""}${fc(i)}">${e(h)}</th>`).join("")}</tr></thead>
       <tbody>${T.rows.map((r, ri) => `<tr><th class="gs-rn">${ri + 2}</th>${r.map((c, ci) => cell(c, ri, ci)).join("")}</tr>`).join("")}
       ${empty ? `<tr class="gs-empty"><th class="gs-rn">2</th><td colspan="${n}" class="bs-none">No trainee in this batch yet.</td></tr>` : ""}</tbody></table></div></section>`;
 }
@@ -949,6 +977,11 @@ window.FTBatchSheet = {
   dsWho(id){ if(!adminOn()) return; B.ds = id; render(); },
   // (the compliance table's Drive link picked for a trainee; ▸ More detail open or shut)
   dlPick(id, k){ B.dl = B.dl || {}; B.dl[id] = k; render(); },
+  // ▾/▸ the Score Card's (and the compliance table's) folds: a group of columns, all of them, the whole table
+  fold(id, gi){ const F = foldOf(id), i = F.g.indexOf(gi); if(i >= 0) F.g.splice(i, 1); else F.g.push(gi); foldRender(id); },
+  foldAll(id, on){ if(!B.data || B.dataLoading) return; const T = tables().find(x => x.id === id); if(!T) return; const F = foldOf(id);
+    F.g = on ? T.groups.map((g, gi) => g.label && g.span > 1 ? gi : -1).filter(gi => gi >= 0) : []; foldRender(id); },
+  hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
   rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
@@ -1125,6 +1158,12 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-how{font-size:13.5px;}
 .bs-lk-rows{display:flex;flex-direction:column;gap:6px;margin:8px 0;} .bs-lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font:14px Arial,sans-serif;} .bs-lk-n{min-width:240px;} .bs-lk-row b{min-width:96px;} .bs-lk-why{flex-basis:100%;color:#7A5A00;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
+.gs .gs-fold{display:none;}
+.gs .gs-group th.gs-shut{max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+.bs-fold-g{all:unset;cursor:pointer;display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .bs-fold-g:hover{text-decoration:underline;} .bs-fold-g:focus-visible{outline:2px solid #F4B77A;outline-offset:2px;}
+.bs-fold-sec{border:0;background:none;cursor:pointer;font-size:15px;color:#1E2340;padding:0 4px 0 0;vertical-align:1px;}
+.bs-fold-all{margin-left:10px;border:1px solid #C4C7C5;background:#fff;border-radius:999px;padding:3px 10px;font:700 12px Arial,sans-serif;color:#1E2340;cursor:pointer;vertical-align:2px;} .bs-fold-all:hover{border-color:#DB8437;color:#B5651F;}
+.bs-hidden{padding-bottom:12px;}
 .gs .gs-group th{background:#1E2340;color:#fff;font:700 13px Arial,sans-serif;text-align:left;padding:5px 10px;border-left:2px solid #fff;white-space:nowrap;} .gs .gs-group th.gs-g2{background:#33406B;}
 .bs-dl-sel{font:inherit;font-size:13px;padding:2px 4px;border:1px solid #C9D1E0;border-radius:6px;background:#fff;max-width:230px;}
 .bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}

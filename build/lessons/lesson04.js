@@ -3,7 +3,7 @@
 const DAY4 = {
   id: 4,
   title: "Receptionist Training",
-  video: "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+  video: "https://drive.google.com/file/d/1fTmhMFC7qHrZcfTrPSCjKwj3ObSbaYXf/view",
   deck: "The_Receptionist_Role.pdf (sent in chat)",
   heading: "Receptionist Training",
   sections: [
