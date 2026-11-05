@@ -256,7 +256,7 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, on the orientation's last slide: get it (it isn't in the onboarding Drive: download the sheet,
 // js/ft-monitoring.js FT_MONITOR_DOC, and upload it to your Drive), then keep it
 const MON_PARTS = [
-  {h:"Your Monitoring Sheet", get:true, steps:[
+  {h:"Your Monitoring Sheet", steps:[
     "Download the Monitoring Sheet below.",
     "Upload it to your Google Drive.",
     "You link it in Part 5."]},
@@ -267,11 +267,10 @@ const MON_PARTS = [
     "Your trainer adds feedback."]}
 ];
 // ⬇ the Monitoring Sheet's own file, on the platform (ft/monitoring/): the Word file downloads straight from here, with no
-// Google sign-in or Drive access asked, and the sheet is shown on the slide (its PDF copy) so the trainee sees what they get
-const MON_FILE = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.docx", MON_VIEW = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.pdf";
+// Google sign-in or Drive access asked; its button sits under the last slide's cards, beside Link My Google Drive
+const MON_FILE = "/ft/monitoring/LSH_VA_Training_Monitoring_Sheet.docx";
 function monGet(){
-  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet.docx">⬇ Download the Monitoring Sheet (Word)</a></div>
-    <div class="ftr-mon-view"><iframe src="${MON_VIEW}#view=FitH&toolbar=0" title="LSH VA Training Monitoring Sheet" loading="lazy"></iframe></div>`;
+  return `<a class="btn btn-navy btn-sm" href="${MON_FILE}" download="LSH VA Training Monitoring Sheet.docx">⬇ Download the Monitoring Sheet (Word)</a>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -460,7 +459,7 @@ const SLIDES = [
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js). Only the Task Tracker is
   // given at onboarding: the Monitoring Sheet is downloaded here (MON_PARTS, the sheet in js/ft-monitoring.js), put in
   // the trainee's own Drive and linked with the rest
-  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
+  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how ftr-drive">${[
       {h:"Your Task Tracker", steps:["It is in the Google Drive you got during onboarding."]},
       MON_PARTS[0], MON_PARTS[1],
       {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
@@ -468,10 +467,9 @@ const SLIDES = [
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.get ? monGet() : ""}
-      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`]
+    </div>`).join("")}</div>
+    <div class="ftr-links ftr-mon ftr-drive-acts">${monGet()}${!FT_AUDIENCE() ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button>` : ""}</div>`]
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
@@ -603,8 +601,6 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
 .ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
 /* the Monitoring Sheet shown under its download (its PDF copy, the browser's own viewer) */
-.ftr-mon-view{margin:10px 0 0;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
-.ftr-mon-view iframe{display:block;width:100%;height:min(34vh,360px);border:0;}
 .ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
 .ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
@@ -739,6 +735,9 @@ body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(5):last-child){grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}   /* the last slide's five */
 @media(max-width:1100px){ body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(5):last-child){grid-template-columns:repeat(2,minmax(0,1fr));} }
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
+/* the last slide: five equal, compact cards, and under them (outside the cards) its two buttons side by side */
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how.ftr-drive > .ftr-part{min-height:0;}
+body.ft-orient #lessonSlideWrap .ftr-drive-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:16px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
