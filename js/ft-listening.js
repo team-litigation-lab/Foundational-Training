@@ -13,7 +13,8 @@
    The recordings themselves stay in the guide's Drive folders. A trainer can replace a set's folder, change how many
    recordings it has, and give each recording its own title and link (Admin → 🛠 Practice Lab → 🎧 Call Listening,
    settings:listening). Records: listening:<id> (the trainee's own) {logs:{<set>:{<n>:{who, purpose, handled, phrase,
-   better, at}}}}. 🏅 My Performance shows the share of each set logged.
+   better, at}}}}. 🏅 My Performance shows the share of each set logged, and Day 3's Reception Listening Activity by its
+   grade (ftListenItems).
    ============================================================ */
 (function(){
 "use strict";
@@ -297,6 +298,11 @@ window.FTListen = {
     // (a broken grade on the sheet is graded again: the sheet it was opened on, whatever the redraw does meanwhile)
     if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; regradeIfStale(opened); try{ paintPop(); }catch(err){} }).catch(() => {}); },
   close(){ POP.sid = null; paintPop(); }, submit: submitPop, regrade: sid => regradeIfStale(sid || POP.sid),
+  // (a call of a grade, c<n>, or one of its answers, c<n>_<field>, by its name — "Call 2: Third Time Calling · Reason for the
+  // call" — for what the 📋 Batch Sheet says was done best and needs to be improved)
+  answerName(sid, k){ const m = /^c(\d+)(?:_(\w+))?$/.exec(String(k || "")), s = setOf(sid); if(!m || !s) return String(k || "");
+    const r = setLive(sid).recs[m[1] - 1], call = r ? r.title : "Call " + m[1], f = m[2] && fieldsOf(s).find(x => x[0] === m[2]);
+    return !m[2] ? call : `${call} · ${f ? f[1].replace(/^\d\.\s*|^\S+\s/, "").replace(/[:?].*$/, "") : m[2]}`; },
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
   state: () => R, reload: () => { X.at = 0; return Promise.all([load(true), loadSets(true)]); }
@@ -313,14 +319,26 @@ window.ftListenSection = () => `<section class="fts-group"><h2>🎧 Call Listeni
     <p class="fts-sub">The sample recordings from the Call Listening sessions. Log each call as you listen — who called, what they wanted, how the VA handled it, a phrase worth reusing — and your trainer can see what you heard without a write-up anywhere else.</p>
     <div class="fts-grid">${window.ftListenCards()}</div></section>`;
 
-// 🏅 My Performance: the share of each set logged
+// 🏅 My Performance: the share of each set logged, and the Reception Listening Activity's grade
 // (the sets as the trainer set them come with the Scorecard's read, ctx.shared, so the share is the same on every page,
 // whether or not 🎧 Call Listening has been opened first)
-window.ftListenItems = ctx => { const rec = ctx.rec["listening:"]; if(!rec || !rec.logs) return [];
+window.ftListenItems = ctx => { const rec = ctx.rec["listening:"], logs = (rec && rec.logs) || {};
   const sv = ctx.shared && ctx.shared["settings:listening"];
   // (X.at stays 0: the copy only stands in until the sets are read fresh, which this never holds back)
   if(sv && typeof sv === "object" && sv.sets && !X.loading && (!X.data || !X.at)) X.data = sv;
-  return SETS.map(s => { const l = setLive(s.id), c = countDone(rec, l); if(!c && !((rec.logs || {})[s.id])) return null;
+  // (an activity's grade is in trackerreview:<id>, which the Scorecard reads for 📋 Task Tracker & Monitoring Sheet)
+  const graded = ((ctx.rec["trackerreview:"] || {}).assess) || {};
+  return SETS.map(s => { const l = setLive(s.id), c = countDone(rec, l), g = s.activity ? graded[s.id] : null;
+    if(!c && !logs[s.id] && !g) return null;
+    // 📝 the activity counts by its 📝 Submit for Grading, not by the share logged: one item, as each set is one, so the
+    // average stays fair to the other sets (js/ft-drive.js leaves it out of 📋, so it counts once). Not submitted yet, or a
+    // broken grade waiting to be graded again (ftStaleGrade), is not graded: no score, never a 0. assess: its grade's key,
+    // for the 📋 Batch Sheet, which scores it on its own day (js/ft-batch-sheet.js)
+    if(s.activity){ const ok = !!g && g.score != null && !ftStaleGrade(g) && typeof g.pct === "number" && isFinite(g.pct);
+      return {name: `${s.icon} Reception Listening Activity`, pct: ok ? g.pct : null, at: (g && g.at) || "", assess: s.id,
+        note: ok ? `${g.score} of ${g.max} points${g.when ? " · graded " + g.when : ""}${g.pending ? " · your trainer grades the rest" : ""}`
+          : g && g.score != null ? "Being graded again: the earlier grading marked right answers ✗"
+          : `Not graded yet · ${c} of ${l.n} calls logged · 📝 Submit for Grading on the Answer Sheet`}; }
     return {name: `${s.icon} ${s.title}`, pct: Math.round(c / l.n * 100), note: `${c} of ${l.n} recordings logged`}; }).filter(Boolean); };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 🎧 Call Listening ---------- */

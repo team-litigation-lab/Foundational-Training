@@ -44,30 +44,35 @@ if(typeof __row === "function") window.renderAdminRow = function(){
   return t.innerHTML;
 };
 
-// a batch's card (and an archived batch on the shelf): the trainee list, filtered to that batch
-const listTo = (k, archived) => {
-  state.adminTab = "batchsheet"; state.batchFolder = null; state.adminBatchFilter = k;
-  if(archived) state.adminShowArchived = true;
-  render();
-  setTimeout(() => { const el = document.getElementById("adminRowsWrap") || document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
-};
-window.openBatchFolder = function(k){
+/* a batch's card (🛡 Admin Master Control → 📁 Batches, and an archived batch's 📂 Open records on its shelf): a batch the
+   📋 Batch Sheet lists opens there; any other — no batch, a batch whose trainees are all archived, a card whose trainees sit
+   under more than one spelling of the Batch ID — opens its own folder page inside 📁 Batches (its 🗂 Registry and
+   ⬇ Full backup), so a card never opens an empty Batch Sheet. (The sheet lists the active trainees by the Batch ID as
+   written, batchLabel(r.batch); a card groups them by the cleaned one, batchKey(r).) */
+window.openBatchFolder = function(k, sub){
   // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
   const all = (state.adminData || []).filter(r => (r.archived || !window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})) && (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
-  listTo(k, all.length > 0 && all.every(r => r.archived));
+  const none = typeof NO_BATCH !== "undefined" ? NO_BATCH : "__none__", live = all.filter(r => !r.archived);
+  const label = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
+  const raw = [...new Set(live.map(r => label(r.batch)).filter(Boolean))];
+  if(k !== none && raw.length === 1 && window.FTBatchSheet && typeof FTBatchSheet.batch === "function"){
+    state.adminTab = "batchsheet"; state.batchFolder = null; FTBatchSheet.batch(raw[0]); return; }
+  state.adminTab = "batches"; state.batchFolder = k; state.batchSub = sub || "registry";
+  if(live.length === 0 && all.length) state.batchShowArchived = true;
+  render();
 };
 
 const __admin = window.renderAdmin;
 // The old Trainee Audit / 📁 Batch Folders page never shows on its own any more: what it held that a trainer DOES is the
 // 👥 Trainees & Batches section at the foot of the 📋 Batch Sheet (js/ft-batch-sheet.js peopleHtml, which draws it with
 // window.__ftPeopleEmbed set). Anything that asks for the page — the Admin screen's default tab, an old link or redirect
-// (cues, rankings, sop, studio → audit), 'batches' — opens the Batch Sheet at that section instead.
+// (cues, rankings, sop, studio → audit) — opens the Batch Sheet instead. ('batches' is a tab of its own: 🛡 Admin Master
+// Control → 📁 Batches, js/ft-batch-admin.js.)
 const toPeople = () => setTimeout(() => { const el = document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
 window.renderAdmin = function(){
-  if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit" || state.adminTab === "batches")){
+  if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit")){
     const asked = !!state.adminTab; state.adminTab = "batchsheet"; if(asked) toPeople();
   }
-  if(state.adminTab === "batches") state.adminTab = "audit";
   const html = __admin.apply(this, arguments);
   if(state.adminTab !== "audit" || !state.isAdmin || state.traineeId || !state.adminData || state.adminLoading) return html;
   const t = frag(html), c = t.content;
@@ -109,9 +114,6 @@ window.renderAdmin = function(){
   }
   return t.innerHTML;
 };
-// the 📁 Batches part redraws when its Drive backups come in (js/ft-batch-admin.js loads them while 'batches' is open)
-const __tab = window.setAdminTab;
-if(typeof __tab === "function") window.setAdminTab = function(tab){ return __tab.call(this, tab === "batches" ? "audit" : tab); };
 
 const st = document.createElement("style"); st.id = "ft-trainees-tab"; st.textContent = `
 .tt-settings{padding:10px 16px;margin:0 0 14px;} .tt-settings > summary{cursor:pointer;font-weight:800;color:var(--navy);}

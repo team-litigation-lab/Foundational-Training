@@ -149,14 +149,21 @@ async function workerChecks() {
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
-    // (👥 Trainees & Batches, its 📁 Batch Folders and 🚫 Offboarded VAs shelf, is gone from Admin: the old page opens the 📋 Batch
-    // Sheet, which has no Approvals & Batches section; ↩ Restore access, restoreOffboarded, still gives the access back)
-    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(1500);
+    // 📁 the batches have their own tab in 🛡 Admin Master Control (js/ft-batch-admin.js batchesTab): the batch's card, the
+    // 🚫 Offboarded VAs shelf with Cara and its ↩ Restore access; not at the foot of the 📋 Batch Sheet
+    await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(2000);
     let shelf = await page.evaluate(() => document.querySelector('main') ? document.querySelector('main').innerText : document.body.innerText);
-    if (/Offboarded VAs \(|Batch Folders/.test(shelf) || await page.$('#bs-people')) fail('👥 Trainees & Batches (Batch Folders, 🚫 Offboarded VAs) still shows in Admin');
+    const row = await page.evaluate(() => ({ sec: (document.querySelector('.lp-admin-sec.active') || {}).innerText || '', tab: [...document.querySelectorAll('.admin-tab-btn.active')].map(b => b.innerText.trim()).join('|') }));
+    if (!/Admin Master Control/.test(row.sec) || !/Batches/.test(row.tab)) fail(`📁 Batches isn't a tab of 🛡 Admin Master Control: ${JSON.stringify(row)}`);
+    if (!/Offboarded VAs \(1\)[\s\S]*Cara Lim/.test(shelf) || !(await page.$('.batch-folder'))) fail(`📁 Batches doesn't show the batch's card and Cara under 🚫 Offboarded VAs: ${shelf.slice(0, 400)}`);
+    if (await page.$('#bs-people')) fail('the batches are still at the foot of the 📋 Batch Sheet');
     page.once('dialog', d => d.accept());
-    await page.evaluate(() => restoreOffboarded('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);
+    await page.click('button[data-id="cara-lim--b103026"]'); await page.waitForTimeout(1500);
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
+    // a batch card: a batch the 📋 Batch Sheet lists opens there (not an empty sheet), as B103026 does here
+    await page.evaluate(() => openBatchFolder('B103026')); await page.waitForTimeout(2500);
+    const toSheet = await page.evaluate(() => ({ tab: state.adminTab, head: ((document.querySelector('.gs-file b') || {}).textContent || '') }));
+    if (toSheet.tab !== 'batchsheet' || !/B103026/.test(toSheet.head)) fail(`B103026's card didn't open it on the Batch Sheet: ${JSON.stringify(toSheet)}`);
     // 📦 archive B103026: Drive answered by the test (the test server has no service account)
     const sent = { files: null, trainees: [] };
     await page.route('**/api/batch/drive-folder', r => r.fulfill({ json: { ok: true, folder: { id: 'F1', link: 'https://drive.google.com/drive/folders/F1' }, records: { id: 'F2', link: 'x' } } }));
@@ -185,6 +192,13 @@ async function workerChecks() {
     // (the cleared batch's trainees: archived and cleared; the other batch untouched, as the records above show)
     const kept = await get('trainee:old-one--b090126');
     if (!kept || kept.archived || kept.purgedAt) fail(`the other batch was touched by B103026's archive: ${JSON.stringify(kept)}`);
+    // …and a batch whose trainees are all archived (B103026, cleared) opens its own folder page inside 📁 Batches — its records
+    // and ⬇ Full backup — never an empty Batch Sheet; ← All batch folders comes back to the cards
+    await page.evaluate(async () => { state.adminTab = 'batches'; await loadAdminLedger(); openBatchFolder('B103026'); }); await page.waitForTimeout(1500);
+    const folder = await page.evaluate(() => ({ tab: state.adminTab, f: state.batchFolder, text: (document.querySelector('main') || document.body).innerText }));
+    if (folder.tab !== 'batches' || folder.f !== 'B103026' || !/Batch B103026/.test(folder.text) || !/Full backup/.test(folder.text)) fail(`an all-archived batch's card didn't open its folder page in 📁 Batches: ${JSON.stringify({ tab: folder.tab, f: folder.f, text: folder.text.slice(0, 300) })}`);
+    await page.evaluate(() => closeBatchFolder()); await page.waitForTimeout(800);
+    if (await page.evaluate(() => state.adminTab !== 'batches' || state.batchFolder)) fail('← All batch folders didn\'t come back to the 📁 Batches cards');
     // 🗑 Delete the batch (in the 📦 Archive dialog): a wrong Batch ID typed back deletes nothing; the right one removes every
     // VA's records and their trainee record, with no Drive backup
     await page.evaluate(() => confirmArchiveBatch('B090126')); await page.waitForTimeout(400);

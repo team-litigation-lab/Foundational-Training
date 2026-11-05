@@ -9,7 +9,7 @@
       Practice Lab page, 🏅 My Performance, the Scorecards and the Main Portal.
    🚫 Offboard (the Trainee Audit's and a batch folder's Revoke): the VA's access closes (POST /api/batch/offboard: a Portal
       ticket no longer signs them in, and an open session signs them out) and they leave Batch Folders, Rankings, the
-      Trainee Audit and the trainer's tabs. Their records are kept: Batch Folders → 🚫 Offboarded VAs → ↩ Restore access.
+      Trainee Audit and the trainer's tabs. Their records are kept: 🛡 Admin Master Control → 📁 Batches → 🚫 Offboarded VAs → ↩ Restore access.
    📦 Archive a batch (every 📦 Archive button): the trainer gives a Google Drive folder link, and the batch is saved into
       it, in "Batch <id> — Archive <date>": the Scorecard Summary, the Mock Call & Demo Scorecards and the Progress Matrix
       (CSV, made here from the same grading the Scorecards use), the batch summary (JSON) and every VA's full records
@@ -18,7 +18,8 @@
       record stays, slimmed, with a snapshot of the scorecard, for the Main Portal's 📊 Progress & Feedback, which reads
       this program's records. The batch then shows on the Archive shelf as ☁ Saved to Drive, with the folder's link
       (batchbackup:<batch>, admins only). A batch archived earlier gets ☁ Save to Drive & clear on its card.
-   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the tab in 🛠 Practice Lab.
+   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the 📋 Mock Call Scorecards tab in
+   🛠 Practice Lab and the 📁 Batches tab (batchesTab, below) in 🛡 Admin Master Control.
    ============================================================ */
 (function(){
 "use strict";
@@ -235,7 +236,7 @@ ftAdminTab("mockscores", "📋 Mock Call Scorecards", renderMockScores);
    🚫 Offboarding a VA (the Trainee Audit's and a batch folder's Revoke)
    ============================================================ */
 window.confirmRevokeTrainee = async function(id, name){
-  const reason = prompt(`Offboard ${name}?\n\nTheir access to this program is revoked now (the Main Portal can't sign them in here again, and an open session signs out within a minute), and they're removed from the Batch Folders, Rankings, Trainee Audit, Trainer Inputs and the Scorecards. Their records are kept: Batch Folders → 🚫 Offboarded VAs → ↩ Restore access brings them back as they were.\n\nReason (optional, kept with the record):`, "");
+  const reason = prompt(`Offboard ${name}?\n\nTheir access to this program is revoked now (the Main Portal can't sign them in here again, and an open session signs out within a minute), and they're removed from the Batch Folders, Rankings, Trainee Audit, Trainer Inputs and the Scorecards. Their records are kept: 🛡 Admin Master Control → 📁 Batches → 🚫 Offboarded VAs → ↩ Restore access brings them back as they were.\n\nReason (optional, kept with the record):`, "");
   if(reason === null) return;
   try{ await api("/api/batch/offboard", {id, reason}); toast(`🚫 ${name} offboarded: access revoked and removed from the batch folders.`); }
   catch(err){ toast("Couldn’t offboard: " + err.message); return; }
@@ -434,13 +435,40 @@ if(typeof __folders === "function") window.renderAdminBatchFolders = function(){
       <p>VAs whose access was revoked. They’re out of the batch folders, Rankings and the trainer’s tabs; their records are kept.</p>
       ${off.length ? `<div class="fba-list">${off.map(r => `<div class="fba-item"><div><b>${e(r.name || r.id)}</b> <span class="bf-count">${e(labelOf(keyOf(r)))} · offboarded ${e(String(r.offboarded.at || "").slice(0, 10))}${r.offboarded.reason ? " · " + e(r.offboarded.reason) : ""}</span></div>
         <button class="btn btn-ghost btn-sm" onclick="restoreOffboarded(this.dataset.id, this.dataset.n)" data-id="${e(r.id)}" data-n="${e(r.name || r.id)}">↩ Restore access</button></div>`).join("")}</div>`
-        : `<div class="empty-note" style="margin:0;">No VA has been offboarded. Use 🚫 Offboard on a VA in the Trainee Audit or their batch folder.</div>`}</div>
+        : `<div class="empty-note" style="margin:0;">No VA has been offboarded.</div>`}</div>
     <div class="bf-shelf fba-shelf"><h2>☁ Saved to Google Drive <span class="bf-count">(${backups.length})</span></h2>
       <p>Batches archived with their backup in Google Drive. A cleared batch’s records are only there now (and its scorecard on the Main Portal).</p>
       ${!BB.list ? `<div class="empty-note" style="margin:0;">Loading…</div>` : backups.length ? `<div class="fba-list">${backups.map(x => `<div class="fba-item"><div><b>${e(x.label || x.batch)}</b> <span class="bf-count">${x.count} VA${x.count === 1 ? "" : "s"} · saved ${e(String(x.at || "").slice(0, 10))}${x.cleared ? " · cleared from the platform" : ""}</span></div>
         <a class="btn btn-ghost btn-sm" href="${e(x.folder)}" target="_blank" rel="noopener">📁 Open the Drive folder</a></div>`).join("")}</div>`
         : `<div class="empty-note" style="margin:0;">Nothing saved yet. 📦 Archive a batch to save it to Drive.</div>`}</div>`;
 };
+
+/* ---------- 🛡 Admin Master Control → 📁 Batches: the batches' own tab, beside 🔓 Open Lessons' locking ----------
+   The trainer keeps the batches with the other things they run: each batch's card with 📦 Archive and ⬇ Records, the
+   📦 Archive shelf (restore), 🚫 Offboarded VAs (restore access) and ☁ Saved to Google Drive. A card opens that batch on the
+   📋 Batch Sheet (js/ft-trainees-tab.js openBatchFolder). (The Batch Sheet keeps its own 📦 Archive batch, beside the batch
+   picker, for the batch on screen.) Registered here, before js/lsh-program.js groups the tabs. */
+function batchesTab(){
+  if(state.adminLoading || !state.adminData){ if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(loadAdminLedger, 0); return `<div class="card" style="padding:24px;">Loading the batches…</div>`; }
+  // (a batch the 📋 Batch Sheet doesn't list — no batch, all archived — opens its own folder page here: its 🗂 Registry, its
+  // records and ⬇ Full backup (JSON); ← All batch folders comes back to the cards. js/ft-trainees-tab.js openBatchFolder)
+  if(state.batchFolder && typeof window.renderBatchFolder === "function"){
+    try{ return `<div class="fba-batches">${window.renderBatchFolder(state.batchFolder)}</div>`; }catch(err){ state.batchFolder = null; }
+  }
+  const keep = state.batchFolder; state.batchFolder = null;
+  let html = "";
+  try{ html = window.renderAdminBatchFolders(); }catch(err){ html = ""; } finally{ state.batchFolder = keep; }
+  const t = document.createElement("template"); t.innerHTML = html;
+  t.content.querySelectorAll(".eyebrow").forEach(x => x.remove());
+  const h1 = [...t.content.querySelectorAll("h1")].find(h => /Batch Folders/.test(h.textContent));
+  if(h1){
+    h1.textContent = "📁 Batches";
+    const p = h1.nextElementSibling;
+    if(p && p.tagName === "P") p.textContent = "Each batch: open its card to see its trainees on the 📋 Batch Sheet. Archive a batch when it finishes; its records stay on the Archive shelf.";
+  }
+  return `<div class="fba-batches">${t.innerHTML}</div>`;
+}
+ftAdminTab("batches", "📁 Batches", batchesTab);
 
 window.FTBatchAdmin = {archive:archiveDialog, gather, buildFiles, startOf, activeBatches};
 

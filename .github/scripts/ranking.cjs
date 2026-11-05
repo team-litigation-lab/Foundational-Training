@@ -245,6 +245,19 @@ const failures = []; const fail = m => failures.push(m);
   if (!w2 || (w2.cols.find(c => c.id === ct) || {}).src !== 'drive:Common Terms') fail(`the Common Terms column didn't get its source: ${JSON.stringify(w2 && w2.cols)}`);
   if (!cRhea || Number(cRhea.raw) !== 21.6) fail(`opening the report didn't fill Rhea's Common Terms from her graded assessment (80% of 27 = 21.6): ${JSON.stringify(cRhea)}`);
   if (!cSam || cSam.raw !== '20') fail(`the fill wrote over a score the trainer typed: ${JSON.stringify(cSam)}`);
+  // 🔄 a cell the platform filled follows the scorecards: Rhea's assessment graded again (90%) → her cell 24.3 on the next read,
+  // and an auto NO SUBMISSION note (from before her files were linked) is worked out again; the trainer's typed 20 stays
+  { const rv = await get('trackerreview:' + ids.Rhea); rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'] = Object.assign(rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'], { score: 24.3, pct: 90 }); await put('trackerreview:' + ids.Rhea, rv);
+    const w = await get(`ranking:${BATCH}:w2`); w.cols.push({ id: 'c-st', label: 'Spelling & Typing Tests', sub: '9/28 to 10/06', type: 'notes', src: 'skills' });
+    w.rows[ids.Rhea].cells['c-st'] = { note: 'NO SUBMISSION', auto: true }; w.rows[ids.Sam].cells['c-st'] = { note: 'Typed by the trainer', auto: true, noteBy: 'trainer' };
+    await put(`ranking:${BATCH}:w2`, w);
+    await put('skills:' + ids.Rhea, { typing: [{ date: '2026-09-28', slot: 'AM', net: 40, acc: 95 }], spelling: [] }); }
+  await page.evaluate(b => { FTRanking.reload(); FTRanking.open(b, 2); }, BATCH); await page.waitForTimeout(4000);
+  { const w = await get(`ranking:${BATCH}:w2`), r = ((w.rows[ids.Rhea] || {}).cells) || {}, sm = ((w.rows[ids.Sam] || {}).cells) || {};
+    if (Number((r[ct] || {}).raw) !== 24.3) fail(`a platform-filled score didn't follow the scorecard (90% of 27 = 24.3): ${JSON.stringify(r[ct])}`);
+    if (!r['c-st'] || /NO SUBMISSION/.test(r['c-st'].note || '') || !/Typing Test/.test(r['c-st'].note || '')) fail(`an auto NO SUBMISSION didn't update to the trainee's compliance: ${JSON.stringify(r['c-st'])}`);
+    if ((sm[ct] || {}).raw !== '20' || (sm['c-st'] || {}).note !== 'Typed by the trainer') fail(`the refresh wrote over what the trainer typed: ${JSON.stringify(sm)}`); }
+  await put('skills:' + ids.Rhea, null);
 
   for (const w of [1, 2]) await put(`ranking:${BATCH}:w${w}`, null);
   for (const id of Object.values(ids)) await put('rankshare:' + id, null);

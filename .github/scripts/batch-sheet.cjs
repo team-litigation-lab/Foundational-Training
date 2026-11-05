@@ -140,7 +140,8 @@ const failures = []; const fail = m => failures.push(m);
   }
   await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
   const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
-  if (!/Ada Active’s files can’t be opened/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/move the files into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's own files: ${sb2.slice(0, 300)}`);
+  // (it names the very link that fails — her 📒 Monitoring Sheet — not "files": the other five may open)
+  if (!/Ada Active’s 📒 Monitoring Sheet can’t be opened/.test(sb2) || /files can’t/.test(sb2) || !/The rest of batch B\d{6} opens/.test(sb2) || !/doesn’t exist \(yet\)/.test(sb2) || !/move it into their LSH Trainee folder/.test(sb2) || /Share the batch’s folder/.test(sb2)) fail(`with the rest of the batch opening, the prompt doesn't name Ada's failing link: ${sb2.slice(0, 300)}`);
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
@@ -218,6 +219,36 @@ const failures = []; const fail = m => failures.push(m);
   // 🔎 a trainee's grades in detail (what 🏅 Scorecards showed): Ada's Knowledge Check 90%
   if (!(await page.evaluate(() => /Grades in detail/.test(document.getElementById('bs-scores').innerText)))) fail('🏅 Scores has no grades in detail');
   if (!(await page.evaluate(() => /Scorecard overall: .*= the average of/.test(document.getElementById('bs-scores').innerText)))) fail('🔎 Grades in detail has no breakdown of the overall');
+
+  // 📝 Ada's Day 3 Reception Listening Activity, graded on its Answer Sheet (32 of 40, 80%: Call 1 all right, Call 2's reason
+  // marked down): ✓ done and scored on Day 3 (📅 Day by Day, 📅 Day 1–16 with what she did best and what to improve), 🛠 Practice
+  // of Lessons 3 and 4 on the 🏅 Score Card (Lesson 4's with her 76% mock call), and in 🏅 Scores under 🎧 Call Listening only
+  { const rv = await get('trackerreview:' + ids.Ada), items = {};
+    for (const n of [1, 2]) for (const f of ['caller', 'callback', 'verified', 'reason', 'action', 'obstacle', 'response']) items[`c${n}_${f}`] = { ok: true, pts: f === 'response' ? 2 : 1 };
+    items.c2_reason = { ok: false, pts: 0, note: 'Names the letter, not the pain clinic waiting on it.' };
+    rv.assess = { recact: { at: iso(now - 1800e3), when: 'Nov 5, 9:30 AM ET', title: 'Reception Listening Activity: Harbor & Pine Calls', score: 32, max: 40, pct: 80, pending: false, ai: true, items } };
+    await put('trackerreview:' + ids.Ada, rv); }
+  await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet wasn\'t read again after the Reception Listening Activity was graded'));
+  await page.waitForTimeout(500);
+  const rl = await page.evaluate(() => { const T = id => FTBatchSheet.tables().find(t => t.id === id), ada = t => t.rows.find(r => /Ada/.test(r[0].v));
+    const sc = T('scorecard'), at = n => { let c = 0; for (const g of sc.groups) { if (String(g.label).startsWith(n + '. ')) return c; c += g.span; } return -1; };
+    const days = T('days'), ds = T('dayscores'), pick = (t, h) => ada(t)[t.head.indexOf(h)];
+    return { l3: ada(sc)[at(3) + 1], l4: ada(sc)[at(4) + 1], d3: pick(days, 'Day 3'), practice: pick(days, '🛠 Practice'), ds3: pick(ds, 'Day 3') }; });
+  // (the 🎧 Call Listening step of Day 3 doesn't score it again: she logged no recording, so that step has no score)
+  if (!rl.l3 || rl.l3.v !== '80%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l3.f) || /Call Listening/.test(rl.l3.f)) fail(`Lesson 3's 🛠 Practice on the Score Card isn't the Reception Listening Activity's 80% alone: ${JSON.stringify(rl.l3)}`);
+  if (!rl.l4 || rl.l4.v !== '78%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l4.f) || !/ 76%/.test(rl.l4.f)) fail(`Lesson 4's 🛠 Practice isn't the activity (80%) and the mock call (76%): ${JSON.stringify(rl.l4)}`);
+  if (!rl.d3 || rl.d3.v !== '80%' || !/the average of 1 scored activity: Reception Listening Activity[^;]* 80% \(32 of 40 points/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day isn't her graded Reception Listening Activity alone: ${JSON.stringify(rl.d3)}`);
+  if (!rl.practice || rl.practice.v !== '80%') fail(`📅 Day by Day's 🛠 Practice doesn't count the graded activity: ${JSON.stringify(rl.practice)}`);
+  if (!rl.ds3 || rl.ds3.v !== '80%') fail(`Ada's Day 3 on 📅 Day 1–16 isn't her graded Reception Listening Activity: ${JSON.stringify(rl.ds3)}`);
+  await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
+  const rx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception Listening Activity/.test(x.textContent)); return it ? it.innerText : ''; });
+  if (!/32 of 40 points \(80%\)/.test(rx) || !/did best[\s\S]*Call 1: The Missing Email: every answer right/i.test(rx) || !/to be improved[\s\S]*Call 2: Third Time Calling · Reason for the call: Names the letter/i.test(rx)) fail(`the activity's context on 📅 Day 1–16 (why, best, to improve): ${rx}`);
+  await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
+  const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
+  if (!gd.some(b => /Call Listening/.test(b.h) && /80%/.test(b.h) && /Reception Listening Activity[\s\S]*80%/.test(b.t))) fail(`🔎 Grades in detail: the activity isn't 🎧 Call Listening's 80%: ${gd.map(b => b.h).join(' | ')}`);
+  const elsewhere = gd.filter(b => !/Call Listening/.test(b.h) && /Reception Listening/.test(b.t)).map(b => b.h);
+  if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
   if (await page.evaluate(() => !!document.getElementById('bs-process') || /Scoring rationale/.test(document.querySelector('.bs-card').innerText))) fail('the ✍️ Process Questions table or its scoring rationale is still on the page');
 
@@ -412,5 +443,5 @@ const failures = []; const fail = m => failures.push(m);
 
   await browser.close();
   if (failures.length) { console.error('Batch Sheet test FAILED:\n - ' + failures.join('\n - ')); process.exit(1); }
-  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in eleven tables, opening on the simplified scorecard (🏅 Score Card lesson by lesson, the compliance with the Drive links dropdown, 📊 Weekly Ranking, 📤 Daily outputs; the rest under ▸ More detail, with the reasons for each score on 📅 Day 1–16); their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
+  console.log('Batch Sheet test passed (🏅 Scorecard opens on it; every registered trainee, waiting or with no progress, on one page in eleven tables, opening on the simplified scorecard (🏅 Score Card lesson by lesson, the compliance with the Drive links dropdown, 📊 Weekly Ranking, 📤 Daily outputs; the rest under ▸ More detail, with the reasons for each score on 📅 Day 1–16); their six Drive links, linked and verified; lessons, Practice Lab use, scores and recent progress, with dates and times from what the platform keeps; wide; one download; ✏️ Fix the batch name moves trainees from a mistyped batch, and an open tab cannot move them back; 📅 Day by Day with the platform\'s own ticks and the trainer\'s; Day 3\'s Reception Listening Activity scored by its grade on its day, in 🛠 Practice and under 🎧 Call Listening only; 📋 My Progress, a trainee\'s own row and no one else\'s, with no trainer tools).');
 })().catch(e => { console.error(e); process.exit(1); });

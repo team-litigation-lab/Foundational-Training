@@ -48,7 +48,7 @@ window.LSH_PROGRAM = {
   // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
   adminTopScorecards: false,
   adminGroups: {
-    admin: ["attendance", "sops", "dbmaint", "orientation"],   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
+    admin: ["attendance", "batches", "sops", "dbmaint", "orientation"],   // (📁 Batches: archive, records, the Archive shelf, offboarded VAs, js/ft-batch-admin.js)   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
     modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["calendaring", "sessions", "listening", "trainerinputs", "mockscores", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
@@ -126,8 +126,9 @@ window.LSH_PROGRAM = {
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
     // (no 👥 Shadowing: shadowing is off the training)
+    // (Day 3's 📝 Reception Listening Activity is one of its items, by its grade: trackerreview:<id>.assess.recact)
     {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
-      about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full.",
+      about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full, and Day 3’s Reception Listening Activity by its grade once you submit its Answer Sheet.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
     {id:"calcheck", icon:"📅", label:"Calendar activity check", key:"calcheck:",
       about:"Day 5’s Attorney Calendar Management Activity: each event you entered in Google Calendar, checked field by field against the activity (the share of fields right on your latest submission).",
