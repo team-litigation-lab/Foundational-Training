@@ -112,13 +112,14 @@ async function makeToken(env, role, subject, hours) {
   const body = `${role}.${encodeURIComponent(subject).replace(/\./g, "%2E")}.${exp}`;
   return `${body}.${await hmac(secretOf(env), body)}`;
 }
-async function readToken(env, request) {
+// (graceMs: an expired token still counts for that long; role: only a token of that role counts)
+async function readToken(env, request, { graceMs = 0, role: only = "" } = {}) {
   const h = request.headers.get("Authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7) : "";
   const parts = t.split(".");
-  if (parts.length !== 4) return null;
+  if (parts.length !== 4 || (only && parts[0] !== only)) return null;
   const [role, subj, exp, sig] = parts;
-  if (Date.now() > Number(exp)) return null;
+  if (Date.now() > Number(exp) + graceMs) return null;
   const good = await hmac(secretOf(env), `${role}.${subj}.${exp}`);
   if (!safeEqual(good, sig)) return null;
   return { role, id: decodeURIComponent(subj) };
@@ -176,18 +177,9 @@ async function readPortalTicket(env, ticket, why = {}) {
   const full = (String(t.full || "").trim() || [first, middle, last].filter(Boolean).join(" ")).replace(/\s+/g, " ").slice(0, 120);
   return { name: `${first} ${last}`, first, last, batch, full };
 }
-// Like readToken, but an expired token still counts for a while (same signature, same trainee), so a trainee
+// A trainee's expired token still counts for a while (readToken's graceMs: same signature, same trainee), so a trainee
 // midway through the course whose 30 days run out isn't sent back to the portal in the middle of a lesson.
 const TOKEN_GRACE_MS = 60 * 24 * 3600 * 1000;
-async function readTraineeTokenGrace(env, request) {
-  const h = request.headers.get("Authorization") || "";
-  const parts = (h.startsWith("Bearer ") ? h.slice(7) : "").split(".");
-  if (parts.length !== 4 || parts[0] !== "t") return null;
-  const [role, subj, exp, sig] = parts;
-  if (Date.now() > Number(exp) + TOKEN_GRACE_MS) return null;
-  if (!safeEqual(await hmac(secretOf(env), `${role}.${subj}.${exp}`), sig)) return null;
-  return { role, id: decodeURIComponent(subj) };
-}
 
 /* ---------- 🔁 a trainee whose Batch ID was changed on the Portal ----------
    Their ID is name + batch (candidateIds), so a sign-in with the new batch would find no record and start a new, empty
@@ -2522,7 +2514,7 @@ export default {
         if (portalOnly(env)) {
           // Trainees come in through the LSH Training Portal (/api/auth/portal). A name + batch typed here is
           // accepted only to renew the session of a trainee who is already signed in on this device.
-          const own = await readTraineeTokenGrace(env, request);
+          const own = await readToken(env, request, { graceMs: TOKEN_GRACE_MS, role: "t" });
           // (or their own account kept through a Batch ID change: its token's ID, checked against its record in traineeSession)
           if (!own || (own.id !== newId && own.id !== rawId && own.id !== legacyId && own.id !== id)) return json({ error: "portal-required" }, 403);
         }
