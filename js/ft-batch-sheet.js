@@ -552,7 +552,7 @@ function driveBanner(){
   const S = B.dstat;
   if(S === undefined){ B.dstat = null; authFetch("/api/drive/status", {}).then(r => r.json()).then(j => { B.dstat = j && typeof j === "object" ? j : {err: true}; rerender(); }).catch(() => { B.dstat = {err: true}; rerender(); }); return ""; }
   if(!S || S.err) return "";
-  const box = (cls, html) => `<div class="bs-warn bs-dstat ${cls}">${html} <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.dstat()">🔁 Test again</button></div>`;
+  const box = (cls, html) => `<div class="bs-warn bs-dstat ${cls}">${html} <button class="btn btn-ghost btn-sm" type="button" ${B.dtest ? "disabled" : ""} onclick="FTBatchSheet.dstat()">${B.dtest ? e(B.dtest) : "🔁 Test again"}</button></div>`;
   if(!S.sa) return box("bad", `🔌 <b>Google Drive isn’t connected.</b> Add <code>GDRIVE_SA_EMAIL</code> and <code>GDRIVE_SA_KEY</code> to the Worker (Cloudflare → foundational-training → Settings → Variables and Secrets), then Deploy. Until then no link can be checked.`);
   if(!S.saOk) return box("bad", `🔌 <b>The service account can’t sign in to Google:</b> ${e(driveWhy(S.saDetail))}.`);
   if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Meanwhile the platform works as the service account ${e(S.email)}: it reads and checks the files shared with it (trainees are told to share with that address), and saves PDFs only into folders on a Shared Drive it is a member of (elsewhere trainees use ⬇ Download PDF).
@@ -570,6 +570,12 @@ function shareBanner(){
   const ppl = people(), stuck = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); }catch(err){ return false; } });
   if(!stuck.length) return "";
   const names = stuck.slice(0, 6).map(p => p.name).join(", ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
+  // (the rest of the batch's files open: the batch's folder is shared, so these trainees' files are somewhere else — their own
+  // My Drive — and it's theirs to move or share, not a folder for the trainer to share)
+  const opens = ppl.filter(p => !stuck.includes(p) && (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
+  if(opens > stuck.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>${e(names)}${stuck.length === 1 ? "’s" : "’"} files can’t be opened</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}). The rest of batch ${e(B.batch)} opens, so its folder is shared: ${stuck.length === 1 ? "this trainee’s" : "these trainees’"} files are somewhere else, such as their own My Drive.</div>
+    <span class="bs-share-do">Ask ${stuck.length === 1 ? "them" : "each of them"} to move the files into their LSH Trainee folder, or share them with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>. Their 🔔 already tells them which link and how; hover over a ✗ below for the reason.</span>
+    <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button></div>`;
   return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>
     <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>
     <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 I’ve shared it: check them now"}</button></div>`;
@@ -899,7 +905,8 @@ function sheetHtml(T, ti){
 const slugOf = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 function dupGroups(){
   if(!adminOn() || meOn() || !Array.isArray(B.all)) return [];
-  const live = B.all.filter(r => r.name && !r.purgedAt && !r.rejected && !r.mergedInto), by = {};
+  // (active accounts only — approved, or waiting for approval: an archived, offboarded or rejected one is 🧹 swept, not merged)
+  const live = B.all.filter(r => r.name && !r.mergedInto && (window.ftActiveTrainee ? ftActiveTrainee(r, {pending: true}) : !r.archived && !r.rejected && !r.offboarded && !r.purgedAt)), by = {};
   live.forEach(r => { (by[slugOf(r.name)] = by[slugOf(r.name)] || []).push(r); });
   const done = r => Object.values(r.dayProgress || {}).filter(x => x && x.done).length;
   return Object.values(by).filter(g => g.length > 1 && g.some(r => bLabel(r.batch || "") === B.batch))
@@ -916,6 +923,29 @@ function dupHtml(){
         ${g.map(a => `<tr${a.id === keep ? ' class="bs-dup-keep"' : ""}><td><input type="radio" name="dup-${e(key)}" ${a.id === keep ? "checked" : ""} onchange="FTBatchSheet.dupKeep('${e(key)}', '${e(a.id)}')" aria-label="Keep ${e(a.id)}"></td>
           <td><code>${e(a.id)}</code></td><td>${e(a.batch)}${bLabel(a.batch) === B.batch ? " (this batch)" : ""}</td><td>${a.reg ? e(when(a.reg)) : "—"}</td><td>${a.last ? e(ago(a.last)) : "—"}</td><td>${a.done}</td><td>${e(a.st)}</td></tr>`).join("")}</tbody></table>
         <button class="btn btn-navy btn-sm" type="button" ${B.dupBusy ? "disabled" : ""} onclick="FTBatchSheet.dupMerge('${e(key)}')">${B.dupBusy === key ? "Merging…" : `👥 Merge into ${e(keep)}`}</button>`; }).join("")}</div>`;
+}
+/* 🧹 SWEEP INACTIVE ACCOUNTS (the menu's 🧹, a trainer's): every account whose access is gone — offboarded, rejected, archived
+   (a past batch's, an old or mistyped Batch ID's), on the block list — and the leftovers of accounts deleted before, listed
+   (worker.js sweepList) with a tick each; ⬇ Back up and sweep downloads every record of the ticked ones as one .json file
+   first, then removes them from the platform, one account at a time (worker.js sweepOne). Active trainees (approved or
+   waiting) and a cleared batch's records kept for the Main Portal are never listed. */
+const WHY = {offboarded: "🚫 Offboarded", rejected: "⛔ Rejected", archived: "📦 Archived", blocked: "🔒 Blocked", leftover: "🗑 Leftover records"};
+function sweepHtml(){
+  const W = B.sweep; if(!W || !adminOn()) return "";
+  const head = `<div class="bs-fix bs-sweep"><h4>🧹 Sweep inactive accounts</h4>`;
+  if(W.loading) return head + `<p>Looking through every account on the platform…</p></div>`;
+  if(W.err) return head + `<p>Couldn’t list them: ${e(W.err)}</p><div class="bs-fix-row"><button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.sweepClose()">Close</button></div></div>`;
+  const rows = W.accounts.map(a => Object.assign({}, a)).concat(W.leftovers.map(l => ({id: l.id, name: l.id.split("--")[0].replace(/-/g, " "), batch: l.id.split("--")[1] || "", why: "leftover", kinds: l.kinds})));
+  if(!rows.length) return head + `<p>✓ Nothing to sweep: every account on the platform is active.</p><div class="bs-fix-row"><button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.sweepClose()">Close</button></div></div>`;
+  const on = rows.filter(r => !W.skip[r.id]), count = {}; rows.forEach(r => { count[r.why] = (count[r.why] || 0) + 1; });
+  return head + `<p>Every account whose access is gone, and the records left behind by accounts deleted before. <b>⬇ Back up and sweep</b> downloads all their records as one file first, then removes them from the platform for good; a swept account can’t sign in again. Active trainees and cleared batches’ records (kept for the Main Portal) are never listed.</p>
+    <p class="bs-sweep-sum">${Object.entries(count).map(([k, n]) => `<span>${WHY[k] || k}: <b>${n}</b></span>`).join("")} <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.sweepAll(${on.length ? "false" : "true"})">${on.length ? "Untick all" : "Tick all"}</button></p>
+    <div class="bs-sweep-list"><table class="bs-dup-t"><thead><tr><th></th><th>Trainee</th><th>Batch</th><th>Why</th><th>Registered</th><th>Last on</th><th>Lessons done</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td><input type="checkbox" ${W.skip[r.id] ? "" : "checked"} onchange="FTBatchSheet.sweepPick('${e(r.id)}', this.checked)" aria-label="Sweep ${e(r.id)}"></td>
+        <td>${e(r.name)}<br><code>${e(r.id)}</code></td><td>${e(r.batch)}</td><td>${WHY[r.why] || e(r.why)}${r.kinds ? `<br><small>${e(r.kinds.join(", "))}</small>` : ""}</td>
+        <td>${r.registeredAt ? e(when(r.registeredAt)) : "—"}</td><td>${r.lastActive ? e(ago(r.lastActive)) : "—"}</td><td>${r.done != null ? r.done : "—"}</td></tr>`).join("")}</tbody></table></div>
+    <div class="bs-fix-row"><button class="btn btn-navy btn-sm" type="button" ${W.busy || !on.length ? "disabled" : ""} onclick="FTBatchSheet.sweepGo()">${W.busy ? e(W.busy) : `⬇ Back up and sweep ${on.length}`}</button>
+      <button class="btn btn-ghost btn-sm" type="button" ${W.busy ? "disabled" : ""} onclick="FTBatchSheet.sweepClose()">Cancel</button></div></div>`;
 }
 function fixHtml(ppl){
   const F = B.fix; if(!F) return "";
@@ -954,7 +984,7 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd" ${B.upd ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Work out every trainee's every training day again from their progress, so 📤 Daily outputs, 📊 Weekly Ranking and 🏅 Scores are current">${B.upd ? `Updating ${B.upd.n} / ${B.upd.of}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <label class="gs-batch">Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-people" onclick="return FTBatchSheet.go('people')">👥 Approvals &amp; Batches</a></span>
@@ -962,6 +992,7 @@ function renderSheet(){
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
     ${dupHtml()}
+    ${sweepHtml()}
     ${fixHtml(ppl)}
     ${dateHtml(ppl)}
     <div class="gs-fbar"><span class="gs-ref" id="bsRef">${B.sel ? e(B.sel.ref) : ""}</span><span class="gs-fx">fx</span><input id="bsBar" readonly value="${B.sel ? e(B.sel.f) : "Click any cell to see what it means"}" aria-label="What the selected cell is"></div>
@@ -1039,7 +1070,21 @@ window.FTBatchSheet = {
   more(open){ B.more = !!open; },
   rkSheet(open){ B.rkSheet = !!open; },
   ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
-  dstat(){ B.dstat = undefined; B.verified = {}; B.dataKey = ""; render(); },
+  // 🔁 Test again: the connection, then every link of the batch that isn't ✓ checked again now, and what it found
+  async dstat(){
+    if(!adminOn() || B.dtest) return;
+    B.dtest = "Testing the connection…"; render();
+    let S = null; try{ const r = await authFetch("/api/drive/status", {}); S = await r.json().catch(() => null); }catch(err){ S = null; }
+    B.dstat = S && typeof S === "object" ? S : {err: true};
+    if(!S || !S.sa || !S.saOk){ B.dtest = null; toast(S && S.sa ? "Google Drive still can’t sign in: see the banner for why." : "Couldn’t reach Google Drive’s settings. Try again in a minute."); render(); return; }
+    const due = B.data ? people().filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => L[k].st !== "none" && !/ok|trainer/.test(L[k].st)); }catch(err){ return false; } }) : [];
+    let open = 0, still = 0;
+    for(let i = 0; i < due.length; i++){ B.dtest = `Checking links ${i + 1} of ${due.length}…`; render();
+      try{ const r = await authFetch("/api/drive/verify", {id: due[i].id}), j = await r.json().catch(() => ({}));
+        Object.values((j && j.verify) || {}).forEach(v => { if(v && v.ok) open++; else if(v) still++; }); }catch(err){} }
+    B.dtest = null; B.verified = {}; B.data = null; B.dataKey = ""; render();
+    toast(due.length ? `✓ Google Drive is connected. Checked ${due.length} trainee${due.length === 1 ? "’s" : "s’"} links again: ${open} open${still ? `, ${still} still can’t be opened or aren’t right (hover over a ✗ for why)` : ""}.` : "✓ Google Drive is connected, and every linked file already opens.", 9000);
+  },
   copyShare(){ const t = (document.getElementById("bsShareTo") || {}).textContent || ""; if(!t) return;
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: " + t), () => toast("Couldn’t copy. Select the address instead.")); },
   // 🔁 every trainee of the batch whose links can't be opened: checked again now, then the sheet read again
@@ -1089,6 +1134,40 @@ window.FTBatchSheet = {
       if(await sharedSet("daycheck:" + id, cur) === false) throw new Error("save");
       if(B.data && B.data.rec[id]) B.data.rec[id].daycheck = cur;
     }catch(err){ toast("Couldn't save the tick. Try again."); }
+    render();
+  },
+  async sweepOpen(){
+    if(!adminOn()) return;
+    B.sweep = {loading: true, skip: {}}; render();
+    try{ const r = await authFetch("/api/batch/sweep-list", {}), j = await r.json().catch(() => ({}));
+      B.sweep = r.ok && j && Array.isArray(j.accounts) ? {accounts: j.accounts, leftovers: j.leftovers || [], skip: {}} : {err: (j && j.error) || "the server didn’t answer", skip: {}}; }
+    catch(err){ B.sweep = {err: "no connection", skip: {}}; }
+    render();
+  },
+  sweepClose(){ if(B.sweep && B.sweep.busy) return; B.sweep = null; render(); },
+  sweepPick(id, on){ if(!B.sweep) return; B.sweep.skip[id] = !on; render(); },
+  sweepAll(on){ const W = B.sweep; if(!W) return; W.skip = {}; if(!on) W.accounts.concat(W.leftovers).forEach(a => { W.skip[a.id] = true; }); render(); },
+  // ⬇ every record of the ticked accounts downloaded as one file first; only then each swept, one at a time
+  async sweepGo(){
+    const W = B.sweep; if(!adminOn() || !W || W.busy) return;
+    const ids = W.accounts.concat(W.leftovers).map(a => a.id).filter(id => !W.skip[id]); if(!ids.length) return;
+    if(!confirm(`Sweep ${ids.length} inactive account${ids.length === 1 ? "" : "s"} from the platform?\n\nA backup of all their records downloads first. Then they are removed for good, and a swept account can't sign in again.`)) return;
+    const backup = {sweptAt: new Date().toISOString(), accounts: {}}, failed = [];
+    for(let i = 0; i < ids.length; i++){ W.busy = `Backing up ${i + 1} of ${ids.length}…`; render();
+      try{ const r = await authFetch("/api/batch/sweep", {id: ids[i], dry: true}), j = await r.json().catch(() => ({})); if(r.ok && j.ok) backup.accounts[ids[i]] = {why: j.why, records: j.records}; else failed.push(ids[i]); }
+      catch(err){ failed.push(ids[i]); } }
+    const go = ids.filter(id => backup.accounts[id]);
+    if(!go.length){ W.busy = null; toast("Couldn’t back up any of them, so nothing was swept. Try again."); render(); return; }
+    // (the backup is saved on this computer before anything is removed)
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 1)], {type: "application/json"}));
+    a.download = `Swept accounts ${new Date().toISOString().slice(0, 10)} (${go.length}).json`; document.body.appendChild(a); a.click(); a.remove();
+    let n = 0;
+    for(let i = 0; i < go.length; i++){ W.busy = `Sweeping ${i + 1} of ${go.length}…`; render();
+      try{ const r = await authFetch("/api/batch/sweep", {id: go[i]}), j = await r.json().catch(() => ({})); if(r.ok && j.ok) n++; else failed.push(go[i]); }
+      catch(err){ failed.push(go[i]); } }
+    B.sweep = null; state.adminData = null; B.people = null; B.all = null; B.data = null; B.dataKey = "";
+    if(window.ftRosterChanged) ftRosterChanged(); else try{ window.dispatchEvent(new Event("ft-roster-changed")); }catch(err){}
+    toast(failed.length ? `🧹 Swept ${n}; ${failed.length} couldn’t be (${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "…" : ""}): try them again.` : `🧹 Swept ${n} inactive account${n === 1 ? "" : "s"}. The backup is in your Downloads.`, 9000);
     render();
   },
   dupKeep(key, id){ (B.dupKeep = B.dupKeep || {})[key] = id; render(); },
@@ -1280,6 +1359,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
 .bs-back button{margin-left:8px;}
 .bs-warn{margin:0 14px 10px;padding:9px 12px;border:1px solid #F4B77A;background:#FFF7ED;border-radius:6px;font:14px Arial,sans-serif;color:#7A4100;}
+.bs-sweep .bs-sweep-sum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;} .bs-sweep-list{max-height:420px;overflow:auto;}
 .bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
 .bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
 .bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}

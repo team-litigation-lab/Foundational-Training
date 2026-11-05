@@ -321,6 +321,76 @@ function renameId(v, from, into) {
     if (k === from) out[into] = mergeVals(out[into] !== undefined ? out[into] : v[into], y); else if (k === into && out[into] !== undefined) out[into] = mergeVals(y, out[into]); else out[k] = y; }
   return out;
 }
+/* 🧹 SWEEP INACTIVE ACCOUNTS (📋 Batch Sheet → 🧹 Sweep inactive accounts, admins): every account whose access is gone is
+   removed from the platform with all its records, after the trainer's browser has downloaded a backup of them:
+     • offboarded (🚫 access revoked), rejected, archived (a past batch's, an old or mistyped Batch ID's), or on the block
+       list (sweepWhy);
+     • and the leftovers of accounts deleted before (the old 🗑 Revoke & delete took only the account and its progress):
+       per-trainee records whose account no longer exists.
+   Never swept: an active trainee (approved, or waiting for approval), a cleared batch's kept record (purgedAt: the Main
+   Portal's 📊 Progress & Feedback reads it), a merged account's redirect. A swept account stays on the block list (why
+   offboarded or archived), so a sign-in can't bring it back as a new, approved account. Each call sweeps ONE account, so
+   no call runs past the Worker's limits; /api/batch/sweep-list finds them. */
+const SWEEP_PREFIXES = () => [...new Set(BACKUP_KEYS("\u0000").concat(MERGE_EXTRA("\u0000")).map((k) => k.split("\u0000")[0]))];
+function sweepWhy(rec, blocked) {
+  if (!rec || typeof rec !== "object" || rec.purgedAt) return "";
+  if (rec.offboarded) return "offboarded"; if (rec.rejected) return "rejected"; if (rec.archived) return "archived";
+  if (blocked && blocked[rec.id]) return "blocked";
+  return "";
+}
+// every record a trainee id has (its keys, the records named by a prefix, its attendance check-ins)
+async function idKeys(kv, id, checkins) {
+  const keys = [];
+  for (const k of [...new Set(BACKUP_KEYS(id).concat(MERGE_EXTRA(id)))]) if ((await kv.get(k)) != null) keys.push(k);
+  for (const pre of PURGE_PREFIXES(id)) ((await kv.list({ prefix: pre })).keys || []).forEach((x) => keys.push(x.name));
+  (checkins || []).filter((n) => n.endsWith(":" + id)).forEach((n) => keys.push(n));
+  return keys;
+}
+async function listKeys(kv, prefix) {
+  const out = []; let cursor;
+  do { const r = await kv.list(Object.assign({ prefix }, cursor ? { cursor } : {})); (r.keys || []).forEach((x) => out.push(x.name)); cursor = r.list_complete === false ? r.cursor : null; } while (cursor);
+  return out;
+}
+async function sweepList(env) {
+  const kv = kvOf(env), blocked = await blockedIds(env, true), accounts = [], known = new Set();
+  const tkeys = await listKeys(kv, "trainee:");
+  for (const k of tkeys) {
+    const id = k.slice("trainee:".length); known.add(id);
+    let rec = null; try { rec = JSON.parse((await kv.get(k)) || "null"); } catch (e) { rec = null; }
+    if (rec && !rec.id) rec.id = id;
+    const why = sweepWhy(rec, blocked); if (!why) continue;
+    accounts.push({ id, name: rec.name || id, batch: rec.batch || "", why, registeredAt: rec.registeredAt || "", lastActive: rec.lastActive || "",
+      done: Object.values(rec.dayProgress || {}).filter((x) => x && x.done).length });
+  }
+  // the leftovers: per-trainee records whose account is gone (no trainee:<id>, not a merged account's redirect)
+  const orphans = {};
+  // (an ID in a trainee's form only, name--batch: never a shared record that happens to share a prefix)
+  const add = (id, k) => { if (!id || !/^[a-z0-9-]+--[a-z0-9-]+$/.test(id) || known.has(id)) return; (orphans[id] = orphans[id] || []).push(k.split(":")[0]); };
+  for (const pre of SWEEP_PREFIXES().concat(["actup:", "guide:"])) {
+    if (pre === "trainee:") continue;
+    for (const k of await listKeys(kv, pre)) add(k.slice(pre.length).split(":")[0], k);
+  }
+  for (const k of await listKeys(kv, "checkin:")) add(k.split(":").pop(), k);
+  const leftovers = [];
+  for (const [id, kinds] of Object.entries(orphans)) { if ((await kv.get(`merged:${id}`)) != null) continue; leftovers.push({ id, kinds: [...new Set(kinds)] }); }
+  return { accounts, leftovers };
+}
+async function sweepOne(env, id, dry) {
+  const kv = kvOf(env), blocked = await blockedIds(env, true);
+  let rec = null; try { rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"); } catch (e) { rec = null; }
+  if (rec && !rec.id) rec.id = id;
+  const why = rec ? sweepWhy(rec, blocked) : "leftover";
+  // (never an active trainee, a cleared batch's kept record, or a merged account's redirect)
+  if (!why) return { error: rec && rec.purgedAt ? "A cleared batch's record is kept for the Main Portal" : "This trainee is active: only inactive accounts are swept", status: 409 };
+  if (!rec && (await kv.get(`merged:${id}`)) != null) return { error: "This is a merged account's redirect", status: 409 };
+  if (!rec && !/^[a-z0-9-]+--[a-z0-9-]+$/.test(id)) return { error: "Not a trainee's ID", status: 400 };
+  const checkins = await listKeys(kv, "checkin:"), keys = await idKeys(kv, id, checkins);
+  if (dry) { const records = {}; for (const k of keys) { const v = await kv.get(k); try { records[k] = JSON.parse(v); } catch (e) { records[k] = v; } } return { ok: true, id, why, records }; }
+  for (const k of keys) await kv.delete(k);
+  // (kept off the platform: a sign-in can't bring the swept account back as a new, approved one)
+  if (rec && !blocked[id]) await setBlocked(env, { [id]: { why: rec.offboarded || rec.rejected ? "offboarded" : "archived", at: new Date().toISOString(), swept: true } });
+  return { ok: true, id, why, deleted: keys.length };
+}
 async function mergeAccounts(env, from, into) {
   const kv = kvOf(env), at = new Date().toISOString();
   const get = async (k) => { const v = await kv.get(k); if (v == null) return undefined; try { return JSON.parse(v); } catch (e) { return v; } };
@@ -2141,6 +2211,12 @@ export default {
           return json({ ok: true, trainee: rec });
         }
         if (path === "/api/batch/blocked") return json({ ids: await blockedIds(env, true) });
+        // 🧹 the inactive accounts and leftovers to sweep; one account swept (dry: its records, for the backup, first)
+        if (path === "/api/batch/sweep-list") return json(await sweepList(env));
+        if (path === "/api/batch/sweep") {
+          const r = await sweepOne(env, String(b.id || "").slice(0, 160), !!b.dry);
+          return json(r.error ? { error: r.error } : r, r.error ? r.status || 400 : 200);
+        }
         // 📦 the batch's folder in the trainer's Drive folder: "Batch <id> — Archive <date>", and "Full records" in it
         if (path === "/api/batch/drive-folder") {
           if (!driveSA(env)) return driveFail(env, new Error("no-sa"));
