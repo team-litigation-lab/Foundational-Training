@@ -1156,7 +1156,7 @@ async function folderFilesAs(token, fid) {
     await list(fid);
     for (const sub of out.filter(f => f.mimeType === FOLDER).slice(0, 40)) await list(sub.id);
   } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
-  return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
+  return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ id: f.id || "", mime: f.mimeType || "", name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
 }
 /* 📄 Save PDF to my Folder (js/ft-process.js): a Knowledge Check answer sheet, as a PDF, written into the trainee's
    Assessment and Activities Folder under its naming convention. The same name in the folder is replaced in place, so
@@ -1414,6 +1414,32 @@ async function checkShots(env, id) {
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
+  // 🔢 THE SCORE ON EACH SCREENSHOT, read once by the AI from the image (a typing test: its WPM and accuracy; a spelling test: its
+  // score out of its total), kept with the file so the 🧪 Typing & Spelling page and the scorecards count it like a test taken on
+  // the platform. At most 8 new screenshots a check (the rest on the next), each read once, a failed read tried again next time.
+  const was = new Map(((prev.files) || []).filter((f) => f && f.link).map((f) => [f.link, f]));
+  files.forEach((f) => { const w = was.get(f.link); if (w) ["wpm", "acc", "score", "total", "read", "readAt"].forEach((k) => { if (w[k] != null) f[k] = w[k]; }); });
+  const meta = new Map(all.map(({ f }) => [f.link, f]));
+  const toRead = files.filter((f) => !f.read && meta.get(f.link) && meta.get(f.link).id && /^image\//.test(meta.get(f.link).mime || "image/")).slice(0, 8);
+  if (toRead.length && (claudeOn(env) || geminiKeyOrder(env).length)) {
+    let tks = [null]; try { tks = (await readTokens(env)).concat([null]); } catch (e) { tks = [null]; }
+    for (const f of toRead) {
+      const m = meta.get(f.link); let bytes = null;
+      for (const tk of tks) { bytes = await driveBytes(m.id, tk, ""); if (bytes) break; }
+      if (!bytes || bytes.length > 6e6) continue;
+      const mime = /png/i.test(m.mime) ? "image/png" : /jpe?g/i.test(m.mime) ? "image/jpeg" : /webp/i.test(m.mime) ? "image/webp" : /gif/i.test(m.mime) ? "image/gif" : "image/png";
+      const sys = "You read the result shown on a screenshot of a typing test or a spelling test. Answer with JSON only.";
+      const prompt = f.kind === "spelling" ? 'This is a spelling test result. Return {"score": <words or points correct>, "total": <out of>} as numbers, or {"score": null, "total": null} if no score is shown.'
+        : 'This is a typing test result. Return {"wpm": <net words per minute, or WPM shown>, "acc": <accuracy percent, a number 0-100>} as numbers, or {"wpm": null, "acc": null} if no result is shown.';
+      try {
+        const raw = await aiReadFile(env, b64Of(bytes), mime, sys, prompt), j = JSON.parse((String(raw).match(/\{[\s\S]*\}/) || ["{}"])[0]);
+        const n = (v, hi) => { const x = Number(v); return isFinite(x) && x >= 0 && x <= hi ? Math.round(x * 10) / 10 : null; };
+        if (f.kind === "spelling") { f.score = n(j.score, 500); f.total = n(j.total, 500); if (f.total != null && f.score != null && f.score > f.total) f.score = null; }
+        else { f.wpm = n(j.wpm, 250); f.acc = n(j.acc, 100); }
+        f.read = true; f.readAt = new Date().toISOString();
+      } catch (e) { /* tried again on the next check */ }
+    }
+  }
   // a folder that can't be read this time keeps the screenshots already found
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
@@ -1729,12 +1755,15 @@ async function driveBytes(fid, token, magic = "%PDF") {
 }
 const b64Of = (b) => { let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
 // the AI reads a PDF (Claude's document input; else Gemini's inline data) and answers in text; "" when neither can
-async function aiReadPdf(env, b64, system, prompt) {
+async function aiReadPdf(env, b64, system, prompt) { return aiReadFile(env, b64, "application/pdf", system, prompt); }
+// (an image — a test screenshot — is read the same way: Claude's image input, else Gemini's inline data)
+async function aiReadFile(env, b64, mime, system, prompt) {
+  const isPdf = mime === "application/pdf";
   if (claudeOn(env) && claudeRest <= Date.now()) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" },
-        body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }, { type: "text", text: prompt }] }] }) });
+        body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: isPdf ? "document" : "image", source: { type: "base64", media_type: mime, data: b64 } }, { type: "text", text: prompt }] }] }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { const msg = String((j.error && j.error.message) || "");
         if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000; else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
@@ -1748,7 +1777,7 @@ async function aiReadPdf(env, b64, system, prompt) {
     try {
       const r = await geminiFetch(env, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": env[name] },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ inline_data: { mime_type: "application/pdf", data: b64 } }, { text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.2 } }) });
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.2 } }) });
       const d = await r.json().catch(() => ({}));
       const t = (((d.candidates || [])[0] || {}).content || {}).parts;
       const txt = (t || []).filter((x) => !x.thought).map((x) => x.text || "").join("");

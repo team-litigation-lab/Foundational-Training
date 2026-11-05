@@ -167,10 +167,15 @@ function complianceText(rec, from, to, since){
   if(!(rec.typing || []).length && !(rec.spelling || []).length && !(rec.shots || []).length) return "NO SUBMISSION";
   return [line("Spelling Test", sp, made.filter(x => x.s === "SP")), line("Typing Test", ty, made.filter(x => x.s !== "SP"))].join("\n");
 }
+// (the tests taken on the platform and the 📷 screenshots in Drive whose score the platform read — worker.js checkShots — in date
+// order, the last n of each)
 function averages(rec, n){
-  const t = (rec.typing || []).slice(-(n || 10)), s = (rec.spelling || []).slice(-(n || 10));
+  const shots = rec.shots || [], byDate = (a, b) => String(a.date || "").localeCompare(String(b.date || ""));
+  const t = (rec.typing || []).concat(shots.filter(f => f.kind === "typing" && typeof f.wpm === "number").map(f => ({date: f.date, net: f.wpm, acc: typeof f.acc === "number" ? f.acc : null, shot: true}))).sort(byDate).slice(-(n || 10));
+  const s = (rec.spelling || []).concat(shots.filter(f => f.kind === "spelling" && typeof f.score === "number" && f.total > 0).map(f => ({date: f.date, score: f.score, total: f.total, shot: true}))).sort(byDate).slice(-(n || 10));
   const avg = (a, f) => a.length ? Math.round(a.reduce((x, y) => x + (Number(f(y)) || 0), 0) / a.length) : null;
-  return {net: avg(t, x => x.net), acc: avg(t, x => x.acc), spell: avg(s, x => x.total ? x.score / x.total * 100 : 0), nt: t.length, ns: s.length};
+  const ta = t.filter(x => x.acc != null);
+  return {net: avg(t, x => x.net), acc: avg(ta, x => x.acc), spell: avg(s, x => x.total ? x.score / x.total * 100 : 0), nt: t.length, ns: s.length, fromShots: t.concat(s).filter(x => x.shot).length};
 }
 const firstDay = rec => { const ds = (rec.typing || []).concat(rec.spelling || [], rec.shots || []).map(x => x.date).filter(Boolean).sort(); return ds[0] || dayKey(new Date()); };
 // the share of the slots due (3 a weekday: Typing AM and PM, Spelling) that were done, made up or not, from the trainee's
