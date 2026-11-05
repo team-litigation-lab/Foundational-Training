@@ -445,6 +445,20 @@ async function mergeAccounts(env, from, into) {
   await setBlocked(env, { [from]: { why: "merged", into, at } });
   return { ok: true, from, into, moved: [...new Set(moved)] };
 }
+// The scorecard snapshot kept on a cleared trainee's record, at most 60,000 characters of JSON. A longer one (many trainer
+// activities, long comments) is shortened step by step, always to valid JSON: the trainer's comments cut short, then
+// dropped, then the trainer activities themselves, leaving the overall, lessons and systems (the full scorecard is in the
+// Drive backup).
+function fitScorecard(sc, max = 60000) {
+  const fits = (o) => JSON.stringify(o).length <= max;
+  if (fits(sc)) return JSON.parse(JSON.stringify(sc));
+  const acts = sc.trainerActs && typeof sc.trainerActs === "object" ? sc.trainerActs : {};
+  const cut = (n) => Object.assign({}, sc, { trainerActs: Object.fromEntries(Object.entries(acts).map(([k, a]) =>
+    [k, a && typeof a === "object" ? Object.assign({}, a, { comment: String(a.comment || "").slice(0, n) }) : a])) });
+  for (const n of [300, 0]) { const o = cut(n); if (fits(o)) return o; }
+  const o = { at: String(sc.at || "").slice(0, 40), overall: sc.overall == null ? null : sc.overall, lessons: sc.lessons || null, systems: Array.isArray(sc.systems) ? sc.systems : [], trimmed: true };
+  return fits(o) ? o : { at: o.at, overall: typeof o.overall === "number" ? o.overall : null, trimmed: true };
+}
 function slimTrainee(rec) {
   const keep = ["id", "name", "firstName", "lastName", "batch", "approved", "rejected", "archived", "archivedAt", "registeredAt", "lastActive", "offboarded"];
   const out = {};
@@ -2667,13 +2681,15 @@ export default {
         if (path === "/api/batch/purge") {
           const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
           if (!rec) return json({ error: "No such trainee" }, 404);
+          // (the slim record, with its scorecard snapshot, is written before anything is deleted: a failure part-way leaves
+          // the trainee whole, never cleared but not archived)
+          const slim = Object.assign(slimTrainee(rec), { archived: true, archivedAt: rec.archivedAt || now, purgedAt: now,
+            scorecard: b.scorecard && typeof b.scorecard === "object" && !Array.isArray(b.scorecard) ? fitScorecard(b.scorecard) : rec.scorecard || null,
+            backup: b.backup && typeof b.backup === "object" ? { folder: String(b.backup.folder || "").slice(0, 300), file: String(b.backup.file || "").slice(0, 300), at: now } : rec.backup || null });
+          await kv.put(`trainee:${id}`, JSON.stringify(slim));
           const keys = PURGE_KEYS(id);
           for (const p of PURGE_PREFIXES(id)) keys.push(...await listAll(env, p));
           await Promise.all(keys.map((k) => kv.delete(k)));
-          const slim = Object.assign(slimTrainee(rec), { archived: true, archivedAt: rec.archivedAt || now, purgedAt: now,
-            scorecard: b.scorecard && typeof b.scorecard === "object" ? JSON.parse(JSON.stringify(b.scorecard).slice(0, 60000)) : rec.scorecard || null,
-            backup: b.backup && typeof b.backup === "object" ? { folder: String(b.backup.folder || "").slice(0, 300), file: String(b.backup.file || "").slice(0, 300), at: now } : rec.backup || null });
-          await kv.put(`trainee:${id}`, JSON.stringify(slim));
           if (!b.keepAccess) await setBlocked(env, { [id]: { why: "archived", name: String(rec.name || "").slice(0, 120), batch: String(rec.batch || "").slice(0, 40), at: now } });
           return json({ ok: true, cleared: keys.length });
         }
