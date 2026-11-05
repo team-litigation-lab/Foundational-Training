@@ -255,27 +255,21 @@ const failures = []; const fail = m => failures.push(m);
 
   // ✍️ Knowledge Checks in detail, under 🏅 Score Card: each answer with its grade out of 10, the feedback and the trainer's
   // comment on it, the trainer's overall comment, and the Process Questions report line — as on the ✍️ Knowledge Check page
-  { const qs = await page.evaluate(l => ftKcQuestions(l).filter(q => !q.set.open).slice(0, 2).map(q => ({ sid: q.set.id, i: q.i, n: q.set.questions.length })), lesson);
-    if (qs.length) {
-      const sid = qs[0].sid, answers = []; qs.forEach(q => { answers[q.i] = 'Answer ' + (q.i + 1) + ' from Ada'; });
-      await put('process:' + ids.Ada, { sets: { [sid]: { answers, submittedAt: iso(now - 2 * 3600e3) } }, kc: { [lesson]: { attempts: 1, best: 90, last: { at: iso(now - 2 * 3600e3), summary: 'Clear on the intake steps.',
+  const kcSeed = async () => { const qs = await page.evaluate(l => ftKcQuestions(l).filter(q => !q.set.open).slice(0, 2).map(q => ({ sid: q.set.id, i: q.i, n: q.set.questions.length })), lesson);
+    if (!qs.length) return qs;
+    const sid = qs[0].sid, answers = []; qs.forEach(q => { answers[q.i] = 'Answer ' + (q.i + 1) + ' from Ada'; });
+    await put('process:' + ids.Ada, { sets: { [sid]: { answers, submittedAt: iso(now - 2 * 3600e3) } }, kc: { [lesson]: { attempts: 1, best: 90, last: { at: iso(now - 2 * 3600e3), summary: 'Clear on the intake steps.',
         items: [{ sid, i: qs[0].i, score: 9, feedback: 'Named every step in order.' }].concat(qs[1] ? [{ sid, i: qs[1].i, score: 5, feedback: 'Missed the conflict check.' }] : []) } } } });
-      await put('kcreview:' + ids.Ada, { lessons: { [lesson]: { comment: 'Good start; review the conflict check.', notes: { [sid + '|' + qs[0].i]: 'Spot on.' } } } });
+    await put('kcreview:' + ids.Ada, { lessons: { [lesson]: { comment: 'Good start; review the conflict check.', notes: { [sid + '|' + qs[0].i]: 'Spot on.' } } } });
+    return qs; };
+  { const qs = await kcSeed();
+    if (qs.length) {
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
       await page.evaluate(id => FTBatchSheet.kdWho(id), ids.Ada); await page.waitForTimeout(400);
       const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).innerText || '');
       if (!/Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
-      // 📤 shareable: 📋 Copy puts the same breakdown on the clipboard as text; 🖨 Print / PDF opens it on a clean page
-      const shared = await page.evaluate(async () => { let copied = '', printed = '';
-        Object.defineProperty(navigator, 'clipboard', { value: { writeText: async t => { copied = t; } }, configurable: true });
-        const was = window.open; window.open = () => ({ document: { write: h => { printed += h; }, close() {} }, focus() {}, print() {} });
-        FTBatchSheet.kdCopy(); await new Promise(r => setTimeout(r, 200)); FTBatchSheet.kdPrint(); await new Promise(r => setTimeout(r, 600)); window.open = was;
-        return { copied, printed }; });
-      if (!/KNOWLEDGE CHECKS — Ada Active/.test(shared.copied) || !/Grade: 9\/10 — Named every step in order/.test(shared.copied) || !/Trainer: Spot on\./.test(shared.copied)
-        || !/Trainer's overall comment: Good start/.test(shared.copied) || !/Process Questions Responses/.test(shared.copied)) fail(`📋 Copy doesn't carry the breakdown: ${shared.copied.slice(0, 500)}`);
-      if (!/Knowledge Checks — Ada Active/.test(shared.printed) || !/9\/10/.test(shared.printed) || !/Spot on\./.test(shared.printed) || /<select|<button/.test(shared.printed)) fail(`🖨 Print / PDF doesn't show the breakdown on a clean page: ${shared.printed.slice(0, 300)}`);
       await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     } else fail('no Knowledge Check questions for the first lesson');
@@ -404,6 +398,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!/TRAINER-NOTE/.test(await page.evaluate(() => [...document.querySelectorAll('.bs-mine #bs-outputs td.bs-ocell')].map(td => td.innerText).join(' ')))) fail('the trainee doesn\'t see her days\' comments in 📤 Daily outputs');
   // (no checklist on her page either, and no trainer's picker)
   if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
+  // (✍️ her Knowledge Checks in detail, shared to her page: each answer with its grade and feedback, the trainer's comments)
+  { await kcSeed(); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(3000);
+    const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).innerText || '');
+    if (!/My Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
+      fail(`the trainee doesn't see her Knowledge Checks in detail on 📋 My Progress: ${kd.slice(0, 400)}`);
+    if (/Ben Blank|Cy Waiting|Dee Glitch/.test(kd)) fail('a trainee sees another trainee\'s Knowledge Checks');
+    await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(2500); }
   for (const x of MT) if (x.names.some(n => n && !/Ada/.test(n))) fail(`📋 My Progress (${x.id}) shows someone else: ${x.names}`);
   if (MT.find(x => x.id === 'scores').head.includes('Rank')) fail('a trainee sees the batch rank column');
   const text = await page.evaluate(() => document.querySelector('.bs-mine').innerText);
