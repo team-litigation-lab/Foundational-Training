@@ -5943,6 +5943,15 @@ function canonicalBatch(raw){
   return "B" + m[1] + m[2] + yy;
 }
 window.canonicalBatch = canonicalBatch;
+// The day a batch started, from its Batch ID, as YYYY-MM-DD; "" when it isn't a real date (as worker.js batchStartDate: a
+// Batch ID given out as B + DDMMYY reads as that day too — B300926 is 30 September 2026, never a 30th month)
+function batchStartDate(batch){
+  const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(canonicalBatch(batch));
+  if(!m) return "";
+  const [mm, dd] = batchRealDay(+m[1], +m[2], +m[3]) ? [m[1], m[2]] : [m[2], m[1]];
+  return `20${m[3]}-${mm}-${dd}`;
+}
+window.batchStartDate = batchStartDate;
 // The Batch ID to show and group by: in its one form, or, for an older code that isn't a date (B1, a guest
 // account's), as it was typed — so a trainee registered under one keeps their records. A new registration
 // has to give a real Batch ID (submitLogin, and worker.js refuses it server-side).
@@ -18922,7 +18931,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.05-7091bbd7";
+var APP_BUILD = "ft-2026.11.05-dd671cb0";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18976,7 +18985,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-assess.js?v=fd446d53bd"></script>
 <script src="/js/ft-claims-email.js?v=94cd2deef4"></script>
 <script src="/js/ft-rules.js?v=1e93f737a5"></script>
-<script src="/js/ft-calsim-core.js?v=86f544f2fc"></script>
+<script src="/js/ft-calsim-core.js?v=677503f8cf"></script>
 <script src="/js/ft-calendar.js?v=0f3118f02a"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
 <script src="/js/ft-firms.js?v=b4384816f9"></script>
@@ -18985,10 +18994,10 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-rubrics.js?v=f7af0cc87b"></script>
 <script src="/js/ft-sessions.js?v=f32ae5d25a"></script>
 <script src="/js/ft-utilization.js?v=e8e4575e2f"></script>
-<script src="/js/ft-ranking.js?v=b0170da53d"></script>
+<script src="/js/ft-ranking.js?v=2b2c0285c2"></script>
 <script src="/js/ft-ranking-summary.js?v=ba7f25e76f"></script>
 <script src="/js/ft-overall.js?v=8a08446d33"></script>
-<script src="/js/ft-batch-sheet.js?v=29aca5c8d6"></script>
+<script src="/js/ft-batch-sheet.js?v=ed5fd353ae"></script>
 <script src="/js/ft-skilltests.js?v=72247c189e"></script>
 <script src="/js/ft-drills.js?v=8362192230"></script>
 <script src="/js/ft-calrules.js?v=8184cf8378"></script>
@@ -19014,7 +19023,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-dna-learn.js?v=276b146f1c"></script>
 <script src="/js/ft-admin-ops.js?v=70597c994c"></script>
 <script src="/js/ft-attendance.js?v=909c9ac081"></script>
-<script src="/js/ft-batch-admin.js?v=6684024829"></script>
+<script src="/js/ft-batch-admin.js?v=b69d43057c"></script>
 <script src="/js/portal-link.js?v=41a9854349"></script>
 <script src="/js/show-password.js?v=c12df67a51"></script>
 <!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
@@ -19029,7 +19038,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-program.js?v=24862e10c9"></script>
 <script src="/js/ft-my-pages.js?v=24eceb04cd"></script>
 <script src="/js/ft-day1-flow.js?v=018e12413a"></script>
-<script src="/js/ft-day-locks.js?v=b27ff3c77a"></script>
+<script src="/js/ft-day-locks.js?v=744922c42a"></script>
 <script src="/js/ft-kb-articles.js?v=5bfc079d4f"></script>
 <script src="/js/ft-kb-card.js?v=f74ad4c2ed"></script>
 <script src="/js/lsh-tool-links.js?v=9f51b4c733"></script>
@@ -19038,7 +19047,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-one-screen.js?v=a23c8cc0f9"></script>
 <script src="/js/ft-screen-fit.js?v=13afa89bff"></script>
 <script src="/js/ft-buffer.js?v=3ee42e67a1"></script>
-<script src="/js/ft-admin-tidy.js?v=6f84d9b26d"></script>
+<script src="/js/ft-admin-tidy.js?v=522b392952"></script>
 <script src="/js/ft-trainees-tab.js?v=9dd53c395a"></script>
 <script src="/js/ft-trainee-log.js?v=fc2f3425f8"></script>
 </body>
