@@ -236,6 +236,14 @@ function canonicalBatch(raw) {
   if (!batchRealDay(+m[1], +m[2], +yy) && !batchRealDay(+m[2], +m[1], +yy)) return "";
   return `B${m[1]}${m[2]}${yy}`;
 }
+// The day a batch started, from its Batch ID, as YYYY-MM-DD; "" when it isn't a real date. (A Batch ID given out as B + DDMMYY
+// reads as that day too: B300926 is 30 September 2026, never a 30th month that would stop the day-by-day scorecard loops.)
+function batchStartDate(batch) {
+  const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(canonicalBatch(batch));
+  if (!m) return "";
+  const [mm, dd] = batchRealDay(+m[1], +m[2], +m[3]) ? [m[1], m[2]] : [m[2], m[1]];
+  return `20${m[3]}-${mm}-${dd}`;
+}
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
 const batchKey = (s) => slugPart(canonicalBatch(s) || s);
@@ -1913,7 +1921,7 @@ async function runTrackerChecks(env, opts) {
     const id = k.slice("trainee:".length);
     const rec = JSON.parse((await kv.get(k)) || "null");
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
-    try { const r = await dailyCompliance(env, id, D); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    try { const r = await dailyCompliance(env, id, D, { rec }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
     // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
     if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
@@ -1927,8 +1935,7 @@ async function runTrackerChecks(env, opts) {
 async function backfillCompliance(env, id, o = {}) {
   const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return 0;
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   if (!start) return 0;
   const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
   const want = [];
@@ -1939,7 +1946,7 @@ async function backfillCompliance(env, id, o = {}) {
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
   let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
-  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, files: files || undefined });
+  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, rec, files: files || undefined });
   return want.length;
 }
 
@@ -2042,7 +2049,7 @@ async function autoLinkBatch(env, batch) {
       const url = driveUrl(f); if (String(drive[k] || "").trim() === url) continue;
       drive[k] = url; (drive.auto = drive.auto || {})[k] = at; set.push(k);
     }
-    if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(B); if (m) drive.startDate = `20${m[3]}-${m[1]}-${m[2]}`; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
+    if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const s = batchStartDate(B); if (s) drive.startDate = s; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
     const none = Object.keys(LINKS_KIND).filter((k) => !drive[k]); if (none.length) missing[r.id] = none;
     // 🔎 not in their Drive: what this search found no file for (and the link they have, if any, isn't ✓) — kept so the Batch
     // Sheet can say it exactly ("Liseny Castillo has no Monitoring Sheet in her Drive"), not only "can't be opened"
@@ -2063,8 +2070,7 @@ async function backtrack(env, id) {
   const kv = kvOf(env), rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return { error: "gone" };
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   const today = TR.ptDate(), days = [];
   if (start) for (let t = Date.parse(start + "T12:00:00Z"); days.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) days.push(d); }
   const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
@@ -2107,8 +2113,7 @@ async function redoCompliance(env, id, ro = {}) {
   const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   if (!start) return 0;
   const today = TR.ptDate(), want = [];
   for (let t = Date.parse(start + "T12:00:00Z"); want.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) want.push(d); }
@@ -2141,6 +2146,8 @@ async function dailyCompliance(env, id, D, o = {}) {
   const get = async (k) => JSON.parse((await kv.get(k)) || "null");
   // (o.pre: a 🔄 Update all scores run reads the trainee's records once for all their days, and writes trackerreview once at the end)
   const pre = o.pre || null;
+  // (the trainee's record, for the batch's first training day: every caller counts the day's due topics from the same day)
+  const rec = o.rec || (await get(`trainee:${id}`)) || {};
   const [drive, skills, proc, tr, prog, ses] = pre ? [pre.drive, pre.skills, pre.proc, pre.tr, pre.prog, pre.ses]
     : await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`)]);
   const rk = `trackerreview:${id}`, cur = pre ? pre.cur : ((await get(rk)) || { days: {} });
@@ -2174,15 +2181,15 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (onD(data["last-view"] && data["last-view"].at)) seen.push("on the platform");
   if (onD(prog && prog.savedAt)) seen.push("progress saved");
   const testsTaken = Object.values(tests).some(Boolean), platformDid = done.length + subs.length + (testsTaken ? 1 : 0);
-  // (a tracker or Monitoring Sheet the system can't open is "not checked" that day, not 0: the comments say why)
-  const unreadable = (x) => !!x && /can't open|can.t be read|not shared|sign.?in/i.test(String(x));
+  // (a tracker or Monitoring Sheet the system can't open, or couldn't read just now, is "not checked" that day, not 0: the comments say why)
+  const unreadable = (x) => !!x && /can't open|can.t be read|couldn.t be read|not shared|sign.?in/i.test(String(x));
   const trRule = tk && (tk.rules || []).find((r) => r.id === "sheet" && !r.pass);
   // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
   // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
   const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
   let monDay = null;
   if (monRead) {
-    const m0 = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String((o.rec || {}).batch || "").trim()), st = m0 ? `20${m0[3]}-${m0[1]}-${m0[2]}` : (drive.startDate || "");
+    const st = batchStartDate(rec.batch) || drive.startDate || "";
     let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
     const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16)));
     monDay = n ? Math.round(due.reduce((a, tp) => a + ((mon.entries.find((x) => x.topic === tp) || {}).pct || 0), 0) / due.length) : mon.pct;
