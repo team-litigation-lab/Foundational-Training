@@ -496,7 +496,7 @@ LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Traini
                       # the deck's two section title pages: the topic dividers take their place
                       "repeats": {"p04", "p24"}},
            "receptionist": {"id": 4, "var": "DAY4", "title": "Receptionist Training", "file": "lesson04.js",
-                      "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+                      "video": "https://drive.google.com/file/d/1fTmhMFC7qHrZcfTrPSCjKwj3ObSbaYXf/view",
                       "pages": receptionist_pages, "repeats": set()}}
 
 def main(name):
