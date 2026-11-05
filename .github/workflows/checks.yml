@@ -51,6 +51,8 @@ jobs:
         run: node .github/scripts/drive.cjs
       - name: A batch's Drive files linked by their naming convention, and each trainee backtracked from Day 1 (worker.js autoLinkBatch, backtrack)
         run: node .github/scripts/autolink.cjs
+      - name: The TAM's day entries — a time or a length ("1.5 hours", "at 10.30") isn't a date heading (worker.js tamEntries)
+        run: node .github/scripts/tam-dates.cjs
       - name: A day's compliance counts from the batch's first day, a passing Drive fault isn't a 0, and a B + DDMMYY Batch ID starts on its day (worker.js dailyCompliance)
         run: node .github/scripts/compliance-start.cjs
       - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)

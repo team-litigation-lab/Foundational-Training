@@ -1408,7 +1408,14 @@ function tamEntries(text, D) {
   const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   const iso = (y, m, d) => { y = String(y || year); if (y.length === 2) y = "20" + y; const k = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`; return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(k) ? k : ""; };
   const dateOf = (l) => { let m = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(l); if (m) return iso(m[1], m[2], m[3]);
-    m = /\b(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?\b/.exec(l); if (m && +m[1] <= 12) return iso(m[3], m[1], m[2]);
+    // (a dot number with no year is a time or a length, not a date, when a unit follows it or "at" comes before it:
+    //  "1.5 hours", "2.5-hour", "10.30 am", "at 10.30" — the next match on the line is tried instead)
+    const re = /\b(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?\b/g;
+    while ((m = re.exec(l))) {
+      if (m[2] === "." && !m[4] && (/^\s*-?\s*(?:hours?|hrs?|h|minutes?|mins?|am|pm|a\.m|p\.m|%)\b/i.test(l.slice(m.index + m[0].length)) || /\bat\s*$/i.test(l.slice(0, m.index)))) continue;
+      if (+m[1] <= 12) return iso(m[4], m[1], m[3]);
+      break;
+    }
     m = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})?/i.exec(l); if (m) return iso(m[3], MON.indexOf(m[1].toLowerCase().slice(0, 3)) + 1, m[2]);
     return ""; };
   const out = {}; let cur = "";
