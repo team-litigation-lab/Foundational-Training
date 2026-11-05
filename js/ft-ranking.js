@@ -532,15 +532,19 @@ async function autoDraft(){
   const r = weekRange();
   // (the week's own dates on the Spelling & Typing column, not last week's)
   if(r) cols.forEach(c => { if(c.src === "skills") c.sub = `${md(r[0])} to ${md(r[1])}`; });
-  R.data = {batch: R.batch, week: R.week, cols, rows: {}, createdAt: new Date().toISOString(), auto: {at: new Date().toISOString(), state: "filling", approved: false}};
+  const D = R.data = {batch: R.batch, week: R.week, cols, rows: {}, createdAt: new Date().toISOString(), auto: {at: new Date().toISOString(), state: "filling", approved: false}};
   save(); rerender();
+  // (after each wait, the draft goes on only while this very report is the one open: the same key isn't enough, since the
+  // report read again — the week picked again, the 📋 Batch Sheet drawing it again — clears it and reads the same week back,
+  // R.data null meanwhile; that draft simply stops, and the report as saved is what opens)
+  const gone = () => R.key !== key || R.data !== D;
   await fillFromPortal();
-  if(R.key !== key) return;
-  R.data.auto.state = "notes"; rerender();
+  if(gone()) return;
+  D.auto.state = "notes"; rerender();
   // (the AI unavailable: the first trainee's notes fail, and the rest are left for the trainer rather than each waiting on it)
-  for(const p of people()){ if(R.key !== key) return; if(!String((rowOf(p.id).notes) || "").trim() && !(await draftNotes(p.id, true))){ R.data.auto.noNotes = true; break; } }
-  if(R.key !== key) return;
-  R.data.auto.state = "done"; save(); rerender();
+  for(const p of people()){ if(gone()) return; if(!String((rowOf(p.id).notes) || "").trim() && !(await draftNotes(p.id, true))){ if(gone()) return; D.auto.noNotes = true; break; } }
+  if(gone()) return;
+  D.auto.state = "done"; save(); rerender();
 }
 const autoBanner = () => {
   const a = R.data && R.data.auto; if(!a) return "";
