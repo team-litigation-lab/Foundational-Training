@@ -534,6 +534,8 @@ const autoBanner = () => {
 const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.week - 1)); return v && Array.isArray(v.cols) ? v.cols : null; }catch(err){ return null; } };
 window.addEventListener("ft-roster-changed", () => { R.people = null; });
 window.FTRanking = {
+  // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
+  ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
   // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
   embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },
   // (the report is the Batch Sheet's batch: picking one moves the sheet too)
