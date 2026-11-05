@@ -71,6 +71,8 @@ function refTermsInto(box){
   const em = box.querySelector(".ftdd-embed");
   em.className = "ftdd-embed ftdd-embed-terms"; em.innerHTML = refTermsHtml(DD.refTab || 0);
   box.classList.add("is-terms");
+  // (no name bar over it: the slide's ribbon names the sheet, and the table gets the room)
+  const h = box.querySelector(".ftdd-inline-h"); if(h) h.remove();
   return true;
 }
 function loadDecks(){
@@ -3126,7 +3128,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
 /* 📊 the reference sheet as a table (refTerms): the page's full height, its tabs above, the rows scrolling under the header */
-.ft-body .ftdd-embed.ftdd-embed-terms{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));display:flex;flex-direction:column;margin-top:10px;border:2px solid #343C66;border-radius:8px;background:#fff;}
+.ft-body .ftdd-embed.ftdd-embed-terms{height:max(320px, calc(var(--ftdd-room, 70vh) - 56px));display:flex;flex-direction:column;margin-top:0;border:2px solid #343C66;border-radius:8px;background:#fff;}
 .ft-body .ftdd-inline.is-terms{margin:0;}
 .ft-body .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid #D9DCE8;background:#F4F5FA;}
 .ft-body .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:600 13px/1.3 'Inter',sans-serif;cursor:pointer;}
