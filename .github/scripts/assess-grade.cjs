@@ -63,6 +63,20 @@ const failures = []; const fail = (m) => failures.push(m);
   if (!it2.c1_reason.pending || !/trainer/.test(it2.c1_reason.note || '')) fail(`without the AI, an answer the key has no pattern for isn't left to the trainer: ${JSON.stringify(it2.c1_reason)}`);
   if (it2.c2_caller.ok) fail('a wrong caller passed the key\'s pattern');
 
+  // 3. with the Portal's shared AI gateway alone (AI_GATEWAY_SECRET, no key of its own): the AI still grades
+  { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.assess; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+  env.AI_GATEWAY_SECRET = 'ci-gateway'; let viaGw = 0; const before = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith('/api/ai-gateway')) { viaGw++;
+      const b = JSON.parse(init.body), ids = [...b.messages.map(m => m.text).join('\n').matchAll(/^\[(c\d_\w+)\]/gm)].map(m => m[1]);
+      return new Response(JSON.stringify({ success: true, model: 'gw', text: JSON.stringify({ results: ids.map(i => ({ id: i, points: /response/.test(i) ? 2 : 1, note: 'Right.' })) }) })); }
+    return before(url, init); };
+  await call('/api/assess/grade', { id, doc: 'recact' }, admin);
+  const it3 = items();
+  if (!viaGw) fail('with only the Portal\'s AI gateway configured, the sheet was not graded by the AI');
+  if (!it3.c1_reason.ok || it3.c1_reason.pending) fail(`with only the gateway, an answer with no key pattern still went to the trainer: ${JSON.stringify(it3.c1_reason)}`);
+  globalThis.fetch = before; delete env.AI_GATEWAY_SECRET;
+
   if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
   console.log('Assessment grading test passed (a 40-answer sheet graded in batches of 10; a cut-off AI reply keeps its whole results; without the AI, the key\'s patterns grade the caller, callback and birth year, and an answer with no pattern goes to the trainer, never a ✗ for a right answer).');
 })().catch(e => { console.error(e); process.exit(1); });

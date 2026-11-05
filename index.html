@@ -5791,8 +5791,10 @@ async function storeSet(key,val){
    sharedGet, and sent again on the next load, every 30 s and when the connection returns. */
 let sharedInFlight = 0;
 const UNSENT = "lsh_unsent:";
-function keepUnsent(key, val, at){ try{ localStorage.setItem(UNSENT+key, JSON.stringify({at, val})); }catch(e){} }
-function readUnsent(key){ try{ const r = localStorage.getItem(UNSENT+key); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+// (each kept write names the trainee who made it: only their sign-in reads it back or sends it again — never another
+//  trainee's, on a shared browser)
+function keepUnsent(key, val, at){ try{ localStorage.setItem(UNSENT+key, JSON.stringify({at, val, by: state.traineeId || ""})); }catch(e){} }
+function readUnsent(key){ try{ const r = localStorage.getItem(UNSENT+key), u = r ? JSON.parse(r) : null; return u && (!("by" in u) || u.by === (state.traineeId || "")) ? u : null; }catch(e){ return null; } }
 function clearUnsent(key, at){ try{ const u = readUnsent(key); if(u && u.at <= at) localStorage.removeItem(UNSENT+key); }catch(e){} }
 let resendBusy = false;
 async function resendUnsent(){
@@ -8813,21 +8815,15 @@ async function resetTraineeSessionData(){
   await storeSet("day10-window", null);
   await storeSet("trainee-batch", "");
 }
-async function logout(){
-  try{ await cloudSaveNow(); }catch(e){}
+/* 🚪 everything of a trainee's on this device, cleared when they leave (🚪 Log out) or are revoked: the in-memory state,
+   their stored progress, notes and drafts, the saved-at stamp, and their writes still waiting to be sent (lsh_unsent:), so
+   the next trainee who signs in on the same browser starts clean. One teardown for both, so they can't drift apart. */
+async function clearTraineeDevice(){
   setTraineeToken("");
   if(state.approvalPollInterval){ clearInterval(state.approvalPollInterval); state.approvalPollInterval = null; }
-  state.activeSurpriseTask = null;
-  state.surpriseResult = null;
-  state.surpriseDraft = "";
-  state.surpriseTaskChecked = false;
-  state.traineeRegisteredAt = null;
-  state.traineeName = "";
-  state.traineeId = "";
-  state.progress = {};
-  state.practiceProgress = {};
-  state.notes = [];
-  state.isAdmin = false;
+  Object.assign(state, {activeSurpriseTask: null, surpriseResult: null, surpriseDraft: "", surpriseTaskChecked: false, traineeRegisteredAt: null,
+    traineeName: "", traineeId: "", progress: {}, practiceProgress: {}, notes: [], isAdmin: false,
+    slideProgress: {}, lastSlide: {}, lastCloudSave: null, dayOrderMigrated: {}});
   await storeSet("trainee-name", "");
   await storeSet("trainee-id", "");
   await storeSet("day-progress", {});
@@ -8835,34 +8831,21 @@ async function logout(){
   await storeSet("notes", []);
   await resetTraineeSessionData();
   for(const k of ["work-log","quick-check-answers","lab-drafts","last-view","slide-progress","last-slide","attn-detail-findings","calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","outbound-calls","c6-audit"]) await storeSet(k, null);
-  state.slideProgress = {}; state.lastSlide = {}; state.lastCloudSave = null; state.dayOrderMigrated = {};
   try{ localStorage.removeItem("lsh_progress-saved-at"); }catch(e){}
+  try{ const ks = []; for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.indexOf(UNSENT) === 0) ks.push(k); } ks.forEach(k => localStorage.removeItem(k)); }catch(e){}
   state.view = "login";
   render();
+}
+async function logout(){
+  // (their work saved first: progress to the cloud, and any write still waiting sent while their sign-in is still good)
+  try{ await cloudSaveNow(); }catch(e){}
+  try{ await resendUnsent(); }catch(e){}
+  await clearTraineeDevice();
 }
 window.logout = logout;
 
 async function forceRevokedLogout(msg){
-  if(state.approvalPollInterval){ clearInterval(state.approvalPollInterval); state.approvalPollInterval = null; }
-  state.activeSurpriseTask = null;
-  state.surpriseResult = null;
-  state.surpriseDraft = "";
-  state.surpriseTaskChecked = false;
-  state.traineeRegisteredAt = null;
-  state.traineeName = "";
-  state.traineeId = "";
-  state.progress = {};
-  state.practiceProgress = {};
-  state.notes = [];
-  state.isAdmin = false;
-  await storeSet("trainee-name", "");
-  await storeSet("trainee-id", "");
-  await storeSet("day-progress", {});
-  await storeSet("practice-progress", {});
-  await storeSet("notes", []);
-  await resetTraineeSessionData();
-  state.view = "login";
-  render();
+  await clearTraineeDevice();
   toast(msg || "Your access to this program has been revoked. Contact your trainer if you believe this is a mistake.");
 }
 // How often an open page asks the server. Every /api/ request counts toward Cloudflare's daily

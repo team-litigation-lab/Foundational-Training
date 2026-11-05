@@ -107,7 +107,9 @@ function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
 const SESSION_HOURS = 24 * 365;
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
-  const body = `${role}.${encodeURIComponent(subject)}.${exp}`;
+  // (a dot in the subject — an admin named "Ma. Theresa" or "Jr." — would split the token into 5 parts, which readToken rejects:
+  //  it is written %2E, and decodeURIComponent turns it back. Tokens with no dot in them are unchanged)
+  const body = `${role}.${encodeURIComponent(subject).replace(/\./g, "%2E")}.${exp}`;
   return `${body}.${await hmac(secretOf(env), body)}`;
 }
 async function readToken(env, request) {
@@ -819,6 +821,9 @@ async function viaGateway(env, req, user) {
    trainer tools CLAUDE_GRADING_MODEL (claude-sonnet-5-5). A rejected key rests 10 minutes, no credits an hour, a rate limit
    its retry-after: the Gemini pool answers meanwhile. → a Response on success, else { status, msg } */
 const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
+// (AI is on with a Gemini key, a Claude key, or the Portal's shared gateway alone — AI_GATEWAY_SECRET, which callGemini
+//  sends everything through first: the server-side reviews and grading run with any of the three)
+const aiOn = (env) => hasGemini(env) || claudeOn(env) || gatewayOn(env);
 const claudeGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
 const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (claudeGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
 let claudeRest = 0;
@@ -962,7 +967,7 @@ async function listAll(env, prefix) {
    For every approved trainee with a tracker: run the rules for the day, write a notes review
    against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
 async function aiText(env, system, prompt, maxTokens) {
-  if (!hasGemini(env) && !claudeOn(env)) return "";
+  if (!aiOn(env)) return "";
   const r = await callGemini(env, JSON.stringify({ feature: "tracker", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
@@ -2698,7 +2703,7 @@ export default {
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
         const body = await request.text();
-        if (!hasGemini(env) && !claudeOn(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
+        if (!aiOn(env)) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
         return await callGemini(env, body, tok && tok.id);
       }
 
@@ -2915,7 +2920,7 @@ export default {
         // (in batches of 10, side by side: one reply for a long sheet — the Reception Listening Activity's 40 answers — ran past
         // its length and came back cut off, and every answer then fell to the key's pattern, ✗ when the key has none)
         let ai = false;
-        if (ask.length && (hasGemini(env) || claudeOn(env))) {
+        if (ask.length && aiOn(env)) {
           const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
           const chunks = []; for (let i = 0; i < ask.length; i += 10) chunks.push(ask.slice(i, i + 10));
           const got = await Promise.all(chunks.map(async (part) => {
