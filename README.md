@@ -903,18 +903,26 @@ Nobody bumps a `?v=` or `APP_BUILD` by hand any more. The deploy's build step (`
 
 ## 🔄 Open pull requests are kept up to date after each deploy
 
-Several pull requests are often open at once, all editing `js/ft-*.js` and `index.html`, so each merge used to leave the others conflicting. `.github/workflows/pr-auto-update.yml` now runs after every push to `main` (every deploy) and brings each open pull request from this repository up to date with it (`.github/scripts/pr-auto-update.sh`):
+Several pull requests are often open at once, all editing `js/ft-*.js` and `index.html`, so each merge used to leave the others conflicting. `.github/workflows/pr-auto-update.yml` runs after every push to `main` (every deploy) and brings each open pull request into `main` from this repository up to date (`.github/scripts/pr-auto-update.sh`):
 
-- **Merge, never rewrite:** `main` is merged into the branch with a merge commit. The branch's own commits are never rewritten or force-pushed. A session working on that branch picks the merge up with `git pull` before its next push.
+- **Merge, never rewrite:** `main` is merged into the branch with a merge commit. The branch's own commits are never rewritten or force-pushed. A session working on that branch picks the merge up with `git pull` before its next push. A branch pushed to while the update runs is left for the next deploy, and so is one already merged into `main`.
 - **Only safe conflicts are resolved** (`.github/scripts/resolve-conflicts.cjs`, which reads the ancestor too: diff3):
-  - *version stamps:* the same lines but for a `?v=` or `APP_BUILD` value. `main`'s are kept, since the deploy writes every stamp again.
-  - *lines both sides added at the same spot:* both are kept whole, the branch's first.
-  - Anything else (the same lines changed two ways, a deleted or binary file) is left for a person.
-- **Checked before it is pushed:** every changed script parses, the Day decks build, every versioned file exists and every local reference resolves. Then the **Checks** workflow is started on the branch, because a push made by a workflow doesn't start it by itself.
-- **When it can't:** one comment on the pull request names the files that need a person. It is updated after later deploys, not repeated, and removed once the branch is up to date.
+  - *`index.html`'s version stamps:* a `<script src>` / `<link href>` `?v=` or `var APP_BUILD` that differs and nothing else. `main`'s are kept, since the deploy writes every stamp again. A `?v=` anywhere else, such as an image's cache-buster or a regex, is a real edit.
+  - *Different lines both sides added at the same spot:* both are kept whole, the branch's first. This only applies when they share no line and declare no name on both sides (a function, `const`/`let`, a method, an object key, a CSS selector, an element id). Otherwise the same thing reached both sides, or two things clash.
+- **Always left for a person:** the same lines changed two ways, a file deleted on one side or created on both, a binary or non-UTF-8 file, mixed line ends, and marker-like lines in a file's own content.
+- **Checked before it is pushed:** every changed script parses, the Day decks build, every versioned file exists and every local reference resolves. The branch's code runs without any token. A check the branch already failed before the merge isn't blamed on the merge: the update goes on and says so.
+- **When it can't:** one comment on the pull request says what needs a person. It is updated after later deploys, not repeated, and removed once the branch is up to date.
 - **Opting out:** a pull request labelled `no-auto-update` is left alone. *Run workflow* on the Actions tab runs it by hand.
 
-`node .github/scripts/pr-auto-update-test.cjs` (part of **Checks**) runs the resolver on its own, then the updater on real branches of a copy of this repository: version stamps and both-sides additions merged and pushed; a clash, a deleted or binary file, and a result that doesn't parse never pushed; a branch already up to date left alone.
+**🔑 Workflow files need a token.** GitHub doesn't let a workflow's own token push a change to `.github/workflows` (for example a new step in `checks.yml`). So a branch whose update would bring one in gets the comment instead, until it is merged by hand once. To have those done too, add the repository secret **`PR_UPDATE_TOKEN`**:
+
+1. Create a fine-grained personal access token on GitHub: *Settings → Developer settings → Fine-grained tokens*.
+2. Give it this repository only, with *Contents*, *Pull requests* and *Workflows* set to *Read and write*.
+3. Save it as `PR_UPDATE_TOKEN` in this repository's *Settings → Secrets and variables → Actions*.
+
+With the secret, pushes also start each pull request's **Checks** by themselves. Without it, the workflow starts **Checks** on every branch it updated.
+
+`node .github/scripts/pr-auto-update-test.cjs` (part of **Checks**) runs the resolver on its own and as a command in a real merge, then the updater on real branches of a copy of this repository. It covers every case above.
 
 ## 🔎 The six Drive links are checked as the trainee's own
 
