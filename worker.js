@@ -67,12 +67,14 @@ function kvOf(env) {
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
 const enc = new TextEncoder();
+// bytes as base64url (no padding)
+const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 /* ---------- tokens: "<role>.<subject>.<expiry>.<hmac>" ---------- */
 async function hmac(secret, msg) {
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
-  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return b64url(sig);
 }
 // The admin password: MASTER_ADMIN_PASSWORD, the LSH Training Portal's master admin password (one password signs an admin in on the Portal and on every platform).
 function adminPass(env) { return env.MASTER_ADMIN_PASSWORD || ""; }
@@ -1038,7 +1040,6 @@ async function driveToken(env, write, self) {
   const asSub = !!(write && !self && env.GDRIVE_SA_SUBJECT), slot = scope + (asSub ? "|sub" : "");
   const SA_TOKEN = SA_TOKENS[slot] || { token: "", exp: 0 };
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
-  const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
   const sk = saKey(env);
   if (sk.why) throw Object.assign(new Error("drive-auth"), { detail: sk.why });
@@ -2708,7 +2709,7 @@ export default {
       if (path === "/api/auth/tool-ticket") {
         if (!portalSecret(env)) return json({ error: "not-available" }, 501);
         const signTicket = async (body) => {
-          const p = btoa(String.fromCharCode(...enc.encode(JSON.stringify(body)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+          const p = b64url(enc.encode(JSON.stringify(body)));
           return `${p}.${await hmac("portal-sso:" + portalSecret(env), p)}`;
         };
         // A trainer (an admin, or the 👁 Trainee view, which sends the admin token) opening the Knowledge Base: the same
