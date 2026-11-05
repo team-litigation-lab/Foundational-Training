@@ -3066,7 +3066,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
 .ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
 .ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
-/* 🖍 the highlighter: what a trainee must do or get right (Day 5's Time Zone & Submit: the instruction, the sample's fields) */
+/* 🖍 the highlighter: what a trainee must do or get right (Day 5's Sample & Time Zone: the instruction, the sample's fields) */
 .ft-body mark.ftdd-hl{background:#FFF200;color:inherit;padding:1px 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 .ft-body .ftdd-ev-hlf{background:#FFF200 !important;box-shadow:0 0 0 2px #FFF200;border-radius:3px;}
 .ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
