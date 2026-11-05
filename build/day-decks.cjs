@@ -309,11 +309,11 @@ const TRIM = {1: {reading: html => {
     step(unit(`<p>4. Lastly, double click the Registry to install.</p>\n` + strip(17, 3)),
       unit(pair(`<p><b>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training.</b></p>\n<p><b>As long as you have this in your list of installed apps then you're good for now.</b></p>\n`,
         `<div class="shots ftdd-sa-strip ftdd-sa-n1">\n${img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")}</div>\n`))) +
-    // the help line in its rounded box, beside Sanders' and Ivan's Discord IDs, each name under its own profile
-    step(pair(`<p class="ftdd-sa-help">For those who still have issues installing Nitro Pro despite carefully following the correct process, you may seek technical assistance from Sanders. For the SA plugins issue, you may reach out to Ivan. Message them at 8AM PST.</p>\n`,
-      `<p class="ftdd-sa-banner">Here are the Discord IDs of Sanders and Ivan. Please be reminded once again that their shift starts at 8:00 AM PST.</p>\n` +
-      `<div class="ftdd-sa-contacts">\n` +
-      `  <div><div class="shots">\n${img("discord-sanders.png", "Sanders on Discord")}</div><p><b>Sanders: sndrrsss9920</b></p></div>\n` +
+    // the help line in its rounded box, beside Ivan's Discord ID under Ivan's profile (the SA plug-ins' help). Sanders' card
+    // and line are off the deck: Sanders was the Nitro Pro help, and the Nitro Pro installation isn't on this deck
+    step(pair(`<p class="ftdd-sa-help">For the SA plugins issue, you may reach out to Ivan. Message Ivan at 8AM PST.</p>\n`,
+      `<p class="ftdd-sa-banner">Here is Ivan's Discord ID. Please be reminded once again that the shift starts at 8:00 AM PST.</p>\n` +
+      `<div class="ftdd-sa-contacts ftdd-sa-one">\n` +
       `  <div><div class="shots">\n${img("discord-ivan.png", "Ivan on Discord")}</div><p><b>Ivan: kuchiq</b></p></div>\n</div>\n`, " ftdd-sa-pair-help"));
 }},
 // Day 5 opens on the Monitoring Sheet's items #10–11, the same panel and 📤 Submit as Day 4's (js/ft-buffer.js "5:s1"), in
