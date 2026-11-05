@@ -42,7 +42,7 @@ const failures = []; const fail = (m) => failures.push(m);
         if (bearer === 'Bearer sub-token' && !subShared && /googleapis\.com\/(upload\/)?drive\/v3\/files/.test(u)) return new Response('{"error":{"code":404}}', { status: 404 });
         if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
             if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
-            const body = init.body && init.body.text ? await init.body.text() : String(init.body || ''); uploads.push({ url: u, method: init.method, body });
+            const body = init.body && init.body.text ? await init.body.text() : String(init.body || ''); uploads.push({ url: u, method: init.method, body, bearer: String((init.headers || {}).Authorization || '') });
             const meta = JSON.parse(body.split('\r\n\r\n')[1].split('\r\n')[0]);
             return new Response(JSON.stringify({ id: 'saved1', name: meta.name, webViewLink: 'https://docs.google.com/document/d/saved1/edit', createdTime: '2026-10-29T15:00:00Z' }));
         }
@@ -151,6 +151,13 @@ const failures = []; const fail = (m) => failures.push(m);
     const st1 = (await call('/api/drive/status', {}, admin)).body || {};
     if (st1.saOk !== true || st1.subjectOk !== false || !/unauthorized_client/.test(st1.subjectDetail || '') || st1.clientId !== '104812345678901234567') fail(`/api/drive/status should say the delegation is refused: ${JSON.stringify(st1)}`);
     if ((await call('/api/drive/status', {}, trainee)).status !== 403) fail('a trainee read the Drive connection status');
+    // …and meanwhile the platform works as the service account: a save goes through as it (no "drive-auth"), and a link it
+    // can't open names the service account's address to share with, not GDRIVE_SA_SUBJECT's
+    const n1 = uploads.length, sv = (await call('/api/drive/save', doc, trainee)).body || {};
+    if (!sv.ok || uploads.length !== n1 + 1 || uploads[uploads.length - 1].bearer !== 'Bearer ci-token') fail(`a save should fall back to the service account while GDRIVE_SA_SUBJECT is refused: ${JSON.stringify(sv)}`);
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; delete rv.verify; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (checked afresh: a ✓ already given stays for its link)
+    const vf = (await call('/api/drive/verify', {}, trainee)).body || {};
+    if (!vf.ok || vf.share !== 'ci@lsh.iam.gserviceaccount.com' || !/Share it with ci@lsh\.iam\.gserviceaccount\.com/.test(((vf.verify || {}).folder || {}).error || '')) fail(`while GDRIVE_SA_SUBJECT is refused, a link check should name the service account to share with: ${JSON.stringify(vf)}`);
     // both refused: the link check can't run, and says why on the trainee's record (no silent ⏳ Pending)
     tokenFail.sa = true;
     { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }

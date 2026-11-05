@@ -551,7 +551,7 @@ function driveBanner(){
   const box = (cls, html) => `<div class="bs-warn bs-dstat ${cls}">${html} <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.dstat()">🔁 Test again</button></div>`;
   if(!S.sa) return box("bad", `🔌 <b>Google Drive isn’t connected.</b> Add <code>GDRIVE_SA_EMAIL</code> and <code>GDRIVE_SA_KEY</code> to the Worker (Cloudflare → foundational-training → Settings → Variables and Secrets), then Deploy. Until then no link can be checked.`);
   if(!S.saOk) return box("bad", `🔌 <b>The service account can’t sign in to Google:</b> ${e(driveWhy(S.saDetail))}.`);
-  if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Until it’s fixed, the platform reads only files shared with ${e(S.email)}.
+  if(S.subject && !S.subjectOk) return box("bad", `🔌 <b>Reading as ${e(S.subject)} doesn’t work:</b> ${e(driveWhy(S.subjectDetail))}. Meanwhile the platform works as the service account ${e(S.email)}: it reads and checks the files shared with it (trainees are told to share with that address), and saves PDFs only into folders on a Shared Drive it is a member of (elsewhere trainees use ⬇ Download PDF).
     <div class="bs-dstat-id">The Worker signs in as <code>${e(S.email)}</code>${S.clientId ? `, Client ID <code>${e(S.clientId)}</code>: this exact number has to be in the Domain-wide delegation list, with the scope <code>https://www.googleapis.com/auth/drive</code>` : ""}.<br><small>Google said: ${e(S.subjectDetail || "")}</small></div>`);
   return box("ok", `🔌 ✓ <b>Google Drive is connected</b>${S.subject ? ` and reads as <b>${e(S.subject)}</b>` : ` as the service account <b>${e(S.email)}</b> (files must be shared with it)`}.`);
 }
