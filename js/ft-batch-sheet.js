@@ -32,6 +32,8 @@ const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKe
 const canon = v => typeof canonicalBatch === "function" ? canonicalBatch(v) : "";
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const lessons = () => (typeof DAYS !== "undefined" && Array.isArray(DAYS) ? DAYS : []);
+// (the lessons with a ✍️ Knowledge Check: its process questions, js/ft-process.js; Lessons 3 and 5 have none)
+const kcLessons = () => lessons().filter(d => typeof window.ftKcQuestions !== "function" || ftKcQuestions(d.id).length);
 const lessonName = id => typeof ftName === "function" ? ftName(id) : "Lesson " + id;
 const t = v => { const d = v ? new Date(v) : null; return d && isFinite(d) ? d : null; };
 const when = v => { const d = t(v); return d ? d.toLocaleString(undefined, {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"}) : ""; };
@@ -128,6 +130,12 @@ async function loadData(){
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
         if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
+    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table), checked now (worker.js verifyLinks, /api/drive/verify:
+    // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
+    if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
+      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked/.test(L[k].st)); }catch(err){ return false; } });
+      if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
+        if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
   B.dataLoading = false; rerender();
 }
@@ -488,13 +496,13 @@ function complianceTable(){
     rows: ppl.map(p => { const {L} = linkState(p), k = (B.dl || {})[p.id] && L[(B.dl || {})[p.id]] ? B.dl[p.id] : (LINKS.find(([k]) => !/ok|trainer/.test(L[k].st)) || LINKS[0])[0];
       const x = L[k], st = LSTAT[x.st] || ["—", ""], okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
-      const decks = ls.filter(d => deckOf(p, d).finished).length, kcs = ls.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
+      const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: x.label, f: x.link || "", cls: "gs-txt bs-dl", dl: {id: p.id, k, L}},
         {v: st[0], f: `${x.label}: ${x.link ? x.link + " · " : ""}${x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`, cls: "bs-lesson " + st[1]},
         {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["—"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")},
         {v: `${decks} / ${ls.length}`, f: `${decks} of the ${ls.length} lesson decks finished`, cls: "gs-num"},
-        {v: `${kcs} / ${ls.length}`, f: `${kcs} of the ${ls.length} lessons' Knowledge Checks passed`, cls: "gs-num"},
+        {v: `${kcs} / ${kl.length}`, f: `${kcs} of the ${kl.length} lessons' Knowledge Checks passed (${kl.map(d => "Lesson " + d.id).join(", ")})`, cls: "gs-num"},
         {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}];
     })};
 }
@@ -917,7 +925,8 @@ window.FTBatchSheet = {
     const ppl = people().filter(p => p.status === "Approved"); if(!ppl.length) return;
     B.upd = {n: 0, of: ppl.length}; render(); let bad = 0;
     for(const p of ppl){
-      try{ const r = await authFetch("/api/compliance/backfill", {ids: [p.id], redo: true}); const j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; }
+      try{ await authFetch("/api/drive/verify", {id: p.id}).catch(() => null);
+        const r = await authFetch("/api/compliance/backfill", {ids: [p.id], redo: true}); const j = await r.json().catch(() => null); if(!r.ok || !j || !j.ok) bad++; }catch(err){ bad++; }
       B.upd.n++; render();
     }
     B.upd = null; B.dataKey = ""; render();
