@@ -226,6 +226,10 @@ function alertBad(){
   m.dataset.sig = sig;
   document.body.appendChild(m);
 }
+// (the pop-up is the trainee's own: a page drawn for anyone else — a trainer, 👁 Switch View, someone signed out — takes it
+// away, so it never sits over a trainer's screen in a tab a trainee used before)
+if(typeof window.render === "function"){ const __rd = window.render; window.render = function(){ const r = __rd.apply(this, arguments);
+  if(!isTrainee() || preview()){ const m = document.getElementById("fdrAlert"); if(m) m.remove(); } return r; }; }
 // (every few minutes, only the checks are read again — never the links being typed — and nothing is redrawn while the
 // trainee is typing or has the links window open)
 const typingNow = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || !!(a && a.isContentEditable); };
