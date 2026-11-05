@@ -46,10 +46,10 @@ if(typeof __row === "function") window.renderAdminRow = function(){
 
 // a batch's card (and an archived batch on the shelf): the trainee list, filtered to that batch
 const listTo = (k, archived) => {
-  state.adminTab = "audit"; state.batchFolder = null; state.adminBatchFilter = k;
+  state.adminTab = "batchsheet"; state.batchFolder = null; state.adminBatchFilter = k;
   if(archived) state.adminShowArchived = true;
   render();
-  setTimeout(() => { const el = document.getElementById("adminRowsWrap"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 50);
+  setTimeout(() => { const el = document.getElementById("adminRowsWrap") || document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
 };
 window.openBatchFolder = function(k){
   // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
@@ -58,7 +58,15 @@ window.openBatchFolder = function(k){
 };
 
 const __admin = window.renderAdmin;
+// The old Trainee Audit / 📁 Batch Folders page never shows on its own any more: what it held that a trainer DOES is the
+// 👥 Trainees & Batches section at the foot of the 📋 Batch Sheet (js/ft-batch-sheet.js peopleHtml, which draws it with
+// window.__ftPeopleEmbed set). Anything that asks for the page — the Admin screen's default tab, an old link or redirect
+// (cues, rankings, sop, studio → audit), 'batches' — opens the Batch Sheet at that section instead.
+const toPeople = () => setTimeout(() => { const el = document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
 window.renderAdmin = function(){
+  if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit" || state.adminTab === "batches")){
+    const asked = !!state.adminTab; state.adminTab = "batchsheet"; if(asked) toPeople();
+  }
   if(state.adminTab === "batches") state.adminTab = "audit";
   const html = __admin.apply(this, arguments);
   if(state.adminTab !== "audit" || !state.isAdmin || state.traineeId || !state.adminData || state.adminLoading) return html;
