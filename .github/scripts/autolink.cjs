@@ -51,9 +51,12 @@ const failures = []; const fail = (m) => failures.push(m);
         { id: id25('template'), name: 'LSH Daily Task Tracker | BatchID VA Name', mimeType: S },
         { id: id25('stranger'), name: `LSH Task Assessment Manual (TAM) | ${B} Carla Gomez`, mimeType: Dc },
         { id: id25('otherBatch'), name: 'LSH Daily Task Tracker | B090126 Ana Cruz', mimeType: S },
+        // 🧪 a typing test's screenshot in her Typing Tests folder, its name without "typing" (the folder says so)
+        { id: id25('anaShot1'), name: '10-30 AM.png', mimeType: 'image/png', parents: [id25('anaTyping')], createdTime: '2026-10-30T15:00:00Z', modifiedTime: '2026-10-30T15:00:00Z' },
     ];
     const [y, m, d] = TR.ptDate().split('-'), us = `${+m}/${+d}/${y}`;
     let trackerReads = 0, asked = [];
+    let apiReads = 0;
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
         if (u === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'ci-token' }));
@@ -67,7 +70,10 @@ const failures = []; const fail = (m) => failures.push(m);
         if (u.includes(id25('anaTracker') + '/export?format=csv')) { trackerReads++; return new Response(
             `LSH DAILY TASK TRACKER\nDate Received,Type of Task,Task Details,Accountable VA,${us},VA Notes,Deadline,Status,Actual Completion Date\n` +
             `⬇ FOR COMPLETION ⬇\n${us},LSH-TRAINING,Reception lesson,Ana,"Finished the slides",Learned the spiel,ASAP,Ongoing,\n`); }
-        if (u.includes(id25('anaMonitor') + '/export?format=txt')) return new Response('Virtual Assistant Essentials - Day 1\nDate: 10/30/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney.\n');
+        // 📒 her Monitoring Sheet: the docs.google.com export answers the service account with a sign-in page; the Drive API's
+        // export has it (worker.js fetchGoogle → googleApiText)
+        if (u.includes(id25('anaMonitor') + '/export?format=txt')) return new Response('<!DOCTYPE html><html><body>Sign in</body></html>');
+        if (u.includes('/drive/v3/files/' + id25('anaMonitor') + '/export?mimeType=text%2Fplain')) { apiReads++; return new Response('Virtual Assistant Essentials - Day 1\nDate: 10/30/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney.\n'); }
         // 📘 her TAM: an entry a day, under its date (10/30 a full one, 11/02 a short one, none on 11/03)
         if (u.includes(id25('anaTam') + '/export?format=txt')) return new Response('LSH Task Assessment Manual\n10/30/2026\nI answered the reception calls with the spiel, logged each call in the tracker and asked the attorney for the missing details.\n11/02/2026: reviewed the intake form\n');
         return new Response('not found', { status: 404 });
@@ -120,6 +126,12 @@ const failures = []; const fail = (m) => failures.push(m);
       if (c1.monitor !== 25 || c2.monitor !== 13) fail(`the Monitoring Sheet part isn't the discussions due by each day (10/30 25, 11/02 13): ${c1.monitor} / ${c2.monitor}`);
       if (c1.tam !== 100 || c2.tam !== 50 || (cur.compliance['2026-11-03'] && c3.tam !== 0)) fail(`the TAM part isn't the day's entry (10/30 100, 11/02 50, 11/03 0): ${c1.tam} / ${c2.tam} / ${c3.tam}`);
       if (!cur.tam || !cur.tam.entries || !cur.tam.entries['2026-10-30']) fail(`the TAM's entries weren't read: ${JSON.stringify(cur.tam)}`); }
+    // 🔁 the Monitoring Sheet read through the Drive API when the docs.google.com export gives a sign-in page
+    if (!apiReads || !cur.monitor || cur.monitor.error || cur.monitor.found !== 1) fail(`the Monitoring Sheet wasn't read through the Drive API: ${apiReads} reads, ${JSON.stringify(cur.monitor && { error: cur.monitor.error, found: cur.monitor.found })}`);
+    // 🧪 the Typing Tests folder is read: "10-30 AM.png" in it is her 10/30 AM typing test, and counts on the day
+    { const sh = (cur.shots || {}).files || [];
+      if (!sh.some(f => f.kind === 'typing' && f.date === '2026-10-30' && f.slot === 'AM')) fail(`the Typing Tests folder's screenshot wasn't found: ${JSON.stringify(cur.shots)}`);
+      if (!((cur.compliance['2026-10-30'] || {}).tests || {}).AM) fail(`10/30's AM typing test (a screenshot) doesn't count on the day: ${JSON.stringify((cur.compliance['2026-10-30'] || {}).tests)}`); }
 
     if (process.env.SHOW) console.log('BACKTRACK', JSON.stringify(bt), 'days', JSON.stringify(days), 'reads', trackerReads);
     if (failures.length) { console.log(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }

@@ -1095,7 +1095,37 @@ async function fetchGoogle(url, env) {
     const text = await res.text();
     if (res.ok && !/^\s*<(!doctype|html)/i.test(text.slice(0, 200))) return text;
   }
+  // 🔁 the docs.google.com export address can answer a service account with Google's sign-in page even for a file shared with
+  // it (the link opens, its content "can't be read"): the same content through the APIs, which take the account's token —
+  // a Doc as text (Drive API export), a Sheet's tab as CSV (Sheets API: the tab of the link's gid, else the first)
+  const viaApi = await googleApiText(url, tokens.filter(Boolean));
+  if (viaApi != null) return viaApi;
   throw new Error("not-shared");
+}
+async function googleApiText(url, tokens) {
+  const id = (String(url).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1], gid = (String(url).match(/[#&?]gid=(\d+)/) || [])[1];
+  if (!id || !tokens.length) return null;
+  const csvCell = (v) => { const t = String(v == null ? "" : v); return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  for (const tk of tokens) {
+    const H = { headers: { Authorization: "Bearer " + tk } };
+    try {
+      if (/\/spreadsheets\//.test(url)) {
+        const meta = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(sheetId,title)`, H);
+        if (!meta.ok) continue;
+        const sheets = ((await meta.json().catch(() => ({}))).sheets || []).map((x) => x.properties || {});
+        const tab = sheets.find((x) => gid != null && String(x.sheetId) === String(gid)) || sheets[0]; if (!tab) continue;
+        const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent("'" + String(tab.title).replace(/'/g, "''") + "'")}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`, H);
+        if (!r.ok) continue;
+        const rows = (await r.json().catch(() => ({}))).values || [];
+        return rows.map((row) => row.map(csvCell).join(",")).join("\n");
+      }
+      if (/\/document\//.test(url)) {
+        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text%2Fplain`, H);
+        if (r.ok) return await r.text();
+      }
+    } catch (e) { /* the next token */ }
+  }
+  return null;
 }
 /* 📄 The answer sheets in a trainee's Assessment and Activities Folder (js/ft-process.js finds each sheet there by its name):
    the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
@@ -1367,15 +1397,26 @@ function tamEntries(text, D) {
 async function checkShots(env, id) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  if (!drive || !drive.folder) return null;
-  const res = await folderFiles(env, drive.folder);
-  const files = (res.files || []).map((f) => { const p = TR.parseTestShot(f.name, f.created || f.modified); return p && Object.assign(p, { name: String(f.name).slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
+  if (!drive || !(drive.folder || drive.typing || drive.spelling)) return null;
+  // 📁 the Typing Tests and Spelling Tests folders (their own links) and the Assessments/Activities folder: a screenshot in the
+  // Typing Tests folder is a typing test even when its name doesn't say so ("10-30 AM.png"), one in Spelling Tests a spelling test
+  const srcs = [["typing", drive.typing], ["spelling", drive.spelling], ["", drive.folder]].filter(([, u]) => u);
+  const seen = new Set(), all = []; let res = { files: [] }, errs = [];
+  for (const [kind, u] of srcs) {
+    const r = await folderFiles(env, u);
+    if (r.error) { errs.push(kind || "folder"); continue; }
+    (r.files || []).forEach((f) => { const key = f.link || f.name + "|" + (f.created || ""); if (seen.has(key)) return; seen.add(key); all.push({ f, kind }); });
+  }
+  if (errs.length === srcs.length) res = { error: "no-access" };
+  const files = all.map(({ f, kind }) => { const nm = String(f.name || ""), as = kind && !/typing|wpm|spell/i.test(nm) ? (kind === "typing" ? "Typing " : "Spelling ") + nm : nm;
+      const p = TR.parseTestShot(as, f.created || f.modified); return p && Object.assign(p, { name: nm.slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
   // a folder that can't be read this time keeps the screenshots already found
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
-  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString() }) : { files, url: String(drive.folder).slice(0, 500), checkedAt: new Date().toISOString(), error: "" };
+  const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
+  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: url0, checkedAt: new Date().toISOString() }) : { files, url: url0, checkedAt: new Date().toISOString(), error: "", unread: errs };
   await kv.put(rk, JSON.stringify(cur));
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
 }

@@ -29,7 +29,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const COL = (label, sub, max, src, period) => Object.assign({id: uid(), label, sub: sub || "", max: max == null ? 5 : max, type: "score", src: src || ""}, period ? {period} : {});
 const BASE = () => [
   {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes", src: "skills"},
-  COL("Monitoring Sheet", "", 5, "drive:Monitoring Sheet"), COL("Tracker", "", 5, "drive:Tracker")];
+  COL("Monitoring Sheet", "", 5, "day:monitor", "week"), COL("Tracker", "", 5, "day:tracker", "week")];
 const TEMPLATES = {
   week1: {label: "📋 Week 1 columns", cols: () => BASE().concat([COL("PI Reading Task", "", 40, "kc:Reading Task"), COL("Ass: Common Terms", "", 27, "drive:Common Terms"),
     COL("Ass: Auto Liability Insurance", "", 45, "drive:Auto Liability"), COL("RC: Data Extraction", "", 125), COL("Reception Mock Calls", "", 5, "trainer:Reception Mock Call")])},
@@ -39,9 +39,16 @@ const TEMPLATES = {
    (📋 Batch Sheet → ✅ Compliance: links correct of six) and 🏅 the Scorecard's overall (every grading system of js/ft-program.js,
    averaged — the same Overall as 🏅 My Performance). A column already there for one is kept as it is; only the missing ones are
    added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
+const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tam", "TAM"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"]];
+// (a column made before: its Monitoring Sheet and Tracker now follow the day's checks too)
+const DAY_OF = {"drive:Monitoring Sheet": "day:monitor", "drive:Tracker": "day:tracker"};
 function connectAll(cols){
+  cols.forEach(c => { if(c.type === "score" && DAY_OF[c.src]){ c.src = DAY_OF[c.src]; c.period = "week"; } });
   const out = cols.slice(), has = src => out.some(c => c.src === src);
   let n = 0;
+  // 📅 each of the day's deliverables, its own column: the week's average of that part of the end-of-shift check
+  // (worker.js dailyCompliance parts: the Monitoring Sheet, the Task Tracker, the TAM, the Typing & Spelling Tests, the EOD)
+  DAY_PARTS.forEach(([k, label]) => { if(!has("day:" + k)){ out.push(COL(label, "", 5, "day:" + k, "week")); n++; } });
   if(!has("compliance")){ out.push(COL("Daily Compliance", "", 5, "compliance", "week")); n++; }
   if(!has("links")){ out.push(COL("Drive Links Compliance", "", 5, "links")); n++; }
   if(!has("overall")){ out.push(COL("🏅 Scorecard overall", "every grading system", 5, "overall")); n++; }
@@ -100,8 +107,10 @@ async function loadWeek(){
   let named = 0;
   if(R.data) R.data.cols.forEach(c => { if(c.src) return; const k = Object.keys(KNOWN_SRC).find(x => String(c.label || "").toLowerCase().includes(x)); if(k && (KNOWN_SRC[k] === "skills") === (c.type === "notes")){ c.src = KNOWN_SRC[k]; named++; } });
   // (🔗 a report not approved yet gets the scorecards it doesn't have a column for yet: connectAll)
-  if(R.data && !(R.data.auto && R.data.auto.approved)){ const cc = connectAll(R.data.cols); if(cc.added){ R.data.cols = cc.map(c => c.id ? c : Object.assign(c, {id: uid()})); named++; } }
-  if(named && !(R.data.auto && R.data.auto.approved)) save();
+  // (every report, approved too: the day's deliverables and the scorecards follow what the trainees do)
+  if(R.data){ const before = JSON.stringify(R.data.cols.map(c => c.src + "|" + (c.period || ""))), cc = connectAll(R.data.cols);
+    if(cc.added || JSON.stringify(cc.map(c => c.src + "|" + (c.period || ""))) !== before){ R.data.cols = cc.map(c => c.id ? c : Object.assign(c, {id: uid()})); named++; } }
+  if(named) save();
   R.dataLoading = false; rerender();
   // 🔄 the report follows the trainees' progress: each time it is opened (until it is approved), its empty cells fill from
   // the platform, never over what a trainer typed
@@ -112,7 +121,7 @@ async function loadWeek(){
 }
 // a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
 const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
-  "monitoring sheet": "drive:Monitoring Sheet", "tracker": "drive:Tracker", "reception mock call": "trainer:Reception Mock Call",
+  "monitoring sheet": "day:monitor", "tracker": "day:tracker", "tam": "day:tam", "eod": "day:eod", "reception mock call": "trainer:Reception Mock Call",
   "spelling & typing": "skills", "daily compliance": "compliance", "drive links compliance": "links", "scorecard overall": "overall"};
 function save(){
   if(!R.data) return; R.saved = false; R.data.updatedAt = new Date().toISOString();
@@ -162,7 +171,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tam", "📅 TAM (the day's entries)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -172,7 +181,8 @@ async function fillFromPortal(quiet){
   if(!R.data || R.fill) return;
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
   const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance"), linkCols = R.data.cols.filter(c => c.type === "score" && c.src === "links");
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links"); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const dayCols = R.data.cols.filter(c => c.type === "score" && /^day:/.test(c.src || ""));
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links" && !/^day:/.test(c.src)); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length && !dayCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   // (the report read again while its grades are read — FTRanking.reload —: the fill stops, it isn't the report on screen any more)
@@ -225,11 +235,24 @@ async function fillFromPortal(quiet){
     });
     // ✅ the Daily Compliance column: the average of the nightly check's days (trackerreview:<id>.compliance, worker.js
     // dailyCompliance) in the week (a column set to "Whole training": every day so far)
+    // 📅 the day's deliverables, each its own column: the week's average of that part of each day's end-of-shift check
+    // (trackerreview:<id>.compliance[<date>].parts: monitor, tracker, tam, tests, eod — a part the day had nothing to check for,
+    // null, isn't counted); a column set to "Whole training": every day so far
+    if(dayCols.length){
+      const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
+      if(gone()){ R.fill = false; return; }
+      dayCols.forEach(c => { const k = c.src.slice(4); if(c.period === "week" && !wk) return; ppl.forEach((p, i) => {
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
+        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
+        if(!days.length){ clear(row, c, cur); return; }
+        const pct = days.reduce((a, [, x]) => a + x.parts[k], 0) / days.length;
+        put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: c.period === "week" ? "week" : "all", days: days.length}); }); });
+    }
     if(compCols.length){
       const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
       if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
-        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (c.period === "week" && !wk)) return;
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
@@ -547,7 +570,7 @@ function renderRanking(){
       <p class="sc-about">The columns can be changed any time (✎ Columns). Nothing about a trainee is filled in until you type it or ⤓ fill it from the platform.</p></div></div>`;
   return `<div class="card rk">${top}
     <div class="rk-title"><b>${e(title())}</b><span id="rkSaved" class="rk-saved">${R.saved ? "✓ Saved" : "Saving…"}</span>
-      <span class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.toggleEdit()">✎ Columns</button>
+      <span class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.explain()" title="Where each column's score comes from, and one trainee's evidence">ℹ How it’s scored</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.toggleEdit()">✎ Columns</button>
         <button class="btn btn-ghost btn-sm" ${R.fill ? "disabled" : ""} onclick="FTRanking.fill()" title="Fill the empty score cells of the columns that have a source, from the trainees' grades on the platform">${R.fill ? "Filling…" : "⤓ Fill from the platform"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.foldAll()" title="Fold every column away but the marks out of 5, the average, the rank and the AI summary (a column's letter folds or shows it alone)">${sheetCols().some(folded) ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="${R.sort === "rank" ? "Sorted by the final average, highest first. Click for A–Z by name." : "Sorted A–Z by name. Click for highest to lowest."}">↕ ${R.sort === "rank" ? "Highest to lowest" : "A–Z"}</button>
@@ -555,7 +578,7 @@ function renderRanking(){
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
     ${R.data.sharedAt ? `<p class="rk-shared">📤 Shared with the trainees ${e(new Date(R.data.sharedAt).toLocaleString())}: each sees their own row on 📬 My Feedback and 🏅 My Performance. Changes since then reach them when you share again.</p>` : ""}
-    ${autoBanner()}${R.edit ? columnsEditor() : ""}${grid()}
+    ${autoBanner()}${R.explain ? explainHtml() : ""}${R.edit ? columnsEditor() : ""}${grid()}
     <p class="sc-how">Type a score in its cell (Tab or → to the next, Enter or ↓ to the trainee below). A score out of its points gets its mark out of 5 in the grey ÷ 5 column beside it; a column out of 5 is already a mark. The grey cells are worked out (select one to see its formula in the bar): the final average is the average of the row’s marks (empty cells don’t count) and the rank follows it. A score’s note goes in the bar above the sheet (a red corner marks it). ⬇ Excel keeps the formulas; ⬇ Word is the facilitator’s report layout, ranked.</p></div>`;
 }
 
@@ -610,7 +633,53 @@ const autoBanner = () => {
 };
 const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.week - 1)); return v && Array.isArray(v.cols) ? v.cols : null; }catch(err){ return null; } };
 window.addEventListener("ft-roster-changed", () => { R.people = null; });
+/* ℹ HOW IT'S SCORED: where each column's score comes from (its source, as ⤓ fills it), and — for the trainee picked — the
+   evidence behind their row: each Drive link, the Task Tracker's days, the Monitoring Sheet, the TAM, the tests found, the EOD
+   and each day's compliance, with why a part is 0 or empty (a file the system can't read, nothing found). */
+const HOW = {
+  skills: "The Typing & Spelling log for the column’s dates: the tests taken on the platform and the screenshots in the trainee’s Typing Tests, Spelling Tests and Assessments/Activities folders (named with the date and AM/PM). Every weekday needs the AM and PM typing tests and the spelling test. NO SUBMISSION: nothing found for those dates.",
+  "day:monitor": "The Monitoring Sheet, day by day: each day counts the classroom discussions due by then (one a training day), each entry checked for a date, 5 takeaways, questions and the understanding rated. The week’s average, out of 5. Empty: not linked, or the system can’t read the file.",
+  "day:tracker": "The Daily Task Tracker, day by day: each training day’s Daily Notes and outputs on the sheet (a trainer’s score for the day where given). The week’s average, out of 5. Empty: not linked, or the system can’t read the sheet.",
+  "day:tam": "The TAM, day by day: the entry written under each training day’s date (15 words or more counts in full, a shorter one half, none 0). The week’s average, out of 5.",
+  "day:tests": "The Typing & Spelling Tests, day by day: of the three a day (AM typing, PM typing, spelling), how many were taken on the platform or saved as screenshots in Drive. The week’s average, out of 5.",
+  "day:eod": "The EOD email, day by day: checked against its template (the subject with the date, Accomplishments, 3 learnings of 2 sentences, On queue for tomorrow, sent before the end of the shift). The week’s average, out of 5.",
+  compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Tracker, Monitoring Sheet, TAM, tests, outputs, EOD, work on the platform). The week’s average, out of 5.",
+  links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance), out of 5.",
+  overall: "🏅 Scorecard overall: every grading system on the platform averaged (the same Overall as 🏅 My Performance), out of 5."
+};
+const howOf = c => !c.src ? "Typed by the trainer: the platform doesn’t fill it." : HOW[c.src] || (/^kc:/.test(c.src) ? `The Knowledge Check of “${c.src.slice(3)}”: its score.` : /^trainer:/.test(c.src) ? `The trainer’s scorecard for “${c.src.slice(8)}” (Trainer Inputs): its score.` : /^drive:/.test(c.src) ? `The graded “${c.src.slice(6)}” (the answer sheet graded on the platform): its score.` : `The platform’s “${c.src}” grades: their score.`) ;
+function explainHtml(){
+  const X = R.explain, ppl = people(), who = X.who && ppl.some(p => p.id === X.who) ? X.who : (ppl[0] || {}).id;
+  if(who && X.loaded !== who && !X.loading) setTimeout(() => FTRanking.explainWho(who), 0);
+  const ev = X.loaded === who ? X.ev : null, wk = weekRange();
+  const pc = v => typeof v === "number" ? v + "%" : "—";
+  let mine = "";
+  if(ev){
+    const rv = ev.rv || {}, dv = ev.dv || {}, sk = ev.sk || {}, ver = rv.verify || {}, nf = (rv.notFound || {}).keys || [];
+    const LBL = {monitor: "📒 Monitoring Sheet", tam: "📘 TAM", typing: "⌨️ Typing Tests folder", spelling: "🔤 Spelling Tests folder", folder: "📁 Assessments/Activities", tracker: "📋 Daily Task Tracker"};
+    const links = Object.keys(LBL).map(k => `<li><b>${LBL[k]}</b>: ${!dv[k] ? (nf.includes(k) ? "✗ not in their Drive (the batch’s Drive was searched)" : "— not linked") : ver[k] && ver[k].url === String(dv[k]).slice(0, 500) ? (ver[k].ok ? "✓ opens" : "✗ " + e(ver[k].error || "can’t be opened")) : "⏳ not checked yet"}</li>`).join("");
+    const days = Object.entries(rv.days || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
+    const trk = days.length ? days.map(([d, x]) => { const bad = (x.rules || []).find(r => !r.pass); return `<li>${e(d)}: ${pc(x.pct)}${bad ? ` — ${e(bad.label)}${bad.detail ? ": " + e(bad.detail) : ""}` : ""}</li>`; }).join("") : "<li>No day of the Task Tracker checked this week.</li>";
+    const m = rv.monitor, mon = !m ? "Not checked yet." : m.error ? "✗ " + e(m.error) : `${m.found} of ${m.total} discussions found, ${pc(m.pct)} complete (checked ${e(String(m.checkedAt || "").slice(0, 10))}).`;
+    const t = rv.tam, tam = !t ? (dv.tam ? "Not read yet: 🔄 Update all scores reads it." : "Not linked.") : t.error ? "✗ " + e(t.error) : `${Object.keys(t.entries || {}).length} dated entr${Object.keys(t.entries || {}).length === 1 ? "y" : "ies"} found.`;
+    const sh = rv.shots || {}, shots = (sh.files || []), inW = x => !wk || (x.date >= wk[0] && x.date <= wk[1]);
+    const tests = `On the platform: ${(sk.typing || []).filter(inW).length} typing, ${(sk.spelling || []).filter(inW).length} spelling. Screenshots in Drive: ${shots.filter(inW).length}${sh.error ? ` (✗ the folders can’t be read: ${e(sh.error)})` : (sh.unread || []).length ? ` (✗ can’t read: ${e(sh.unread.join(", "))})` : ""}${sh.checkedAt ? `, checked ${e(String(sh.checkedAt).slice(0, 10))}` : ", not checked yet"}.`;
+    const comp = Object.entries(rv.compliance || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
+    const P = ["tracker", "monitor", "tam", "tests", "outputs", "eod", "platform"];
+    const ctab = comp.length ? `<table class="rk-xt"><tr><th>Day</th><th>All</th>${P.map(k => `<th>${k === "tests" ? "Typing & Spelling" : k === "tam" ? "TAM" : k === "eod" ? "EOD" : k[0].toUpperCase() + k.slice(1)}</th>`).join("")}</tr>${comp.map(([d, x]) => `<tr><td>${e(d)}</td><td><b>${pc(x.pct)}</b></td>${P.map(k => `<td>${pc((x.parts || {})[k])}</td>`).join("")}</tr>`).join("")}</table>${comp.some(([, x]) => (x.unreadable || []).length) ? `<p class="rk-xn">“—” for a part: nothing to check that day, or the file can’t be read (${e([...new Set(comp.flatMap(([, x]) => x.unreadable || []))].join(", "))}).</p>` : ""}` : "<p>No day checked this week yet: 🔄 Update all scores on the 📋 Batch Sheet works every day out from Day 1.</p>";
+    mine = `<div class="rk-xw"><h4>🔗 Drive links</h4><ul>${links}</ul><h4>📋 Task Tracker, this week</h4><ul>${trk}</ul><h4>📒 Monitoring Sheet</h4><p>${mon}</p><h4>📘 TAM</h4><p>${tam}</p><h4>🧪 Typing & Spelling, this week</h4><p>${tests}</p><h4>✅ Each day’s check</h4>${ctab}</div>`;
+  }
+  return `<div class="rk-explain card"><div class="rk-xh"><b>ℹ How the scores are tracked</b><button class="btn btn-ghost btn-sm" onclick="FTRanking.explain()">✕ Close</button></div>
+    <p class="rk-xn">A cell with ⤓ was filled by the platform: it is filled again from the scorecards each time the report opens and after every 🔄 Update on the 📋 Batch Sheet (approved reports too). A cell you type is kept as you typed it. Each day is checked at the end of the shift; 🔄 Update all scores checks every day again from Day 1.</p>
+    <ul class="rk-xcols">${(R.data.cols || []).map(c => `<li><b>${e(c.label)}</b>${c.type === "score" ? ` <small>(${e(c.max)} points → out of 5)</small>` : ""}: ${e(howOf(c))}</li>`).join("")}</ul>
+    <label class="rk-xp"><b>🔎 One trainee’s evidence${wk ? ` (${e(wk[0])} to ${e(wk[1])})` : ""}:</b> <select onchange="FTRanking.explainWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === who ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
+    ${ev ? mine : `<p class="rk-xn">Reading…</p>`}</div>`;
+}
 window.FTRanking = {
+  explain(){ R.explain = R.explain ? null : {}; rerender(); },
+  async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
+    let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
+    if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: v[0] || {}, dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
   // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
   ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
   fold(k){ const f = foldSet(); if(f.has(k)) f.delete(k); else f.add(k); saveFolds(); rerender(); },
@@ -760,6 +829,10 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl-avg{color:#1F4E2C;} .xl-rank{text-align:center;color:#B5651F;}
 .xl td.xl-sel,.xl td:focus{box-shadow:inset 0 0 0 2px #217346;}
 .xl-td.has-note::after{content:"";position:absolute;top:0;right:0;border-left:7px solid transparent;border-top:7px solid #D13438;}
+.rk-explain{margin:10px 0;padding:14px 16px;border-left:5px solid var(--orange);font-size:14px;line-height:1.5;} .rk-xh{display:flex;justify-content:space-between;align-items:center;font-size:16px;color:var(--navy);margin-bottom:6px;}
+.rk-xn{color:var(--ink-soft);font-size:13px;margin:4px 0;} .rk-xcols{margin:6px 0 10px;padding-left:18px;} .rk-xcols li{margin:3px 0;} .rk-xp{display:block;margin:10px 0 6px;} .rk-xp select{font:inherit;padding:4px 8px;}
+.rk-xw h4{margin:10px 0 2px;color:var(--navy);font-size:14px;} .rk-xw ul{margin:2px 0;padding-left:18px;} .rk-xw p{margin:2px 0;}
+.rk-xt{border-collapse:collapse;font-size:13px;margin-top:4px;} .rk-xt th,.rk-xt td{border:1px solid #E3E6EF;padding:3px 7px;text-align:center;} .rk-xt th{background:#F4F6FA;}
 .xl-td.is-auto::before{content:"⤓";position:absolute;bottom:1px;left:2px;font-size:9px;color:#217346;}
 .xl-addl{min-width:240px;}
 .xl-ai{position:absolute;top:2px;right:2px;border:1px solid #D4D4D4;background:#fff;border-radius:4px;font-size:11px;padding:0 4px;cursor:pointer;opacity:.75;}

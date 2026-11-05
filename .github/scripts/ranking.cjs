@@ -245,6 +245,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!w2 || (w2.cols.find(c => c.id === ct) || {}).src !== 'drive:Common Terms') fail(`the Common Terms column didn't get its source: ${JSON.stringify(w2 && w2.cols)}`);
   if (!cRhea || Number(cRhea.raw) !== 21.6) fail(`opening the report didn't fill Rhea's Common Terms from her graded assessment (80% of 27 = 21.6): ${JSON.stringify(cRhea)}`);
   if (!cSam || cSam.raw !== '20') fail(`the fill wrote over a score the trainer typed: ${JSON.stringify(cSam)}`);
+  // 📅 every day's deliverable is its own column (the Monitoring Sheet, the Tracker, the TAM, the Typing & Spelling Tests, the EOD)
+  if (!['day:monitor', 'day:tracker', 'day:tam', 'day:tests', 'day:eod'].every(k => (w2.cols || []).some(c => c.src === k))) fail(`the day's deliverables aren't all columns: ${JSON.stringify((w2.cols || []).map(c => c.src))}`);
+  // ℹ How it's scored: each column's source, and one trainee's evidence
+  await page.evaluate(() => FTRanking.explain()); await page.waitForTimeout(1500);
+  { const x = await page.evaluate(() => (document.querySelector('.rk-explain') || {}).innerText || '');
+    if (!/How the scores are tracked/.test(x) || !/TAM, day by day/.test(x) || !/Drive links/.test(x) || !/Each day’s check/.test(x)) fail(`ℹ How it's scored doesn't explain the columns and a trainee's evidence: ${x.slice(0, 300)}`); }
+  await page.evaluate(() => FTRanking.explain());
   // 🔄 a cell the platform filled follows the scorecards: Rhea's assessment graded again (90%) → her cell 24.3 on the next read,
   // and an auto NO SUBMISSION note (from before her files were linked) is worked out again; the trainer's typed 20 stays
   { const rv = await get('trackerreview:' + ids.Rhea); rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'] = Object.assign(rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'], { score: 24.3, pct: 90 }); await put('trackerreview:' + ids.Rhea, rv);

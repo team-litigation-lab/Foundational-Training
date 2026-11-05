@@ -502,7 +502,9 @@ window.ftDriveItems = ctx => {
   const rv = ctx.rec["trackerreview:"] || {}, out = [];
   // (ctx.range: a week's dates, from ⤓ Fill in the Weekly Ranking: the tracker's days in it only; at: each item's date)
   const inRange = d => !ctx.range || (String(d).slice(0, 10) >= ctx.range[0] && String(d).slice(0, 10) <= ctx.range[1]);
-  const days = Object.entries(rv.days || {}).filter(([d, x]) => x && x.source === "drive" && inRange(d));
+  // (a day whose sheet the system couldn't read isn't a 0: it isn't counted, as in the day's compliance — a trainer's score still is)
+  const unread = x => (x.rules || []).some(r => r.id === "sheet" && !r.pass && /can't open|can.t be read|not shared|sign.?in/i.test(String(r.detail || "")));
+  const days = Object.entries(rv.days || {}).filter(([d, x]) => x && x.source === "drive" && inRange(d) && (tScore(x) != null || !unread(x)));
   if(days.length){ const vals = days.map(([d, x]) => tScore(x) != null ? tScore(x) : x.pct).filter(v => typeof v === "number");
     out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)", at:days.map(([d]) => d).sort().pop()}); }
   const m = rv.monitor;
