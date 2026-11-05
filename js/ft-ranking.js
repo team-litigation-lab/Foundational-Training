@@ -255,7 +255,7 @@ async function fillFromPortal(quiet){
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.parts[k], 0) / days.length;
-        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", instructions: "Following Instructions (the six Drive links as the course asks)"}[k] || k;
+        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", instructions: "Following Instructions (naming, saving route, deliverables on time, Drive links)"}[k] || k;
         put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: c.period === "week" ? "week" : "all", days: days.length,
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
@@ -681,7 +681,7 @@ const HOW = {
   "day:monitor": "The Monitoring Sheet, day by day: each day counts the classroom discussions due by then (one a training day), each entry checked for a date, 5 takeaways, questions and the understanding rated. The week’s average, out of 5. Empty: not linked, or the system can’t read the file.",
   "day:tracker": "The Daily Task Tracker, day by day: each training day’s Daily Notes and outputs on the sheet (a trainer’s score for the day where given). The week’s average, out of 5. Empty: not linked, or the system can’t read the sheet.",
   "day:tests": "The Typing & Spelling Tests, day by day: of the three a day (AM typing, PM typing, spelling), how many were taken on the platform or saved as screenshots in Drive. The week’s average, out of 5.",
-  "day:instructions": "Following Instructions, day by day (strict): each training day's six Drive links as the course asks — linked, the trainee's own, the right file or folder, named by the convention, where it belongs. Out of the six, checked at the end of the shift; a day already over keeps what was found then, so fixing a link later doesn't undo the days it was wrong. The week's average, out of 5.",
+  "day:instructions": "Following Instructions, day by day (strict): the naming convention (answer sheets, test screenshots), the folder structure and saving route (screenshots in the Typing / Spelling Tests folders, the six Drive links), and the deliverables on time (the three tests that day, the EOD before the end of the shift, the Task Tracker updated, answer sheets by their due time). The share followed each day; a day already over keeps what was found then, so fixing something later doesn't undo it. The week's average, out of 5.",
   "day:eod": "The EOD email, day by day: checked against its template (the subject with the date, Accomplishments, 3 learnings of 2 sentences, On queue for tomorrow, sent before the end of the shift). The week’s average, out of 5.",
   compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, Following Instructions, the day’s outputs and work on the platform; the TAM on a day a trainer graded it for shadowing). The week’s average, out of 5.",
   links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance), out of 5.",
@@ -843,39 +843,42 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 #xlBar{flex:1 1 auto;border:0;padding:5px 8px;font:inherit;outline:none;min-width:0;}
 #xlBar[readonly]{color:#444;background:#FAFAFA;}
 .xl-wrap{overflow:auto;max-height:62vh;border:1px solid #C8C8C8;background:#fff;}
-.xl{border-collapse:separate;border-spacing:0;font:600 14.5px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
+.xl{border-collapse:separate;border-spacing:0;font:700 17px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
 /* (every trainee's row the same height, for balance: a long note scrolls inside its cell) */
+/* (every trainee's row the same height, for balance; the text columns narrower, so the sheet leaves room for the other
+   scorecards — a long note or summary scrolls inside its own cell) */
 .xl-row > td,.xl-row > th{height:76px;box-sizing:border-box;}
-.xl-row .xl-txt{height:72px;overflow-y:auto;font-size:13px;font-weight:600;}
+.xl-row .xl-txt{height:72px;overflow-y:auto;font-size:15px;font-weight:700;line-height:1.3;padding:3px 6px;}
 .xl-clip{max-height:66px;overflow-y:auto;}
-.xl-num{font-weight:800 !important;font-size:15.5px;}
-.xl-calc{font-size:15.5px;font-weight:800 !important;}
-.t-ex{background:#E3EEFF !important;color:#0B3FA8 !important;} .t-gd{background:#E3F5E9 !important;color:#14652F !important;}
-.t-ok{background:#FFF6CC !important;color:#7A5A00 !important;} .t-lo{background:#FDE3E1 !important;color:#B42318 !important;}
+.xl-row td.xl-aisum{font-size:14.5px;font-weight:600;line-height:1.35;padding:3px 6px;}
+.xl-num{font-weight:900 !important;font-size:19px;}
+.xl-calc{font-size:19px;font-weight:900 !important;}
+.t-ex{background:#CFE0FF !important;color:#0A3A9E !important;} .t-gd{background:#CDEFD8 !important;color:#0F5A2A !important;}
+.t-ok{background:#FFE9A3 !important;color:#6B4A00 !important;} .t-lo{background:#FBCFCB !important;color:#A0150C !important;}
 .t-ex .xl-in,.t-gd .xl-in,.t-ok .xl-in,.t-lo .xl-in{color:inherit;}
-.rk-legend{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;margin-top:6px;} .rk-legend span{padding:2px 9px;border-radius:999px;font-weight:800;} .rk-legend small{color:var(--ink-soft);}
+.rk-legend{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:16px;font-weight:800;margin-top:6px;} .rk-legend span{padding:2px 9px;border-radius:999px;font-weight:800;} .rk-legend small{color:var(--ink-soft);}
 #rkTip{position:fixed;z-index:10080;display:none;background:#1E2340;color:#fff;font:600 13px/1.45 'Segoe UI',Arial,sans-serif;padding:9px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(20,24,50,.3);pointer-events:none;white-space:normal;}
 .xl th,.xl td{border-right:1px solid #D4D4D4;border-bottom:1px solid #D4D4D4;padding:0;}
 .xl-letters th{position:sticky;top:0;z-index:4;background:#F3F3F3;color:#555;font-weight:400;font-size:11.5px;height:20px;text-align:center;min-width:76px;}
 .xl-letters th.xl-l:not(.xl-frz){cursor:pointer;} .xl-letters th.xl-l:not(.xl-frz):hover{background:#E3ECDC;}
 .xl th.xl-folded,.xl td.xl-fold{min-width:14px !important;width:14px;max-width:14px;padding:0 !important;background:repeating-linear-gradient(90deg,#EEF1F4,#EEF1F4 3px,#E1E5EA 3px,#E1E5EA 6px);}
-.xl-head th.xl-h-ai{min-width:320px;background:#2F5D8C;}
-.xl td.xl-aisum{min-width:320px;max-width:420px;white-space:normal;font-size:12.5px;line-height:1.45;vertical-align:top;padding:5px 7px;background:#F4F8FC;color:#1E2340;}
+.xl-head th.xl-h-ai{min-width:260px;background:#2F5D8C;}
+.xl td.xl-aisum{min-width:260px;max-width:340px;white-space:normal;font-size:12.5px;line-height:1.45;vertical-align:top;padding:5px 7px;background:#F4F8FC;color:#1E2340;}
 .xl td.xl-aisum.is-plain{color:#3C4043;font-style:italic;} .xl td.xl-aisum .xl-wait{color:#80868B;font-style:italic;}
 .xl-corner,.xl-rn{position:sticky;left:0;z-index:5;background:#F3F3F3 !important;color:#555;font-weight:400 !important;font-size:11.5px;width:34px;min-width:34px !important;text-align:center;}
 .xl-corner{top:0;z-index:6;}
-.xl-title td{padding:5px 8px;font-size:14px;background:#fff;}
-.xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:800;font-size:13px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
-.xl-head th.xl-h-name,.xl-head th.xl-h-notes,.xl-head th.xl-h-addl{min-width:200px;}
+.xl-title td{padding:5px 8px;font-size:17px;background:#fff;}
+.xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:900;font-size:15px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
+.xl-head th.xl-h-name{min-width:150px;} .xl-head th.xl-h-notes{min-width:150px;max-width:190px;} .xl-head th.xl-h-addl{min-width:190px;}
 .xl-head th.xl-h-calc,.xl-head th.xl-h-avg,.xl-head th.xl-h-rank{background:#4A7F28;}
 .xl .xl-frz{position:sticky;left:34px;z-index:2;background:#fff;}
 .xl-head .xl-frz{z-index:4;background:#5B9A32;}
 .xl-head th.xl-rn{color:#555;font-weight:400;}
-.xl-name{padding:4px 8px !important;font-weight:800;font-size:15px;min-width:190px;vertical-align:middle;outline:none;}
+.xl-name{padding:4px 8px !important;font-weight:900;font-size:17.5px;min-width:150px;vertical-align:middle;outline:none;}
 .xl-td{position:relative;vertical-align:top;}
 .xl-in{display:block;width:100%;border:0;border-radius:0;background:transparent;font:inherit;color:inherit;padding:4px 6px;outline:none;resize:none;}
 .xl-num{text-align:right;min-width:76px;}
-.xl-txt{min-width:200px;line-height:1.3;}
+.xl-txt{min-width:150px;line-height:1.3;}
 .xl-calc{background:#F2F2F2;text-align:right;padding:4px 8px !important;font-weight:700;vertical-align:top;outline:none;min-width:64px;}
 .xl-avg{color:#1F4E2C;} .xl-rank{text-align:center;color:#B5651F;}
 .xl td.xl-sel,.xl td:focus{box-shadow:inset 0 0 0 2px #217346;}
@@ -885,7 +888,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .rk-xw h4{margin:10px 0 2px;color:var(--navy);font-size:14px;} .rk-xw ul{margin:2px 0;padding-left:18px;} .rk-xw p{margin:2px 0;}
 .rk-xt{border-collapse:collapse;font-size:13px;margin-top:4px;} .rk-xt th,.rk-xt td{border:1px solid #E3E6EF;padding:3px 7px;text-align:center;} .rk-xt th{background:#F4F6FA;}
 .xl-td.is-auto::before{content:"⤓";position:absolute;bottom:1px;left:2px;font-size:9px;color:#217346;}
-.xl-addl{min-width:240px;}
+.xl-addl{min-width:190px;}
 .xl-ai{position:absolute;top:2px;right:2px;border:1px solid #D4D4D4;background:#fff;border-radius:4px;font-size:11px;padding:0 4px;cursor:pointer;opacity:.75;}
 .xl-ai:hover{opacity:1;}
 @media(max-width:900px){.rk-col{grid-template-columns:1fr 1fr;}}

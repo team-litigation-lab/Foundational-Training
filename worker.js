@@ -102,6 +102,9 @@ function adminPassStatus(env) {
   return "MASTER_ADMIN_PASSWORD" + (ignored.length ? ` (had ${ignored.join(", ")}: ignored)` : "") + odd;
 }
 function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
+// (a sign-in — a trainer's or a trainee's — lasts a year: no one is signed out by the clock, only by 🚪 Log out, a revoked access
+// or offboarding, which the Worker checks on every request)
+const SESSION_HOURS = 24 * 365;
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
   const body = `${role}.${encodeURIComponent(subject)}.${exp}`;
@@ -1156,7 +1159,7 @@ async function folderFilesAs(token, fid) {
     await list(fid);
     for (const sub of out.filter(f => f.mimeType === FOLDER).slice(0, 40)) await list(sub.id);
   } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
-  return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
+  return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ id: f.id || "", mime: f.mimeType || "", name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
 }
 /* 📄 Save PDF to my Folder (js/ft-process.js): a Knowledge Check answer sheet, as a PDF, written into the trainee's
    Assessment and Activities Folder under its naming convention. The same name in the folder is replaced in place, so
@@ -1410,10 +1413,36 @@ async function checkShots(env, id) {
   }
   if (errs.length === srcs.length) res = { error: "no-access" };
   const files = all.map(({ f, kind }) => { const nm = String(f.name || ""), as = kind && !/typing|wpm|spell/i.test(nm) ? (kind === "typing" ? "Typing " : "Spelling ") + nm : nm;
-      const p = TR.parseTestShot(as, f.created || f.modified); return p && Object.assign(p, { name: nm.slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
+      const p = TR.parseTestShot(as, f.created || f.modified); return p && Object.assign(p, { name: nm.slice(0, 160), link: f.link || "", created: f.created || f.modified || "", in: kind || "folder" }); })
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
+  // 🔢 THE SCORE ON EACH SCREENSHOT, read once by the AI from the image (a typing test: its WPM and accuracy; a spelling test: its
+  // score out of its total), kept with the file so the 🧪 Typing & Spelling page and the scorecards count it like a test taken on
+  // the platform. At most 8 new screenshots a check (the rest on the next), each read once, a failed read tried again next time.
+  const was = new Map(((prev.files) || []).filter((f) => f && f.link).map((f) => [f.link, f]));
+  files.forEach((f) => { const w = was.get(f.link); if (w) ["wpm", "acc", "score", "total", "read", "readAt"].forEach((k) => { if (w[k] != null) f[k] = w[k]; }); });
+  const meta = new Map(all.map(({ f }) => [f.link, f]));
+  const toRead = files.filter((f) => !f.read && meta.get(f.link) && meta.get(f.link).id && /^image\//.test(meta.get(f.link).mime || "image/")).slice(0, 8);
+  if (toRead.length && (claudeOn(env) || geminiKeyOrder(env).length)) {
+    let tks = [null]; try { tks = (await readTokens(env)).concat([null]); } catch (e) { tks = [null]; }
+    for (const f of toRead) {
+      const m = meta.get(f.link); let bytes = null;
+      for (const tk of tks) { bytes = await driveBytes(m.id, tk, ""); if (bytes) break; }
+      if (!bytes || bytes.length > 6e6) continue;
+      const mime = /png/i.test(m.mime) ? "image/png" : /jpe?g/i.test(m.mime) ? "image/jpeg" : /webp/i.test(m.mime) ? "image/webp" : /gif/i.test(m.mime) ? "image/gif" : "image/png";
+      const sys = "You read the result shown on a screenshot of a typing test or a spelling test. Answer with JSON only.";
+      const prompt = f.kind === "spelling" ? 'This is a spelling test result. Return {"score": <words or points correct>, "total": <out of>} as numbers, or {"score": null, "total": null} if no score is shown.'
+        : 'This is a typing test result. Return {"wpm": <net words per minute, or WPM shown>, "acc": <accuracy percent, a number 0-100>} as numbers, or {"wpm": null, "acc": null} if no result is shown.';
+      try {
+        const raw = await aiReadFile(env, b64Of(bytes), mime, sys, prompt), j = JSON.parse((String(raw).match(/\{[\s\S]*\}/) || ["{}"])[0]);
+        const n = (v, hi) => { const x = Number(v); return isFinite(x) && x >= 0 && x <= hi ? Math.round(x * 10) / 10 : null; };
+        if (f.kind === "spelling") { f.score = n(j.score, 500); f.total = n(j.total, 500); if (f.total != null && f.score != null && f.score > f.total) f.score = null; }
+        else { f.wpm = n(j.wpm, 250); f.acc = n(j.acc, 100); }
+        f.read = true; f.readAt = new Date().toISOString();
+      } catch (e) { /* tried again on the next check */ }
+    }
+  }
   // a folder that can't be read this time keeps the screenshots already found
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
@@ -1729,12 +1758,15 @@ async function driveBytes(fid, token, magic = "%PDF") {
 }
 const b64Of = (b) => { let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
 // the AI reads a PDF (Claude's document input; else Gemini's inline data) and answers in text; "" when neither can
-async function aiReadPdf(env, b64, system, prompt) {
+async function aiReadPdf(env, b64, system, prompt) { return aiReadFile(env, b64, "application/pdf", system, prompt); }
+// (an image — a test screenshot — is read the same way: Claude's image input, else Gemini's inline data)
+async function aiReadFile(env, b64, mime, system, prompt) {
+  const isPdf = mime === "application/pdf";
   if (claudeOn(env) && claudeRest <= Date.now()) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" },
-        body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }, { type: "text", text: prompt }] }] }) });
+        body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: isPdf ? "document" : "image", source: { type: "base64", media_type: mime, data: b64 } }, { type: "text", text: prompt }] }] }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { const msg = String((j.error && j.error.message) || "");
         if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000; else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
@@ -1748,7 +1780,7 @@ async function aiReadPdf(env, b64, system, prompt) {
     try {
       const r = await geminiFetch(env, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": env[name] },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ inline_data: { mime_type: "application/pdf", data: b64 } }, { text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.2 } }) });
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.2 } }) });
       const d = await r.json().catch(() => ({}));
       const t = (((d.candidates || [])[0] || {}).content || {}).parts;
       const txt = (t || []).filter((x) => !x.thought).map((x) => x.text || "").join("");
@@ -2130,27 +2162,70 @@ async function dailyCompliance(env, id, D, o = {}) {
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
   const tamG = (cur.tamGrades || {})[D] || null, eodRaw = (cur.eodTrainer || {})[D] || null;
-  // 📏 FOLLOWING INSTRUCTIONS, strictly: the six monitored Drive links as the course asks — each linked, the trainee's own,
-  // the right kind, named by the convention, where it belongs (worker.js verifyLinks, trackerreview:<id>.verify; a trainer's
-  // ✓ Mark as opening counts). Recorded for the day it is checked; a day already over keeps what was found then, so a trainee
-  // who fixes a link afterwards is still marked down for the days it was wrong — a backtrack doesn't undo it — and the days
-  // after the fix score in full. (A link not checked yet, or Drive busy, isn't held against them.)
-  const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr;
-  let instr = wasI || null;
-  if (D >= TR.ptDate() || (!wasI && !o.redo && !o.backfill)) {
-    const dc = (pre && pre.daycheck) || (await get(`daycheck:${id}`)) || {};
-    const ver = cur.verify || {}, ov = dc.links || {}, issues = [];
-    let ok = 0, judged = 0;
-    for (const k of Object.keys(LINKS_KIND)) {
-      const url = String((drive || {})[k] || "").trim(), v = ver[k];
-      if (!url) { judged++; issues.push({ k, why: "not linked" }); continue; }
-      if (ov[k] && ov[k].ok && String(ov[k].url || "").trim() === url) { judged++; ok++; continue; }
-      if (!v || v.retry || String(v.url || "").trim() !== url.slice(0, 500)) continue;
-      judged++; if (v.ok) ok++; else issues.push({ k, why: String(v.error || "not as the course asks").slice(0, 200) });
-    }
-    instr = judged ? { pct: Math.round(100 * ok / Object.keys(LINKS_KIND).length), ok, of: Object.keys(LINKS_KIND).length, issues, at: new Date().toISOString() } : wasI || null;
-  }
   const eodT = eodRaw && pctOf(eodRaw.score) != null ? Object.assign({}, eodRaw, { score: pctOf(eodRaw.score) }) : null;
+  // 📏 FOLLOWING INSTRUCTIONS, strictly — each training day, everything the course asks that the platform can see:
+  //   • the naming convention: the day's answer sheets (process:<id>, ft-process.js nameOk) and test screenshots (named with
+  //     their date and AM/PM);
+  //   • the folder structure and saving route: the screenshots saved in the Typing Tests / Spelling Tests folder, not elsewhere;
+  //     the six monitored Drive links — linked, the trainee's own, the right kind, named by the convention, where they belong
+  //     (verifyLinks; a trainer's ✓ Mark as opening counts) — for the day they are checked (no record of past days' links);
+  //   • the deliverables on time: the day's answer sheets saved by their due time, the three tests taken that day (not made up
+  //     later), the EOD sent before the end of the shift, the Task Tracker updated that day.
+  // Kept for the day: a day already over keeps what was found then (v2), so fixing something afterwards — or a backtrack —
+  // doesn't undo the days it was wrong, and the days after the fix score in full. A day not over yet isn't marked down for
+  // what can still be done today.
+  const todayPT = TR.ptDate(), dcRec = (pre && pre.daycheck) || (await get(`daycheck:${id}`)) || {};
+  const instrOf = (Dx, keptLinks) => {
+    const overX = Dx < todayPT, dayX = ((drive || {}).days || {})[Dx] || {}, tkX = (cur.days || {})[Dx];
+    const eodX = (cur.eodTrainer || {})[Dx] && pctOf(cur.eodTrainer[Dx].score) != null;
+    const checks = [], add = (k, ok, why) => checks.push({ k, ok: !!ok, why: ok ? "" : String(why || "").slice(0, 200) });
+    // the six links: checked now, for today; a past day keeps the links it was checked with, if any
+    let linkChecks = [];
+    if (!overX) {
+      const ver = cur.verify || {}, ov = dcRec.links || {};
+      for (const k of Object.keys(LINKS_KIND)) {
+        const url = String((drive || {})[k] || "").trim(), v = ver[k];
+        if (!url) { linkChecks.push({ k, ok: false, why: "not linked" }); continue; }
+        if (ov[k] && ov[k].ok && String(ov[k].url || "").trim() === url) { linkChecks.push({ k, ok: true, why: "" }); continue; }
+        if (!v || v.retry || String(v.url || "").trim() !== url.slice(0, 500)) continue;
+        linkChecks.push({ k, ok: !!v.ok, why: v.ok ? "" : String(v.error || "not as the course asks").slice(0, 200) });
+      }
+    } else if (Array.isArray(keptLinks)) linkChecks = keptLinks;
+    checks.push(...linkChecks);
+    // the test screenshots of the day: named, and saved where they belong
+    (((cur.shots || {}).files) || []).filter((f) => f && f.date === Dx).forEach((f) => {
+      const what = f.kind === "spelling" ? "Spelling Test" : `Typing Test (${f.slot || "AM"})`;
+      add("name", f.named, `${what} screenshot not named with its date and AM/PM (“${String(f.name || "").slice(0, 60)}”)`);
+      if (f.in) add("route", f.in === f.kind, `${what} screenshot saved in the ${f.in === "folder" ? "Assessments/Activities" : f.in === "typing" ? "Typing Tests" : "Spelling Tests"} folder, not ${f.kind === "spelling" ? "Spelling Tests" : "Typing Tests"}`);
+    });
+    // the day's answer sheets: named by the convention, saved by their due time
+    Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { const f = x && x.file; if (!f || !f.at || TR.ptDate(new Date(f.at)) !== Dx) return;
+      add("name", f.nameOk, `answer sheet not named by the convention (“${String(f.name || sid).slice(0, 60)}”)`);
+      add("late", f.onTime, `answer sheet (“${String(f.name || sid).slice(0, 60)}”) saved after its due time`); });
+    // the deliverables on time (a day that is over: the day's three tests, the EOD, the Task Tracker)
+    if (overX) {
+      const taken = { AM: 0, PM: 0, SP: 0 };   // 1 on the day, 2 made up later
+      const mark = (sl, v) => { if (!taken[sl] || v < taken[sl]) taken[sl] = v; };
+      ((skills || {}).typing || []).forEach((t) => { if (t.makeup && String(t.makeup).split(" ")[0] === Dx) mark(String(t.makeup).split(" ")[1] === "PM" ? "PM" : "AM", 2); else if (!t.makeup && t.date === Dx) mark(t.slot === "PM" ? "PM" : "AM", 1); });
+      ((skills || {}).spelling || []).forEach((x) => { if (x.makeup && String(x.makeup).split(" ")[0] === Dx) mark("SP", 2); else if (!x.makeup && x.date === Dx) mark("SP", 1); });
+      (((cur.shots || {}).files) || []).forEach((f) => { if (f && f.date === Dx) mark(f.kind === "spelling" ? "SP" : f.slot === "PM" ? "PM" : "AM", f.up && f.up > f.date ? 2 : 1); });
+      [["AM", "AM Typing Test"], ["PM", "PM Typing Test"], ["SP", "Spelling Test"]].forEach(([sl, nm]) => add("late", taken[sl] === 1, taken[sl] === 2 ? `${nm} made up on a later day` : `${nm} not taken that day`));
+      if (eodX) add("eod", true, "");
+      else if (dayX.eod && String(dayX.eod.text || "").trim()) { const ch = TR.checkEod(dayX.eod.text, dayX.eod.subject || "", Dx, dayX.eod.at), tr = (ch.rules || []).find((r) => r.id === "time"); add("eod", !tr || tr.pass, "EOD sent after the end of the shift"); }
+      else add("eod", false, "no EOD sent that day");
+      const trR = tkX && (tkX.rules || []).find((r) => r.id === "sheet" && !r.pass), unr = trR && /can't open|can.t be read|not shared|sign.?in/i.test(String(trR.detail || ""));
+      if (drive && drive.tracker && !unr) add("tracker", !!(tkX && typeof tkX.pct === "number" && tkX.pct > 0), "Task Tracker not updated that day");
+    }
+    const okN = checks.filter((c) => c.ok).length;
+    return checks.length ? { v: 2, pct: Math.round(100 * okN / checks.length), ok: okN, of: checks.length, issues: checks.filter((c) => !c.ok).map((c) => ({ k: c.k, why: c.why })).slice(0, 20), links: linkChecks, at: new Date().toISOString() } : null;
+  };
+  const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr, over = D < todayPT;
+  let instr = wasI || null;
+  if (!over || !wasI || wasI.v !== 2) instr = instrOf(D, wasI && wasI.links) || wasI || null;
+  // (the past days this trainee has no mark for yet — checked before it was kept — get theirs from what is on record for them)
+  Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
+    const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {}; x.parts.instructions = I.pct;
+    const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
@@ -2169,7 +2244,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
-  if (was && was.instr && D < TR.ptDate()) parts.instructions = was.instr.pct;
+  if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
   if (o.redo && !o.fresh && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
@@ -2346,7 +2421,7 @@ export default {
         await new Promise((r) => setTimeout(r, 400)); // slow down guessing
         const given = normPass(passphrase), want = normPass(adminPass(env));
         if (!given || !want || !safeEqual(given, want)) return json({ error: "Incorrect password" }, 401);
-        return json({ token: await makeToken(env, "a", "admin", 12) });
+        return json({ token: await makeToken(env, "a", "admin", SESSION_HOURS) });
       }
       // The trainee's session for a name + batch: their record id (new or legacy form) and token.
       const traineeSession = async (name, batch, id) => {
@@ -2377,7 +2452,7 @@ export default {
         else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
         if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
-        return json({ id: chosen, token: await makeToken(env, "t", chosen, 24 * 30), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
+        return json({ id: chosen, token: await makeToken(env, "t", chosen, SESSION_HOURS), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
       if (path === "/api/auth/trainee") {
         if (!secure) return json({ error: "not-configured" }, 501);
@@ -2411,7 +2486,7 @@ export default {
         if (!who) return json({ error: why.r === "signature"
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
-        if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
+        if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", SESSION_HOURS) });
         if (who.admin) {
           // Single sign-on for trainers too: an administrator signed in on the Main Portal opens every program as a
           // trainer, with no second password here. Their ticket works once, so a copy of the link (browser history,
@@ -2419,7 +2494,7 @@ export default {
           if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
           // (the token keeps the trainer's name, hub:<name>: a trainer who came from the main Hub gets the Portal's simulators
           // signed in too, /api/auth/tool-ticket)
-          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), 12) });
+          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), SESSION_HOURS) });
         }
         // 🔁 a Batch ID changed on the Portal: the trainee's ID is their name + batch, so the new batch would be a second,
         // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
@@ -2431,7 +2506,7 @@ export default {
           await withFull(moved.id, moved.rec);
           const blockedM = (await blockedIds(env))[moved.id];
           if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
-          return json({ id: moved.id, token: await makeToken(env, "t", moved.id, 24 * 30), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
+          return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
             name: who.name, first: who.first, last: who.last });
         }
         const res = await traineeSession(who.name, who.batch, "");

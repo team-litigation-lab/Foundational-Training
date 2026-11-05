@@ -24,7 +24,8 @@ window.renderTopbar = function(){
   [...nav.children].forEach(b => { const v = (onc(b).match(/goto\('([a-z]+)'\)/) || [])[1];
     if(b.classList.contains("lp-focus") || b.classList.contains("nav-focus") || /openFocusPanel/.test(onc(b)) || (v && GONE.includes(v))) b.remove(); });
   const btn = (v, label, title) => `<button type="button" class="lp-sec${state.view === v ? " active" : ""}" onclick="goto('${v}')" title="${title}">${label}</button>`;
-  const mine = btn("notes", "🗒 Notes", "Your own notes from the lessons") + btn("scorecard", "🏅 My Performance", "Your focus, your trainer’s feedback and your grades");
+  // (🏅 My Performance is part of 📋 My Progress & Performance now, js/ft-batch-sheet.js: no button of its own)
+  const mine = btn("notes", "🗒 Notes", "Your own notes from the lessons") + (window.FTBatchSheet ? "" : btn("scorecard", "🏅 My Performance", "Your focus, your trainer’s feedback and your grades"));
   // these are their own buttons now, so 📚 Dashboard isn't lit on them
   if(["notes", "scorecard"].includes(state.view)) [...nav.children].forEach(b => { if(/goto\('modules'\)/.test(onc(b))) b.classList.remove("active"); });
   const portal = nav.querySelector(".lp-portal");
@@ -37,13 +38,16 @@ const __render = window.render;
 window.render = function(){
   if(state.view === "tasks"){ state.view = "modules"; return window.render.apply(this, arguments); }
   const r = __render.apply(this, arguments);
-  if(state.view !== "scorecard" || !isTrainee()) return r;
-  const main = document.querySelector("#app > main.main-lp"); if(!main || main.querySelector(".ftmp-focus")) return r;
+  // (🎯 the focus and 📬 My Feedback: on 🏅 My Performance, now part of 📋 My Progress & Performance, #/mysheet)
+  if(!["scorecard", "mysheet"].includes(state.view) || !isTrainee()) return r;
+  const main = document.querySelector("#app > main.main-lp, #app > main.main-dash"); if(!main || main.querySelector(".ftmp-focus")) return r;
+  if(state.view === "mysheet" && !main.querySelector(".bs-perf")) return r;
   let focus = "";
   try{ focus = (typeof renderWorkOnNextPanel === "function" && renderWorkOnNextPanel()) || ""; }catch(err){}
   if(!state.feedbackLoadedAt && typeof loadMyFeedback === "function"){ state.feedbackLoadedAt = Date.now(); loadMyFeedback(); }
   main.insertAdjacentHTML("afterbegin", `<section class="ftmp-focus">${focus || `<section class="won-panel"><div class="won-head"><h3>🎯 My Focus</h3></div><p class="ftmp-none">Nothing flagged yet. When your trainer sets a focus or reviews your work, it shows here.</p></section>`}</section>`);
-  if(window.FTMyFeedback) main.insertAdjacentHTML("beforeend", `<section class="ftmp-fb"><h2>📬 My Feedback</h2>${FTMyFeedback.html()}</section>`);
+  if(window.FTMyFeedback){ const fb = `<section class="ftmp-fb"><h2>📬 My Feedback</h2>${FTMyFeedback.html()}</section>`, perf = main.querySelector(".bs-perf");
+    if(perf) perf.insertAdjacentHTML("afterend", fb); else main.insertAdjacentHTML("beforeend", fb); }
   try{ if(typeof markFocusSeen === "function") markFocusSeen(); }catch(err){}
   return r;
 };

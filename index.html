@@ -5706,13 +5706,14 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
    MASTER_ADMIN_PASSWORD set, the portal runs in the old open mode.
    ============================================================ */
 state.authToken = (()=>{ try{ return localStorage.getItem("lsh_auth_token")||""; }catch(e){ return ""; } })();
-state.adminToken = (()=>{ try{ return sessionStorage.getItem("lsh_admin_token")||""; }catch(e){ return ""; } })();
+// (a trainer stays signed in on this browser — closing it doesn't sign them out — until 🚪 Log out)
+state.adminToken = (()=>{ try{ return localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||""; }catch(e){ return ""; } })();
 function authHeaders(){
   const t = (state.isAdmin && state.adminToken) || state.authToken;
   return Object.assign({"Content-Type":"application/json"}, t ? {"Authorization":"Bearer "+t} : {});
 }
 function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setItem("lsh_auth_token", t) : localStorage.removeItem("lsh_auth_token"); }catch(e){} }
-function setAdminToken(t){ state.adminToken = t||""; try{ t ? sessionStorage.setItem("lsh_admin_token", t) : sessionStorage.removeItem("lsh_admin_token"); }catch(e){} }
+function setAdminToken(t){ state.adminToken = t||""; try{ if(t){ localStorage.setItem("lsh_admin_token", t); sessionStorage.removeItem("lsh_admin_token"); } else { localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); } }catch(e){} }
 // General rule: a trainee sign-in is never an admin session. A leftover admin token in this browser
 // (a trainer who signed in on the same machine, an earlier test) used to leave 🏅 Scorecards, 👁 Switch
 // View and 🛡 Admin in a trainee's top bar. Whenever a trainee is signed in, the admin session is dropped.
@@ -18938,7 +18939,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.05-fa402069";
+var APP_BUILD = "ft-2026.11.05-b193bc42";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18988,7 +18989,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=059387117b"></script>
 <script src="/js/ft-tracker.js?v=c99a688325"></script>
 <script src="/js/ft-monitoring.js?v=c93e3c2768"></script>
-<script src="/js/ft-process.js?v=9197090673"></script>
+<script src="/js/ft-process.js?v=f66a68217e"></script>
 <script src="/js/ft-assess.js?v=fd446d53bd"></script>
 <script src="/js/ft-claims-email.js?v=94cd2deef4"></script>
 <script src="/js/ft-rules.js?v=1e93f737a5"></script>
@@ -19001,18 +19002,18 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-rubrics.js?v=f7af0cc87b"></script>
 <script src="/js/ft-sessions.js?v=98abaa7ac8"></script>
 <script src="/js/ft-utilization.js?v=2b483a7834"></script>
-<script src="/js/ft-ranking.js?v=dc443aaae0"></script>
-<script src="/js/ft-ranking-summary.js?v=8398ba7ba5"></script>
+<script src="/js/ft-ranking.js?v=7e1c85e294"></script>
+<script src="/js/ft-ranking-summary.js?v=ba7f25e76f"></script>
 <script src="/js/ft-overall.js?v=8a08446d33"></script>
-<script src="/js/ft-batch-sheet.js?v=d1e86aa617"></script>
-<script src="/js/ft-skilltests.js?v=398ff25693"></script>
+<script src="/js/ft-batch-sheet.js?v=7c1bfd6f7e"></script>
+<script src="/js/ft-skilltests.js?v=8d4d77a4f6"></script>
 <script src="/js/ft-drills.js?v=b1a7af7657"></script>
 <script src="/js/ft-calrules.js?v=8184cf8378"></script>
 <script src="/js/ft-writing.js?v=84d5475ebf"></script>
 <script src="/js/ft-calweek-core.js?v=aa11fcb54a"></script>
 <script src="/js/ft-calweek.js?v=91865d6c8a"></script>
 <script src="/js/ft-calcheck.js?v=ce110cce18"></script>
-<script src="/js/ft-listening.js?v=c5a4d82ad7"></script>
+<script src="/js/ft-listening.js?v=fe87bd295a"></script>
 <script src="/js/ft-todo.js?v=54c20efd75"></script>
 <script src="/js/ft-next-step.js?v=a4448878a1"></script>
 <script src="/js/ft-day-decks.js?v=4befa55af0"></script>
@@ -19042,8 +19043,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
 <script src="/js/ft-program.js?v=52c407aac3"></script>
-<script src="/js/lsh-program.js?v=5608506b42"></script>
-<script src="/js/ft-my-pages.js?v=3de883ee6a"></script>
+<script src="/js/lsh-program.js?v=1994e550c3"></script>
+<script src="/js/ft-my-pages.js?v=24eceb04cd"></script>
 <script src="/js/ft-day1-flow.js?v=018e12413a"></script>
 <script src="/js/ft-day-locks.js?v=b27ff3c77a"></script>
 <script src="/js/ft-kb-articles.js?v=5bfc079d4f"></script>

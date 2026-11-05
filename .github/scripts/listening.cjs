@@ -137,6 +137,19 @@ async function workerChecks() {
   await page.evaluate(() => FTListen.close());
   await put('trackerreview:' + id, null);
 
+  // 📝 Submit for Grading: graded, and the sheet's button back to "📝 Submit for Grading" by itself (not "Grading…" for good, even
+  // when the page's redraw doesn't paint the sheet)
+  { await page.evaluate(() => { state.view = 'daydeck'; window.__r1 = window.render; FTListen.pop('recact'); }); await page.waitForTimeout(2500);
+    await page.evaluate(() => { window.confirm = () => true; window.render = function(){}; }); 
+    await page.evaluate(() => FTListen.submit()); await page.waitForTimeout(500);
+    for (let k = 0; k < 40 && /Grading…/.test(await page.evaluate(() => (document.querySelector('.ln-pop-f') || {}).innerText || '')); k++) await page.waitForTimeout(500);
+    const foot = await page.evaluate(() => (document.querySelector('.ln-pop-f') || {}).innerText || '');
+    await page.evaluate(() => { window.render = window.__r1; });
+    if (!/Submit for Grading/.test(foot) || /Grading…/.test(foot)) fail(`the answer sheet stays on "Grading…" after grading: ${foot}`);
+    const gr = ((await get('trackerreview:' + id)) || { assess: {} }).assess || {};
+    if (!gr.recact) fail('📝 Submit for Grading didn\'t grade the answer sheet');
+    await page.evaluate(() => FTListen.close()); await put('trackerreview:' + id, null); }
+
   // 📝 a trainer in 👁 Switch View opens the answer sheet before the listening sets are in (a fresh page, the sets slow to come):
   // it shows as soon as they arrive — it no longer waits for the page's redraw to come round to it — never "Loading…" for good
   { const p2 = await browser.newPage({ viewport: { width: 1366, height: 900 } });

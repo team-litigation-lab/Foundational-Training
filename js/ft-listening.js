@@ -287,12 +287,15 @@ async function submitPop(){
   POP.sending = true; paintPop();
   try{
     if(await saveAll(sid) === false) throw new Error("save");
-    const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc: sid}), j = await r.json().catch(() => ({}));
+    // (the grading answers within 2 minutes, or the sheet says so — never "Grading…" for good)
+    const late = new Promise((_, no) => setTimeout(() => no(new Error("late")), 120000));
+    const r = await Promise.race([authFetch("/api/assess/grade", {id: state.traineeId, doc: sid}), late]), j = await r.json().catch(() => ({}));
     if(!r.ok) throw new Error(j.error || "send");
     POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review;
-    const g = gradedOf(sid); toast(g ? `✓ Graded: ${g.score} of ${g.max} (${g.pct}%). Your score is on 🏅 My Performance.` : "✓ Submitted for grading.");
-  }catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
-  POP.sending = false; render();
+    const g = gradedOf(sid); toast(g ? `✓ Graded: ${g.score} of ${g.max} (${g.pct}%). Your score is on 📋 My Progress & Performance.` : "✓ Submitted for grading.");
+  }catch(err){ toast(err.message === "late" ? "The grading is taking long: your answers are saved. Close the sheet and open it again in a minute to see your score, or submit again." : err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
+  // (the sheet painted again itself: the page's redraw doesn't always come round to it — FTListen.pop)
+  POP.sending = false; try{ render(); }catch(err){} try{ paintPop(); }catch(err){}
 }
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,

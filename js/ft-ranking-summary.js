@@ -35,6 +35,21 @@ const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
 const redraw = () => { const c = ctx(); if(c && c.rerender) c.rerender(); else if(typeof render === "function") render(); };
 
 /* ---------- the week's evidence for one trainee ---------- */
+async function progOf(p, range){
+  const out = {calls: null, written: null, callsN: 0, writtenN: 0};
+  try{
+    if(!window.lshProgram || typeof lshProgram.compute !== "function") return out;
+    const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
+    const vals = await sharedGetMany(S.map(s => s.key + p.id).concat(shared)), rec = {}, sh = {};
+    S.forEach((s, i) => { rec[s.key] = vals[i] || null; }); shared.forEach((k, i) => { sh[k] = vals[S.length + i] || null; });
+    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since}, range ? {range} : {}));
+    const row = id => (sc.rows || []).find(r => r.s.id === id), graded = it => (it || []).filter(x => typeof x.pct === "number" && isFinite(x.pct));
+    const calls = graded(((row("calls") || {}).items || []).concat(((row("portalsims") || {}).items || []).filter(x => /call|recept|intake|phone|voice/i.test(x.name || ""))));
+    const written = graded(((row("drive") || {}).items || []).filter(x => /^📄/.test(x.name || "")).concat((row("listening") || {}).items || [], (row("process") || {}).items || [], (row("transcribe") || {}).items || [], (row("lor") || {}).items || []));
+    const mean = xs => xs.length ? xs.reduce((a, x) => a + x.pct, 0) / xs.length : null;
+    return {calls: mean(calls), written: mean(written), callsN: calls.length, writtenN: written.length};
+  }catch(err){ return out; }
+}
 async function evidence(p, range){
   const [lab, proc, kcr, rv, fb, tfb, ses, sk] = await sharedGetMany(["labreview:", "process:", "kcreview:", "trackerreview:", "feedback:", "trainerfb:", "sessions:", "skills:"].map(k => k + p.id));
   const inW = at => !range || (String(at || "").slice(0, 10) >= range[0] && String(at || "").slice(0, 10) <= range[1]);
@@ -57,18 +72,27 @@ async function evidence(p, range){
   // the base scores, out of 5, from the evidence
   const critAvg = re => avg(use.flatMap(x => x.crit.filter(c => re.test(c.n)).map(c => Number(c.s))));
   const pct5 = v => v == null ? null : v / 20;
+  // (the Scorecard's own grading systems for the week — js/ft-program.js through lshProgram.compute: the practice calls in the
+  // simulators and the written output graded on the platform)
+  const prog = await progOf(p, range);
   const eodOn = comp.map(c => c.eod).filter(Boolean), timeRules = eodOn.map(x => (x.rules || []).find(r => r.id === "time")).filter(Boolean);
   const base = {
     attention: r1(avg([critAvg(/attention|detail|authenticat|comprehension|accura/i), pct5(avg(kcs.map(k => k.pct))), pct5(avg(assess.map(a => a.pct))), pct5(avg(comp.map(c => c.parts.tracker).filter(v => v != null)))])),
     compliance: r1(pct5(avg(comp.map(c => c.pct)))),
-    // 📏 strictly: each day's six Drive links as the course asks, as found that day (worker.js dailyCompliance instr)
+    // 📏 strictly: each day's naming convention, saving route and folders, deliverables on time and Drive links (worker.js dailyCompliance instr)
     instructions: r1(pct5(avg(comp.map(c => c.parts.instructions).filter(v => v != null)))),
     timely: r1(avg([timeRules.length ? 5 * timeRules.filter(r => r.pass).length / timeRules.length : null, items.length ? 5 * items.filter(x => x.onTime).length / items.length : null, pct5(avg(comp.map(c => c.parts.outputs).filter(v => v != null)))])),
-    communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i), pct5(avg(eodOn.map(x => x.pct)))])),
+    // 💬 communication: the mock calls' and demos' communication criteria and their overall scores, the practice calls in the
+    // simulators (🎯 graded calls, 🧰 the Portal's call simulators), the written output graded on the platform (the assessments and
+    // answer sheets, the listening activity) and the EOD emails
+    communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i),
+      avg(use.map(x => x.avg5)), pct5(avg(eodOn.map(x => x.pct))), pct5(prog.calls), pct5(prog.written)])),
     english: r1(avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))])),
     call: r1(avg(use.filter(x => x.mock).map(x => x.avg5))),
-    tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i)]))};
-  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell};
+    // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
+    // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
+    tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
+  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell, prog};
 }
 // the evidence as the AI reads it
 function brief(ev){
@@ -78,6 +102,8 @@ function brief(ev){
   ev.assess.forEach(a => L.push(`[Assessment] ${a.title}: ${a.score}/${a.max} (${a.pct}%)`));
   if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, following instructions ${c.parts.instructions ?? "–"}${c.instr && (c.instr.issues || []).length ? " [not followed: " + c.instr.issues.map(x => x.k + ": " + clip(x.why, 60)).join("; ") + "]" : ""}, TAM (shadowing) ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
   if(ev.runs.length) L.push(`[Practice Sessions] ${ev.runs.map(v => v + "%").join(", ")}`);
+  if(ev.prog && ev.prog.callsN) L.push(`[Practice calls in the simulators] ${ev.prog.callsN} graded, average ${Math.round(ev.prog.calls)}%`);
+  if(ev.prog && ev.prog.writtenN) L.push(`[Written output graded on the platform] ${ev.prog.writtenN} graded, average ${Math.round(ev.prog.written)}%`);
   if(ev.spell.length) L.push(`[Spelling tests] ${ev.spell.map(v => Math.round(v) + "%").join(", ")}`);
   ev.days.forEach(d => L.push(`[Trainer's day-by-day feedback] lesson ${d.l}: ${d.rating} · ${d.summary}`));
   ev.sent.forEach(x => L.push(`[Trainer's feedback] ${x.title}: ${x.verdict}${x.score != null ? " " + x.score + "%" : ""} · ${x.comment}`));
@@ -89,9 +115,14 @@ function plainComment(k, ev, s){
   const mocks = ev.sheets.filter(x => x.mock), demos = ev.sheets.filter(x => !x.mock);
   const remarks = xs => xs.map(x => x.comment).filter(has).slice(0, 2).join(" ");
   if(k === "call") return `${sc} ${mocks.length ? `Mock calls: ${mocks.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(mocks.concat(demos))}`.trim();
-  if(k === "tools") return `${sc} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(demos)}`.trim();
+  if(k === "communication"){ const P = ev.prog || {}, bits = [];
+    if(ev.sheets.length) bits.push(`${ev.sheets.length} mock call/demo scoresheet${ev.sheets.length === 1 ? "" : "s"}`);
+    if(P.callsN) bits.push(`${P.callsN} practice call${P.callsN === 1 ? "" : "s"} in the simulators (${Math.round(P.calls)}%)`);
+    if(P.writtenN) bits.push(`${P.writtenN} graded written output${P.writtenN === 1 ? "" : "s"} (${Math.round(P.written)}%)`);
+    return `${sc} ${bits.length ? "From " + bits.join(", ") + "." : ""}`.trim(); }
+  if(k === "tools"){ const pl = ev.comp.filter(c => c.parts.platform != null); return `${sc} ${pl.length ? `Worked on the platform's tools on ${pl.filter(c => c.parts.platform >= 100).length} of ${pl.length} days checked.` : ""} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}.` : ""}`.trim(); }
   if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
-    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 2).join("; ")}.` : ev.comp.some(c => c.instr) ? "Every Drive link as the course asks." : ""}`.trim(); }
+    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 3).join("; ")}.` : ev.comp.some(c => c.instr) ? "Naming, saving route and deliverables all as instructed." : ""}`.trim(); }
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
   return sc;
 }
@@ -146,7 +177,10 @@ async function draft(){
   S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
 const overall = r => r1(avg(COMP.map(([k]) => r.scores[k])));
-function ranked(){ const rows = Object.entries((S.data || {}).rows || {}).map(([id, r]) => Object.assign({id}, r, {overall: overall(r)}));
+// (only the batch's trainees now: a trainee revoked, offboarded or archived after the week was summarized drops off the report and
+// its ranking — the summary keeps their row, so restoring them brings it back)
+function ranked(){ const c = ctx(), live = c && Array.isArray(c.people) && c.people.length ? new Set(c.people.map(p => p.id)) : null;
+  const rows = Object.entries((S.data || {}).rows || {}).filter(([id]) => !live || live.has(id)).map(([id, r]) => Object.assign({id}, r, {overall: overall(r)}));
   const o = rows.filter(r => r.overall != null).sort((a, b) => b.overall - a.overall); o.forEach((r, i) => { r.rank = i && o[i - 1].overall === r.overall ? o[i - 1].rank : i + 1; });
   return rows.sort((a, b) => (a.rank || 999) - (b.rank || 999) || String(a.name).localeCompare(String(b.name))); }
 const tone = v => v == null ? "na" : v >= 4.5 ? "ex" : v >= 3.5 ? "gd" : v >= 2.5 ? "ok" : "lo";
@@ -184,17 +218,18 @@ const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks .rks-head h2{margin:2px 0 !important;font:800 26px 'Fraunces',Georgia,serif !important;color:#fff !important;} .rks .rks-head .rks-k{margin:0 !important;font-size:12px !important;letter-spacing:.08em;text-transform:uppercase;color:#F6C08F !important;font-weight:800 !important;}
 .rks .rks-head .rks-sub{margin:2px 0 0 !important;color:#E8ECF7 !important;font-size:15px !important;} .rks .rks-head .rks-sub b{color:#fff !important;} .rks .rks-head .rks-legend span{color:#fff !important;}
 .rks-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;} .rks-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;} .rks-legend small{color:#C9D1E8;}
-.rks-tbl{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px;} .rks-tbl th{background:#F1F3F9;color:#1E2340;font-weight:800;padding:8px 6px;text-align:center;border-bottom:2px solid #DB8437;font-size:16px;}
-.rks-tbl th small{font-size:11px;font-weight:700;color:#5F6368;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:800;font-size:16px;color:#DB8437;}
-.rks-chip{display:inline-block;min-width:38px;padding:3px 7px;border-radius:8px;font-weight:800;font-size:13.5px;} .rks-lbl{color:#5F6368;}
-.rks-ex{background:#D7F0DE;color:#14532D;} .rks-gd{background:#E3EEFB;color:#1E3A8A;} .rks-ok{background:#FFF1D6;color:#8A4A00;} .rks-lo{background:#FDE2E1;color:#9B1C1C;} .rks-na{background:#F1F3F4;color:#80868B;}
+.rks-tbl{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:18px;font-weight:800;} .rks-tbl th{background:#F1F3F9;color:#1E2340;font-weight:800;padding:8px 6px;text-align:center;border-bottom:2px solid #DB8437;font-size:16px;}
+.rks-tbl th small{font-size:14px;font-weight:900;color:#1E2340;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
+.rks-chip{display:inline-block;min-width:52px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:19px;} .rks-lbl{color:#5F6368;}
+/* (the Weekly Ranking's colours: 🔵 high, 🟢 good, 🟡 critical, 🔴 fail) */
+.rks-ex{background:#CFE0FF;color:#0A3A9E;} .rks-gd{background:#CDEFD8;color:#0F5A2A;} .rks-ok{background:#FFE9A3;color:#6B4A00;} .rks-lo{background:#FBCFCB;color:#A0150C;} .rks-na{background:#ECEEF2;color:#5F6368;}
 .rks-legend .rks-ex,.rks-legend .rks-gd,.rks-legend .rks-ok,.rks-legend .rks-lo{border:1px solid #fff;}
 .rks-card{border:1px solid #E1E5EE;border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fff;break-inside:avoid;}
 .rks-card-h{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:18px;margin:0 0 4px;}
 details.rks-card>summary{list-style:none;cursor:pointer;margin:0;} details.rks-card>summary::-webkit-details-marker{display:none;} details.rks-card[open]>summary{margin:0 0 6px;}
 details.rks-card>summary:focus-visible{outline:3px solid #DB8437;outline-offset:3px;border-radius:8px;}
 .rks-caret{display:inline-block;color:#1E2340;font-size:14px;transition:transform .15s ease;} details.rks-card[open]>summary .rks-caret{transform:rotate(90deg);}
-.rks-mini{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;} .rks-mini>span{display:inline-flex;align-items:center;gap:3px;} .rks-mini .rks-chip{min-width:30px;font-size:12.5px;padding:2px 5px;}
+.rks-mini{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;} .rks-mini>span{display:inline-flex;align-items:center;gap:3px;} .rks-mini .rks-chip{min-width:40px;font-size:16px;padding:4px 8px;}
 details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#DB8437;} .rks-ov{margin-left:auto;font-size:13.5px;color:#5F6368;}
 .rks-ovc{margin:2px 0 8px;font-style:italic;color:#3C4043;}
 .rks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;} .rks-comp{background:#F8F9FC;border-radius:10px;padding:9px 11px;}
