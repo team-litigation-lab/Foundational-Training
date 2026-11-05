@@ -25,7 +25,9 @@ const failures = []; const fail = m => failures.push(m);
     await put('progress:' + P[0][0], { data: { 'work-log': wl.concat([{ at: days[1], kind: 'task', label: 'Random Task · Lesson 2 (missed)', score: 0 }]),
       'day-progress': { 1: { studiedAt: days[0], done: true, score: 90, history: [{ date: days[0], score: 60 }, { date: days[1], score: 90 }] } } } });
     await put('skills:' + P[0][0], { typing: [{ at: days[2], net: 48 }], spelling: [] });
-    await put('calsim:' + P[0][0], { submissions: [{ at: days[3], scn: 'w1', auto: { pct: 70 } }], reviews: { 'w1|x': { at: days[4], score: 80 } } });
+    await put('calsim:' + P[0][0], { drafts: { w1: [{ id: 'e1', title: 'Deposition', date: '2026-07-06' }, { id: 'e2', title: 'Hearing', date: '2026-07-07T09:00:00' }] }, submissions: [{ at: days[3], scn: 'w1', auto: { pct: 70 } }], reviews: { 'w1|x': { at: days[4], score: 80 } } });
+    // (a draft calendar's events are scheduled days, not attempts; the 📅 Calendaring Activity's submission is one)
+    await put('calweek:' + P[0][0], { v: 1, events: [{ task: 1, title: 'x', d: 1 }], savedAt: days[4], submittedAt: days[4], pct: 80, done: true });
     await put('sessions:' + P[0][0], { runs: { 'reception|-': { startedAt: days[5], submittedAt: days[5], attempts: 1, auto: { pct: 85 } } } });
     // Ian: one tool once, on the first day
     await put('progress:' + P[1][0], { data: { 'work-log': [{ at: days[0], kind: 'lab', label: 'Intake practice', score: 50 }] } });
@@ -45,9 +47,10 @@ const failures = []; const fail = m => failures.push(m);
     if (!(eag(rows[1]) < 50)) fail(`Ian isn't below 50: ${rows[1][col('Eagerness')]}`);
     if (!/^6 \/ [67]$/.test(rows[0][col('Active days')])) fail(`Eve's active days (back to registration): ${rows[0][col('Active days')]}`);
     if (!/^1 \/ [67]$/.test(rows[1][col('Active days')])) fail(`Ian's active days (the trainer's review counted?): ${rows[1][col('Active days')]}`);
-    // Eve: 6 AI practice + typing + calsim submission + session = 9 (the missed task and the trainer's review not counted)
-    if (rows[0][col('Practice attempts')] !== '9') fail(`Eve's practice attempts: ${rows[0][col('Practice attempts')]}`);
-    if (rows[0][col('Tools used')] !== '4 / 13') fail(`Eve's tools used: ${rows[0][col('Tools used')]}`);
+    // Eve: 6 AI practice + typing + calsim submission + Calendaring Activity + session = 10 (the missed task, the calendar
+    // drafts and the trainer's review not counted)
+    if (rows[0][col('Practice attempts')] !== '10') fail(`Eve's practice attempts: ${rows[0][col('Practice attempts')]}`);
+    if (rows[0][col('Tools used')] !== '5 / 13') fail(`Eve's tools used: ${rows[0][col('Tools used')]}`);
     if (rows[0][col('Practised again')] !== '5') fail(`Eve's practised again: ${rows[0][col('Practised again')]}`);
     if (!/\+30/.test(rows[0][col('Getting better')])) fail(`Eve's improvement: ${rows[0][col('Getting better')]}`);
     if (rows[0][col('Decks')] !== '1 · 2') fail(`Eve's decks · KC tries: ${rows[0][col('Decks')]}`);

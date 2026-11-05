@@ -593,11 +593,13 @@ function outputsTable(){
    trainer's comment, else the AI's review of the Task Tracker's notes / the Monitoring Sheet. (It was a 💬 Comments list
    under the table; it is now in the table itself.) */
 const sent2 = (...xs) => { const out = [];
-  xs.filter(Boolean).forEach(x => String(x).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=[A-Z0-9🤖🧑‍🏫"“(])/).forEach(y => { y = y.trim(); if(y) out.push(/[.!?…]$/.test(y) ? y : y + "."); }));
+  // (sentences split without a lookbehind, which older Safari can't parse)
+  xs.filter(Boolean).forEach(x => (String(x).replace(/\s+/g, " ").trim().match(/(?:[^.!?…]|[.!?…]+(?=\S))+(?:[.!?…]+|$)/g) || []).forEach(y => { y = y.trim(); if(y && /\w/.test(y)) out.push(/[.!?…]$/.test(y) ? y : y + "."); }));
   return out.slice(0, 2).map(y => y.length > 230 ? y.slice(0, 228).replace(/\s+\S*$/, "") + "…" : y).join(" "); };
 const first = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = /^.+?[.!?](?=\s|$)/.exec(t); return m ? m[0] : t; };
 function dayActs(R, d){
   const rv = (R.src || {})["trackerreview:"] || {}, c = (rv.compliance || {})[d] || {}, P = c.parts || {}, tk = (rv.days || {})[d] || null, mon = rv.monitor || null, out = [];
+  const monDay = !!(mon && mon.checkedAt && (() => { const x = new Date(mon.checkedAt); return !isNaN(x) && [x.toISOString().slice(0, 10), `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`].includes(d); })());
   const unread = k => (c.unreadable || []).includes(k), share = "The system can't open it, so it isn't counted. Share it with the program's account (📁 My Drive links).";
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   if(P.tracker != null || unread("tracker")){
@@ -608,8 +610,9 @@ function dayActs(R, d){
   }
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
-      : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : mon && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", mon && (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "")),
-      more: mon && mon.review ? "AI review: " + mon.review : ""});
+      // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
+      : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : monDay && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      more: monDay && mon.review ? "AI review: " + mon.review : ""});
   }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
     out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
@@ -618,7 +621,8 @@ function dayActs(R, d){
     out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(took.length ? `Took ${took.join(" and ")}.` : "No test found for the day.", took.length && miss.length ? `Not found: ${miss.join(", ")}.` : took.length ? "All three tests done." : "")}); }
   if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
     out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
-      : [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + ".", sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
+      : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
+      sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
     out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
       miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }

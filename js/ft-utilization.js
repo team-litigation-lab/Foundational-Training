@@ -28,7 +28,7 @@ const TOOLS = [
 const TOOL_KEYS = TOOLS.filter(x => /:$/.test(x.id)).map(x => x.id);
 const OWN = ["trainee:", "progress:", "skills:", "simresults:", "sessions:"].concat(TOOL_KEYS);
 // a trainer's part of a tool record: not the trainee's activity
-const SKIP = new Set(["reviews", "review", "trainer", "trainerReview", "released", "comment", "feedback", "grade", "grades", "assess", "best", "latest", "last", "summary"]);
+const SKIP = new Set(["reviews", "review", "trainer", "trainerReview", "released", "comment", "feedback", "grade", "grades", "assess", "best", "latest", "last", "summary", "drafts", "events", "anchors", "anchor"]);
 const TS = ["submittedAt", "completedAt", "startedAt", "at", "date", "savedAt"];
 
 const t = v => { if(!v) return null; const d = new Date(v); return isNaN(d) ? null : d; };
@@ -44,7 +44,8 @@ const scoreOf = o => { const max = num(o.max) || num(o.total); if(num(o.pct) != 
 function crawl(v, out, path, depth){
   if(!v || typeof v !== "object" || depth > 6) return;
   if(Array.isArray(v)){ v.forEach((x, i) => crawl(x, out, path, depth + 1)); return; }
-  const f = TS.find(k => typeof v[k] === "string" && t(v[k]));
+  // (a bare calendar date, "2026-07-06", is a scheduled day, not when the trainee did something: only a time counts)
+  const f = TS.find(k => typeof v[k] === "string" && t(v[k]) && (k !== "date" || /T\d/.test(v[k])));
   if(f && path.length){ out.push({at: t(v[f]), item: String(v.scn || v.scenario || v.set || v.lesson || v.title || v.name || v.label || path[path.length - 1] || ""), score: scoreOf(v)}); return; }
   Object.keys(v).forEach(k => { if(!SKIP.has(k)) crawl(v[k], out, path.concat(k), depth + 1); });
 }
@@ -73,6 +74,9 @@ function eventsOf(rec){
     push(r.submittedAt || r.startedAt, "sessions", "practice", `Practice Session ${r.submittedAt ? "submitted" : "started"}: ${k.split("|")[0]}`, k, r.auto && r.auto.pct); });
   TOOL_KEYS.forEach(k => { const got = [], seen = new Set(), lab = TOOLS.find(x => x.id === k).label.replace(/^\S+\s/, "");
     crawl(rec[k], got, [], 0);
+    // (a record that is one attempt itself, 📅 Calendaring Activity's {events, savedAt, submittedAt, pct}: its own time)
+    const top = rec[k] && (rec[k].submittedAt || rec[k].completedAt || rec[k].savedAt);
+    if(!got.length && t(top)) got.push({at: t(top), item: "", score: num(rec[k].pct)});
     got.forEach(g => { const s = +g.at + "|" + g.item; if(seen.has(s)) return; seen.add(s); out.push({at: g.at, tool: k, kind: "practice", what: `${lab}${g.item && !/^\d+$/.test(g.item) ? ": " + g.item : ""}`, item: k + g.item, score: num(g.score)}); }); });
   return out.filter(x => +x.at <= Date.now() + 60000).sort((a, b) => b.at - a.at);
 }
