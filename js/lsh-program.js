@@ -316,7 +316,7 @@ function loadMine(force){
     keyed().forEach((s, i) => { SC.rec[s.key] = vals[i] || null; });
     pub.forEach((k, i) => { SC.shared[k] = vals[mine.length + i] || null; });
     if(pub.length) SC.sharedIn = true;
-  }).catch(() => {}).then(() => { SC.loading = null; if(state.view === "scorecard") render(); });
+  }).catch(() => {}).then(() => { SC.loading = null; if(state.view === "scorecard" || state.view === "mysheet") render(); });
   return SC.loading;
 }
 const mineCtx = () => ({id:state.traineeId, progress:state.progress || {}, rec:SC.id === state.traineeId ? SC.rec : {}, shared:SC.shared, since:String(state.traineeRegisteredAt || "").slice(0, 10)});
@@ -358,6 +358,8 @@ window.render = function(){
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
+  // (a trainee's 🏅 My Performance is part of 📋 My Progress & Performance, js/ft-batch-sheet.js #/mysheet)
+  if(v === "scorecard" && isTrainee() && window.FTBatchSheet){ state.view = "mysheet"; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} return window.render(); }
   // 📚 Dashboard is the landing page for every viewer, signed in or not (renderModules() already has its own
   // "not signed in" note instead of a personal progress bar) — only 🏅 My Performance still needs an identity
   // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
@@ -447,6 +449,8 @@ window.renderAdmin = function(){
 
 window.lshProgram = {
   compute, section, mine:() => compute(mineCtx()),
+  // 🏅 My Performance as a block, for 📋 My Progress (js/ft-batch-sheet.js): one page for the trainee's grades and progress
+  performanceHtml(){ if(!isTrainee()) return ""; loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000); return renderScorecard(); },
   scorecard(){ if(adminOn()){ state.adminTab = CFG.adminScorecardsTab || "scorecards"; goto("admin"); } else goto("scorecard"); },
   batch(b){ AS.batch = b; render(); },
   refresh(){ AS.rows = null; AS.fresh = true; render(); },

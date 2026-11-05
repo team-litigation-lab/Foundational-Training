@@ -1506,7 +1506,9 @@ function renderMine(){
   if(!B.me || B.meFor !== state.traineeId){ if(!B.meLoading){ B.me = null; B.data = null; B.dataKey = ""; loadMe(); } return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading your progress…</div>`; }
   loadData();
   const D = B.data, ready = D && !B.dataLoading && !D.error, T = ready ? tables() : null;
-  return `<div class="card gs-card bs-card bs-mine">
+  // (🏅 My Performance and 📋 My Progress are one page: the grades from every grading system first, then the sheet)
+  const perf = window.lshProgram && typeof lshProgram.performanceHtml === "function" ? `<div class="bs-perf">${lshProgram.performanceHtml()}</div>` : "";
+  return `${perf}<div class="card gs-card bs-card bs-mine">
     <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>My Progress · ${e(B.me.name)}</b>
       <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refreshMe()">↻ Refresh</button>${window.FTTraineeLog ? `<button onclick="FTTraineeLog.open()">📜 My Log</button>` : ""}</span></div>
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
@@ -1522,13 +1524,15 @@ FTBatchSheet.openMine = function(){ goto(ME); };
 // #/mysheet: a trainee's own page; anyone else is sent to the 📚 Dashboard
 const __routeRender = window.render;
 window.render = function(){
+  // (🏅 My Performance, #/scorecard, is now part of this page: a trainee who opens it lands here)
+  if(state.view === "scorecard" && isTrainee()){ state.view = ME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
   if(state.view !== ME) return __routeRender.apply(this, arguments);
   if(!isTrainee()){ state.view = "modules"; return __routeRender.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-dash">${renderMine()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {[ME]: "My Progress"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {[ME]: "My Progress & Performance"});
 // 📋 My Progress in a trainee's top bar (never an admin's), beside 🏅 My Performance
 const __top = window.renderTopbar;
 window.renderTopbar = function(){
@@ -1536,7 +1540,9 @@ window.renderTopbar = function(){
   if(!isTrainee()) return html;
   const t = document.createElement("template"); t.innerHTML = html;
   const nav = t.content.querySelector(".topbar .nav"); if(!nav || nav.querySelector(".bs-mybtn")) return html;
-  const btn = `<button type="button" class="lp-sec bs-mybtn${state.view === ME ? " active" : ""}" onclick="goto('${ME}')" title="Your progress on one sheet: lessons, Knowledge Checks, practice and scores">📋 My Progress</button>`;
+  const btn = `<button type="button" class="lp-sec bs-mybtn${state.view === ME ? " active" : ""}" onclick="goto('${ME}')" title="Your grades from every grading system and your progress on one page: lessons, Knowledge Checks, practice and scores">📋 My Progress &amp; Performance</button>`;
+  // (🏅 My Performance has no entry of its own any more: it is on this page)
+  [...t.content.querySelectorAll('.topbar .nav button, .topbar .nav a')].forEach(b => { if(!b.classList.contains("bs-mybtn") && /goto\('scorecard'\)|lshProgram\.scorecard\(\)/.test(b.getAttribute("onclick") || "")) b.remove(); });
   const portal = nav.querySelector(".lp-portal");
   if(portal) portal.insertAdjacentHTML("beforebegin", btn); else nav.insertAdjacentHTML("beforeend", btn);
   if(state.view === ME) [...nav.children].forEach(b => { if(/goto\('modules'\)/.test(b.getAttribute("onclick") || "") && !b.classList.contains("bs-mybtn")) b.classList.remove("active"); });
