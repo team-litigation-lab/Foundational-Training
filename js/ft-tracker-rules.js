@@ -311,6 +311,78 @@
     return {pct, pass: rules.every((r) => r.pass), rules, subject: sub.slice(0, 200), learnings: goodLearn.length};
   }
 
+  /* 📦 DAY 8'S INTAKE PACKET, checked for accuracy and completeness (js/ft-intake.js, worker.js checkIntakePacket), on the
+     Saving Intake Packet and Extracted Intake Documents rubric (js/ft-rubrics.js "intake-packet": Document Handling —
+     Extraction, Renaming & Organization; Document Properties Accuracy; Attention to Detail) and the Day 8 steps: the packet
+     downloaded, renamed "INTAKE - Packet (VA's Name)", uploaded with every document extracted from it into a subfolder of
+     the Assessments/Activities folder named after the assigned client, each extracted document named under the Document
+     Naming Convention, "INTAKE - <Document> (VA's Name)", and the Intake Worksheet kept outside that subfolder.
+     o: {file: {ok, error, name, mime, modified} — the packet the trainee linked; folder: {ok, error, name, files: [{name,
+     modified}]} — the client subfolder; client: the assigned client's name; va: the trainee's name; assignedAt; docs: the
+     documents the AI found in the packet (canonical names, or null when the packet couldn't be read)}.
+     Returns {pct, pass, rules: [{id, label, pass, detail}], extracted, missing, wrong, misnamed}. */
+  const PACKET_DOCS = ["Intake Packet", "Internal Intake Form", "Clients Info Sheet", "Clients Need List", "CM Notes", "1P Drivers License",
+    "3P Drivers License", "DMV", "3P DMV", "Conflict of Interest Waiver", "Consent For Disclosure of Information", "Internet and Surveillance Ack",
+    "Limited Power of Attorney", "General Release", "MVA Questionnaire", "Premise Questionnaire", "Attorney's Lien", "NPIM Referral Form",
+    "PD Claims", "HITECH", "HIPAA", "Signed Medicare Form", "Signed Contingency Fee Agreement", "ISO Claim Search", "Front Passport Card",
+    "Back Passport Card", "Client Communication Disclosure", "Signature Certificate", "Police Report", "Traffic Accident Report",
+    "Traffic Ticket", "Insurance vs Lien Disclaimer", "Affidavit of Communication", "Notice and Waiver of Potential Conflict of Interest"];
+  const pkNorm = (v) => " " + String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\.(pdf|docx?|jpe?g|png)$/i, "")
+    .replace(/driver'?s?\s*licen[cs]e/g, "dl").replace(/traffic accident report|\btar\b/g, "tar").replace(/acknowledg(e)?ment/g, "ack")
+    .replace(/client'?s'?/g, "clients").replace(/attorney'?s/g, "attorneys").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim() + " ";
+  const pkWords = (v) => pkNorm(v).trim().split(" ").filter((w) => w && !["of", "and", "the", "for", "a", "form", "signed"].includes(w));
+  // (a document title and a document name the same document: one's words inside the other's, or most of them shared)
+  function sameDoc(a, b){
+    const A = pkNorm(a), B = pkNorm(b); if(A.trim() && (A.includes(B) || B.includes(A))) return true;
+    const wa = pkWords(a), wb = pkWords(b); if(!wa.length || !wb.length) return false;
+    const hit = wa.filter((w) => wb.includes(w)).length; return hit / Math.max(wa.length, wb.length) >= 0.6;
+  }
+  // "INTAKE - Police Report (lory).pdf" → {title: "Police Report", who: "lory"}; null when it isn't in the convention
+  function intakeName(n){
+    const m = /^\s*intake\s*[-–—]\s*(.+?)\s*\(([^)]+)\)\s*(\.[a-z0-9]{2,5})?\s*$/i.exec(String(n || ""));
+    return m ? {title: m[1].trim(), who: m[2].trim()} : null;
+  }
+  function checkPacket(o){
+    o = o || {}; const file = o.file || {}, folder = o.folder || {}, files = (folder.files || []).filter((f) => f && f.name);
+    const va = String(o.va || "").trim(), vaWords = pkWords(va), client = String(o.client || "").trim();
+    const isVa = (w) => { const x = pkWords(w); return !!x.length && x.some((p) => vaWords.includes(p)); };
+    const isPacket = (n) => /\bpacket\b/i.test(String(n || ""));
+    const isSheet = (n) => /worksheet/i.test(String(n || ""));
+    const pn = intakeName(file.name);
+    const extracted = files.filter((f) => !isPacket(f.name) && !isSheet(f.name));
+    const misnamed = extracted.filter((f) => { const x = intakeName(f.name); return !x || !isVa(x.who); }).map((f) => f.name);
+    const titles = extracted.map((f) => (intakeName(f.name) || {title: f.name}).title);
+    const docs = Array.isArray(o.docs) ? o.docs.filter((d) => d && !/^intake packet$/i.test(String(d).trim())) : null;
+    const missing = docs ? docs.filter((d) => !titles.some((t) => sameDoc(t, d))) : [];
+    const wrong = docs ? titles.filter((t) => !docs.some((d) => sameDoc(t, d))) : [];
+    const folderName = String(folder.name || ""), fw = pkWords(folderName), cw = pkWords(client);
+    const folderOk = !!folderName && (cw.length ? cw.filter((w) => w.length > 1).every((w) => fw.includes(w)) : !/assessments?|activities/i.test(folderName));
+    const changed = file.modified && o.assignedAt ? Date.parse(file.modified) >= Date.parse(o.assignedAt) : null;
+    const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+    const rules = [
+      {id: "link", label: "Your corrected packet is linked and opens", pass: !!file.ok,
+        detail: file.ok ? (file.name ? `“${file.name}”` : "") : (file.error || "The link is missing or the file can't be opened: share it with the platform (Anyone with the link can view).")},
+      {id: "rename", label: "The packet renamed: INTAKE - Packet (Your Name)", pass: !!(pn && /packet/i.test(pn.title) && isVa(pn.who)),
+        detail: !file.name ? "" : !pn ? `It reads “${file.name}”: name it INTAKE - Packet (${va || "Your Name"})` : !isVa(pn.who) ? `“(${pn.who})” isn't your name` : !/packet/i.test(pn.title) ? `“${pn.title}” should read Packet` : ""},
+      {id: "corrected", label: "Your corrected copy, uploaded after the packet was assigned", pass: changed !== false,
+        detail: changed === false ? "The file is older than your assignment: upload the copy you edited" : changed == null ? "" : `Uploaded ${String(file.modified).slice(0, 10)}`},
+      {id: "folder", label: `Saved in a subfolder named after your client${client ? ` (${client})` : ""}`, pass: !!folder.ok && folderOk,
+        detail: !folder.ok ? (folder.error || "Link the client subfolder you saved the packet and its documents in") : folderOk ? `“${folderName}”` : `The subfolder is “${folderName}”${client ? `: name it after ${client}` : ""}`},
+      {id: "packet-in", label: "The renamed packet is in the subfolder with its documents", pass: !!folder.ok && files.some((f) => isPacket(f.name)),
+        detail: folder.ok && !files.some((f) => isPacket(f.name)) ? "No packet found in the subfolder" : ""},
+      {id: "complete", label: "Every document in the packet extracted", pass: !!folder.ok && extracted.length > 0 && (!docs || !missing.length),
+        detail: !folder.ok ? "" : !extracted.length ? "No extracted document in the subfolder" : !docs ? `${plural(extracted.length, "document")} extracted (the packet itself couldn't be read to compare)`
+          : missing.length ? `${plural(missing.length, "document")} missing: ${missing.join(", ")}` : `All ${plural(docs.length, "document")} of the packet extracted`},
+      {id: "identified", label: "Each document correctly identified", pass: !!folder.ok && extracted.length > 0 && !wrong.length,
+        detail: wrong.length ? `Not in the packet (check what each document is): ${wrong.join(", ")}` : ""},
+      {id: "naming", label: "Each document named INTAKE - Document (Your Name)", pass: !!folder.ok && extracted.length > 0 && !misnamed.length,
+        detail: misnamed.length ? `${plural(misnamed.length, "file")} to rename: ${misnamed.slice(0, 8).join(", ")}${misnamed.length > 8 ? "…" : ""}` : ""},
+      {id: "worksheet", label: "The Intake Worksheet kept outside the client subfolder", pass: !files.some((f) => isSheet(f.name)),
+        detail: files.some((f) => isSheet(f.name)) ? "Move the worksheet to your Assessments/Activities folder" : ""}];
+    const pct = Math.round(100 * rules.filter((r) => r.pass).length / rules.length);
+    return {pct, pass: rules.every((r) => r.pass), rules, extracted: extracted.length, missing, wrong, misnamed, docsRead: !!docs};
+  }
+
   root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
-    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt, checkEod};
+    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);
