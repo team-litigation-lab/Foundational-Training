@@ -47,7 +47,22 @@ function load(force){
   return D.loading;
 }
 window.addEventListener("focus", () => { if(isTrainee() && D.id && ["tracker", "monitoring"].includes(state.view)) load(); });
-async function save(){ D.drive.updatedAt = new Date().toISOString(); return sharedSet("drive:" + D.id, D.drive); }
+// (drive:<id> is shared: 📦 Day 8's packet links and document links (js/ft-intake.js) and an EOD received by email (worker.js
+// receiveEod) are written there by others, so a save reads the record again and keeps what they wrote since this page loaded it)
+const OTHERS = ["intakePacket", "intakeFolder", "intakeDocs"];
+function keepOthers(next, fresh){
+  if(!fresh || typeof fresh !== "object") return next;
+  OTHERS.forEach(k => { if(k in fresh) next[k] = fresh[k]; else delete next[k]; });
+  Object.entries(fresh.days || {}).forEach(([d, x]) => { const eod = x && x.eod; if(!eod || eod.via !== "email") return;
+    next.days = next.days || {}; const mine = (next.days[d] || {}).eod;
+    if(!mine || !(Date.parse(mine.at) >= Date.parse(eod.at))) next.days[d] = Object.assign({}, next.days[d] || {}, {eod}); });
+  return next;
+}
+async function save(){
+  const fresh = await sharedGet("drive:" + D.id).catch(() => null);
+  keepOthers(D.drive, fresh);
+  D.drive.updatedAt = new Date().toISOString(); return sharedSet("drive:" + D.id, D.drive);
+}
 const day = () => D.day || today();
 const dayLinks = d => ((D.drive.days[d] || {}).links || []);
 
@@ -411,6 +426,7 @@ window.FTDriveAdmin = {
       if(JSON.stringify(next) === JSON.stringify(cur)) continue;
       if(!next.startDate) next.startDate = today();
       next.updatedAt = new Date().toISOString(); next.linkedBy = "trainer";
+      keepOthers(next, await sharedGet("drive:" + id).catch(() => null));
       if(await sharedSet("drive:" + id, next) === false) fail++; else { row.drive = next; n++; }
     }
     DA.saving = false;
