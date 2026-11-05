@@ -105,10 +105,11 @@ window.FTAttendance = {
     return override(id, v); },
   clear(id){ if(confirm("Clear the manual Time In? The automatic one (or ⏳ Not in yet) shows again.")) return override(id, ""); },
   csv(){
-    const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+    // (a cell that starts like a formula — =, +, -, @, a tab — is kept as text, so a trainee's name can't run in Excel or Sheets)
+    const q = v => { const t = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(t) ? "'" + t : t).replace(/"/g, '""')}"`; };
     const lines = [["Date", "Batch", "Name", "Time In (EST)", "Training"].map(q).join(",")];
     rows().forEach(g => g.list.forEach(x => lines.push([A.day, labelOf(g.b), x.r.fullName || x.r.name || x.r.id, x.c ? t12(x.c.timeIn) : "Not in", (x.c && x.c.training) || ""].map(q).join(","))));
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\n")], {type: "text/csv"})); a.download = `Attendance ${A.day}.csv`; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\r\n")], {type: "text/csv;charset=utf-8"})); a.download = `Attendance ${A.day}.csv`; a.click();
   },
   state: () => A
 };
