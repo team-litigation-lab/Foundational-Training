@@ -34,7 +34,7 @@ const GCAL = ["Tomato", "Flamingo", "Tangerine", "Banana", "Sage", "Basil", "Pea
 /* ---------- the firm profiles ---------- */
 const CMSF = window.FT_CMS_FIRM || {};
 const DEFAULT_FIRMS = [
-  {id:"lsh-training-law-group", name:CMSF.name || "LSH Training Law Group (fictional)", location:"Riverton, Georgia", state:"GA", tz:"Eastern",
+  {id:"lsh-training-law-group", name:CMSF.name || "LSH Law Firm", location:"Riverton, Georgia", state:"GA", tz:"Eastern",
     hours:"Monday–Friday, 8:30 AM – 5:30 PM Eastern", start:"08:30", end:"17:30", mainLine:CMSF.mainLine || "(555) 010-2000",
     greeting:"Thank you for calling Legal Support Help. This is (your name).",
     attorneys:(CMSF.directory || []).filter(x => /^Atty\./.test(x.name)).map(x => ({name:x.name, role:x.role})),
