@@ -1847,7 +1847,7 @@ async function aiReadFile(env, b64, mime, system, prompt) {
   return "";
 }
 async function checkIntakePacket(env, id, hint = {}) {
-  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const kv = kvOf(env), get = (k) => getJSON(kv, k);
   const [rec, drive, asg, set] = await Promise.all([get(`trainee:${id}`), get(`drive:${id}`), get(`intakeassign:${id}`), get("settings:intake")]);
   if (!rec) return { error: "Missing trainee" };
   const n = Number((asg || {}).packet) || 0, pk = ((set || {}).packets || {})[n] || {};
@@ -2137,7 +2137,7 @@ async function backtrack(env, id) {
    Weekly Ranking's Daily Compliance and 🏅 Scores match it. The records are read once and trackerreview written once. Returns the
    number of days. */
 async function redoCompliance(env, id, ro = {}) {
-  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const kv = kvOf(env), get = (k) => getJSON(kv, k);
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
   const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
