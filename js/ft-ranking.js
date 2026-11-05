@@ -268,9 +268,10 @@ const head = c => `<b>${e(c.label)}${c.type === "score" ? ` (${num(c.max) === 5 
 function reportTable(){
   const cols = R.data.cols;
   return `<table class="rk-doc" border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:Calibri,Arial,sans-serif;font-size:9.5pt;">
-    <thead><tr><th>Rank</th><th><b>Trainee Name</b></th>${cols.map(c => `<th>${head(c)}</th>`).join("")}<th><b>W${R.week} Final Average</b></th><th><b>Additional Notes</b></th></tr></thead>
+    <thead><tr><th>Rank</th><th><b>Trainee Name</b></th>${cols.map(c => `<th>${head(c)}</th>`).join("")}<th><b>W${R.week} Final Average</b></th><th><b>AI summary of the week</b></th><th><b>Additional Notes</b></th></tr></thead>
     <tbody>${ranked().map(x => { const r = (R.data.rows || {})[x.p.id] || {cells: {}}; return `<tr><td style="text-align:center"><b>${x.rank || "—"}</b></td><td><b>${e(x.p.name)}</b></td>
       ${cols.map(c => `<td>${cellOut(c, (r.cells || {})[c.id])}</td>`).join("")}<td><b>${x.avg == null ? "" : fix2(x.avg) + "/5"}</b></td>
+      <td>${e(aiText(x.p.id))}</td>
       <td>${String(r.notes || "").split("\n").filter(Boolean).map(l => `<p>${e(l)}</p>`).join("")}</td></tr>`; }).join("")}</tbody></table>`;
 }
 function wordDoc(){
@@ -301,7 +302,7 @@ function columnsEditor(){
 function sheetCols(){
   const out = [{k: "name"}];
   R.data.cols.forEach(c => { if(c.type === "notes") out.push({k: "notes", c}); else if(num(c.max) === 5) out.push({k: "mark5", c}); else out.push({k: "raw", c}, {k: "calc", c}); });
-  return out.concat([{k: "avg"}, {k: "rank"}, {k: "addl"}]);
+  return out.concat([{k: "avg"}, {k: "rank"}, {k: "ai"}, {k: "addl"}]);
 }
 const letter = i => { let s = ""; i++; while(i){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
 function headOf(s){
@@ -313,6 +314,7 @@ function headOf(s){
   if(s.k === "calc") return `${c.label} ÷ 5`;
   if(s.k === "avg") return `W${R.week} Final Average`;
   if(s.k === "rank") return "Rank";
+  if(s.k === "ai") return "🤖 AI summary of the week";
   return "Additional Notes";
 }
 // the formulas behind the worked-out cells, as the sheet (and the Excel file) has them
@@ -326,6 +328,16 @@ function formulaOf(s, ci, row, sc, first, last){
   return "";
 }
 const sheetRows = () => R.sort === "rank" ? ranked().map(x => x.p) : people();
+/* ▾/▸ retractable: a column folds to a thin strip (a click on its letter) and back; Collapse all keeps the marks out of 5,
+   the average, the rank and the AI summary. Kept per viewer on this browser. */
+const FOLD_KEY = "lsh_rk_fold";
+const foldSet = () => { if(!R.folds){ try{ R.folds = new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); }catch(err){ R.folds = new Set(); } } return R.folds; };
+const saveFolds = () => { try{ localStorage.setItem(FOLD_KEY, JSON.stringify([...foldSet()])); }catch(err){} };
+const fk = s => s.c ? s.k + ":" + s.c.id : s.k;
+const folded = s => s.k !== "name" && foldSet().has(fk(s));
+const FD = s => folded(s) ? " xl-folded" : "";
+// (the AI summary of a trainee's week, for the sheet, ⬇ Word and ⬇ Excel)
+const aiText = id => { const w = window.FTRankSummary && FTRankSummary.weekSummary ? FTRankSummary.weekSummary(id) : null; return (w && w.text) || ""; };
 function grid(){
   const list = sheetRows(), sc = sheetCols(), rk = {}; ranked().forEach(x => { rk[x.p.id] = x; });
   if(!list.length) return `<p class="sc-empty">No approved trainees in ${e(R.batch)}.</p>`;
@@ -334,12 +346,16 @@ function grid(){
   return `<div class="xl-fbar"><span class="xl-ref" id="xlRef">A3</span><span class="xl-fx">fx</span>
       <input id="xlBar" list="rkNotes" placeholder="Select a cell" readonly onchange="FTRanking.bar(this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
     <div class="xl-wrap"><table class="xl"><thead>
-      <tr class="xl-letters"><th class="xl-corner"></th>${sc.map((s, i) => `<th class="xl-l${s.k === "name" ? " xl-frz" : ""}">${L(i)}</th>`).join("")}</tr></thead><tbody>
+      <tr class="xl-letters"><th class="xl-corner"></th>${sc.map((s, i) => `<th class="xl-l${s.k === "name" ? " xl-frz" : ""}${FD(s)}" ${s.k === "name" ? "" : `onclick="FTRanking.fold('${fk(s)}')" title="${folded(s) ? "▸ Show this column" : "▾ Fold this column away"}"`}>${folded(s) ? "▸" : L(i)}</th>`).join("")}</tr></thead><tbody>
       <tr class="xl-title"><th class="xl-rn">1</th><td class="xl-frz" colspan="${sc.length}"><b>${e(title())}</b></td></tr>
-      <tr class="xl-head"><th class="xl-rn">2</th>${sc.map((s, i) => `<th class="${s.k === "name" ? "xl-frz " : ""}xl-h-${s.k}" data-ref="${L(i)}2">${e(headOf(s)).replace(/\n/g, "<br>")}</th>`).join("")}</tr>
+      <tr class="xl-head"><th class="xl-rn">2</th>${sc.map((s, i) => `<th class="${s.k === "name" ? "xl-frz " : ""}xl-h-${s.k}${FD(s)}" data-ref="${L(i)}2" title="${e(headOf(s))}">${folded(s) ? "" : e(headOf(s)).replace(/\n/g, "<br>")}</th>`).join("")}</tr>
       ${list.map((p, ri) => { const row = first + ri, r = rowOf(p.id), x = rk[p.id] || {};
         return `<tr class="xl-row"><th class="xl-rn">${row}</th>${sc.map((s, ci) => {
           const ref = L(ci) + row, at = `data-ri="${ri}" data-ci="${ci}" data-ref="${ref}" data-p="${e(p.id)}" data-k="${s.k}"`;
+          // (a folded column: a thin strip, its value in the tooltip; ▸ on its letter brings it back)
+          if(folded(s)) return `<td class="xl-fold" title="${e(headOf(s))}"></td>`;
+          if(s.k === "ai"){ const w = window.FTRankSummary && FTRankSummary.weekSummary ? FTRankSummary.weekSummary(p.id) : {text: ""};
+            return `<td class="xl-td xl-aisum${w.ai ? "" : " is-plain"}" tabindex="0" ${at} ${ev} title="${e(w.text || "")}">${w.text ? e(w.text) : `<span class="xl-wait">${w.state === "busy" ? "🤖 Summarizing the week…" : "🤖 Summarized when the week’s summary is ready (📑 above)"}</span>`}</td>`; }
           if(s.k === "name") return `<td class="xl-frz xl-name" tabindex="0" ${at} ${ev}>${e(p.name)}</td>`;
           if(s.k === "notes"){ const cell = r.cells[s.c.id] || {};
             return `<td class="xl-td"><textarea class="xl-in xl-txt" rows="2" ${at} data-c="${s.c.id}" ${ev} placeholder="Complete / Complied; however, lacking … (dates)" onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'note', this.value)">${e(cell.note || "")}</textarea></td>`; }
@@ -418,7 +434,7 @@ function xlsxParts(){
   const str = (r, s, v) => `<c r="${r}" t="inlineStr" s="${s}"><is><t xml:space="preserve">${X(v)}</t></is></c>`;
   // the export adds the notes under the scores as one column, before Additional Notes (Excel shows a cell note only on hover)
   const cols = sc.slice(0, -1).concat([{k: "snotes"}, sc[sc.length - 1]]);
-  const width = {name: 26, notes: 34, mark5: 11, raw: 12, calc: 9, avg: 12, rank: 7, snotes: 34, addl: 42};
+  const width = {name: 26, notes: 34, mark5: 11, raw: 12, calc: 9, avg: 12, rank: 7, snotes: 34, ai: 48, addl: 42};
   const head = s => s.k === "snotes" ? "Notes on the scores" : headOf(s);
   const rows = [`<row r="1" ht="22" customHeight="1">${str("A1", 5, title())}</row>`,
     `<row r="2" ht="48" customHeight="1">${cols.map((s, i) => str(L(i) + "2", 1, head(s))).join("")}</row>`];
@@ -430,6 +446,7 @@ function xlsxParts(){
       if(s.k === "notes") return str(ref, 2, (cells[s.c.id] || {}).note || "");
       if(s.k === "mark5" || s.k === "raw"){ const v = num((cells[s.c.id] || {}).raw); return v == null ? `<c r="${ref}" s="6"/>` : `<c r="${ref}" s="6"><v>${v}</v></c>`; }
       if(s.k === "calc" || s.k === "avg" || s.k === "rank") return `<c r="${ref}" s="${s.k === "rank" ? 7 : 4}"><f>${X(formulaOf(s, ci, row, cols, first, last).slice(1))}</f></c>`;
+      if(s.k === "ai") return str(ref, 2, aiText(x.p.id));
       if(s.k === "snotes") return str(ref, 2, R.data.cols.filter(c => c.type === "score" && (cells[c.id] || {}).note).map(c => `${c.label}: ${cells[c.id].note}`).join("\n"));
       return str(ref, 2, r.notes || "");
     }).join("")}</row>`);
@@ -488,6 +505,7 @@ function renderRanking(){
     <div class="rk-title"><b>${e(title())}</b><span id="rkSaved" class="rk-saved">${R.saved ? "✓ Saved" : "Saving…"}</span>
       <span class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.toggleEdit()">✎ Columns</button>
         <button class="btn btn-ghost btn-sm" ${R.fill ? "disabled" : ""} onclick="FTRanking.fill()" title="Fill the empty score cells of the columns that have a source, from the trainees' grades on the platform">${R.fill ? "Filling…" : "⤓ Fill from the platform"}</button>
+        <button class="btn btn-ghost btn-sm" onclick="FTRanking.foldAll()" title="Fold every column away but the marks out of 5, the average, the rank and the AI summary (a column's letter folds or shows it alone)">${sheetCols().some(folded) ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="Order the rows by name or by rank">↕ ${R.sort === "rank" ? "By rank" : "By name"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.copy()">📋 Copy</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.print()">🖨 Print</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
@@ -536,6 +554,10 @@ window.addEventListener("ft-roster-changed", () => { R.people = null; });
 window.FTRanking = {
   // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
   ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
+  fold(k){ const f = foldSet(); if(f.has(k)) f.delete(k); else f.add(k); saveFolds(); rerender(); },
+  foldAll(){ const f = foldSet(), sc = sheetCols();
+    if(sc.some(folded)) f.clear(); else sc.forEach(s => { if(["raw", "notes", "addl"].includes(s.k)) f.add(fk(s)); });
+    saveFolds(); rerender(); },
   // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
   embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },
   // (the report is the Batch Sheet's batch: picking one moves the sheet too)
@@ -653,6 +675,11 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl{border-collapse:separate;border-spacing:0;font:12.5px Calibri,'Segoe UI',Arial,sans-serif;color:#1F1F1F;}
 .xl th,.xl td{border-right:1px solid #D4D4D4;border-bottom:1px solid #D4D4D4;padding:0;}
 .xl-letters th{position:sticky;top:0;z-index:4;background:#F3F3F3;color:#555;font-weight:400;font-size:11.5px;height:20px;text-align:center;min-width:76px;}
+.xl-letters th.xl-l:not(.xl-frz){cursor:pointer;} .xl-letters th.xl-l:not(.xl-frz):hover{background:#E3ECDC;}
+.xl th.xl-folded,.xl td.xl-fold{min-width:14px !important;width:14px;max-width:14px;padding:0 !important;background:repeating-linear-gradient(90deg,#EEF1F4,#EEF1F4 3px,#E1E5EA 3px,#E1E5EA 6px);}
+.xl-head th.xl-h-ai{min-width:320px;background:#2F5D8C;}
+.xl td.xl-aisum{min-width:320px;max-width:420px;white-space:normal;font-size:12px;line-height:1.45;vertical-align:top;padding:5px 7px;background:#F4F8FC;color:#1E2340;}
+.xl td.xl-aisum.is-plain{color:#3C4043;font-style:italic;} .xl td.xl-aisum .xl-wait{color:#80868B;font-style:italic;}
 .xl-corner,.xl-rn{position:sticky;left:0;z-index:5;background:#F3F3F3 !important;color:#555;font-weight:400 !important;font-size:11.5px;width:34px;min-width:34px !important;text-align:center;}
 .xl-corner{top:0;z-index:6;}
 .xl-title td{padding:5px 8px;font-size:14px;background:#fff;}

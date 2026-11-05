@@ -1,5 +1,5 @@
 /* ============================================================
-   👥 TRAINEES & BATCHES: Trainee Audit and 📁 Batch Folders as one tab, in 🏅 Scorecard
+   👥 TRAINEES & BATCHES: Trainee Audit and 📁 Batch Folders as one tab, in 🛡 Admin Master Control (not in 🏅 Scorecard)
    ------------------------------------------------------------
    The 📋 Batch Sheet (js/ft-batch-sheet.js) already shows every trainee's progress, lessons, Knowledge Checks, Practice
    Lab, scores and recent activity, so this tab keeps only what the sheet doesn't have, the things a trainer DOES:
@@ -52,7 +52,8 @@ const listTo = (k, archived) => {
   setTimeout(() => { const el = document.getElementById("adminRowsWrap"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 50);
 };
 window.openBatchFolder = function(k){
-  const all = (state.adminData || []).filter(r => (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
+  // (a revoked or offboarded trainee doesn't count: js/ft-roster.js)
+  const all = (state.adminData || []).filter(r => (r.archived || !window.ftActiveTrainee || ftActiveTrainee(r, {pending: true})) && (typeof batchKey === "function" ? batchKey(r) : r.batch) === k);
   listTo(k, all.length > 0 && all.every(r => r.archived));
 };
 

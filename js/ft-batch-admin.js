@@ -100,7 +100,8 @@ async function msLoad(force){
     MS.loadedFor = sig;
   }catch(err){ toast("Couldn’t load the scorecards. Check your connection."); }
   MS.loading = false;
-  if(state.view === "admin" && state.adminTab === "mockscores" && !isTyping()) render();
+  // (🧑‍🏫 Graders: Mock Calls & Demos draws this page too, under its graders: it redraws there as well)
+  if(state.view === "admin" && ["mockscores", "graders"].includes(state.adminTab) && !isTyping()) render();
 }
 function renderMockScores(){
   if(state.adminLoading || !state.adminData){

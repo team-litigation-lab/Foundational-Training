@@ -93,10 +93,24 @@ const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons
 const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : plainHeads(evlInline(v)); }catch(err){ return (s || {}).html; } };
 /* A slide's headings are the deck's navy bar with white text: a highlight or a text colour a trainer's edit put on a heading
    (Day 7's "What to collect about insurance on an intake call", in yellow) is dropped, on the heading and inside it */
+/* (and a heading is never inside the slide editor's 📦 Card, the dashed .ftdd-ph box: a card holding a heading, Day 7's
+   insurance heading, gives way to what it holds, without its 📌 icon; a card left empty is dropped) */
 function plainHeads(html){
   const h = String(html || "");
-  if(!/<h[1-6][\s>]/i.test(h) || !/(background|color)\s*:/i.test(h)) return h;
+  const heads = /<h[1-6][\s>]/i.test(h), card = /ftdd-ph\b/.test(h);
+  if(!heads || (!card && !/(background|color)\s*:/i.test(h))) return h;
   const t = document.createElement("template"); t.innerHTML = h;
+  if(card){
+    // (innermost first, so a card inside a card is handled before the one holding it)
+    [...t.content.querySelectorAll(".ftdd-ph")].reverse().forEach(c => {
+      const empty = !c.textContent.replace(/📌/g, "").trim() && !c.querySelector("img, iframe, video, audio, table");
+      if(empty){ c.remove(); return; }
+      if(!c.querySelector("h1, h2, h3, h4, h5, h6")) return;
+      c.querySelectorAll(":scope > .ftdd-ph-ic").forEach(x => x.remove());
+      const kids = [...c.childNodes].flatMap(k => k.nodeType === 1 && k.tagName === "DIV" && !k.className ? [...k.childNodes] : [k]);
+      c.replaceWith(...kids);
+    });
+  }
   t.content.querySelectorAll(":is(h1,h2,h3,h4,h5,h6), :is(h1,h2,h3,h4,h5,h6) [style]").forEach(el => {
     if(!el.style) return;
     ["background", "background-color", "color"].forEach(p => el.style.removeProperty(p));
@@ -2189,6 +2203,8 @@ function toolsSlide(){
 }
 
 root.FTDayDecks = {open, go, next: nextKC,
+  // (the scale every day's card starts from on this screen: Day 1's, unstretched, before it grows to fill the slide)
+  cardScale(){ const box = document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
   // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
   tsheet(btn){
     const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;

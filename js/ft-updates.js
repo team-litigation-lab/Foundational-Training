@@ -677,7 +677,7 @@ function renderFtOpenDays(){
    record as unlockedDays (worker.js keeps trainees from writing it); their open page picks it up at its next sync
    (applyAdminUnlocks in index.html) and dayUnlocked() above opens the lesson's day cards. */
 function renderFtOpenForOne(sel, open, everyone){
-  const people = (state.adminData || []).filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected)
+  const people = (state.adminData || []).filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)))
     .filter(r => sel === "__all" || ftBatchKey(r.batch) === sel)
     .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
   const who = people.find(r => r.id === state.ftOdTrainee) || null;
@@ -741,7 +741,7 @@ async function ftLoadVideoRequests(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
-    const people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    const people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
     const vals = await ftGetMany([].concat(...people.map(p => ["videoreq:" + p.id, "videoaccess:" + p.id])));
     const rows = [];
     people.forEach((p, i) => {
@@ -754,6 +754,8 @@ async function ftLoadVideoRequests(){
   VREQ.loading = false;
   if(state.view === "admin") render();
 }
+// a trainee revoked or offboarded: their requests go from the list at its next read
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { VREQ.rows = null; VREQ.at = 0; });
 window.ftApproveVideo = async function(tid, lesson, on){
   const cur = (await sharedGet("videoaccess:" + tid)) || {};
   const acc = Object.assign({}, cur.lessons || {});

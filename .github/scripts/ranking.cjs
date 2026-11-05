@@ -51,10 +51,17 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
   const heads = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
   const want = ['2', 'Trainee Name', 'Spelling & Typing Tests', 'Monitoring Sheet (5/5)', 'Tracker (5/5)', 'PI Reading Task (40/40)', 'PI Reading Task ÷ 5', 'Ass: Common Terms (27/27)', 'Ass: Common Terms ÷ 5',
-    'Ass: Auto Liability Insurance (45/45)', 'Ass: Auto Liability Insurance ÷ 5', 'RC: Data Extraction (125/125)', 'RC: Data Extraction ÷ 5', 'Reception Mock Calls (5/5)', 'W1 Final Average', 'Rank', 'Additional Notes'];
+    'Ass: Auto Liability Insurance (45/45)', 'Ass: Auto Liability Insurance ÷ 5', 'RC: Data Extraction (125/125)', 'RC: Data Extraction ÷ 5', 'Reception Mock Calls (5/5)', 'W1 Final Average', 'Rank', '🤖 AI summary of the week', 'Additional Notes'];
   if (JSON.stringify(heads) !== JSON.stringify(want)) fail(`the Week 1 columns are ${JSON.stringify(heads)}`);
   const letters = await page.$$eval('.xl-letters th', t => t.map(x => x.innerText.trim()).join(''));
-  if (letters !== 'ABCDEFGHIJKLMNOP') fail(`the sheet's column letters are ${letters}`);
+  if (letters !== 'ABCDEFGHIJKLMNOPQ') fail(`the sheet's column letters are ${letters}`);
+  // ▾/▸ retractable: Collapse all folds the points columns and notes away (the marks out of 5, the average and the rank stay);
+  // Expand all brings them back
+  await page.evaluate(() => FTRanking.foldAll()); await page.waitForTimeout(300);
+  const fold = await page.$$eval('.xl-head th', t => t.map(x => (x.classList.contains('xl-folded') ? '·' : '') + (x.getAttribute('title') || x.innerText).replace(/\s+/g, ' ').trim()));
+  if (!fold.some(h => h === '·PI Reading Task (40/40)') || fold.some(h => h === '·PI Reading Task ÷ 5' || h === '·W1 Final Average' || h === '·Rank')) fail(`Collapse all: ${JSON.stringify(fold)}`);
+  await page.evaluate(() => FTRanking.foldAll()); await page.waitForTimeout(300);
+  if (await page.$('.xl-head th.xl-folded')) fail('Expand all left a column folded');
   const empty = await page.$$eval('.xl .xl-num', t => t.filter(x => x.value).length);
   if (empty) fail('the report came with scores already in it');
 
