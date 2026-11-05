@@ -148,7 +148,10 @@ async function draft(){
   S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
 const overall = r => r1(avg(COMP.map(([k]) => r.scores[k])));
-function ranked(){ const rows = Object.entries((S.data || {}).rows || {}).map(([id, r]) => Object.assign({id}, r, {overall: overall(r)}));
+// (only the batch's trainees now: a trainee revoked, offboarded or archived after the week was summarized drops off the report and
+// its ranking — the summary keeps their row, so restoring them brings it back)
+function ranked(){ const c = ctx(), live = c && Array.isArray(c.people) && c.people.length ? new Set(c.people.map(p => p.id)) : null;
+  const rows = Object.entries((S.data || {}).rows || {}).filter(([id]) => !live || live.has(id)).map(([id, r]) => Object.assign({id}, r, {overall: overall(r)}));
   const o = rows.filter(r => r.overall != null).sort((a, b) => b.overall - a.overall); o.forEach((r, i) => { r.rank = i && o[i - 1].overall === r.overall ? o[i - 1].rank : i + 1; });
   return rows.sort((a, b) => (a.rank || 999) - (b.rank || 999) || String(a.name).localeCompare(String(b.name))); }
 const tone = v => v == null ? "na" : v >= 4.5 ? "ex" : v >= 3.5 ? "gd" : v >= 2.5 ? "ok" : "lo";
