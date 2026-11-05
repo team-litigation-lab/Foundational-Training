@@ -1346,19 +1346,7 @@ async function checkDrive(env, id, D, o = {}) {
     const prev = cur.monitor || {};
     let g, review = "", error = "";
     try {
-      const f = TR.googleFile(drive.monitor);
-      let text;
-      try { text = await fetchGoogle(f.exportUrl, env); }
-      catch (e0) {
-        // (a Word file (.docx) kept in Drive opens in Google Docs under a docs.google.com/document link, but has no Google Docs
-        // export: its own text is read from the file)
-        if (f.kind !== "doc" || !f.id) throw e0;
-        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
-        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
-        text = bytes ? await docxText(bytes) : "";
-        if (!String(text || "").trim()) throw e0;
-      }
-      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      const text = await driveText(env, drive.monitor);
       const set = JSON.parse((await kv.get("settings:monitor")) || "null");
       const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((t) => typeof t === "string" ? { title: t } : t);
       g = TR.gradeMonitorText(text, topics);
@@ -1378,16 +1366,7 @@ async function checkDrive(env, id, D, o = {}) {
   if (drive.tam && o.tam === true) {
     let error = "", entries = {};
     try {
-      const f = TR.googleFile(drive.tam);
-      let text;
-      try { text = await fetchGoogle(f.exportUrl, env); }
-      catch (e0) {
-        if (f.kind !== "doc" || !f.id) throw e0;
-        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
-        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
-        text = bytes ? await docxText(bytes) : ""; if (!String(text || "").trim()) throw e0;
-      }
-      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      const text = await driveText(env, drive.tam);
       entries = tamEntries(text, D);
     } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The TAM couldn't be read just now: grade it again in a minute."; }
     cur.tam = { entries, error, url: String(drive.tam).slice(0, 500), checkedAt: at };
@@ -1792,6 +1771,23 @@ async function docxText(b) {
     p += 46 + nl + xl + cl;
   }
   return "";
+}
+/* A Google Doc's or Sheet's text (a Sheet's rows, one line each, its filled cells joined by spaces); the Monitoring Sheet and the TAM.
+   (a Word file (.docx) kept in Drive opens in Google Docs under a docs.google.com/document link, but has no Google Docs
+   export: its own text is read from the file) */
+async function driveText(env, url) {
+  const f = TR.googleFile(url);
+  let text;
+  try { text = await fetchGoogle(f.exportUrl, env); }
+  catch (e0) {
+    if (f.kind !== "doc" || !f.id) throw e0;
+    let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
+    let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
+    text = bytes ? await docxText(bytes) : "";
+    if (!String(text || "").trim()) throw e0;
+  }
+  if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+  return text;
 }
 async function driveBytes(fid, token, magic = "%PDF") {
   const tries = [];
