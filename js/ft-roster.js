@@ -2,7 +2,7 @@
    👥 WHO IS ON THE SCORECARDS: an active trainee, the one rule every trainer's list uses
    ------------------------------------------------------------
    A trainee whose access is revoked leaves every scorecard by themselves — the 📋 Batch Sheet (🏅 Score Card, the
-   compliance, ✍️ Process Questions, 📤 Daily outputs…), 📊 Weekly Ranking, 📝 Send Feedback, the 🧑‍🏫 Graders' scoresheets,
+   compliance, 📤 Daily outputs…), 📊 Weekly Ranking, 📝 Send Feedback, the 🧑‍🏫 Graders' scoresheets,
    📦 Intake Packets, 🧪 Typing & Spelling, 📁 Drive Trackers and 🏅 Scorecards:
      • offboarded (🚫 Offboard: access revoked, worker.js /api/batch/offboard), rejected, archived or cleared (purgedAt);
      • or on the platform's block list (access:blocked, worker.js blockedIds: offboarded, or their batch cleared), read here

@@ -25,7 +25,8 @@ const failures = []; const fail = (m) => failures.push(m);
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
     const META = {}, metaCalls = [];   // 🔗 the links' names, as Drive gives them (null: the account can't open it)
-    let subShared = false;   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
+    let subShared = false;
+    const tokenFail = { sub: false, sa: false };   // Google refusing a sign-in: the delegation (sub), the key (sa)   // whether GDRIVE_SA_SUBJECT is on the trainee's folder yet
     globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
         // (GDRIVE_SA_SUBJECT's token: the trainee shared their folder with the service account only, so that user can't see it
@@ -57,8 +58,11 @@ const failures = []; const fail = (m) => failures.push(m);
             'Virtual Assistant Essentials - Day 1\nDate: 10/01/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney with case tasks.\n2. Federal courts hear cases between parties in different states.\n3. Solo attorneys gain the most from a VA handling intake.\n4. Clear written updates build the client’s trust.\n5. Deadlines are tracked in the firm’s calendar every day.\n3 Questions That You Still Have\n1. How are court deadlines counted?\nRate Your Understanding\n[x] I am confident that I can do this on my own.\n');
         if (u.startsWith('https://drive.google.com/embeddedfolderview?id=abcFolderId01')) return new Response('<div class="flip-entries"><div class="flip-entry" id="entry-f1"><a href="https://docs.google.com/document/d/f1/edit"><div class="flip-entry-title">PI Overview_Answers (Dee)</div><div class="flip-entry-last-modified"><div>Oct 26</div></div></a></div><div class="flip-entry" id="entry-sub1"><a href="https://drive.google.com/drive/folders/sub1"><div class="flip-entry-title">Week 1</div></a></div></div>');
         if (u.startsWith('https://drive.google.com/embeddedfolderview?id=sub1')) return new Response('<div class="flip-entry" id="entry-f2"><a href="https://drive.google.com/file/d/f2/view"><div class="flip-entry-title">Typing Test 10.26.26AM</div><div class="flip-entry-last-modified"><div>10:41 AM</div></div></a></div>');
+        if (u.startsWith('https://oauth2.googleapis.com/tokeninfo')) return new Response(JSON.stringify({ azp: '104812345678901234567', scope: 'https://www.googleapis.com/auth/drive.readonly' }));
         if (u === 'https://oauth2.googleapis.com/token') { const jwt = decodeURIComponent(String(init.body || '').split('assertion=')[1] || '');
             const claims = JSON.parse(Buffer.from((jwt.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString() || '{}');
+            if (claims.sub && tokenFail.sub) return new Response(JSON.stringify({ error: 'unauthorized_client', error_description: 'Client is unauthorized to retrieve access tokens using this method, or client not authorized for any of the scopes requested.' }), { status: 401 });
+            if (!claims.sub && tokenFail.sa) return new Response(JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid JWT Signature.' }), { status: 400 });
             return new Response(JSON.stringify({ access_token: claims.sub ? 'sub-token' : 'ci-token' })); }
         if (u.startsWith('https://www.googleapis.com/drive/v3/files?')) {
             const parent = decodeURIComponent(u).match(/'([^']+)' in parents/)[1];
@@ -142,6 +146,20 @@ const failures = []; const fail = (m) => failures.push(m);
     const v1 = await call('/api/drive/verify', {}, trainee), vv = (v1.body || {}).verify || {};
     if (!v1.body || !v1.body.ok || !vv.folder || !vv.folder.ok || !vv.tracker || !vv.tracker.ok || !vv.monitor || !vv.monitor.ok || v1.body.share !== 'saver@lsh.example') fail(`the links should open as GDRIVE_SA_SUBJECT: ${JSON.stringify(v1.body)}`);
     if (!(JSON.parse(store.get('ft:trackerreview:' + id)).verify || {}).folder) fail('the link check wasn\'t kept in trackerreview (the Batch Sheet reads it)');
+    // 🔌 the connection's status, with Google's reason: the delegation refused for GDRIVE_SA_SUBJECT, the account itself fine
+    tokenFail.sub = true;
+    const st1 = (await call('/api/drive/status', {}, admin)).body || {};
+    if (st1.saOk !== true || st1.subjectOk !== false || !/unauthorized_client/.test(st1.subjectDetail || '') || st1.clientId !== '104812345678901234567') fail(`/api/drive/status should say the delegation is refused: ${JSON.stringify(st1)}`);
+    if ((await call('/api/drive/status', {}, trainee)).status !== 403) fail('a trainee read the Drive connection status');
+    // both refused: the link check can't run, and says why on the trainee's record (no silent ⏳ Pending)
+    tokenFail.sa = true;
+    { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
+    await call('/api/drive/status', {}, admin);   // (signs in afresh: no token kept from before)
+    const v0 = (await call('/api/drive/verify', {}, trainee)).body || {};
+    const ve = JSON.parse(store.get('ft:trackerreview:' + id)).verifyError || {};
+    if (v0.error !== 'drive-auth' || !/unauthorized_client/.test(v0.detail || '') || !/invalid_grant/.test(v0.detail || '') || !/invalid_grant/.test(ve.detail || '')) fail(`a link check that can't sign in should keep Google's reasons: ${JSON.stringify(v0)} / ${JSON.stringify(ve)}`);
+    tokenFail.sub = false; tokenFail.sa = false;
+    await call('/api/drive/status', {}, admin);
     delete env.GDRIVE_SA_SUBJECT;
     { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.verifyAt; delete rv.verify; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }   // (past the 20-second wait; a link not checked yet: a ✓ is locked for its link)
     const v2 = await call('/api/drive/verify', {}, trainee), vv2 = (v2.body || {}).verify || {};
