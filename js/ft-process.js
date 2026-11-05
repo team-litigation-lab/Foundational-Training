@@ -211,7 +211,9 @@ async function sheetPdf(set){
 const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
   quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
 // the lesson's files: one per naming convention among the sheets on its page
-const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs = moduleStudied(lesson) ? all : all.filter(x => x.set.open), seen = new Set();
+// (on ✍️ Knowledge Check every question of the lesson can be answered, so every sheet has its 📄 Save PDF to my Folder there,
+// finished module or not; on the Process Questions page, before the module is finished, only its open sheets)
+const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs = moduleStudied(lesson) || (typeof state === "object" && state.view === "kc") ? all : all.filter(x => x.set.open), seen = new Set();
   return [...new Set(qs.map(x => x.set))].filter(set => !seen.has(set.file) && seen.add(set.file)); };
 /* 📝 A day's worksheet, done in Word, embedded with the answer sheet it goes with (by the sheet's file): its download and
    its naming convention live here, beside 📄 Save PDF to my Folder, not on the deck (the deck's slide links here,
@@ -617,7 +619,9 @@ async function loadAdmin(){
     // The trainee records in one request, then the active trainees' answer sheets (sharedGetMany; ftGetMany in js/ft-updates.js).
     const ids = keys.map(k=>String(k).replace(/^process:/, ""));
     const people = await sharedGetMany(ids.map(id=>"trainee:"+id));
-    const rows = ids.map((id, i)=>{ const rec = people[i]; return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }).filter(x=>!x.archived);
+    // (only active trainees: no record (deleted), archived, revoked or offboarded drops the row — ftActiveTrainee, js/ft-roster.js)
+    const rows = ids.map((id, i)=>{ const rec = people[i]; return {id, rec, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||""}; })
+      .filter(x=>x.rec && !x.rec.archived && (!window.ftActiveTrainee || ftActiveTrainee(x.rec)));
     const sheets = await ftGetMany(rows.map(x=>"process:"+x.id).concat(rows.map(x=>"kcreview:"+x.id)));
     rows.forEach((x, i)=>{ x.p = sheets[i] || {sets:{}}; x.rv = sheets[rows.length + i] || {lessons:{}}; if(!x.rv.lessons) x.rv.lessons = {}; });
     FPA.rows = rows.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
@@ -625,6 +629,8 @@ async function loadAdmin(){
   FPA.loading = false;
   if(state.view==="process") render();
 }
+// a trainee added, revoked or offboarded: the rows are read again
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { FPA.rows = null; });
 // The ranking report's line, in the facilitator's words.
 function reportLine(x){
   const sets = PROCESS_SETS, done = sets.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt);

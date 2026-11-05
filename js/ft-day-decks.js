@@ -2203,8 +2203,8 @@ function toolsSlide(){
 }
 
 root.FTDayDecks = {open, go, next: nextKC,
-  // (the scale every day's card starts from on this slide box, Day 1's card fitted to it: for the Day decks test)
-  cardScale: box => cardScale(box),
+  // (the scale every day's card starts from on this screen: Day 1's, unstretched, before it grows to fill the slide)
+  cardScale(){ const box = document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
   // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
   tsheet(btn){
     const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;
@@ -3560,7 +3560,7 @@ main.main-ftdd .ftdd-sheet > .ftdd-score.ftdd-score-big{align-self:stretch;width
 main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1300px;font-size:22px;}
 main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:6px 16px !important;font-size:21px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:140px !important;}
-/* (Day 9's metrics with the practice links beside them) */
+/* (Day 9's metrics with the practice links and the trainee's mock call case beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:19px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}

@@ -226,13 +226,15 @@ async function loadAdmin(){
     const ids = ((await sharedList("trainee:")) || []).map(k => String(k).replace(/^trainee:/, ""));
     const get = window.ftGetMany || sharedGetMany;
     const people = await get(ids.map(id => "trainee:" + id));
-    const rows = ids.map((id, i) => ({id, p: people[i] || {}})).filter(x => x.p.approved && !x.p.archived);
+    const rows = ids.map((id, i) => ({id, p: people[i] || {}})).filter(x => x.p.approved && !x.p.archived && (!window.ftActiveTrainee || ftActiveTrainee(x.p)));  // (revoked/offboarded drop off, js/ft-roster.js)
     const recs = await get(rows.map(x => "transcribe:" + x.id));
     rows.forEach((x, i) => { x.t = recs[i] || null; });
     T.admin.rows = rows.sort((a, b) => String(a.p.name || "").localeCompare(String(b.p.name || "")));
   }catch(err){ T.admin.rows = []; }
   if(state.view === "transcribe") render();
 }
+// (the roster changed: read the trainees again)
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { T.admin = null; });
 function renderAdmin(){
   if(!T.admin) loadAdmin();
   const rows = (T.admin && T.admin.rows) || null;
