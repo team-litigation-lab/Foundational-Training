@@ -507,7 +507,10 @@ window.ftDriveItems = ctx => {
   // 📒 the Monitoring Sheet items a slide's 📤 Submit had graded (Day 2's #5–7: /api/monitor/items, js/ft-buffer.js): the
   // score is here, not on the slide (the slide keeps the feedback)
   // 📄 the on-platform assessments graded by their Submit for Grading (js/ft-assess.js, /api/assess/grade)
-  Object.values(rv.assess || {}).forEach(x => { if(!x || x.score == null) return;
+  // (an activity answered in the 🎧 Call Listening log — Day 3's Reception Listening Activity — counts there instead, with the
+  // listening it belongs to: js/ft-listening.js ftListenItems; here as well, it would count twice in the overall)
+  const inListening = doc => !!(window.FTListen && (FTListen.sets || []).some(s => s.activity && s.id === doc));
+  Object.entries(rv.assess || {}).forEach(([doc, x]) => { if(!x || x.score == null || inListening(doc)) return;
     out.push({name:`📄 ${x.title || "Assessment"}`, pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
   Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
     out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
