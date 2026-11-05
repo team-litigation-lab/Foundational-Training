@@ -33,6 +33,8 @@ jobs:
         run: node build/script-versions.cjs --check
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
+      - name: Pull requests kept up to date after a deploy (only safe conflicts resolved; a result that fails a check, or a conflict that needs a person, is never pushed)
+        run: node .github/scripts/pr-auto-update-test.cjs
       - name: No builder notes on the site (the Training Guide's instructions for building the platform aren't content)
         run: node .github/scripts/builder-notes.cjs
       - name: Batch IDs are B + MMDDYY (the page and the Worker read them the same way; older codes keep working)
