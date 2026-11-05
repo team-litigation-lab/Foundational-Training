@@ -130,10 +130,11 @@ async function loadData(){
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
         if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
-    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table), checked now (worker.js verifyLinks, /api/drive/verify:
+    // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table) or whose last check couldn't sign in to Google
+    // (⚠ Can't check: a key or setting fixed since), checked now (worker.js verifyLinks, /api/drive/verify:
     // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
     if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
-      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked/.test(L[k].st)); }catch(err){ return false; } });
+      const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked|unchecked/.test(L[k].st)); }catch(err){ return false; } });
       if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
         if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
