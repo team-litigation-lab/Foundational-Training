@@ -419,9 +419,10 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
     <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">${readOn ? "📖 Reading Task best" : "Knowledge Check best"} ${best}%</span>` : ""}</div>
     <div class="fp-body">
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
-        <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
+        <textarea rows="4" placeholder="Your answer, in complete sentences." ${studied && onScreen.includes(x.set) && kcLeft(lesson, readOn) <= 0 ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
-        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">${best != null ? `🔁 Retake: Submit for Grading · best ${best}%` : "📝 Submit for Grading"}</button>`
+        ${studied ? (kcLeft(lesson, readOn) <= 0 ? `<button class="btn btn-navy btn-sm" type="button" disabled title="A Knowledge Check is taken once; your trainer can grant a retry for a technical problem">✓ Taken${best != null ? ` · ${best}%` : ""}</button>`
+            : `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">${kcUsed(lesson, readOn) ? `🔁 Retry granted: Submit for Grading` : "📝 Submit for Grading"}</button>`)
           // (before the module is finished: the open sheet — Day 1's Reading Task — is submitted on its own; it is graded with the module's others later)
           : sets.map(st => { const sub = (FP.data.sets[st.id] || {}).submittedAt;
               return `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.submitOpen('${st.id}')">${sub ? "🔁 Submit again" : "📝 Submit"} · ${e(st.title)}</button>${sub ? `<span class="fp-st st-done">✓ Submitted ${e(new Date(sub).toLocaleDateString())}</span>` : ""}`; }).join("")}
@@ -690,6 +691,14 @@ async function checkTraineeFolder(id, force){
   if(state.view === "process") render();
 }
 const readSetOf = l => { const sets = [...new Set(kcQuestionsFor(l).map(q => q.set))]; return sets.length > 1 ? sets.find(st => !!st.open) || null : null; };
+// ↺ Grant a retry: a Knowledge Check is taken once; for a technical problem the trainer gives one more attempt, with the reason
+function retryBox(x, l, read, rec){
+  const used = (rec && rec.attempts) || 0, all = kcAllowed(x.rv, l, read), log = ((x.rv && x.rv.retryLog) || []).filter(g => g && g.key === retryKey(l, read));
+  return `<div class="fp-kcrow fp-retry"><span class="fp-muted">🔒 Taken once. ${used ? `${used} of ${all} attempt${all === 1 ? "" : "s"} used.` : "Not taken yet."}${used && used < all ? " A retry is waiting to be used." : ""}</span>
+      ${used >= all ? `<input data-retry-why maxlength="300" placeholder="The technical problem (e.g. the connection dropped while grading)">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.retry('${x.id}', ${l}, ${read}, this)">↺ Grant a retry</button>` : ""}</div>
+    ${log.length ? `<ul class="fp-retrylog">${log.slice(-5).map(g => `<li>↺ ${e(new Date(g.at).toLocaleString())}: ${e(g.why)}</li>`).join("")}</ul>` : ""}`;
+}
 function kcAdmin(x){
   const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b).filter(l=>DAYS.find(d=>d.id===l));
   const kc = (x.p && x.p.kc) || {}, kr = (x.p && x.p.kcRead) || {};
@@ -700,7 +709,8 @@ function kcAdmin(x){
     ${entries.map(({l, read, title, qs, rec, rv})=>{ const k = x.id + "|" + l + (read ? "|read" : ""), open = !!FPA.kcOpen[k], last = rec && rec.last;
       const t = trainerScore(rv);
       return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.kc('${x.id}', ${l}, ${read})">${open ? "▾" : "▸"} ${e(title)}
-          ${rec && rec.attempts ? `<span class="fp-pill ${rec.best >= KC_PASS ? "ok" : "mid"}">graded best ${rec.best}% · ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"}</span>` : `<span class="fp-pill bad">not taken</span>`}
+          ${rec && rec.attempts ? `<span class="fp-pill ${rec.best >= KC_PASS ? "ok" : "mid"}">graded best ${rec.best}% · ${rec.attempts} of ${kcAllowed(x.rv, l, read)} attempt${kcAllowed(x.rv, l, read) === 1 ? "" : "s"} used</span>` : `<span class="fp-pill bad">not taken</span>`}
+          ${rec && rec.attempts && rec.attempts < kcAllowed(x.rv, l, read) ? `<span class="fp-pill">↺ retry granted, not used yet</span>` : ""}
           ${t != null ? `<span class="fp-pill ${t >= KC_PASS ? "ok" : "mid"}">🧑‍🏫 final ${t}%</span>` : rv.comment ? `<span class="fp-pill">🧑‍🏫 commented</span>` : ""}</div>
         ${open ? `<div class="fp-kcform">
           ${last && last.summary ? `<p class="fp-muted"><b>Graded ${e(new Date(last.at).toLocaleString())}:</b> ${e(last.summary)}</p>` : ""}
@@ -712,6 +722,7 @@ function kcAdmin(x){
           <div class="fp-kcrow"><label>Final score <input type="number" min="0" max="100" data-score value="${t != null ? t : ""}" placeholder="${rec && rec.attempts ? rec.best : "—"}"> %</label>
             <span class="fp-muted">Empty keeps the graded score. ${read ? "Yours replaces it as the Reading Task’s own score; the lesson’s score is its own sheet’s." : `Yours replaces it; ${KC_PASS}% or more finishes the lesson.`}</span>
             <button class="btn btn-navy btn-sm" type="button" onclick="FTProcessAdmin.saveKc('${x.id}', ${l}, this, ${read})">Save my review</button></div>
+          ${retryBox(x, l, read, rec)}
         </div>` : ""}</div>`; }).join("")}</div>`;
 }
 window.FTProcessAdmin = {
@@ -730,6 +741,24 @@ window.FTProcessAdmin = {
       if(await sharedSet("kcreview:" + id, cur) === false) throw new Error("save");
       x.rv = cur; toast("✓ Review saved. The trainee sees it on their Knowledge Check.");
     }catch(err){ toast("Couldn’t save the review. Check your connection."); }
+    btn.disabled = false; render();
+  },
+  // ↺ one more attempt at a Knowledge Check (a technical problem), with the reason: kcreview:<id>.retries and .retryLog
+  async retry(id, l, read, btn){
+    const x = FPA.rows.find(r=>r.id===id); if(!x) return;
+    const why = String((btn.parentElement.querySelector("[data-retry-why]") || {}).value || "").trim().slice(0, 300);
+    if(!why){ toast("Write the technical problem first: it is kept with the retry."); return; }
+    btn.disabled = true;
+    try{
+      const cur = (await sharedGet("kcreview:" + id)) || {lessons:{}}; if(!cur.lessons) cur.lessons = {};
+      const k = retryKey(l, read), used = ((((x.p || {})[read ? "kcRead" : "kc"] || {})[l]) || {}).attempts || 0;
+      cur.retries = cur.retries || {};
+      // (one attempt more than they have used: a trainee who took it several times before the once-only rule gets one more too)
+      cur.retries[k] = Math.max((Number(cur.retries[k]) || 0) + 1, used);
+      cur.retryLog = (Array.isArray(cur.retryLog) ? cur.retryLog : []).concat([{key:k, lesson:l, read:!!read, why, at:new Date().toISOString()}]).slice(-200);
+      if(await sharedSet("kcreview:" + id, cur) === false) throw new Error("save");
+      x.rv = cur; toast(`✓ Retry granted. ${x.name || "The trainee"} can submit the ${read ? "Reading Task" : "Knowledge Check"} once more.`);
+    }catch(err){ toast("Couldn’t grant the retry. Check your connection."); }
     btn.disabled = false; render();
   },
   row(id){ FPA.open[id] = !FPA.open[id]; render(); if(FPA.open[id]) checkTraineeFolder(id); },
@@ -801,6 +830,28 @@ function loadReview(force){
 const kcReview = id => (KR.id === state.traineeId && KR.data && KR.data.lessons[id]) || null;
 const readReview = id => (KR.id === state.traineeId && KR.data && (KR.data.read || {})[id]) || null;
 const trainerScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.max(0, Math.min(100, Math.round(Number(r.score)))) : null;
+/* 🔒 A Knowledge Check is taken ONCE. The attempts a trainee has are 1 plus the retries their trainer granted for a technical
+   problem (✍️ Knowledge Check, as an admin → the sheet → ↺ Grant a retry): kcreview:<id>.retries = {"<lesson>" (its own
+   sheet) | "read<lesson>" (its 📖 Reading Task): n}, each with a line in kcreview:<id>.retryLog ({key, lesson, read, why, at}).
+   worker.js holds a trainee's process:<id> to the same count, so a new attempt past it is never saved. A grading that
+   fails (the AI didn't answer) isn't an attempt. */
+const retryKey = (id, read) => (read ? "read" : "") + id;
+const kcAllowed = (rv, id, read) => 1 + Math.max(0, Math.floor(Number(((rv && rv.retries) || {})[retryKey(id, read)]) || 0));
+const myAllowed = (id, read) => kcAllowed(KR.id === state.traineeId ? KR.data : null, id, read);
+const kcUsed = (id, read) => { const r = read ? readRec(id) : kcRec(id); return (r && r.attempts) || 0; };
+const kcLeft = (id, read) => myAllowed(id, read) - kcUsed(id, read);
+// the Knowledge Check page's button (Submit, once; a retry the trainer granted; or ✓ Taken) and the line under it
+function kcButton(id, read){
+  const used = kcUsed(id, read), all = myAllowed(id, read);
+  return (used >= all ? `<button class="btn btn-navy" id="kcSubmit" type="button" disabled>✓ Taken · ${used} of ${all} attempt${all === 1 ? "" : "s"} used</button>`
+    : `<button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${used ? "🔁 Retry granted by your trainer: Submit for Grading" : "Submit for Grading"}</button>`) + `<span class="fp-save" id="fpSave"></span>`;
+}
+function kcNote(id, read){
+  const used = kcUsed(id, read), all = myAllowed(id, read), what = read ? "Reading Task" : "Knowledge Check";
+  return `<p class="fp-muted kc-once">🔒 ${used >= all ? `You've taken this ${what}: it is taken once. If a technical problem affected your attempt, ask your trainer: they can grant a retry.`
+    : used ? "Your trainer granted a retry: it is one more attempt, so submit when every answer is final."
+    : `You take this ${what} once: submit when every answer is final. (If a technical problem affects it, your trainer can grant a retry.)`}</p>`;
+}
 // The lesson's Knowledge Check score: the trainer's when they gave one, else the best graded attempt.
 function kcBest(id){ const t = trainerScore(kcReview(id)); if(t != null) return t; const r = kcRec(id); return r && r.attempts ? r.best : null; }
 // A trainer's score reaches the lesson's progress (and the trainee's record): a passing one finishes the lesson.
@@ -877,7 +928,7 @@ function renderKc(){
   const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>`;
   if(!d || !qs.length) return `${back}<div class="card" style="padding:28px;">This lesson has no Knowledge Check.</div>`;
   const intro = `<p class="eyebrow">Knowledge Check</p><h1>${e(d.title)}</h1>
-    <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score, and your trainer adds their own review.</p>`;
+    <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. It is taken <b>once</b>, so submit when every answer is final; your trainer adds their own review (and can grant a retry if a technical problem affects your attempt).</p>`;
   if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
     <div class="card kc-card">${bySheet(qs, x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`)}
     <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Knowledge Check in the top bar.</p></div>`;
@@ -886,6 +937,7 @@ function renderKc(){
   if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
   loadReview();
   const read = isReadPage(qs, shownSets(qs)), rec = read ? readRec(id) : kcRec(id), shown = KC.shown[shownKey(id, read)] || (rec && rec.last), prog = state.progress[id] || {};
+  const locked = kcLeft(id, read) <= 0;   // 🔒 taken: the answers stay as they were graded
   if(read) return `${back}
     <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
       ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${rec.best}%` : `best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
@@ -894,11 +946,10 @@ function renderKc(){
     <div class="card kc-card">
       ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
-          <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
+          <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}
           ${(()=>{ const n = ((readReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
-      <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
-        <span class="fp-save" id="fpSave"></span></div>
+      <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
       <p class="fp-muted">Your answers save as you type.</p>
       ${pdfBox(id)}
     </div>
@@ -912,11 +963,10 @@ function renderKc(){
     <div class="card kc-card">
       ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
-          <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
+          <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}
           ${(()=>{ const n = ((kcReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
-      <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
-        <span class="fp-save" id="fpSave"></span></div>
+      <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
       <p class="fp-muted">Your answers save as you type.</p>
       ${pdfBox(id)}
     </div>
@@ -988,6 +1038,9 @@ window.FTKc = {
     // each scored on its own (a trainee on the Virtual Assistant Essentials sheet was blocked by the Reading Task's six
     // questions, which that page doesn't show)
     const onScreen = shownSets(all), read = isReadPage(all, onScreen), sk = shownKey(id, read);
+    // 🔒 taken once: the trainer's grants read fresh first (a retry granted a minute ago counts)
+    { const p = loadReview(true); if(p) await p; }
+    if(kcLeft(id, read) <= 0){ toast(`You've taken this ${read ? "Reading Task" : "Knowledge Check"}: it is taken once. If a technical problem affected your attempt, ask your trainer for a retry.`, 9000); render(); return; }
     const qs = all.filter(x => onScreen.includes(x.set));
     // (a lesson graded from two answer sheets, Day 1's Reading Task and its Process Questions: the message names the sheet
     // that still has short answers, so a trainee on the other sheet's page knows where to go)
@@ -999,7 +1052,7 @@ window.FTKc = {
     const sig = kcSig(qs), last = ((read ? readRec(id) : kcRec(id)) || {}).last;
     if(last && last.sig === sig){
       KC.shown[sk] = last; if(state.view !== "kc"){ state.dayId = Number(id); goto("kc"); } else render();
-      toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands. Change an answer to grade it again.`, 8000); return; }
+      toast(`Already graded: ${last.pct}%. Your answers haven’t changed since, so the score stands.`, 8000); return; }
     KC.grading = true;
     const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
     const prompt = kcPrompt(d, qs, ans);
@@ -1039,7 +1092,7 @@ window.FTKc = {
       try{ syncToLedger(); }catch(err){}
       KC.shown[sk] = r;
       if(pct >= KC_PASS){ toast(`✓ ${pct}% · ${ftName(id)} finished.`); if(pct >= 85) burstConfetti(); }
-      else toast(`${pct}%: not yet. Read the feedback under each answer, improve them and submit again.`);
+      else toast(`${pct}%: not yet at ${KC_PASS}%. Read the feedback under each answer; your trainer reviews it too.`);
     }catch(err){
       toast((err && err.message) ? "Couldn't grade your answers: " + err.message : "Couldn't grade your answers. Please try again.");
     }finally{
@@ -1153,7 +1206,9 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-kcadmin{margin-top:10px;} .fp-kcadmin-h{display:block;color:var(--navy);font-size:14.5px;margin-bottom:2px;}
 .fp-kcform{padding:6px 0 4px;} .fp-kcform textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;margin-top:6px;resize:vertical;}
 .fp-kclabel{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-top:8px;}
-.fp-kcrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;} .fp-kcrow label{font-weight:700;color:var(--navy);font-size:14px;}
+.fp-kcrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;}
+.fp-retry{border-top:1px dashed #DDE1EC;padding-top:8px;} .fp-retry input{flex:1 1 260px;min-width:200px;padding:6px 9px;border:1px solid #CBD2E1;border-radius:8px;font:inherit;font-size:13.5px;}
+.fp-retrylog{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-soft);} .kc-once{margin:6px 0 0;} .fp-kcrow label{font-weight:700;color:var(--navy);font-size:14px;}
 .fp-kcrow input{width:80px;font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:8px;}
 .kc-trainer{padding:14px 16px;margin-bottom:14px;border-left:4px solid var(--navy);} .kc-trainer-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--navy);font-size:15.5px;}
 .kc-trainer p{margin:8px 0 0;font-size:14.5px;} .kc-fb.kc-trainer-note{background:#EEF2FF;border-color:var(--navy);}

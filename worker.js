@@ -357,7 +357,25 @@ async function traineeWrite(env, tok, key, value) {
   if (key === `process:${id}`) {
     // Process Questions (js/ft-process.js): the trainee's own answer sheets.
     if (value.length > 400000) return "The answers are too large to save";
-    await kv.put(key, value); return null;
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    // 🔒 a Knowledge Check is taken once (js/ft-process.js kcAllowed): kc[lesson] / kcRead[lesson] = {attempts, best, last}.
+    // A trainee's attempts are 1 plus the retries the trainer granted for a technical problem (kcreview:<id>.retries,
+    // "<lesson>" / "read<lesson>"). A graded attempt can't be changed or taken away, and one past the count isn't saved.
+    const rvRaw = await kv.get(`kcreview:${id}`);
+    let rv = null; try { rv = rvRaw ? JSON.parse(rvRaw) : null; } catch (e) { rv = null; }
+    const allowed = (slot, l) => 1 + Math.max(0, Math.floor(Number(((rv && rv.retries) || {})[(slot === "kcRead" ? "read" : "") + l]) || 0));
+    const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+    const n = (r) => Math.max(0, Math.floor(Number(r && r.attempts) || 0));
+    for (const slot of ["kc", "kcRead"]) {
+      const was = obj(existing && existing[slot]), now = obj(incoming[slot]), out = {};
+      for (const l of new Set([...Object.keys(was), ...Object.keys(now)])) {
+        const w = was[l], v = now[l];
+        if (n(w) > 0) out[l] = v && n(v) > n(w) && n(w) < allowed(slot, l) && n(v) <= allowed(slot, l) ? v : w;   // a new attempt, if one is left
+        else if (v) { if (n(v) <= allowed(slot, l)) out[l] = v; }   // the first attempt
+      }
+      if (Object.keys(out).length || slot in incoming || (existing && slot in existing)) incoming[slot] = out;
+    }
+    await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `calsim:${id}`) {
     // Calendar Scheduler (js/ft-calendar.js): the trainee's draft calendars and submissions. The trainer's reviews

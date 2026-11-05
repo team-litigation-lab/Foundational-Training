@@ -51,6 +51,8 @@ jobs:
         run: node .github/scripts/intake-packet.cjs
       - name: Who sees what of the Batch Sheet and My Progress (a trainee only their own; only a trainer moves a batch)
         run: node .github/scripts/sheet-access.cjs
+      - name: A Knowledge Check is taken once (a second attempt isn't saved; a trainer's retry lets one more through)
+        run: node .github/scripts/kc-once.cjs
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)
         run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)

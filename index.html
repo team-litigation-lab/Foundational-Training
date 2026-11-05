@@ -6350,7 +6350,7 @@ function orientSlides(){
      <p class="or-foot">Days open one at a time — each builds on the one before.</p>`},
    {k:"A day", h:"How every day works", body:`
      <div class="or-flow">${step(1,"🖥","Lesson slides","One topic at a time, with Quick Checks between them. Next / Previous at the bottom; your place is saved.")}<i>→</i>${step(2,"📝","Knowledge Check","Pass at 70% to mark the day complete ✓.")}<i>→</i>${step(3,"🧪","Practice Lab","Do the real task. Graded with written feedback — or “coming soon” on days without one yet.")}<i>→</i>${step(4,"🔓","Next day opens","Finishing the Practice Lab unlocks tomorrow.")}</div>
-     <div class="or-note">Didn't pass the Knowledge Check? That's a <b>“not yet”</b>, not a “no” — you can still move on, and retake it any time. Your best score counts.</div>`},
+     <div class="or-note">Didn't pass the Knowledge Check? That's a <b>“not yet”</b>, not a “no” — you can still move on. Each Knowledge Check is taken once, so submit when your answers are final; if a technical problem affects it, your trainer can grant a retry.</div>`},
    {k:"Dashboard", h:"Your dashboard at a glance", body:`
      <div class="or-bp">
        <div class="or-bp-main">
@@ -6555,7 +6555,7 @@ function renderFacilitatorGuide(){
         <li><b>Run the slides in 🖥 Presenter view</b> and share only the slides window: each slide's notes panel has what's on the slide, the spoken script and the scenario for the room. The day's Speaker Notes PDF is in Admin → SOP Reference.</li>
         <li><b>Practice Lab is where the learning sticks.</b> Have trainees complete it live, then debrief. Their work auto-saves (💾) and they can resume after a refresh.</li>
         <li><b>End-of-day discussion</b> is the day's last slide in Presenter view (and in the SOP session plan) — raise it live before the Knowledge Check.</li>
-        <li><b>Knowledge Check:</b> 70% marks the day complete ✓. Failing doesn't block progress — trainees see a clear "cleared to proceed / retake optional" message.</li>
+        <li><b>Knowledge Check:</b> 70% marks the day complete ✓. Failing doesn't block progress. Each Knowledge Check is taken <b>once</b>; for a technical problem, grant a retry in ✍️ Knowledge Check → the trainee → the lesson → ↺ Grant a retry.</li>
       </ul>
     </div>
 
@@ -7465,7 +7465,7 @@ async function loadTraineeRanking(force){
 
 /* ---------- Competency profile + "Work on next" (dashboard sidebar) ---------- */
 const COMPETENCIES = [
-  {id:"knowledge", label:"Knowledge Retention", tip:"Review the lesson slides for any day under 70% and retake its Knowledge Check."},
+  {id:"knowledge", label:"Knowledge Retention", tip:"Review the lesson slides for any day under 70% and go over your trainer's feedback on its Knowledge Check."},
   {id:"accuracy", label:"Accuracy & Precision", tip:"Double-check names, dates, figures and details against the source before submitting."},
   {id:"presence", label:"Executive Presence & Judgment", tip:"Lead with a recommendation, not just options — write as if Elias will act on it immediately."},
   {id:"risk", label:"Risk, Confidentiality & SOPs", tip:"Before sending, ask: is anything confidential, who else needs to know, and what's the escalation path?"},
@@ -7491,7 +7491,7 @@ function workOnNextItems(){
   const fbDays = Object.entries(state.myFeedback||{}).sort((a,b)=>(b[1].sentAt||"").localeCompare(a[1].sentAt||""));
   if(fbDays.length){ (fbDays[0][1].areasToBuild||[]).slice(0,2).forEach(x=>items.push({src:`Trainer · ${ftName(fbDays[0][0])}`, text:x, action:`openDayFeedback(${fbDays[0][0]})`})); }
   // 2) Knowledge Checks not yet passed
-  DAYS.forEach(d=>{ const p = (state.progress||{})[d.id]; if(p && typeof p.score==="number" && !p.done) items.push({src:`${ftName(d.id)} Knowledge Check`, text:`Not yet at 70% (best ${p.score}%) — review and retake when ready.`, action:`goto('day',${d.id})`}); });
+  DAYS.forEach(d=>{ const p = (state.progress||{})[d.id]; if(p && typeof p.score==="number" && !p.done) items.push({src:`${ftName(d.id)} Knowledge Check`, text:`Not yet at 70% (${p.score}%): review the lesson and your trainer's feedback.`, action:`goto('day',${d.id})`}); });
   // 3) latest graded-work gaps
   const recent = (state.workLog||[]).filter(e=>e.kind!=="quiz" && (e.growth||e.gaps||[]).length).slice(-3).reverse();
   recent.forEach(e=>{ const t = (e.growth && e.growth[0]) || (e.gaps && e.gaps[0]); if(t) items.push({src:e.label, text:t}); });
@@ -18987,7 +18987,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=ft-2026.11.05-packet-check2"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.30-lien-optional"></script>
-<script src="/js/ft-process.js?v=ft-2026.11.02-kc-route"></script>
+<script src="/js/ft-process.js?v=ft-2026.11.05-kc-once"></script>
 <script src="/js/ft-assess.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-claims-email.js?v=ft-2026.10.30-claims-email"></script>
 <script src="/js/ft-rules.js?v=ft-2026.11.02-monitor-file"></script>
@@ -19028,7 +19028,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-dna-learn.js?v=ft-2026.11.04-dna-learn"></script>
-<script src="/js/ft-admin-ops.js?v=ft-2026.11.05-demo-case"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.11.05-kc-once"></script>
 <script src="/js/ft-attendance.js?v=ft-2026.11.02-override"></script>
 <script src="/js/ft-batch-admin.js?v=ft-2026.11.05-demo-case"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
