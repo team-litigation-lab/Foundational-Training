@@ -1,7 +1,7 @@
 /* ============================================================
    📑 THE WEEKLY RANKING, SUMMARIZED FOR MANAGEMENT
    ------------------------------------------------------------
-   📋 Batch Sheet → 📊 Weekly Ranking opens on this: each trainee's week as a scorecard of seven competencies, each scored out of
+   📋 Batch Sheet → 📊 Weekly Ranking opens on this: each trainee's week as a scorecard of eight competencies, each scored out of
    5 with a summarized comment on their progress, and the trainer's feedback summarized — the report sent to management every
    week, laid out to be read as it is (⬇ Word, 🖨 Print), the trainees ranked by their overall.
      🔎 Attention to Detail    the rubric criteria on accuracy (Attention to Details, Authentication, Comprehension…), the
@@ -27,7 +27,7 @@ const clip = (v, n) => { const t = String(v == null ? "" : v).replace(/\s+/g, " 
 const avg = xs => { const v = xs.filter(x => typeof x === "number" && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 const r1 = v => v == null ? null : Math.round(v * 10) / 10;
 const COMP = [
-  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["timely", "⏱", "Timely Submission (Time Management)"],
+  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["instructions", "📏", "Following Instructions"], ["timely", "⏱", "Timely Submission (Time Management)"],
   ["communication", "💬", "Communication Proficiency"], ["english", "🔤", "English Proficiency"], ["call", "📞", "Call Handling"], ["tools", "🛠", "Tools Utilization"]];
 const S = {key: "", data: null, loading: false, busy: false, edit: false, err: ""};
 const keyOf = (b, w) => `rksum:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
@@ -47,7 +47,7 @@ async function evidence(p, range){
   const week = sheets.filter(x => inW(x.at)), use = week.length ? week : sheets;   // (none this week: the latest ones)
   const kcs = Object.entries((proc && proc.kc) || {}).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),
     weak: (x.last.items || []).filter(q => q.score <= 6).map(q => clip(q.feedback, 160)).slice(0, 2)} : null).filter(Boolean);
-  const comp = Object.entries((rv && rv.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, eod: c.eodCheck || null, tests: c.tests || {}}));
+  const comp = Object.entries((rv && rv.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
   const assess = Object.values((rv && rv.assess) || {}).filter(x => x && x.score != null);
   const days = Object.entries((fb && fb.days) || {}).filter(([l, x]) => x && x.status === "sent").map(([l, x]) => ({l, rating: x.rating || "", summary: clip(x.summary, 400), at: x.sentAt}));
@@ -61,6 +61,8 @@ async function evidence(p, range){
   const base = {
     attention: r1(avg([critAvg(/attention|detail|authenticat|comprehension|accura/i), pct5(avg(kcs.map(k => k.pct))), pct5(avg(assess.map(a => a.pct))), pct5(avg(comp.map(c => c.parts.tracker).filter(v => v != null)))])),
     compliance: r1(pct5(avg(comp.map(c => c.pct)))),
+    // 📏 strictly: each day's six Drive links as the course asks, as found that day (worker.js dailyCompliance instr)
+    instructions: r1(pct5(avg(comp.map(c => c.parts.instructions).filter(v => v != null)))),
     timely: r1(avg([timeRules.length ? 5 * timeRules.filter(r => r.pass).length / timeRules.length : null, items.length ? 5 * items.filter(x => x.onTime).length / items.length : null, pct5(avg(comp.map(c => c.parts.outputs).filter(v => v != null)))])),
     communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i), pct5(avg(eodOn.map(x => x.pct)))])),
     english: r1(avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))])),
@@ -74,7 +76,7 @@ function brief(ev){
   ev.sheets.forEach(x => L.push(`[${x.mock ? "Mock call" : "Demo"}] ${x.title}: ${x.avg5 != null ? x.avg5.toFixed(2) + "/5" : ""} ${x.status}${x.crit.length ? " · " + x.crit.map(c => `${c.n} ${c.s}/5${c.f ? " (" + clip(c.f, 120) + ")" : ""}`).join("; ") : ""}${x.comment ? " · Trainer: " + x.comment : ""}`));
   ev.kcs.forEach(k => L.push(`[Knowledge Check] lesson ${k.l}: ${k.pct}% · ${k.summary}${k.weak.length ? " · weaker answers: " + k.weak.join(" | ") : ""}`));
   ev.assess.forEach(a => L.push(`[Assessment] ${a.title}: ${a.score}/${a.max} (${a.pct}%)`));
-  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, TAM ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
+  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, following instructions ${c.parts.instructions ?? "–"}${c.instr && (c.instr.issues || []).length ? " [not followed: " + c.instr.issues.map(x => x.k + ": " + clip(x.why, 60)).join("; ") + "]" : ""}, TAM (shadowing) ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
   if(ev.runs.length) L.push(`[Practice Sessions] ${ev.runs.map(v => v + "%").join(", ")}`);
   if(ev.spell.length) L.push(`[Spelling tests] ${ev.spell.map(v => Math.round(v) + "%").join(", ")}`);
   ev.days.forEach(d => L.push(`[Trainer's day-by-day feedback] lesson ${d.l}: ${d.rating} · ${d.summary}`));
@@ -88,6 +90,8 @@ function plainComment(k, ev, s){
   const remarks = xs => xs.map(x => x.comment).filter(has).slice(0, 2).join(" ");
   if(k === "call") return `${sc} ${mocks.length ? `Mock calls: ${mocks.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(mocks.concat(demos))}`.trim();
   if(k === "tools") return `${sc} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}. ` : ""}${remarks(demos)}`.trim();
+  if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
+    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 2).join("; ")}.` : ev.comp.some(c => c.instr) ? "Every Drive link as the course asks." : ""}`.trim(); }
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
   return sc;
 }
@@ -164,7 +168,7 @@ function reportHtml(forDoc, V){
     <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th></tr></thead>
       <tbody>${rows.map(r => `<tr><td class="rks-rank">${r.rank || "—"}</td><td class="rks-name"><b>${e(r.name)}</b></td>${COMP.map(([k]) => `<td>${chip(r.scores[k])}</td>`).join("")}<td>${chip(r.overall)} <small class="rks-lbl">${LBL[tone(r.overall)]}</small></td></tr>`).join("")}</tbody></table>
     ${rows.map(r => {
-      // ▸/▾ on the page each trainee's card folds to its heading (rank, name, the seven scores and the overall); ✎ Edit opens them
+      // ▸/▾ on the page each trainee's card folds to its heading (rank, name, the eight scores and the overall); ✎ Edit opens them
       // all, and the Word and Print copies are always open. Which are open is kept while the page is (S.open).
       const head = `<span class="rks-rk">#${r.rank || "—"}${V && r.rank && r.of ? `<small> of ${r.of}</small>` : ""}</span><b>${e(r.name)}</b>${forDoc ? "" : `<span class="rks-mini">${COMP.map(([k, ic, n]) => `<span title="${e(n)}">${ic}${chip(r.scores[k])}</span>`).join("")}</span>`}<span class="rks-ov">${chip(r.overall)} ${LBL[tone(r.overall)]}</span>`;
       const was = (S.open || {})[fk(r)], open = forDoc || ed || (V ? was !== false : was);   // (a trainee's own card starts open)
@@ -214,7 +218,7 @@ window.FTRankSummary = {
     return `<div class="rks-wrap"><div class="rks-bar-acts"><select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
         ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(true)">▾ Expand all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(false)">▸ Collapse all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.word()">⬇ Word</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.print()">🖨 Print</button>` : ""}
         ${d && d.sharedAt ? `<span class="rks-note">📤 Shared ${e(new Date(d.sharedAt).toLocaleString())}${d.editedAt && d.editedAt > d.sharedAt ? " — edited since: share again for the trainees to see it" : ""}.</span>` : ""}
-        <span class="rks-note">Each trainee's week: seven competencies scored out of 5 with a summarized comment, and the trainer's feedback.</span></div>
+        <span class="rks-note">Each trainee's week: eight competencies scored out of 5 with a summarized comment, and the trainer's feedback.</span></div>
       ${S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line

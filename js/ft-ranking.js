@@ -40,13 +40,16 @@ const TEMPLATES = {
    averaged — the same Overall as 🏅 My Performance). A column already there for one is kept as it is; only the missing ones are
    added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
 // (📘 the TAM isn't a daily deliverable: it is graded only for a shadowing activity, when a trainer asks)
-const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"]];
+// (📏 Following Instructions too: each day's six Drive links as the course asks, held to the day they were checked)
+const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"], ["instructions", "Following Instructions"]];
 // (a column made before: its Monitoring Sheet and Tracker now follow the day's checks too)
 const DAY_OF = {"drive:Monitoring Sheet": "day:monitor", "drive:Tracker": "day:tracker"};
+// (a TAM column a trainer typed scores in stays, as a column of their own — only the platform's TAM column goes)
+const typedIn = c => !!(R.data && Object.values(R.data.rows || {}).some(r => { const x = ((r || {}).cells || {})[c.id]; return x && !x.auto && (num(x.raw) != null || String(x.note || "").trim()); }));
 function connectAll(cols){ cols = cols.slice();
   cols.forEach(c => { if(c.type === "score" && DAY_OF[c.src]){ c.src = DAY_OF[c.src]; c.period = "week"; } });
   // (a TAM column added before the TAM stopped being a daily part goes again)
-  cols = cols.filter(c => c.src !== "day:tam");
+  cols = cols.filter(c => c.src !== "day:tam" || typedIn(c)).map(c => c.src === "day:tam" ? Object.assign(c, {src: ""}) : c);
   const out = cols.slice(), has = src => out.some(c => c.src === src);
   let n = 0;
   // 📅 each of the day's deliverables, its own column: the week's average of that part of the end-of-shift check
@@ -174,7 +177,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["day:instructions", "📅 Following Instructions (the day's six Drive links)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -252,7 +255,7 @@ async function fillFromPortal(quiet){
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.parts[k], 0) / days.length;
-        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email"}[k] || k;
+        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", instructions: "Following Instructions (the six Drive links as the course asks)"}[k] || k;
         put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: c.period === "week" ? "week" : "all", days: days.length,
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
@@ -265,7 +268,7 @@ async function fillFromPortal(quiet){
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
         put(row, c, cur, {raw: fmt(pct / 100 * max), period: c.period === "week" ? "week" : "all", days: days.length,
-          why: `Daily Compliance, each day's whole end-of-shift check (Monitoring Sheet, Tracker, tests, EOD, outputs, platform): ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.pct}%`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`});
+          why: `Daily Compliance, each day's whole end-of-shift check (Monitoring Sheet, Tracker, tests, EOD, following instructions, outputs, platform; the TAM on a shadowing day): ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.pct}%`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`});
       }));
     }
     // 🔗 the Drive Links Compliance column: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance)
@@ -416,11 +419,11 @@ const FD = s => folded(s) ? " xl-folded" : "";
 const aiText = id => { const w = window.FTRankSummary && FTRankSummary.weekSummary ? FTRankSummary.weekSummary(id) : null; return (w && w.text) || ""; };
 /* 🎨 a score's colour by its mark out of 5 (Blue high, Green good, Yellow critical, Red fail), and 💬 its hover card: how the
    platform came up with it (the cell's why, kept by ⤓ fill), or that a trainer typed it, or where it will come from */
-const toneCls = m => m == null || !isFinite(m) ? "" : m >= 4.5 ? "t-ex" : m >= 3.5 ? "t-gd" : m >= 2.5 ? "t-ok" : "t-lo";
+const toneCls = m0 => { const m = m0 == null || !isFinite(m0) ? null : Math.round(m0 * 100) / 100; return m == null ? "" : m >= 4.5 ? "t-ex" : m >= 3.5 ? "t-gd" : m >= 2.5 ? "t-ok" : "t-lo"; };
 const TONE_TXT = {"t-ex": "🔵 High (4.5 or more).", "t-gd": "🟢 Good (3.5 to 4.49).", "t-ok": "🟡 Critical (2.5 to 3.49).", "t-lo": "🔴 Fail (below 2.5)."};
 function tipOf(c, cell, p){
   const m = mark(c, cell), head = `${p.name} · ${c.label}`;
-  if(num(cell.raw) == null) return `${head}: no score yet. ${howOf(c)}`;
+  if(num(cell.raw) == null) return `${head}: no score yet. ${howOf(c)}${String(cell.note || "").trim() ? " Note: " + cell.note : ""}`;
   const tone = TONE_TXT[toneCls(m)] || "";
   if(!cell.auto) return `${head}: ${cell.raw}${c.max && num(c.max) !== 5 ? " of " + c.max : ""} — typed by the trainer${m != null ? ` (${fix2(m)} out of 5)` : ""}. ${tone}${cell.note ? " Note: " + cell.note : ""}`;
   return `${head}: ${cell.why || howOf(c)} ${tone}${cell.note ? " Note: " + cell.note : ""}`;
@@ -481,7 +484,11 @@ function paintFigures(id, cid){
     if(r) r.textContent = x.rank || "";
   });
   const td = [...document.querySelectorAll("td[data-cell]")].find(t => t.getAttribute("data-cell") === id + "|" + cid);
-  if(td){ td.classList.remove("is-auto"); if(col) tone(td, mark(col, rowOf(id).cells[cid])); }
+  const P = people().find(x => x.id === id);
+  if(td){ td.classList.remove("is-auto"); if(col){ tone(td, mark(col, rowOf(id).cells[cid])); if(P) td.setAttribute("data-tip", tipOf(col, rowOf(id).cells[cid] || {}, P)); } }
+  if(col && el && P) el.setAttribute("data-tip", tipOf(col, rowOf(id).cells[cid] || {}, P));
+  ranked().forEach(x => { const a = [...document.querySelectorAll(".rk-avg")].find(t => t.getAttribute("data-a") === x.p.id);
+    if(a) a.setAttribute("data-tip", `${x.p.name}'s final average: the average of their marks out of 5 (the columns with a score), ranked ${x.rank || "—"}. ${x.avg == null ? "" : TONE_TXT[toneCls(x.avg)] || ""}`); });
 }
 // the formula bar: a score's note (typed there, shown as Excel's red corner), a worked-out cell's formula, a text cell's text
 function focusCell(el){
@@ -674,8 +681,9 @@ const HOW = {
   "day:monitor": "The Monitoring Sheet, day by day: each day counts the classroom discussions due by then (one a training day), each entry checked for a date, 5 takeaways, questions and the understanding rated. The week’s average, out of 5. Empty: not linked, or the system can’t read the file.",
   "day:tracker": "The Daily Task Tracker, day by day: each training day’s Daily Notes and outputs on the sheet (a trainer’s score for the day where given). The week’s average, out of 5. Empty: not linked, or the system can’t read the sheet.",
   "day:tests": "The Typing & Spelling Tests, day by day: of the three a day (AM typing, PM typing, spelling), how many were taken on the platform or saved as screenshots in Drive. The week’s average, out of 5.",
+  "day:instructions": "Following Instructions, day by day (strict): each training day's six Drive links as the course asks — linked, the trainee's own, the right file or folder, named by the convention, where it belongs. Out of the six, checked at the end of the shift; a day already over keeps what was found then, so fixing a link later doesn't undo the days it was wrong. The week's average, out of 5.",
   "day:eod": "The EOD email, day by day: checked against its template (the subject with the date, Accomplishments, 3 learnings of 2 sentences, On queue for tomorrow, sent before the end of the shift). The week’s average, out of 5.",
-  compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, the day’s outputs and work on the platform). The week’s average, out of 5.",
+  compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, Following Instructions, the day’s outputs and work on the platform; the TAM on a day a trainer graded it for shadowing). The week’s average, out of 5.",
   links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance), out of 5.",
   overall: "🏅 Scorecard overall: every grading system on the platform averaged (the same Overall as 🏅 My Performance), out of 5."
 };
@@ -697,8 +705,8 @@ function explainHtml(){
     const sh = rv.shots || {}, shots = (sh.files || []), inW = x => !wk || (x.date >= wk[0] && x.date <= wk[1]);
     const tests = `On the platform: ${(sk.typing || []).filter(inW).length} typing, ${(sk.spelling || []).filter(inW).length} spelling. Screenshots in Drive: ${shots.filter(inW).length}${sh.error ? ` (✗ the folders can’t be read: ${e(sh.error)})` : (sh.unread || []).length ? ` (✗ can’t read: ${e(sh.unread.join(", "))})` : ""}${sh.checkedAt ? `, checked ${e(String(sh.checkedAt).slice(0, 10))}` : ", not checked yet"}.`;
     const comp = Object.entries(rv.compliance || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
-    const P = ["monitor", "tracker", "tests", "eod", "outputs", "platform"];
-    const ctab = comp.length ? `<table class="rk-xt"><tr><th>Day</th><th>All</th>${P.map(k => `<th>${k === "tests" ? "Typing & Spelling" : k === "eod" ? "EOD" : k[0].toUpperCase() + k.slice(1)}</th>`).join("")}</tr>${comp.map(([d, x]) => `<tr><td>${e(d)}</td><td><b>${pc(x.pct)}</b></td>${P.map(k => `<td>${pc((x.parts || {})[k])}</td>`).join("")}</tr>`).join("")}</table>${comp.some(([, x]) => (x.unreadable || []).length) ? `<p class="rk-xn">“—” for a part: nothing to check that day, or the file can’t be read (${e([...new Set(comp.flatMap(([, x]) => x.unreadable || []))].join(", "))}).</p>` : ""}` : "<p>No day checked this week yet: each training day is checked at the end of the shift (🔄 Update all scores on the 📋 Batch Sheet runs today’s check now).</p>";
+    const P = ["monitor", "tracker", "tests", "eod", "instructions", "outputs", "platform", "tam"];
+    const ctab = comp.length ? `<table class="rk-xt"><tr><th>Day</th><th>All</th>${P.map(k => `<th>${k === "tests" ? "Typing & Spelling" : k === "instructions" ? "Following Instructions" : k === "tam" ? "TAM (shadowing)" : k === "eod" ? "EOD" : k[0].toUpperCase() + k.slice(1)}</th>`).join("")}</tr>${comp.map(([d, x]) => `<tr><td>${e(d)}</td><td><b>${pc(x.pct)}</b></td>${P.map(k => `<td>${pc((x.parts || {})[k])}</td>`).join("")}</tr>`).join("")}</table>${comp.some(([, x]) => (x.unreadable || []).length) ? `<p class="rk-xn">“—” for a part: nothing to check that day, or the file can’t be read (${e([...new Set(comp.flatMap(([, x]) => x.unreadable || []))].join(", "))}).</p>` : ""}` : "<p>No day checked this week yet: each training day is checked at the end of the shift (🔄 Update all scores on the 📋 Batch Sheet runs today’s check now).</p>";
     mine = `<div class="rk-xw"><h4>🔗 Drive links</h4><ul>${links}</ul><h4>📋 Task Tracker, this week</h4><ul>${trk}</ul><h4>📒 Monitoring Sheet</h4><p>${mon}</p><h4>📘 TAM</h4><p>${tam}</p><h4>🧪 Typing & Spelling, this week</h4><p>${tests}</p><h4>✅ Each day’s check</h4>${ctab}</div>`;
   }
   return `<div class="rk-explain card"><div class="rk-xh"><b>ℹ How the scores are tracked</b><button class="btn btn-ghost btn-sm" onclick="FTRanking.explain()">✕ Close</button></div>

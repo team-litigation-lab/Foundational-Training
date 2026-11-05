@@ -202,7 +202,8 @@ const num = v => { const n = parseFloat(String(v == null ? "" : v).replace(/,/g,
 const avgOf = xs => { const v = xs.filter(x => typeof x === "number" && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 function weekMark(rep, id){
   const r = rep && (rep.rows || {})[id]; if(!r) return null;
-  return avgOf(rep.cols.map(c => { const raw = num(((r.cells || {})[c.id] || {}).raw); return raw == null || c.type !== "score" ? null : Math.max(0, Math.min(5, raw / (num(c.max) || 5) * 5)); }));
+  // (a platform TAM column from before the TAM became shadowing-only doesn't count: js/ft-ranking.js drops it on opening)
+  return avgOf(rep.cols.map(c => { const cell = (r.cells || {})[c.id] || {}, raw = num(cell.raw); return raw == null || c.type !== "score" || (c.src === "day:tam" && cell.auto) ? null : Math.max(0, Math.min(5, raw / (num(c.max) || 5) * 5)); }));
 }
 function compOf(p){ const c = (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const days = Object.values(c).filter(x => x && typeof x.pct === "number"); return {pct: avgOf(days.map(x => x.pct)), n: days.length}; }
@@ -525,24 +526,27 @@ function foldRender(id){
        and a note; the day's compliance is worked out again (worker.js /api/eod/grade). An empty score takes it off.
      • 📘 Grade the TAM — the TAM isn't a daily part: when there is a shadowing activity, the trainer reads it here
        (worker.js /api/drive/tam), and it shows its dated entries. */
+// today, as the platform's days run (Pacific time, js/ft-tracker-rules.js TZ), for the trainer's date fields
+const ptToday = () => { try{ return new Intl.DateTimeFormat("en-CA", {timeZone: (window.FTTrackerRules || {}).TZ || "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date()); }catch(err){ return new Date().toISOString().slice(0, 10); } };
+const isWeekdayIso = iso => { const d = new Date(iso + "T12:00:00Z").getUTCDay(); return d >= 1 && d <= 5; };
 function trainerToolsHtml(){
   if(!adminOn() || meOn() || !B.data) return "";
   const ppl = people(); if(!ppl.length) return "";
   const id = B.tt && ppl.some(p => p.id === B.tt) ? B.tt : ppl[0].id, R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {};
-  const today = new Date().toISOString().slice(0, 10), t = rv.tam;
-  const tamOut = B.tamBusy ? "Reading the TAM…" : !t ? "Not graded yet." : t.error ? "✗ " + t.error : Object.keys(t.entries || {}).length
-    ? Object.entries(t.entries).sort().slice(-8).map(([d, x]) => `${d}: ${x.words} words`).join(" · ") : "No dated entry found in the TAM.";
+  const today = ptToday(), t = rv.tam, TD = B.ttD || {}, tg = rv.tamGrades || {};
+  const tamOut = B.tamBusy ? "Reading the TAM…" : t && t.error ? "✗ " + t.error : Object.keys(tg).length
+    ? "Graded: " + Object.entries(tg).sort().slice(-6).map(([d, x]) => `${d} ${x.pct}% (${x.words} words)`).join(" · ") : "No shadowing day graded yet.";
   const bt = B.btOut && B.btOut.id === id ? B.btOut : null;
   return `<details class="bs-le bs-tt" ${B.ttOpen ? "open" : ""} ontoggle="FTBatchSheet.ttOpen(this.open)"><summary>⏪ Backtrack a trainee · ✍ EOD score by hand · 📘 Grade the TAM (shadowing)</summary>
     <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.ttWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
     <div class="bs-tt-row"><b>⏪ Backtrack</b> <button class="btn btn-ghost btn-sm" type="button" ${B.btBusy ? "disabled" : ""} onclick="FTBatchSheet.backtrack('${e(id)}')">${B.btBusy ? "Backtracking…" : "⏪ Backtrack this trainee from Day 1"}</button>
       <span class="bs-note">${bt ? e(bt.text) : "Reads their Task Tracker, Monitoring Sheet and test screenshots again for every training day since the batch started, and works each day out again (a day’s trainer score and comment are kept)."}</span></div>
     <p class="bs-note">The daily check runs at the end of every shift (and 🔄 Update runs today’s now); backtrack one trainee when their days need catching up — files linked late, a file fixed after the fact.</p>
-    <div class="bs-tt-row"><b>✍ EOD</b> <input type="date" id="bsEodD" value="${e(B.ttDay || today)}" max="${today}"> <input type="number" id="bsEodS" min="0" max="100" placeholder="Score %" style="width:90px">
-      <input type="text" id="bsEodN" placeholder="Note (optional)" style="flex:1;min-width:160px"> <button class="btn btn-navy btn-sm" type="button" onclick="FTBatchSheet.eodGrade('${e(id)}')">💾 Save the EOD score</button></div>
+    <div class="bs-tt-row"><b>✍ EOD</b> <input type="date" id="bsEodD" value="${e(TD.d || B.ttDay || today)}" max="${today}" oninput="FTBatchSheet.ttKeep('d', this.value)"> <input type="number" id="bsEodS" min="0" max="100" placeholder="Score %" style="width:90px" value="${e(TD.s || "")}" oninput="FTBatchSheet.ttKeep('s', this.value)">
+      <input type="text" id="bsEodN" placeholder="Note (optional)" style="flex:1;min-width:160px" value="${e(TD.n || "")}" oninput="FTBatchSheet.ttKeep('n', this.value)"> <button class="btn btn-navy btn-sm" type="button" onclick="FTBatchSheet.eodGrade('${e(id)}')">💾 Save the EOD score</button></div>
     <p class="bs-note">For a day the EOD monitoring missed, or before it was set up. It replaces the automatic check for that day; an empty score takes it off.</p>
-    <div class="bs-tt-row"><b>📘 TAM</b> <button class="btn btn-ghost btn-sm" type="button" ${B.tamBusy ? "disabled" : ""} onclick="FTBatchSheet.tamGrade('${e(id)}')">📘 Grade the TAM now</button> <span class="bs-note">${e(tamOut)}</span></div>
-    <p class="bs-note">The TAM is only for shadowing: it isn’t scored every day. Grade it when there is a shadowing activity.</p></details>`;
+    <div class="bs-tt-row"><b>📘 TAM</b> <input type="date" id="bsTamD" value="${e(TD.t || today)}" max="${today}" oninput="FTBatchSheet.ttKeep('t', this.value)"> <button class="btn btn-ghost btn-sm" type="button" ${B.tamBusy ? "disabled" : ""} onclick="FTBatchSheet.tamGrade('${e(id)}')">📘 Grade the TAM for this shadowing day</button> <span class="bs-note">${e(tamOut)}</span></div>
+    <p class="bs-note">The TAM is only for shadowing: it isn’t scored every day. On a day with a shadowing activity, grade it here: the day’s TAM entry (15 words or more in full, shorter half, none 0) counts in that day’s compliance.</p></details>`;
 }
 function linksEditHtml(){
   if(!adminOn() || meOn() || !B.data) return "";
@@ -735,6 +739,11 @@ function dayActs(R, d){
     out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
       : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
       sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
+  // 📏 following instructions (strict): the day's six Drive links as the course asks, as found that day
+  if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 3), LB = Object.fromEntries(LINKS);
+    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `${I.ok} of ${I.of} Drive links as the course asks that day. Not followed: ${iss.map(x => `${(LB[x.k] || x.k).replace(/^\S+\s/, "")} (${x.why})`).join("; ")}.` : `All ${I.of || 6} Drive links as the course asks that day.`, iss.length ? "Fixing them later doesn’t undo the day." : "")}); }
+  // 📘 the TAM, on a day a trainer graded it for shadowing
+  if(P.tam != null) out.push({k: "tam", icon: "📘", label: "TAM (shadowing)", pct: P.tam, text: sent2(P.tam >= 100 ? "A full entry for the day, graded for the shadowing activity." : P.tam > 0 ? "A short entry for the day: 15 words or more count in full." : "No TAM entry dated that day.")});
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
     out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Scored by a trainer: ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
       miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
@@ -1164,7 +1173,8 @@ window.FTBatchSheet = {
       for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; rerender(); }
       msgs.push(`✓ Checked ${all.length} trainee${all.length === 1 ? "" : "s"}’ links`);
     }
-    if(doBack){
+    if(doBack && !isWeekdayIso(ptToday())) msgs.push("No daily check on a weekend: training days are weekdays");
+    else if(doBack){
       step("Running today’s check", appr.length);
       for(const p of appr){
         try{ await authFetch("/api/drive/shots", {id: p.id}); }catch(err){}
@@ -1260,13 +1270,17 @@ window.FTBatchSheet = {
   leOpen(o){ B.leOpen = !!o; },
   leWho(id){ if(!adminOn()) return; B.le = id; B.leOpen = true; render(); },
   ttOpen(v){ B.ttOpen = !!v; },
-  ttWho(id){ if(!adminOn()) return; B.tt = id; B.ttOpen = true; render(); },
+  ttWho(id){ if(!adminOn()) return; B.tt = id; B.ttOpen = true; B.ttD = {}; render(); },
+  // (what the trainer types in the tools stays put while the sheet redraws — the update on opening runs meanwhile)
+  ttKeep(k, v){ (B.ttD = B.ttD || {})[k] = v; },
   async eodGrade(id){
     if(!adminOn()) return;
     const d = (document.getElementById("bsEodD") || {}).value, sc = (document.getElementById("bsEodS") || {}).value, note = (document.getElementById("bsEodN") || {}).value;
-    if(!d){ toast("Pick the day."); return; } B.ttDay = d;
+    if(!d){ toast("Pick the day."); return; } if(!isWeekdayIso(d) || d > ptToday()){ toast("Pick a training day: a weekday, today or before."); return; } B.ttDay = d;
+    if(sc !== "" && !(Number(sc) >= 0 && Number(sc) <= 100)){ toast("The score is 0 to 100."); return; }
     try{ const r = await authFetch("/api/eod/grade", {id, date: d, score: sc === "" ? null : Number(sc), note}), j = await r.json().catch(() => null);
-      if(!r.ok || !j || !j.ok) throw new Error("save");
+      if(!r.ok || !j || !j.ok){ toast((j && j.error) || "Couldn’t save the EOD score. Try again."); return; }
+      B.ttD = {d};
       toast(sc === "" ? `EOD score taken off for ${d}.` : `✍ EOD for ${d} scored ${j.eod}% (the day: ${j.pct}%).`);
     }catch(err){ toast("Couldn’t save the EOD score. Try again."); }
     B.data = null; B.dataKey = ""; render();
@@ -1287,9 +1301,12 @@ window.FTBatchSheet = {
     render();
   },
   async tamGrade(id){
-    if(!adminOn() || B.tamBusy) return; B.tamBusy = true; B.tt = id; render();
-    try{ const r = await authFetch("/api/drive/tam", {id}), j = await r.json().catch(() => null);
-      const t = j && j.tam; toast(!t ? "The TAM isn’t linked." : t.error ? "📘 " + t.error : `📘 TAM read: ${Object.keys(t.entries || {}).length} dated entries.`);
+    if(!adminOn() || B.tamBusy) return;
+    const d = (document.getElementById("bsTamD") || {}).value || ptToday();
+    if(!isWeekdayIso(d) || d > ptToday()){ toast("Pick the shadowing day: a weekday, today or before."); return; }
+    B.tamBusy = true; B.tt = id; render();
+    try{ const r = await authFetch("/api/drive/tam", {id, date: d}), j = await r.json().catch(() => null);
+      toast(!j ? "Couldn’t read the TAM. Try again." : j.error ? "📘 " + j.error : `📘 TAM for ${d}: ${j.grade ? j.grade.pct + "% (" + j.grade.words + " words)" : "graded"}; the day's compliance is now ${j.pct}%.`);
     }catch(err){ toast("Couldn’t read the TAM. Try again."); }
     B.tamBusy = false; B.data = null; B.dataKey = ""; render();
   },

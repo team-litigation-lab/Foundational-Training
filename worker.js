@@ -1361,7 +1361,7 @@ async function checkDrive(env, id, D, o = {}) {
       }
       if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
       entries = tamEntries(text, D);
-    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The TAM couldn't be read just now: it is checked again at the end of the shift."; }
+    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The TAM couldn't be read just now: grade it again in a minute."; }
     cur.tam = { entries, error, url: String(drive.tam).slice(0, 500), checkedAt: at };
     out.tam = Object.keys(entries).length;
   }
@@ -2055,7 +2055,7 @@ async function redoCompliance(env, id, ro = {}) {
   if (!want.length) return 0;
   const [drive, skills, proc, tr, prog, ses, cur] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`), get(`trackerreview:${id}`)]);
   let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
-  const pre = { drive, skills, proc, tr, prog, ses, cur: cur || { days: {} } };
+  const pre = { drive, skills, proc, tr, prog, ses, cur: cur || { days: {} }, daycheck: (await get(`daycheck:${id}`)) || {} };
   for (const d of want) {
     const had = (pre.cur.compliance || {})[d];
     await dailyCompliance(env, id, d, { pre, redo: true, fresh: !!ro.fresh, rec, files: files || undefined, backfill: !had && d < today });
@@ -2127,31 +2127,60 @@ async function dailyCompliance(env, id, D, o = {}) {
     const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16)));
     monDay = n ? Math.round(due.reduce((a, tp) => a + ((mon.entries.find((x) => x.topic === tp) || {}).pct || 0), 0) / due.length) : mon.pct;
   }
-  // 📘 the TAM: the day's entry (tamEntries) — 15 words or more 100, a shorter one 50, none 0
-  const tamE = drive && drive.tam && cur.tam && !unreadable(cur.tam.error) ? ((cur.tam.entries || {})[D] || null) : undefined;
+  // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
+  const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
+  const tamG = (cur.tamGrades || {})[D] || null, eodRaw = (cur.eodTrainer || {})[D] || null;
+  // 📏 FOLLOWING INSTRUCTIONS, strictly: the six monitored Drive links as the course asks — each linked, the trainee's own,
+  // the right kind, named by the convention, where it belongs (worker.js verifyLinks, trackerreview:<id>.verify; a trainer's
+  // ✓ Mark as opening counts). Recorded for the day it is checked; a day already over keeps what was found then, so a trainee
+  // who fixes a link afterwards is still marked down for the days it was wrong — a backtrack doesn't undo it — and the days
+  // after the fix score in full. (A link not checked yet, or Drive busy, isn't held against them.)
+  const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr;
+  let instr = wasI || null;
+  if (D >= TR.ptDate() || (!wasI && !o.redo && !o.backfill)) {
+    const dc = (pre && pre.daycheck) || (await get(`daycheck:${id}`)) || {};
+    const ver = cur.verify || {}, ov = dc.links || {}, issues = [];
+    let ok = 0, judged = 0;
+    for (const k of Object.keys(LINKS_KIND)) {
+      const url = String((drive || {})[k] || "").trim(), v = ver[k];
+      if (!url) { judged++; issues.push({ k, why: "not linked" }); continue; }
+      if (ov[k] && ov[k].ok && String(ov[k].url || "").trim() === url) { judged++; ok++; continue; }
+      if (!v || v.retry || String(v.url || "").trim() !== url.slice(0, 500)) continue;
+      judged++; if (v.ok) ok++; else issues.push({ k, why: String(v.error || "not as the course asks").slice(0, 200) });
+    }
+    instr = judged ? { pct: Math.round(100 * ok / Object.keys(LINKS_KIND).length), ok, of: Object.keys(LINKS_KIND).length, issues, at: new Date().toISOString() } : wasI || null;
+  }
+  const eodT = eodRaw && pctOf(eodRaw.score) != null ? Object.assign({}, eodRaw, { score: pctOf(eodRaw.score) }) : null;
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
-    // (📘 the TAM isn't a daily part: it is graded when a trainer asks, for a shadowing activity — /api/drive/tam)
+    // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
+    tam: tamG && pctOf(tamG.pct) != null ? pctOf(tamG.pct) : null,
+    instructions: instr ? instr.pct : null,
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved || subs.length ? 100 : 0,
     // (📧 the EOD checked against its template, TR.checkEod: its %, not 100 for anything there)
-    // (✍ a trainer's own EOD score for the day — a day before the EOD monitoring was set up, or one it missed — stands:
-    // drive:<id>.days[<date>].eodTrainer = {score, note, by, at})
-    eod: day.eodTrainer && typeof day.eodTrainer.score === "number" ? day.eodTrainer.score
+    // (✍ a trainer's own EOD score for the day — one the EOD monitoring missed, or before it was set up — stands:
+    // trackerreview:<id>.eodTrainer[<date>] = {score, note, at}, a record only the Worker and trainers write)
+    eod: eodT ? eodT.score
       : day.eod && String(day.eod.text || "").trim() ? TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at).pct : 0
   };
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
+  if (was && was.instr && D < TR.ptDate()) parts.instructions = was.instr.pct;
   if (o.redo && !o.fresh && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tam: tamE || null, eodTrainer: day.eodTrainer || null,
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG, eodTrainer: eodT, instr,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
+  // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
+  // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)
+  Object.values(cur.compliance).forEach((x) => { if (!x || !x.parts || typeof x.parts.tam !== "number" || x.tamGraded) return;
+    delete x.parts.tam; const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
   if (pre) pre.cur = cur; else await kv.put(rk, JSON.stringify(cur));
@@ -2637,28 +2666,52 @@ export default {
         const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
         try { return json(await backtrack(env, id)); } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
       }
-      // 📘 the TAM, graded when a trainer asks (a shadowing activity): its entries read by date (tamEntries); not a daily part
+      // 📘 THE TAM, GRADED WHEN A TRAINER ASKS — a shadowing activity: the TAM read (its entries by date, tamEntries) and the
+      // day's entry graded (15 words or more 100, a shorter one 50, none 0), kept in trackerreview:<id>.tamGrades[<date>]; that
+      // day's compliance counts it. Not a daily part: no other day has a TAM. score null takes a day's grade off.
       if (path === "/api/drive/tam") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
         const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
-        try { await checkDrive(env, id, TR.ptDate(), { ai: false, tam: true, monitor: false, tracker: false });
-          const cur = JSON.parse((await kvOf(env).get(`trackerreview:${id}`)) || "null") || {}; return json({ ok: true, tam: cur.tam || null }); }
-        catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+        const D = /^\d{4}-\d{2}-\d{2}$/.test(String(b.date || "")) ? String(b.date) : TR.ptDate();
+        if (D > TR.ptDate() || !TR.isWeekday(D)) return json({ error: "Pick a training day (a weekday, today or before)." }, 400);
+        try {
+          const kv = kvOf(env), rk = `trackerreview:${id}`;
+          if (b.off) { const cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} }; if (cur.tamGrades) delete cur.tamGrades[D]; await kv.put(rk, JSON.stringify(cur)); }
+          else {
+            const r = await checkDrive(env, id, TR.ptDate(), { ai: false, tam: true, monitor: false, tracker: false });
+            if (!r) return json({ error: "The TAM isn't linked.", code: "no-links" }, 400);
+            const cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} }, t = cur.tam || {};
+            if (t.error) return json({ ok: false, error: t.error, tam: t });
+            const en = (t.entries || {})[D] || null;
+            cur.tamGrades = cur.tamGrades || {};
+            cur.tamGrades[D] = { pct: !en ? 0 : en.words >= 15 ? 100 : 50, words: en ? en.words : 0, at: new Date().toISOString() };
+            await kv.put(rk, JSON.stringify(cur));
+          }
+          const was = ((JSON.parse((await kv.get(rk)) || "null") || {}).compliance || {})[D];
+          const c = await dailyCompliance(env, id, D, { redo: true, backfill: !!(was && was.backfilled) });
+          const fin = JSON.parse((await kv.get(rk)) || "null") || {};
+          return json({ ok: true, day: D, grade: (fin.tamGrades || {})[D] || null, tam: fin.tam || null, pct: c && c.pct });
+        } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
       }
-      // ✍ a trainer's EOD score for a day (missed by the EOD monitoring, or before it was set up): kept on the day, and the day's
-      // compliance worked out again. score null takes it off.
+      // ✍ A TRAINER'S EOD SCORE for a training day (one the EOD monitoring missed, or before it was set up): kept in
+      // trackerreview:<id>.eodTrainer[<date>] — a record only the Worker and trainers write, so a trainee can neither forge it nor
+      // overwrite it with their own saves — and the day worked out again as it was (its Task Tracker and Monitoring Sheet parts,
+      // and whether it was filled in afterwards, kept). score null takes it off.
       if (path === "/api/eod/grade") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
         const id = String(b.id || "").slice(0, 100), D = String(b.date || "").slice(0, 10);
         if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(D)) return json({ error: "Missing trainee or date" }, 400);
-        const kv = kvOf(env), dk = `drive:${id}`, drive = JSON.parse((await kv.get(dk)) || "null") || {};
-        drive.days = drive.days || {}; const day = drive.days[D] = drive.days[D] || {};
-        const sc = b.score == null || b.score === "" ? null : Math.max(0, Math.min(100, Math.round(Number(b.score))));
-        if (sc == null || !isFinite(sc)) delete day.eodTrainer; else day.eodTrainer = { score: sc, note: String(b.note || "").slice(0, 500), at: new Date().toISOString() };
-        await kv.put(dk, JSON.stringify(drive));
-        const c = await dailyCompliance(env, id, D, {});
+        if (D > TR.ptDate() || !TR.isWeekday(D)) return json({ error: "Pick a training day (a weekday, today or before)." }, 400);
+        const kv = kvOf(env), rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+        const sc = b.score == null || b.score === "" ? null : Number(b.score);
+        if (sc != null && !(isFinite(sc) && sc >= 0 && sc <= 100)) return json({ error: "The score is 0 to 100." }, 400);
+        cur.eodTrainer = cur.eodTrainer || {};
+        if (sc == null) delete cur.eodTrainer[D]; else cur.eodTrainer[D] = { score: Math.round(sc), note: String(b.note || "").slice(0, 500), at: new Date().toISOString() };
+        await kv.put(rk, JSON.stringify(cur));
+        const was = (cur.compliance || {})[D];
+        const c = await dailyCompliance(env, id, D, { redo: true, backfill: !!(was && was.backfilled) });
         return json({ ok: true, day: D, eod: (c && c.parts || {}).eod, pct: c && c.pct });
       }
       if (path === "/api/drive/status") {
@@ -2704,9 +2757,11 @@ export default {
         const critRaw = await kv.get("settings:trackercriteria");
         // (a trainer's 🔄 Update on the 📋 Batch Sheet runs it for the whole batch without the AI review: ai false)
         const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
+        // (and the day's compliance, with the new checks in: dailyCompliance — a training day only, never a weekend; and also for a
+        // trainee with no Task Tracker or Monitoring Sheet linked, whose tests, EOD and work still count)
+        const cD = b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate();
+        if (TR.isWeekday(cD)) { try { await dailyCompliance(env, id, cD); } catch (e) { /* the checks above still stand */ } }
         if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
-        // (and the day's compliance, with the new checks in: dailyCompliance)
-        try { await dailyCompliance(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate()); } catch (e) { /* the checks above still stand */ }
         if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
       }

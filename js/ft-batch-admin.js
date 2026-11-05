@@ -274,7 +274,9 @@ async function loadBackups(){
   BB.loading = false;
   if(state.view === "admin" && ["batches", "audit"].includes(state.adminTab) && !state.batchFolder && !isTyping()) render();
 }
-const csv = rows => rows.map(r => r.map(v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+// (a cell that starts like a formula — =, +, -, @, a tab — is kept as text, so a name or a comment can't run in Excel or Sheets)
+const csvCell = v => { const t = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(t) ? "'" + t : t).replace(/"/g, '""')}"`; };
+const csv = rows => rows.map(r => r.map(csvCell).join(",")).join("\r\n");
 const pct = v => v == null ? "" : v;
 // every VA's grades, from the same grading systems (and the same records) the Scorecards collect
 async function gather(members){
