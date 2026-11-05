@@ -278,7 +278,7 @@ FTSessions.cards = function(){
     const dayT = window.FTDays ? FTDays.label(FTDays.forSession(s.id)) : "";
     // (✓ done: submitted; the Practice Lab files the card under its first day and shows Done / Review: js/ft-simulators.js)
     const st = !open ? "locked" : run && run.submittedAt ? "done" : run && run.startedAt ? "live" : "todo";
-    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}" data-days="${window.FTDays ? FTDays.forSession(s.id).join(",") : ""}" data-status="${st}" data-type="session"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
+    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}" data-sid="${e(s.id)}" data-days="${window.FTDays ? FTDays.forSession(s.id).join(",") : ""}" data-status="${st}" data-type="session"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
       ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case, and your firm has none in its caseload yet — ask in the training GC."}</p>` : ""}

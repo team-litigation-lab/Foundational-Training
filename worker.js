@@ -1099,7 +1099,17 @@ async function checkDrive(env, id, D, o = {}) {
     let g, review = "", error = "";
     try {
       const f = TR.googleFile(drive.monitor);
-      let text = await fetchGoogle(f.exportUrl, env);
+      let text;
+      try { text = await fetchGoogle(f.exportUrl, env); }
+      catch (e0) {
+        // (a Word file (.docx) kept in Drive opens in Google Docs under a docs.google.com/document link, but has no Google Docs
+        // export: its own text is read from the file)
+        if (f.kind !== "doc" || !f.id) throw e0;
+        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
+        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
+        text = bytes ? await docxText(bytes) : "";
+        if (!String(text || "").trim()) throw e0;
+      }
       if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
       const set = JSON.parse((await kv.get("settings:monitor")) || "null");
       const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((t) => typeof t === "string" ? { title: t } : t);
@@ -1110,7 +1120,7 @@ async function checkDrive(env, id, D, o = {}) {
             `Trainee: ${(rec && rec.name) || "Trainee"}\nThe sheet's entries (one per classroom discussion: the date, 5 major takeaways, 3 questions, and how well they understand it):\n${text.slice(0, 9000)}\n\nThe automated check found ${g.found} of ${g.total} discussions, ${g.pct}% complete.\nReview it: are the takeaways specific to each discussion and in complete sentences, are questions real, which entries are missing or incomplete (name them). At most 6 short bullet points, under 140 words. No greeting, no sign-off.`, 500);
         } catch (e) { review = ""; }
       }
-    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The Monitoring Sheet link must be a Google Docs or Google Sheets link."; }
+    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : !TR.googleFile(drive.monitor).kind ? "The Monitoring Sheet link must be a Google Docs or Google Sheets link." : "The Monitoring Sheet couldn't be read just now: it is checked again at the end of the shift."; }
     cur.monitor = Object.assign({}, g || { pct: 0, found: 0, total: 0, entries: [] }, { error, url: String(drive.monitor).slice(0, 500), review: review || (error ? "" : prev.review || ""), checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
     out.monitor = cur.monitor.pct;
   }
@@ -1271,7 +1281,7 @@ async function verifyLinks(env, id) {
         if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa) };
         else if (K.folder && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
         else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
-        else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "")) r = { ok: false, error: VERIFY_WHY.doc };
+        else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
         else if (j.name && !K.re.test(String(j.name))) r = { ok: false, error: `It opens, but it isn't your ${K.label} (its name is "${String(j.name).slice(0, 120)}"). Link the right one.`, name: String(j.name).slice(0, 200) };
         else r = await ownCheck(k, K, fid, String(j.name || ""), j.parents, tokens);
@@ -1381,7 +1391,27 @@ async function driveItem(env, fid, folder) {
   return { ok: false };
 }
 const PDF_MAX = 20e6;
-async function driveBytes(fid, token) {
+const WORD_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+async function docxText(b) {
+  const u16 = (o) => b[o] | (b[o + 1] << 8), u32 = (o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+  let e = -1; for (let i = b.length - 22; i >= Math.max(0, b.length - 66000); i--) if (u32(i) === 0x06054b50) { e = i; break; }
+  if (e < 0) return "";
+  let p = u32(e + 16); const n = u16(e + 10), dec = new TextDecoder();
+  for (let k = 0; k < n && p + 46 <= b.length; k++) {
+    if (u32(p) !== 0x02014b50) break;
+    const method = u16(p + 10), size = u32(p + 20), nl = u16(p + 28), xl = u16(p + 30), cl = u16(p + 32), off = u32(p + 42);
+    const name = dec.decode(b.subarray(p + 46, p + 46 + nl));
+    if (name === "word/document.xml") {
+      const start = off + 30 + u16(off + 26) + u16(off + 28), raw = b.subarray(start, start + size);
+      const xml = method === 0 ? dec.decode(raw) : await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+      return xml.replace(/<w:tab\/>/g, "\t").replace(/<w:br\/>|<\/w:p>/g, "\n").replace(/<[^>]+>/g, "")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&").replace(/\n{3,}/g, "\n\n");
+    }
+    p += 46 + nl + xl + cl;
+  }
+  return "";
+}
+async function driveBytes(fid, token, magic = "%PDF") {
   const tries = [];
   if (token) tries.push([`https://www.googleapis.com/drive/v3/files/${fid}?alt=media&supportsAllDrives=true`, { Authorization: "Bearer " + token }]);
   tries.push([`https://drive.google.com/uc?export=download&id=${fid}`, {}]);
@@ -1395,7 +1425,7 @@ async function driveBytes(fid, token) {
       for (;;) { const { done, value } = await rd.read(); if (done) break; size += value.length; if (size > PDF_MAX) { big = true; try { await rd.cancel(); } catch (e) { /* closed */ } break; } parts.push(value); }
       if (big) continue;
       const b = new Uint8Array(size); let o = 0; for (const x of parts) { b.set(x, o); o += x.length; }
-      if (b.length > 4 && String.fromCharCode(b[0], b[1], b[2], b[3]) === "%PDF") return b;
+      if (b.length > 4 && String.fromCharCode(b[0], b[1], b[2], b[3]).startsWith(magic)) return b;
     } catch (e) { /* the next way */ }
   }
   return null;
