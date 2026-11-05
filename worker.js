@@ -851,6 +851,13 @@ const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
 const aiOn = (env) => hasGemini(env) || claudeOn(env) || gatewayOn(env);
 const claudeModel = (env, feature) => String((isGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (isGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
 let claudeRest = 0;
+// the headers of every Claude request, and how long Claude rests after an error (a bad key, no credit, a rate limit)
+const claudeBaseHeaders = (env) => ({ "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" });
+function noteClaudeError(res, msg) {
+  if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000;
+  else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
+  else if (res.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(res.headers.get("retry-after")) || 60, 5), 600) * 1000;
+}
 async function callClaude(env, req) {
   if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
   // alternating turns that start and end with the user (an opening line from the model gets a short user turn before it)
@@ -868,7 +875,7 @@ async function callClaude(env, req) {
   const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
   const sys = msgText(req.system).trim();
   if (sys) body.system = sys;
-  const headers = { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" };
+  const headers = claudeBaseHeaders(env);
   // Sonnet 5.5: a request its safety classifier declines is answered by a fallback model the server picks, instead of failing
   if (model === "claude-sonnet-5-5") { headers["anthropic-beta"] = "server-side-fallback-2026-07-01"; body.fallbacks = "default"; }
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), grading ? 60000 : 20000);
@@ -877,9 +884,7 @@ async function callClaude(env, req) {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const msg = String((data.error && data.error.message) || `Claude error ${r.status}`);
-      if (r.status === 401 || r.status === 403) claudeRest = Date.now() + 600000;
-      else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
-      else if (r.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(r.headers.get("retry-after")) || 60, 5), 600) * 1000;
+      noteClaudeError(r, msg);
       return { status: r.status, msg };
     }
     if (data.stop_reason === "refusal") return { status: 502, msg: "Claude declined this request" };
@@ -1819,12 +1824,10 @@ async function aiReadFile(env, b64, mime, system, prompt) {
   if (claudeOn(env) && claudeRest <= Date.now()) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" },
+        headers: claudeBaseHeaders(env),
         body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: isPdf ? "document" : "image", source: { type: "base64", media_type: mime, data: b64 } }, { type: "text", text: prompt }] }] }) });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { const msg = String((j.error && j.error.message) || "");
-        if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000; else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
-        else if (res.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(res.headers.get("retry-after")) || 60, 5), 600) * 1000; }
+      if (!res.ok) noteClaudeError(res, String((j.error && j.error.message) || ""));
       const t = res.ok ? (j.content || []).filter((x) => x && x.type === "text").map((x) => x.text || "").join("") : "";
       if (t.trim() && j.stop_reason !== "max_tokens") return t;
     } catch (e) { /* Gemini next */ }
