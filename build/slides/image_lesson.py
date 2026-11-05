@@ -54,7 +54,7 @@ DECKS = {
             # each page's own title (its largest text is the role label, e.g. "Role: Intake Specialist")
             "headings": {2: 'Introduction', 3: 'Personal Injury Case Stages', 4: 'Legal Intake', 5: 'Legal Intake and Consultation', 6: 'Investigation', 7: 'Opening Claims', 8: 'Claims Set Up and Liability Determination', 9: 'Policy Limits and Coverages', 10: 'Client Communication Specialist', 11: 'Treatment', 12: 'Collecting Medical Bills and Records', 13: 'Collecting Medical Bills and Records', 14: 'Demands', 15: 'Demands', 16: 'Demands', 17: 'Settlement', 18: 'Negotiations', 19: 'Disbursement', 20: 'Litigation', 21: 'Receptionist', 22: 'Calendar Management', 23: 'Appointment Setter', 24: 'Scheduler', 25: 'Thank You'}},
     "rec": {"id": 4, "var": "DAY4", "file": "lesson04.js", "title": "Receptionist Training",
-            "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+            "video": "https://drive.google.com/file/d/1fTmhMFC7qHrZcfTrPSCjKwj3ObSbaYXf/view",
             "pdf": "The_Receptionist_Role.pdf (sent in chat)",
             "about": 'the "The Receptionist Role" deck (Canva design DAHWU0f4UhU), all 55 pages',
             "headings": {28: 'Handling Mass Tort & Long-Duration Case Calls', 29: 'Handling Mass Tort & Long-Duration Case Calls', 51: 'Routing Calls: Cold Transfers', 52: 'Routing Calls: Warm Transfers', 53: 'Routing Calls: Conference Calls', 55: 'Thank You'}},
