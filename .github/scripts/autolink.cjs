@@ -31,7 +31,9 @@ const failures = []; const fail = (m) => failures.push(m);
     put('drive:' + ben, { tracker: benOwn });
     put('trackerreview:' + ben, { days: {}, verify: { tracker: { ok: true, url: benOwn, at: '2026-11-01T00:00:00Z' } } });
     // a day's trainer score and comment, kept by the backtrack
-    put('trackerreview:' + ana, { days: { '2026-11-02': { pct: 40, trainerScore: 90, comment: 'Good recovery.', checkedAt: '2026-11-02T22:00:00Z' } } });
+    // (a day worked out before her files were linked: its Tracker and Monitoring Sheet parts 0 — the backtrack works them out afresh)
+    put('trackerreview:' + ana, { days: { '2026-11-02': { pct: 40, trainerScore: 90, comment: 'Good recovery.', checkedAt: '2026-11-02T22:00:00Z' } },
+        compliance: { '2026-11-02': { v: 2, pct: 0, parts: { tracker: 0, monitor: 0 } } } });
 
     const F = 'application/vnd.google-apps.folder', S = 'application/vnd.google-apps.spreadsheet', Dc = 'application/vnd.google-apps.document';
     const id25 = (s) => (s + 'x'.repeat(30)).slice(0, 28);
@@ -66,6 +68,8 @@ const failures = []; const fail = (m) => failures.push(m);
             `LSH DAILY TASK TRACKER\nDate Received,Type of Task,Task Details,Accountable VA,${us},VA Notes,Deadline,Status,Actual Completion Date\n` +
             `⬇ FOR COMPLETION ⬇\n${us},LSH-TRAINING,Reception lesson,Ana,"Finished the slides",Learned the spiel,ASAP,Ongoing,\n`); }
         if (u.includes(id25('anaMonitor') + '/export?format=txt')) return new Response('Virtual Assistant Essentials - Day 1\nDate: 10/30/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney.\n');
+        // 📘 her TAM: an entry a day, under its date (10/30 a full one, 11/02 a short one, none on 11/03)
+        if (u.includes(id25('anaTam') + '/export?format=txt')) return new Response('LSH Task Assessment Manual\n10/30/2026\nI answered the reception calls with the spiel, logged each call in the tracker and asked the attorney for the missing details.\n11/02/2026: reviewed the intake form\n');
         return new Response('not found', { status: 404 });
     };
     const call = async (p, body, token) => {
@@ -94,6 +98,9 @@ const failures = []; const fail = (m) => failures.push(m);
     if ([...store.keys()].some(k => k.startsWith('ft:drive:') && store.get(k).includes(id25('otherBatch')))) fail("another batch's file was linked");
     if (get('drive:old-ana--b090126').tracker) fail("a trainee of another batch got this batch's links");
     if (!(r.missing || {})[ben] || !r.missing[ben].includes('tam')) fail(`Ben's missing links aren't reported: ${JSON.stringify(r.missing)}`);
+    // 🔎 what wasn't found in Drive is kept for the Batch Sheet to say exactly (Ben has no TAM in his Drive)
+    { const nf = ((get('trackerreview:' + ben) || {}).notFound || {}).keys || [];
+      if (!nf.includes('tam') || nf.includes('monitor')) fail(`Ben's "not in his Drive" isn't kept as found: ${JSON.stringify(nf)}`); }
 
     if (process.env.SHOW) console.log('AUTOLINK', JSON.stringify(r));
     // ⏪ Ana from Day 1
@@ -106,6 +113,13 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!cur.days['2026-10-30']) fail("Day 1 (the batch's start, 10/30) wasn't checked");
     if (cur.days['2026-11-02'].trainerScore !== 90 || cur.days['2026-11-02'].comment !== 'Good recovery.') fail(`the backtrack lost a day's trainer score or comment: ${JSON.stringify(cur.days['2026-11-02'])}`);
     if (!cur.compliance || !cur.compliance['2026-10-30']) fail(`each day's compliance wasn't worked out again: ${JSON.stringify(Object.keys(cur.compliance || {}))}`);
+    // ✅ the day's compliance reads the entries: the Task Tracker's day afresh (not the 0 from before), the Monitoring Sheet's
+    // discussions due by that day (Day 1's entry 25%: a date, no 5 takeaways…; Day 2's not written: 0), the TAM's entry that day
+    { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
+      if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
+      if (c1.monitor !== 25 || c2.monitor !== 13) fail(`the Monitoring Sheet part isn't the discussions due by each day (10/30 25, 11/02 13): ${c1.monitor} / ${c2.monitor}`);
+      if (c1.tam !== 100 || c2.tam !== 50 || (cur.compliance['2026-11-03'] && c3.tam !== 0)) fail(`the TAM part isn't the day's entry (10/30 100, 11/02 50, 11/03 0): ${c1.tam} / ${c2.tam} / ${c3.tam}`);
+      if (!cur.tam || !cur.tam.entries || !cur.tam.entries['2026-10-30']) fail(`the TAM's entries weren't read: ${JSON.stringify(cur.tam)}`); }
 
     if (process.env.SHOW) console.log('BACKTRACK', JSON.stringify(bt), 'days', JSON.stringify(days), 'reads', trackerReads);
     if (failures.length) { console.log(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }

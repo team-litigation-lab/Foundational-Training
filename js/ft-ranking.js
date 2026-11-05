@@ -107,7 +107,8 @@ async function loadWeek(){
   // the platform, never over what a trainer typed
   // (🤖 a draft read back before it was done — the report read again mid-draft: its fill and notes go on, finishDraft)
   if(R.data && R.data.auto && !R.data.auto.approved && R.data.auto.state !== "done") setTimeout(() => { if(R.key === key) finishDraft(key); }, 0);
-  else if(R.data && !(R.data.auto && R.data.auto.approved)) setTimeout(() => { if(R.key === key) fillFromPortal(true); }, 0);
+  // (an approved report too: its platform-filled cells keep following the scorecards — a trainer's typed ones never change)
+  else if(R.data) setTimeout(() => { if(R.key === key) fillFromPortal(true); }, 0);
 }
 // a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
 const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
@@ -189,6 +190,9 @@ async function fillFromPortal(quiet){
     let n = 0, undated = 0;
     // 🔄 a cell the platform filled (auto) follows the scorecards: filled again each time, with what they say now — a 0 or a
     // NO SUBMISSION from before the trainee's files were linked becomes their score. A trainer's own score or note is kept.
+    // (and a platform-filled score its scorecard has no grade for any more — a 0 from a tracker not readable then — is cleared:
+    // the cell shows what the scorecard says now, nothing when it has nothing)
+    const clear = (row, c, cur) => { if(cur && cur.auto && num(cur.raw) != null){ const nx = Object.assign({}, cur); delete nx.raw; row.cells[c.id] = nx; n++; } };
     const put = (row, c, cur, v) => { const nx = Object.assign({}, cur || {}, v, {auto: true}); if(cur && cur.auto && Object.keys(v).every(k => String(cur[k]) === String(nx[k]))) return; row.cells[c.id] = nx; n++; };
     ppl.forEach((p, i) => {
       const rec = {}; S.forEach((s, j) => { rec[s.key] = vals[i * S.length + j] || null; });
@@ -198,7 +202,7 @@ async function fillFromPortal(quiet){
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(typed(cur)) return;          // never over what the trainer typed
         const week = c.period === "week"; if(week && !scW) return;
-        if(c.src === "overall"){ const o = (week ? scW : sc).overall; if(o == null) return;
+        if(c.src === "overall"){ const o = (week ? scW : sc).overall; if(o == null){ clear(row, c, cur); return; }
           put(row, c, cur, {raw: fmt(o / 100 * (num(c.max) || 5)), period: week ? "week" : "all"}); return; }
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
         const src = (week ? scW : sc).rows.find(r => r.s.id === sid); if(!src) return;
@@ -214,7 +218,7 @@ async function fillFromPortal(quiet){
           const it = graded.find(x => nm(x) === w || nm(x).endsWith(" " + w) || nm(x).startsWith(w + " ·")) || graded.find(x => nm(x).includes(w));
           pct = it ? it.pct : null; mark5 = it && typeof it.mark5 === "number" ? it.mark5 : null;
         }
-        if(pct == null) return;
+        if(pct == null){ clear(row, c, cur); return; }
         const max = num(c.max) || 5;
         put(row, c, cur, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), period: week ? "week" : "all"});
       });
@@ -227,7 +231,7 @@ async function fillFromPortal(quiet){
       compCols.forEach(c => ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
-        if(!days.length) return;
+        if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
         put(row, c, cur, {raw: fmt(pct / 100 * max), period: c.period === "week" ? "week" : "all", days: days.length});
       }));
