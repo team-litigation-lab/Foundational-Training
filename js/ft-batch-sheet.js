@@ -487,8 +487,9 @@ function complianceTable(){
     rows: ppl.map(p => { const {L} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
       const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
-      const linkCol = k => { const x = L[k], st = x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""];
-        const f = `${x.label}: ${x.link ? x.link + " · " : ""}${x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`;
+      const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""];
+        // (🔎 not in their Drive: the batch's Drive was searched and has no such file with their name — worker.js autoLinkBatch)
+        const f = `${x.label}: ${x.link ? x.link + " · " : ""}${x.nf ? `not in their Drive: the batch’s Drive was searched${x.nf !== true ? " " + when(x.nf) : ""} and has no ${x.label} with their name. They need to make it from the template and link it${x.c && x.c.err ? ` (the check said: ${x.c.err})` : ""}` : x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`;
         return {v: st[0], f, tip: f, cls: "bs-lesson bs-lk " + st[1]}; };
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["— Not linked"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")}]
@@ -599,14 +600,23 @@ function shareBanner(){
   // which of their links: "Liseny Castillo’s 📒 Monitoring Sheet", not "files" (one link can't be opened, the other five may)
   const badOf = p => { try{ const {L} = linkState(p); return LINKS.filter(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)).map(([, l]) => l); }catch(err){ return []; } };
   const whatOf = p => { const b = badOf(p); return b.length === LINKS.length ? "files" : b.join(", "); };
-  const named = stuck.slice(0, 6).map(p => `${e(p.name)}’s <b>${e(whatOf(p))}</b>`).join("; ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
+  // 🔎 each failing link, said exactly — the link, why it fails (and Google's own words), when it was checked — with what a
+  // trainer can do about it right there: ↗ open it, ✓ Mark as opening (the trainer's override, for a link that does open for
+  // them), ✎ Re-link (🔗 Link a trainee's files by hand, on that trainee)
+  const detail = `<ul class="bs-share-list">${stuck.map(p => { let L = {}; try{ L = linkState(p).L; }catch(err){}
+    return LINKS.filter(([k]) => L[k] && L[k].st === "bad" && ACCESS((L[k].c || {}).err)).map(([k, l]) => { const x = L[k], c = x.c || {};
+      const cause = x.nf ? `<b class="bs-nf">not in their Drive</b> — the batch’s Drive was searched${x.nf !== true ? " " + e(when(x.nf)) : ""} and has no ${e(l)} with ${e(p.name)}’s name: the saved link points to nothing they own. They need to make it from the template and link it. <small>(The check said: ${e(c.err || "the system can’t open it")})</small>` : e(c.err || "the system can’t open it");
+      return `<li><b>${e(p.name)} · ${e(l)}</b>: ${cause}${c.why ? ` <small>(Google: ${e(c.why)})</small>` : ""}${c.at ? ` <small>· checked ${e(when(c.at))}</small>` : ""}
+        <span class="bs-share-acts">${x.link ? `<a class="btn btn-ghost btn-sm" href="${e(x.link)}" target="_blank" rel="noopener">↗ Open the link</a>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button><button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ Re-link</button></span></li>`; }).join(""); }).join("")}</ul>`;
+  const nfOf = p => { try{ const {L} = linkState(p); const b = LINKS.filter(([k]) => L[k].st === "bad" && ACCESS((L[k].c || {}).err)); return b.length && b.every(([k]) => L[k].nf); }catch(err){ return false; } };
+  const named = stuck.slice(0, 6).map(p => `${e(p.name)}’s <b>${e(whatOf(p))}</b>${nfOf(p) ? " isn’t in their Drive and" : ""}`).join("; ") + (stuck.length > 6 ? ` and ${stuck.length - 6} more` : "");
   // (the rest of the batch's files open: the batch's folder is shared, so these trainees' files are somewhere else — their own
   // My Drive — and it's theirs to move or share, not a folder for the trainer to share)
   const opens = ppl.filter(p => !stuck.includes(p) && (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
-  if(opens > stuck.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 ${named} can’t be opened (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}). The rest of batch ${e(B.batch)} opens, so its folder is shared: the saved link points to a file the system can’t open — one that doesn’t exist (yet), was deleted, or sits somewhere else, such as their own My Drive.</div>
-    <span class="bs-share-do">Hover over the ✗ below for the link. Ask ${stuck.length === 1 ? "them" : "each of them"} to make the file from its template or move it into their LSH Trainee folder and link it again, or share it with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>. Their 🔔 already tells them which link and how.</span>
+  if(opens > stuck.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 ${named} can’t be opened (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}). The rest of batch ${e(B.batch)} opens, so its folder is shared: the saved link points to a file the system can’t open — one that doesn’t exist (yet), was deleted, or sits somewhere else, such as their own My Drive.</div>${detail}
+    <span class="bs-share-do">Ask ${stuck.length === 1 ? "them" : "each of them"} to make the file from its template or move it into their LSH Trainee folder and link it again, or share it with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>. Their 🔔 already tells them which link and how.</span>
     <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button></div>`;
-  return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>
+  return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${stuck.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"}: ${e(names)}).</div>${detail}
     <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>
     <button class="btn btn-navy btn-sm" type="button" ${B.rechecking ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 I’ve shared it: check them now"}</button></div>`;
 }
@@ -690,6 +700,10 @@ function dayActs(R, d){
       : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : monDay && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       more: monDay && mon.review ? "AI review: " + mon.review : ""});
   }
+  // 📘 the TAM: the day's entry, by its date (worker.js tamEntries)
+  if(P.tam != null || unread("tam")){ const te = c.tam || null;
+    out.push({k: "tam", icon: "📘", label: "TAM", pct: P.tam, text: unread("tam") ? sent2(share)
+      : sent2(!te ? "No TAM entry dated that day." : te.words >= 15 ? `Entry written for the day (${plural(te.words, "word")}).` : `A short entry for the day (${plural(te.words, "word")}): 15 or more count in full.`)}); }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
     out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
   if(c.tests || P.tests != null){ const t = c.tests || {}, took = [t.AM && "the morning typing test", t.PM && "the afternoon typing test", t.SP && "the spelling test"].filter(Boolean),
@@ -912,7 +926,7 @@ function linkState(p){
     // its content says, until the link changes)
     if(v && v.ok === false && v.mine === false && sameLink(v.url, link)){ out[k] = {st: "bad", label, link, c: {err: v.error || "it isn't the trainee's own", at: v.at}}; return; }
     if(v && v.ok && sameLink(v.url, link)){ out[k] = {st: "ok", label, link, c: {err: "", at: v.at}, issue: c && c.err && !ACCESS(c.err) && sameLink(c.url || link, link) ? c.err : ""}; return; }
-    if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", at: v.at}}; return; }
+    if(v && sameLink(v.url, link) && !v.retry && (!c || !t(c.at) || (t(v.at) && t(v.at) >= t(c.at)))){ out[k] = v.ok ? {st: "ok", label, link, c: {err: "", at: v.at}} : {st: "bad", label, link, c: {err: v.error || "the system can't open it", why: v.why || "", at: v.at}}; return; }
     // (not checked yet, or checked on another link: ⏳ Pending verification — or ⚠ Can't check, when the last try couldn't sign
     // in to Google Drive at all: rv.verifyError, worker.js verifyLinks, with Google's reason)
     if(!c || (c.url && !sameLink(c.url, link))){ const ve = rv.verifyError && !(t(rv.verifyAt) && t(rv.verifyAt) > t(rv.verifyError.at)) ? rv.verifyError : null;
@@ -923,13 +937,17 @@ function linkState(p){
     const ofThis = c.url ? sameLink(c.url, link) : !(t(dv.updatedAt) && t(c.at) && t(dv.updatedAt) > t(c.at));
     out[k] = {st: ofThis ? "bad" : "relinked", label, link, c};
   });
+  // 🔎 not in their Drive (worker.js autoLinkBatch: the batch's Drive searched, no such file with their name): said so exactly
+  const nf = (rv.notFound || {}).keys || [];
+  LINKS.forEach(([k]) => { const x = out[k]; if(x && nf.includes(k) && /^(bad|none)$/.test(x.st)) x.nf = rv.notFound.at || true; });
   const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt, rv.verifyAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
   return {L: out, dv, checked};
 }
 function linkCell(x){
-  if(x.st === "none") return {v: "—", f: `${x.label}: not linked yet`, cls: "bs-lesson gs-lo"};
+  const nfWhy = x.nf ? ` · NOT IN THEIR DRIVE: the batch's Drive was searched${x.nf !== true ? " " + when(x.nf) : ""} and has no ${x.label} with their name. They need to make it (from the template) and link it` : "";
+  if(x.st === "none") return {v: x.nf ? "✗ Not in Drive" : "—", f: `${x.label}: not linked yet${nfWhy}`, cls: "bs-lesson gs-lo"};
   if(x.st === "trainer") return {v: "✓ trainer", f: `${x.label}: ${x.link} · marked as opening by a trainer ${when(x.o.at)}${x.c && x.c.err ? ` (the system's check said: ${x.c.err})` : ""}`, cls: "bs-lesson gs-hi"};
-  if(x.st === "bad") return {v: "❌ Inaccessible", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}`, cls: "bs-lesson gs-mid"};
+  if(x.st === "bad") return {v: x.nf ? "✗ Not in Drive" : "❌ Inaccessible", f: `${x.label}: linked (${x.link}), but ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}${nfWhy}`, cls: "bs-lesson gs-mid"};
   if(x.st === "fix") return {v: "⚠ needs a fix", f: `${x.label}: ${x.link} · the system opens it, but: ${x.c.err}${x.c.at ? ` (checked ${when(x.c.at)})` : ""}`, cls: "bs-lesson gs-mid"};
   if(x.st === "unchecked") return {v: "⚠ Can’t check", f: `${x.label}: ${x.link} · ${x.c.err}`, cls: "bs-lesson gs-mid"};
   if(x.st === "pending") return {v: "⏳ Pending", f: `${x.label}: ${x.link} · Pending verification: not checked yet on this link (it is checked when saved, at the end of the shift and on 🔁 Check now)`, cls: "bs-lesson gs-mid"};
@@ -1520,7 +1538,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-sweep .bs-sweep-sum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;} .bs-sweep-list{max-height:420px;overflow:auto;}
 .bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
 .bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
-.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
+.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}

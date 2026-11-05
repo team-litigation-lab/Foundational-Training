@@ -74,7 +74,7 @@ function brief(ev){
   ev.sheets.forEach(x => L.push(`[${x.mock ? "Mock call" : "Demo"}] ${x.title}: ${x.avg5 != null ? x.avg5.toFixed(2) + "/5" : ""} ${x.status}${x.crit.length ? " · " + x.crit.map(c => `${c.n} ${c.s}/5${c.f ? " (" + clip(c.f, 120) + ")" : ""}`).join("; ") : ""}${x.comment ? " · Trainer: " + x.comment : ""}`));
   ev.kcs.forEach(k => L.push(`[Knowledge Check] lesson ${k.l}: ${k.pct}% · ${k.summary}${k.weak.length ? " · weaker answers: " + k.weak.join(" | ") : ""}`));
   ev.assess.forEach(a => L.push(`[Assessment] ${a.title}: ${a.score}/${a.max} (${a.pct}%)`));
-  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
+  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, TAM ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
   if(ev.runs.length) L.push(`[Practice Sessions] ${ev.runs.map(v => v + "%").join(", ")}`);
   if(ev.spell.length) L.push(`[Spelling tests] ${ev.spell.map(v => Math.round(v) + "%").join(", ")}`);
   ev.days.forEach(d => L.push(`[Trainer's day-by-day feedback] lesson ${d.l}: ${d.rating} · ${d.summary}`));

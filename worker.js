@@ -1254,7 +1254,7 @@ const DRIVE_UNREADABLE = "The system can't open this file. Check that the link i
 async function checkDrive(env, id, D, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  if (!drive || (!drive.tracker && !drive.monitor)) return null;
+  if (!drive || (!drive.tracker && !drive.monitor && !drive.tam)) return null;
   const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   if (!cur.days) cur.days = {};
@@ -1314,8 +1314,48 @@ async function checkDrive(env, id, D, o = {}) {
     cur.monitor = Object.assign({}, g || { pct: 0, found: 0, total: 0, entries: [] }, { error, url: String(drive.monitor).slice(0, 500), review: review || (error ? "" : prev.review || ""), checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
     out.monitor = cur.monitor.pct;
   }
+  // 📘 the TAM (Task Assessment Manual): its entries, by the date each is written under (tamEntries) — the day's compliance
+  // counts the day's entry (dailyCompliance tam)
+  if (drive.tam && o.tam !== false) {
+    let error = "", entries = {};
+    try {
+      const f = TR.googleFile(drive.tam);
+      let text;
+      try { text = await fetchGoogle(f.exportUrl, env); }
+      catch (e0) {
+        if (f.kind !== "doc" || !f.id) throw e0;
+        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
+        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
+        text = bytes ? await docxText(bytes) : ""; if (!String(text || "").trim()) throw e0;
+      }
+      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      entries = tamEntries(text, D);
+    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The TAM couldn't be read just now: it is checked again at the end of the shift."; }
+    cur.tam = { entries, error, url: String(drive.tam).slice(0, 500), checkedAt: at };
+    out.tam = Object.keys(entries).length;
+  }
   cur.updatedAt = at;
   await kv.put(rk, JSON.stringify(cur));
+  return out;
+}
+/* 📘 THE TAM'S ENTRIES BY DAY: the Task Assessment Manual is written day by day, each entry under its date ("11/05/2026",
+   "11/5/26", "2026-11-05", "November 5, 2026"). Each date found starts an entry, up to the next date; its words are counted.
+   {<YYYY-MM-DD>: {words, lines}} — an entry of 15 words or more counts in full for its day, a shorter one half. D: today, for
+   the year of a date written without one. */
+function tamEntries(text, D) {
+  const year = String(D || TR.ptDate()).slice(0, 4), lines = String(text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const iso = (y, m, d) => { y = String(y || year); if (y.length === 2) y = "20" + y; const k = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`; return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(k) ? k : ""; };
+  const dateOf = (l) => { let m = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(l); if (m) return iso(m[1], m[2], m[3]);
+    m = /\b(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?\b/.exec(l); if (m && +m[1] <= 12) return iso(m[3], m[1], m[2]);
+    m = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})?/i.exec(l); if (m) return iso(m[3], MON.indexOf(m[1].toLowerCase().slice(0, 3)) + 1, m[2]);
+    return ""; };
+  const out = {}; let cur = "";
+  for (const l of lines) {
+    const d = dateOf(l);
+    if (d) { cur = d; out[d] = out[d] || { words: 0, lines: 0 }; const rest = l.replace(/^[^:]*\d[^:]*:\s*/, ""); if (rest !== l) { out[d].words += rest.split(/\s+/).filter(Boolean).length; out[d].lines++; } continue; }
+    if (cur) { out[cur].words += l.split(/\s+/).filter(Boolean).length; out[cur].lines++; }
+  }
   return out;
 }
 
@@ -1902,6 +1942,12 @@ async function autoLinkBatch(env, batch) {
     }
     if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(B); if (m) drive.startDate = `20${m[3]}-${m[1]}-${m[2]}`; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
     const none = Object.keys(LINKS_KIND).filter((k) => !drive[k]); if (none.length) missing[r.id] = none;
+    // 🔎 not in their Drive: what this search found no file for (and the link they have, if any, isn't ✓) — kept so the Batch
+    // Sheet can say it exactly ("Liseny Castillo has no Monitoring Sheet in her Drive"), not only "can't be opened"
+    const nf = Object.keys(LINKS_KIND).filter((k) => !got[k] && !okNow(k));
+    const rk = `trackerreview:${r.id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+    const was = JSON.stringify((cur.notFound || {}).keys || []);
+    if (was !== JSON.stringify(nf) || (nf.length && !cur.notFound)) { cur.notFound = { keys: nf, at, batch: B }; await kv.put(rk, JSON.stringify(cur)); }
   }
   return { ok: true, batch: B, trainees: roster.length, searched: tagged.length + monitors.length, linked, missing, as: tokens.subOk ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL };
 }
@@ -1943,9 +1989,11 @@ async function backtrack(env, id) {
     } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
   }
   // the Monitoring Sheet (and today's tracker) as the end-of-shift check reads them, without a new AI review; the test screenshots
-  if (drive.monitor || drive.tracker) { try { await checkDrive(env, id, today, { ai: false }); out.monitor = "ok"; } catch (e) { out.monitor = "error"; } }
+  if (drive.monitor || drive.tracker || drive.tam) { try { await checkDrive(env, id, today, { ai: false }); out.monitor = "ok"; } catch (e) { out.monitor = "error"; } }
   if (drive.folder || drive.typing || drive.spelling) { try { const r = await checkShots(env, id); out.shots = r && r.error ? r.error : "ok"; } catch (e) { out.shots = "error"; } }
-  try { out.redone = await redoCompliance(env, id); } catch (e) { out.redone = 0; }
+  // (fresh: every day worked out again from what was just read — not the Tracker's and Monitoring Sheet's parts of an earlier
+  // check, which may be a 0 from before the files were linked)
+  try { out.redone = await redoCompliance(env, id, { fresh: true }); } catch (e) { out.redone = 0; }
   return Object.assign({ ok: true }, out);
 }
 
@@ -1953,7 +2001,7 @@ async function backtrack(env, id) {
    counts it) to today, worked out again from what the platform keeps now — their progress included — so 📤 Daily outputs, 📊
    Weekly Ranking's Daily Compliance and 🏅 Scores match it. The records are read once and trackerreview written once. Returns the
    number of days. */
-async function redoCompliance(env, id) {
+async function redoCompliance(env, id, ro = {}) {
   const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
@@ -1968,7 +2016,7 @@ async function redoCompliance(env, id) {
   const pre = { drive, skills, proc, tr, prog, ses, cur: cur || { days: {} } };
   for (const d of want) {
     const had = (pre.cur.compliance || {})[d];
-    await dailyCompliance(env, id, d, { pre, redo: true, files: files || undefined, backfill: !had && d < today });
+    await dailyCompliance(env, id, d, { pre, redo: true, fresh: !!ro.fresh, rec, files: files || undefined, backfill: !had && d < today });
   }
   await kv.put(`trackerreview:${id}`, JSON.stringify(pre.cur));
   return want.length;
@@ -2027,9 +2075,22 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (a tracker or Monitoring Sheet the system can't open is "not checked" that day, not 0: the comments say why)
   const unreadable = (x) => !!x && /can't open|can.t be read|not shared|sign.?in/i.test(String(x));
   const trRule = tk && (tk.rules || []).find((r) => r.id === "sheet" && !r.pass);
+  // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
+  // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
+  const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
+  let monDay = null;
+  if (monRead) {
+    const m0 = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String((o.rec || {}).batch || "").trim()), st = m0 ? `20${m0[3]}-${m0[1]}-${m0[2]}` : (drive.startDate || "");
+    let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
+    const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16)));
+    monDay = n ? Math.round(due.reduce((a, tp) => a + ((mon.entries.find((x) => x.topic === tp) || {}).pct || 0), 0) / due.length) : mon.pct;
+  }
+  // 📘 the TAM: the day's entry (tamEntries) — 15 words or more 100, a shorter one 50, none 0
+  const tamE = drive && drive.tam && cur.tam && !unreadable(cur.tam.error) ? ((cur.tam.entries || {})[D] || null) : undefined;
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
-    monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" && !unreadable(cur.monitor.error) ? cur.monitor.pct : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    tam: tamE === undefined ? null : tamE ? (tamE.words >= 15 ? 100 : 50) : 0,
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     outputs: links || saved || subs.length ? 100 : 0,
@@ -2039,12 +2100,12 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
-  if (o.redo && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  if (o.redo && !o.fresh && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean),
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : "", cur.tam && unreadable(cur.tam.error) ? "tam" : ""].filter(Boolean), tam: tamE || null,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
