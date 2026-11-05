@@ -1037,7 +1037,7 @@ async function loadAdmin(){
     A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || "")); A.sig = sigOf(A.rows);
   }catch(err){ A.rows = []; }
   A.loading = false;
-  if(state.view === "admin" && state.adminTab === "calscores") render();
+  if(state.view === "admin" && ftTabOn("calscores")) render();
 }
 // One trainee's scores, per week: the automated review of their latest submission and the trainer's score for it.
 function scoresOf(x){
@@ -1086,7 +1086,7 @@ function guideHTML(){
 }
 function startPoll(){ if(!A.timer) A.timer = setInterval(pollAdmin, 10000); }
 async function pollAdmin(){
-  if(document.hidden || !A.auto || state.view !== "admin" || state.adminTab !== "calscores" || !A.rows || A.loading) return;
+  if(document.hidden || !A.auto || state.view !== "admin" || !ftTabOn("calscores") || !A.rows || A.loading) return;
   try{
     // Two requests a poll: the list of trainees with a record, and their records in one batch (names only for a trainee not seen yet).
     const keys = (await sharedList("calsim:")) || [], ids = keys.map(k => String(k).replace(/^calsim:/, ""));
@@ -1270,6 +1270,11 @@ window.render = function(){
   if(!S.loading && (!S.data || !S.entered || S.who !== (isTrainee() ? state.traineeId : ""))){ S.entered = true; load(); }   // read the record afresh each time the page opens (a trainer may have reviewed since)
   if(isTrainee() && !state.ftOpenDays && typeof ftLoadOpenDays === "function") ftLoadOpenDays().then(() => { if(state.view === "calsim") render(); }).catch(() => {});
 };
+/* 🛠 Practice Lab's two calendaring activities, the Attorney Calendar (📅 Calendar Scores, ✅ Calendar Activity Check,
+   📅 Calendaring Activity) and the Calendar Mock Calls (📅 Booking Rules), together on one admin tab, 📅 Calendaring
+   (js/ft-calcheck.js). A part's page is "on" under its own tab or under the one it sits in. */
+window.FT_CAL_TABS = {calendaring: ["calscores", "calcheck", "calweek", "calrules"]};
+window.ftTabOn = id => state.adminTab === id || (window.FT_CAL_TABS[state.adminTab] || []).includes(id);
 const __admin = window.renderAdmin;
 window.renderAdmin = function(){
   const tab = `<button class="admin-tab-btn ${state.adminTab === "calscores" ? "active" : ""}" onclick="setAdminTab('calscores')">📅 Calendar Scores</button>`;

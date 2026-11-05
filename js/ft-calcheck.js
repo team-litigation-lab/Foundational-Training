@@ -451,7 +451,7 @@ async function loadAdmin(){
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
   }catch(err){ AD.rows = AD.rows || []; }
-  AD.loading = false; if(state.view === "admin" && state.adminTab === "calcheck") render();
+  AD.loading = false; if(state.view === "admin" && ftTabOn("calcheck")) render();
 }
 // a submission's results, event by event
 function checksTable(rows){
@@ -479,6 +479,19 @@ function adminHtml(){
 }
 window.FTCalCheckAdmin = {batch(b){ AD.batch = b; render(); }, open(id){ AD.open[id] = !AD.open[id]; render(); }, reload: () => loadAdmin()};
 ftAdminTab("calcheck", "✅ Calendar Activity Check", adminHtml);
+// the two calendaring activities, each one tab: its parts' own pages one under the other (each part as its own tab draws
+// it, the tab bar left off). The parts' own tabs stay as routes, with no button (js/ft-program.js adminHidden)
+const __calBase = window.renderAdmin;
+const calPart = id => { const was = state.adminTab; state.adminTab = id;
+  let out = ""; try{ out = __calBase(); }finally{ state.adminTab = was; }
+  const i = out.indexOf("admin-tabs"), end = i >= 0 ? out.indexOf("</div>", i) : -1;
+  return end >= 0 ? out.slice(end + 6) : out; };
+const calSec = (h, sub, ids) => `<section class="ft-calsec"><h2 class="ft-calsec-h">${h}</h2><p class="ft-calsec-sub">${sub}</p>
+  <div style="display:flex;flex-direction:column;gap:18px;">${ids.map(calPart).join("")}</div></section>`;
+ftAdminTab("calendaring", "📅 Calendaring", () => `<div class="ft-calpair" style="display:flex;flex-direction:column;gap:28px;">
+  ${calSec("1 · Attorney Calendar", "Day 5’s Attorney Calendar Management Activity: its scores, the events each trainee entered, and next week’s calendar.", ["calscores", "calcheck", "calweek"])}
+  ${calSec("2 · Calendar Mock Calls", "Day 6’s Calendar Management mock calls: each booking checked against the scheduling rules.", ["calrules"])}</div>
+  <style>.ft-calsec-h{margin:0 0 2px;font:800 20px/1.25 'Poppins','Inter',sans-serif;color:var(--navy,#1E2340);border-left:5px solid var(--orange,#DB8437);padding-left:10px;} .ft-calsec-sub{margin:0 0 10px 15px;color:var(--ink-soft,#5F6368);font-size:14px;}</style>`);
 
 if(!document.getElementById("ftdd-deck-font")){
   const f = document.createElement("link"); f.id = "ftdd-deck-font"; f.rel = "stylesheet";
