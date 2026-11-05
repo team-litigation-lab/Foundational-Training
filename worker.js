@@ -63,6 +63,10 @@ function kvOf(env) {
     }
   };
 }
+// a KV record read as JSON (null when there is none); the facilitator voice and the tracker criteria the trainer saved
+const getJSON = async (kv, k) => JSON.parse((await kv.get(k)) || "null");
+const voiceOf = async (kv) => facilitatorVoice(await getJSON(kv, "settings:feedback-style"));
+const criteriaOf = async (kv) => { const raw = await kv.get("settings:trackercriteria"); return (raw && (JSON.parse(raw).text || "").trim()) || TR.DEFAULT_CRITERIA; };
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
@@ -1310,7 +1314,7 @@ async function checkDrive(env, id, D, o = {}) {
   const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   if (!cur.days) cur.days = {};
-  const at = new Date().toISOString(), voice = o.voice != null ? o.voice : facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+  const at = new Date().toISOString(), voice = o.voice != null ? o.voice : await voiceOf(kv);
   const out = { id };
   if (drive.tracker && o.tracker !== false) {
     let res, review = "";
@@ -1875,7 +1879,7 @@ async function checkIntakePacket(env, id, hint = {}) {
   // a short feedback in the facilitator's voice, from the check
   let feedback = "";
   try {
-    const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+    const voice = await voiceOf(kv);
     const lines = result.rules.map((r) => `${r.pass === null ? "PENDING" : r.pass ? "MET" : "NOT MET"}: ${r.label}${r.detail ? " — " + r.detail : ""}`).join("\n");
     feedback = await aiText(env, "You are the training facilitator of Legal Support Help giving a trainee Legal VA feedback on Day 8's Intake Packet activity (Saving Intake Packet and Extracted Intake Documents: document handling — extraction, renaming and organization —, document properties accuracy and attention to detail). Write 2–4 sentences: open with a verdict label (Excellent / Good / Good, with Improvements Needed / Needs Improvement), name exactly what is right and what to correct. Use only the facts given." + voice,
       `Trainee: ${va}\nClient: ${client || "(not given)"}\nScore: ${result.pct}%\n${lines}${docs ? `\nDocuments in the packet: ${docs.join(", ")}` : "\n(The packet's own pages couldn't be read.)"}\nExtracted files: ${((folder.files) || []).map((f) => f.name).join(", ") || "(none)"}`, 400);
@@ -1894,9 +1898,8 @@ async function runTrackerChecks(env, opts) {
   const o = opts || {};
   const D = o.date || TR.ptDate();
   if (!o.force && !TR.isWeekday(D)) return { date: D, skipped: "weekend", checked: 0 };
-  const critRaw = await kv.get("settings:trackercriteria");
-  const criteria = (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA;
-  const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+  const criteria = await criteriaOf(kv);
+  const voice = await voiceOf(kv);
   const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
   const done = [];
   // (each trainee's Assessments/Activities folder is listed once a run: the screenshots, the day's compliance and the backfill
@@ -2164,7 +2167,7 @@ async function redoCompliance(env, id, ro = {}) {
    sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
 async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
-  const get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const get = (k) => getJSON(kv, k);
   // (o.pre: a 🔄 Update all scores run reads the trainee's records once for all their days, and writes trackerreview once at the end)
   const pre = o.pre || null;
   // (the trainee's record, for the batch's first training day: every caller counts the day's due topics from the same day)
@@ -2887,9 +2890,8 @@ export default {
           const t = last && last.selfCheckAt ? Date.parse(last.selfCheckAt) : 0;
           if (Date.now() - t < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
         }
-        const critRaw = await kv.get("settings:trackercriteria");
         // (a trainer's 🔄 Update on the 📋 Batch Sheet runs it for the whole batch without the AI review: ai false)
-        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
+        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: await criteriaOf(kv) }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
         // (and the day's compliance, with the new checks in: dailyCompliance — a training day only, never a weekend; and also for a
         // trainee with no Task Tracker or Monitoring Sheet linked, whose tests, EOD and work still count)
         const cD = b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate();
@@ -2925,7 +2927,7 @@ export default {
         const now = new Date(), et = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(now).map(p => [p.type, p.value]));
         const onTime = Number(et.hour) < 17, when = `${et.weekday} ${String(et.hour).padStart(2, "0")}:${et.minute} ET`;
         const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"), activity = String(b.activity || "").slice(0, 160);
-        const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+        const voice = await voiceOf(kv);
         let g = null;
         try {
           const raw = await aiText(env, "You are a training supervisor at Legal Support Help reviewing items of a trainee virtual assistant's Training Progress Monitoring Sheet. Never mention that you are an AI. Answer with JSON only." + voice,
@@ -2974,7 +2976,7 @@ export default {
         // its length and came back cut off, and every answer then fell to the key's pattern, ✗ when the key has none)
         let ai = false;
         if (ask.length && aiOn(env)) {
-          const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+          const voice = await voiceOf(kv);
           const chunks = []; for (let i = 0; i < ask.length; i += 10) chunks.push(ask.slice(i, i + 10));
           const got = await Promise.all(chunks.map(async (part) => {
             try {
