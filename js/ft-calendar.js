@@ -1074,7 +1074,7 @@ function feedHTML(){
   all.sort((a, b) => b.z.at.localeCompare(a.z.at));
   return `<div class="cs-feed"><div class="cs-feed-hd"><b>📡 Live submissions</b><label class="cs-feed-auto"><input type="checkbox" ${A.auto ? "checked" : ""} onchange="FTCalAdmin.auto(this.checked)"> update on its own</label>${A.stale ? '<button class="btn btn-primary btn-sm" onclick="FTCalAdmin.refresh()">New activity: refresh</button>' : ""}</div>
     ${all.length ? all.slice(0, 5).map(({x, z}) => { const s = C.SCENARIOS.find(q => q.id === z.scn), st = aiState(z), r = x.d.reviews[subKey(z)];
-      return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live(${js(x.id)},${js(subKey(z))})">🖥 Open live review</button></div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
+      return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}${s ? `<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live(${js(x.id)},${js(subKey(z))})">🖥 Open live review</button>` : ""}</div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
 }
 const GUIDE_KEYS = [["all", "All weeks"]];
 function guideHTML(){
@@ -1133,9 +1133,11 @@ function detailHTML(x){
   return `<div class="cs-atts">${list || '<div class="fp-muted">Nothing submitted yet.</div>'}${runs}${ext}</div>`;
 }
 // Save the trainer's side of one submission (a fresh read first: the trainee may have saved since this screen loaded).
+// (a strict read: a failed or empty one throws, so it never turns into a blank record saved over the trainee's work)
 async function persist(id, mutate){
   const row = A.rows.find(r => r.id === id); if(!row) throw new Error("trainee");
-  const fresh = norm(await sharedGet("calsim:" + id)); mutate(fresh);
+  const raw = await (typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet)("calsim:" + id); if(!raw) throw new Error("read");
+  const fresh = norm(raw); mutate(fresh);
   if(await sharedSet("calsim:" + id, fresh) === false) throw new Error("save");
   row.d = fresh; return fresh;
 }
@@ -1173,14 +1175,14 @@ window.FTCalAdmin = {
   },
   async withdraw(id, k){ try{ await persist(id, d => { if(d.reviews[k]) d.reviews[k].released = false; }); toast("Back to draft: the trainee no longer sees your feedback."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); } },
   async regen(id, k){
-    const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
+    const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z || !s) return;   // (a scenario this page doesn't know has nothing to review)
     toast("Asking the AI…"); const ai = await generateAI(s, atSub(z, () => C.cleanFor(s, z.events)), "trainer", subAnchor(z));
     try{ await persist(id, d => { const t = d.submissions.find(q => subKey(q) === k); if(t) t.ai = ai; }); toast(ai.error ? "The AI check wasn’t available." : "AI feedback updated."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); }
   },
 
   /* ----- 🖥 Live review: the trainer talks the feedback through as it shows on screen, step by step ----- */
   live(id, k){
-    const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
+    const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z || !s) return;
     const r = row.d.reviews[k] || {};
     L = {id, k, step:0, name:row.name, s, z, anchor:subAnchor(z), events:atSub(z, () => C.cleanFor(s, z.events)), g:subReview(s, z), tasks:Object.assign({}, r.tasks || {}), extra:(r.extra || []).join("\n"), comment:r.comment || "", score:r.score != null ? r.score : "", released:released(r)};
     paintLive(); document.body.classList.add("cs-live-open"); startLivePoll();
