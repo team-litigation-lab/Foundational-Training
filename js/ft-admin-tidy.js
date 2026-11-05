@@ -15,7 +15,8 @@
 const KEY = "settings:autoarchive";
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;
 const keyOf = r => typeof batchKey === "function" ? batchKey(r) : (r.batch || "");
-const startOf = b => { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(String(b || "")); return m ? Date.UTC(2000 + Number(m[3]), Number(m[1]) - 1, Number(m[2])) : 0; };
+// (a batch's first day as a time, for ordering: index.html batchStartDate — a B + DDMMYY Batch ID reads as its day; 0 when not a date)
+const startOf = b => { const d = typeof batchStartDate === "function" ? batchStartDate(b) : ""; return d ? Date.parse(d + "T00:00:00Z") : 0; };
 let running = false;
 const RECENT_DAYS = 30;   // (the 18-day programme with room to spare: a batch registered within it is still training)
 

@@ -21,7 +21,7 @@ const failures = []; const fail = (m) => failures.push(m);
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
     store.set('ft:trainee:' + id, JSON.stringify({ id, name: 'Dee Drive', batch: 'B9', approved: true }));
     const SHEET = 'https://docs.google.com/spreadsheets/d/1TrackerSheetIdForTheCiTest0001/edit#gid=7', DOC = 'https://docs.google.com/document/d/1MonitorDocIdForTheCiTest000001/edit';
-    let shared = true, folderGone = false;
+    let shared = true, folderGone = false, typingOpen = false, typingGone = false;
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
     const META = {}, metaCalls = [];   // 🔗 the links' names, as Drive gives them (null: the account can't open it)
@@ -50,6 +50,8 @@ const failures = []; const fail = (m) => failures.push(m);
             return new Response(JSON.stringify({ files: uploads.length ? [{ id: 'saved1' }] : [] }));
         }
         if (folderGone && u.startsWith('https://drive.google.com/embeddedfolderview')) return new Response('', { status: 404 });
+        if (typingOpen && u.startsWith('https://drive.google.com/embeddedfolderview?id=1TypingFolderIdForCi01')) return typingGone ? new Response('', { status: 500 })
+            : new Response('<div class="flip-entry" id="entry-t1"><a href="https://drive.google.com/file/d/t1/view"><div class="flip-entry-title">10-27-26 PM.png</div><div class="flip-entry-last-modified"><div>Oct 27</div></div></a></div>');
         if (!shared) return new Response('<!doctype html><html>Sign in</html>', { status: 200 });
         if (u.includes('1TrackerSheetIdForTheCiTest0001/export?format=csv&gid=7')) return new Response(
             `LSH DAILY TASK TRACKER\nDate Received,Type of Task,Task Details,Accountable VA,${us},VA Notes,Deadline,Status,Actual Completion Date\n` +
@@ -235,6 +237,15 @@ const failures = []; const fail = (m) => failures.push(m);
     const shB = await call('/api/drive/shots', { id }, admin), kept2 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
     if (!shB.body || (shB.body.results[0] || {}).error !== 'no-access' || kept2.error !== 'no-access' || (kept2.files || []).length !== 1) fail(`an unreadable folder should keep what was found and say so: ${JSON.stringify(kept2)}`);
     folderGone = false;
+    // only SOME of the folders can't be read (the Typing Tests folder, just now): the screenshots already found in it are kept,
+    // with the ones in the folders that were read
+    typingOpen = true;
+    const shC = await call('/api/drive/shots', { id }, admin), kept3 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
+    if ((shC.body.results[0] || {}).shots !== 2 || !(kept3.files || []).some(f => /file\/d\/t1/.test(f.link) && f.kind === 'typing' && f.in === 'typing')) fail(`the Typing Tests folder's screenshot wasn't found: ${JSON.stringify(kept3)}`);
+    typingGone = true;
+    await call('/api/drive/shots', { id }, admin); const kept4 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
+    if (kept4.error || (kept4.files || []).length !== 2 || !kept4.files.some(f => /file\/d\/t1/.test(f.link)) || !(kept4.unread || []).includes('typing')) fail(`a folder that can't be read when the others can should keep its screenshots already found: ${JSON.stringify(kept4)}`);
+    typingOpen = typingGone = false;
     // a file that isn't shared: Google answers with its sign-in page
     shared = false;
     const r3 = await call('/api/drive/check', { id }, admin);
@@ -289,6 +300,22 @@ const failures = []; const fail = (m) => failures.push(m);
       await worker.email({ from: 'dee.drive@gmail.com', raw: new Response(raw).body, headers: { get: k => hdr.get(k) || null } }, env, { waitUntil() {} });
       const e1 = ((JSON.parse(store.get('ft:drive:' + id)).days || {})[D2] || {}).eod || {};
       if (e1.via !== 'email' || !/warm transfer/.test(e1.text || '')) fail(`the emailed EOD wasn't kept as the day's EOD: ${JSON.stringify(e1).slice(0, 200)}`);
+      // an EOD's text read right (worker.js mimeText): an HTML-only EOD with a screenshot attached is read from its HTML, not
+      // the screenshot's bytes; an attached .txt file isn't the EOD either; quoted-printable and base64 UTF-8 (curly quotes,
+      // dashes, accents) and a windows-1252 part read as written (sent from an address no trainee has: admin:eod-unmatched)
+      const mimeEod = async (mime) => { const h = new Map([['from', 'Mime Tester <mime@x.com>'], ['subject', 'Daily Report']]);
+        await worker.email({ from: 'mime@x.com', raw: new Response('From: Mime Tester <mime@x.com>\r\nSubject: Daily Report\r\n' + mime).body, headers: { get: k => h.get(k) || null } }, env, { waitUntil() {} });
+        return (JSON.parse(store.get('ft:admin:eod-unmatched') || '{"items":[]}').items[0] || {}).text || ''; };
+      const att = await mimeEod('Content-Type: multipart/mixed; boundary="m1"\r\n\r\n--m1\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Accomplishments/Completed Tasks:</p><li>the HTML EOD</li>\r\n--m1\r\nContent-Type: image/png; name="shot.png"\r\nContent-Disposition: attachment; filename="shot.png"\r\nContent-Transfer-Encoding: base64\r\n\r\n' + Buffer.from('\x89PNG\r\n\x1a\nBINARYDATA', 'latin1').toString('base64') + '\r\n--m1--\r\n');
+      if (!/the HTML EOD/.test(att) || /PNG|BINARY/.test(att)) fail(`an attachment was read as the EOD instead of its HTML: ${JSON.stringify(att).slice(0, 120)}`);
+      const txt = await mimeEod('Content-Type: multipart/mixed; boundary="m2"\r\n\r\n--m2\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Disposition: attachment; filename="notes.txt"\r\n\r\nnot the EOD\r\n--m2\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nthe real EOD\r\n--m2--\r\n');
+      if (!/the real EOD/.test(txt) || /not the EOD/.test(txt)) fail(`an attached text file was read as the EOD: ${JSON.stringify(txt).slice(0, 120)}`);
+      const qp = await mimeEod('Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nI=E2=80=99ve learned =E2=80=94 caf=C3=A9\r\n');
+      if (qp.trim() !== 'I’ve learned — café') fail(`a quoted-printable UTF-8 EOD came out garbled: ${JSON.stringify(qp)}`);
+      const b64 = await mimeEod('Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n' + Buffer.from('I’ve learned — café').toString('base64') + '\r\n');
+      if (b64.trim() !== 'I’ve learned — café') fail(`a base64 UTF-8 EOD came out garbled: ${JSON.stringify(b64)}`);
+      const w1252 = await mimeEod('Content-Type: text/plain; charset=windows-1252\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\nI=92ve learned =97 caf=E9\r\n');
+      if (w1252.trim() !== 'I’ve learned — café') fail(`a windows-1252 EOD came out garbled: ${JSON.stringify(w1252)}`);
       const cc = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {})[D2] || {};
       if (!cc.eodCheck || cc.parts.eod !== 100 || cc.eodCheck.via !== 'email') fail(`the emailed EOD wasn't checked (100%): ${JSON.stringify(cc.eodCheck || cc.parts)}`);
       // an EOD missing its learnings: its % and what is missing

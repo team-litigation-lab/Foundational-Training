@@ -236,6 +236,14 @@ function canonicalBatch(raw) {
   if (!batchRealDay(+m[1], +m[2], +yy) && !batchRealDay(+m[2], +m[1], +yy)) return "";
   return `B${m[1]}${m[2]}${yy}`;
 }
+// The day a batch started, from its Batch ID, as YYYY-MM-DD; "" when it isn't a real date. (A Batch ID given out as B + DDMMYY
+// reads as that day too: B300926 is 30 September 2026, never a 30th month that would stop the day-by-day scorecard loops.)
+function batchStartDate(batch) {
+  const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(canonicalBatch(batch));
+  if (!m) return "";
+  const [mm, dd] = batchRealDay(+m[1], +m[2], +m[3]) ? [m[1], m[2]] : [m[2], m[1]];
+  return `20${m[3]}-${mm}-${dd}`;
+}
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
 const batchKey = (s) => slugPart(canonicalBatch(s) || s);
@@ -436,6 +444,20 @@ async function mergeAccounts(env, from, into) {
   await kv.put(`merged:${from}`, JSON.stringify({ into, at }));
   await setBlocked(env, { [from]: { why: "merged", into, at } });
   return { ok: true, from, into, moved: [...new Set(moved)] };
+}
+// The scorecard snapshot kept on a cleared trainee's record, at most 60,000 characters of JSON. A longer one (many trainer
+// activities, long comments) is shortened step by step, always to valid JSON: the trainer's comments cut short, then
+// dropped, then the trainer activities themselves, leaving the overall, lessons and systems (the full scorecard is in the
+// Drive backup).
+function fitScorecard(sc, max = 60000) {
+  const fits = (o) => JSON.stringify(o).length <= max;
+  if (fits(sc)) return JSON.parse(JSON.stringify(sc));
+  const acts = sc.trainerActs && typeof sc.trainerActs === "object" ? sc.trainerActs : {};
+  const cut = (n) => Object.assign({}, sc, { trainerActs: Object.fromEntries(Object.entries(acts).map(([k, a]) =>
+    [k, a && typeof a === "object" ? Object.assign({}, a, { comment: String(a.comment || "").slice(0, n) }) : a])) });
+  for (const n of [300, 0]) { const o = cut(n); if (fits(o)) return o; }
+  const o = { at: String(sc.at || "").slice(0, 40), overall: sc.overall == null ? null : sc.overall, lessons: sc.lessons || null, systems: Array.isArray(sc.systems) ? sc.systems : [], trimmed: true };
+  return fits(o) ? o : { at: o.at, overall: typeof o.overall === "number" ? o.overall : null, trimmed: true };
 }
 function slimTrainee(rec) {
   const keep = ["id", "name", "firstName", "lastName", "batch", "approved", "rejected", "archived", "archivedAt", "registeredAt", "lastActive", "offboarded"];
@@ -1386,7 +1408,14 @@ function tamEntries(text, D) {
   const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   const iso = (y, m, d) => { y = String(y || year); if (y.length === 2) y = "20" + y; const k = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`; return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(k) ? k : ""; };
   const dateOf = (l) => { let m = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(l); if (m) return iso(m[1], m[2], m[3]);
-    m = /\b(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?\b/.exec(l); if (m && +m[1] <= 12) return iso(m[3], m[1], m[2]);
+    // (a dot number with no year is a time or a length, not a date, when a unit follows it or "at" comes before it:
+    //  "1.5 hours", "2.5-hour", "10.30 am", "at 10.30" — the next match on the line is tried instead)
+    const re = /\b(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?\b/g;
+    while ((m = re.exec(l))) {
+      if (m[2] === "." && !m[4] && (/^\s*-?\s*(?:hours?|hrs?|h|minutes?|mins?|am|pm|a\.m|p\.m|%)\b/i.test(l.slice(m.index + m[0].length)) || /\bat\s*$/i.test(l.slice(0, m.index)))) continue;
+      if (+m[1] <= 12) return iso(m[4], m[1], m[3]);
+      break;
+    }
     m = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})?/i.exec(l); if (m) return iso(m[3], MON.indexOf(m[1].toLowerCase().slice(0, 3)) + 1, m[2]);
     return ""; };
   const out = {}; let cur = "";
@@ -1403,7 +1432,7 @@ function tamEntries(text, D) {
    day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
    deleted from it stops counting. Into trackerreview:<id>.shots = {files: [{kind, date, slot, up, named, name, link,
    created}], checkedAt, error}; js/ft-skilltests.js counts them with the tests taken on the platform. */
-async function checkShots(env, id) {
+async function checkShots(env, id, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
   if (!drive || !(drive.folder || drive.typing || drive.spelling)) return null;
@@ -1412,7 +1441,8 @@ async function checkShots(env, id) {
   const srcs = [["typing", drive.typing], ["spelling", drive.spelling], ["", drive.folder]].filter(([, u]) => u);
   const seen = new Set(), all = []; let res = { files: [] }, errs = [];
   for (const [kind, u] of srcs) {
-    const r = await folderFiles(env, u);
+    // (o.listFolder: the nightly check's one listing of each folder a run)
+    const r = await (o.listFolder ? o.listFolder(u) : folderFiles(env, u));
     if (r.error) { errs.push(kind || "folder"); continue; }
     (r.files || []).forEach((f) => { const key = f.link || f.name + "|" + (f.created || ""); if (seen.has(key)) return; seen.add(key); all.push({ f, kind }); });
   }
@@ -1422,6 +1452,14 @@ async function checkShots(env, id) {
     .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   const prev = cur.shots || {};
+  // (some folders read, some not, e.g. Google failing on the Typing Tests folder just now: the screenshots already found in the
+  // folders that failed are kept with the ones read now, so a day's tests don't drop out of compliance until the next check)
+  if (!res.error && errs.length) {
+    const have = new Set(files.map((f) => f.link || f.name + "|" + f.created));
+    (prev.files || []).forEach((p) => { if (p && errs.includes(p.in || "") && !have.has(p.link || p.name + "|" + p.created)) files.push(p); });
+    files.sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created)));
+    if (files.length > 400) files.splice(0, files.length - 400);
+  }
   // 🔢 THE SCORE ON EACH SCREENSHOT, read once by the AI from the image (a typing test: its WPM and accuracy; a spelling test: its
   // score out of its total), kept with the file so the 🧪 Typing & Spelling page and the scorecards count it like a test taken on
   // the platform. At most 8 new screenshots a check (the rest on the next), each read once, a failed read tried again next time.
@@ -1448,7 +1486,7 @@ async function checkShots(env, id) {
       } catch (e) { /* tried again on the next check */ }
     }
   }
-  // a folder that can't be read this time keeps the screenshots already found
+  // a folder that can't be read this time keeps the screenshots already found (all of them failing: the whole record kept)
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: url0, checkedAt: new Date().toISOString() }) : { files, url: url0, checkedAt: new Date().toISOString(), error: "", unread: errs };
@@ -1638,10 +1676,21 @@ async function verifyLinks(env, id) {
    matches is kept for the trainer (admin:eod-unmatched, the last 50). A pasted EOD (📋 Task Tracker) is checked the same way. */
 function mimeText(raw) {
   const text = String(raw || "");
-  const decodeQP = (s) => s.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16)));
-  const decodeB64 = (s) => { try { return decodeURIComponent(escape(atob(s.replace(/\s+/g, "")))); } catch (e) { try { return atob(s.replace(/\s+/g, "")); } catch (e2) { return ""; } } };
+  // (a quoted-printable or base64 part is bytes: read them in the part's charset, UTF-8 unless it says otherwise; a latin1 /
+  // windows-1252 one, or bytes that aren't valid UTF-8, read one byte per character as before)
+  const bytesOf = (bin) => Uint8Array.from(bin, (c) => c.charCodeAt(0) & 255);
+  const inCharset = (bin, cs) => {
+    cs = String(cs || "utf-8").toLowerCase();
+    try { return new TextDecoder(cs, { fatal: true }).decode(bytesOf(bin)); } catch (e) {
+      try { if (!/^(utf-?8|us-ascii|ascii)$/.test(cs)) return new TextDecoder("windows-1252").decode(bytesOf(bin)); } catch (e2) { /* below */ }
+      return bin;
+    }
+  };
+  const decodeQP = (s, cs) => inCharset(s.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16))), cs);
+  const decodeB64 = (s, cs) => { try { return inCharset(atob(s.replace(/\s+/g, "")), cs); } catch (e) { return ""; } };
   const body = (part) => { const i = part.search(/\r?\n\r?\n/); if (i < 0) return { h: part, b: "" }; return { h: part.slice(0, i), b: part.slice(i).replace(/^\r?\n\r?\n/, "") }; };
-  const decode = (h, b) => /content-transfer-encoding:\s*base64/i.test(h) ? decodeB64(b) : /content-transfer-encoding:\s*quoted-printable/i.test(h) ? decodeQP(b) : b;
+  const decode = (h, b) => { const cs = (/charset="?([^";\s]+)/i.exec(h) || [])[1];
+    return /content-transfer-encoding:\s*base64/i.test(h) ? decodeB64(b, cs) : /content-transfer-encoding:\s*quoted-printable/i.test(h) ? decodeQP(b, cs) : b; };
   const walk = (part) => {
     const { h, b } = body(part), bm = /boundary="?([^";\r\n]+)"?/i.exec(h);
     if (/content-type:\s*multipart\//i.test(h) && bm) {
@@ -1650,7 +1699,11 @@ function mimeText(raw) {
       for (const p of parts) { const t = walk(p.replace(/^\r?\n/, "")); if (t && t.html) return t; }
       return null;
     }
-    if (/content-type:\s*text\/html/i.test(h)) return { html: decode(h, b) };
+    // (an attachment — a PDF, a screenshot, even a .txt file — is never the EOD: only the text of the email itself is read;
+    // a part with no Content-Type, a plain email, is text)
+    const uh = h.replace(/\r?\n[ \t]+/g, " "), ct = (/^content-type:([^\r\n]*)/im.exec(uh) || [])[1], cd = (/^content-disposition:([^\r\n]*)/im.exec(uh) || [])[1] || "";
+    if (/^\s*attachment/i.test(cd) || /\b(file)?name\*?=/i.test(cd + ";" + (ct || "")) || (ct !== undefined && !/^\s*text\/(plain|html)\b/i.test(ct))) return null;
+    if (/^\s*text\/html/i.test(ct || "")) return { html: decode(h, b) };
     return { plain: decode(h, b) };
   };
   const r = walk(text) || {};
@@ -1854,7 +1907,13 @@ async function runTrackerChecks(env, opts) {
   const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
   const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
   const done = [];
-  for (const k of keys) {
+  // (each trainee's Assessments/Activities folder is listed once a run: the screenshots, the day's compliance and the backfill
+  // all read that one listing, so a night of many trainees stays inside Drive's and the Worker's limits)
+  const listed = new Map();
+  const listFolder = (u) => { if (!listed.has(u)) listed.set(u, folderFiles(env, u).catch(() => ({ error: "drive" }))); return listed.get(u); };
+  const folderOf = async (id) => { const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null"); return drive && drive.folder ? listFolder(drive.folder) : undefined; };
+  // (a trainee whose records can't be read is passed over: the next trainee is still checked)
+  for (const k of keys) { try {
     const id = k.slice("tracker:".length);
     const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
@@ -1872,15 +1931,15 @@ async function runTrackerChecks(env, opts) {
     cur.updatedAt = new Date().toISOString();
     await kv.put(rk, JSON.stringify(cur));
     done.push({ id, pct: res.pct, flags: res.flags.length });
-  }
+  } catch (e) { /* the next trainee */ } }
   // the trainees whose tracker and Monitoring Sheet are in Google Drive
   const driveKeys = o.id ? [`drive:${o.id}`] : await listAll(env, "drive:");
   for (const k of driveKeys) {
     const id = k.slice("drive:".length);
-    const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+    let rec = null; try { rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"); } catch (e) { continue; }
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
-    try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
+    try { const r = await checkShots(env, id, { listFolder }); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
     // (the six monitored links, checked again at the end of the shift: a ✓ stays for its link, verifyLinks)
     if (driveSA(env)) { try { const r = await verifyLinks(env, id); if (r && r.ok) done.push({ id, links: true }); } catch (e) { /* the next trainee */ } }
   }
@@ -1888,11 +1947,12 @@ async function runTrackerChecks(env, opts) {
   const people = o.id ? [`trainee:${o.id}`] : await listAll(env, "trainee:");
   for (const k of people) {
     const id = k.slice("trainee:".length);
-    const rec = JSON.parse((await kv.get(k)) || "null");
+    let rec = null, files; try { rec = JSON.parse((await kv.get(k)) || "null"); } catch (e) { continue; }
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
-    try { const r = await dailyCompliance(env, id, D); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    try { files = await folderOf(id); } catch (e) { files = undefined; }
+    try { const r = await dailyCompliance(env, id, D, { rec, files }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
     // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
-    if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
+    if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec, files }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
   return { date: D, checked: done.length, results: done };
 }
@@ -1904,8 +1964,7 @@ async function runTrackerChecks(env, opts) {
 async function backfillCompliance(env, id, o = {}) {
   const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return 0;
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   if (!start) return 0;
   const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
   const want = [];
@@ -1915,8 +1974,9 @@ async function backfillCompliance(env, id, o = {}) {
   }
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
-  let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
-  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, files: files || undefined });
+  // (the nightly check hands over the folder it already listed: o.files)
+  let files = o.files || null; if (!files && drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
+  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, rec, files: files || undefined });
   return want.length;
 }
 
@@ -2019,7 +2079,7 @@ async function autoLinkBatch(env, batch) {
       const url = driveUrl(f); if (String(drive[k] || "").trim() === url) continue;
       drive[k] = url; (drive.auto = drive.auto || {})[k] = at; set.push(k);
     }
-    if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const m = /^B(\d{2})(\d{2})(\d{2})$/.exec(B); if (m) drive.startDate = `20${m[3]}-${m[1]}-${m[2]}`; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
+    if (set.length) { drive.updatedAt = at; if (!drive.startDate) { const s = batchStartDate(B); if (s) drive.startDate = s; } await kv.put(dk, JSON.stringify(drive)); linked[r.id] = set; }
     const none = Object.keys(LINKS_KIND).filter((k) => !drive[k]); if (none.length) missing[r.id] = none;
     // 🔎 not in their Drive: what this search found no file for (and the link they have, if any, isn't ✓) — kept so the Batch
     // Sheet can say it exactly ("Liseny Castillo has no Monitoring Sheet in her Drive"), not only "can't be opened"
@@ -2040,8 +2100,7 @@ async function backtrack(env, id) {
   const kv = kvOf(env), rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return { error: "gone" };
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   const today = TR.ptDate(), days = [];
   if (start) for (let t = Date.parse(start + "T12:00:00Z"); days.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) days.push(d); }
   const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
@@ -2084,8 +2143,7 @@ async function redoCompliance(env, id, ro = {}) {
   const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
-  const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(rec.batch || "").trim());
-  const start = m ? `20${m[3]}-${m[1]}-${m[2]}` : rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "";
+  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
   if (!start) return 0;
   const today = TR.ptDate(), want = [];
   for (let t = Date.parse(start + "T12:00:00Z"); want.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) want.push(d); }
@@ -2118,6 +2176,8 @@ async function dailyCompliance(env, id, D, o = {}) {
   const get = async (k) => JSON.parse((await kv.get(k)) || "null");
   // (o.pre: a 🔄 Update all scores run reads the trainee's records once for all their days, and writes trackerreview once at the end)
   const pre = o.pre || null;
+  // (the trainee's record, for the batch's first training day: every caller counts the day's due topics from the same day)
+  const rec = o.rec || (await get(`trainee:${id}`)) || {};
   const [drive, skills, proc, tr, prog, ses] = pre ? [pre.drive, pre.skills, pre.proc, pre.tr, pre.prog, pre.ses]
     : await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`)]);
   const rk = `trackerreview:${id}`, cur = pre ? pre.cur : ((await get(rk)) || { days: {} });
@@ -2151,15 +2211,15 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (onD(data["last-view"] && data["last-view"].at)) seen.push("on the platform");
   if (onD(prog && prog.savedAt)) seen.push("progress saved");
   const testsTaken = Object.values(tests).some(Boolean), platformDid = done.length + subs.length + (testsTaken ? 1 : 0);
-  // (a tracker or Monitoring Sheet the system can't open is "not checked" that day, not 0: the comments say why)
-  const unreadable = (x) => !!x && /can't open|can.t be read|not shared|sign.?in/i.test(String(x));
+  // (a tracker or Monitoring Sheet the system can't open, or couldn't read just now, is "not checked" that day, not 0: the comments say why)
+  const unreadable = (x) => !!x && /can't open|can.t be read|couldn.t be read|not shared|sign.?in/i.test(String(x));
   const trRule = tk && (tk.rules || []).find((r) => r.id === "sheet" && !r.pass);
   // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
   // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
   const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
   let monDay = null;
   if (monRead) {
-    const m0 = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String((o.rec || {}).batch || "").trim()), st = m0 ? `20${m0[3]}-${m0[1]}-${m0[2]}` : (drive.startDate || "");
+    const st = batchStartDate(rec.batch) || drive.startDate || "";
     let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
     const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16)));
     monDay = n ? Math.round(due.reduce((a, tp) => a + ((mon.entries.find((x) => x.topic === tp) || {}).pct || 0), 0) / due.length) : mon.pct;
@@ -2637,13 +2697,15 @@ export default {
         if (path === "/api/batch/purge") {
           const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
           if (!rec) return json({ error: "No such trainee" }, 404);
+          // (the slim record, with its scorecard snapshot, is written before anything is deleted: a failure part-way leaves
+          // the trainee whole, never cleared but not archived)
+          const slim = Object.assign(slimTrainee(rec), { archived: true, archivedAt: rec.archivedAt || now, purgedAt: now,
+            scorecard: b.scorecard && typeof b.scorecard === "object" && !Array.isArray(b.scorecard) ? fitScorecard(b.scorecard) : rec.scorecard || null,
+            backup: b.backup && typeof b.backup === "object" ? { folder: String(b.backup.folder || "").slice(0, 300), file: String(b.backup.file || "").slice(0, 300), at: now } : rec.backup || null });
+          await kv.put(`trainee:${id}`, JSON.stringify(slim));
           const keys = PURGE_KEYS(id);
           for (const p of PURGE_PREFIXES(id)) keys.push(...await listAll(env, p));
           await Promise.all(keys.map((k) => kv.delete(k)));
-          const slim = Object.assign(slimTrainee(rec), { archived: true, archivedAt: rec.archivedAt || now, purgedAt: now,
-            scorecard: b.scorecard && typeof b.scorecard === "object" ? JSON.parse(JSON.stringify(b.scorecard).slice(0, 60000)) : rec.scorecard || null,
-            backup: b.backup && typeof b.backup === "object" ? { folder: String(b.backup.folder || "").slice(0, 300), file: String(b.backup.file || "").slice(0, 300), at: now } : rec.backup || null });
-          await kv.put(`trainee:${id}`, JSON.stringify(slim));
           if (!b.keepAccess) await setBlocked(env, { [id]: { why: "archived", name: String(rec.name || "").slice(0, 120), batch: String(rec.batch || "").slice(0, 40), at: now } });
           return json({ ok: true, cleared: keys.length });
         }

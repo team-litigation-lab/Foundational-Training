@@ -130,11 +130,16 @@ window.LSH_PROGRAM = {
     {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
       about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full, and Day 3’s Reception Listening Activity by its grade once you submit its Answer Sheet.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
-    {id:"calcheck", icon:"📅", label:"Calendar activity check", key:"calcheck:",
-      about:"Day 5’s Attorney Calendar Management Activity: each event you entered in Google Calendar, checked field by field against the activity (the share of fields right on your latest submission).",
-      items: ctx => typeof window.ftCalCheckItems === "function" ? window.ftCalCheckItems(ctx) : []},
-    {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:",
-      about:"Your calendar mock-call bookings, each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart.",
+    // (📅 one card for the two calendar checks: Day 5's Attorney Calendar Management Activity and the mock-call bookings
+    //  against the scheduling rules, each booking set named "📅 Booking rules · …")
+    {id:"calcheck", icon:"📅", label:"Calendar checks", key:"calcheck:",
+      about:"Day 5’s Attorney Calendar Management Activity (each event you entered in Google Calendar, checked field by field: the share of fields right on your latest submission) and your calendar mock-call bookings (each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart).",
+      items: ctx => [].concat(
+        (typeof window.ftCalCheckItems === "function" ? window.ftCalCheckItems(ctx) || [] : []),
+        (typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) || [] : []).map(x => x && Object.assign({}, x, {name: "📅 Booking rules · " + String(x.name).replace(/^📅\s*/, "")})))},
+    // (hidden: no card of its own — its items are on 📅 Calendar checks — but its records are still read, and a day's
+    //  activity still finds its booking-rule score by this id; noOverall: not counted twice)
+    {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:", hidden:true, noOverall:true,
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
     {id:"calweek", icon:"📅", label:"Calendaring Activity", key:"calweek:",
       about:"Standard Training - Calendaring Activity (Days 5–6): the tasks you booked on the attorney’s calendar for next week, checked against the attorney’s rules (the score of your submitted calendar).",
