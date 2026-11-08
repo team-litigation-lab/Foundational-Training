@@ -98,7 +98,7 @@ const failures = []; const fail = m => failures.push(m);
   // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking and
   // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)
   const top = await page.evaluate(() => [...document.querySelectorAll('.bs-card > .bs-sec, .bs-card > details.bs-more')].map(x => x.id || (x.classList.contains('bs-more') ? 'more' : '')).filter(Boolean));
-  if (JSON.stringify(top.slice(0, 5)) !== JSON.stringify(['bs-scorecard', 'bs-compliance', 'bs-ranking', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
+  if (JSON.stringify(top.slice(0, 4)) !== JSON.stringify(['bs-scorecard', 'bs-compliance', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
   if (await page.evaluate(() => document.querySelector('details.bs-more').open)) fail('▸ More detail is open before the trainer opens it');
   await page.evaluate(() => { FTBatchSheet.more(true); render(); }); await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
@@ -149,6 +149,16 @@ const failures = []; const fail = m => failures.push(m);
     const ada = li.find(x => /Ada Active/.test(x.t)), ben = li.find(x => /Ben/.test(x.t));
     if (!ada || !/📒 Monitoring Sheet/.test(ada.t) || !/can.t open/i.test(ada.t) || !ada.open || !ada.mark || !ada.relink) fail(`Ada's failing link isn't listed with why and the trainer's fixes: ${JSON.stringify(ada)}`);
     if (!ben || !/not linked yet/.test(ben.t) || !/2 of 6 links right/.test(ben.t)) fail(`a trainee with links not saved yet isn't listed: ${JSON.stringify(li.map(x => x.t.slice(0, 120)))}`); }
+  // 🗄 Archive one account from the link issues list (not a trainee, or one who left): its record archived, after a confirm
+  { const zid = 'zed-notatrainee--' + BATCH.toLowerCase();
+    await put('trainee:' + zid, { id: zid, name: 'Zed Notatrainee', batch: BATCH, approved: true, registeredAt: new Date().toISOString() });
+    await page.evaluate(() => { window.__conf = window.confirm; window.confirm = () => true; });
+    const btn = await page.evaluate(() => !!document.querySelector('.bs-share-list .bs-arch1'));
+    await page.evaluate(id => FTBatchSheet.archiveOne(id, 'Zed Notatrainee'), zid); await page.waitForTimeout(1200);
+    await page.evaluate(() => { window.confirm = window.__conf; });
+    const z = await get('trainee:' + zid);
+    if (!btn || !z || z.archived !== true || z.name !== 'Zed Notatrainee') fail(`🗄 Archive on the link issues list didn't archive the account: ${btn} ${JSON.stringify(z)}`);
+    await put('trainee:' + zid, null); await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(2500); }
   if (!/trainees have Drive link issues/.test(sb2) || /files can’t be opened yet/.test(sb2)) fail(`the issues list doesn't say how many trainees have link issues: ${sb2.slice(0, 300)}`);
   // 🔎 not in their Drive (the batch's Drive searched, no Monitoring Sheet with her name: worker.js autoLinkBatch notFound): said so
   { const rv = (await get('trackerreview:' + ids.Ada)) || { days: {} }; rv.notFound = { keys: ['monitor'], at: new Date().toISOString(), batch: BATCH }; await put('trackerreview:' + ids.Ada, rv);
@@ -175,8 +185,12 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   const dx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception/i.test(x.textContent)); return it ? it.innerText : ''; });
   if (!/Why this score/i.test(dx) || !/3\.80\/5/.test(dx) || !/did best[\s\S]*Warm, branded greeting/i.test(dx) || !/to be improved[\s\S]*Skipped the caller verification/i.test(dx)) fail(`the mock call's context (why, best, to improve): ${dx}`);
-  const rkAt = await page.evaluate(() => { const a = document.getElementById('bs-compliance'), r = document.getElementById('bs-ranking'); return !!(a && r && a.nextElementSibling === r && r.querySelector('.rk-bar')); });
-  if (!rkAt) fail('the 📊 Weekly Ranking is not right under the Score Card and the compliance');
+  // 📊 the Weekly Ranking is its own button, 📊 Weekly Reports: not on the Batch Sheet; there alone, for the same batch
+  if (await page.$('#bs-ranking')) fail('the 📊 Weekly Ranking is still on the 📋 Batch Sheet');
+  { await page.evaluate(() => { state.adminTab = 'weeklyreports'; render(); }); await page.waitForTimeout(1500);
+    const wr = await page.evaluate(() => ({ rk: !!document.querySelector('#bs-ranking .rk-bar'), comp: !!document.getElementById('bs-compliance'), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('button, a')].some(b => /📊 Weekly Reports/.test(b.textContent)) }));
+    if (!wr.rk || wr.comp || !/^Weekly Reports · B\d{6}/.test(wr.title) || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
+    await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800); }
 
   // 👥 everyone registered, from the moment they register
   const tr = by('trainees').rows, names = tr.map(r => r[0]);
@@ -196,7 +210,9 @@ const failures = []; const fail = m => failures.push(m);
     await page.waitForFunction(() => { const b = document.querySelector('button.bs-upd-all'); return b && !b.disabled && /Update all scores/.test(b.textContent); }, null, { timeout: 60000 }).catch(() => fail('🔄 Update all scores never finished'));
     await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet wasn\'t read again after 🔄 Update all scores'));
     page.off('request', watch);
-    const want = tr.filter(r => r[1] === 'Approved').length;
+    // (no daily check on a weekend, in Pacific time: training days are weekdays)
+    const weekend = /Sat|Sun/.test(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', weekday: 'short' }).format(new Date()));
+    const want = weekend ? 0 : tr.filter(r => r[1] === 'Approved').length;
     if (asked.length !== want) fail(`🔄 Update all scores ran today's check for ${asked.length} trainees, not the ${want} approved: ${asked}`);
     if (back.length) fail(`🔄 Update all scores still backtracks from Day 1 (${back.length} calls)`);
     if (linked.length !== 1) fail(`🔄 Update all scores looked for the batch's Drive files ${linked.length} times, not once`); }
@@ -267,12 +283,19 @@ const failures = []; const fail = m => failures.push(m);
     return qs; };
   { const qs = await kcSeed();
     if (qs.length) {
+      // (📄 and an assessment: Day 2's Auto Liability Insurance, graded — its answers, ✓/✗ with the points and the grader's note)
+      { const AL = '11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C';
+        await put('assess:' + ids.Ada, { v: 1, docs: { [AL]: { answers: { i1: 'The policy limit', i2: 'Ada' }, updatedAt: iso(now - 3600e3) } } });
+        const rv = (await get('trackerreview:' + ids.Ada)) || { days: {} }; rv.assess = Object.assign({}, rv.assess, { [AL]: { at: iso(now - 3000e3), when: 'Nov 4', title: 'Auto Liability Insurance – Assessment', score: 1, max: 40, pct: 3, pending: false,
+          items: { i1: { ok: true, pts: 1, note: 'Right: the policy limit.' }, i2: { ok: false, pts: 0, note: 'Nevada requires 25/50/20.' } } } }); await put('trackerreview:' + ids.Ada, rv); }
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
       await page.evaluate(id => FTBatchSheet.kdWho(id), ids.Ada); await page.waitForTimeout(400);
       const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).innerText || '');
-      if (!/Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
+      if (!/Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
+        || !/Auto Liability Insurance – Assessment/.test(kd) || !/The policy limit/.test(kd) || !/✓ 1 pt\s*Right: the policy limit/.test(kd) || !/✗ 0 pts\s*Nevada requires 25\/50\/20/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
+      await put('assess:' + ids.Ada, null); { const rv = (await get('trackerreview:' + ids.Ada)) || {}; if (rv.assess) { delete rv.assess['11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C']; await put('trackerreview:' + ids.Ada, rv); } }
       await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     } else fail('no Knowledge Check questions for the first lesson');
@@ -404,7 +427,7 @@ const failures = []; const fail = m => failures.push(m);
   // (✍️ her Knowledge Checks in detail, shared to her page: each answer with its grade and feedback, the trainer's comments)
   { await kcSeed(); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(3000);
     const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).innerText || '');
-    if (!/My Knowledge Checks in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
+    if (!/My Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
       fail(`the trainee doesn't see her Knowledge Checks in detail on 📋 My Progress: ${kd.slice(0, 400)}`);
     if (/Ben Blank|Cy Waiting|Dee Glitch/.test(kd)) fail('a trainee sees another trainee\'s Knowledge Checks');
     await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(2500); }

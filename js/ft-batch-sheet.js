@@ -27,6 +27,10 @@
 "use strict";
 if(typeof window.ftAdminTab !== "function") return;
 const TAB = "batchsheet";
+// 📊 Weekly Reports: a button of its own beside 📋 Batch Sheet — the same batch, picker and data, showing only the Weekly
+// Ranking (the management summary and the marks sheet), which the Batch Sheet no longer carries
+const WEEKLY = "weeklyreports";
+const weeklyOn = () => state.view === "admin" && state.adminTab === WEEKLY && adminOn() && !meOn();
 const e = v => esc(String(v == null ? "" : v));
 // (a link the trainee saved goes into an href only as an http(s) address, escaped: a javascript: one is never a link)
 const safeHref = u => /^https?:\/\//i.test(String(u || "").trim()) ? e(String(u).trim()) : "";
@@ -49,7 +53,7 @@ const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const ME = "mysheet";
 const meOn = () => state.view === ME && isTrainee();
-const on = () => (state.view === "admin" && state.adminTab === TAB && adminOn()) || meOn();
+const on = () => (state.view === "admin" && (state.adminTab === TAB || state.adminTab === WEEKLY) && adminOn()) || meOn();
 const rerender = () => { if(on()) render(); };
 
 /* ---------- who is in the batch: everyone who registered, approved or not ---------- */
@@ -96,7 +100,7 @@ async function loadData(){
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     // (process:<id>: the Knowledge Checks' graded answers, each answer's feedback and the summary, for the scores' context)
-    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:"];
+    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:", "assess:"];
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
@@ -110,7 +114,7 @@ async function loadData(){
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
-      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, src: sc, score};
+      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score};
     });
     // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
     let reps = [];
@@ -281,6 +285,17 @@ function gradesHtml(){
    Process Questions report line (js/ft-process.js FTProcessReport), then each Knowledge Check: its score and how it was scored
    (the trainer's final, else the graded best, the attempts), when it was graded and the graded summary, the trainer's overall
    comment, and every question with the answer, its grade out of 10 with the feedback, and the trainer's comment on it. */
+// 📄 the assessments answered on the platform (js/ft-assess.js): the grade (trackerreview:<id>.assess[doc]) and the answers
+// (assess:<id>.docs[doc].answers), question by question, as the Knowledge Checks are
+function assessRows(p){
+  const A = window.FTAssess; if(!A || typeof A.docs !== "function") return [];
+  const R = B.data.rec[p.id] || {}, gr = (((R.src || {})["trackerreview:"] || {}).assess) || {}, ans = (R.assess && R.assess.docs) || {};
+  return A.docs().map(doc => { const g = gr[doc] || null, a = (ans[doc] || {}).answers || {}, it = (g && g.items) || {};
+    const items = A.questions(doc).map(q => { const r = it[q.id] || null;
+      return {q: q.q, part: q.part, answer: String(a[q.id] == null ? "" : a[q.id]).trim(), ok: r ? !!r.ok : null, pts: r && r.pts != null ? Number(r.pts) : null,
+        max: r && r.max != null ? Number(r.max) : null, pending: !!(r && r.pending), note: r ? String(r.note || "") : ""}; });
+    return {doc, title: A.title(doc), g, items, answered: items.some(x => x.answer)}; });
+}
 function kcRows(p){
   return kcSheets().map(k => { const g = sheetGrade(p, k); return {k, g}; });
 }
@@ -308,8 +323,16 @@ function kcDetailHtml(){
               <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
               ${typeof it.score === "number" ? `<div class="bs-kd-fb ${fbTone(Number(it.score))}"><b>${e(String(it.score))}/10</b> ${e(it.feedback || "")}</div>` : it.answer && g.subm ? `<div class="bs-kd-fb"><b>—</b> not graded yet</div>` : ""}
               ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
-        </details>`; }).join("")}</div>`; };
-  return `<div class="bs-ck bs-kdw">${meOn() ? `<h4>✍️ My Knowledge Checks in detail</h4>` : `<label class="bs-ck-who">✍️ Knowledge Checks in detail for <select onchange="FTBatchSheet.kdWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
+        </details>`; }).join("")}
+      ${(() => { const as = assessRows(p); if(!as.length) return "";
+        return `<h5 class="bs-kd-sub">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
+          return `<details class="bs-kd"${who.length === 1 && (g || x.answered) ? " open" : ""}><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
+              ${g ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : ""}</summary>
+            ${x.answered || g ? `<ol class="bs-kd-q">${x.items.map(it => `<li><b>${e(it.q)}</b> <small>${e(it.part)}</small>
+                <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
+                ${it.ok != null || it.pending ? `<div class="bs-kd-fb ${it.pending ? "gs-mid" : it.ok ? "gs-hi" : "gs-lo"}"><b>${it.pending ? "⏳ to the trainer" : (it.ok ? "✓" : "✗") + (it.pts != null ? ` ${it.pts}${it.max != null ? "/" + it.max : ""} pt${it.pts === 1 ? "" : "s"}` : "")}</b> ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
+          </details>`; }).join(""); })()}</div>`; };
+  return `<div class="bs-ck bs-kdw">${meOn() ? `<h4>✍️ My Knowledge Checks & Assessments in detail</h4>` : `<label class="bs-ck-who">✍️ Knowledge Checks & Assessments in detail for <select onchange="FTBatchSheet.kdWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     <button type="button" class="bs-dl" onclick="FTBatchSheet.kdCsv()" title="Every trainee's Knowledge Checks, answer by answer: the grade, the feedback and the trainer's comments (.csv)">⬇ Download the breakdown</button>
     <p class="bs-note">Each Knowledge Check answer by answer: the grade out of 10 with its feedback, the trainer’s comment on it, the trainer’s overall comment and final score — as on the ✍️ Knowledge Check page.</p>
     ${who.map(one).join("")}</div>`;
@@ -707,7 +730,7 @@ function shareBanner(){
   const access = withIssues.filter(r => r.its.some(it => it.x.st === "bad" && ACCESS((it.x.c || {}).err)));
   const opens = ppl.filter(p => (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
   const fixes = (p, it) => `<span class="bs-share-acts">${safeHref(it.x.link) ? `<a class="btn btn-ghost btn-sm" href="${safeHref(it.x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></span>`;
-  const list = `<ul class="bs-share-list">${withIssues.map(({p, its}) => `<li><b>${e(p.name)}</b> <small>(${LINKS.length - its.length} of ${LINKS.length} links right)</small><ul>${its.map(it => `<li><b>${e(it.l)}</b>: ${issueWhy(p, it)}${(it.x.c || {}).at ? ` <small>· checked ${e(when(it.x.c.at))}</small>` : ""} ${fixes(p, it)}</li>`).join("")}</ul></li>`).join("")}</ul>`;
+  const list = `<ul class="bs-share-list">${withIssues.map(({p, its}) => `<li><b>${e(p.name)}</b> <small>(${LINKS.length - its.length} of ${LINKS.length} links right)</small> <button class="btn btn-ghost btn-sm bs-arch1" type="button" data-id="${e(p.id)}" data-name="${e(p.name)}" onclick="FTBatchSheet.archiveOne(this.dataset.id, this.dataset.name)" title="Archive this account (someone who isn't a trainee, or who left): off the sheet and this list; Admin → Batches brings it back">🗄 Archive</button><ul>${its.map(it => `<li><b>${e(it.l)}</b>: ${issueWhy(p, it)}${(it.x.c || {}).at ? ` <small>· checked ${e(when(it.x.c.at))}</small>` : ""} ${fixes(p, it)}</li>`).join("")}</ul></li>`).join("")}</ul>`;
   const recheck = `<button class="btn btn-navy btn-sm" type="button" ${B.rechecking || B.sync ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button>
     <small class="bs-share-auto">${B.autoChk ? "🔁 Checking the flagged links again…" : B.autoChkAt ? `Checked again by itself ${e(when(new Date(B.autoChkAt).toISOString()))}; it checks again every few minutes while this page is open, so a link the VA fixes drops off.` : ""}</small>`;
   // (most of the batch can't be opened at all: the batch's folder isn't shared yet — one share covers everyone)
@@ -727,7 +750,9 @@ function sectionsHtml(T){
     : sheetHtml(x, i);
   const at = id => T.findIndex(x => x.id === id), main = id => one(T[at(id)], at(id));
   const rest = T.map((x, i) => [x, i]).filter(([x]) => !MAIN.includes(x.id));
-  return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
+  // (📊 Weekly Reports: the Weekly Ranking alone; the Batch Sheet without it — a trainee's page keeps their own report)
+  if(weeklyOn()) return rankingHtml();
+  return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + (meOn() ? rankingHtml() : "") + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
@@ -1170,12 +1195,12 @@ function renderSheet(){
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
-    <div class="gs-top"><span class="gs-logo">📋</span><div class="gs-file"><b>Batch Sheet · ${e(B.batch)}</b>
+    <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : "Batch Sheet"} · ${e(B.batch)}</b>
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>
         ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
-      <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 Weekly Ranking</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
+      <span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · ${weeklyOn() ? `<a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a>` : `<a href="#" onclick="state.adminTab = '${WEEKLY}'; render(); return false;">📊 Weekly Reports</a>`} · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
@@ -1308,6 +1333,17 @@ window.FTBatchSheet = {
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   kdWho(id){ if(!adminOn()) return; B.kd = id; render(); },
+  // 🗄 one account archived from the Drive link issues list (not a trainee, or one who left): its record marked archived, as
+  // a batch's archive marks each (index.html confirmArchiveBatch), read strictly so a failed read never writes over it
+  async archiveOne(id, name){
+    if(!adminOn() || !id || !confirm(`Archive ${name || id}? They leave this batch's sheet and the link issues list. Admin → Batches can bring them back.`)) return;
+    try{ const got = typeof readStrict === "function" ? await readStrict("trainee:" + id) : {ok: true, value: await sharedGet("trainee:" + id)};
+      if(!got.ok || !got.value){ toast("Couldn’t read the account. Check your connection."); return; }
+      const rec = Object.assign({}, got.value, {archived: true, archivedAt: new Date().toISOString(), archivedBy: "trainer"});
+      if(await sharedSet("trainee:" + id, rec) === false){ toast("Couldn’t archive the account. Check your connection."); return; }
+      toast(`🗄 ${name || id} archived.`); if(typeof state === "object") state.adminData = null; B.people = null; B.data = null; B.dataKey = ""; render();
+    }catch(err){ toast("Couldn’t archive the account. Check your connection."); }
+  },
   // ⬇ the Knowledge Checks' breakdown: a row per answer
   kdCsv(){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
@@ -1316,6 +1352,9 @@ window.FTBatchSheet = {
     people().forEach(p => kcRows(p).forEach(({k, g}) => { const base = [p.name, k.title, g.pct != null ? g.pct + "%" : "", g.how, (g.last && g.last.summary) || "", (g.rv || {}).comment || ""];
       if(!g.items.length) lines.push(base.map(q).join(","));
       g.items.forEach((it, n) => lines.push(base.concat([n + 1, it.q, it.answer, typeof it.score === "number" ? it.score : "", it.feedback, it.note]).map(q).join(","))); }));
+    // (📄 and each assessment, question by question: the points instead of a grade out of 10)
+    people().forEach(p => assessRows(p).forEach(x => { const g = x.g || {}, base = [p.name, "📄 " + x.title, g.pct != null ? g.pct + "%" : "", g.score != null ? `${g.score}/${g.max} points` : "not graded yet", "", ""];
+      x.items.forEach((it, n) => lines.push(base.concat([n + 1, it.q, it.answer, it.pending ? "to the trainer" : it.pts != null ? it.pts + (it.max != null ? "/" + it.max : "") + " pts" : "", it.note, ""]).map(q).join(","))); }));
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\r\n")], {type: "text/csv"}));
     a.download = meOn() ? `My Knowledge Checks ${(B.me || {}).name || ""} ${new Date().toISOString().slice(0, 10)}.csv` : `Knowledge Checks ${B.batch} ${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -1569,6 +1608,7 @@ window.FTBatchSheet = {
 };
 
 ftAdminTab(TAB, "📋 Batch Sheet", renderSheet);
+ftAdminTab(WEEKLY, "📊 Weekly Reports", renderSheet);
 
 /* ---------- 🔒 the trainee's own sheet: 📋 My Progress ---------- */
 async function loadMe(){
@@ -1671,7 +1711,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-kd-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font:800 14px Arial,sans-serif;background:#EEF0F6;}
 .bs-kd-q{margin:6px 0 12px;padding-left:22px;font:14px Arial,sans-serif;color:#1F1F1F;} .bs-kd-q > li{margin:0 0 12px;} .bs-kd-q > li > b{font-weight:800;}
 .bs-kd-a{margin:4px 0;padding:6px 10px;background:#F7F8FA;border-radius:6px;} .bs-kd-fb{margin:4px 0;padding:6px 10px;border-radius:6px;background:#F1F3F4;border-left:4px solid #9AA0A6;} .bs-kd-fb.gs-hi{border-left-color:#1A73E8;} .bs-kd-fb.gs-mid{border-left-color:#E8A400;} .bs-kd-fb.gs-lo{border-left-color:#D93025;}
-.bs-kd-note{margin:4px 0;padding:6px 10px;border-radius:6px;background:#FFF8E1;font-weight:700;}
+.bs-arch1{margin-left:8px;padding:2px 10px;font-size:12px;} .bs-kd-sub{margin:16px 0 4px;font:800 16px Arial,sans-serif;color:#1E2340;} .bs-kd-note{margin:4px 0;padding:6px 10px;border-radius:6px;background:#FFF8E1;font-weight:700;}
 .bs-upd{margin-left:12px;border:1px solid #1E2340;background:#1E2340;color:#fff;border-radius:999px;padding:4px 12px;font:700 13px Arial,sans-serif;cursor:pointer;vertical-align:3px;}
 .bs-upd:disabled{background:#EEF0F6;color:#3A4058;border-color:#C9CEDD;cursor:progress;}
 .bs-le{margin:10px 14px 8px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;padding:0 14px;} .bs-le > summary{cursor:pointer;padding:10px 0;font:700 15px Arial,sans-serif;color:#1E2340;}

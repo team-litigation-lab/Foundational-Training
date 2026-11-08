@@ -249,7 +249,13 @@ root.FTAssess = {
   graded: doc => graded(doc),
   grade: doc => post(doc),
   // the result, for 🏅 My Performance (js/ft-drive.js ftDriveItems)
-  title: doc => (FORMS[doc] || {}).title || "Assessment"
+  title: doc => (FORMS[doc] || {}).title || "Assessment",
+  // every assessment, and each one's questions in order with their item ids (the 📋 Batch Sheet's breakdown, js/ft-batch-sheet.js)
+  docs: () => Object.keys(FORMS),
+  questions(doc){ const f = FORMS[doc]; if(!f) return [];
+    return f.parts.flatMap(p => p.kind === "match" ? p.terms.map((t, i) => ({id: "m" + (i + 1), q: `${i + 1}. ${t}`, part: p.h}))
+      : p.kind === "short" ? p.qs.map((q, i) => ({id: p.id + (i + 1), q: `${i + 1}. ${q}`, part: p.h}))
+      : (() => { let n = 0; return p.groups.flatMap(g => g.qs.map(q => { n++; return {id: p.id + n, q: `${n}. ${q}`, part: p.h}; })); })()); }
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-assess"; s.textContent = `
