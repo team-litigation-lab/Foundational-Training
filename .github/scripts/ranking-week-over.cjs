@@ -15,6 +15,8 @@ const failures = []; const fail = m => failures.push(m);
   const get = key => page.evaluate(async key => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json())).value || 'null'), key);
   let id = null;
   try {
+    // (the clock is fixed before the page loads: fixing it while the Batch Sheet loads left the report unrendered at times)
+    await page.clock.setFixedTime(new Date('2026-10-31T00:30:00Z'));
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
     await signIn(page, 'Fri', 'Evening', BATCH);
     id = await page.evaluate(() => state.traineeId);
@@ -26,10 +28,13 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(b => { const s = window.sharedSet; window.sharedSet = function (k) { return String(k).startsWith(`ranking:${b}:`) ? Promise.resolve(true) : s.apply(this, arguments); }; }, BATCH);
     await page.evaluate(() => { state.traineeId = null; state.isAdmin = true; state.adminPreview = false; state.adminData = null; FTRanking.reload(); state.adminTab = 'ranking'; goto('admin'); });
     await page.waitForTimeout(2000);
-    await page.clock.setFixedTime(new Date('2026-10-31T00:30:00Z'));
-    await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, BATCH);
-    // (the batch's report read: either the draft starting or the offer to start it)
-    await page.waitForFunction(() => /is over|hasn.t been started/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 15000 }).catch(() => {});
+    // (the batch and week picked, then the report read: either the draft starting or the offer to start it; picked again if
+    //  the Batch Sheet, still loading, drew over it — up to three times)
+    for (let n = 0; n < 3; n++) {
+      await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, BATCH);
+      const ok = await page.waitForFunction(() => /is over|hasn.t been started/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).then(() => true, () => false);
+      if (ok) break;
+    }
     const txt = await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '');
     if (!/Week 1 is over/.test(txt)) fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)}`);
   } catch (e) { fail(e.stack || String(e)); }
