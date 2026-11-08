@@ -40,11 +40,11 @@ const failures = []; const fail = m => failures.push(m);
   // the trainer opens the tab
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'ranking'; FTRanking.reload(); goto('admin'); });
   await page.waitForTimeout(2500);
-  // (no tab of its own: the report is in 📋 Batch Sheet, under 📅 Day 1–16: Detailed Scores; the old tab lands there)
-  if (!(await page.$('#bs-ranking .rk'))) fail('the 📊 Weekly Ranking is not in the 📋 Batch Sheet');
-  if (await page.evaluate(() => state.adminTab) !== 'batchsheet') fail('the old 📊 Weekly Ranking tab doesn\'t land on the 📋 Batch Sheet');
-  const tabs = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
-  if (!/Batch Sheet/.test(tabs) || /Weekly Ranking/.test(tabs)) fail(`🏅 Scorecard still has a 📊 Weekly Ranking tab: ${tabs}`);
+  // (its own button, 📊 Weekly Reports: the old tab lands there)
+  if (!(await page.$('#bs-ranking .rk')) || await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the 📊 Weekly Ranking is not on 📊 Weekly Reports');
+  if (await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the old 📊 Weekly Ranking tab doesn\'t land on 📊 Weekly Reports');
+  const tabs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
+  if (!/Weekly Reports/.test(tabs) || /Weekly Ranking/.test(tabs)) fail(`🏅 Scorecard's tabs have no 📊 Weekly Reports (the old 📊 Weekly Ranking tab hidden): ${tabs}`);
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
   if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);

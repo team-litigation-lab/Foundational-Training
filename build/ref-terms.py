@@ -21,13 +21,15 @@ def fix_urls(t):
     return t
 
 wb = openpyxl.load_workbook(io.BytesIO(urllib.request.urlopen(f"https://docs.google.com/spreadsheets/d/{ID}/export?format=xlsx").read()))
+# every tab's headers checked before anything is deleted (a changed tab stops the build with the pictures and the JS as they were)
+# (the first header cell is the sheet's own, "Busi" or "Others" on some tabs: the table always heads it TERM)
+for ws in wb.worksheets:
+    if [str(c.value or "").strip() for c in ws[1][:len(HEAD)]][1:] != HEAD[1:]:
+        sys.exit(f'the reference sheet\'s "{ws.title}" tab no longer heads its columns {" | ".join(HEAD[1:])}')
 os.makedirs(IMG, exist_ok=True)
 for f in os.listdir(IMG): os.remove(os.path.join(IMG, f))
 tabs = []
 for k, ws in enumerate(wb.worksheets):
-    head = [str(c.value or "").strip() for c in ws[1][:len(HEAD)]]
-    # (the first header cell is the sheet's own, "Busi" or "Others" on some tabs: the table always heads it TERM)
-    if head[1:] != HEAD[1:]: sys.exit(f'the reference sheet\'s "{ws.title}" tab no longer heads its columns {" | ".join(HEAD[1:])}')
     # the pictures, by the cell they sit in
     pics = {}
     for n, im in enumerate(ws._images):

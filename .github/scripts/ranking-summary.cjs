@@ -32,7 +32,7 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => { window.callAIJson = async p => { window.__prompt(p); const k = ['attention', 'compliance', 'timely', 'communication', 'english', 'call', 'tools']; const o = { scores: { call: 1 }, comments: {} };
       k.forEach(x => { o.comments[x] = 'AI-' + x; }); o.trainer = 'TRAINER-SUMMARY'; o.overall = 'A steady week.'; return o; }; });
     const idle = async () => { await page.waitForTimeout(400); await page.waitForFunction(() => window.FTRankSummary && !FTRankSummary.busy(), null, { timeout: 30000 }).catch(() => fail('the summary never finished')); await page.waitForTimeout(600); };
-    await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); });
+    await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'weeklyreports'; goto('admin'); });
     await page.waitForTimeout(2000); await page.evaluate(b => FTBatchSheet.batch(b), BATCH); await page.waitForTimeout(3000);
     await page.evaluate(() => FTRanking.week(1)); await page.waitForTimeout(800);
     if (!(await page.$('#bs-ranking .rks-wrap'))) fail('📊 Weekly Ranking has no management summary');

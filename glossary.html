@@ -799,9 +799,10 @@ var TERMS = RAW.split("\n").map(function (l) {
 var area = "ALL", q = "";
 function esc(s) { return s.replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 function hl(s) {
-  s = esc(s); if (!q) return s;
-  var e = esc(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return s.replace(new RegExp("(" + e + ")", "ig"), "<mark>$1</mark>");
+  if (!q) return esc(s);
+  // (matched in the raw text, each piece escaped on its own: a match never lands inside an "&quot;" or "&amp;")
+  var re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+  return s.split(re).map(function (p, i) { return i % 2 ? "<mark>" + esc(p) + "</mark>" : esc(p); }).join("");
 }
 function letter(t) { var c = t[0].toUpperCase(); return /[A-Z]/.test(c) ? c : "#"; }
 function render() {

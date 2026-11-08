@@ -63,16 +63,26 @@ function kvOf(env) {
     }
   };
 }
+// a KV record read as JSON (null when there is none); the facilitator voice and the tracker criteria the trainer saved
+const getJSON = async (kv, k) => JSON.parse((await kv.get(k)) || "null");
+const voiceOf = async (kv) => facilitatorVoice(await getJSON(kv, "settings:feedback-style"));
+const criteriaOf = async (kv) => { const raw = await kv.get("settings:trackercriteria"); return (raw && (JSON.parse(raw).text || "").trim()) || TR.DEFAULT_CRITERIA; };
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
+// whose records a route works on (a trainee: their own; an admin: the one they name), and the 429 a trainee gets when they
+// ask again within ms of the last time (iso: when that was; an admin is never held back)
+const subjectOf = (tok, b) => tok.role === "a" ? String(b.id || "") : tok.id;
+const tooSoon = (tok, iso, ms, msg) => tok.role !== "a" && iso && Date.now() - Date.parse(iso) < ms ? json({ error: msg, code: "wait" }, 429) : null;
 const enc = new TextEncoder();
+// bytes as base64url (no padding)
+const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 /* ---------- tokens: "<role>.<subject>.<expiry>.<hmac>" ---------- */
 async function hmac(secret, msg) {
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
-  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return b64url(sig);
 }
 // The admin password: MASTER_ADMIN_PASSWORD, the LSH Training Portal's master admin password (one password signs an admin in on the Portal and on every platform).
 function adminPass(env) { return env.MASTER_ADMIN_PASSWORD || ""; }
@@ -112,13 +122,14 @@ async function makeToken(env, role, subject, hours) {
   const body = `${role}.${encodeURIComponent(subject).replace(/\./g, "%2E")}.${exp}`;
   return `${body}.${await hmac(secretOf(env), body)}`;
 }
-async function readToken(env, request) {
+// (graceMs: an expired token still counts for that long; role: only a token of that role counts)
+async function readToken(env, request, { graceMs = 0, role: only = "" } = {}) {
   const h = request.headers.get("Authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7) : "";
   const parts = t.split(".");
-  if (parts.length !== 4) return null;
+  if (parts.length !== 4 || (only && parts[0] !== only)) return null;
   const [role, subj, exp, sig] = parts;
-  if (Date.now() > Number(exp)) return null;
+  if (Date.now() > Number(exp) + graceMs) return null;
   const good = await hmac(secretOf(env), `${role}.${subj}.${exp}`);
   if (!safeEqual(good, sig)) return null;
   return { role, id: decodeURIComponent(subj) };
@@ -176,18 +187,9 @@ async function readPortalTicket(env, ticket, why = {}) {
   const full = (String(t.full || "").trim() || [first, middle, last].filter(Boolean).join(" ")).replace(/\s+/g, " ").slice(0, 120);
   return { name: `${first} ${last}`, first, last, batch, full };
 }
-// Like readToken, but an expired token still counts for a while (same signature, same trainee), so a trainee
+// A trainee's expired token still counts for a while (readToken's graceMs: same signature, same trainee), so a trainee
 // midway through the course whose 30 days run out isn't sent back to the portal in the middle of a lesson.
 const TOKEN_GRACE_MS = 60 * 24 * 3600 * 1000;
-async function readTraineeTokenGrace(env, request) {
-  const h = request.headers.get("Authorization") || "";
-  const parts = (h.startsWith("Bearer ") ? h.slice(7) : "").split(".");
-  if (parts.length !== 4 || parts[0] !== "t") return null;
-  const [role, subj, exp, sig] = parts;
-  if (Date.now() > Number(exp) + TOKEN_GRACE_MS) return null;
-  if (!safeEqual(await hmac(secretOf(env), `${role}.${subj}.${exp}`), sig)) return null;
-  return { role, id: decodeURIComponent(subj) };
-}
 
 /* ---------- 🔁 a trainee whose Batch ID was changed on the Portal ----------
    Their ID is name + batch (candidateIds), so a sign-in with the new batch would find no record and start a new, empty
@@ -244,6 +246,14 @@ function batchStartDate(batch) {
   const [mm, dd] = batchRealDay(+m[1], +m[2], +m[3]) ? [m[1], m[2]] : [m[2], m[1]];
   return `20${m[3]}-${mm}-${dd}`;
 }
+// A trainee's first training day: their batch's start, else the day they registered (PT); "" when neither is known.
+// And the weekdays from that day to today (at most max of them).
+const batchStart = (rec) => batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+function weekdaysSince(start, today, max = 120) {
+  const out = [];
+  if (start) for (let t = Date.parse(start + "T12:00:00Z"); out.length < max; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) out.push(d); }
+  return out;
+}
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
 const batchKey = (s) => slugPart(canonicalBatch(s) || s);
@@ -296,6 +306,8 @@ const BLOCK_MSG = {
   archived: "Your batch's training has ended and its records were archived. Contact your trainer if you need anything from it.",
   merged: "This account was merged into your current one. Open the program again from the LSH Training Portal."
 };
+// the 403 a blocked trainee gets (blockedIds' entry: why it is blocked)
+const blockedRes = (b) => json({ error: BLOCK_MSG[b.why] || BLOCK_MSG.offboarded, code: "access-" + (b.why || "offboarded") }, 403);
 // Clearing a batch from the platform (POST /api/batch/purge): the trainee's working records go (they are in the Drive
 // backup first). Kept for the Main Portal's 📊 Progress & Feedback and its scorecard, which read this program's records
 // from the shared KV: the trainee record (slimmed, with the scorecard snapshot), the trainer's daily feedback, the
@@ -492,6 +504,26 @@ function canRead(tok, key) {
 // a Monday, on or after the activity's own July 6, 2026; anchorsOk keeps only those of a record's anchors.
 const okAnchor = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= "2026-07-06" && (() => { const d = new Date(iso + "T00:00:00Z"); return !isNaN(d) && d.toISOString().slice(0, 10) === iso && d.getUTCDay() === 1; })();
 const anchorsOk = (a) => Object.fromEntries(Object.entries(a && typeof a === "object" && !Array.isArray(a) ? a : {}).filter(([k, v]) => /^[a-z0-9-]{1,40}$/.test(k) && okAnchor(v)));
+// A trainee's own records that are kept as sent (a plain object, at most so many characters): <kind>:<id> → [max, message]
+const PLAIN_RECORDS = {
+  // The trainee's Google Drive links (js/ft-drive.js): their Assessment and Activities Folder, Task Tracker sheet, Monitoring Sheet
+  // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
+  drive: [200000, "The links are too large to save"],
+  // LOR Drafting Activity (js/ft-lor.js): the trainee's own drafts of the two letters. The case they
+  // were assigned is in lorassign:<id>, which only admins write.
+  lor: [300000, "The drafts are too large to save"],
+  // 📄 the assessments answered on the platform (js/ft-assess.js): the trainee's own answers. The grades are the Worker's
+  // (/api/assess/grade), in trackerreview:<id>, which a trainee never writes.
+  assess: [200000, "The answers are too large to save"],
+  // Transcription Activity (js/ft-transcribe.js): the trainee's own minutes, file name, link and report-back for
+  // the two interview recordings. The trainer's score is in labreview:<id> (Trainer Inputs), which only admins write.
+  transcribe: [300000, "The minutes are too large to save"],
+  // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
+  learn: [400000, "The notes are too large to save"],
+  // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
+  // reviews are in labreview:<id>, which only admins write.
+  sessions: [400000, "The sessions record is too large to save"]
+};
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
   const id = tok.id;
@@ -560,31 +592,9 @@ async function traineeWrite(env, tok, key, value) {
     }
     await kv.put(key, JSON.stringify(incoming)); return null;
   }
-  if (key === `drive:${id}`) {
-    // The trainee's Google Drive links (js/ft-drive.js): their Assessment and Activities Folder, Task Tracker sheet, Monitoring Sheet
-    // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
-    if (value.length > 200000) return "The links are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `lor:${id}`) {
-    // LOR Drafting Activity (js/ft-lor.js): the trainee's own drafts of the two letters. The case they
-    // were assigned is in lorassign:<id>, which only admins write.
-    if (value.length > 300000) return "The drafts are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `assess:${id}`) {
-    // 📄 the assessments answered on the platform (js/ft-assess.js): the trainee's own answers. The grades are the Worker's
-    // (/api/assess/grade), in trackerreview:<id>, which a trainee never writes.
-    if (value.length > 200000) return "The answers are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `transcribe:${id}`) {
-    // Transcription Activity (js/ft-transcribe.js): the trainee's own minutes, file name, link and report-back for
-    // the two interview recordings. The trainer's score is in labreview:<id> (Trainer Inputs), which only admins write.
-    if (value.length > 300000) return "The minutes are too large to save";
+  for (const [kind, [max, msg]] of Object.entries(PLAIN_RECORDS)) {
+    if (key !== `${kind}:${id}`) continue;
+    if (value.length > max) return msg;
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }
@@ -682,24 +692,11 @@ async function traineeWrite(env, tok, key, value) {
     if (!incoming || typeof incoming !== "object" || !Array.isArray(incoming.plays)) return "Invalid record";
     await kv.put(key, value); return null;
   }
-  if (key === `learn:${id}`) {
-    // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
-    if (value.length > 400000) return "The notes are too large to save";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
   if (key.startsWith(`guide:${id}:`)) {
     // Process Guide (js/ft-process-guide.js): one guide per demo, guide:<id>:<guide id>, with its pasted
     // screenshots (shrunk in the browser). The page cleans the HTML before it shows it.
     if (!/^guide:[^:]+:[a-z0-9-]{1,40}$/.test(key)) return "Not allowed";
     if (value.length > 5000000) return "The guide is too large to save: use fewer or smaller screenshots";
-    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
-    await kv.put(key, value); return null;
-  }
-  if (key === `sessions:${id}`) {
-    // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
-    // reviews are in labreview:<id>, which only admins write.
-    if (value.length > 400000) return "The sessions record is too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }
@@ -783,9 +780,11 @@ function geminiKeyOrder(env) {
   return [...pool.slice(start), ...pool.slice(0, start), ...spare];
 }
 const GEMINI_FLASH = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"], GEMINI_LITE = "gemini-3.5-flash-lite";
-const geminiModels = (env, feature) => (feature === "chat" || feature === "tracker" || !feature   // high-volume features start on Flash-Lite
-  ? [GEMINI_LITE, ...GEMINI_FLASH]
-  : [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]).filter((v, i, a) => v && a.indexOf(v) === i);
+// grading and trainer tools (anything but the high-volume chat and tracker) get the stronger models
+const isGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
+const geminiModels = (env, feature) => (isGrading(feature)   // high-volume features start on Flash-Lite
+  ? [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]
+  : [GEMINI_LITE, ...GEMINI_FLASH]).filter((v, i, a) => v && a.indexOf(v) === i);
 
 /* Gemini refuses some regions ("User location is not supported for the API use"). The Worker is placed in
    the US (wrangler.json), but placement is best-effort: a request can still run near the trainee. A refused
@@ -822,14 +821,15 @@ export class GeminiRelay {
 // and draws from the Portal's one master key pool and one shared budget (module "standard") with the other programs, the CMS and the
 // Portal's simulators. Without the secret this Worker still uses its own GEMINI_API_KEY pool, as before.
 const gatewayOn = (env) => !!String((env && env.AI_GATEWAY_SECRET) || "").trim();
+// a message's content (a string, or a list of parts) as plain text
+const msgText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
 async function viaGateway(env, req, user) {
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
-  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: toText(m.content) }));
+  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: msgText(m.content) }));
   let r, data = null;
   try {
     r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
-      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, tier: claudeGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: msgText(req.system), messages, tier: isGrading(req.feature) ? "grading" : "chat", maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
     });
     data = await r.json().catch(() => null);
   } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
@@ -846,28 +846,33 @@ const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
 // (AI is on with a Gemini key, a Claude key, or the Portal's shared gateway alone — AI_GATEWAY_SECRET, which callGemini
 //  sends everything through first: the server-side reviews and grading run with any of the three)
 const aiOn = (env) => hasGemini(env) || claudeOn(env) || gatewayOn(env);
-const claudeGrading = (feature) => !(feature === "chat" || feature === "tracker" || !feature);
-const claudeModel = (env, feature) => String((claudeGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (claudeGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
+const claudeModel = (env, feature) => String((isGrading(feature) ? env.CLAUDE_GRADING_MODEL : env.CLAUDE_CHAT_MODEL) || "").trim() || (isGrading(feature) ? "claude-sonnet-5-5" : "claude-haiku-5-5");
 let claudeRest = 0;
+// the headers of every Claude request, and how long Claude rests after an error (a bad key, no credit, a rate limit)
+const claudeBaseHeaders = (env) => ({ "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" });
+function noteClaudeError(res, msg) {
+  if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000;
+  else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
+  else if (res.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(res.headers.get("retry-after")) || 60, 5), 600) * 1000;
+}
 async function callClaude(env, req) {
   if (claudeRest > Date.now()) return { status: 429, msg: "Claude is resting after an error" };
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   // alternating turns that start and end with the user (an opening line from the model gets a short user turn before it)
   const turns = [];
   for (const m of req.messages || []) {
-    const role = m.role === "assistant" ? "assistant" : "user", text = toText(m.content).trim();
+    const role = m.role === "assistant" ? "assistant" : "user", text = msgText(m.content).trim();
     if (!text) continue;
     const prev = turns[turns.length - 1];
     if (prev && prev.role === role) prev.content += "\n\n" + text; else turns.push({ role, content: text });
   }
   if (!turns.length || turns[0].role !== "user") turns.unshift({ role: "user", content: "(Begin.)" });
   if (turns[turns.length - 1].role !== "user") turns.push({ role: "user", content: "(Continue.)" });
-  const grading = claudeGrading(req.feature), model = claudeModel(env, req.feature);
+  const grading = isGrading(req.feature), model = claudeModel(env, req.feature);
   // max_tokens covers thinking as well as the answer, so it has room above the page's max_tokens (only what's used is billed)
   const body = { model, max_tokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, grading ? 8192 : 2048), 32000), messages: turns, output_config: { effort: grading ? "medium" : "low" } };
-  const sys = toText(req.system).trim();
+  const sys = msgText(req.system).trim();
   if (sys) body.system = sys;
-  const headers = { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" };
+  const headers = claudeBaseHeaders(env);
   // Sonnet 5.5: a request its safety classifier declines is answered by a fallback model the server picks, instead of failing
   if (model === "claude-sonnet-5-5") { headers["anthropic-beta"] = "server-side-fallback-2026-07-01"; body.fallbacks = "default"; }
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), grading ? 60000 : 20000);
@@ -876,9 +881,7 @@ async function callClaude(env, req) {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const msg = String((data.error && data.error.message) || `Claude error ${r.status}`);
-      if (r.status === 401 || r.status === 403) claudeRest = Date.now() + 600000;
-      else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
-      else if (r.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(r.headers.get("retry-after")) || 60, 5), 600) * 1000;
+      noteClaudeError(r, msg);
       return { status: r.status, msg };
     }
     if (data.stop_reason === "refusal") return { status: 502, msg: "Claude declined this request" };
@@ -906,14 +909,13 @@ async function callGemini(env, rawBody, user) {
   const keys = geminiKeyOrder(env);
   if (!keys.length && claudeFail) return json({ error: { message: (claudeFail.status === 429 ? "rate limit (Claude): " : "Claude: ") + claudeFail.msg } }, claudeFail.status === 429 ? 429 : 502);
   if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add ANTHROPIC_API_KEY (or GEMINI_API_KEY5) as a Secret in Cloudflare." }, 500);
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
-  const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
+  const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: msgText(m.content) }] }));
   const payload = {
     contents,
     // extra headroom: newer Gemini models may spend part of the budget "thinking" before answering
     generationConfig: { maxOutputTokens: Math.min(Math.max((Number(req.max_tokens) || 1024) * 2, 2048), 16384), temperature: 0.7 }
   };
-  if (req.system) payload.systemInstruction = { parts: [{ text: toText(req.system) }] };
+  if (req.system) payload.systemInstruction = { parts: [{ text: msgText(req.system) }] };
   // Google limits the 2.5 models to accounts that already used them; new projects use 3.8 Flash / 3.5 Flash-Lite.
   // Free tier: each model has its own quota. Flash-Lite allows about 500 requests a day and 15 a
   // minute; the Flash models only 20 a day and 5 a minute. So live chat (high volume) starts on
@@ -978,12 +980,7 @@ async function callGemini(env, rawBody, user) {
   return json({ error: { message: (status === 502 && /API key/i.test(last.msg) ? "invalid x-api-key (Gemini): " : status === 429 ? "rate limit (Gemini free tier): " : "") + last.msg } }, status);
 }
 
-async function listAll(env, prefix) {
-  const kv = kvOf(env);
-  const keys = []; let cursor;
-  do { const r = await kv.list({ prefix, cursor }); r.keys.forEach((k) => keys.push(k.name)); cursor = r.list_complete ? null : r.cursor; } while (cursor);
-  return keys;
-}
+const listAll = (env, prefix) => listKeys(kvOf(env), prefix);
 
 /* ---------- Daily Task Tracker: the daily check ----------
    For every approved trainee with a tracker: run the rules for the day, write a notes review
@@ -1051,7 +1048,6 @@ async function driveToken(env, write, self) {
   const asSub = !!(write && !self && env.GDRIVE_SA_SUBJECT), slot = scope + (asSub ? "|sub" : "");
   const SA_TOKEN = SA_TOKENS[slot] || { token: "", exp: 0 };
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
-  const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
   const sk = saKey(env);
   if (sk.why) throw Object.assign(new Error("drive-auth"), { detail: sk.why });
@@ -1161,7 +1157,7 @@ async function googleApiText(url, tokens) {
    the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
    else through the folder's own link (publicFolderFiles). */
 async function folderFiles(env, folderUrl) {
-  const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
+  const fid = folderId(folderUrl);
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return publicFolderFiles(fid);
   let tokens;
@@ -1214,13 +1210,16 @@ async function saveToFolder(env, folderUrl, name, bytes, mime) {
   } catch (e) { return first; }
   return saveToFolderOnce(env, fid, name, bytes, mime);
 }
+// a Drive error as "quota" (the Drive is full), "no-access" or "drive"; a name put in a Drive query, escaped
+const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
+const driveQ = (s) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 async function saveToFolderOnce(env, fid, name, bytes, mime) {
   let token;
   try { token = await writeToken(env); } catch (e) { return { error: "drive-auth" }; }
   const auth = { Authorization: "Bearer " + token }, PDF = mime || "application/pdf";
-  const q = encodeURIComponent(`'${fid}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${PDF}' and trashed = false`);
+  const q = encodeURIComponent(`'${fid}' in parents and name = '${driveQ(name)}' and mimeType = '${PDF}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
-  if (!found.ok) return { error: found.status === 404 || found.status === 403 ? "no-access" : "drive" };
+  if (!found.ok) return { error: driveErr(found) };
   const old = ((await found.json().catch(() => ({}))).files || [])[0];
   const b = "lsh" + crypto.randomUUID().replace(/-/g, ""), enc = new TextEncoder();
   const meta = old ? { name } : { name, mimeType: PDF, parents: [fid] };
@@ -1228,17 +1227,16 @@ async function saveToFolderOnce(env, fid, name, bytes, mime) {
   const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files${old ? "/" + old.id : ""}?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,createdTime,modifiedTime`,
     { method: old ? "PATCH" : "POST", headers: Object.assign({ "Content-Type": `multipart/related; boundary=${b}` }, auth), body });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: /storageQuota/i.test(JSON.stringify(j)) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive" };
+  if (!res.ok) return { error: driveErr(res, j) };
   return { ok: true, updated: !!old, file: { name: j.name || name, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view`, created: j.createdTime || "", modified: j.modifiedTime || "" } };
 }
 /* 📦 A batch's archive in the Google Drive folder the trainer gives (js/ft-batch-admin.js): a folder of its own in it, and
    files of any size (a resumable upload, so a trainee's full records with their Process Guide screenshots fit). A file of the
    same name in that folder is replaced, so saving a batch again never leaves two copies. Needs the service account with
    Editor access to the folder (Content manager on a Shared Drive); a personal My Drive also needs GDRIVE_SA_SUBJECT. */
-const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
 async function driveFolder(env, parentId, name) {
   const auth = { Authorization: "Bearer " + await writeToken(env) }, FOLDER = "application/vnd.google-apps.folder";
-  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${FOLDER}' and trashed = false`);
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${driveQ(name)}' and mimeType = '${FOLDER}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,webViewLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
   if (!found.ok) throw new Error(driveErr(found, fj));
@@ -1252,7 +1250,7 @@ async function driveFolder(env, parentId, name) {
 }
 async function driveUpload(env, parentId, name, mime, bytes) {
   const auth = { Authorization: "Bearer " + await writeToken(env) };
-  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and trashed = false`);
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${driveQ(name)}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   const fj = await found.json().catch(() => ({}));
   if (!found.ok) throw new Error(driveErr(found, fj));
@@ -1318,7 +1316,7 @@ async function checkDrive(env, id, D, o = {}) {
   const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
   if (!cur.days) cur.days = {};
-  const at = new Date().toISOString(), voice = o.voice != null ? o.voice : facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+  const at = new Date().toISOString(), voice = o.voice != null ? o.voice : await voiceOf(kv);
   const out = { id };
   if (drive.tracker && o.tracker !== false) {
     let res, review = "";
@@ -1348,19 +1346,7 @@ async function checkDrive(env, id, D, o = {}) {
     const prev = cur.monitor || {};
     let g, review = "", error = "";
     try {
-      const f = TR.googleFile(drive.monitor);
-      let text;
-      try { text = await fetchGoogle(f.exportUrl, env); }
-      catch (e0) {
-        // (a Word file (.docx) kept in Drive opens in Google Docs under a docs.google.com/document link, but has no Google Docs
-        // export: its own text is read from the file)
-        if (f.kind !== "doc" || !f.id) throw e0;
-        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
-        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
-        text = bytes ? await docxText(bytes) : "";
-        if (!String(text || "").trim()) throw e0;
-      }
-      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      const text = await driveText(env, drive.monitor);
       const set = JSON.parse((await kv.get("settings:monitor")) || "null");
       const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((t) => typeof t === "string" ? { title: t } : t);
       g = TR.gradeMonitorText(text, topics);
@@ -1380,16 +1366,7 @@ async function checkDrive(env, id, D, o = {}) {
   if (drive.tam && o.tam === true) {
     let error = "", entries = {};
     try {
-      const f = TR.googleFile(drive.tam);
-      let text;
-      try { text = await fetchGoogle(f.exportUrl, env); }
-      catch (e0) {
-        if (f.kind !== "doc" || !f.id) throw e0;
-        let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
-        let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
-        text = bytes ? await docxText(bytes) : ""; if (!String(text || "").trim()) throw e0;
-      }
-      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      const text = await driveText(env, drive.tam);
       entries = tamEntries(text, D);
     } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The TAM couldn't be read just now: grade it again in a minute."; }
     cur.tam = { entries, error, url: String(drive.tam).slice(0, 500), checkedAt: at };
@@ -1537,8 +1514,7 @@ const NAMING = {
   tracker: { batch: true, rule: "LSH Daily Task Tracker | BatchID Your Name" } };
 const ruleFor = (k, batch, name) => NAMING[k].rule.replace("BatchID", /^B\d{6}$/.test(batch) ? batch : "BatchID").replace("Your Name", name || "Your Name");
 const GENERIC = { typing: true, spelling: true, folder: true };
-const nameWords = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
-// a person's name is in a text when its words of 3 letters or more are there (two of them, or the one it has)
+const nameWords = (t) => slugPart(t).split("-").filter(Boolean);
 // a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
 const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
 const nameHits = (person, T) => pWords(person).filter((w) => T.has(w)).length;
@@ -1567,9 +1543,7 @@ async function verifyLinks(env, id) {
     if (roster) return roster;
     const suffix = id.includes("--") ? "--" + id.split("--").pop() : "";
     const keys = [];
-    if (suffix) { let cursor; do { const r = await kv.list(Object.assign({ prefix: "trainee:" }, cursor ? { cursor } : {}));
-      (r.keys || []).forEach((x) => { if (x.name.endsWith(suffix) && x.name !== `trainee:${id}`) keys.push(x.name); });
-      cursor = r.list_complete === false ? r.cursor : null; } while (cursor); }
+    if (suffix) keys.push(...(await listKeys(kv, "trainee:")).filter((n) => n.endsWith(suffix) && n !== `trainee:${id}`));
     roster = (await Promise.all(keys.slice(0, 200).map((n) => kv.get(n)))).map((v) => { try { return JSON.parse(v); } catch (e) { return null; } })
       .filter((r) => r && r.name && !r.purgedAt && !r.rejected);
     return roster;
@@ -1623,7 +1597,7 @@ async function verifyLinks(env, id) {
     if (!url) continue;
     // (✓ Mark as opening: locked for this very link)
     if (prev[k] && prev[k].ok && prev[k].v === VERIFY_V && String(prev[k].url || "").trim() === url.slice(0, 500)) { out[k] = prev[k]; seen.set(prev[k].fid || url, k); continue; }
-    const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || [])[1]);
+    const f = TR.googleFile(url), fid = K.folder ? folderId(url) : (f.id || (String(url).match(FILE_ID_RE) || [])[1]);
     let r;
     if (!fid) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : K.folder ? notFolder(K.label) : k === "tracker" ? VERIFY_WHY.sheet : k === "monitor" ? VERIFY_WHY.doc : `This isn't a file's own link. Open your ${K.label} and copy its address from the address bar.` };
     else if (k === "tracker" && f.kind !== "sheet") r = { ok: false, error: VERIFY_WHY.sheet };
@@ -1646,7 +1620,7 @@ async function verifyLinks(env, id) {
         if (!res.ok && busy && prev[k] && prev[k].url === url.slice(0, 500) && !prev[k].retry) { out[k] = prev[k]; if (prev[k].fid) seen.set(prev[k].fid, k); continue; }
         if (!res.ok && busy) r = { ok: false, error: "Google Drive was busy and didn't answer. Check again in a minute.", retry: true };
         else if (!res.ok) r = { ok: false, error: VERIFY_WHY.share(sa), why: String((j.error || {}).message || res.status).slice(0, 200) };
-        else if (K.folder && j.mimeType !== "application/vnd.google-apps.folder") r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
+        else if (K.folder && j.mimeType !== FOLDER_MIME) r = { ok: false, error: k === "folder" ? VERIFY_WHY.folder : notFolder(K.label) };
         else if (k === "tracker" && j.mimeType !== "application/vnd.google-apps.spreadsheet") r = { ok: false, error: VERIFY_WHY.sheet };
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
@@ -1749,7 +1723,9 @@ async function receiveEod(env, msg) {
    documents in the packet itself, read by the AI from the PDF (canonical names from the Document Naming Convention); the
    check (TR.checkPacket: accuracy and completeness on the Saving Intake Packet rubric) and a short feedback in the
    facilitator's voice. Kept in intakecheck:<id> (the trainee reads it; only this Worker writes it). */
-const fileIdOf = (u) => (String(u || "").match(/\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+// a Drive file id in a /file/d/, /document/d/, /spreadsheets/d/ or /presentation/d/ link
+const FILE_ID_RE = /\/(?:file|document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]{10,})/;
+const fileIdOf = (u) => (String(u || "").match(FILE_ID_RE) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
 const htmlDec = (t) => String(t || "").replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 async function driveItem(env, fid, folder) {
   if (!fid) return { ok: false };
@@ -1776,6 +1752,7 @@ async function driveItem(env, fid, folder) {
 }
 const PDF_MAX = 20e6;
 const WORD_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const FOLDER_MIME = "application/vnd.google-apps.folder";
 async function docxText(b) {
   const u16 = (o) => b[o] | (b[o + 1] << 8), u32 = (o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
   let e = -1; for (let i = b.length - 22; i >= Math.max(0, b.length - 66000); i--) if (u32(i) === 0x06054b50) { e = i; break; }
@@ -1794,6 +1771,23 @@ async function docxText(b) {
     p += 46 + nl + xl + cl;
   }
   return "";
+}
+/* A Google Doc's or Sheet's text (a Sheet's rows, one line each, its filled cells joined by spaces); the Monitoring Sheet and the TAM.
+   (a Word file (.docx) kept in Drive opens in Google Docs under a docs.google.com/document link, but has no Google Docs
+   export: its own text is read from the file) */
+async function driveText(env, url) {
+  const f = TR.googleFile(url);
+  let text;
+  try { text = await fetchGoogle(f.exportUrl, env); }
+  catch (e0) {
+    if (f.kind !== "doc" || !f.id) throw e0;
+    let tks = [null]; if (driveSA(env)) { try { tks = (await readTokens(env)).concat([null]); } catch (e1) { tks = [null]; } }
+    let bytes = null; for (const tk of tks) { bytes = await driveBytes(f.id, tk, "PK"); if (bytes) break; }
+    text = bytes ? await docxText(bytes) : "";
+    if (!String(text || "").trim()) throw e0;
+  }
+  if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+  return text;
 }
 async function driveBytes(fid, token, magic = "%PDF") {
   const tries = [];
@@ -1823,12 +1817,10 @@ async function aiReadFile(env, b64, mime, system, prompt) {
   if (claudeOn(env) && claudeRest <= Date.now()) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": String(env.ANTHROPIC_API_KEY).trim(), "anthropic-version": "2026-10-21" },
+        headers: claudeBaseHeaders(env),
         body: JSON.stringify({ model: claudeModel(env, "grading"), max_tokens: 8192, output_config: { effort: "medium" }, system, messages: [{ role: "user", content: [{ type: isPdf ? "document" : "image", source: { type: "base64", media_type: mime, data: b64 } }, { type: "text", text: prompt }] }] }) });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { const msg = String((j.error && j.error.message) || "");
-        if (res.status === 401 || res.status === 403) claudeRest = Date.now() + 600000; else if (/credit balance|billing/i.test(msg)) claudeRest = Date.now() + 3600000;
-        else if (res.status === 429) claudeRest = Date.now() + Math.min(Math.max(Number(res.headers.get("retry-after")) || 60, 5), 600) * 1000; }
+      if (!res.ok) noteClaudeError(res, String((j.error && j.error.message) || ""));
       const t = res.ok ? (j.content || []).filter((x) => x && x.type === "text").map((x) => x.text || "").join("") : "";
       if (t.trim() && j.stop_reason !== "max_tokens") return t;
     } catch (e) { /* Gemini next */ }
@@ -1848,7 +1840,7 @@ async function aiReadFile(env, b64, mime, system, prompt) {
   return "";
 }
 async function checkIntakePacket(env, id, hint = {}) {
-  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const kv = kvOf(env), get = (k) => getJSON(kv, k);
   const [rec, drive, asg, set] = await Promise.all([get(`trainee:${id}`), get(`drive:${id}`), get(`intakeassign:${id}`), get("settings:intake")]);
   if (!rec) return { error: "Missing trainee" };
   const n = Number((asg || {}).packet) || 0, pk = ((set || {}).packets || {})[n] || {};
@@ -1883,7 +1875,7 @@ async function checkIntakePacket(env, id, hint = {}) {
   // a short feedback in the facilitator's voice, from the check
   let feedback = "";
   try {
-    const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+    const voice = await voiceOf(kv);
     const lines = result.rules.map((r) => `${r.pass === null ? "PENDING" : r.pass ? "MET" : "NOT MET"}: ${r.label}${r.detail ? " — " + r.detail : ""}`).join("\n");
     feedback = await aiText(env, "You are the training facilitator of Legal Support Help giving a trainee Legal VA feedback on Day 8's Intake Packet activity (Saving Intake Packet and Extracted Intake Documents: document handling — extraction, renaming and organization —, document properties accuracy and attention to detail). Write 2–4 sentences: open with a verdict label (Excellent / Good / Good, with Improvements Needed / Needs Improvement), name exactly what is right and what to correct. Use only the facts given." + voice,
       `Trainee: ${va}\nClient: ${client || "(not given)"}\nScore: ${result.pct}%\n${lines}${docs ? `\nDocuments in the packet: ${docs.join(", ")}` : "\n(The packet's own pages couldn't be read.)"}\nExtracted files: ${((folder.files) || []).map((f) => f.name).join(", ") || "(none)"}`, 400);
@@ -1902,9 +1894,8 @@ async function runTrackerChecks(env, opts) {
   const o = opts || {};
   const D = o.date || TR.ptDate();
   if (!o.force && !TR.isWeekday(D)) return { date: D, skipped: "weekend", checked: 0 };
-  const critRaw = await kv.get("settings:trackercriteria");
-  const criteria = (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA;
-  const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+  const criteria = await criteriaOf(kv);
+  const voice = await voiceOf(kv);
   const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
   const done = [];
   // (each trainee's Assessments/Activities folder is listed once a run: the screenshots, the day's compliance and the backfill
@@ -1964,7 +1955,7 @@ async function runTrackerChecks(env, opts) {
 async function backfillCompliance(env, id, o = {}) {
   const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return 0;
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+  const start = batchStart(rec);
   if (!start) return 0;
   const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
   const want = [];
@@ -1988,10 +1979,9 @@ async function backfillCompliance(env, id, o = {}) {
    account. A file goes to the trainee of the batch whose name it carries (the most name words; a tie with another trainee
    assigns it to nobody). A link is filled in where the trainee has none, or where theirs isn't ✓ (trackerreview.verify);
    a trainee's own ✓ link is never replaced. drive:<id>.auto[k] = when it was linked this way. */
-const driveUrl = (f) => f.mimeType === "application/vnd.google-apps.folder" ? `https://drive.google.com/drive/folders/${f.id}`
+const driveUrl = (f) => f.mimeType === FOLDER_MIME ? `https://drive.google.com/drive/folders/${f.id}`
   : f.mimeType === "application/vnd.google-apps.spreadsheet" ? `https://docs.google.com/spreadsheets/d/${f.id}/edit`
   : f.mimeType === "application/vnd.google-apps.document" ? `https://docs.google.com/document/d/${f.id}/edit` : (f.webViewLink || `https://drive.google.com/file/d/${f.id}/view`);
-const FOLDER_MIME = "application/vnd.google-apps.folder";
 async function driveSearch(tokens, q, max = 3000) {
   const seen = new Map();
   for (const token of tokens) {
@@ -2100,9 +2090,8 @@ async function backtrack(env, id) {
   const kv = kvOf(env), rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return { error: "gone" };
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
-  const today = TR.ptDate(), days = [];
-  if (start) for (let t = Date.parse(start + "T12:00:00Z"); days.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) days.push(d); }
+  const start = batchStart(rec);
+  const today = TR.ptDate(), days = weekdaysSince(start, today);
   const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
   if (drive.tracker && days.length && driveSA(env)) {
     try {
@@ -2140,13 +2129,12 @@ async function backtrack(env, id) {
    Weekly Ranking's Daily Compliance and 🏅 Scores match it. The records are read once and trackerreview written once. Returns the
    number of days. */
 async function redoCompliance(env, id, ro = {}) {
-  const kv = kvOf(env), get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const kv = kvOf(env), get = (k) => getJSON(kv, k);
   const rec = await get(`trainee:${id}`);
   if (!rec) return 0;
-  const start = batchStartDate(rec.batch) || (rec.registeredAt ? TR.ptDate(new Date(rec.registeredAt)) : "");
+  const start = batchStart(rec);
   if (!start) return 0;
-  const today = TR.ptDate(), want = [];
-  for (let t = Date.parse(start + "T12:00:00Z"); want.length < 120; t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (d > today) break; if (TR.isWeekday(d)) want.push(d); }
+  const today = TR.ptDate(), want = weekdaysSince(start, today);
   if (!want.length) return 0;
   const [drive, skills, proc, tr, prog, ses, cur] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`), get(`trackerreview:${id}`)]);
   let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
@@ -2173,7 +2161,7 @@ async function redoCompliance(env, id, ro = {}) {
    sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
 async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
-  const get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const get = (k) => getJSON(kv, k);
   // (o.pre: a 🔄 Update all scores run reads the trainee's records once for all their days, and writes trackerreview once at the end)
   const pre = o.pre || null;
   // (the trainee's record, for the batch's first training day: every caller counts the day's due topics from the same day)
@@ -2516,7 +2504,7 @@ export default {
         if (kept) chosen = kept;
         else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
         const blocked = (await blockedIds(env))[chosen];
-        if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
+        if (blocked) return blockedRes(blocked);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, SESSION_HOURS), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
       if (path === "/api/auth/trainee") {
@@ -2527,7 +2515,7 @@ export default {
         if (portalOnly(env)) {
           // Trainees come in through the LSH Training Portal (/api/auth/portal). A name + batch typed here is
           // accepted only to renew the session of a trainee who is already signed in on this device.
-          const own = await readTraineeTokenGrace(env, request);
+          const own = await readToken(env, request, { graceMs: TOKEN_GRACE_MS, role: "t" });
           // (or their own account kept through a Batch ID change: its token's ID, checked against its record in traineeSession)
           if (!own || (own.id !== newId && own.id !== rawId && own.id !== legacyId && own.id !== id)) return json({ error: "portal-required" }, 403);
         }
@@ -2570,7 +2558,7 @@ export default {
         if (moved) {
           await withFull(moved.id, moved.rec);
           const blockedM = (await blockedIds(env))[moved.id];
-          if (blockedM) return json({ error: BLOCK_MSG[blockedM.why] || BLOCK_MSG.offboarded, code: "access-" + (blockedM.why || "offboarded") }, 403);
+          if (blockedM) return blockedRes(blockedM);
           return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
             name: who.name, first: who.first, last: who.last });
         }
@@ -2616,7 +2604,7 @@ export default {
             if (blocked.why === "merged") return json({ value: JSON.stringify({ id: tok.id, approved: false, mergedInto: blocked.into || "" }) });
             return json({ value: rec ? JSON.stringify(Object.assign({}, rec, { approved: false })) : null });
           }
-          return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
+          return blockedRes(blocked);
         }
       }
 
@@ -2722,7 +2710,7 @@ export default {
       if (path === "/api/auth/tool-ticket") {
         if (!portalSecret(env)) return json({ error: "not-available" }, 501);
         const signTicket = async (body) => {
-          const p = btoa(String.fromCharCode(...enc.encode(JSON.stringify(body)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+          const p = b64url(enc.encode(JSON.stringify(body)));
           return `${p}.${await hmac("portal-sso:" + portalSecret(env), p)}`;
         };
         // A trainer (an admin, or the 👁 Trainee view, which sends the admin token) opening the Knowledge Base: the same
@@ -2758,7 +2746,7 @@ export default {
       if (path === "/api/attendance/time-in") {
         if (tok.role !== "a") return json({ ok: false, error: "Trainers only" }, 403);
         const b = await request.json().catch(() => ({}));
-        return json(await setTimeIn(kvOf(env), b, tok.name || tok.id || "trainer"));
+        return json(await setTimeIn(kvOf(env), b, tok.id || "trainer"));
       }
 
       /* ---------- AI proxy (signed-in users only, so strangers can't spend your credits) ---------- */
@@ -2776,7 +2764,6 @@ export default {
         return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
       }
 
-      /* ---------- 🔗 the trainee's three Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
       // (the trainers' Gmail, team-litigation@, unless the Worker names another: EOD_INBOX)
       if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || EOD_ADDRESS).trim() });
@@ -2860,13 +2847,14 @@ export default {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         return json(await driveStatus(env));
       }
+      /* ---------- 🔗 the trainee's six Drive links, opened now (the trainee's own, at most every 20 seconds; an admin's for anyone) ---------- */
       if (path === "/api/drive/verify") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
-          if (last && last.verifyAt && Date.now() - Date.parse(last.verifyAt) < 20 * 1000) return json({ error: "Checked a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.verifyAt, 20 * 1000, "Checked a moment ago. Try again in a few seconds."); if (w) return w;
         }
         return json(await verifyLinks(env, id));
       }
@@ -2875,11 +2863,11 @@ export default {
          most every 3 minutes; an admin's for anyone): checkIntakePacket ---------- */
       if (path === "/api/intake/check") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`intakecheck:${id}`)) || "null");
-          if (last && last.selfAt && Date.now() - Date.parse(last.selfAt) < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.selfAt, 3 * 60 * 1000, "Checked a moment ago. Try again in a few minutes."); if (w) return w;
         }
         const r = await checkIntakePacket(env, id, { client: String(b.client || ""), trainer: tok.role === "a" });
         if (r.error) return json(r, 400);
@@ -2889,16 +2877,14 @@ export default {
       /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */
       if (path === "/api/drive/check") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
-          const t = last && last.selfCheckAt ? Date.parse(last.selfCheckAt) : 0;
-          if (Date.now() - t < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.selfCheckAt, 3 * 60 * 1000, "Checked a moment ago. Try again in a few minutes."); if (w) return w;
         }
-        const critRaw = await kv.get("settings:trackercriteria");
         // (a trainer's 🔄 Update on the 📋 Batch Sheet runs it for the whole batch without the AI review: ai false)
-        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
+        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), Object.assign({ criteria: await criteriaOf(kv) }, tok.role === "a" && b.ai === false ? { ai: false } : {}));
         // (and the day's compliance, with the new checks in: dailyCompliance — a training day only, never a weekend; and also for a
         // trainee with no Task Tracker or Monitoring Sheet linked, whose tests, EOD and work still count)
         const cD = b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate();
@@ -2914,14 +2900,13 @@ export default {
          trainee's own, at most once a minute; the result goes to trackerreview:<id>.items["5-7"] (trainees read it) ---------- */
       if (path === "/api/monitor/items") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         const nums = (Array.isArray(b.items) ? b.items : []).map(Number).filter(n => Number.isInteger(n) && n > 0 && n < 100).slice(0, 10);
         if (!nums.length) return json({ error: "Which items?" }, 400);
         const key = nums.join("-"), rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
         cur.items = cur.items || {};
-        const last = cur.items[key] && cur.items[key].at ? Date.parse(cur.items[key].at) : 0;
-        if (tok.role !== "a" && Date.now() - last < 60 * 1000) return json({ error: "Submitted a moment ago. Try again in a minute.", code: "wait" }, 429);
+        const w = tooSoon(tok, cur.items[key] && cur.items[key].at, 60 * 1000, "Submitted a moment ago. Try again in a minute."); if (w) return w;
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         if (!drive || !drive.monitor) return json({ error: "Link your Monitoring Sheet first: 📁 Link My Google Drive, on your 📚 Dashboard.", code: "no-link" }, 400);
         let text = "";
@@ -2934,7 +2919,7 @@ export default {
         const now = new Date(), et = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(now).map(p => [p.type, p.value]));
         const onTime = Number(et.hour) < 17, when = `${et.weekday} ${String(et.hour).padStart(2, "0")}:${et.minute} ET`;
         const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"), activity = String(b.activity || "").slice(0, 160);
-        const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+        const voice = await voiceOf(kv);
         let g = null;
         try {
           const raw = await aiText(env, "You are a training supervisor at Legal Support Help reviewing items of a trainee virtual assistant's Training Progress Monitoring Sheet. Never mention that you are an AI. Answer with JSON only." + voice,
@@ -2958,13 +2943,12 @@ export default {
          trainer). The trainee's own, at most every 30 seconds; the result goes to trackerreview:<id>.assess["<doc id>"] ---------- */
       if (path === "/api/assess/grade") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id, doc = String(b.doc || ""), K = ASSESS_KEYS[doc];
+        const id = subjectOf(tok, b), doc = String(b.doc || ""), K = ASSESS_KEYS[doc];
         if (!id) return json({ error: "Missing trainee" }, 400);
         if (!K) return json({ error: "No such assessment" }, 400);
         const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
         cur.assess = cur.assess || {};
-        const last = cur.assess[doc] && cur.assess[doc].at ? Date.parse(cur.assess[doc].at) : 0;
-        if (tok.role !== "a" && Date.now() - last < 30 * 1000) return json({ error: "Graded a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+        const w = tooSoon(tok, cur.assess[doc] && cur.assess[doc].at, 30 * 1000, "Graded a moment ago. Try again in a few seconds."); if (w) return w;
         // (an activity logged in the 🎧 Call Listening log, js/ft-listening.js: its answers are that log's, c<n>_<field>)
         let ans = {};
         if (K.source === "listening") {
@@ -2983,7 +2967,7 @@ export default {
         // its length and came back cut off, and every answer then fell to the key's pattern, ✗ when the key has none)
         let ai = false;
         if (ask.length && aiOn(env)) {
-          const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+          const voice = await voiceOf(kv);
           const chunks = []; for (let i = 0; i < ask.length; i += 10) chunks.push(ask.slice(i, i + 10));
           const got = await Promise.all(chunks.map(async (part) => {
             try {
@@ -3028,7 +3012,7 @@ export default {
         if (!ids.length) return json({ error: "Missing trainee" }, 400);
         if (tok.role !== "a") {
           const last = (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots;
-          if (last && last.checkedAt && Date.now() - Date.parse(last.checkedAt) < 60 * 1000) return json({ error: "Checked a moment ago. Try again in a minute.", code: "wait" }, 429);
+          const w = tooSoon(tok, last && last.checkedAt, 60 * 1000, "Checked a moment ago. Try again in a minute."); if (w) return w;
         }
         const results = [];
         for (const id of ids) { try { results.push((await checkShots(env, id)) || { id, error: "no-folder" }); } catch (e) { results.push({ id, error: "drive" }); } }
@@ -3039,7 +3023,7 @@ export default {
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
       if (path === "/api/drive/answers") {
         const b = await request.json().catch(() => ({}));
-        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        const id = subjectOf(tok, b);
         if (!id) return json({ error: "Missing trainee" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
@@ -3060,7 +3044,7 @@ export default {
         if (word ? magic.slice(0, 4) !== "PK\u0003\u0004" : magic !== "%PDF-") return json({ error: word ? "Not a Word file" : "Not a PDF" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
         // (no-access: the trainee is told the service account's address, to share their folder with it as Editor)
-        try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "");
+        try { const r = await saveToFolder(env, drive && drive.folder, name, bytes, word ? WORD_MIME : "");
           return json(r.error === "no-access" && env.GDRIVE_SA_EMAIL ? Object.assign({ share: shareAddr(env) }, env.GDRIVE_SA_SUBJECT && Date.now() < SUB_DOWN.until ? { sub: false } : {}, r) : r); } catch (e) { return json({ error: "drive" }); }
       }
 

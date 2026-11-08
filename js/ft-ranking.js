@@ -136,7 +136,7 @@ function save(){
   paintSaved();
 }
 function paintSaved(){ const el = document.getElementById("rkSaved"); if(el) el.textContent = R.saved ? "✓ Saved" : "Saving…"; }
-const rerender = () => { if(state.view === "admin" && (state.adminTab === "ranking" || state.adminTab === "batchsheet")) render(); };
+const rerender = () => { if(state.view === "admin" && (state.adminTab === "ranking" || state.adminTab === "batchsheet" || state.adminTab === "weeklyreports")) render(); };
 
 /* ---------- ⤓ fill the empty cells from what the platform already graded ---------- */
 // the Scorecard's sources (js/ft-program.js) give every trainee's graded items; a column's src picks one:
@@ -730,7 +730,7 @@ window.FTRanking = {
   // 📋 the Batch Sheet shows the report under its 📅 Day 1–16 scores, for the batch it shows (its own batch picker hidden there)
   embed(batch){ if(batch && R.batch !== batch){ R.batch = batch; R.key = ""; R.data = null; R.edit = false; if(!R.weekSet) R.week = weekNow(); } return renderRanking(); },
   // (the report is the Batch Sheet's batch: picking one moves the sheet too)
-  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); if(window.FTBatchSheet && state.adminTab === "batchsheet") FTBatchSheet.batch(b); else render(); },
+  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); if(window.FTBatchSheet && (state.adminTab === "batchsheet" || state.adminTab === "weeklyreports")) FTBatchSheet.batch(b); else render(); },
   approve(){ if(!R.data || !R.data.auto) return; R.data.auto.approved = true; R.data.auto.approvedAt = new Date().toISOString(); save(); toast("✓ Approved: you can 📤 share it with the trainees now."); render(); },
   // opened on a batch's week from elsewhere (📈 Overall Performance, the trainer's dashboard card)
   open(batch, week){ if(batch) R.batch = batch; if(week){ R.week = Number(week); R.weekSet = true; } R.key = ""; R.data = null; toRanking(batch); },
@@ -807,7 +807,7 @@ window.FTRanking = {
 /* 📊 no tab of its own: the report is in 📋 Batch Sheet, under 📅 Day 1–16: Detailed Scores (FTRanking.embed). An old link,
    a saved tab or FTRanking.open lands there, on the report, for the batch asked for. */
 function toRanking(batch){
-  state.adminTab = "batchsheet";
+  state.adminTab = "weeklyreports";
   if(batch && window.FTBatchSheet && state.isAdmin) FTBatchSheet.batch(batch);
   if(state.view !== "admin") goto("admin"); else render();
   let n = 0; const t = setInterval(() => { const el = document.getElementById("bs-ranking"); if(el || ++n > 40){ clearInterval(t); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); } }, 250);
