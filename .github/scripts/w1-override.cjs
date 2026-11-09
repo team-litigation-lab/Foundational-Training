@@ -42,7 +42,8 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(1500);
     // (the records seeded once the sign-ins' own background checks are done, then the sheet read again)
     await page.waitForTimeout(3000);
-    const SEED = { days: {}, compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-09': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
+    // (Week 2's day is checked at the end of the shift, final: a day not over yet — today's — doesn't count until it is, index.html ftDay1)
+    const SEED = { days: {}, compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-09': { v: 2, final: true, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
     for (const id of Object.values(ids)) await put('trackerreview:' + id, SEED);
     const sheet = async (b, name) => {
       await page.evaluate(b => { FTBatchSheet.batch(b); FTBatchSheet.refresh(); }, b);
