@@ -473,8 +473,9 @@ function grid(){
           if(s.k === "ai"){ const w = window.FTRankSummary && FTRankSummary.weekSummary ? FTRankSummary.weekSummary(p.id) : {text: ""};
             return `<td class="xl-td xl-aisum${w.ai ? "" : " is-plain"}" tabindex="0" ${at} ${ev} title="${e(w.text || "")}"><div class="xl-clip">${w.text ? e(w.text) : `<span class="xl-wait">${w.state === "busy" ? "🤖 Summarizing the week…" : "🤖 Summarized when the week’s summary is ready (📑 above)"}</span>`}</div></td>`; }
           if(s.k === "name") return `<td class="xl-frz xl-name" tabindex="0" ${at} ${ev}>${e(p.name)}</td>`;
+          // (no placeholder text in a remark: an empty week — no compliance report yet — reads empty, not as if it were remarked)
           if(s.k === "notes"){ const cell = r.cells[s.c.id] || {};
-            return `<td class="xl-td"><textarea class="xl-in xl-txt" rows="2" ${at} data-c="${s.c.id}" ${ev} placeholder="Complete / Complied; however, lacking … (dates)" onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'note', this.value)">${e(cell.note || "")}</textarea></td>`; }
+            return `<td class="xl-td"><textarea class="xl-in xl-txt" rows="2" ${at} data-c="${s.c.id}" ${ev} onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'note', this.value)">${e(cell.note || "")}</textarea></td>`; }
           if(s.k === "mark5" || s.k === "raw"){ const cell = r.cells[s.c.id] || {};
             return `<td class="xl-td${cell.note ? " has-note" : ""}${cell.auto ? " is-auto" : ""} ${toneCls(mark(s.c, cell))}" data-cell="${e(p.id)}|${s.c.id}" data-tip="${e(tipOf(s.c, cell, p))}"><input class="xl-in xl-num" inputmode="decimal" ${at} data-c="${s.c.id}" ${ev} value="${e(cell.raw == null ? "" : cell.raw)}" onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'raw', this.value)"></td>`; }
           if(s.k === "calc"){ const m = mark(s.c, r.cells[s.c.id]);
