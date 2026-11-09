@@ -3418,15 +3418,17 @@ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-templat
 main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
 /* (the metrics on a deck slide, read only: one table, read large; its "Score" header on one line) */
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1100px;margin:0 auto;font-size:18px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:7px 10px;white-space:nowrap;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:110px !important;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:3px 12px !important;line-height:1.2 !important;font-size:17px;}
-/* (a slide that is the metrics alone, data-big: the scorecard across more of the slide, its text larger) */
+/* (larger: the table across the slide, up to 1300px, its text and rows bigger — read from the back of the room) */
+main.main-ftdd .ftdd-sheet > .ftdd-score{align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){width:100%;max-width:1300px;margin:0 auto;font-size:22px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:9px 16px;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:150px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:7px 16px !important;line-height:1.3 !important;font-size:22px !important;}
+/* (a slide that is the metrics alone, data-big: larger still) */
 main.main-ftdd .ftdd-sheet > .ftdd-score.ftdd-score-big{align-self:stretch;width:100%;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1300px;font-size:22px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:6px 16px !important;font-size:21px !important;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:140px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1400px;font-size:25px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:9px 18px !important;font-size:25px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:170px !important;}
 /* (Day 9's metrics with the practice links beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
