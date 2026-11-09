@@ -24,5 +24,10 @@ ck(h && JSON.stringify(h.tracker.noteDates) === '["2026-11-02"]' && h.tracker.ro
 // the Monitoring Sheet's entries by their date, in any form
 const mon = TR.gradeMonitorText('Virtual Assistant Essentials - Day 1\nDate: Friday, October 30, 2026\nTakeaways\n1. one two three four\nVirtual Assistant Essentials - Day 2\nDate - 11/2\n', TR.MONITOR_TOPICS);
 ck(JSON.stringify(mon.entries.map(e => e.date)) === JSON.stringify(['2026-10-30', TR.ptDate().slice(0, 4) + '-11-02']), `the Monitoring Sheet's entries aren't dated: ${JSON.stringify(mon.entries.map(e => e.date))}`);
+// a tracker still on the template's own dates (December 2022) on a 2026 day: the check says so, and how to fix it
+const old = TR.fromSheetCsv(['Type of Task,Task Details,Accountable VA,"Wednesday, December 14, 2022","Thursday, December 15, 2022",VA Notes,Status', 'LSH-TRAINING,Typing Test,Ana,,,,Ongoing'].join('\n'), { today: '2026-10-30' });
+const od = TR.checkDay(Object.assign(old, { startDate: '2026-10-26' }), '2026-10-30').rules.find(r => r.id === 'daily-notes');
+ck(od && /12\/14\/2022 to 12\/15\/2022: the template's own dates/.test(od.detail) && /10\/30\/2026/.test(od.detail), `old template dates aren't pointed out: ${JSON.stringify(od)}`);
+ck(TR.staleDates(['2026-10-29'], '2026-10-30') === '', 'a tracker on the training\'s own dates was called stale');
 if (fails.length) { console.log('FAIL\n- ' + fails.join('\n- ')); process.exit(1); }
 console.log('Tracker dates test passed (a day\'s inputs read for that day: the Daily Notes dated in any form, in the heading or under it; the Monitoring Sheet\'s entries by their Date: line).');
