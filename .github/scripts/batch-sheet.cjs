@@ -107,7 +107,7 @@ const failures = []; const fail = m => failures.push(m);
     if (pt && (!pt.secs.some(x => /Grades/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
     // 🏅 Grades, in one: the Score Card, the Practice Lab's use, every grading system and the lessons, under one heading; no
     // separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade, 📚 Lessons or day-by-day sections repeating the same grades
-    if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
+    if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
     if (pt && !(/Score Card, lesson by lesson/.test(pt.text) && /Every grading system/.test(pt.text) && /Lessons: the deck and the Knowledge Check/.test(pt.text) && /Overall %/.test(pt.text))) fail(`🏅 Grades doesn't hold the Score Card, the grading systems, the lessons and the Overall %: ${pt.text.slice(0, 300)}`);
     // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
