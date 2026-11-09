@@ -464,13 +464,14 @@ function dayDeliverables(p, d){
   const later = k => L[k] != null && L[k] !== d.day ? L[k] : null;
   list.forEach(x => {
     const it = x.it, lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
-    if(lk){ out.push({name: it.t, pct: null, status: `Scored on Day ${lk}`, why: `Its score is on Day ${lk}, the last day it runs.`, best: [], improve: [], by: ""}); return; }
+    if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ out.push(trainerCtx(acts[it.id], it.t)); return; }
     if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ out.push(c); return; } }
     if(it.assess){ const c = assessCtx(R, it); if(c){ out.push(c); return; } }
+    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ out.push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ out.push(...cs); return; }
-      if(ls.length && !here_.length){ const n = later("kc|" + ls[0]); out.push({name: it.t, pct: null, status: `Scored on Day ${n}`, why: `The Knowledge Check's score is on Day ${n}, the last day it runs.`, best: [], improve: [], by: ""}); return; } }
+      if(ls.length && !here_.length) return; }
     out.push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
   });
   // 📒 the day's Monitoring Sheet update, graded on Submit (js/ft-buffer.js ACTS[…].submit, trackerreview:<id>.items)
@@ -529,8 +530,8 @@ function rankingHtml(){
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `${sw}<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
-  return `${sw}<section class="bs-sec bs-rank" id="bs-ranking">${FTRankSummary.html()}
-    <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
+  // (the marks sheet under the report, always shown: no fold line over it)
+  return `${sw}<section class="bs-sec bs-rank" id="bs-ranking">${FTRankSummary.html()}<div class="bs-rank-sheet">${sheet}</div></section>`;
 }
 /* ============================================================
    🏅 THE SIMPLIFIED SCORECARD: what the Batch Sheet opens on (the facilitator's own sheet)
@@ -854,7 +855,8 @@ function sectionsHtml(T){
   // (📊 Weekly Reports: the Weekly Ranking alone; the Batch Sheet without it — a trainee's page keeps their own report)
   if(weeklyOn()) return rankingHtml();
   // (🔗 Drive Links: the Drive links alone)
-  if(linksOn()) return driveBanner() + shareBanner() + one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "");
+  // (🔗 Drive Links: the sheet first, Google Drive's connection and the trainees with link issues at the bottom)
+  if(linksOn()) return one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "") + driveBanner() + shareBanner();
   // (the trainee's 📋 My Progress: everything as before, their own Drive links and report included)
   if(meOn()) return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
@@ -896,8 +898,8 @@ function everyGradeHtml(p, bare){
   const out = rows.map(r => `<tr class="bs-pt-sub"><td class="bs-pt-m">${e(`${r.s.icon || ""} ${r.s.label}`.trim())}</td><td class="bs-pt-v ${e(tone(r.avg))}">${r.avg != null ? r.avg + "%" : "—"}</td><td class="bs-pt-f">${r.avg != null ? `Average of ${r.graded} grade${r.graded === 1 ? "" : "s"}` : "Nothing graded yet"}</td></tr>`
     + r.items.map(it => { const v = typeof it.pct === "number" && isFinite(it.pct) ? Math.round(it.pct) : null;
       return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(it.name))}</td><td class="bs-pt-v ${e(tone(v))}">${v != null ? v + "%" : "—"}</td><td class="bs-pt-f">${e(stripTags(it.note || ""))}${it.at ? ` <small>${e(String(it.at).slice(0, 10))}</small>` : ""}</td></tr>`; }).join("")).join("");
-  const btns = REVIEW.map(([tab, label]) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.review('${tab}')">${label}</button>`).join("");
-  return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}<tr><td colspan="3" class="bs-pt-rv">${btns}</td></tr>`;
+  // (📅 / 🟢 / 🎧 Review: buttons in 🛡 Admin Master Control now, not in each trainee's grades)
+  return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}`;
 }
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
 function matrixOf(x){
@@ -946,10 +948,9 @@ function perTraineeHtml(T){
     const part = (t, rows) => rows ? sub(t) + rows : "";
     const grades = `<tr class="bs-pt-sec"><th colspan="3">🏅 Grades</th></tr>`
       + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average|feedback \(day by day\)/i.test(h))   // (the grading systems: below, with their grades)
-      + part("🏅 Score Card, lesson by lesson", rowsOf(byId("scorecard")))
-      + part("🛠 Practice Lab", rowsOf(byId("practice"), h => /^(Tools used|Attempts|Last practice)$/.test(h) || /Practice tools|Roleplays/.test(h)))
-      + part("🔎 Every grading system, and each of its grades", everyGradeHtml(p, true))
-      + part("📚 Lessons: the deck and the Knowledge Check, with their dates", rowsOf(byId("lessons")));
+      // (every grading system with each of its grades, in the same 🏅 Grades list; no lesson-by-lesson Score Card, Practice Lab
+      // or Lessons here: the lessons and decks are in Compliance and Platform Utilization Monitoring)
+      + everyGradeHtml(p, true);
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
     // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
@@ -960,7 +961,7 @@ function perTraineeHtml(T){
       + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t]) => `<span class="bs-pt-k ${e(t)}">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
-      <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
+      <div class="bs-pt-wrap"><table class="bs-pt-t"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${body}</tbody></table>
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
           : `<button type="button" class="btn btn-navy btn-sm bs-pt-fbb" onclick="FTBatchSheet.fbOpen('${e(p.id)}')">📝 Send Feedback to ${e(p.name)}</button>`) : ""}</div></div>`;
   }).join("")}</div>`;
@@ -1131,7 +1132,10 @@ const KINDS = [["kc", "✍️ Knowledge Checks"], ["practice", "🛠 Practice"],
 const kindOf = it => it.at === "tool" && it.id === "process" ? "kc" : it.at === "trainer" || /Mock call|Demo/i.test(it.kind || "") ? "mock" : it.at === "session" || it.at === "tool" || it.assess ? "practice" : "class";
 const DAILY_T = /^(Typing Test \(morning|Spelling Test \(once a day\)|Free Communication Upskill)/;
 const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
-const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t));
+// (not on the scorecards: the classroom lessons and discussions, the buffer times and Mock Call Preparation — nothing is
+// scored there — and the daily tests, which have their own compliance)
+const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation/i.test(it.t || "");
+const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
 function autoDone(R, d, it, p){
@@ -1144,6 +1148,7 @@ function autoDone(R, d, it, p){
     return {done: a.status === "Passed" || a.score != null || !!a.status, how: `Trainer: ${a.status || "recorded"}${a.score != null ? ` · ${a.score}%` : ""}`}; }
   // 📝 done once submitted for grading; until then the trainer's tick still counts (the worksheet, handed in on Drive)
   if(it.assess){ const g = assessOf(R, it); return g && g.at ? {done: true, how: `Submitted for grading ${g.when || when(g.at)}`} : null; }
+  if(it.at === "drive"){ const g = gradeByName(R, it); return g ? {done: true, how: `Graded ${g.pct}%`} : null; }
   if(it.at !== "tool") return null;
   switch(it.id){
     case "process": { const ls = d.lessons || []; if(!ls.length) return null; const ok = ls.every(l => dp[l] && dp[l].done);
@@ -1169,7 +1174,16 @@ const numOr = v => v != null && v !== "" && isFinite(Number(v)) ? Math.max(0, Ma
 // js/ft-listening.js) — not graded is no score, never a 0
 const assessOf = (R, it) => ((((R.src || {})["trackerreview:"] || {}).assess) || {})[it.assess] || null;
 const gradePct = g => g && g.score != null && !(window.ftStaleGrade && ftStaleGrade(g)) ? numOr(g.pct) : null;
+// 📝 an assessment handed in on Drive (the day's "… — Assessment", at: "drive") by its grade on the 🏅 Scorecard: the grading
+// system's item of the same name (– or — alike), so the day shows its score as the grades list does
+const normName = t => String(t || "").replace(/^[^A-Za-z0-9]+/, "").replace(/[–—-]+/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
+function gradeByName(R, it){
+  const sc = R.score; if(!sc || !Array.isArray(sc.rows)) return null; const want = normName(it.t);
+  for(const r of sc.rows) for(const x of (r.items || [])) if(typeof x.pct === "number" && isFinite(x.pct) && normName(stripTags(x.name)) === want) return {pct: Math.round(x.pct), how: stripTags(x.note || "Graded")};
+  return null;
+}
 function scoreOf(R, d, it, p){
+  if(it.at === "drive"){ const g = gradeByName(R, it); if(g) return g; }
   const src = R.src || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   if(it.at === "session"){
     const runs = ((src["sessions:"] || {}).runs) || {}, rv = ((src["labreview:"] || {}).sessions) || {};
@@ -1216,7 +1230,10 @@ function daysTable(){
         {v: `${full} / ${D.length}`, f: `${full} of the ${D.length} days with every activity done`, cls: "gs-num gs-bold"}]
         .concat(KINDS.map(([k, label]) => { const xs = kind(k), n = xs.filter(y => y.done).length, left = xs.filter(y => !y.done), sl = scoreLine(xs);
           return {v: sl.avg != null ? pct(sl.avg) : n ? `${n} / ${xs.length} done` : "", f: `${label}, Days 1–${D.length}: ${sl.avg != null ? `average ${sl.avg}% of ${sl.n} scored (${sl.why}). ` : "nothing scored yet. "}${n} of ${xs.length} done${left.length ? ". Still to do: " + left.slice(0, 6).map(y => y.it.t).join("; ") + (left.length > 6 ? "…" : "") : ""}`,
-            cls: "bs-lesson " + (sl.avg != null ? tone(sl.avg) : xs.length && n === xs.length ? "gs-hi" : n ? "gs-mid" : "")}; }),
+            cls: "bs-lesson " + (sl.avg != null ? tone(sl.avg) : xs.length && n === xs.length ? "gs-hi" : n ? "gs-mid" : ""),
+            // (in the trainee's table, a table: each activity, its score or Done / Not yet, and how it was found)
+            parts: xs.map(y => ({name: y.it.t, v: y.score ? y.score.pct + "%" : y.done ? "Done" : "Not yet", tone: y.score ? tone(y.score.pct) : y.done ? "gs-hi" : "gs-lo",
+              text: y.score ? y.score.how || "" : y.manual ? "Ticked done by the trainer" : (y.auto && y.auto.how) || ""}))}; }),
           D.map((d, i) => { const x = st[i], n = x.filter(y => y.done).length, done = x.length && n === x.length, sl = scoreLine(x);
           const left = x.filter(y => !y.done).map(y => y.it.t);
           return {v: sl.avg != null ? `${done ? "✓ " : ""}${sl.avg}%` : n ? `${done ? "✓ " : ""}${n}/${x.length} done` : "",
@@ -1426,7 +1443,7 @@ ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `U
     ${dupHtml()}
     ${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
-    <p class="sc-how bs-how">Nothing to set up: this page reads what the platform already records. New trainees appear as soon as they register. Point at a cell to see what it means. ⬇ Download saves all ten tables as one file that opens in Google Sheets or Excel.</p></div>`;
+   </div>`;
 }
 
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
@@ -2057,7 +2074,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t thead th:nth-child(1){width:24%;} .bs-pt-t thead th:nth-child(2){width:13%;}
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:26%;} .bs-pt-t col.bs-pt-c2{width:120px;}   /* (the Score column only as wide as a score) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */

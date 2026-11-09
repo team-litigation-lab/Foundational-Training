@@ -193,24 +193,12 @@ async function workerChecks() {
   await page.evaluate(b => FTSessionsAdmin.batch(b), BATCH); await page.waitForTimeout(600);
   await page.evaluate(id => FTInputs.cell(id, 'calendar-live'), id); await page.waitForTimeout(1800);
 
-  // ✍️ Writing skills (js/ft-writing.js): the scorecard ends with the Writing criterion, and under it the check of the
-  // trainee's pasted writing suggests a score that ⤓ Use this score puts in (the AI answer is stubbed: no AI on the test server)
-  const wIdx = await page.evaluate(() => FT_RUBRICS.writingIndex(FT_RUBRICS.list.calendar));
-  if (wIdx !== (await page.evaluate(() => FT_RUBRICS.list.calendar.criteria.length)) - 1) fail('the Writing criterion is not the scorecard\'s last');
-  if (!(await page.$('.wr-assist textarea'))) fail('Trainer Inputs has no ✍️ writing check under the scorecard');
-  if (!(await page.$('.cr-assist'))) fail('the writing check replaced the booking rule check');
-  let asked = '';
-  await page.evaluate(() => { window.__ai = window.callAIJson; window.callAIJson = async p => { window.__asked = p; return { score: 3.7, grammar: ['"he dont" → "he doesn\'t"'], spelling: ['"HIPPA" → "HIPAA"'], format: [], summary: 'Clear but with slips.' }; }; });
-  await page.fill('.wr-assist textarea', 'Client called, he dont have the HIPPA form yet. Booked the deposition for 11/05/2026 at 10 AM.');
-  await page.click('.wr-assist .wr-act button'); await page.waitForTimeout(800);
-  asked = await page.evaluate(() => window.__asked || '');
-  if (!/GRAMMAR[\s\S]*SPELLING[\s\S]*FORMAT/.test(asked) || !/HIPPA form/.test(asked)) fail('the writing check didn\'t send the trainee\'s text for grammar, spelling and format');
-  const wout = await page.evaluate(() => (document.querySelector('.wr-out') || {}).innerText || '');
-  if (!/Suggested: 3\.5\/5/.test(wout) || !/HIPAA/.test(wout) || !/doesn/.test(wout)) fail(`the writing check's findings aren't shown (half points): ${wout}`);
-  await page.click('.wr-out button'); await page.waitForTimeout(300);
-  if ((await page.inputValue(`.ti-rub-tbl input[data-crit="${wIdx}"]`)) !== '3.5') fail('⤓ Use this score didn\'t fill the Writing criterion');
-  if (!/HIPAA/.test(await page.inputValue(`.ti-rub-tbl input[data-fb="${wIdx}"]`))) fail('the Writing criterion\'s Remarks don\'t carry the findings');
-  await page.evaluate(() => { window.callAIJson = window.__ai; });
+  // 🛠 the scorecard ends with Tools Utilization (it was ✍️ Writing: Grammar, Spelling & Format), and no manual writing
+  // check under it any more; the booking rule check stays
+  const crit = await page.evaluate(() => FT_RUBRICS.list.calendar.criteria.map(c => c.n));
+  if (crit[crit.length - 1] !== 'Tools Utilization') fail(`the calendaring scorecard doesn't end with Tools Utilization: ${crit[crit.length - 1]}`);
+  if (await page.$('.wr-assist')) fail('the manual ✍️ writing check is still under the scorecard');
+  if (!(await page.$('.cr-assist'))) fail('the booking rule check is gone');
 
   await put('calrules:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);

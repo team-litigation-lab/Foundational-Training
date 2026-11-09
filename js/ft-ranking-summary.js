@@ -203,7 +203,7 @@ function reportHtml(forDoc, V){
   return `<div class="rks${forDoc ? " rks-doc" : ""}">
     <div class="rks-head"><div><p class="rks-k">Legal Support Help · Foundational Training</p><h2>${V ? "My Weekly Progress Report" : "Weekly Progress Report"}</h2>
       <p class="rks-sub">Batch <b>${e(c.batch)}</b> · Week <b>${e(c.week)}</b>${d && d.range ? ` · ${e(fmtR(d.range))}` : ""}</p></div>
-      <div class="rks-legend">${["ex", "gd", "ok", "lo"].map(t => `<span><i class="rks-${t}"></i>${LBL[t]}</span>`).join("")}<small>Scores out of 5</small></div></div>
+      <div class="rks-legend">${["ex", "gd", "ok", "lo"].map(t => `<span><i class="rks-${t}"></i>${LBL[t]}</span>`).join("")}<small>Scores out of 5</small></div>${!forDoc && !V && S.acts ? `<div class="rks-head-acts">${S.acts}</div>` : ""}</div>
     <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th>${one ? `<th class="rks-sumh">Summary & trainer’s feedback</th>` : ""}</tr></thead>
       <tbody>${rows.map(r => `<tr><td class="rks-rank">${r.rank || "—"}</td><td class="rks-name"><b>${e(r.name)}</b></td>${COMP.map(([k]) => `<td${one && r.comments[k] ? ` title="${e(r.comments[k])}"` : ""}>${chip(r.scores[k])}</td>`).join("")}<td>${chip(r.overall)} <small class="rks-lbl">${LBL[tone(r.overall)]}</small></td>${one ? `<td class="rks-sum">${r.overallComment ? `<p>${e(r.overallComment)}</p>` : ""}${r.trainer ? `<p class="rks-sum-fb"><b>🧑‍🏫</b> ${e(r.trainer)}</p>` : ""}</td>` : ""}</tr>`).join("")}</tbody></table>
     ${one ? "" : rows.map(r => {
@@ -216,7 +216,7 @@ function reportHtml(forDoc, V){
       <div class="rks-grid">${COMP.map(([k, ic, n]) => `<div class="rks-comp"><div class="rks-comp-h"><span>${ic} ${e(n)}</span>${ed ? `<input type="number" min="0" max="5" step="0.1" value="${r.scores[k] == null ? "" : r.scores[k]}" onchange="FTRankSummary.set('${e(r.id)}','score','${k}',this.value)">` : chip(r.scores[k])}</div>${bar(r.scores[k])}
         ${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','comment','${k}',this.value)">${e(r.comments[k] || "")}</textarea>` : `<p>${e(r.comments[k] || "")}</p>`}</div>`).join("")}</div>
       <div class="rks-fb"><b>🧑‍🏫 Feedback from the trainer</b>${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','trainer','',this.value)">${e(r.trainer || "")}</textarea>` : `<p>${e(r.trainer || "")}</p>`}</div>${forDoc ? "</section>" : "</details>"}`; }).join("")}
-    ${d ? `<p class="rks-foot">${V ? "Shared with you" : "Prepared"} ${e(new Date(d.at).toLocaleString())} from the platform's records of the week${d.ai ? ", summarized in the facilitator's voice" : ""}.</p>` : ""}</div>`;
+    ${d && (V || forDoc) ? `<p class="rks-foot">${V ? "Shared with you" : "Prepared"} ${e(new Date(d.at).toLocaleString())} from the platform's records of the week${d.ai ? ", summarized in the facilitator's voice" : ""}.</p>` : ""}</div>`;
 }
 const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,#1E2340,#33406B);color:#fff;margin:0 0 12px;}
@@ -227,9 +227,9 @@ const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks-tbl th small{font-size:14px;font-weight:900;color:#1E2340;}
 /* (a heading breaks between words, never inside one: "Rank", "Compliance" stay whole) */
 .rks-tbl th,.rks-tbl th small{word-break:normal !important;overflow-wrap:normal !important;hyphens:none !important;} .rks-tbl thead th:first-child{white-space:nowrap;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
-.rks-tbl .rks-sumh{text-align:left;min-width:320px;} .rks-tbl .rks-sum{text-align:left;font-size:14px;font-weight:600;line-height:1.45;color:#2B3040;max-width:520px;} .rks-sum p{margin:0 0 4px;} .rks-sum-fb{color:#14532D;}
+.rks-tbl .rks-sumh{text-align:left;min-width:480px;width:40%;} .rks-tbl .rks-sum{text-align:left;font-size:14.5px;font-weight:600;line-height:1.45;color:#2B3040;min-width:480px;} .rks-sum p{margin:0 0 4px;} .rks-sum-fb{color:#14532D;}
 .rks-tbl td[title]{cursor:help;}
-.rks-chip{display:inline-block;min-width:52px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:19px;} .rks-lbl{color:#5F6368;}
+.rks-chip{display:inline-block;min-width:36px;padding:3px 6px;border-radius:8px;font-weight:900;font-size:15px;} .rks-lbl{color:#5F6368;}
 /* (the Weekly Ranking's colours: 🔵 high, 🟢 good, 🟡 critical, 🔴 fail) */
 .rks-ex{background:#CFE0FF;color:#0A3A9E;} .rks-gd{background:#CDEFD8;color:#0F5A2A;} .rks-ok{background:#FFE9A3;color:#6B4A00;} .rks-lo{background:#FBCFCB;color:#A0150C;} .rks-na{background:#ECEEF2;color:#5F6368;}
 .rks-legend .rks-ex,.rks-legend .rks-gd,.rks-legend .rks-ok,.rks-legend .rks-lo{border:1px solid #fff;}
@@ -247,6 +247,9 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-fb{margin:10px 0 0;padding:9px 11px;border-left:4px solid #DB8437;background:#FFF8EF;border-radius:8px;font-size:14px;} .rks-fb p{margin:4px 0 0;line-height:1.5;}
 .rks textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13.5px;margin-top:6px;padding:6px 8px;border:1px solid #C9D1E0;border-radius:8px;} .rks input[type=number]{width:64px;font:inherit;padding:2px 4px;}
 .rks-foot{color:#80868B;font-size:12px;margin:6px 0 0;}
+.rks-head-acts{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
+.rks-head-acts .btn-ghost{background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.45) !important;color:#fff !important;}
+.rks-head-acts .btn-navy{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;} .rks-head-acts select{font-weight:800;}
 .rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
 /* ---------- on the page: above the marks sheet, in 📊 Weekly Ranking ---------- */
@@ -259,8 +262,11 @@ window.FTRankSummary = {
     if(!S.loading && S.key === k && !S.data && !S.busy && !(S.tried || {})[k] && (c.people || []).length && c.range && c.range[0] <= new Date().toISOString().slice(0, 10)){
       (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     const d = S.data;
-    return `<div class="rks-wrap"><div class="rks-bar-acts"><select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
-        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}</div>
+    // (the week and the report's buttons sit in its blue banner once there is a report; before it, on their own line)
+    const acts = `<select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
+        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}`;
+    S.acts = d && !S.loading ? acts : "";
+    return `<div class="rks-wrap">${S.acts ? "" : `<div class="rks-bar-acts">${acts}</div>`}
       ${S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line

@@ -191,7 +191,8 @@ function mcaseHtml(el){
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
   if(!freshAdmin()) return "";
   const c = callById(((AD.recs || {})[id] || {}).call);
-  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">🎬 No demo case for this trainee yet: it comes with their packet, <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
+  // (no case yet: nothing over the scoresheet — the case comes with the trainee's packet, 📦 Intake Packets)
+  return c ? trainerCase(c, "") : "";
 }
 const btn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 // (a button, not a viewer link: the deck draws a link in a slide as a tile)

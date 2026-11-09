@@ -133,10 +133,11 @@ async function workerChecks() {
     await page.fill('.fms-cmt textarea', 'Good, with improvements needed.');
     await page.fill('.fms-fac', 'Coach Ana Reyes');
     // (the Result follows the score: 4/5 is over the passing 3/5)
-    if (await page.inputValue('.fms-pick [data-ms-status]') !== 'Passed') fail(`4/5 didn't set the Result to Passed: ${await page.inputValue('.fms-pick [data-ms-status]')}`);
+    if (await page.$('[data-ms-status]')) fail('the Graders still has a Result picker');
+    if (await page.evaluate(() => FTMockScores.status()) !== 'Passed') fail(`4/5 didn't set the Result to Passed: ${await page.evaluate(() => FTMockScores.status())}`);
     await page.fill('.fms-tbl tbody tr:nth-child(1) input[type=number]', '1');
     for (let i = 1; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '2');
-    if (await page.inputValue('.fms-pick [data-ms-status]') !== 'Redo') fail('under 3/5 didn\'t set the Result to Redo');
+    if (await page.evaluate(() => FTMockScores.status()) !== 'Redo') fail('under 3/5 didn\'t set the Result to Redo');
     for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '4');
     const avg = await text('.fms-tbl [data-avg]'), sc = await page.inputValue('.fms-sheet [data-score]');
     if (avg !== '4.00/5' || sc !== '80') fail(`the average and the score don't follow the scores: ${avg} ${sc}`);
