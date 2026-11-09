@@ -1908,6 +1908,7 @@ body.bs-wide main{max-width:none !important;padding-left:6px;padding-right:6px;}
 body.bs-wide .ft-admin-screen{padding-left:10px;padding-right:10px;}
 body.bs-wide .bs-card{padding-left:10px !important;padding-right:10px !important;}
 body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
+body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !important;}   /* (📦 Intake Packets, wide the same way) */
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 .bs-card .gs-file b{font-size:17px;white-space:nowrap;}
