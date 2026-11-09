@@ -1295,11 +1295,11 @@ const ROWS = {
       {id: "s1v", h: "Recorded Shadowing: Intake Support & PI Claims Specialist Roles", parts: [["<!--cut:shadow-->", null]], fix: [["<!--cut:shadow-->\n", ""]]}]
   },
   13: {
-    // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
+    // the breakout's exercise this afternoon; the HIPAA series is a day's activity, not homework (the timing note stays with the afternoon)
     // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
     // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
     // (its stray "Thank you." line is off the slide)
-    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
+    s3: [{id: "s3", h: "HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
@@ -1447,8 +1447,8 @@ function stripLessonDeck(h, html, note = LESSON_NOTE){
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
 // a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
 const EX_RENAME = {
-  // (Day 13: the breakout's section keeps only the HIPAA homework: the breakout is the Call Listening slide's)
-  13: {s3: {h: "HOMEWORK: HIPAA Training 101"}}};
+  // (Day 13: the breakout's section keeps only the HIPAA Training 101 (an activity of the day, not homework): the breakout is the Call Listening slide's)
+  13: {s3: {h: "HIPAA Training 101"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 // what an activity slide emptied by PREP still carries (none now: the packet's paired intake case is the Day 8 demo's, on its
 // preparation slide s3p, TRIM[8].s3; Day 9's Intake Mock Call carries no case)

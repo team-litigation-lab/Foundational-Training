@@ -471,7 +471,7 @@ function listenSlide(day, time){
   // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
   if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
   return {id: "listen", h: `${time || "AM"}: ${LISTEN_H[day] || "Call Listening Session"}`, html:
-    `${LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
+    `${LISTEN_NOTE[day] ? `<p>${LISTEN_NOTE[day]}</p>` : LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
      ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>${listenLinks(day)}` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
@@ -501,6 +501,8 @@ const LISTEN_LINKS = {13: [["Sample SOPs", "https://drive.google.com/drive/folde
 const listenLinks = day => (LISTEN_LINKS[day] || []).map(([t, u]) => `<p><a class="ftdd-tile k-folder" href="${e(u)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📁</span><span class="ftdd-tile-t"><b>${e(t)}</b><small>Open the folder</small></span></a></p>`).join("");
 // a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
 const LISTEN_LEAD = {3: "Sample Call Recordings"};
+// a day whose recordings are samples, for reference only (Day 13: nothing to log, not scored)
+const LISTEN_NOTE = {13: "<b>These are sample recordings and reference documents only.</b> Listen to the calls and look through the Sample SOPs to see how the role is handled. There’s nothing to log or submit, and they aren’t scored."};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
@@ -1453,8 +1455,8 @@ const LESSON_CARDS = {
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
       // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
-      {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
+      {t: "Call Listening / Breakout Session", sub: "Sample recordings and reference documents, not scored", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},

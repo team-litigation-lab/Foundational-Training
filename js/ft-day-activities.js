@@ -142,7 +142,7 @@ const DAYS = [
   {day:13, role:"Provider Communication Training", lessons:[8], items:[
     {t:"Buffer Time for the LOR Drafting Demo", kind:"Buffer", at:"trainer", id:"lor-demo"},
     {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc"},
-    {t:"🎧 Call Listening on the provider communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
+    {t:"🎧 Sample provider communication recordings and reference documents (Sample SOPs): for reference, not scored", kind:"Reference", at:"tool", id:"listening", sample:true},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
