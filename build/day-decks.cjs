@@ -1295,11 +1295,11 @@ const ROWS = {
       {id: "s1v", h: "Recorded Shadowing: Intake Support & PI Claims Specialist Roles", parts: [["<!--cut:shadow-->", null]], fix: [["<!--cut:shadow-->\n", ""]]}]
   },
   13: {
-    // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
+    // the breakout's exercise this afternoon; the HIPAA series is a day's activity, not homework (the timing note stays with the afternoon)
     // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
     // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
     // (its stray "Thank you." line is off the slide)
-    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
+    s3: [{id: "s3", h: "HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
@@ -1447,8 +1447,8 @@ function stripLessonDeck(h, html, note = LESSON_NOTE){
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
 // a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
 const EX_RENAME = {
-  // (Day 13: the breakout's section keeps only the HIPAA homework: the breakout is the Call Listening slide's)
-  13: {s3: {h: "HOMEWORK: HIPAA Training 101"}}};
+  // (Day 13: the breakout's section keeps only the HIPAA Training 101 (an activity of the day, not homework): the breakout is the Call Listening slide's)
+  13: {s3: {h: "HIPAA Training 101"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 // what an activity slide emptied by PREP still carries (none now: the packet's paired intake case is the Day 8 demo's, on its
 // preparation slide s3p, TRIM[8].s3; Day 9's Intake Mock Call carries no case)
@@ -1464,6 +1464,9 @@ const PREP = {
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
+// 📥 a slide a day gains that its guide day doesn't have: Day 14 (the Medical Records training's day 2) also teaches Saving
+// Medical Bills & Records (the guide's Day 17, build/lessons/off/lesson09.js d17-s2), after the Gentle Reminders
+const INSERT = {14: [{after: "s1d", id: "s1m", h: "AM: Saving Medical Bills & Records", html: SLOT(14, "s1m-1") + "\n" + "<p>Today you will also learn how to save medical bills and records. Please go to the links below and follow the process.</p>\n<p><b>Topic: Saving Medical Bills &amp; Records </b></p>\n<p>Task 1 - Go to this link and learn the step-by-step process.</p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"Topic: Saving Medical Bills &amp; Records\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing</a></p>\n<p>Task 2 - Watch this sample demo</p>\n<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link</a></p>\n<p><b>Note:</b> Create your own work guide/notes.</p>\n<hr class=\"stars\">\n<h4>You may add these in your notes.</h4>\n<p>Complete Naming Convention:</p>\n<p>MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Extracted Docs:</p>\n<p>BILL</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21  (Michelle)</p>\n<p>------------</p>\n<p>RECORDS</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p>\n<p>-----------</p>\n<p>LIEN</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Report Format on Notes tab:</p>\n<p>Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p>\n<p><b>Note:</b> Highlight the filename, right click and paste the internal link. </p>\n<p>--------------</p>\n<p>Report Format on Tasks tab:</p>\n<p>mm.dd.yyyy Received bills &amp; records from <u>lien holder(medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p>"}]};
 // 🧰 a preparation slide's link to the tool its demo uses (the tool's card in 🛠 Practice Lab, scored on the 🏅 Score Card)
 const PREP_LEAD = {
   12: {s1dp: '<div class="ftdd-pq-go ftdd-lor-go"><p><b>🧰 Your 1P and 3P LORs</b>: the demo uploads and sends the letters you draft in the LOR Drafting Activity (🛠 Practice Lab → 🧰 Drafting Tools). Its score is on your 🏅 Score Card.</p>' +
@@ -1538,6 +1541,8 @@ for(let n = 1; n <= 16; n++){
     const x = slides[i];
     slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), ...((PREP_OFF[n] || []).includes(id) ? [] : [{id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""}]));
   }
+  for(const x of INSERT[n] || []){ const i = slides.findIndex(y => y.id === x.after); if(i < 0) throw new Error(`Day ${n} has no ${x.after} to put ${x.id} after`);
+    slides.splice(i + 1, 0, {id: x.id, h: x.h, html: x.html}); }
   // (and what a preparation slide opens with: Day 12's demo uploads and sends the LORs drafted in the LOR Drafting Activity)
   for(const [id, h] of Object.entries(PREP_LEAD[n] || {})){
     const x = slides.find(y => y.id === id); if(!x) throw new Error(`Day ${n} has no ${id} to open with its link`);

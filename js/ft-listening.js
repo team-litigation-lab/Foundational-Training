@@ -39,7 +39,7 @@ const SETS = [
     audio:["insurance-obtain-pip-log", "insurance-obtain-pd-estimate", "inquiry-hospital", "inquiry-where-to-send-records-request",
       "follow-up-records-request", "recorded-call-2023-02-23", "recorded-call-2023-02-27"].map(f => `/ft/day13/audio/${f}.mp3`),
     folder:"https://drive.google.com/drive/folders/17_v7RMsD93ebLoq9mu7srIqkcxEL-Egk?usp=drive_link",
-    about:"The sample recordings from Day 13’s Medical Records Specialist discussion."},
+    about:"Sample recordings from Day 13’s Medical Records Specialist discussion, for reference only: listen to them; they aren’t scored.", sample:true},
   // 📝 Day 3's Reception Listening Activity answers: the five Harbor & Pine practice calls (build/calls/pi-reception-activity.json,
   // played here: audio), each logged with its 5 data points and its challenge (fields: ACT_FIELDS); the deck's stop after the
   // calls opens it, and its Next goes on to the CRM/CMS videos. Not in the Practice Lab's Call Listening list (activity)
@@ -344,7 +344,8 @@ window.ftListenItems = ctx => { const rec = ctx.rec["listening:"], logs = (rec &
   if(sv && typeof sv === "object" && sv.sets && !X.loading && (!X.data || !X.at)) X.data = sv;
   // (an activity's grade is in trackerreview:<id>, which the Scorecard reads for 📋 Task Tracker & Monitoring Sheet)
   const graded = ((ctx.rec["trackerreview:"] || {}).assess) || {};
-  return SETS.map(s => { const l = setLive(s.id), c = countDone(rec, l), g = s.activity ? graded[s.id] : null;
+  // (a set of sample recordings, for reference only — Day 13's provider calls — is never scored: sample)
+  return SETS.filter(s => !s.sample).map(s => { const l = setLive(s.id), c = countDone(rec, l), g = s.activity ? graded[s.id] : null;
     if(!c && !logs[s.id] && !g) return null;
     // 📝 the activity counts by its 📝 Submit for Grading, not by the share logged: one item, as each set is one, so the
     // average stays fair to the other sets (js/ft-drive.js leaves it out of 📋, so it counts once). Not submitted yet, or a
