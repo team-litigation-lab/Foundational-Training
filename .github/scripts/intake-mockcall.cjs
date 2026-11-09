@@ -49,8 +49,9 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     let rec = await get('intakeassign:' + id);
     if (!rec || rec.packet !== 2 || rec.call !== 'ft_in_nicole') fail(`packet 2 didn't bring its demo case: ${JSON.stringify(rec)}`);
     // (the page only assigns: the demo case, the trainee's links, 🔎 the check and the worksheet are on their 📋 Batch Sheet page)
-    const heads = await page.evaluate(() => [...document.querySelectorAll('.ftis-admin thead th')].map(t => t.textContent.trim()).join('|'));
-    if (heads !== 'Trainee|Packet') fail(`📦 Intake Packets should only assign the packets: ${heads}`);
+    // (each trainee's cell: their name and the packet dropdown, nothing else; the page fits on one screen, so no table)
+    const cells = await page.evaluate(() => [...document.querySelectorAll('.ftis-admin .ftis-acell')].map(c => [c.querySelectorAll('select').length, c.querySelectorAll('input, button, textarea').length, /FTIntakeAdmin\.assign\(/.test((c.querySelector('select') || {}).getAttribute ? c.querySelector('select').getAttribute('onchange') : '')]));
+    if (!cells.length || cells.some(([sel, other, assigns]) => sel !== 1 || other || !assigns)) fail(`📦 Intake Packets should only assign the packets: ${JSON.stringify(cells)}`);
     await page.evaluate(id => FTIntake.cardHtml(id), id); await page.waitForTimeout(1200);
     const card = await page.evaluate(id => FTIntake.cardHtml(id), id);
     if (!/📦 Intake Packet \(Day 8\)/.test(card) || !/Packet 2/.test(card) || !/New Intake With a Deadline Close/.test(card) || !/Intake Worksheet/.test(card) || !/Accuracy &amp; completeness/.test(card)) fail(`the trainee's 📦 Intake Packet rows (Batch Sheet) don't show the packet and its paired case: ${card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 300)}`);
