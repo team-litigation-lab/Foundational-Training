@@ -14,6 +14,10 @@
 @container (max-height:120px){ .dash-main .module-card.mc-clean .module-icon{font-size:30px;} }
 @container (max-height:40px){ .dash-main .module-card.mc-clean .module-icon{font-size:20px;} }
 @container (max-height:26px){ .dash-main .module-card.mc-clean .module-icon{display:none;} }
+/* The icon fills most of the room it has (the body is a size container), up to 96px, and stays full-colour. */
+.dash-main .module-card.mc-clean .module-icon{font-size:clamp(34px,72cqh,96px) !important;opacity:1 !important;filter:drop-shadow(0 3px 6px rgba(30,35,64,.22));}
+/* The Dashboard uses the screen's whole width: no 1600px cap, a slim gutter each side. */
+@media (min-width:1001px){ main.main-dash{max-width:none !important;padding-left:24px !important;padding-right:24px !important;} }
 .dash-main .module-card.ftr-card > .module-start-btn{margin:auto 0 0 !important;width:auto !important;border:0 !important;border-top:1px solid #D3D7E2 !important;border-radius:0 !important;box-shadow:none !important;padding:12px 10px;font-size:15px;}
 /* Each lesson card wears a hint of its own colour, the same one its role has on the Knowledge Base card: the
    rule above the title, the Start / Part buttons and the Video row. Text stays the dark shade (AA on white and

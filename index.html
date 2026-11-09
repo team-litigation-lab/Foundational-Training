@@ -12534,12 +12534,8 @@ async function submitTraineeFeedback(){
 Object.assign(window, {openTraineeFeedback, submitTraineeFeedback, tfbSetStar});
 function renderFeedbackDashCard(){
   if(state.isAdmin){
-    /* Admin view: trainers read feedback rather than send it, so the card opens Admin → Trainee Feedback. */
-    return `<div class="card stat tfb-dash">
-    <div class="lbl">💬 Trainee feedback</div>
-    <div class="sub" style="margin:4px 0 10px;">Trainees rate the platform, lessons and facilitator from this card. See what they've sent.</div>
-    <div class="tfb-dash-actions"><button type="button" class="btn btn-primary btn-sm" onclick="state.adminTab='tfeedback'; goto('admin')">View trainee feedback →</button></div>
-  </div>`;
+    /* Admin view: no tile. Trainers read feedback from Admin → Trainee Feedback. */
+    return "";
   }
   if(!state.traineeId){
     /* Trainee view (admin preview) or signed out: show the card so trainers see it; sending needs a trainee sign-in. */
