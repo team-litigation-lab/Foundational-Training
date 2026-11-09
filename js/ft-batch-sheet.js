@@ -931,8 +931,10 @@ function activitiesHtml(p){
 function dayExtras(p, d, dt){
   const out = [];
   let n = 0; for(let k = 1; k <= 40; k++) if(dayDate(k) === d){ n = k; break; }
+  // (📅 that training day's scored deliverables, each with its score and why: 📅 Day 1–16: Detailed Scores, here on its day)
   if(n && dt){ const r = rowFor(dt, p, 0, 1), k = dt.head.indexOf("Day " + n), c = r && k >= 0 ? r[k] || {} : null;
-    if(c && (c.v || c.f)) out.push({name: `📅 Day ${n} activities`, v: stripTags(c.v) || "—", tone: (String(c.cls || "").match(/gs-(hi|mid|lo)/) || [""])[0], text: stripTags(c.f || "")}); }
+    if(c && (c.v || (c.parts || []).length)) out.push({name: `📅 Day ${n} score`, v: stripTags(c.v) || "—", tone: (String(c.cls || "").match(/gs-(hi|mid|lo)/) || [""])[0], text: stripTags(c.f || "")},
+      ...(c && Array.isArray(c.parts) ? c.parts.map(x => Object.assign({}, x, {name: "· " + stripTags(x.name)})) : [])); }
   const fb = (((B.data.rec[p.id] || {}).feedback || {}).days) || {}, ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
   Object.entries(fb).filter(([, v]) => v && v.status === "sent" && v.sentAt && ptd(v.sentAt) === d).forEach(([l, v]) =>
     out.push({name: "💬 Trainer feedback", v: v.rating || "—", tone: ratingTone(v.rating), text: `${lessonName(Number(l))}${v.summary ? ": " + String(v.summary).replace(/\s+/g, " ").slice(0, 400) : ""}`}));
@@ -962,7 +964,7 @@ function matrixOf(x){
   return {sub: same[0].cols.map(k => x.head[k]), groups: same, cols: same.flatMap(g => g.cols)};
 }
 // a day's activities / assessments, a row each: what, its score or status, and how it went
-const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`).join("")}</tbody></table>`;
+const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`).join("")}</tbody></table>`;
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch)
@@ -985,13 +987,13 @@ function perTraineeHtml(T){
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
-          : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "days"))))
+          : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
-        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
+        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
-    const sec = x => { const rows = rowsOf(x); return rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${rows}` : ""; };
+    const sec = x => { const rows = rowsOf(x); return rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.id === "outputs" ? "📤 Daily outputs & 📅 Day scores" : x.title)}</th></tr>${rows}` : ""; };
     /* 🏅 GRADES, in one: the Overall % and its parts, the 🏅 Score Card (lesson by lesson), the Practice Lab's use, every grading
        system with each of its items, and the lessons with their dates — what 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
        📅 Lessons & Knowledge Checks day by day and 📚 Lessons each showed a part of, the same grades over and over */
@@ -999,7 +1001,8 @@ function perTraineeHtml(T){
     const sub = t => `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">${t}</td></tr>`;
     const part = (t, rows) => rows ? sub(t) + rows : "";
     const grades = `<tr class="bs-pt-sec"><th colspan="3">🏅 Grades</th></tr>`
-      + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average/i.test(h))   // (💬 the day-by-day feedback: on its day, in 📤 Daily outputs)   // (the grading systems: below, with their grades)
+      // (no Scorecard overall, Daily compliance, Weeks average or Overall %: the trainee's line at the top shows them;
+      // 💬 the day-by-day feedback is on its day, in 📤 Daily outputs)   // (the grading systems: below, with their grades)
       // (every grading system with each of its grades, in the same 🏅 Grades list; no lesson-by-lesson Score Card, Practice Lab
       // or Lessons here: the lessons and decks are in Compliance and Platform Utilization Monitoring)
       + everyGradeHtml(p, true) + gradersHtml(p);
@@ -1009,7 +1012,7 @@ function perTraineeHtml(T){
     // (🏅 Grades in place of the 🏅 Score Card; Compliance and Platform Utilization Monitoring at the very bottom, after the
     // trainee's own record)
     // (📅 Day by Day: each training day's activities are in that day of 📤 Daily outputs, dayExtras)
-    const inGrades = ["scores", "scorecard", "practice", "lessons", "days"], last = ["compliance"];
+    const inGrades = ["scores", "scorecard", "practice", "lessons", "days", "dayscores"], last = ["compliance"];
     // (✍️ in place of 📅 Day by Day: the Knowledge Checks answer by answer with the comments, the Assessments and the Activities)
     const kd = `<tr class="bs-pt-sec"><th colspan="3">✍️ Knowledge Checks, Assessments &amp; Activities</th></tr><tr><td colspan="3" class="bs-pt-kd">${kdOneHtml(p, true)}${activitiesHtml(p)}</td></tr>`;
     const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + kd + grades + intake + use.filter(x => x.id === "trainees").map(sec).join("")
@@ -2143,7 +2146,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:26%;} .bs-pt-t col.bs-pt-c2{width:120px;}   /* (the Score column only as wide as a score) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:15%;} .bs-pt-t col.bs-pt-c2{width:120px;}   /* (the Score column only as wide as a score) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
