@@ -2303,13 +2303,17 @@ async function dailyCompliance(env, id, D, o = {}) {
   // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
   // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
   const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
-  let monDay = null;
+  let monDay = null, monDated = false;
   if (monRead) {
     const st = batchStartDate(rec.batch) || drive.startDate || "";
     let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
     // (the day's work only: the entry for that day's discussion — the sheet is updated day by day — not every one due so far)
     const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16))), todays = due[due.length - 1];
-    monDay = n ? Math.round(((mon.entries.find((x) => x.topic === todays) || {}).pct) || 0) : mon.pct;
+    // (📅 by its date: the entry dated that day — its "Date:" line — is the day's; a sheet read before entries kept their dates
+    // falls back on the day's topic)
+    const dated = monDated = mon.entries.some((x) => x && "date" in x);
+    monDay = dated ? Math.round(((mon.entries.find((x) => x.date === D) || {}).pct) || 0)
+      : n ? Math.round(((mon.entries.find((x) => x.topic === todays) || {}).pct) || 0) : mon.pct;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
@@ -2398,7 +2402,8 @@ async function dailyCompliance(env, id, D, o = {}) {
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
-  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monDated) parts.monitor = was.parts.monitor; }
+  // (📒 the Monitoring Sheet keeps every day's entry under its own date, so a past day is read again from the entry dated that day)
   // (📅 a batch's first training day: its Task Tracker, Monitoring Sheet and tests are checked like any day's, and kept under
   // day1Parts — the day itself doesn't count, below)
   // (📅 and any part the day doesn't ask for is left out too, not a 0: the Day's outputs only on a day with something to hand
@@ -2945,6 +2950,31 @@ export default {
           const fin = JSON.parse((await kv.get(rk)) || "null") || {};
           return json({ ok: true, day: D, grade: (fin.tamGrades || {})[D] || null, tam: fin.tam || null, pct: c && c.pct });
         } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
+      // 📅 THE CALENDAR MANAGEMENT MOCK CALL SCORECARD, one with the Training Portal's Google Calendar Simulator: the trainee's
+      // scorecards there (the Portal's /api/calsim-scorecard, found by their name and batch), read for 🧑‍🏫 Graders to fill from
+      // (op "get"), and a scorecard saved in 🧑‍🏫 Graders sent there (op "put"), so both sides show the same card. Server to
+      // server with the shared AI_GATEWAY_SECRET; without it: {ok: false, off: true}. Trainers only.
+      if (path === "/api/calsim-card") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
+        if (!gatewayOn(env)) return json({ ok: false, off: true });
+        const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+        if (!rec || !rec.name) return json({ ok: false, error: "No such trainee" }, 404);
+        const base = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/calsim-scorecard";
+        const hdr = { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, batch = canonicalBatch(rec.batch) || String(rec.batch || "");
+        try {
+          if (b.op === "put") {
+            const rows = Array.isArray(b.rows) ? b.rows.slice(0, 7).map((x) => ({ score: x && x.score, feedback: String((x && x.feedback) || "").slice(0, 600) })) : [];
+            const r = await fetch(base, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr), body: JSON.stringify({ name: rec.name, batch, rows, by: String(b.by || "Trainer").slice(0, 80) }) });
+            const j = await r.json().catch(() => ({}));
+            return json(j && j.success ? { ok: true, card: j.card } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+          }
+          const r = await fetch(base + "?" + new URLSearchParams({ name: rec.name, batch }), { headers: hdr });
+          const j = await r.json().catch(() => ({}));
+          return json(j && j.success ? { ok: true, account: j.username || "", cards: Array.isArray(j.cards) ? j.cards.slice(-5) : [] } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+        } catch (e) { return json({ ok: false, error: "The Portal is unreachable: " + String(e && e.message || e).slice(0, 160) }); }
       }
       // ✍ A TRAINER'S EOD SCORE for a training day (one the EOD monitoring missed, or before it was set up): kept in
       // trackerreview:<id>.eodTrainer[<date>] — a record only the Worker and trainers write, so a trainee can neither forge it nor

@@ -265,9 +265,12 @@
       const take = seg.slice(ti >= 0 ? ti + 1 : 0, qi > ti ? qi : (ri > ti ? ri : seg.length)).filter((l) => words(l) >= 4);
       const qs = qi >= 0 ? seg.slice(qi + 1, ri > qi ? ri : seg.length).filter((l) => words(l) >= 2) : [];
       const rated = segLow.some((l) => RATING_HINTS.some((h) => l.includes(h)) && /[x✓✔☑☒■●▣]|\bselected\b|\(x\)|\[x\]/i.test(l)) || segLow.some((l) => /^rating\s*[:\-]\s*[1-4]/.test(l));
+      // (📅 the entry's own date — its "Date: 10/30/2026" line — so each day's score is read from the entry dated that day)
+      const dl = seg.find((l) => /^date\b/i.test(l)) || seg.find((l) => /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(l)) || "";
+      const dm = /(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\/\d{1,2}\/\d{2,4}|[A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4})/.exec(dl), date = dm ? isoDate(dm[1].replace(/,/g, ""), "") : "";
       const checks = [["Date", seg.some((l) => isoDate(l.replace(/^date\s*[:\-]?\s*/i, ""), "2000") || /\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/.test(l))],
         ["5 takeaways", take.length >= 5], ["Questions", qs.length >= 1], ["Understanding rated", rated]];
-      return {topic: x.t.title || x.t, takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
+      return {topic: x.t.title || x.t, date, takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
     });
     entries.forEach((x) => { if(optionalTopic(x.topic)) x.optional = true; });
     const pct = entries.length ? Math.round(entries.reduce((a, x) => a + x.pct, 0) / entries.length) : 0;

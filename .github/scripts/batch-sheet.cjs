@@ -104,15 +104,14 @@ const failures = []; const fail = m => failures.push(m);
   { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
       return { n: document.querySelectorAll('.bs-pt').length, head: (d.querySelector('.bs-pt-h') || {}).innerText || '', secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
     if (!pt || pt.n !== 1 || !/Ada Active/.test(pt.head) || !/Overall/.test(pt.head)) fail(`📄 Ada's page doesn't open from the trainee dropdown: ${JSON.stringify(pt && { n: pt.n, head: pt.head })}`);
-    if (pt && (!pt.secs.some(x => /Grades/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
-    // 🏅 Grades, in one: the Score Card, the Practice Lab's use, every grading system and the lessons, under one heading; no
-    // separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade, 📚 Lessons or day-by-day sections repeating the same grades
-    if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
-    // (🏅 Grades: every grading system with its grades; the Overall, Scorecard and Daily compliance totals are in the page's header
-    // only, not repeated as rows; no lesson-by-lesson Score Card, Practice Lab or Lessons in it, no Measure / Score / How header
-    // row, no 📅 / 🟢 / 🎧 Review buttons — those are in 🛡 Admin Master Control)
-    if (pt && !/Knowledge Checks/.test(pt.text)) fail(`🏅 Grades doesn't hold the grading systems: ${pt.text.slice(0, 300)}`);
-    if (pt && /Overall %|Weeks average/.test(pt.text)) fail(`🏅 Grades still repeats the header's totals: ${pt.text.slice(0, 300)}`);
+    if (pt && !pt.secs.some(x => /Daily outputs/.test(x))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
+    // (no 🏅 Grades table: every grade is in 📤 Daily outputs & 📅 Day scores and in ✍️ Knowledge Checks, Assessments &
+    // Activities; a trainer's own score goes in ✎ Edit a score), and no separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
+    // 📚 Lessons or day-by-day sections repeating the same grades
+    if (pt && pt.secs.some(x => /^(🏅 Grades|🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
+    if (pt && !pt.secs.some(x => /Edit a score/.test(x))) fail(`a trainer has no ✎ Edit a score on Ada's page: ${pt.secs}`);
+    if (pt && !/Knowledge Checks, Assessments & Activities/.test(pt.text)) fail(`Ada's page doesn't hold her Knowledge Checks, Assessments & Activities: ${pt.text.slice(0, 300)}`);
+    if (pt && /Overall %|Weeks average/.test(pt.text)) fail(`Ada's page still repeats the header's totals: ${pt.text.slice(0, 300)}`);
     if (pt && /Score Card, lesson by lesson|Lessons: the deck and the Knowledge Check|Every grading system|How it was worked out|Review their calendaring/.test(pt.text)) fail(`Ada's table still has a part that was removed: ${pt.text.slice(0, 300)}`);
     // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);

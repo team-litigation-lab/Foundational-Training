@@ -232,15 +232,56 @@ function groupScores(b){
   const out = {}; Object.keys(CRIT).forEach(g => { const on = (b.checks || []).filter(c => c[3] === g && c[1] !== null); if(on.length) out[g] = Math.round(on.filter(c => c[1]).length / on.length * 10) / 2; });
   return out;
 }
+// 🗓 the trainee's CALENDAR MANAGEMENT MOCK CALL scorecard on the Training Portal's Google Calendar Simulator (the same seven
+// metrics as this one, worker.js /api/calsim-card): read once a visit, its latest card shown with ⤓ Fill from it
+const P = {cache: {}};
+function portalCard(id){
+  const c = P.cache[id];
+  if(!c){ P.cache[id] = {loading: true};
+    Promise.resolve(typeof authFetch === "function" ? authFetch("/api/calsim-card", {id, op: "get"}).then(r => r.json()) : {ok: false})
+      .then(j => { P.cache[id] = j && j.ok ? {cards: j.cards || [], user: j.account || ""} : {off: !!(j && j.off), error: (j && j.error) || ""}; if(state.view === "admin") render(); })
+      .catch(() => { P.cache[id] = {error: "unreachable"}; });
+    return null; }
+  return c.loading ? null : c;
+}
+function portalHtml(id){
+  const c = portalCard(id);
+  if(c === null) return `<p class="fss-wide fss-muted cr-assist">🗓 Loading the Google Calendar Simulator’s scorecard…</p>`;
+  if(c.off) return "";
+  if(c.error) return `<p class="fss-wide fss-muted cr-assist">🗓 The Google Calendar Simulator’s scorecard couldn’t be read (${e(c.error)}).</p>`;
+  const k = (c.cards || [])[c.cards.length - 1];
+  if(!k) return `<p class="fss-wide fss-muted cr-assist">🗓 No scorecard on the Google Calendar Simulator yet${c.user ? "" : " (no Training Portal account found for this trainee’s name and batch)"}.</p>`;
+  const vals = {}, notes = {};
+  FT_RUBRICS.list.calendar.criteria.forEach((cr, i) => { const row = (k.rows || []).find(x => x.metric === cr.n) || (k.rows || [])[i]; if(row && row.score != null){ vals[i] = Number(row.score); if(row.feedback) notes[i] = row.feedback; } });
+  return `<div class="fss-wide cr-assist"><b>🗓 Google Calendar Simulator scorecard</b> (${e(k.by || "Trainer")}, ${e(String(k.at || "").slice(0, 10))}${k.source === "foundational" ? ", saved here" : ""}): <b>${num(k.average)} / 5 · ${num(k.pct)}%</b>
+    <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fillCard(this, ${JSON.stringify({vals, notes}).replace(/'/g, "&#39;")})'>⤓ Fill from the simulator’s scorecard</button></div>`;
+}
+FTCalRules.portalCard = portalCard;
+FTCalRules.fillCard = (btn, x) => {
+  if(!(window.FTMockScores && FTMockScores.fillCrit)) return;
+  const n = FTMockScores.fillCrit(x.vals, x.notes);
+  toast(n ? `⤓ ${n} criteri${n === 1 ? "on" : "a"} filled from the Google Calendar Simulator’s scorecard` : "Those criteria already have scores: nothing typed was changed.");
+};
+// 🗓 a Calendar Management Mock Call saved in 🧑‍🏫 Graders, sent to the trainee's Google Calendar Simulator scorecards too (every
+// criterion scored): the same card on both sides
+FTCalRules.pushCard = async (id, scores, feedback, by) => {
+  const rb = FT_RUBRICS.list.calendar; if(!rb || !Array.isArray(scores) || scores.length !== rb.criteria.length || scores.some(v => v == null || v === "")) return null;
+  try{ const j = await (await authFetch("/api/calsim-card", {id, op: "put", by, rows: scores.map((v, i) => ({score: Number(v), feedback: (feedback || [])[i] || ""}))})).json();
+    if(j && j.ok){ delete P.cache[id]; return true; } return j && j.off ? null : false; }
+  catch(err){ return false; }
+};
 window.ftRubricAssist = (r, a) => {
   const rb = window.FT_RUBRICS && FT_RUBRICS.forAct(a); if(!rb || rb.key !== "calendar") return "";
+  return portalHtml(r.id) + bookingHtml(r);
+};
+function bookingHtml(r){
   const b = latestFor(r.id);
   if(b === null) return `<p class="fss-wide fss-muted cr-assist">📅 Loading the trainee’s booking rule check…</p>`;
   if(!b) return `<p class="fss-wide fss-muted cr-assist">📅 No booking recorded on the Booking Rule Check yet.</p>`;
   const g = groupScores(b), miss = (b.checks || []).filter(c => c[1] === false).map(c => c[0]);
   return `<div class="fss-wide cr-assist"><b>📅 Booking rule check</b> (${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1].toLowerCase())}, ${e(b.title || "")}, ${e(b.date)}): <b>${num(b.met)} of ${num(b.total)} rules met</b>${miss.length ? ` · missed: ${e(miss.join("; "))}` : ""}.
     <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fill(this, ${JSON.stringify(g)})'>⤓ Fill the rule criteria (${Object.keys(g).map(k => `${k === "info" ? "Information" : k === "slot" ? "Slot & rules" : k === "alt" ? "Alternatives" : "Calendar entry"} ${g[k]}`).join(", ")})</button></div>`;
-};
+}
 FTCalRules.fill = (btn, g) => {
   // (on 🧑‍🏫 Graders, the one-VA sheet: its criteria by index, through FTMockScores, never over a typed score)
   if(btn.closest(".fms") && window.FTMockScores && FTMockScores.fillCrit){

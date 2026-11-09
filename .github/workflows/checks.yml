@@ -61,6 +61,8 @@ jobs:
         run: node .github/scripts/compliance-recheck.cjs
       - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)
         run: node .github/scripts/cron-checks.cjs
+      - name: Calendar Management Mock Call scorecard, one with the Portal's Google Calendar Simulator
+        run: node .github/scripts/calsim-card.cjs
       - name: A Monitoring Sheet kept as a Word file (.docx) in Drive read and checked
         run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)

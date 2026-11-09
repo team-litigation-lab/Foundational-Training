@@ -56,6 +56,7 @@ window.LSH_PROGRAM = {
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],
     intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
+    lorassign: ["lorassign"],   // 📄 Assign LORs: its own section beside 📦 Intake Packets (js/ft-lor.js)
     // 🔗 Drive Links and 🧑‍🏫 Graders: Mock Calls & Demos, section buttons of their own beside 📊 Weekly Reports (adminSections)
     drivelinks: ["drivelinks"],
     graders: ["graders"],
@@ -75,10 +76,10 @@ window.LSH_PROGRAM = {
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}],
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}],
   adminLead: {scorecard: "batchsheet"},
   // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
-  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "admin", "modules", "lab"],
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [

@@ -1,4 +1,4 @@
-// ✎ A trainer edits a score in place (📋 Batch Sheet → a trainee's page → 🏅 Grades, js/ft-batch-sheet.js editScore), hovers a
+// ✎ A trainer edits a score (📋 Batch Sheet → a trainee's page → ✎ Edit a score, js/ft-batch-sheet.js editScore), hovers a
 // score for what it rests on, and adds points to the Scorecard overall (js/lsh-program.js setExtra):
 //   - each edit is written where that grade's trainer's score already lives: a Knowledge Check in kcreview:<id>, a mock call in
 //     labreview:<id>.acts (merged: its rubric, comment and facilitator kept; the Result follows the score; a later 🧑‍🏫 Graders
@@ -87,26 +87,31 @@ async function workerChecks() {
     if (b0.items['trainer|act:transcription-1'] && !b0.items['trainer|act:transcription-1'].auto) fail('the Transcription recording\'s automatic score isn\'t marked automatic before the trainer scores it');
     if (!b0.items['sessions|run:reception|-'] || b0.items['sessions|run:reception|-'].pct !== 55) fail(`the resubmitted Practice Session doesn't start from its automated checks: ${JSON.stringify(b0.items['sessions|run:reception|-'])}`);
 
-    // 🔎 the fields and the hover, on the trainer's page
-    const pg = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
-      const refs = [...d.querySelectorAll('input.bs-ed[data-ref]')].map(x => x.getAttribute('data-ref'));
-      const items = [...d.querySelectorAll('tr')].filter(tr => tr.querySelector('td.bs-pt-it') && tr.querySelector('input.bs-ed[data-ref]'));
-      const untitled = items.filter(tr => !(tr.querySelector('td.bs-pt-v').getAttribute('title') || '').trim()).map(tr => tr.querySelector('td.bs-pt-it').innerText);
-      const call = items.find(tr => tr.querySelector('input[data-ref="act:reception-live"]'));
+    // 🔎 ✎ Edit a score, on the trainer's page: every grade a trainer can set in its list, one field for the grade picked
+    // (with the hover rationale), then the + points field as a plain row; no 🏅 Grades table
+    const box = (ref) => page.evaluate(([id, ref]) => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
+      const opts = [...d.querySelectorAll('select.bs-ed-pick option')].map(o => o.value), fld = d.querySelector('tr.bs-pt-ed input.bs-ed[data-ref]');
       const x = d.querySelector('input.bs-ed[data-extra]'), xtr = x && x.closest('tr');
-      const tracker = [...d.querySelectorAll('tr')].find(tr => /Daily Task Tracker ·/.test(tr.innerText));
-      return { refs, untitled, callTip: call ? call.querySelector('td.bs-pt-v').getAttribute('title') : '', extra: !!x, extraInSec: !!(xtr && xtr.classList.contains('bs-pt-sec')), extraTh: !!(xtr && xtr.querySelector('th')),
-        extraLabel: xtr ? xtr.querySelector('td').innerText.trim() : '', trackerInput: !!(tracker && tracker.querySelector('input.bs-ed')) }; }, id);
-    if (!pg) fail('Eve\'s page isn\'t on the Batch Sheet');
-    else {
-      for (const r of [`kc:${L}`, 'act:reception-live', 'act:transcription-1', 'run:reception|-', 'monitor', 'assess:recact', 'items:5-7']) if (!pg.refs.includes(r)) fail(`🏅 Grades has no field to edit ${r}: ${pg.refs.join(', ')}`);
-      if (pg.untitled.length) fail(`a score in 🏅 Grades has no hover rationale: ${pg.untitled.join(' | ')}`);
-      if (!/CALL-COMMENT/.test(pg.callTip) || !/rubric/i.test(pg.callTip)) fail(`the mock call's hover doesn't give its rationale (rubric, comment): ${pg.callTip}`);
-      if (!pg.extra || pg.extraInSec || pg.extraTh || pg.extraLabel !== '+') fail(`the + points field isn't a plain row at the end of 🏅 Grades: ${JSON.stringify(pg)}`);
-      if (pg.trackerInput) fail('the Daily Task Tracker average (no ref: its days are scored one by one) can be edited in place');
-    }
+      return { opts, ref: fld ? fld.getAttribute('data-ref') : '', fields: d.querySelectorAll('input.bs-ed[data-ref]').length, tip: fld ? fld.closest('td').getAttribute('title') || '' : '',
+        extra: !!x, extraInSec: !!(xtr && xtr.classList.contains('bs-pt-sec')), extraTh: !!(xtr && xtr.querySelector('th')), extraLabel: xtr ? xtr.querySelector('td').innerText.trim() : '',
+        grades: [...d.querySelectorAll('.bs-pt-sec th')].some(th => /🏅 Grades/.test(th.innerText)) }; }, [id, ref]);
+    const pick = async (ref) => { await page.evaluate(([id, ref]) => FTBatchSheet.edPick(id, ref), [id, ref]); await page.waitForTimeout(250); return box(ref); };
+    { const pg = await box();
+      if (!pg) fail('Eve\'s page isn\'t on the Batch Sheet');
+      else {
+        for (const r of [`kc:${L}`, 'act:reception-live', 'act:transcription-1', 'run:reception|-', 'monitor', 'assess:recact', 'items:5-7']) if (!pg.opts.includes(r)) fail(`✎ Edit a score has no ${r} to pick: ${pg.opts.join(', ')}`);
+        if (pg.fields !== 1) fail(`✎ Edit a score shows ${pg.fields} score fields, not the one picked`);
+        if (pg.grades) fail('the trainee\'s page still has a 🏅 Grades table');
+        if (!pg.extra || pg.extraInSec || pg.extraTh || pg.extraLabel !== '+') fail(`the + points field isn't a plain row under ✎ Edit a score: ${JSON.stringify(pg)}`);
+        // (the Daily Task Tracker average has no ref: its days are scored one by one, so it isn't offered)
+        if (pg.opts.some(r => /tracker/i.test(r))) fail('the Daily Task Tracker average can be edited');
+      }
+      for (const r of pg ? pg.opts : []) { const b = await pick(r); if (b.ref !== r || !b.tip.trim()) { fail(`picking ${r} doesn't give its field with a hover rationale: ${JSON.stringify({ ref: b.ref, tip: b.tip })}`); break; } }
+      const call = await pick('act:reception-live');
+      if (!/CALL-COMMENT/.test(call.tip) || !/rubric/i.test(call.tip)) fail(`the mock call's hover doesn't give its rationale (rubric, comment): ${call.tip}`); }
 
     // ✍️ a Knowledge Check, through the field itself: kcreview, and the sheet's ✍️ Knowledge Checks
+    await pick(`kc:${L}`);
     await page.fill(`#bs-pt-${id} input.bs-ed[data-ref="kc:${L}"]`, '85');
     await page.dispatchEvent(`#bs-pt-${id} input.bs-ed[data-ref="kc:${L}"]`, 'change');
     await page.waitForFunction(async ([id, L]) => { const r = await sharedGet('kcreview:' + id); return r && r.lessons && r.lessons[L] && r.lessons[L].score === 85; }, [id, L], { timeout: 10000 }).catch(() => fail('the Knowledge Check edit didn\'t reach kcreview'));
@@ -165,7 +170,7 @@ async function workerChecks() {
       // (📅 Day 1–16: the activity's day shows the trainer's score, and so does its why)
       const d3 = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'dayscores'), k = t.head.indexOf('Day 3'); return (t.rows[0][k].parts || []).filter(x => /Listening Activity/.test(x.name)).map(x => x.v + ' ' + x.text).join(' | '); });
       if (!/^90% Trainer's score 90%/.test(d3)) fail(`📅 Day 3 doesn't show the override: ${d3}`);
-      const tip = await page.evaluate(id => { const i = document.querySelector(`#bs-pt-${id} input.bs-ed[data-ref="assess:recact"]`); return i ? i.closest('td').getAttribute('title') : ''; }, id);
+      const tip = (await pick('assess:recact')).tip;
       if (!/was 60%/.test(tip)) fail(`the override's hover doesn't say what it replaced: ${tip}`);
       const x = await page.evaluate(() => ({ ran: !!window.__xss, img: document.querySelectorAll('.bs-pt img[src="x"], .bs-pt-t img').length }));
       if (x.ran || x.img) fail(`the override's note ran as HTML: ${JSON.stringify(x)}`); }
