@@ -2369,7 +2369,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   let instr = wasI || null;
   if (!over || !wasI || wasI.v !== 2 || o.raise) instr = instrOf(D, wasI && wasI.links) || wasI || null;
   // (the past days this trainee has no mark for yet — checked before it was kept — get theirs from what is on record for them)
-  Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
+  Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || x.day1 || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
     const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {}; x.parts.instructions = I.pct;
     const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   const parts = {
@@ -2409,13 +2409,19 @@ async function dailyCompliance(env, id, D, o = {}) {
         if (!onPlatform) parts.platform = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
+  // (📅 a batch's Day 1 is the setup day: nothing that day counts for or against the trainee. What was found is kept under
+  // day1Parts to show; the parts are left out and the day's % is null, so no average counts it — index.html ftDay1 the same)
+  let day1Parts = null;
+  { const st1 = batchStartDate(rec.batch) || (drive && drive.startDate) || "";
+    if (st1 && D >= st1) { let k = 0; for (let t = Date.parse(st1 + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 3; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++;
+      if (k === 1) { day1Parts = Object.assign({}, parts); for (const key of Object.keys(parts)) parts[key] = null; } } }
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
     unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
-    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr,
+    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, day1: !!day1Parts, day1Parts,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
   // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)

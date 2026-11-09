@@ -126,6 +126,7 @@ async function loadData(){
       const at = j => vals[i * per + j] || null, sc = {};
       S.forEach((s, j) => { sc[s.key] = at(own.length + j); });
       if(window.ftW1Override) sc["trackerreview:"] = ftW1Override.comp(sc["trackerreview:"], p.batch);   // W1-OVERRIDE
+      if(window.ftDay1) sc["trackerreview:"] = ftDay1.comp(sc["trackerreview:"], p.batch);   // 📅 Day 1 isn't counted
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
@@ -1056,14 +1057,14 @@ function outputsTable(){
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
-          return {v: pct(vs[i]), csv: `${pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
+          return {v: x.day1 ? "Day 1: not counted" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
             parts: acts.map(a => ({name: `${a.icon} ${a.label}`, v: a.pct == null ? "—" : Math.round(a.pct) + "%", tone: tone(a.pct), text: a.text})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
-              : !open ? `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
-              : `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
+              : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
+              : `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : "the day"}</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
     })};
 }
 /* 📤 each activity of a checked day, in the Daily outputs table's cell: its score in a little box and the trainee's
@@ -1076,7 +1077,7 @@ const sent2 = (...xs) => { const out = [];
   return out.slice(0, 2).map(y => y.length > 230 ? y.slice(0, 228).replace(/\s+\S*$/, "") + "…" : y).join(" "); };
 const first = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = /^.+?[.!?](?=\s|$)/.exec(t); return m ? m[0] : t; };
 function dayActs(R, d){
-  const rv = (R.src || {})["trackerreview:"] || {}, c = (rv.compliance || {})[d] || {}, P = c.parts || {}, tk = (rv.days || {})[d] || null, mon = rv.monitor || null, out = [];
+  const rv = (R.src || {})["trackerreview:"] || {}, c = (rv.compliance || {})[d] || {}, P = (c.day1 ? c.day1Parts : c.parts) || {}, tk = (rv.days || {})[d] || null, mon = rv.monitor || null, out = [];
   const monDay = !!(mon && mon.checkedAt && (() => { const x = new Date(mon.checkedAt); return !isNaN(x) && [x.toISOString().slice(0, 10), `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`].includes(d); })());
   const unread = k => (c.unreadable || []).includes(k), share = "The system can't open it, so it isn't counted. Share it with the program's account (📁 My Drive links).";
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
@@ -1110,7 +1111,8 @@ function dayActs(R, d){
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
     out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Scored by a trainer: ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
       miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
-  return out;
+  // (📅 Day 1, the batch's setup day, index.html ftDay1: what was found is shown, but no part counts for or against them)
+  return c.day1 ? out.map(a => Object.assign({}, a, {pct: null, text: `Day 1 (setup day): not counted. Found: ${a.pct == null ? "—" : Math.round(a.pct) + "%"}. ` + a.text})) : out;
 }
 /* Everything each trainee did, from what the platform keeps, newest first. */
 function events(){

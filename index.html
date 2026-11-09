@@ -5513,6 +5513,21 @@ function batchStartDate(batch){
   return `20${m[3]}-${mm}-${dd}`;
 }
 window.batchStartDate = batchStartDate;
+// 📅 A batch's Day 1 (its first weekday from the Batch ID's date) is the setup day: its Daily compliance doesn't count,
+// for or against a trainee. Each part is kept under day1Parts to show what was found, the parts are left out (null) and the
+// day's % is null, so every average skips it (worker.js dailyCompliance writes new days the same way; this covers the days
+// checked before it did). Applied where the browser reads trackerreview:<id>.
+window.ftDay1 = {
+  date(b){ const st = batchStartDate(b); if(!st) return "";
+    for(let t = Date.parse(st + "T12:00:00Z"), k = 0; k < 7; t += 864e5, k++){ const d = new Date(t), w = d.getUTCDay(); if(w > 0 && w < 6) return d.toISOString().slice(0, 10); }
+    return ""; },
+  comp(rv, b){
+    const D = this.date(b), x = rv && rv.compliance && D ? rv.compliance[D] : null;
+    if(!x || !x.parts || x.day1 || x.w1) return rv;
+    return Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance, {[D]: Object.assign({}, x,
+      {day1: true, day1Parts: x.parts, parts: Object.fromEntries(Object.keys(x.parts).map(k => [k, null])), pct: null})})});
+  }
+};
 // ===== W1-OVERRIDE B103026 one-off: Week 1 (training days 1–5) counted done, its EOD 100%. Applied only where the
 // browser READS the records (nothing is written back: never hook it into sharedGet). Delete this block and every line
 // tagged W1-OVERRIDE (grep -rn W1-OVERRIDE) to remove it. =====
@@ -14062,7 +14077,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.09-2eef472d";
+var APP_BUILD = "ft-2026.11.09-012f8bed";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14108,7 +14123,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=d0943941d0"></script>
 <script src="/js/ft-tracker.js?v=49e68a23e1"></script>
 <script src="/js/ft-monitoring.js?v=c93e3c2768"></script>
-<script src="/js/ft-process.js?v=191bad0aae"></script>
+<script src="/js/ft-process.js?v=2046350761"></script>
 <script src="/js/ft-assess.js?v=dc52887b7f"></script>
 <script src="/js/ft-claims-email.js?v=94cd2deef4"></script>
 <script src="/js/ft-rules.js?v=f4f7527f00"></script>
@@ -14121,10 +14136,10 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-rubrics.js?v=79b8aac4e1"></script>
 <script src="/js/ft-sessions.js?v=3834be8942"></script>
 <script src="/js/ft-utilization.js?v=d188248919"></script>
-<script src="/js/ft-ranking.js?v=731ff2f1d1"></script>
-<script src="/js/ft-ranking-summary.js?v=1f8b3a5d71"></script>
+<script src="/js/ft-ranking.js?v=fced2c2db8"></script>
+<script src="/js/ft-ranking-summary.js?v=530dd9f056"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=5422381cf9"></script>
+<script src="/js/ft-batch-sheet.js?v=443b39beb3"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=5588cf2eca"></script>
 <script src="/js/ft-calrules.js?v=adaad052d7"></script>
