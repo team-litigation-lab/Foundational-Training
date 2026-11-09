@@ -128,7 +128,7 @@ const full = () => withShots(S.rec, S.shots);
 
 /* ---------- compliance: which slots a day needs, and which ones are done ---------- */
 // A training day is a weekday from the trainee's first test (or the day they registered) to today.
-function trainingDays(rec, from, to){
+function trainingDays(from, to){
   const out = [], d = new Date(from + "T12:00:00"), end = new Date(to + "T12:00:00");
   for(let i = 0; d <= end && i < 400; i++, d.setDate(d.getDate() + 1)) if(d.getDay() !== 0 && d.getDay() !== 6) out.push(dayKey(d));
   return out;
@@ -146,7 +146,7 @@ function ledger(rec){
 // today isn't over: its slots only count as missing from tomorrow on
 function missing(rec, from, to){
   const L = ledger(rec), out = [], today = dayKey(new Date());
-  trainingDays(rec, from, to).filter(k => k < today).forEach(k => { const x = L[k] || {};
+  trainingDays(from, to).filter(k => k < today).forEach(k => { const x = L[k] || {};
     ["AM", "PM"].forEach(s => { if(!x[s]) out.push({kind: "typing", date: k, slot: s}); });
     if(!x.SP) out.push({kind: "spelling", date: k, slot: "SP"}); });
   return out;
@@ -182,7 +182,7 @@ const firstDay = rec => { const ds = (rec.typing || []).concat(rec.spelling || [
 // first day to yesterday (today isn't over), plus today's own three
 function compliance(rec, since){
   const today = dayKey(new Date()), from = startOf(rec, "", since), L = ledger(rec);
-  const due = trainingDays(rec, from, today).filter(k => k < today);
+  const due = trainingDays(from, today).filter(k => k < today);
   let done = 0, made = 0; due.forEach(k => ["AM", "PM", "SP"].forEach(s => { const x = (L[k] || {})[s]; if(x){ done++; if(x.made) made++; } }));
   const need = due.length * 3, t = L[today] || {};
   return {need, done, made, lacking: need - done, pct: need ? Math.round(done / need * 100) : null, today: {AM: t.AM || null, PM: t.PM || null, SP: t.SP || null}, from};
@@ -300,7 +300,7 @@ function renderTrainee(){
       <div class="card st-card"><h3>🔤 Spelling Test</h3><p>${WORDS_PER_TEST} words read aloud in a sentence: legal, medical and business words from the course.</p><button class="btn btn-navy" onclick="FTSkills.spelling()">Start the spelling test</button></div>
     </div>
     ${miss.length ? `<div class="card st-makeup"><h3>Missed tests to make up</h3><p class="st-note">The guide asks you to make up a missed test in your idle time. Pick the one you are making up, then take it.</p>
-      <div class="st-chips">${miss.map(m => `<button class="btn btn-ghost btn-sm" onclick="FTSkills.makeup('${m.kind}','${m.date} ${m.slot === "SP" ? "SP" : m.slot}')">${m.kind === "typing" ? "⌨ Typing" : "🔤 Spelling"} · ${e(md(m.date))}${m.slot === "SP" ? "" : " " + m.slot}</button>`).join("")}</div></div>` : ""}
+      <div class="st-chips">${miss.map(m => `<button class="btn btn-ghost btn-sm" onclick="FTSkills.makeup('${m.kind}','${m.date} ${m.slot}')">${m.kind === "typing" ? "⌨ Typing" : "🔤 Spelling"} · ${e(md(m.date))}${m.slot === "SP" ? "" : " " + m.slot}</button>`).join("")}</div></div>` : ""}
     <div class="card st-hist"><div class="st-histh"><h3>Your log</h3><span>${av.net != null ? `Typing: <b>${av.net} WPM</b> net, ${av.acc}% accuracy (last ${av.nt})` : "No typing test yet"} · ${av.spell != null ? `Spelling: <b>${av.spell}%</b> (last ${av.ns})` : "No spelling test yet"}</span></div>
       ${hist.length ? `<table class="st-tbl"><thead><tr><th>When</th><th>Test</th><th>Result</th><th></th></tr></thead><tbody>${hist.map(x => `<tr><td>${e(md(x.date))} · ${e(x.slot)}</td><td>${x.k === "t" ? "⌨ Typing" : "🔤 Spelling"}</td>
         <td>${x.k === "t" ? `${e(x.net)} WPM · ${e(x.acc)}%` : `${e(x.score)} / ${e(x.total)}`}</td><td>${x.makeup ? `<span class="st-tag">make-up for ${e(md(x.makeup.split(" ")[0]))}${x.makeup.split(" ")[1] !== "SP" ? " " + e(x.makeup.split(" ")[1]) : ""}</span>` : ""}</td></tr>`).join("")}</tbody></table>`
@@ -345,7 +345,7 @@ function renderAdmin(){
   const ppl = AD.people.filter(p => bLabel(p.batch) === AD.batch);
   const today = dayKey(new Date());
   const to = AD.to || today, from = AD.from || (() => { const d = new Date(); d.setDate(d.getDate() - 9); return dayKey(d); })();
-  const days = trainingDays(null, from, to);
+  const days = trainingDays(from, to);
   // today at a glance: who has all three, who has some, who has none yet
   const tday = ppl.map(p => { const x = ledger(AD.recs[p.id] || blank())[today] || {}; return ["AM", "PM", "SP"].filter(s => x[s]).length; });
   const last = ppl.map(p => AD.shots[p.id] && AD.shots[p.id].checkedAt).filter(Boolean).sort().pop();
@@ -383,7 +383,7 @@ window.FTSkills = {
     a.download = `Typing & Spelling ${b} ${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   },
   typing(){ startTyping(""); }, spelling(){ startSpelling(""); },
-  makeup(kind, slot){ if(kind === "typing") startTyping(slot); else startSpelling(slot.replace(/ SP$/, " SP")); },
+  makeup(kind, slot){ if(kind === "typing") startTyping(slot); else startSpelling(slot); },
   type(t){
     const r = S.run; if(!r || r.kind !== "typing" || r.done) return;
     if(!r.started && t.value){ r.started = Date.now(); clearInterval(S.tick); S.tick = setInterval(() => { if(!S.run || S.run.done){ clearInterval(S.tick); return; } paintTyping(); if((Date.now() - S.run.started) / 1000 >= SECS) finishTyping(); }, 200); }
