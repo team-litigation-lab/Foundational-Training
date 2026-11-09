@@ -1047,14 +1047,28 @@ function perTraineeHtml(T){
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
+      // (📤 Daily outputs & 📅 Day scores, week by week: a heading row per week — its dates and the average of its days — that
+      // folds the week's days away; the current week open, the weeks before folded, so the page isn't one long scroll)
+      const wkOf = d => { try{ return window.ftWeeks && ftWeeks.now ? ftWeeks.now(p.batch || B.batch, d) : 1; }catch(err){ return 1; } };
+      const dts = x.id === "outputs" && x.dates ? x.dates : null, wks = {};
+      if(dts) dts.forEach((d, j) => { if(!d) return; const w = wkOf(d), c = r[j + 2] || {}, n = parseFloat(stripTags(c.v)); (wks[w] = wks[w] || {days: [], vals: []}).days.push(d); if(isFinite(n)) wks[w].vals.push(n); });
+      const nowWk = dts ? Math.max(...Object.keys(wks).map(Number).concat([1])) : 0;
+      const folded = w => { const k = p.id + "|" + w; return B.fold && k in B.fold ? !!B.fold[k] : w < nowWk; };
+      let lastWk = null;
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
+        const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
+        let wkHead = "";
+        if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, avg = W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null, f = folded(w);
+          const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span><span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span></th></tr>`; }
+        const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
           : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
             + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read from the Task Tracker and Monitoring Sheet</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
-        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -1629,6 +1643,9 @@ async function readCheck(id, date){
     <h4>💾 Saved for the day</h4><p>${S ? `Parts: ${e(JSON.stringify(S.parts || S.day1Parts || {}))} · AI grade: tracker ${e(S.trackerAi == null ? "—" : S.trackerAi + "%")}, Monitoring Sheet ${e(S.monitorAi == null ? "—" : S.monitorAi + "%")} · checked ${e(String(S.checkedAt || "").slice(0, 16).replace("T", " "))}` : "Nothing saved for the day yet."}${j.ai ? "" : " · ⚠ No AI is set up on the server, so no AI grade can be given."}</p>`;
 }
 window.FTBatchSheet = {
+  // (📤 Daily outputs, a week folded or shown on a trainee's page: kept for the visit)
+  foldWeek(id, w){ B.fold = B.fold || {}; const k = id + "|" + w, row = document.querySelector(`.bs-pt-wk[onclick*="'${id}', ${w})"]`), now = row ? row.classList.contains("is-folded") : false;
+    B.fold[k] = !now; if(typeof rerender === "function") rerender(); else render(); },
   readCheck,
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
@@ -2259,6 +2276,9 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-parts tr.bs-parts-g.bs-parts-top th{background:#1E2340;color:#fff;font-size:14.5px;padding:7px 10px;}
 .bs-parts tr.bs-parts-g .bs-parts-gv{float:right;font-weight:700;color:#FDE68A;}
 .bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;}
+.bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
+.bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
+.bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
