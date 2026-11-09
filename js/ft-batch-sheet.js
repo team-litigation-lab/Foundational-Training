@@ -115,6 +115,11 @@ async function loadData(){
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     // (process:<id>: the Knowledge Checks' graded answers, each answer's feedback and the summary, for the scores' context)
     const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:", "assess:"];
+    // (🔁 first the scores given on the simulators — the Google Calendar Simulator's scorecard, Ring Channel's graded calls —
+    // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
+    // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
+    if(state.isAdmin && typeof authFetch === "function")
+      for(let i = 0; i < ppl.length; i += 40){ try{ await authFetch("/api/sim-scores/sync", {ids: ppl.slice(i, i + 40).map(p => p.id)}); }catch(err){} }
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];

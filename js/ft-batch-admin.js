@@ -313,7 +313,8 @@ window.FTMockScores = {
   autoOf,
   step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
-  refresh(){ MS.loadedFor = ""; if(window.FTMockLinks) FTMockLinks.refresh(); if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
+  refresh(){ MS.loadedFor = ""; MS.simSynced = "";   // (↻ reads the simulators again too)
+    if(window.FTMockLinks) FTMockLinks.refresh(); if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
   crit(id, i, val){ const d = draftOf(id), t = String(val).trim(); d.scores[i] = t === "" ? null : Math.max(0, Math.min(5, Number(t))); refreshCol(id); },
   fb(id, i, val){ draftOf(id).feedback[i] = String(val).slice(0, 600); refreshCol(id); },
   score(id, val){ const d = draftOf(id); d.score = String(val).trim(); d.scoreTyped = d.score !== ""; refreshCol(id); },
