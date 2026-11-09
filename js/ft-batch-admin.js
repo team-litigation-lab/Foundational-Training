@@ -231,6 +231,7 @@ function renderMockScores(){
     ${autoBar}
     ${rb && (rb.key === "calendar" || rb.key === "transcription") && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
+    ${typeof window.ftMockLinks === "function" ? window.ftMockLinks(r, a) : ""}
     <table class="ftms-tbl fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}</th><th>Score</th><th>Remarks</th></tr></thead><tbody>
       ${crit}
       ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
@@ -305,7 +306,7 @@ window.FTMockScores = {
   autoOf,
   step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
-  refresh(){ MS.loadedFor = ""; if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
+  refresh(){ MS.loadedFor = ""; if(window.FTMockLinks) FTMockLinks.refresh(); if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
   crit(id, i, val){ const d = draftOf(id), t = String(val).trim(); d.scores[i] = t === "" ? null : Math.max(0, Math.min(5, Number(t))); refreshCol(id); },
   fb(id, i, val){ draftOf(id).feedback[i] = String(val).slice(0, 600); refreshCol(id); },
   score(id, val){ const d = draftOf(id); d.score = String(val).trim(); d.scoreTyped = d.score !== ""; refreshCol(id); },
@@ -329,6 +330,8 @@ window.FTMockScores = {
         cur.acts[act] = Object.assign({}, cur.acts[act] || {}, {scoreEdited:!!d.scoreTyped && d.score !== ""}, {status:d.status || "Not yet", redo:!!d.redo, score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
           comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
           d.autoFrom ? {source:"auto-reviewed", autoAt:d.autoFrom} : {source:undefined, autoAt:undefined},
+          // (☎ 🗂 the graded call on its Ring Channel line and the CMS record it was scored beside, js/ft-mockcall-links.js)
+          window.FTMockLinks && FTMockLinks.sources(id, curAct()) ? {sources:FTMockLinks.sources(id, curAct())} : {},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
             feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : rb ? {rubric:undefined} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
