@@ -68,9 +68,9 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     // Day 8's Practice Intake Calls has no cases box (and no Sample Intake Forms): the cases are the Day 8 demo's, on its preparation slide (s3p)
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);
     if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall, .ftdd-sheet .ftis-forms'))) fail('Day 8\'s Practice Intake Calls still has the cases box or the sample forms');
-    // Day 9's Intake Mock Calls Metrics slide carries no case: the packet's case is the Day 8 demo's
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
-    if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall'))) fail('Day 9\'s Intake Mock Calls slide still has a case box (the case is the Day 8 demo\'s)');
+    // the Intake Mock Calls Metrics slide (closing Part 2: Day 8's mcm) carries no case: the packet's case is the Day 8 demo's
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 'mcm'))); await page.waitForTimeout(2000);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall'))) fail('the Intake Mock Calls Metrics slide still has a case box (the case is the Day 8 demo\'s)');
     // the trainer's Day 8 demo preparation slide: no list of every case (removed: cases are assigned with the packets in
     // Admin → 📦 Intake, and each case is on the trainer's scoring sheet) — the box is empty and hidden
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2500);
