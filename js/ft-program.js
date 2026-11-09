@@ -152,6 +152,11 @@ window.LSH_PROGRAM = {
       about:"Your final average each week, out of 5, from the weekly progress report your trainer shared with you (and your rank in the batch).",
       items: ctx => Object.values(((ctx.rec["rankshare:"] || {}).weeks) || {}).filter(w => w && w.avg != null).sort((a, b) => a.week - b.week)
         .map(w => ({name:`Week ${w.week}`, pct:Math.round(Number(w.avg) / 5 * 100), note:`${Number(w.avg).toFixed(2)}/5${w.rank ? ` · rank ${w.rank} of ${w.of}` : ""}`}))},
+    // 🛠 the Practice Lab, as Admin → 🛠 Practice Lab → 🟢 Practice Sessions measures it (js/ft-utilization.js): the Utilization, the
+    // Eagerness to Learn and the scored AI practice tools, roleplays and random tasks (progress:<id>'s work log), counted in the overall
+    {id:"practicelab", icon:"🛠", label:"Practice Lab", key:"progress:",
+      about:"How much you use the Practice Lab and how eager you are to learn, as your trainer sees it: 📈 Utilization (the Practice Lab tools you used, and the training days you practiced on), 🔥 Eagerness to Learn (showing up every day, practicing, going back to practice again and getting better), and the latest score of each AI practice tool, roleplay and random task you did.",
+      items: ctx => window.FTUtil && typeof window.FTUtil.scoreItems === "function" ? window.FTUtil.scoreItems(ctx) : []},
     {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
       about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
       items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
