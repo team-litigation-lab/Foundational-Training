@@ -522,7 +522,7 @@ s2: html => {
   const ul = xs => "<ul>" + xs.map(x => `<li>${x}</li>`).join("") + "</ul>\n";
   // (the slide in cards: Trainee should and the Minimum Information side by side, then the Scheduling Rules and the Additional
   // Notes. The guide's Possible Scenarios / Nature of Request are the trainer's guide for the mock calls: off the slide, in a
-  // sheet the trainer opens over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button on the trainer's deck only))
+  // sheet opened over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button to trainers and trainees alike))
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   const scenarios = [
       ["Client Consultation: New PI Case", "New PI case; (instructions provided by client)"],

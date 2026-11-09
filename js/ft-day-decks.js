@@ -411,13 +411,12 @@ function visual(html){
   })();
   // tiles that ended up next to each other share one grid
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
-  // 📌 a trainer's guide the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): on the trainer's
-  // deck, a button that opens it as a sheet over the slide (FTDayDecks.tsheet); on a trainee's, nothing
+  // 📌 a sheet the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): a button that opens it over
+  // the slide (FTDayDecks.tsheet), on the trainer's deck and the trainee's alike
   root.querySelectorAll("template.ftdd-tsheet").forEach(t => {
-    if(!isAdminView()){ t.remove(); return; }
     const w = document.createElement("div"); w.className = "ftdd-tsheet-go";
     w.innerHTML = `<button type="button" class="btn btn-navy" onclick="FTDayDecks.tsheet(this)"></button>`;
-    w.querySelector("button").textContent = (t.getAttribute("data-title") || "📌 Trainer’s guide") + " · 🧑‍🏫 Trainer’s guide";
+    w.querySelector("button").textContent = t.getAttribute("data-title") || "📌 Possible Scenarios";
     t.replaceWith(w); w.appendChild(t);
   });
   // 2. tasks → numbered step cards; topics → a topic chip; dashed lines → a divider
@@ -437,7 +436,8 @@ function visual(html){
       const d = document.createElement("div"); d.className = "ftdd-topic"; d.textContent = "🏷 " + m[1].trim(); p.replaceWith(d); return;
     }
     if(/^-{5,}$/.test(txt)){ const hr = document.createElement("hr"); hr.className = "ftdd-rule"; p.replaceWith(hr); return; }
-    if(/^(note|notes|reminder|reminders|important|tip|gentle reminders?)\b|^📌|^❗/i.test(txt)){ p.classList.add("ftdd-callout"); return; }
+    // (a card's heading — "📌 Additional Notes" — stays the card's white-on-navy heading, never a callout)
+    if(/^(note|notes|reminder|reminders|important|tip|gentle reminders?)\b|^📌|^❗/i.test(txt) && !p.classList.contains("ftdd-card4-h")){ p.classList.add("ftdd-callout"); return; }
     if(/update (item|#)|monitoring sheet/i.test(txt) && txt.length < 160) p.classList.add("ftdd-check");
   });
   // 3. the naming convention: the line after "Naming Convention" is the name to copy
@@ -2087,12 +2087,12 @@ root.FTDayDecks = {open, go, next: nextKC,
   // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
   // Day decks test)
   cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
-  // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
+  // 📌 the sheet over the slide (Day 6's Possible Scenarios), trainers and trainees alike: ✕, a click outside it, or Esc closes it
   tsheet(btn){
     const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;
     const old = document.getElementById("ftddTsheet"); if(old) old.remove();
     const m = document.createElement("div"); m.id = "ftddTsheet"; m.className = "ftdd-tsm";
-    m.innerHTML = `<div class="ftdd-tsm-box" role="dialog" aria-modal="true"><div class="ftdd-tsm-h"><b></b><span>🧑‍🏫 Trainer’s guide · not shown to trainees</span><button type="button" class="ftdd-tsm-x" aria-label="Close">✕</button></div><div class="ftdd-tsm-body"></div></div>`;
+    m.innerHTML = `<div class="ftdd-tsm-box" role="dialog" aria-modal="true"><div class="ftdd-tsm-h"><b></b><button type="button" class="ftdd-tsm-x" aria-label="Close">✕</button></div><div class="ftdd-tsm-body"></div></div>`;
     m.querySelector(".ftdd-tsm-h b").textContent = t.getAttribute("data-title") || "Trainer’s guide";
     m.querySelector(".ftdd-tsm-body").appendChild(t.content.cloneNode(true));
     const close = () => { m.remove(); document.removeEventListener("keydown", esc, true); };
@@ -2967,7 +2967,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h b{color:#fff !important;}
 .ftdd-tsm-box{background:#fff;border-radius:16px;width:min(1200px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);}
 .ftdd-tsm-h{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#1E2340;border-bottom:4px solid #E8590C;color:#fff;}
 .ftdd-tsm-h b{font:800 19px/1.3 'Poppins','Inter',sans-serif;} .ftdd-tsm-h span{font-size:13px;color:#C9CFDD;margin-left:auto;}
-.ftdd-tsm-x{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;}
+.ftdd-tsm-x{margin-left:auto;background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;}
 .ftdd-tsm-body{overflow:auto;padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
 .ftdd-tsheet-card{border:1.5px solid #D9DEEA;border-left:4px solid #E8590C;border-radius:10px;padding:10px 12px;background:#FBFBFE;display:flex;flex-direction:column;gap:4px;font:14px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 .ftdd-tsheet-card b{font-weight:700;} .ftdd-tsheet-card span{color:#4A5170;}
