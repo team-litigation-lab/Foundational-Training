@@ -5513,6 +5513,28 @@ function batchStartDate(batch){
   return `20${m[3]}-${mm}-${dd}`;
 }
 window.batchStartDate = batchStartDate;
+// ===== W1-OVERRIDE B103026 one-off: Week 1 (training days 1–5) counted done, its EOD 100%. Applied only where the
+// browser READS the records (nothing is written back: never hook it into sharedGet). Delete this block and every line
+// tagged W1-OVERRIDE (grep -rn W1-OVERRIDE) to remove it. =====
+window.ftW1Override = {
+  on: b => canonicalBatch(b) === "B103026",
+  dayOn(b, n){ return this.on(b) && Number(n) >= 1 && Number(n) <= 5; },
+  // (training days 1–5 from B103026's first day, 10/30/2026: the Batch Sheet's dayDate(1..5))
+  DATES: ["2026-10-30", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"],
+  NOTE: "Week 1 one-off (B103026): counted done / 100%",
+  // a trackerreview record with Week 1's EOD part at 100 and each day's % worked out again (worker.js dailyCompliance's
+  // formula: the average of the numeric parts); the same record, untouched, for any other batch
+  comp(rv, b){
+    if(!rv || !rv.compliance || !this.on(b)) return rv;
+    const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
+    this.DATES.forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return;
+      const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
+      out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
+        eodTrainer: {score: 100, note: this.NOTE + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true}); });
+    return out;
+  }
+};
+// ===== /W1-OVERRIDE =====
 // The Batch ID to show and group by: in its one form, or, for an older code that isn't a date (B1, a guest
 // account's), as it was typed — so a trainee registered under one keeps their records. A new registration
 // has to give a real Batch ID (submitLogin, and worker.js refuses it server-side).
