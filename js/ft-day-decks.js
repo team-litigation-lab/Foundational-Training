@@ -411,13 +411,12 @@ function visual(html){
   })();
   // tiles that ended up next to each other share one grid
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
-  // 📌 a trainer's guide the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): on the trainer's
-  // deck, a button that opens it as a sheet over the slide (FTDayDecks.tsheet); on a trainee's, nothing
+  // 📌 a sheet the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): a button that opens it over
+  // the slide (FTDayDecks.tsheet), on the trainer's deck and the trainee's alike
   root.querySelectorAll("template.ftdd-tsheet").forEach(t => {
-    if(!isAdminView()){ t.remove(); return; }
     const w = document.createElement("div"); w.className = "ftdd-tsheet-go";
     w.innerHTML = `<button type="button" class="btn btn-navy" onclick="FTDayDecks.tsheet(this)"></button>`;
-    w.querySelector("button").textContent = (t.getAttribute("data-title") || "📌 Trainer’s guide") + " · 🧑‍🏫 Trainer’s guide";
+    w.querySelector("button").textContent = t.getAttribute("data-title") || "📌 Possible Scenarios";
     t.replaceWith(w); w.appendChild(t);
   });
   // 2. tasks → numbered step cards; topics → a topic chip; dashed lines → a divider
@@ -437,7 +436,8 @@ function visual(html){
       const d = document.createElement("div"); d.className = "ftdd-topic"; d.textContent = "🏷 " + m[1].trim(); p.replaceWith(d); return;
     }
     if(/^-{5,}$/.test(txt)){ const hr = document.createElement("hr"); hr.className = "ftdd-rule"; p.replaceWith(hr); return; }
-    if(/^(note|notes|reminder|reminders|important|tip|gentle reminders?)\b|^📌|^❗/i.test(txt)){ p.classList.add("ftdd-callout"); return; }
+    // (a card's heading — "📌 Additional Notes" — stays the card's white-on-navy heading, never a callout)
+    if(/^(note|notes|reminder|reminders|important|tip|gentle reminders?)\b|^📌|^❗/i.test(txt) && !p.classList.contains("ftdd-card4-h")){ p.classList.add("ftdd-callout"); return; }
     if(/update (item|#)|monitoring sheet/i.test(txt) && txt.length < 160) p.classList.add("ftdd-check");
   });
   // 3. the naming convention: the line after "Naming Convention" is the name to copy
@@ -2087,12 +2087,12 @@ root.FTDayDecks = {open, go, next: nextKC,
   // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
   // Day decks test)
   cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
-  // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
+  // 📌 the sheet over the slide (Day 6's Possible Scenarios), trainers and trainees alike: ✕, a click outside it, or Esc closes it
   tsheet(btn){
     const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;
     const old = document.getElementById("ftddTsheet"); if(old) old.remove();
     const m = document.createElement("div"); m.id = "ftddTsheet"; m.className = "ftdd-tsm";
-    m.innerHTML = `<div class="ftdd-tsm-box" role="dialog" aria-modal="true"><div class="ftdd-tsm-h"><b></b><span>🧑‍🏫 Trainer’s guide · not shown to trainees</span><button type="button" class="ftdd-tsm-x" aria-label="Close">✕</button></div><div class="ftdd-tsm-body"></div></div>`;
+    m.innerHTML = `<div class="ftdd-tsm-box" role="dialog" aria-modal="true"><div class="ftdd-tsm-h"><b></b><button type="button" class="ftdd-tsm-x" aria-label="Close">✕</button></div><div class="ftdd-tsm-body"></div></div>`;
     m.querySelector(".ftdd-tsm-h b").textContent = t.getAttribute("data-title") || "Trainer’s guide";
     m.querySelector(".ftdd-tsm-body").appendChild(t.content.cloneNode(true));
     const close = () => { m.remove(); document.removeEventListener("keydown", esc, true); };
@@ -2967,7 +2967,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h b{color:#fff !important;}
 .ftdd-tsm-box{background:#fff;border-radius:16px;width:min(1200px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);}
 .ftdd-tsm-h{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#1E2340;border-bottom:4px solid #E8590C;color:#fff;}
 .ftdd-tsm-h b{font:800 19px/1.3 'Poppins','Inter',sans-serif;} .ftdd-tsm-h span{font-size:13px;color:#C9CFDD;margin-left:auto;}
-.ftdd-tsm-x{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;}
+.ftdd-tsm-x{margin-left:auto;background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;}
 .ftdd-tsm-body{overflow:auto;padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
 .ftdd-tsheet-card{border:1.5px solid #D9DEEA;border-left:4px solid #E8590C;border-radius:10px;padding:10px 12px;background:#FBFBFE;display:flex;flex-direction:column;gap:4px;font:14px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 .ftdd-tsheet-card b{font-weight:700;} .ftdd-tsheet-card span{color:#4A5170;}
@@ -3296,6 +3296,15 @@ main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:70
 .ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
 main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
+/* (a document with its note, .ftdd-pdoc-side: the note beside its first page, the page as tall as the slide allows; the other
+   pages are in the page viewer, opened from it) */
+.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-row{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:12px;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-side p.ftdd-pdoc-note{margin:0;max-width:none;font-size:21px;line-height:1.55;}
+.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-pages{display:flex;justify-content:center;margin:0;}
+.ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-hid{display:none !important;}
+.ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-pg img{height:calc(var(--ftdd-room, 70vh) - 110px);min-height:320px;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-pg span{font-size:15px;color:#B5651F !important;}
+@media(max-width:800px){.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-row{grid-template-columns:1fr;}}
 /* (Day 7's blank intake forms, .ftdd-pdoc-big: a form's pages in one row, each as wide as the row allows and as tall as the slide's room) */
 .ftdd-sheet .ftdd-pdoc-big .ftdd-pdoc-pages, .ftdd-sheet .ftdd-pdoc-big[data-pages] .ftdd-pdoc-pages{grid-template-columns:repeat(var(--n),minmax(0,1fr));justify-content:stretch;gap:10px 12px;}
 .ftdd-sheet .ftdd-pdoc-big a.ftdd-pdoc-pg img{width:100%;height:auto;max-height:calc(var(--ftdd-room, 70vh) - 90px);min-height:0;}
@@ -3418,15 +3427,17 @@ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-imgside.ftdd-imgside-r{grid-templat
 main.main-ftdd .ftdd-sheet .ftdd-imgside-img > h4{margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-imgside-txt p.ftdd-rule{font-size:20px !important;line-height:1.45 !important;margin:0 0 16px !important;padding:12px 14px;border-left:5px solid #E8590C;background:#FFF7ED;border-radius:8px;}
 /* (the metrics on a deck slide, read only: one table, read large; its "Score" header on one line) */
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1100px;margin:0 auto;font-size:18px;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:7px 10px;white-space:nowrap;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:110px !important;}
-main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:3px 12px !important;line-height:1.2 !important;font-size:17px;}
-/* (a slide that is the metrics alone, data-big: the scorecard across more of the slide, its text larger) */
+/* (larger: the table across the slide, up to 1300px, its text and rows bigger — read from the back of the room) */
+main.main-ftdd .ftdd-sheet > .ftdd-score{align-self:stretch;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){width:100%;max-width:1300px;margin:0 auto;font-size:22px;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th{padding:9px 16px;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:150px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:7px 16px !important;line-height:1.3 !important;font-size:22px !important;}
+/* (a slide that is the metrics alone, data-big: larger still) */
 main.main-ftdd .ftdd-sheet > .ftdd-score.ftdd-score-big{align-self:stretch;width:100%;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1300px;font-size:22px;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:6px 16px !important;font-size:21px !important;}
-main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:140px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))){max-width:1400px;font-size:25px;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:9px 18px !important;font-size:25px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(3))) th:not(:first-child){width:170px !important;}
 /* (Day 9's metrics with the practice links beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}

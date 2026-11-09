@@ -374,7 +374,11 @@ const DEFAULT_ACTS = [
 ];
 const T = {acts:null};
 const acts = () => T.acts || DEFAULT_ACTS;
-const STATUSES = ["Not yet", "Passed", "Redo"];
+// (the Result: Passed or Failed by the score, 3/5 passes — js/ft-rubrics.js ftResult; the trainer's own choice is only a
+// Redo, which keeps the score off the scorecards until it is done again)
+const RES = r => window.ftResult ? ftResult(r) : (r && r.status) || "Not yet";
+const STATUSES = ["By the score", "Redo"];
+const pillCls = v => v === "Passed" ? "ok" : v === "Failed" ? "bad" : v === "Redo" ? "mid" : "";
 // What this module's live work is: its Practice Session and anything done with the trainer.
 // Used by 📚 Dashboard to show each module's activities next to it (js/ft-program.js).
 FTSessions.forLesson = function(lesson){
@@ -408,9 +412,9 @@ FTSessions.trainerCards = function(){
     && (!window.FTDayLocks || FTDayLocks.labOpen(window.FTDays ? FTDays.forAct(a.id) : [])));
   return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).filter(shown).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
     const dayT = window.FTDays ? FTDays.label(actDays(a)) : "";
-    const st = !isTrainee() ? "todo" : r.status === "Passed" ? "done" : r.status === "Redo" ? "redo" : "todo";
+    const res = RES(r), st = !isTrainee() ? "todo" : res === "Passed" || res === "Failed" ? "done" : res === "Redo" ? "redo" : "todo";
     return `<div class="card fts-card" data-days="${actDays(a).join(",")}" data-status="${st}" data-type="trainer"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
-      <h3>${e(a.title)} ${r.status ? `<span class="fss-pill ${r.status === "Passed" ? "ok" : r.status === "Redo" ? "mid" : ""}">${e(r.status)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
+      <h3>${e(a.title)} ${res !== "Not yet" ? `<span class="fss-pill ${pillCls(res)}">${e(res)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
       <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
         const got = isTrainee() && r.rubric && r.rubric.key === rb.key ? r.rubric : null;
@@ -548,12 +552,12 @@ function renderTrainerInputs(){
       <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTInputs.saveList(this)">💾 Save the activities</button></div></div>` : ""}
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl fss-grid"><thead><tr><th>Trainee</th>${list.map(a => `<th title="${e(a.title)}">${e(a.title.length > 28 ? a.title.slice(0, 26) + "…" : a.title)}</th>`).join("")}</tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>${list.map(a => { const c = cellOf(r, a), sc = tScore(c);
-        return `<td><button class="fss-cell ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}" onclick="FTInputs.cell('${e(r.id)}','${e(a.id)}')">${c.status ? e(c.status) + (sc != null ? " " + sc + "%" : "") : autoOf(r, a, c) ? `🤖 ${e(autoOf(r, a, c).pct)}%` : "＋"}</button></td>`; }).join("")}</tr>`).join("")}
+        return `<td><button class="fss-cell ${pillCls(RES(c))}" onclick="FTInputs.cell('${e(r.id)}','${e(a.id)}')">${RES(c) !== "Not yet" ? e(RES(c)) + (sc != null ? " " + sc + "%" : "") : autoOf(r, a, c) ? `🤖 ${e(autoOf(r, a, c).pct)}%` : "＋"}</button></td>`; }).join("")}</tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
     ${editing ? (() => { const r = rows.find(x => x.id === TI.cell[0]), a = list.find(x => x.id === TI.cell[1]), c = cellOf(r, a), au = autoOf(r, a, c);
       return `<div class="fss-rvform fss-cellform"><b>${e(r.name)} · ${e(a.title)}</b>
-        ${au ? `<p class="fss-wide fss-muted">🤖 Filled in from the automatic check of ${e(new Date(au.at).toLocaleString())} (${au.pct == null ? "—" : e(au.pct) + "%"}): review it, pick the result and Save. Your score replaces it on the trainee’s Scorecard.</p>` : ""}
-        <label>Result <select data-status>${STATUSES.map(s => `<option ${s === (c.status || "Not yet") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+        ${au ? `<p class="fss-wide fss-muted">🤖 Filled in from the automatic check of ${e(new Date(au.at).toLocaleString())} (${au.pct == null ? "—" : e(au.pct) + "%"}): review it and Save. Your score replaces it on the trainee’s Scorecard.</p>` : ""}
+        <label title="Passed at 3/5 (60%) or more, Failed below; Redo keeps it off the scorecards until it is done again">Result <select data-status>${STATUSES.map(s => `<option ${s === (c.redo === true ? "Redo" : "By the score") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
         ${rubricForm(a, au ? {rubric:{key:au.key, scores:au.scores, feedback:au.feedback}} : c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}
         <label>Score <input type="number" min="0" max="100" data-score value="${tScore(c) != null ? tScore(c) : au && au.pct != null ? au.pct : ""}"> %</label>
         <label>Date <input type="date" data-date value="${e(c.date || new Date().toISOString().slice(0, 10))}"></label>
@@ -619,7 +623,8 @@ Return ONLY JSON: {"comment":"..."}`;
     if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)){ toast("The score is a number from 0 to 100."); return; }
     btn.disabled = true;
     const rr = rubricRead(box);
-    try{ await writeReview(id, cur => { cur.acts = cur.acts || {}; cur.acts[act] = Object.assign({status:box.querySelector("[data-status]").value, score:sv === "" ? null : Math.round(Number(sv)),
+    try{ await writeReview(id, cur => { cur.acts = cur.acts || {}; const redo = box.querySelector("[data-status]").value === "Redo", score = sv === "" ? null : Math.round(Number(sv));
+      cur.acts[act] = Object.assign({status:RES({score, redo, status:cur.acts[act] && cur.acts[act].status}), redo, score,
         date:box.querySelector("[data-date]").value, comment:String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000), at:new Date().toISOString()},
         rr && rr.scores.some(v => v != null) ? {rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}} : {}); });
       TI.cell = null; toast("✓ Saved. The trainee sees it on their Practice Lab page."); }
@@ -649,7 +654,7 @@ function metricsTable(key, view){
   if(!trainer || !a) return `<table class="ftms-tbl">${head}${mine ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
     ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>${mine && mine.rubric.avg != null ? e(Number(mine.rubric.avg).toFixed(2)) : "0"}</td>${mine ? "<td></td>" : ""}</tr></tbody></table>
-    ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${mine.status ? ": " + e(mine.status) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
+    ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${RES(mine) !== "Not yet" ? ": " + e(RES(mine)) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
   // (on a deck, only a hidden marker: the 🧑‍🏫 Scoresheet button in the bar under the slide opens the sheet; no hint line)
   return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"${state.view === "daydeck" ? " hidden" : ""}><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
@@ -698,14 +703,14 @@ function metricsSheet(key){
   if(!AD.rows.length) return `<div class="ftms ftms-trainer"><p class="ftms-none">No approved trainees to score yet. Approve your trainees in Admin → 👥 Trainees: they show here, by batch, as soon as they are approved.</p></div>`;
   const id = people.some(r => r.id === MS.who[key]) ? MS.who[key] : "", row = people.find(r => r.id === id), several = actsOfRubric(key);
   const c = row ? ((((row.rv || {}).acts) || {})[a.id] || {}) : {}, dr = MS.draft[key + "|" + a.id + "|" + id];
-  const got = dr || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]}), status = (dr && dr.status) || c.status || "Not yet";
+  const got = dr || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]}), status = (dr && dr.status) || (c.redo === true ? "Redo" : "By the score");
   const avg = RUB().average(rb, got.scores);
   return `<div class="ftms ftms-trainer" data-ms="${e(key)}" data-act="${e(a.id)}">
     <div class="ftms-pick"><b>🧑‍🏫 Score a trainee</b>
       <select aria-label="Batch" onchange="FTMetrics.batch(this.value)">${batches.map(b => `<option ${b === MS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       ${several.length > 1 ? `<select aria-label="Activity" onchange="FTMetrics.act('${e(key)}', this.value)">${several.map(x => `<option value="${e(x.id)}" ${x.id === a.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select>` : ""}
       <select aria-label="Trainee" onchange="FTMetrics.who('${e(key)}', this.value)"><option value="">Choose a trainee…</option>${people.map(r => `<option value="${e(r.id)}" ${r.id === id ? "selected" : ""}>${e(r.name)}</option>`).join("")}</select>
-      ${row && c.status ? `<span class="fss-pill ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : ""}
+      ${row && RES(c) !== "Not yet" ? `<span class="fss-pill ${pillCls(RES(c))}">Saved: ${e(RES(c))}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : ""}
       <label>Facilitated by <input data-fac list="ftmsFacList" maxlength="120" value="${e((dr && dr.facilitator != null ? dr.facilitator : c.facilitator) || facLast())}" placeholder="Trainer’s name" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"><datalist id="ftmsFacList">${[...new Set([facLast(), ...AD.rows.flatMap(x => Object.values(((x.rv || {}).acts) || {}).map(v => v && v.facilitator))].map(x => String(x || "").trim()).filter(Boolean))].sort().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
       <label>Result <select data-status ${row ? "" : "disabled"} onchange="FTMetrics.calc(this)">${STATUSES.map(x => `<option ${x === status ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
@@ -760,7 +765,8 @@ window.FTMetrics = {
     const played = act === "intake-packet-demo" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
     try{
       await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
-        cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
+        const redo = box.querySelector("[data-status]").value === "Redo", score = rr.avg == null ? null : Math.round(rr.avg / 5 * 100);
+        cur.acts[act] = Object.assign({}, prev, {status:RES({score, redo, status:prev.status}), redo, score,
           date:prev.date || new Date().toISOString().slice(0, 10), facilitator, at:new Date().toISOString(),
           rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}},
           // (the CMS call the trainee was assigned, js/ft-intake.js; null when none, so an earlier case isn't carried over)
@@ -793,11 +799,14 @@ window.ftTrainerItems = ctx => {
   const auto = (((ctx.rec["trackerreview:"] || {}).transcribe) || {});
   const autoItem = a => { const m = /^transcription-([12])$/.exec(a.id), g = m && auto[m[1]];
     return g && typeof g.pct === "number" ? {name:a.title, at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet"} : null; };
-  return list.filter(a => (mine[a.id] && mine[a.id].status) || autoItem(a)).map(a => { if(!(mine[a.id] && mine[a.id].status)) return autoItem(a);
+  // (a graded one counts at once, Passed or Failed; a Redo the trainer asked for stays off until it is done again — and is
+  // never replaced by the automatic score)
+  const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet";
+  return list.filter(a => recorded(a) ? RES(mine[a.id]) !== "Redo" : !!autoItem(a)).map(a => { if(!recorded(a)) return autoItem(a);
     const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
     const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
-    return {name:a.title, at:r.at || "", pct:t != null ? t : r.status === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    return {name:a.title, at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `
@@ -837,7 +846,7 @@ main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fss-f input, .fss-f select, .fss-f textarea, .fss-rvform input, .fss-rvform select, .fss-rvform textarea, .fss-acts-edit textarea{font:inherit;font-weight:500;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;}
 .fss-f legend{margin-bottom:4px;} .fss-check{display:flex;gap:7px;align-items:center;font-size:13.5px;font-weight:500;color:var(--ink);}
 .fss-pill{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:#F3F4F8;color:#4A5070;vertical-align:2px;}
-.fss-pill.ok{background:#E7F5EE;color:#1E7F4F;} .fss-pill.mid{background:#FEF7C3;color:#7a5d00;} .fss-pill.live{background:#E7F5EE;color:#1E7F4F;}
+.fss-pill.ok{background:#E7F5EE;color:#1E7F4F;} .fss-pill.mid{background:#FEF7C3;color:#7a5d00;} .fss-pill.bad{background:#FDECEC;color:#B42318;} .fss-pill.live{background:#E7F5EE;color:#1E7F4F;}
 .fss-checks{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;} .fss-checks-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .fss-checks ul{list-style:none;margin:8px 0 0;padding:0;font-size:14px;} .fss-checks li{padding:4px 0;border-top:1px solid #F1F2F6;}
 .fss-checks li.ok{color:#1E7F4F;} .fss-checks li.miss{color:#B5531A;} .fss-checks li span{display:block;font-size:12.5px;color:var(--ink-soft);margin-left:18px;}
@@ -867,7 +876,7 @@ main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .ti-rub-card li span{flex:1 1 auto;} .ti-rub-card li em{flex-basis:100%;color:var(--ink-soft);font-size:12.5px;}
 .fss-acts-edit textarea{width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;}
 .fss-cell{font:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;min-width:70px;}
-.fss-cell.ok{background:#E7F5EE;color:#1E7F4F;border-color:#CDEBDC;} .fss-cell.mid{background:#FEF7C3;color:#7a5d00;}
+.fss-cell.ok{background:#E7F5EE;color:#1E7F4F;border-color:#CDEBDC;} .fss-cell.mid{background:#FEF7C3;color:#7a5d00;} .fss-cell.bad{background:#FDECEC;color:#B42318;border-color:#F5C2C0;}
 .fss-grid td span{display:block;}
 `; document.head.appendChild(s); })();
 })();

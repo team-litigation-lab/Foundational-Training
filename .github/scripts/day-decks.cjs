@@ -237,9 +237,10 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     if (r.over > 2) fail(`Day ${n}'s card runs past its slide by ${r.over}px`);
     // every slide has something on it (a launch, its button)
     for (let i = 1; i < r.ids.length - 1; i++) {
-      await page.evaluate(i => FTDayDecks.to(i), i); await page.waitForTimeout(150);
-      const has = await page.evaluate(() => { const sh = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-sheet'), go = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-dv-go, .ftdd-mid .ftdd-deck .ftdd-ho');
-        return !!go || !!(sh && (sh.innerText.trim() || sh.querySelector('img, iframe, .ftdd-tile'))); });
+      await page.evaluate(i => FTDayDecks.to(i), i);
+      // (up to 3 s for a slide whose content arrives after it opens — Day 8's intake documents, read from their Drive folder)
+      const has = await page.waitForFunction(() => { const sh = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-sheet'), go = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-dv-go, .ftdd-mid .ftdd-deck .ftdd-ho');
+        return !!go || !!(sh && (sh.innerText.trim() || sh.querySelector('img, iframe, .ftdd-tile'))); }, null, { timeout: 3000, polling: 100 }).then(() => true, () => false);
       if (!has) fail(`Day ${n}'s slide ${r.ids[i]} is empty`);
     }
     if (n === 2 && !/^Law Firm Communication$/.test(r.title.trim())) fail(`Day 2's deck is headed "${r.title}"`);
@@ -445,9 +446,17 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     return { lists: sh.querySelectorAll('ul').length, items: sh.querySelectorAll('ul > li').length, bars: sh.querySelectorAll('.ftdd-sec, h3').length,
       rules: /Tuesdays and Thursdays/.test(sh.textContent) && /EST time zone/.test(sh.textContent) && /Date of Loss/.test(sh.textContent) }; });   // (textContent: a long slide is read in pages, and the rules may be on a page not showing)
   if (mc.lists < 4 || mc.items < 20 || !mc.rules || mc.bars > 2) fail(`Day 6's Mock Call Scenarios aren't read as the guide's text and lists: ${JSON.stringify(mc)}`);
-  // (in cards; the Possible Scenarios are the trainer's guide: not on a trainee's slide, a sheet the trainer opens over it)
-  const cards6 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-sheet .ftdd-card4').length, scen: /Possible Scenarios|Mediation Preparation Call/.test((document.querySelector('.ftdd-sheet') || document.body).textContent), btn: !!document.querySelector('.ftdd-tsheet-go') }));
-  if (cards6.cards !== 4 || cards6.scen || cards6.btn) fail(`Day 6's Mock Call Scenarios aren't four cards with the Possible Scenarios kept off a trainee's slide: ${JSON.stringify(cards6)}`);
+  // (in cards; the Possible Scenarios are a sheet opened over the slide — off the slide itself, but a trainee opens it too)
+  const cards6 = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body, go = sh.querySelector('.ftdd-tsheet-go');
+    const txt = [...sh.childNodes].filter(n => !(n.nodeType === 1 && n.classList.contains('ftdd-tsheet-go'))).map(n => n.textContent).join(' ');
+    return { cards: sh.querySelectorAll('.ftdd-card4').length, onSlide: /Mediation Preparation Call/.test(txt.replace(go ? go.textContent : '', '')), btn: !!go }; });
+  // (every card's heading white on navy: "📌 Additional Notes" too, never a callout)
+  const heads6 = await page.evaluate(() => [...document.querySelectorAll('.ftdd-sheet .ftdd-card4-h')].map(h => [h.textContent.trim().slice(0, 20), getComputedStyle(h).color]));
+  if (heads6.length !== 4 || heads6.some(([, c]) => c !== 'rgb(255, 255, 255)')) fail(`Day 6's card headings aren't all white: ${JSON.stringify(heads6)}`);
+  if (cards6.cards !== 4 || cards6.onSlide || !cards6.btn) fail(`Day 6's Mock Call Scenarios aren't four cards with the Possible Scenarios as a sheet a trainee can open: ${JSON.stringify(cards6)}`);
+  const tshT = await page.evaluate(() => { const b = document.querySelector('.ftdd-tsheet-go button'); if (!b) return null; b.click(); const m = document.getElementById('ftddTsheet');
+    const r = { cards: m ? m.querySelectorAll('.ftdd-tsheet-card').length : 0, hidden: m ? /not shown to trainees|Trainer’s guide/.test(m.textContent) : null }; if (m) m.remove(); return r; });
+  if (!tshT || tshT.cards !== 16 || tshT.hidden) fail(`a trainee can't open Day 6's Possible Scenarios (16), or it still says it's the trainer's only: ${JSON.stringify(tshT)}`);
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; FTDayDecks.open(6, FTDayDecks.at(6, 's2')); }); await page.waitForTimeout(1600);
   const tsh = await page.evaluate(() => { const b = document.querySelector('.ftdd-tsheet-go button'); if (!b) return null; b.click(); const m = document.getElementById('ftddTsheet');
     const r = { cards: m ? m.querySelectorAll('.ftdd-tsheet-card').length : 0, title: m ? m.querySelector('.ftdd-tsm-h b').textContent : '' }; if (m) m.remove(); return r; });

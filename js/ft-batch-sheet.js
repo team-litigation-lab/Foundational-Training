@@ -125,6 +125,7 @@ async function loadData(){
     ppl.forEach((p, i) => {
       const at = j => vals[i * per + j] || null, sc = {};
       S.forEach((s, j) => { sc[s.key] = at(own.length + j); });
+      if(window.ftW1Override) sc["trackerreview:"] = ftW1Override.comp(sc["trackerreview:"], p.batch);   // W1-OVERRIDE
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
@@ -398,16 +399,19 @@ function kcDetailHtml(){
 const clip = (v, n = 420) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 const num100 = v => v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null;
 // 🧑‍🏫 a trainer-scored activity (a mock call, a demo): the rubric's criteria, their 0–5 scores and remarks
+// (the Result: Passed / Failed by the score, Redo only when the trainer asked for one — js/ft-rubrics.js ftResult)
+const resOf = a => window.ftResult ? ftResult(a) : (a && a.status) || "Not yet";
 function trainerCtx(a, title){
+  const res = resOf(a), redo = res === "Redo";
   const rb = a.rubric && window.FT_RUBRICS && FT_RUBRICS.list ? FT_RUBRICS.list[a.rubric.key] : null, pct_ = num100(a.score) != null ? num100(a.score) : a.status === "Passed" ? 100 : null;
   const crit = rb && a.rubric ? (rb.criteria || []).map((c, i) => ({n: c.n, s: (a.rubric.scores || [])[i], fb: (a.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : [];
   const byS = crit.slice().sort((x, y) => Number(y.s) - Number(x.s));
   const best = byS.filter(c => Number(c.s) >= 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
   const low = byS.slice().reverse().filter(c => Number(c.s) < 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
   const why = [crit.length ? `The trainer scored ${crit.length} criteria on the ${rb.title} rubric: weighted average ${a.rubric.avg != null ? Number(a.rubric.avg).toFixed(2) : "–"}/5${pct_ != null ? ` = ${pct_}%` : ""}` : pct_ != null ? `The trainer's score: ${pct_}%` : "",
-    a.status ? `Result: ${a.status}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
-  return {name: title, pct: pct_, status: a.status || "", why, best: best.length ? best : (!crit.length && a.status === "Passed" ? ["Passed with the trainer"] : []),
-    improve: low.length ? low : a.status === "Redo" ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer"};
+    res !== "Not yet" ? `Result: ${res}${redo ? " (off the scorecards until it is done again)" : ""}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
+  return {name: title, pct: redo ? null : pct_, status: res === "Not yet" ? "" : res, why, best: best.length ? best : (!crit.length && res === "Passed" ? ["Passed with the trainer"] : []),
+    improve: low.length ? low : redo ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer"};
 }
 // 🟢 a Practice Session: its latest submitted attempt's checks, the trainer's review, the AI's evaluation
 function sessionCtx(R, it){
@@ -463,16 +467,18 @@ function dayDeliverables(p, d){
   const out = [], acts = (((R.src["labreview:"] || {}).acts) || {}), list = dayStatus(p, d), L = lastDayOf();
   const later = k => L[k] != null && L[k] !== d.day ? L[k] : null;
   list.forEach(x => {
+    // (W1-OVERRIDE: a Week 1 activity with no score reads Done, with the note)
+    const push = (...os) => out.push(...os.map(o => x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o));
     const it = x.it, lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
-    if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ out.push(trainerCtx(acts[it.id], it.t)); return; }
-    if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ out.push(c); return; } }
-    if(it.assess){ const c = assessCtx(R, it); if(c){ out.push(c); return; } }
-    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ out.push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
+    if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
+    if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ push(c); return; } }
+    if(it.assess){ const c = assessCtx(R, it); if(c){ push(c); return; } }
+    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
-      const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ out.push(...cs); return; }
+      const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
       if(ls.length && !here_.length) return; }
-    out.push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
+    push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
   });
   // 📒 the day's Monitoring Sheet update, graded on Submit (js/ft-buffer.js ACTS[…].submit, trackerreview:<id>.items)
   const ACTS = (window.FTBuffer && FTBuffer.ACTS) || {}, items = ((R.src["trackerreview:"] || {}).items) || {};
@@ -701,11 +707,13 @@ function linksEditHtml(){
   const ppl = people(); if(!ppl.length) return "";
   const id = B.le && ppl.some(p => p.id === B.le) ? B.le : ppl[0].id, dv = (B.data.rec[id] || {}).drive || {}, L = (() => { try{ return linkState(ppl.find(p => p.id === id)).L; }catch(err){ return {}; } })();
   const mark = k => { const x = L[k] || {}; return (LSTAT[x.st] || ["", ""])[0]; };
-  return `<details class="bs-le" ${B.leOpen ? "open" : ""} ontoggle="FTBatchSheet.leOpen(this.open)"><summary>🔗 Link a trainee’s files by hand</summary>
+  // (opened from 🔗 Link files by hand on the blue bar, and drawn right under it)
+  if(!B.leOpen) return "";
+  return `<div class="bs-le card"><div class="bs-le-h"><b>🔗 Link a trainee’s files by hand</b><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.leOpen(false)">✕ Close</button></div>
     <label class="bs-ck-who">Trainee <select onchange="FTBatchSheet.leWho(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>
     <p class="bs-note">Paste each file’s or folder’s own link (open it in Drive and copy the address). 🔄 Update on ✅ Compliance finds most of them by itself; use this for any it couldn’t.</p>
     <div class="bs-le-rows">${LINKS.map(([k, label]) => `<label class="bs-le-row"><span>${e(label)}</span><input type="url" data-k="${k}" value="${e(dv[k] || "")}" placeholder="https://${/folder|typing|spelling/.test(k) ? "drive.google.com/drive/folders/…" : "docs.google.com/…"}"><small>${e(mark(k))}${(dv.auto || {})[k] ? " · found automatically" : dv.linkedBy === "trainer" && dv[k] ? " · set by a trainer" : ""}</small></label>`).join("")}</div>
-    <div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" ${B.leBusy ? "disabled" : ""} onclick="FTBatchSheet.leSave('${e(id)}', this)">${B.leBusy ? "Saving…" : "💾 Save and check"}</button></div></details>`;
+    <div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" ${B.leBusy ? "disabled" : ""} onclick="FTBatchSheet.leSave('${e(id)}', this)">${B.leBusy ? "Saving…" : "💾 Save and check"}</button></div></div>`;
 }
 // 🔄 a section's own Update (FTBatchSheet.sync): the trainer's, and its progress while it runs
 const SYNC_OF = {scorecard: "scores", compliance: "links", outputs: "outputs", ranking: "ranking"};
@@ -844,7 +852,7 @@ function shareBanner(){
 // every other table under ▸ More detail; the approvals and batches at the foot
 const MAIN = ["scorecard", "compliance", "outputs"];
 function sectionsHtml(T){
-  const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, linksEditHtml() + trainerToolsHtml() + "</section>")
+  const one = (x, i) => x.id === "compliance" ? groupedSheetHtml(x, i).replace(/<\/section>$/, trainerToolsHtml() + "</section>")
     : x.id === "scorecard" ? groupedSheetHtml(x, i).replace(/<\/section>$/, kcDetailHtml() + "</section>")
     : x.id === "dayscores" ? sheetHtml(x, i).replace(/<\/section>$/, dayScoresHtml() + "</section>")
     : x.id === "scores" ? sheetHtml(x, i).replace(/<\/section>$/, gradesHtml() + "</section>")
@@ -901,6 +909,19 @@ function everyGradeHtml(p, bare){
   // (📅 / 🟢 / 🎧 Review: buttons in 🛡 Admin Master Control now, not in each trainee's grades)
   return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}`;
 }
+// 🧑‍🏫 the Graders' Mock Calls & Demos (labreview:<id>.acts): each graded one, its score and its result — ✓ Passed, ↻ Redo or
+// ⏳ Not yet — as 🧑‍🏫 Graders saved it, in the trainee's 🏅 Grades
+function gradersHtml(p){
+  const acts = ((((B.data.rec[p.id] || {}).src || {})["labreview:"] || {}).acts) || {};
+  const list = window.FTSessions && typeof FTSessions.trainerActs === "function" ? (FTSessions.trainerActs() || []) : [];
+  const title = k => { const a = list.find(x => x.id === k); return a ? a.title : k; };
+  const rows = Object.entries(acts).filter(([, a]) => a && (a.status || a.score != null)).sort((x, y) => String(x[1].date || "").localeCompare(String(y[1].date || "")));
+  if(!rows.length) return "";
+  const badge = st => st === "Passed" ? `<b class="bs-res bs-res-ok">✓ Passed</b>` : st === "Redo" ? `<b class="bs-res bs-res-no">↻ Redo</b>` : `<b class="bs-res bs-res-wait">⏳ Not yet</b>`;
+  return `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">🧑‍🏫 Graders: Mock Calls &amp; Demos</td></tr>` + rows.map(([k, a]) => { const v = num100(a.score);
+    return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(title(k)))}</td><td class="bs-pt-v ${e(tone(v))}">${v != null ? v + "%" : "—"} ${badge(a.status)}</td>
+      <td class="bs-pt-f">${e([a.date ? "Graded " + a.date : "", a.facilitator ? "by " + a.facilitator : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(" · "))}</td></tr>`; }).join("");
+}
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
 function matrixOf(x){
   if(!Array.isArray(x.groups) || !x.groups.length) return null;
@@ -950,7 +971,7 @@ function perTraineeHtml(T){
       + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average|feedback \(day by day\)/i.test(h))   // (the grading systems: below, with their grades)
       // (every grading system with each of its grades, in the same 🏅 Grades list; no lesson-by-lesson Score Card, Practice Lab
       // or Lessons here: the lessons and decks are in Compliance and Platform Utilization Monitoring)
-      + everyGradeHtml(p, true);
+      + everyGradeHtml(p, true) + gradersHtml(p);
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
     // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
@@ -1136,7 +1157,8 @@ const DAILY_T = /^(Typing Test \(morning|Spelling Test \(once a day\)|Free Commu
 const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 // (not on the scorecards: the classroom lessons and discussions, the buffer times and Mock Call Preparation — nothing is
 // scored there — and the daily tests, which have their own compliance)
-const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation/i.test(it.t || "");
+// (nor the Confidentiality & Call Response Exercise: off the scorecards, it stays in Day 3's deck)
+const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response/i.test(it.t || "");
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
@@ -1154,8 +1176,9 @@ function autoDone(R, d, it, p){
   if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], g = a ? null : autoTr(R, it);
     if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
     if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
-    if(a.status === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%)` : "")};
-    return {done: a.status === "Passed" || a.score != null || !!a.status, how: `Trainer: ${a.status || "recorded"}${a.score != null ? ` · ${a.score}%` : ""}`}; }
+    const res = resOf(a);
+    if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
+    return {done: res !== "Not yet", how: `Trainer: ${res === "Not yet" ? "recorded" : res}${a.score != null ? ` · ${a.score}%` : ""}`}; }
   // 📝 done once submitted for grading; until then the trainer's tick still counts (the worksheet, handed in on Drive)
   if(it.assess){ const g = assessOf(R, it); return g && g.at ? {done: true, how: `Submitted for grading ${g.when || when(g.at)}`} : null; }
   if(it.at === "drive"){ const g = gradeByName(R, it); return g ? {done: true, how: `Graded ${g.pct}%`} : null; }
@@ -1201,8 +1224,8 @@ function scoreOf(R, d, it, p){
       return t != null ? {pct: t, how: "trainer's score"} : runs[k].submittedAt && runs[k].auto && typeof runs[k].auto.pct === "number" ? {pct: Math.round(runs[k].auto.pct), how: "automated checks"} : null; }).filter(Boolean);
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: xs.map(x => `${x.pct}% (${x.how})`).join(", ")} : null;
   }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a ? numOr(a.score) : null, g = a ? null : autoTr(R, it);
-    return v != null ? {pct: v, how: `trainer's score${a.status ? " · " + a.status : ""}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null, g = a ? null : autoTr(R, it);
+    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
   if(it.assess){ const g = assessOf(R, it), v = gradePct(g);
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;
@@ -1223,7 +1246,8 @@ function scoreOf(R, d, it, p){
 function dayStatus(p, d){
   const R = B.data.rec[p.id] || {}, man = ((R.daycheck || {}).items) || {};
   return dayItems(d).map(it => { const a = autoDone(R, d, it, p), m = man[ckKey(d, it)], sc = scoreOf(R, d, it, p);
-    return {it, key: ckKey(d, it), auto: a, score: sc, manual: !!(m && m.done), mAt: m && m.at, done: !!(m && m.done) || !!(a && a.done)}; });
+    const w1 = !!(window.ftW1Override && ftW1Override.dayOn(p.batch, d.day)) && !(m && m.done) && !(a && a.done);   // W1-OVERRIDE
+    return {it, key: ckKey(d, it), auto: w1 ? {done: true, how: ftW1Override.NOTE} : a, score: sc, manual: !!(m && m.done), mAt: m && m.at, done: w1 || !!(m && m.done) || !!(a && a.done), w1}; });
 }
 // a set of activities as a score: the average of the scored ones, with each one's score for the bar above the sheet
 const scoreLine = xs => { const sc = xs.filter(y => y.score); return {avg: sc.length ? Math.round(avgOf(sc.map(y => y.score.pct))) : null, n: sc.length,
@@ -1441,11 +1465,11 @@ function renderSheet(){
   const waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
-  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="${B.leOpen ? "bs-le-on" : ""}" onclick="FTBatchSheet.leOpen(${B.leOpen ? "false" : "true"})">🔗 Link files by hand</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
 ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div></div>`;
   const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", "", "", controls);
-  return `${banner}<div class="card gs-card bs-card">
+  return `${banner}${linksEditHtml()}<div class="card gs-card bs-card">
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
 </div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, use <b>✏️ Fix the batch name</b> in 🛡 Admin Master Control → 📁 Batches.</div>` : ""}
@@ -1653,7 +1677,7 @@ window.FTBatchSheet = {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("📋 Copied: " + t), () => toast("Couldn’t copy. Select the address instead.")); },
   // 🔁 every trainee of the batch whose links can't be opened: checked again now, then the sheet read again
   recheckLinks(){ return FTBatchSheet.sync("links"); },
-  leOpen(o){ B.leOpen = !!o; },
+  leOpen(o){ if(!adminOn()) return; B.leOpen = !!o; render(); },
   leWho(id){ if(!adminOn()) return; B.le = id; B.leOpen = true; render(); },
   ttOpen(v){ B.ttOpen = !!v; },
   ttWho(id){ if(!adminOn()) return; B.tt = id; B.ttOpen = true; B.ttD = {}; render(); },
@@ -2151,6 +2175,8 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-look{margin-left:auto;font-weight:700;color:#1E2340;} .bs-look select{font:600 13px Arial,sans-serif;padding:5px 10px;border:1px solid #C9CEDA;border-radius:999px;background:#fff;color:#1E2340;max-width:260px;}
 .bs-mk{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;border-radius:6px;font:800 14px Arial,sans-serif;border:0;} .bs-mk-ok{color:#166534;background:#DCFCE7;} .bs-mk-wait{color:#92400E;background:#FEF3C7;} button.bs-mk-x,.bs-mk-x{color:#991B1B;background:#FEE2E2;cursor:pointer;} button.bs-mk-x:hover{background:#FCA5A5;}
 .bs-lkg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid #E3E6EE;border-radius:6px;overflow:hidden;} .bs-lkc{overflow-wrap:normal;word-break:normal;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;text-align:center;font-size:12.5px;line-height:1.25;} .bs-lkc + .bs-lkc{border-left:1px solid #E3E6EE;}
+.bs-le.card{padding:12px 16px;margin:0 0 12px;} .bs-le-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px;color:#1E2340;} .gs-menu button.bs-le-on{background:#F6C08F !important;color:#1E2340 !important;}
+.bs-res{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;font:800 13px Arial,sans-serif;border:2px solid;} .bs-res-ok{background:#E6F4EA;border-color:#1E8E3E;color:#0B5D1E;} .bs-res-no{background:#FDE8E8;border-color:#D93025;color:#A50E0E;} .bs-res-wait{background:#FFF4E0;border-color:#E8A400;color:#7A4B00;}
 .bs-lkg-n{grid-template-columns:repeat(var(--n,6),minmax(0,1fr));} .bs-lkg-n .bs-lkc span:first-child{font-size:12px;color:#3C4043;} .bs-lkg-n .bs-lkc b{font-size:13px;color:#1E2340;}
 @media (max-width:760px){.bs-lkg{grid-template-columns:repeat(3,minmax(0,1fr));} .bs-lkc:nth-child(4){border-left:0;} .bs-lkc:nth-child(n+4){border-top:1px solid #E3E6EE;} .bs-look{margin-left:0;}}
 .bs-pop{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;} .bs-pop-box{position:relative;background:#fff;border-radius:10px;max-width:460px;width:100%;padding:18px 20px;box-shadow:0 20px 50px rgba(0,0,0,.3);font:14px Arial,sans-serif;color:#1f2937;}

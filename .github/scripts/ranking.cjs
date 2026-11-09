@@ -143,7 +143,7 @@ const failures = []; const fail = m => failures.push(m);
   for (let i = 0; i < 14; i++) await page.fill(`.ti-rub-tbl input[data-crit="${i}"]`, i < 2 ? '5' : '4');
   await page.fill('.ti-rub-tbl input[data-fb="7"]', 'Resolved the caller’s concern but missed the claim number.');
   if ((await page.innerText('[data-avg]')) !== '4.14/5' || (await page.inputValue('.fss-cellform [data-score]')) !== '83') fail(`the scorecard's weighted average isn't the score: ${await page.innerText('[data-avg]')} → ${await page.inputValue('.fss-cellform [data-score]')}%`);
-  await page.selectOption('.fss-cellform [data-status]', 'Passed');
+  await page.selectOption('.fss-cellform [data-status]', 'By the score');
   await page.click('.fss-cellform >> text=Save'); await page.waitForTimeout(1500);
   const lr = ((await get('labreview:' + ids.Sam)) || {}).acts || {};
   const rec = lr['reception-live'] || {};

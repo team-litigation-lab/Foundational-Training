@@ -250,7 +250,7 @@ async function fillFromPortal(quiet){
     // (trackerreview:<id>.compliance[<date>].parts: monitor, tracker, tam, tests, eod — a part the day had nothing to check for,
     // null, isn't counted); a column set to "Whole training": every day so far
     if(dayCols.length){
-      const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
+      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE
       if(gone()){ R.fill = false; return; }
       dayCols.forEach(c => { const k = c.src.slice(4); if(c.period === "week" && !wk) return; ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
@@ -262,7 +262,7 @@ async function fillFromPortal(quiet){
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
     if(compCols.length){
-      const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
+      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE
       if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (c.period === "week" && !wk)) return;
@@ -735,7 +735,7 @@ window.FTRanking = {
   explain(){ R.explain = R.explain ? null : {}; rerender(); },
   async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
     let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
-    if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: v[0] || {}, dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
+    if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: window.ftW1Override ? ftW1Override.comp(v[0] || {}, (people().find(p => p.id === id) || {}).batch || R.batch) : (v[0] || {}), dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
   // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
   ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
   fold(k){ const f = foldSet(); if(f.has(k)) f.delete(k); else f.add(k); saveFolds(); rerender(); },

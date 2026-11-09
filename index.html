@@ -5513,6 +5513,28 @@ function batchStartDate(batch){
   return `20${m[3]}-${mm}-${dd}`;
 }
 window.batchStartDate = batchStartDate;
+// ===== W1-OVERRIDE B103026 one-off: Week 1 (training days 1–5) counted done, its EOD 100%. Applied only where the
+// browser READS the records (nothing is written back: never hook it into sharedGet). Delete this block and every line
+// tagged W1-OVERRIDE (grep -rn W1-OVERRIDE) to remove it. =====
+window.ftW1Override = {
+  on: b => canonicalBatch(b) === "B103026",
+  dayOn(b, n){ return this.on(b) && Number(n) >= 1 && Number(n) <= 5; },
+  // (training days 1–5 from B103026's first day, 10/30/2026: the Batch Sheet's dayDate(1..5))
+  DATES: ["2026-10-30", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"],
+  NOTE: "Week 1 one-off (B103026): counted done / 100%",
+  // a trackerreview record with Week 1's EOD part at 100 and each day's % worked out again (worker.js dailyCompliance's
+  // formula: the average of the numeric parts); the same record, untouched, for any other batch
+  comp(rv, b){
+    if(!rv || !rv.compliance || !this.on(b)) return rv;
+    const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
+    this.DATES.forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return;
+      const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
+      out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
+        eodTrainer: {score: 100, note: this.NOTE + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true}); });
+    return out;
+  }
+};
+// ===== /W1-OVERRIDE =====
 // The Batch ID to show and group by: in its one form, or, for an older code that isn't a date (B1, a guest
 // account's), as it was typed — so a trainee registered under one keeps their records. A new registration
 // has to give a real Batch ID (submitLogin, and worker.js refuses it server-side).
@@ -14037,7 +14059,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.09-fd53fbe2";
+var APP_BUILD = "ft-2026.11.09-afb48199";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14086,21 +14108,21 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-process.js?v=191bad0aae"></script>
 <script src="/js/ft-assess.js?v=dc52887b7f"></script>
 <script src="/js/ft-claims-email.js?v=94cd2deef4"></script>
-<script src="/js/ft-rules.js?v=003bb36b32"></script>
+<script src="/js/ft-rules.js?v=f4f7527f00"></script>
 <script src="/js/ft-calsim-core.js?v=e5a3258e64"></script>
 <script src="/js/ft-calendar.js?v=fc598b7761"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
 <script src="/js/ft-firms.js?v=24b4d52c09"></script>
-<script src="/js/ft-day-activities.js?v=b7a3e5020d"></script>
+<script src="/js/ft-day-activities.js?v=ec87dcaa07"></script>
 <script src="/js/ft-simulators.js?v=03f496123b"></script>
-<script src="/js/ft-rubrics.js?v=19a087a866"></script>
-<script src="/js/ft-sessions.js?v=c113630fca"></script>
+<script src="/js/ft-rubrics.js?v=1154f93e59"></script>
+<script src="/js/ft-sessions.js?v=48210af5e8"></script>
 <script src="/js/ft-utilization.js?v=d188248919"></script>
-<script src="/js/ft-ranking.js?v=f1d168adb5"></script>
-<script src="/js/ft-ranking-summary.js?v=08c7d097c7"></script>
+<script src="/js/ft-ranking.js?v=284be4dcfe"></script>
+<script src="/js/ft-ranking-summary.js?v=e574e5325f"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=184067f2f3"></script>
-<script src="/js/ft-skilltests.js?v=689ed88454"></script>
+<script src="/js/ft-batch-sheet.js?v=6366ca97d2"></script>
+<script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=5588cf2eca"></script>
 <script src="/js/ft-calrules.js?v=adaad052d7"></script>
 <script src="/js/ft-writing.js?v=f939b19609"></script>
@@ -14110,13 +14132,13 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=c432b947a8"></script>
 <script src="/js/ft-todo.js?v=317351bc17"></script>
 <script src="/js/ft-next-step.js?v=a4448878a1"></script>
-<script src="/js/ft-day-decks.js?v=7baede68e7"></script>
+<script src="/js/ft-day-decks.js?v=69a8b0c914"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=6fa36bd766"></script>
 <script src="/js/ft-minutes-rules.js?v=1637b476a6"></script>
-<script src="/js/ft-transcribe.js?v=8e00652ba2"></script>
-<script src="/js/ft-intake.js?v=462a86cce3"></script>
+<script src="/js/ft-transcribe.js?v=94d75f9f2a"></script>
+<script src="/js/ft-intake.js?v=0b62e8240e"></script>
 <script src="/js/ft-process-guide.js?v=9a68e5c077"></script>
 <script src="/js/ft-lor.js?v=663462f3d8"></script>
 <script src="/js/ft-trainer-feedback.js?v=cb9131f78b"></script>
@@ -14126,7 +14148,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-dna-learn.js?v=276b146f1c"></script>
 <script src="/js/ft-admin-ops.js?v=1f18bc546d"></script>
 <script src="/js/ft-attendance.js?v=ae6746fd47"></script>
-<script src="/js/ft-batch-admin.js?v=d97d06e214"></script>
+<script src="/js/ft-batch-admin.js?v=f4e6b36b64"></script>
 <script src="/js/portal-link.js?v=41a9854349"></script>
 <script src="/js/show-password.js?v=c12df67a51"></script>
 <!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
@@ -14134,11 +14156,11 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-blueprint-course.js?v=57917aeff1"></script>
 <script src="/js/lsh-blueprint.js?v=29a13302ce"></script>
 <script src="/js/lsh-dashboard.js?v=7283130891"></script>
-<script src="/js/ft-card-grid.js?v=234180e8fa"></script>
+<script src="/js/ft-card-grid.js?v=9e93c91cb0"></script>
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
-<script src="/js/ft-program.js?v=998419feac"></script>
-<script src="/js/lsh-program.js?v=8ee414ad32"></script>
+<script src="/js/ft-program.js?v=2337fb19f3"></script>
+<script src="/js/lsh-program.js?v=d6043da109"></script>
 <script src="/js/ft-my-pages.js?v=24eceb04cd"></script>
 <script src="/js/ft-day1-flow.js?v=b0a895932f"></script>
 <script src="/js/ft-day-locks.js?v=5a9b64bd73"></script>

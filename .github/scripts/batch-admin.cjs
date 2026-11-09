@@ -139,7 +139,8 @@ async function workerChecks() {
     if (await page.evaluate(() => FTMockScores.status()) !== 'Passed') fail(`4/5 didn't set the Result to Passed: ${await page.evaluate(() => FTMockScores.status())}`);
     await page.fill('.fms-tbl tbody tr:nth-child(1) input[type=number]', '1');
     for (let i = 1; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '2');
-    if (await page.evaluate(() => FTMockScores.status()) !== 'Redo') fail('under 3/5 didn\'t set the Result to Redo');
+    // (under 3/5 is Failed — it still counts; Redo is only the trainer's own choice)
+    if (await page.evaluate(() => FTMockScores.status()) !== 'Failed') fail(`under 3/5 didn't set the Result to Failed: ${await page.evaluate(() => FTMockScores.status())}`);
     for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '4');
     const avg = await text('.fms-tbl [data-avg]'), sc = await page.inputValue('.fms-sheet [data-score]');
     if (avg !== '4.00/5' || sc !== '80') fail(`the average and the score don't follow the scores: ${avg} ${sc}`);
@@ -155,6 +156,16 @@ async function workerChecks() {
     const lr = await get('labreview:ana-cruz--b103026'), c = ((lr || {}).acts || {})['reception-live'] || {};
     if (c.status !== 'Passed' || c.score !== 80 || !c.rubric || c.rubric.avg !== 4 || c.rubric.feedback[0] !== 'Clear intro' || !/improvements/.test(c.comment) || c.facilitator !== 'Coach Ana Reyes') fail(`the scorecard wasn't saved as Trainer Inputs saves it: ${JSON.stringify(c)}`);
     if (await get('labreview:ben-diaz--b103026')) fail('a VA who wasn\'t scored got a record');
+    // ✅ a graded mock call counts on the scorecards at once (Passed, and Failed too); ↻ Ask for a Redo keeps it off them
+    const counted = r => page.evaluate(r => (window.ftTrainerItems({ rec: { 'labreview:': r }, shared: {} }) || []).filter(x => /Reception Mock Call/i.test(x.name)).map(x => x.pct + '|' + x.note), r);
+    if (!/^80\|Passed/.test((await counted(lr)).join())) fail(`a Passed mock call doesn't count on the scorecards: ${await counted(lr)}`);
+    if (!/^40\|Failed/.test((await counted({ acts: { 'reception-live': { status: 'Redo', score: 40 } } })).join())) fail('a Failed mock call (or one saved as an automatic Redo before) doesn\'t count on the scorecards');
+    await page.evaluate(() => FTMockScores.redo('ana-cruz--b103026')); await page.waitForTimeout(300);
+    if (await page.evaluate(() => FTMockScores.status()) !== 'Redo' || !/Redo asked/.test(await text('.fms-redo'))) fail('↻ Ask for a Redo didn\'t set the Result to Redo');
+    await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
+    const lr2 = await get('labreview:ana-cruz--b103026'), c2 = ((lr2 || {}).acts || {})['reception-live'] || {};
+    if (c2.status !== 'Redo' || c2.redo !== true || c2.score !== 80) fail(`the Redo wasn't saved with the score kept: ${JSON.stringify(c2)}`);
+    if ((await counted(lr2)).length) fail(`a mock call sent back for a Redo still counts on the scorecards: ${await counted(lr2)}`);
     // 🎧 the Transcription Activity's automatic score (trackerreview:<id>.transcribe, worker.js gradeTranscription): Ben's
     // scoresheet starts from it, not saved and still "Not yet" until the trainer reviews it; ✓ Accept and Save make it the
     // trainer's (source auto-reviewed); Ana's own saved score (no scorecard) is never replaced by hers

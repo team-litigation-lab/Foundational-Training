@@ -42,7 +42,8 @@ async function progOf(p, range){
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     const vals = await sharedGetMany(S.map(s => s.key + p.id).concat(shared)), rec = {}, sh = {};
     S.forEach((s, i) => { rec[s.key] = vals[i] || null; }); shared.forEach((k, i) => { sh[k] = vals[S.length + i] || null; });
-    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since}, range ? {range} : {}));
+    // (reviewedOnly: an automatic score no trainer has reviewed yet stays out of the management summary, as out of the ranking)
+    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since, reviewedOnly: true}, range ? {range} : {}));
     const row = id => (sc.rows || []).find(r => r.s.id === id), graded = it => (it || []).filter(x => typeof x.pct === "number" && isFinite(x.pct));
     const calls = graded(((row("calls") || {}).items || []).concat(((row("portalsims") || {}).items || []).filter(x => /call|recept|intake|phone|voice/i.test(x.name || ""))));
     const written = graded(((row("drive") || {}).items || []).filter(x => /^📄/.test(x.name || "")).concat((row("listening") || {}).items || [], (row("process") || {}).items || [], (row("transcribe") || {}).items || [], (row("lor") || {}).items || []));
@@ -57,12 +58,13 @@ async function evidence(p, range){
   // the scoresheets (mock calls and demos): every criterion's score and remark, the comment
   const sheets = Object.entries((lab && lab.acts) || {}).filter(([k, x]) => x && (x.rubric || x.score != null || has(x.comment))).map(([k, x]) => {
     const rb = x.rubric ? rub[x.rubric.key] : null;
-    return {act: k, title: rb ? rb.title : k, mock: rb ? /mock call/i.test(rb.title) : /live|mock/i.test(k), at: x.at || x.date || "", status: x.status || "", score: x.score, avg5: x.rubric && x.rubric.avg != null ? Number(x.rubric.avg) : x.score != null ? Number(x.score) / 20 : null, comment: clip(x.comment, 500),
+    return {act: k, title: rb ? rb.title : k, mock: rb ? /mock call/i.test(rb.title) : /live|mock/i.test(k), at: x.at || x.date || "", status: window.ftResult ? ftResult(x) : x.status || "", score: x.score, avg5: x.rubric && x.rubric.avg != null ? Number(x.rubric.avg) : x.score != null ? Number(x.score) / 20 : null, comment: clip(x.comment, 500),
       crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
   const week = sheets.filter(x => inW(x.at)), use = week.length ? week : sheets;   // (none this week: the latest ones)
   const kcs = Object.entries((proc && proc.kc) || {}).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),
     weak: (x.last.items || []).filter(q => q.score <= 6).map(q => clip(q.feedback, 160)).slice(0, 2)} : null).filter(Boolean);
-  const comp = Object.entries((rv && rv.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
+  const rvW = window.ftW1Override ? ftW1Override.comp(rv, p.batch) : rv;   // W1-OVERRIDE
+  const comp = Object.entries((rvW && rvW.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
   const assess = Object.values((rv && rv.assess) || {}).filter(x => x && x.score != null);
   const days = Object.entries((fb && fb.days) || {}).filter(([l, x]) => x && x.status === "sent").map(([l, x]) => ({l, rating: x.rating || "", summary: clip(x.summary, 400), at: x.sentAt}));

@@ -522,7 +522,7 @@ s2: html => {
   const ul = xs => "<ul>" + xs.map(x => `<li>${x}</li>`).join("") + "</ul>\n";
   // (the slide in cards: Trainee should and the Minimum Information side by side, then the Scheduling Rules and the Additional
   // Notes. The guide's Possible Scenarios / Nature of Request are the trainer's guide for the mock calls: off the slide, in a
-  // sheet the trainer opens over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button on the trainer's deck only))
+  // sheet opened over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button to trainers and trainees alike))
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   const scenarios = [
       ["Client Consultation: New PI Case", "New PI case; (instructions provided by client)"],
@@ -1061,7 +1061,14 @@ const PDOC_DIR = "/ft/day7/forms";
 // (the document's name alone on its bar: no page count or new-tab link. big: its pages in one row, as large as the
 // slide allows: Day 7's blank intake forms)
 // (note: a line under the name saying what the document is for, a 📌 callout)
-const pdocHtml = ([slug, title, n, dir = PDOC_DIR, note], big) => `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
+// (with a note: the note beside the document's first page, as large as the slide allows; its other pages open from it — a
+// click on the page steps through all of them in the page viewer, js/ft-day-decks.js — not laid out on the slide)
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR, note], big) => note && big !== true
+  ? `<div class="ftdd-pdoc ftdd-pdoc-side" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div><div class="ftdd-pdoc-row">` +
+    `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p><div class="ftdd-pdoc-pages">${Array.from({length: n}, (_, i) =>
+    `<a class="ftdd-pdoc-pg${i ? " ftdd-pdoc-hid" : ""}" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
+    `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy">${i ? "" : `<span>🔍 Click to open ${n > 1 ? `all ${n} pages` : "it"}</span>`}</a>`).join("")}</div></div></div>\n`
+  : `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
   (note ? `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p>` : "") +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
@@ -1075,7 +1082,28 @@ const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit 
   "<b>What this is for:</b> a sworn statement the firm asks the at-fault party (3P) to fill in, under oath and notarized. It shows whether they have " +
   "<b>any other insurance</b> that could pay the client’s claim beyond their auto policy’s Bodily Injury (BI) limit: other policies in their or a household " +
   "member’s name, an umbrella policy, coverage through their employer, and whether they are worth more than $200,000. It is sent with the 3P Letter of " +
-  "Representation (the <i>LOR with Affidavit</i>)."]];
+  "Representation (the <i>LOR with Affidavit</i>)."],
+  ["signup-agreement", "Sign-Up Packet 1 · Agreement for Representation (the contingency fee contract): blank (LSH Law Firm)", 5, PDOC_DIR,
+  "<b>What this is for:</b> the contract the client signs to hire the firm: the contingency fee (33⅓% before an answer is filed, 40% after), costs and expenses, the client’s right to cancel within 3 business days, the attorneys’ lien and the HIPAA consent. The first document in every signed packet."],
+  ["signup-client-rights", "Sign-Up Packet 2 · Statement of Client’s Rights: blank (LSH Law Firm)", 2, PDOC_DIR,
+  "<b>What this is for:</b> the client’s rights under a contingency fee contract (Florida Bar): to bargain on the fee, to cancel within 3 days, to a closing statement, to decide on any settlement. The client signs that they received it."],
+  ["signup-hipaa", "Sign-Up Packet 3 · HIPAA Authorization and HITECH Medical Records Request: blank (LSH Law Firm)", 2, PDOC_DIR,
+  "<b>What this is for:</b> lets the firm receive the client’s medical records; the HITECH letter asks each provider for the complete records and itemized bills."],
+  ["signup-police-report", "Sign-Up Packet 4 · Affidavit of Consent to Release Police Report Information: blank (LSH Law Firm)", 1, PDOC_DIR,
+  "<b>What this is for:</b> a notarized affidavit so the firm can get the police (crash) report within its first 60 days."],
+  ["signup-medicare", "Sign-Up Packet 5 · Medicare: Consent to Release and Proof of Representation: blank (LSH Law Firm)", 2, PDOC_DIR,
+  "<b>What this is for:</b> for a client on Medicare: lets CMS share the client’s claim information with the firm, and shows CMS that the firm represents the client."],
+  ["signup-termination", "Sign-Up Packet 6 · Notice of Termination of Representation: blank (LSH Law Firm)", 1, PDOC_DIR,
+  "<b>What this is for:</b> for a client who had another lawyer for this accident: tells that lawyer they are replaced and asks for the file."],
+  ["signup-client-info", "Sign-Up Packet 7 · Client Information Sheet: blank (LSH Law Firm)", 3, PDOC_DIR,
+  "<b>What this is for:</b> the client’s details for the file (contact, family, employer, health insurance), the accident, injuries and treatment, and prior accidents. English and Spanish."],
+  ["signup-iso", "Sign-Up Packet 8 · ISO ClaimSearch: Request for Disclosure to Third Parties: blank (LSH Law Firm)", 1, PDOC_DIR,
+  "<b>What this is for:</b> the client’s request to ISO ClaimSearch to release their claims history to the firm (prior claims and accidents)."],
+  ["conflict-waiver", "Sign-Up Packet · Notice and Waiver of Potential Conflict of Interest: blank (LSH Law Firm)", 6, PDOC_DIR,
+  "<b>What this is for:</b> when the firm represents <b>two or more clients from the same accident</b> (e.g. a driver and a passenger), " +
+  "their interests can clash: one settlement can leave less money for the others. The clients sign this after the attorney explains the " +
+  "options, the risks and the advantages of one firm representing them all, with the Florida Bar Rules 4-1.7, 4-1.8 and 4-1.9 attached. " +
+  "It is the latest version of the Conflict of Interest Waiver."]];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video

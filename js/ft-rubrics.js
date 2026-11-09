@@ -72,5 +72,18 @@ function average(rubric, scores){
   (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
   return w ? sum / w : null;
 }
-root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, keys: () => Object.keys(R)};
+/* ✅ a mock call's or demo's result, from its record (labreview:<id>.acts[<activity>]): Passed at 3/5 (60%) or more, Failed
+   below — worked out from the score, so it counts on the scorecards as soon as it is graded — unless the trainer asked for a
+   Redo (redo: true), which keeps it off the scorecards until it is done again. "Not yet" before any score. (A record saved
+   before Redo became the trainer's own choice, with "Redo" set by a low score, reads as Failed.) */
+const PASS_PCT = 60;
+function result(c){
+  if(!c) return "Not yet";
+  if(c.redo === true) return "Redo";
+  const n = c.score == null || c.score === "" ? NaN : Number(c.score);
+  if(isFinite(n)) return n >= PASS_PCT ? "Passed" : "Failed";
+  return c.status === "Passed" ? "Passed" : "Not yet";
+}
+root.ftResult = result;
+root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result, PASS_PCT, keys: () => Object.keys(R)};
 })(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this));

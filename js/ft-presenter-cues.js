@@ -125,8 +125,9 @@
     if(!FTQ.people.length) return `<p class="cue-flow">No approved trainee to log against yet. Record the result in Admin → 🧑‍🏫 Trainer Inputs instead.</p>`;
     const acts = FTQ.acts || DEFAULT_ACTS;
     const want = m.act || (acts.some(a=>a.id === g.act) ? g.act : acts[0].id);
-    const statuses = ["Passed", "Redo", "Not yet"];
-    const status = m.status || (comp == null || pass == null ? "Passed" : comp >= pass ? "Passed" : "Redo");
+    // (the Result is Passed or Failed by the score, 3/5 passes; the trainer's own choice is only a Redo)
+    const statuses = ["By the score", "Redo"];
+    const status = m.status === "Redo" ? "Redo" : "By the score";
     const q = esc(String(key));
     return `<div class="cue-log"><div class="cue-h">📥 Log it to the trainee's record</div>
       <div class="cue-log-row">
@@ -205,7 +206,7 @@
     const acts = FTQ.acts || DEFAULT_ACTS;
     const act = m.act || (acts.some(a=>a.id === q.grade.act) ? q.grade.act : acts[0].id);
     const comp = composite(q.grade, m), pass = q.grade.ai && typeof q.grade.ai.pass === "number" ? q.grade.ai.pass : null;
-    const status = m.status || (comp == null || pass == null ? "Passed" : comp >= pass ? "Passed" : "Redo");
+    const redo = m.status === "Redo", status = window.ftResult ? ftResult({score: comp, redo}) : redo ? "Redo" : comp == null || comp >= 60 ? "Passed" : "Failed";
     const ticked = ((q.grade.trainer || {}).rubric || []).filter((t, i)=>m.ticks[i]);
     const parts = [String(m.note || "").trim(), ticked.length ? "Observed: " + ticked.join("; ") + "." : "",
       m.pre == null ? "" : `AI pre-score ${m.pre}%${comp == null ? "" : `, trainer ${comp}%`}.`].filter(Boolean);
@@ -213,7 +214,7 @@
     try{
       const rec = (await sharedGet("labreview:" + m.who)) || {};
       rec.acts = rec.acts || {};
-      rec.acts[act] = {status, score:comp, date:new Date().toISOString().slice(0, 10),
+      rec.acts[act] = {status, redo, score:comp, date:new Date().toISOString().slice(0, 10),
         comment:parts.join(" ").slice(0, 4000), at:new Date().toISOString(), source:"presenter:" + key};
       if(await sharedSet("labreview:" + m.who, rec) === false) throw new Error("save");
       const who = (FTQ.people || []).find(p=>p.id === m.who);

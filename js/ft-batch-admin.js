@@ -28,12 +28,14 @@ const e = v => esc(String(v == null ? "" : v));
 const RUB = () => window.FT_RUBRICS || {list:{}, keys:() => [], forAct:() => null, average:() => null};
 const STATUSES = ["Not yet", "Passed", "Redo"];
 const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
-// the passing mark: a weighted average of 3 out of 5 (60%); the Result follows it until the trainer picks one
+// the passing mark: a weighted average of 3 out of 5 (60%). The Result is Passed or Failed by the score, and counts on the
+// scorecards once graded; Redo only when the trainer asks for one (↻ Ask for a Redo), which keeps it off them
 const PASS = 3;
 function autoStatus(d){
-  if(!d || d.statusTyped) return;
+  if(!d) return;
   const v = d.score !== "" && isFinite(Number(d.score)) ? Number(d.score) / 20 : null;
-  d.status = v == null ? "Not yet" : v >= PASS ? "Passed" : "Redo";
+  d.status = d.redo ? "Redo" : v == null ? "Not yet" : v >= PASS ? "Passed" : "Failed";
+  const rb = document.querySelector("[data-ms-result]"); if(rb && valOf(MS.va) === d) rb.textContent = d.status;
   const sel = document.querySelector("[data-ms-status]"); if(sel && valOf(MS.va) === d) sel.value = d.status;
 }
 const avgTxt = v => v == null ? "—" : (Math.round(v * 100) / 100).toFixed(2) + "/5";
@@ -103,7 +105,7 @@ function draftOf(id){
   const k = dkey(id);
   if(!MS.draft[k]){
     const c = cellOf(id, MS.act), rb = RUB().forAct(curAct()), got = c.rubric && rb && c.rubric.key === rb.key ? c.rubric : {};
-    MS.draft[k] = {status:c.status || "Not yet", score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
+    MS.draft[k] = {status:window.ftResult ? ftResult(c) : c.status || "Not yet", redo:c.redo === true, score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
       scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:false, dirty:false};
     // (a cell the trainer hasn't scored — no result, no score, no scorecard — starts from the automatic score, not saved
     // until the trainer reviews it: ✓ Accept, or any change, then 💾 Save)
@@ -196,7 +198,7 @@ function renderMockScores(){
       <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
-          const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : a && autoOf(x.id, a.id) ? " · 🤖 auto-scored, to review" : "";
+          const res = window.ftResult ? ftResult(c) : c.status, tag = dd && dd.dirty ? " · ● not saved" : res && res !== "Not yet" ? ` · ${res}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : a && autoOf(x.id, a.id) ? " · 🤖 auto-scored, to review" : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></div>` : ""}
       </div>`;
@@ -229,7 +231,8 @@ function renderMockScores(){
       ${crit}
       ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
     </tbody></table>
-    <div class="fms-savebar">${saveBtn}<button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button></div>
+    <div class="fms-savebar"><span class="fms-result ${d.status === "Passed" ? "ok" : d.status === "Failed" ? "bad" : d.status === "Redo" ? "mid" : ""}">Result: <b data-ms-result>${e(d.status)}</b></span>
+      <button class="btn btn-ghost btn-sm fms-redo" onclick="FTMockScores.redo('${id}')" title="${d.redo ? "Count this score on the scorecards again" : "Ask the trainee to do it again: the score stays off the scorecards until it is re-done"}">${d.redo ? "✓ Redo asked · undo" : "↻ Ask for a Redo"}</button>${saveBtn}<button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button></div>
     <div class="fms-foot">
       <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
       <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
@@ -272,6 +275,8 @@ window.FTMockScores = {
   week(w){ MS.wk = w; render(); },
   // (the Result of the trainee on screen: it follows the score, with no picker of its own)
   status(){ const d = valOf(MS.va); return d ? d.status : ""; },
+  // ↻ the trainer asks for a Redo (or takes it back): the Result is Redo, off the scorecards, until it is graded again
+  redo(id){ const d = draftOf(id); d.redo = !d.redo; d.dirty = true; if(!d.date) d.date = today(); autoStatus(d); render(); },
   // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
   va(id){ MS.va = id; render(); },
   // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
@@ -313,7 +318,8 @@ window.FTMockScores = {
         const cur = (await sharedGet("labreview:" + id)) || {};
         cur.acts = cur.acts || {};
         const avg = rb ? RUB().average(rb, d.scores) : null;
-        cur.acts[act] = Object.assign({status:d.status || "Not yet", score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
+        autoStatus(d);
+        cur.acts[act] = Object.assign({status:d.status || "Not yet", redo:!!d.redo, score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
           comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
           d.autoFrom ? {source:"auto-reviewed", autoAt:d.autoFrom} : {},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
@@ -621,6 +627,8 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-savebar label{font:800 15px Arial,sans-serif;color:#1E2340;display:inline-flex;gap:8px;align-items:center;}
 .fms-savebar select{font:800 15px Arial,sans-serif;padding:6px 10px;border-radius:8px;border:2px solid #6AA84F;}
 .fms-savebar .fms-savebtn{font-size:15px;padding:8px 16px;}
+.fms-result{font:800 15px Arial,sans-serif;color:#1E2340;margin-right:auto;padding:5px 12px;border-radius:999px;background:#EEF0F6;}
+.fms-result.ok{background:#E7F5EE;color:#1E7F4F;} .fms-result.bad{background:#FDECEC;color:#B42318;} .fms-result.mid{background:#FEF7C3;color:#7a5d00;}
 /* (the weighted average on one line: "2.79/5", never "2.79/" then "5") */
 .fms-tbl [data-avg]{white-space:nowrap;}
 .fms-foot label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--navy);}
