@@ -3215,6 +3215,23 @@ export default {
         for (const id of ids) { try { out[id] = await syncSimScores(env, id); } catch (e) { out[id] = []; } }
         return json({ ok: true, filled: out });
       }
+      // 📢 the Main Portal's announcement (its Training Directory's ticker), changed from Admin → 📢 Announcements: sent to the
+      // Portal's /api/announcement server to server with the shared AI_GATEWAY_SECRET; op "set" (text) or "clear". Trainers only.
+      if (path === "/api/portal-announcement") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        if (!gatewayOn(env)) return json({ ok: false, off: true, error: "No AI_GATEWAY_SECRET on this Worker yet" });
+        const text = String(b.text || "").replace(/\s+/g, " ").trim().slice(0, 500), clear = b.op === "clear";
+        if (!clear && !text) return json({ ok: false, error: "Type the announcement" }, 400);
+        try {
+          const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { method: clear ? "DELETE" : "POST",
+            headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, body: clear ? undefined : JSON.stringify({ text, by: String(b.by || "Trainer").slice(0, 60) }) });
+          const j = await r.json().catch(() => ({}));
+          if (!(j && j.success)) return json({ ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+          globalThis.__ftAnn = { at: Date.now(), text: String(j.text || "") };   // (the ticker here shows it at once)
+          return json({ ok: true, text: j.text || "" });
+        } catch (e) { return json({ ok: false, error: "The Portal couldn't be reached" }); }
+      }
       if (path === "/api/calsim-card") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
