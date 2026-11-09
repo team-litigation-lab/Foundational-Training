@@ -366,8 +366,8 @@ function finalHTML(s, r, sub){
 function reviewHTML(g, notes){
   notes = notes || {};
   if(g.kind === "activity") return actReviewHTML(g, notes);
-  const act = g.kind === "activity", info = g.extras.filter(x => !x.why.length && x.info);
-  return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? (act ? "✅ Passes" : "✅ Meets the attorney’s rules") : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} ${act ? "events perfect" : "tasks perfect"}</span></div>
+  const info = g.extras.filter(x => !x.why.length && x.info);
+  return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Meets the attorney’s rules" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} tasks perfect</span></div>
     ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b> <span>${i.pts} / ${i.weight}</span></div>
       ${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li><b>${e(c.label)}:</b> ${e(c.why)}</li>`).join("")}</ul>`}${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
     ${g.extras.filter(x => x.why.length).length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${g.extras.filter(x => x.why.length).map(x => `<li><b>${e(x.title)}</b> (${x.when ? e(x.when) : C.DAYS[x.day].slice(0, 3) + " " + hh(x.start)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}</div>`;
