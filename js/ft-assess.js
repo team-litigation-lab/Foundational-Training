@@ -116,10 +116,8 @@ const A = {rec: null, id: null, loading: false, t: null, sending: false, review:
    by the assessment's convention (shown beside the button: it lives here, not on the deck), written into the trainee's
    Assessment and Activities Folder by the Worker (/api/drive/save; saving again replaces it). Where the platform can't
    write to the folder, the PDF downloads under the same name and the folder opens, to drop it in. */
-const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
+const {firstName, codeName, DRIVE_WHY} = window.FTPdfKit;   // (js/ft-process.js)
 const fileName = doc => `${FORMS[doc].file} (${firstName() || "VA’s first name"})`;
-const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
-  quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
 async function answersPdf(doc){
   if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())) return null;
   const f = FORMS[doc], a = answers(doc), { jsPDF } = window.jspdf;
@@ -196,7 +194,7 @@ root.FTAssess = {
     return `<div class="card fp-set fa-form">${f.intro ? `<section class="fa-part fa-intro">${f.intro}</section>` : ""}${f.parts.map(p => partHtml(doc, p)).join("")}
       <div class="fa-foot">${g ? `<p class="fa-done">✓ Graded ${e(g.when || "")}${g.pending ? " · your trainer grades the essays" : ""}. Your score is on 🏅 My Performance. You can correct your answers and submit again.</p>` : `<p class="fa-muted">Your answers save as you type.</p>`}
         <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>
-      <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc)).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(")}</code></p>
+      <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${codeName(fileName(doc))}</code></p>
         <button class="btn btn-ghost btn-sm fa-drive" type="button" onclick="FTAssess.savePdf('${doc}')"${A.saving ? " disabled" : ""}>${A.saving ? "Saving the PDF…" : "📄 Save PDF to my Folder"}</button>
         <button class="btn btn-ghost btn-sm fa-dl" type="button" onclick="FTAssess.downloadPdf('${doc}')" title="The same PDF, downloaded to this computer: upload it to your Assessment and Activities Folder if saving to the folder doesn’t work">⬇ Download PDF</button></div></div>`;
   },

@@ -17,15 +17,13 @@
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
 const forTrainee = () => !!state.traineeId && !state.isAdmin;
-const DD = {day: null, i: 0, loading: null, failed: false, split: false, auto: false, timer: null};
+const DD = {day: null, i: 0, loading: null, failed: false};
 const PREF = k => { try{ return localStorage.getItem("ft_dd_" + k) === "1"; }catch(err){ return false; } };
 const setPref = (k, v) => { try{ localStorage.setItem("ft_dd_" + k, v ? "1" : "0"); }catch(err){} };
-DD.split = false;   // (the side panel's Split screen is gone: one slide at a time)
 DD.page = 0;   // a long slide is read in pages, each one a screenful (fitSheets below)
-// 🧑‍🏫 the trainer's deck reads as the trainee's: the facilitator's notes open in a drawer beside the slide (not on it), and
-// the trainer's side panel can be hidden so the slide takes the full width (both remembered in this browser)
-DD.notes = PREF("notes"); DD.railOff = PREF("railoff");
-const AUTOPLAY_SECS = 20;
+// 🧑‍🏫 the trainer's deck reads as the trainee's: the facilitator's notes open in a drawer beside the slide (not on it),
+// remembered in this browser
+DD.notes = PREF("notes");
 const SRC = (function(){ const s = document.currentScript; const v = s && /\?v=([^&]+)/.exec(s.src); return "/js/ft-day-decks-data.js" + (v ? "?v=" + v[1] : ""); })();
 const decks = () => root.FT_DAY_DECKS || null;
 /* 📊 Day 2's Common Terms Used reference sheet, drawn as a table of its own (js/ft-ref-terms-data.js, built from the Google
@@ -134,18 +132,15 @@ function go(step){
   const d = decks() && decks()[DD.day]; if(!d) return;
   const n = slidesOf(d).length;
   // a long slide is read in pages: turn those first, then move to the next slide
-  if(!DD.split && Math.abs(step) === 1 && (DD.pages || 1) > 1){
+  if(Math.abs(step) === 1 && (DD.pages || 1) > 1){
     const p = DD.page + step;
     if(p >= 0 && p < DD.pages){ DD.page = p; fitSheets(); if(root.FTDeckMotion) FTDeckMotion.page(step); return; }
   }
-  const by = DD.split && Math.abs(step) === 1 ? step * 2 : step;
-  const i = Math.max(0, Math.min(n - 1, DD.i + by));
-  if(i === DD.i){ if(DD.auto) stopAuto(); return; }
-  if(!deckMayGo(DD.day, i)){ if(DD.auto) stopAuto(); return; }
+  const i = Math.max(0, Math.min(n - 1, DD.i + step));
+  if(i === DD.i) return;
+  if(!deckMayGo(DD.day, i)) return;
   DD.i = i; DD.page = step < 0 ? 99 : 0; DD.pages = 1; render();
 }
-/* ▶ Autoplay: the slides turn themselves, so a trainer can present hands-free and a trainee can watch through.
-   It stops at the last slide, and any click on Previous/Next or a dot leaves it running from there. */
 // 🔓 Day 1 in order (js/ft-day1-flow.js): a trainee on Day 1 goes slide by slide, only as far as the trainer has unlocked
 // (from the slide showing on that day's deck; from anywhere else, the dashboard or a lesson, it is -1)
 const deckMayGo = (n, i) => (!root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1))
@@ -157,13 +152,6 @@ function slideLocked(n, i){
   const t = root.toast; root.toast = () => {};
   try{ return !FTDay1.mayGo(Number(n), Number(i), -1); }catch(err){ return false; }finally{ root.toast = t; }
 }
-function startAuto(){ stopAuto(); DD.auto = true; DD.timer = setInterval(() => {
-  const d = decks() && decks()[DD.day]; if(!d) return stopAuto();
-  if(DD.i >= slidesOf(d).length - 1) return stopAuto();
-  go(1);
-}, AUTOPLAY_SECS * 1000); }
-function stopAuto(){ clearInterval(DD.timer); DD.timer = null; if(DD.auto){ DD.auto = false; if(state.view === "daydeck") render(); } }
-function pickDay(n){ n = Number(n); if(!dayOpen(n)) return; DD.day = n; DD.i = 0; DD.page = 0; DD.pages = 1; if(instructionOnlyDays().includes(n)) loadExtras(); render(); }
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["daydeck", "knowtools"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {daydeck: "Day deck", knowtools: "Know Your Tools"});
@@ -199,7 +187,6 @@ function kindOf(s, html){
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   return {ic: "📝", label: "Read & Do"};
 }
-const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
 function linkKind(href, label, dk){
   const u = String(href || "");
@@ -274,12 +261,12 @@ function visual(html){
     // and its name under it. A click anywhere on the card plays it bigger in the pop-up viewer (the
     // preview only shows it: it takes no clicks)
     const prevSrc = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
-    if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-vwrap, .ftdd-tile.k-video"))){
+    if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-tile.k-video"))){
       const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-vcards") ? p.previousElementSibling : null;
       const grid = last || document.createElement("div"); grid.className = "ftdd-vcards";
       tiles.forEach((x, j) => {
-        const card = x.matches(".ftdd-vwrap") ? x : document.createElement("div");
-        if(card !== x) card.appendChild(x);
+        const card = document.createElement("div");
+        card.appendChild(x);
         card.className = "ftdd-vcard";
         const tile = card.querySelector(".ftdd-tile"), pic = document.createElement("span");
         pic.className = "ftdd-vcard-pic";
@@ -293,14 +280,13 @@ function visual(html){
     }
     // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it. So does every video the platform can play (Drive, Loom, YouTube): it is watched on the slide, not
     // through a link (a line of several videos, a player each); an interview recording keeps its 🎧 Transcribe tile
-    const embedOf = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
-    const isVid = x => !!(x && x.matches && (x.matches(".ftdd-tile.k-video") || (x.matches(".ftdd-vwrap") && x.querySelector(".ftdd-tile.k-video"))));
-    const embeds = as.length === 1 && as[0].hasAttribute("data-embed") && embedOf(as[0]) ? [0]
-      : as.every((a, j) => isVid(tiles[j]) && embedOf(a)) ? as.map((a, j) => j) : [];
+    const isVid = x => !!(x && x.matches && x.matches(".ftdd-tile.k-video"));
+    const embeds = as.length === 1 && as[0].hasAttribute("data-embed") && prevSrc(as[0]) ? [0]
+      : as.every((a, j) => isVid(tiles[j]) && prevSrc(a)) ? as.map((a, j) => j) : [];
     if(embeds.length){
       const boxes = embeds.map(j => {
-      const a = as[j], src = embedOf(a);
-      const x = tiles[j], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video");
+      const a = as[j], src = prevSrc(a);
+      const tile = tiles[j], vid = tile.classList.contains("k-video");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's; a name that is only the guide's address reads as the tile's)
@@ -416,8 +402,7 @@ function visual(html){
     root.querySelectorAll("a.ftdd-tile[href]").forEach(a => {
       const href = a.getAttribute("href");
       if(!seen.has(href)){ seen.add(href); return; }
-      const wrap = a.closest(".ftdd-vwrap");
-      (wrap || a).remove();
+      a.remove();
     });
     root.querySelectorAll("p, span").forEach(x => {
       if(x.querySelector("a, img, iframe") || x.closest(".trainer-slot")) return;
@@ -427,7 +412,6 @@ function visual(html){
     });
   })();
   // tiles that ended up next to each other share one grid
-  root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
   // 📌 a trainer's guide the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): on the trainer's
   // deck, a button that opens it as a sheet over the slide (FTDayDecks.tsheet); on a trainee's, nothing
@@ -535,7 +519,7 @@ function listenCards(cards, folder, recs){
       : folder ? `<a class="btn btn-ghost btn-sm" href="${e(folder)}" target="_blank" rel="noopener noreferrer">▶ Play it from the folder</a>` : ""}</div>`).join("")}</div>`;
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
-const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
+const slidesOf = d => {
   // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
   const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
   let listened = false;
@@ -543,14 +527,13 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
     // the "To be added" placeholder has no slide of its own on any day: no 📌 From your trainer: activities & instructions
     // slide at the end of a deck (no 🎲 Today's Task either: the unannounced task lands in 🎲 Tasks)
     if(s.placeholder) return;
-    const slide = s;
-    if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
+    if(/call listening/i.test(String(s.h || ""))){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
-      out.push(Object.assign({}, slide, {h: splitHeading(slide.h)}));
+      out.push(Object.assign({}, s, {h: splitHeading(s.h)}));
       const ls = listenSlide(d.day, t); if(ls){ out.push(ls); listened = true; }
       return;
     }
-    out.push(slide);
+    out.push(s);
   });
   // a day whose card has a 🎧 Call Listening row but no slide of the guide's that names it (Day 13: its classroom discussion's
   // slide is off the deck, build/day-decks.cjs SKIP) still gets the log slide; its row puts it in place (inCardOrder)
@@ -708,10 +691,6 @@ const pqLessons = (n, info) => (PQ_LESSONS[Number(n)] || (info || dayInfo(n)).le
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 // (d.pq: the build's word for a day whose Process Questions were on a slide that is off the deck, build/day-decks.cjs)
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.pq || (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || "")))); }
-/* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
-   trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
-   and its ✍️ Knowledge Check. */
-const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calendar management calls"], 6: ["intake", "intake calls"]};
 // the scorecard a slide's "… Metrics" (or a mock-call / demo slide's title) names, else the one of the day's trainer-led activity
 function dayRubric(title){
   const R = root.FT_RUBRICS; if(!R) return null;
@@ -741,34 +720,9 @@ function scoreBox(s, info, body){
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
   return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
-const WAIT_OFF = true;
-function waitBox(s, info){
-  // (off every slide for now: the mock calls' and demos' slides carry their own instructions)
-  if(WAIT_OFF) return "";
-  const h = String(s.h || "");
-  if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
-  // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
-  if(/mock call/i.test(h)) return "";
-  // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
-  // the tools itself, and its instructions and metrics)
-  if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
-  // (nor on a slide the build marks data-nowait: Day 8's SA demonstration and Intake Mock Call Activity, whose next slide
-  // has the Call Simulator)
-  if(/data-nowait/.test(String(s.html || ""))) return "";
-  const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
-  const sim = SIM_OF[l], acts = [];
-  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practice ${sim[1]} on the Call Simulator</button>`);
-  if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
-  if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
-  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.toKC(${l})">✍️ Knowledge Check</button>`);
-  if(!acts.length) return "";
-  const what = /demo/i.test(h) ? "the demo" : "the mock calls";
-  return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
-    <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
-}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s))) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s)));
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -817,15 +771,14 @@ function renderDeck(){
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
   setLastAt(DD.day, DD.i);
-  const pair = DD.split && DD.i + 1 < n;   // the slide beside it, for reading the instructions and the sample together
-  const tr = isAdminView(), nNotes = tr ? slotsOf(list[DD.i]) + (pair ? slotsOf(list[DD.i + 1]) : 0) : 0;
-  const cards = slideCard(d, info, list, DD.i) + (pair ? slideCard(d, info, list, DD.i + 1) : "");
+  const tr = isAdminView(), nNotes = tr ? slotsOf(list[DD.i]) : 0;
+  const cards = slideCard(d, info, list, DD.i);
   // a mock call / demo slide's scoring sheet (FTMetrics) puts 💾 Save, the scores and Remarks on the right: the notes open on the left there
   const notesL = /ftms-trainer/.test(cards);
   // 🧑‍🏫 a mock call / demo slide with a scoresheet (FTMetrics): its button sits in the bar under the slide, full size
   // whatever the slide's zoom, and opens the scoresheet pop-up (js/ft-sessions.js)
   const sheetKey = tr && root.FTMetrics && FTMetrics.open ? ((/class="ftms-launch" data-ms="([^"]+)"/.exec(cards) || [])[1] || "") : "";
-  return `<div class="ftdd-stage${DD.split ? " ftdd-stage-split" : ""}">
+  return `<div class="ftdd-stage">
     <div class="ftdd-mid">${back}
       ${nNotes ? `<div class="ftdd-notes${notesL ? " ftdd-notes-l" : ""}" id="ftddNotes" role="complementary" aria-label="Facilitator notes" ${DD.notes ? "" : "hidden"}>
         <div class="ftdd-notes-h"><b>🧑‍🏫 Facilitator notes</b><span>Only you see these. They aren’t on the trainees’ slide.</span>
@@ -837,7 +790,7 @@ function renderDeck(){
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
-        <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
+        <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
           : `<button type="button" class="btn ftdd-next ft-endmod" onclick="goto('modules')" title="The end of today's deck: back to the 📚 Dashboard">✅ End of Module</button>`)}
       </div>
@@ -911,11 +864,13 @@ function sheetPages(sheet){
   // (a card pinned over the slide, js/ft-buffer.js ftbf-float, is on every page and never makes one of its own)
   const kids = [...sheet.children].filter(k => !k.classList.contains("ftbf-float"));
   kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
+  // (a block's height, its margins included)
+  const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // (a block dealt out by its own rows had them hidden page by page: they are shown again before the slide is dealt anew)
   sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
-  if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
+  if(kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
   const room = sheet.clientHeight, read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
   const mid = sheet.classList.contains("ftdd-d615");
   if(mid && room && zoomToFit(sheet, MID_FIT)) return [kids];
@@ -925,7 +880,6 @@ function sheetPages(sheet){
   // between breaks starts a page of its own, and a part longer than a page runs on over the next ones
   if(room && kids.some(k => k.classList.contains("ftdd-pgbreak"))){
     kids.forEach(k => { k.style.zoom = ""; });
-    const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
     const pages = []; let page = [], used = 0;
     kids.forEach(k => {
       if(k.classList.contains("ftdd-pgbreak")){ if(page.length) pages.push(page); page = [k]; used = 0; return; }
@@ -944,7 +898,6 @@ function sheetPages(sheet){
   if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
   if(!room || (!mid && (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN)))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
-  const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
   const units = [];
   kids.forEach(k => {
@@ -976,33 +929,23 @@ function sheetPages(sheet){
       if(sumH(p) + sumH(nx) <= capAll / 0.9){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
     }
     return out; };
-  const pages = []; let page = [], used = 0;
-  // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
-  // the next page, and fitSheets scales the page down to fit
+  // a page holds what fits on the screen at three quarters size (the limit): a block that would hang off the foot of that
+  // starts the next page, and fitSheets scales the page down to fit
   // (an empty trainer slot, nothing to see, never makes a page of its own: the block after it shares its page)
   const shown = pg => pg.some(x => hOf(x) > 0);
-  units.forEach(k => {
-    const h = hOf(k);
-    if(shown(page) && used + h > room / (read ? 1 : PAGE_ZOOM)){
-      // a heading never ends a page: it moves to the next one with the text it heads
-      const carry = [];
-      while(page.length > 1 && isHead(page[page.length - 1])) carry.unshift(page.pop());
-      pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
-    }
-    page.push(k); used += h;
-  });
-  if(page.length) pages.push(page);
+  const deal = limit => { const out = []; let pg = [], u = 0;
+    units.forEach(k => { const h = hOf(k);
+      // (a heading never ends a page: it moves to the next one with the text it heads)
+      if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
+        out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
+      pg.push(k); u += h; });
+    if(pg.length) out.push(pg); return out; };
+  const pages = deal(capAll);
   // the same number of pages, filled about evenly, so the last page isn't a line or two on its own: the smallest page
   // height that still deals the slide into that many pages (a heading still never ends a page)
   if(pages.length > 1){
-    const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
-    const deal = limit => { const out = []; let pg = [], u = 0;
-      units.forEach(k => { const h = hOf(k);
-        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
-          out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
-        pg.push(k); u += h; });
-      if(pg.length) out.push(pg); return out; };
-    for(let limit = Math.max(total / pages.length, tallest); limit < cap; limit += Math.max(8, cap / 60)){
+    const total = units.reduce((a, x) => a + hOf(x), 0), tallest = Math.max(...units.map(hOf));
+    for(let limit = Math.max(total / pages.length, tallest); limit < capAll; limit += Math.max(8, capAll / 60)){
       const even = deal(limit); if(even.length <= pages.length) return fold(even);
     }
   }
@@ -1092,7 +1035,7 @@ function fitSheets(){
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, mid ? 0.5 : read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
-    else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
+    else if(!sheet.classList.contains("ftdd-sheet-edit")) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
     if(!mid) centerPage(sheet);   // (Days 6–15 are centred by their flex box: ftdd-d615)
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
@@ -1262,7 +1205,7 @@ root.render = function(){
     fitSheets(); deckPresenter(); requestAnimationFrame(() => { if(state.view === "knowtools"){ fitSheets(); deckPresenter(); } });
     return;
   }
-  if(state.view !== "daydeck"){ if(DD.auto) stopAuto(); return __render.apply(this, arguments); }
+  if(state.view !== "daydeck") return __render.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   // the last slide of a day's deck reached: that day is done (a lesson is Finished when all its days are)
   try{ const d = decks() && decks()[DD.day]; if(d && DD.i >= slidesOf(d).length - 1) markDayDone(DD.day); }catch(err){}
@@ -1554,8 +1497,8 @@ const ASSESS_NEXT = {2: {
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
-  if(a && root.FTProcess && !DD.split) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
-  const k = kcOf(s); if(!k || !root.FTProcess || DD.split) return "";
+  if(a && root.FTProcess) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
+  const k = kcOf(s); if(!k || !root.FTProcess) return "";
   return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(k.label)}</button>`;
 }
 function toAssessNext(a){
@@ -1615,7 +1558,7 @@ function deckPresenter(){
 // the last slide, its ✅ End of Module (the same card as the lessons', js/ft-slides.js)
 function deckNextUp(){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
-  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split || !root.FTNextUp) return;
+  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || !root.FTNextUp) return;
   const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // the slide's own pages come first: Next turns them
@@ -2048,7 +1991,7 @@ function mapDetour(n, list, i){
 }
 // opening that stop from the map: the deck stands on its slide, then goes on exactly as that slide's Next does
 function mapStop(n, i){
-  mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto();
+  mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return;
   loadDecks().then(() => {
     const d = decks() && decks()[n], list = d ? slidesOf(d) : [], s = list[i]; if(!s) return;
     DD.day = Number(n); DD.i = i; DD.page = 0; DD.pages = 1; setLastAt(n, i);
@@ -2168,7 +2111,7 @@ root.FTDayDecks = {open, go, next: nextKC,
   // ⛶ a decision tree bigger: it fills the screen, and again (or Esc) brings it back
   treeFull(btn){ const t = btn && btn.closest(".ftdt"); if(!t) return; const d = document;
     if(d.fullscreenElement || d.webkitFullscreenElement){ (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
-    const req = t.requestFullscreen || t.webkitRequestFullscreen; if(req) req.call(t); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, stop: openStop,
+    const req = t.requestFullscreen || t.webkitRequestFullscreen; if(req) req.call(t); }, slide: openSlide, stop: openStop,
   refFull(btn){
     const em = btn && btn.closest(".ftdd-embed-terms"); if(!em) return;
     const doc = document, on = doc.fullscreenElement || doc.webkitFullscreenElement;
@@ -2176,13 +2119,9 @@ root.FTDayDecks = {open, go, next: nextKC,
     const req = em.requestFullscreen || em.webkitRequestFullscreen; if(req) req.call(em);
   },
   refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, assessDoc, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
-  split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
-  // 🧑‍🏫 the facilitator's notes drawer, and the trainer's side panel shown or hidden (the slide keeps its page: its size is
-  // unchanged by the drawer, and the panel only gives it its width back, so it is dealt again)
+  // 🧑‍🏫 the facilitator's notes drawer shown or hidden (the slide keeps its page: its size is unchanged by the drawer)
   notes(){ DD.notes = !DD.notes; setPref("notes", DD.notes); render(); },
-  rail(){ DD.railOff = !DD.railOff; setPref("railoff", DD.railOff); DD.page = 0; DD.pages = 1; render(); },
   notesPaint: () => { if(state.view === "daydeck") paintNotes(); },
-  auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
   // 🗺 Map: the training roadmap
   // (the deck already showing moves to the slide; from anywhere else, the dashboard or a lesson, the deck opens on it)
@@ -2192,19 +2131,16 @@ root.FTDayDecks = {open, go, next: nextKC,
     const m = /^([^:<]+):\s*<i>([^<]+)<\/i>/.exec(x); if(!m || /Test \[date/.test(m[2])) return [];
     const n = m[2].trim(), r = /Recording 1 \/ 2/.exec(n);
     return (r ? [n.replace(r[0], "Recording 1"), n.replace(r[0], "Recording 2")] : [n]).map(name => ({name, what: m[1].trim()})); }),
-  map: mapOpen, mapClose, mapStop, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
+  map: mapOpen, mapClose, mapStop, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
-  tools: () => TOOLS.map(t => t.name),
-  // the index of a day's first slide of its own (after its day card and Training Agenda)
   // the index of a slide by its id (the guide's own slide ids, as js/ft-day-decks-data.js has them)
   // a day's slides, in the deck's order
   list: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d) : []; },
   // a day's card rows, in its card's order, and a row's title as the card shows it (js/ft-day-locks.js: a step per row)
   dayRows, rowLabel,
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
-  first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
@@ -2213,10 +2149,9 @@ root.FTDayDecks = {open, go, next: nextKC,
     const top = [...sheet.children].find(k => k === el || k.contains(el)); if(!top) return false;
     for(let p = 0; p < (DD.pages || 1); p++){ DD.page = p; fitSheets(); if(el.offsetParent) return true; }
     return false;
-  }, dayOpen, currentDay, load: loadDecks, day: () => DD.day, discussionDay, instructionOnlyDays,
+  }, dayOpen, currentDay, load: loadDecks, day: () => DD.day, instructionOnlyDays,
   // the no-discussion day's last slide, "From your trainer"
   // (its own slide: the deck now ends on its end slide, after it)
-  trainer(n){ loadDecks().then(() => { const d = decks() && decks()[Number(n)], i = d ? slidesOf(d).findIndex(s => s.trainer) : -1; open(n, i >= 0 ? i : 999); }); },
   async addX(n){
     if(!isAdminView()) return;
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
@@ -2247,7 +2182,6 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display
 .ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:10px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
 .ftdd-slides{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;}
-.ftdd-stage-split .ftdd-slides{grid-template-columns:repeat(2,minmax(0,1fr));}
 .ftdd-rail{display:flex;flex-direction:column;gap:6px;min-width:0;}
 .ftdd-presenter{display:block;flex:0 0 auto;position:relative;z-index:30;pointer-events:none;user-select:none;overflow:visible;}
 .ftdd-presenter img{display:block;width:var(--pw, 100%);max-width:none;height:auto;margin-left:calc((100% - var(--pw, 100%)) * .55);transform:scaleX(-1);
@@ -2292,7 +2226,6 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
   .ftdd-rail-h{display:none;}
   .ftdd-rail .ftdd-lessons{flex-direction:row;}
-  .ftdd-stage-split .ftdd-slides{grid-template-columns:minmax(0,1fr);}
 }
 .ftdd-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .ftdd-top .back-link{margin:0;}
@@ -2344,7 +2277,6 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:700;}
 .ftdd-sheet.ftdd-hw ul, .ftdd-sheet.ftdd-hw ol{display:inline-block;text-align:left;}
 .ftdd-sheet.ftdd-hw .ftdd-tiles, .ftdd-sheet.ftdd-hw .url-list{justify-content:center;}
 .ftdd-sheet.ftdd-hw .url-list > span{display:block;}
-.ftdd-sheet.ftdd-hw .ftdd-vwrap{justify-content:center;}
 .ftdd-sheet.ftdd-hw .ftdd-tile b{font-size:18px;}
 /* Days 6–15: bigger, bolder, higher-contrast type; the content centred on the sheet, across and down; nothing split */
 .ftdd-sheet.ftdd-d615{display:flex;flex-direction:column;justify-content:safe center;align-items:center;text-align:center;gap:6px;}
@@ -2362,13 +2294,11 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;c
 .ftdd-sheet.ftdd-d615 p.li{text-align:left;align-self:center;}
 .ftdd-sheet.ftdd-d615 table{margin-left:auto;margin-right:auto;}
 .ftdd-sheet.ftdd-d615 :is(tr,li,figure,img,table,.ftdd-step,.ftdd-inline){break-inside:avoid;page-break-inside:avoid;}
-.ftdd-sheet.ftdd-d615 :is(.ftdd-tiles,.url-list,.ftdd-vwrap,.shots){justify-content:center;}
+.ftdd-sheet.ftdd-d615 :is(.ftdd-tiles,.url-list,.shots){justify-content:center;}
 /* a screenshot or sample fits the slide: it shrinks to the sheet instead of making it scroll */
 .ftdd-sheet img{max-width:100%;height:auto;max-height:min(58vh,560px);object-fit:contain;}
 /* an embedded deck keeps its 16:9 but never grows past the slide (js/ft-updates.js gives it a padding-top box) */
 .ftdd-sheet .canva-frame{padding-top:0 !important;height:min(44vh,480px) !important;aspect-ratio:16/9;max-width:100%;margin-left:auto;margin-right:auto;}
-.ftdd-stage-split .ftdd-sheet img{max-height:min(44vh,420px);}
-.ftdd-stage-split .ftdd-sheet .canva-frame{height:min(34vh,300px) !important;}
 .ftdd-onnavy{overflow:auto;min-height:0;}
 /* 🧰 Know Your Tools: the tools listed on the left, the picked one (its screenshot, what it is for, where, its features) */
 .ftdd-tools{display:block;height:100%;min-height:0;}
@@ -2422,7 +2352,6 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-tile-t b{font-size:15px;line-height:1.5;color:#1F5B39;text-decoration:underline;text-underline-offset:2px;display:inline;overflow:visible;}
 .ftdd-tile.k-video .ftdd-tile-t b{font-size:15.5px;}
 .ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-left:8px;white-space:nowrap;}
-.ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
 /* …except a set of videos the trainee is to watch one after another (Day 3's five CRM/CMS videos, data-card): cards side
    by side, each with the video's preview, so the set reads as what to watch, and a click plays it bigger */
 /* (a row of one or two videos sits in the middle of the slide, not on the left with empty columns beside it) */
@@ -2795,10 +2724,6 @@ main.main-ftdd .ftdd-sheet p.ftdd-hbar{font:800 18px/1.3 'Poppins','Inter',sans-
 main.main-ftdd .ftdd-sheet p.ftdd-hbar:first-child{margin-top:0;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar b, main.main-ftdd .ftdd-sheet p.ftdd-hbar strong{color:inherit !important;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:800;}
-/* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
-.ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
-.ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
-.ftdd-wait-acts{display:flex;flex-wrap:wrap;gap:8px;}
 /* each criterion a box of the same height, its number centred beside the text, so the rows line up */
 .ftdd-score-l{align-items:stretch;grid-auto-rows:1fr;gap:8px 12px !important;}
 .ftdd-score-l li{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1.5px solid #E6D6C2;border-radius:10px;background:#FFFBF6;font-size:13.5px;line-height:1.35;counter-increment:sc;}

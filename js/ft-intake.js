@@ -304,33 +304,31 @@ const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: "", paired:
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const keys = people.map(r => "intakeassign:" + r.id), vals = [], subs = [];
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    vals.push(...await sharedGetMany(keys));
     // (each trainee's submitted Intake Worksheet link: actsub:<id>.items.intakews)
     // (and each trainee's own packet link: drive:<id>.intakePacket)
     const dvs = []; const dkeys = people.map(r => "drive:" + r.id);
-    for(let i = 0; i < dkeys.length; i += 99) dvs.push(...await sharedGetMany(dkeys.slice(i, i + 99)));
+    dvs.push(...await sharedGetMany(dkeys));
     AD.pk = {}; AD.pf = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket, f = dvs[i] && dvs[i].intakeFolder; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); if(f && /^https:\/\//.test(String(f))) AD.pf[r.id] = String(f); });
     // (🔎 each trainee's packet check: intakecheck:<id>, worker.js checkIntakePacket)
     const cks = [], ckeys = people.map(r => "intakecheck:" + r.id);
-    for(let i = 0; i < ckeys.length; i += 99) cks.push(...await sharedGetMany(ckeys.slice(i, i + 99)));
+    cks.push(...await sharedGetMany(ckeys));
     AD.ck = {}; people.forEach((r, i) => { const c = cks[i]; if(c && Array.isArray(c.rules)) AD.ck[r.id] = c; });
     const skeys = people.map(r => "actsub:" + r.id);
-    for(let i = 0; i < skeys.length; i += 99) subs.push(...await sharedGetMany(skeys.slice(i, i + 99)));
+    subs.push(...await sharedGetMany(skeys));
     AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
     AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     AD.assign = {}; AD.recs = {}; people.forEach((r, i) => { const v = vals[i] && typeof vals[i] === "object" ? vals[i] : null; if(v) AD.recs[r.id] = v; if(v && v.packet) AD.assign[r.id] = Number(v.packet); });
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
     AD.at = Date.now();
   }catch(err){ AD.rows = AD.rows || []; AD.at = Date.now(); }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
 }
 function adminHtml(){
   if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
+  const pk = packets(), calls = mockCalls();
   if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
   // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
   // (an assignment made before the client was kept with it gets its case's client, once)

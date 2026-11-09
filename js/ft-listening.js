@@ -362,15 +362,12 @@ const AD = {rows: null, loading: false, batch: "", open: {}, set: SETS[0].id, ed
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    // (revoked, offboarded or blocked trainees drop off, js/ft-roster.js)
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const keys = people.map(r => "listening:" + r.id), vals = [];
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    vals.push(...await sharedGetMany(keys));
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].logs ? vals[i] : {logs: {}}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "listening") render();
 }

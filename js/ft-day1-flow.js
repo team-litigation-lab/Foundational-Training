@@ -76,8 +76,7 @@ function mayGo(n, i, from){
   if(n !== 1 || !active()) return true;
   const want = stepAt(i);
   if(want > at()){ toast(`🔒 ${step(want).label} opens when your trainer unlocks it. You are on ${step(at()).label}.`); return false; }
-  const by = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state().split ? 2 : 1;
-  if(from >= 0 && i > from + by){ toast("Day 1 goes in order: one slide at a time, with Next →."); return false; }
+  if(from >= 0 && i > from + 1){ toast("Day 1 goes in order: one slide at a time, with Next →."); return false; }
   return true;
 }
 const goCurrent = () => { try{ (new Function(step(at()).go))(); }catch(err){ goto("day", 12); } };

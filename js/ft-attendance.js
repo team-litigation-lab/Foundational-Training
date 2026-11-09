@@ -43,7 +43,7 @@ async function load(){
     A.ins[day] = ins;
     // the trainers' Time Ins for the day, from each batch's attendance record
     const bk = [...new Set(A.people.map(r => attKey(r.batch)))].map(k => `attendance:${k}:${day}`), man = {};
-    for(let i = 0; i < bk.length; i += 99) (await sharedGetMany(bk.slice(i, i + 99))).forEach(rec => {
+    (await sharedGetMany(bk)).forEach(rec => {
       Object.entries((rec && rec.rows) || {}).forEach(([id, row]) => { if(row && row.timeIn) man[id] = {timeIn: row.timeIn, by: row.by || ""}; }); });
     A.man[day] = man;
   }catch(err){ A.err = "Couldn’t load the attendance. Try ↻ Refresh."; }

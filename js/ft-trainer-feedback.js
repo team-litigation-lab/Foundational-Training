@@ -158,12 +158,7 @@ window.FTMyFeedback = {html: () => renderMine().replace(/^<div class="tfb-hero">
 const __render = window.render;
 window.render = function(){
   if(state.view === "myfeedback"){ state.view = "scorecard"; return window.render.apply(this, arguments); }
-  if(state.view !== "myfeedback") return __render.apply(this, arguments);
-  if(!state.traineeId){ state.view = "modules"; return __render.apply(this, arguments); }
-  if(MF.list && !MF.loading && Date.now() - F.at > 60000) loadAll();
-  const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-tfb"><a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>${renderMine()}</main>` + renderFooter();
-  try{ afterRender(); }catch(err){}
+  return __render.apply(this, arguments);
 };
 
 /* ---------- Admin → 📝 Send Feedback ---------- */
@@ -376,7 +371,6 @@ window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || 
   .map(it => ({name: `${(ACTS[it.act] || {}).icon || "📝"} ${(ACTS[it.act] || {}).label || it.act} · ${it.title}`, pct: Number(it.score), note: it.verdict || "Trainer’s score"}));
 
 (function(){ const st = document.createElement("style"); st.id = "ft-trainer-feedback"; st.textContent = `
-main.main-tfb{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 .tfb-hero h1{margin:0 0 4px;} .tfb-hero p{margin:0;color:var(--ink-soft);}
 .tfb-page{padding:14px 18px;border-left:5px solid #DB8437;}
 .tfb-page h3{margin:0 0 8px;color:var(--navy);}

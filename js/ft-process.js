@@ -138,7 +138,6 @@ const codeName = n => e(n).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(");
 const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
 const ptDay = d => window.FTTrackerRules ? FTTrackerRules.ptDate(d ? new Date(d) : new Date()) : new Date(d || Date.now()).toISOString().slice(0, 10);
 const bare = n => String(n || "").replace(/\.(docx?|pdf|txt|rtf|odt)$/i, "");
-const nameMatches = (set, n) => normName(bare(n)) === normName(fileName(set));
 // a file that is this sheet but named another way: the convention's words in it, whatever the spaces, underscores and capitals
 const key = t => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const looksLike = (set, n) => key(bare(n)).includes(key(set.file));
@@ -157,9 +156,7 @@ async function checkFolder(force){
   let changed = false;
   if(FOLDER.files) PROCESS_SETS.forEach(set => {
     const x = FP.data.sets[set.id]; if(!x || !x.assignedOn) return;
-    const mine = FOLDER.files.filter(f => looksLike(set, f.name)).sort((a, b) => (nameMatches(set, b.name) - nameMatches(set, a.name)) || String(a.created).localeCompare(String(b.created)));
-    const f = mine[0]; if(!f) return;
-    const nf = {name: f.name, link: f.link, at: f.created || f.modified, nameOk: nameMatches(set, f.name), onTime: ptDay(f.created || f.modified) <= x.assignedOn};
+    const nf = findInFolder(set, x, FOLDER.files); if(!nf) return;
     if(JSON.stringify(nf) !== JSON.stringify(x.file || null)){ x.file = nf; changed = true; }
   });
   if(changed) queueSave();   // (nothing on the trainee's page changes: the trainer sees the result)
@@ -212,6 +209,8 @@ async function sheetPdf(set){
 }
 const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
   quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
+// (📝 the Assessments, js/ft-assess.js, which loads next, name their files and explain a failed save the same way)
+window.FTPdfKit = {firstName, codeName, DRIVE_WHY};
 // the lesson's files: one per naming convention among the sheets on its page
 // (on ✍️ Knowledge Check every question of the lesson can be answered, so every sheet has its 📄 Save PDF to my Folder there,
 // finished module or not; on the Process Questions page, before the module is finished, only its open sheets)
@@ -573,15 +572,6 @@ window.FTProcess = {
   },
   set(sid, i, v){
     const x = sheet(sid); x.answers[i] = v; x.updatedAt = new Date().toISOString(); queueSave();
-    const set = PROCESS_SETS.find(s=>s.id===sid), c = document.getElementById("fpCount-"+sid), st = document.getElementById("fpSt-"+sid);
-    if(c) c.textContent = `${answered(set, x)} of ${set.questions.length} answered`;
-    if(st){ const s = statusOf(set, x); st.className = "fp-st st-"+s.k; st.textContent = s.t; }
-  },
-  async submit(sid){
-    const set = PROCESS_SETS.find(s=>s.id===sid), x = sheet(sid), n = answered(set, x);
-    if(n < set.questions.length && !confirm(`You’ve answered ${n} of ${set.questions.length} questions. Submit anyway?`)) return;
-    x.submittedAt = new Date().toISOString(); queueSave();
-    toast(`✓ ${set.title} Process Questions submitted.`); render();
   },
   // 📝 Submit on an open sheet before its module is finished (Day 1's Reading Task): every answer in complete sentences, then
   // the sheet is marked submitted (the trainer sees it); it is graded with the module's Knowledge Check once the module is finished
@@ -978,39 +968,31 @@ function renderKc(){
   loadReview();
   const read = isReadPage(qs, shownSets(qs)), rec = read ? readRec(id) : kcRec(id), shown = KC.shown[shownKey(id, read)] || (rec && rec.last), prog = state.progress[id] || {};
   const locked = kcLeft(id, read) <= 0;   // 🔒 taken: the answers stay as they were graded
-  if(read) return `${back}
-    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
-      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
-    ${readReview(id) ? reviewBlock(id, readReview(id)).replace("this Knowledge Check’s final score", "the Reading Task’s final score") : ""}
-    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
-    <div class="card kc-card">
+  // the answers card (each answer, its AI feedback and the trainer's note from the review `rv`) and the answer-sheet box
+  const kcCard = rv => `<div class="card kc-card">
       ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
           <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${num(g.score)}/10</b> ${e(g.feedback)}</div>` : ""}
-          ${(()=>{ const n = ((readReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
+          ${(()=>{ const n = ((rv || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
       <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
       <p class="fp-muted">Your answers save as you type.</p>
       ${pdfBox(id)}
     </div>
     ${kcSave(qs)}`;
+  if(read) return `${back}
+    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
+      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
+    ${readReview(id) ? reviewBlock(id, readReview(id)).replace("this Knowledge Check’s final score", "the Reading Task’s final score") : ""}
+    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
+    ${kcCard(readReview(id))}`;
   return `${back}
     <div class="kc-hero">${intro}
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `Best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
     ${reviewBlock(id)}
     ${shown ? kcReport(id, shown) : ""}
     ${prog.done && root_FTNextStep() ? root_FTNextStep().compact(id) : ""}
-    <div class="card kc-card">
-      ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
-        return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
-          <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
-          ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${num(g.score)}/10</b> ${e(g.feedback)}</div>` : ""}
-          ${(()=>{ const n = ((kcReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
-      <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
-      <p class="fp-muted">Your answers save as you type.</p>
-      ${pdfBox(id)}
-    </div>
-    ${kcSave(qs)}`;
+    ${kcCard(kcReview(id))}`;
 }
 // 📄 The lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, checked there by the platform
 function kcSave(qs){
@@ -1019,6 +1001,15 @@ function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
   if(isTraineeHere()){ sets.forEach(assignedOn); checkFolder(); }
   return "";
+}
+// the grader's reply as the stored grading record: each answer's score (0–10) and feedback, the percent, the summary;
+// null when the reply has no scores. `extra` adds the caller's own fields (sig, auto).
+function kcResult(raw, qs, extra){
+  const got = Array.isArray(raw && raw.items) ? raw.items : []; if(!got.length) return null;
+  const items = qs.map((x, k) => { const it = got.find(g => Number(g && g.n) === k + 1) || got[k] || {};
+    return {sid: x.set.id, i: x.i, score: Math.max(0, Math.min(10, Math.round(Number(it.score) || 0))), feedback: String(it.feedback || "").slice(0, 900)}; });
+  const pct = Math.round(items.reduce((a, b) => a + b.score, 0) / (10 * items.length) * 100);
+  return Object.assign({pct, items, summary: String((raw && raw.summary) || "").slice(0, 1200), at: new Date().toISOString(), voice: "facilitator-dna"}, extra);
 }
 // ✍️ the grading prompt (the facilitator's DNA, each answer 0–10 and its feedback, the summary): the trainee's 📝 Submit for
 // Grading, and a sheet left "Submitted" graded by itself on the trainer's side (ftKcGradeFor)
@@ -1054,11 +1045,8 @@ window.ftKcGradeFor = async function(tid, lessonId, read){
   const ans = x => String((((proc.sets[x.set.id] || {}).answers) || [])[x.i] || "").trim();
   if(!qs.some(x => ans(x))) return null;
   const raw = await callAIJson(kcPrompt(d, qs, ans), 1800, undefined, "grading");
-  const got = Array.isArray(raw && raw.items) ? raw.items : []; if(!got.length) return null;
-  const items = qs.map((x, k) => { const it = got.find(g => Number(g && g.n) === k + 1) || got[k] || {};
-    return {sid: x.set.id, i: x.i, score: Math.max(0, Math.min(10, Math.round(Number(it.score) || 0))), feedback: String(it.feedback || "").slice(0, 900)}; });
-  const pct = Math.round(items.reduce((a, b) => a + b.score, 0) / (10 * items.length) * 100);
-  const r = {pct, items, summary: String((raw && raw.summary) || "").slice(0, 1200), at: new Date().toISOString(), voice: "facilitator-dna", auto: "trainer-side"};
+  const r = kcResult(raw, qs, {auto: "trainer-side"}); if(!r) return null;
+  const pct = r.pct;
   // (read again just before writing: the trainee may have saved meanwhile; only their grading record is added to)
   const cur = (await sharedGet("process:" + tid)) || proc, slot = read ? "kcRead" : "kc";
   cur[slot] = cur[slot] || {}; const rec = cur[slot][lessonId] = cur[slot][lessonId] || {attempts: 0, best: 0, last: null};
@@ -1100,12 +1088,9 @@ window.FTKc = {
     const prompt = kcPrompt(d, qs, ans);
     try{
       const raw = await callAIJson(prompt, 1800, undefined, "grading");
-      const got = Array.isArray(raw && raw.items) ? raw.items : [];
-      const items = qs.map((x,k)=>{ const it = got.find(g=>Number(g && g.n)===k+1) || got[k] || {};
-        return {sid:x.set.id, i:x.i, score:Math.max(0, Math.min(10, Math.round(Number(it.score)||0))), feedback:String(it.feedback||"").slice(0, 900)}; });
-      if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
-      const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
-      const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna", sig};
+      const r = kcResult(raw, qs, {sig});
+      if(!r) throw new Error("The grader didn't return scores. Please submit again.");
+      const pct = r.pct;
       // 📖 the Reading Task: its own score, kept apart; the lesson's score and its pass stay its own sheet's
       if(read){
         FP.data.kcRead = FP.data.kcRead || {};
@@ -1187,7 +1172,6 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
 .kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
 .kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
-.kc-save{margin-top:14px;} .kc-save h3{margin:0 0 10px;color:var(--navy);font-size:17px;} .kc-save .fp-actions{margin:8px 0 12px;} .kc-folder{display:block;margin:4px 0 6px;font-size:14.5px;color:var(--navy);}
 .kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
 .kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
 
@@ -1195,8 +1179,6 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-hero .btn{margin-bottom:10px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}
 .fp-muted{color:var(--ink-soft);font-size:13.5px;}
-.fp-folder{padding:12px 16px;margin-bottom:14px;font-size:15px;} .fp-folder label{display:block;margin-bottom:6px;color:var(--navy);}
-.fp-folder-row{display:flex;gap:8px;} .fp-folder-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fp-index{display:flex;flex-direction:column;gap:10px;}
 .fp-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;box-sizing:border-box;padding:14px 16px;cursor:pointer;font:inherit;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;}
 .fp-row:hover{border-color:var(--orange-soft);box-shadow:0 2px 8px rgba(0,0,0,.05);}
@@ -1218,18 +1200,12 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-pdf-rule{margin:0;flex:1 1 100%;font-size:14px;line-height:1.9;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
 .fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-drive{margin-left:auto;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
 .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;line-height:1.5;word-break:normal;overflow-wrap:normal;}
-.fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
-.fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
-.fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
-.fp-file-rule{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:0 0 8px;} .fp-file-rule > span:first-child{font-weight:800;color:var(--orange-deep);}
-.fp-file-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;}
-.fp-file-res{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:8px 0 0;} .fp-file .fp-muted{margin:6px 0 0;}
 .fp-sheet-h{margin:18px 0 4px;padding:8px 14px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;border-radius:8px;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
 .fp-sheet-h:first-child{margin-top:0;}
 .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
-.fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
+.fp-qs textarea:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
 .fp-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;} .fp-actions a.btn{text-decoration:none;}
 .fp-admin{padding:18px 20px;} .fp-admin h3{margin:0 0 4px;color:var(--navy);}
 .fp-qedit{border:1px solid var(--line);border-radius:10px;margin:14px 0;padding:10px 14px;background:var(--bg);}

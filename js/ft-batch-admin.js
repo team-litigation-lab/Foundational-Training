@@ -508,7 +508,7 @@ function batchesTab(){
 }
 ftAdminTab("batches", "📁 Batches", batchesTab);
 
-window.FTBatchAdmin = {archive:archiveDialog, gather, buildFiles, startOf, activeBatches};
+window.FTBatchAdmin = {archive:archiveDialog};
 
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-admin"; s.textContent = `
 /* 🧑‍🏫 Graders: the Training Guide's scoresheet (criterion | Score | Remarks), every text wrapping */

@@ -261,15 +261,13 @@ if(typeof window.addEventListener === "function") window.addEventListener("ft-ro
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const vals = []; const keys = people.map(r => "calrules:" + r.id).concat(["settings:calrules"]);
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    vals.push(...await sharedGetMany(keys));
     const st = vals.pop(); if(st && st.lunch !== undefined) X.lunch = st.lunch;
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && Array.isArray(vals[i].bookings) ? vals[i] : {bookings: []}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && ftTabOn("calrules")) render();
 }

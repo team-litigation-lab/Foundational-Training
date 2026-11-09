@@ -85,7 +85,7 @@ async function load(rows, key){
   U.loading = true;
   try{
     const want = []; rows.forEach(r => OWN.forEach(k => want.push(k + r.id)));
-    const vals = []; for(let i = 0; i < want.length; i += 99) vals.push(...await sharedGetMany(want.slice(i, i + 99)));
+    const vals = []; vals.push(...await sharedGetMany(want));
     const per = {};
     rows.forEach((r, i) => { const rec = {}; OWN.forEach((k, j) => { rec[k] = vals[i * OWN.length + j] || null; });
       if(!rec["sessions:"] && r.s) rec["sessions:"] = r.s;

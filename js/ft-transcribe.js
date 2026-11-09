@@ -155,7 +155,7 @@ function fitDesk(){
 addEventListener("resize", () => { if(state.view === "transcribe") fitDesk(); });
 const STEPS = [["📨", "The request"], ["🎧", "Listen"], ["📝", "Draft the minutes"], ["🏷", "Name & file it"], ["💬", "Report back"], ["📤", "Submit"]];
 function stepper(n){
-  const r = run(n), f = r.f || {}, cs = checks(n);
+  const r = run(n), cs = checks(n);
   const doneAt = [true, !!r.startedAt, cs[0][1] && cs[1][1], cs[4][1] && cs[5][1], cs[6][1], !!r.submittedAt];
   return `<ol class="tr-steps">${STEPS.map(([ic, t], i) => `<li class="${doneAt[i] ? "done" : ""}"><span class="tr-step-ic">${doneAt[i] ? "✓" : ic}</span><span>${t}</span></li>`).join("")}</ol>`;
 }
