@@ -1462,6 +1462,10 @@ const PREP = {
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
+// 🧰 a preparation slide's link to the tool its demo uses (the tool's card in 🛠 Practice Lab, scored on the 🏅 Score Card)
+const PREP_LEAD = {
+  12: {s1dp: '<div class="ftdd-pq-go ftdd-lor-go"><p><b>🧰 Your 1P and 3P LORs</b>: the demo uploads and sends the letters you draft in the LOR Drafting Activity (🛠 Practice Lab → 🧰 Drafting Tools). Its score is on your 🏅 Score Card.</p>' +
+    '<button type="button" class="btn btn-navy" onclick="lshOpenPortalDrafting()">🧰 Open the LOR Drafting Activity →</button> <button type="button" class="btn btn-ghost" onclick="goto(\'simulators\')">🛠 Practice Lab</button></div>\n'}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
@@ -1531,6 +1535,11 @@ for(let n = 1; n <= 16; n++){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
     slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), ...((PREP_OFF[n] || []).includes(id) ? [] : [{id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""}]));
+  }
+  // (and what a preparation slide opens with: Day 12's demo uploads and sends the LORs drafted in the LOR Drafting Activity)
+  for(const [id, h] of Object.entries(PREP_LEAD[n] || {})){
+    const x = slides.find(y => y.id === id); if(!x) throw new Error(`Day ${n} has no ${id} to open with its link`);
+    x.html = h + x.html;
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];

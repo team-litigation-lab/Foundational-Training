@@ -64,11 +64,76 @@ const PORTAL_DRAFTING = "https://cm-training-activity.pages.dev/simulators/draft
 // The tool opens on the letter asked for: none = the LORs; "medlor" = the MedLOR with Unsworn COR and the
 // client's signed HIPAA, merged into one PDF (Day 14); "lienbv" = the Lien Balance Verification (Day 16).
 const PORTAL_LETTER = {medlor: "?tab=prov&kind=medlor", lienbv: "?tab=prov&kind=lienbv"};
-window.lshOpenPortalDrafting = function(letter){
-  const url = PORTAL_DRAFTING + (PORTAL_LETTER[letter] || "");
+// (and a trainee's assigned case, 📄 Assign LORs: the tool then shows that case alone, ?case=N)
+window.lshOpenPortalDrafting = async function(letter){
+  let url = PORTAL_DRAFTING + (PORTAL_LETTER[letter] || "");
+  if(isTrainee() && !letter){
+    if(L.id !== state.traineeId || !L.assign){ try{ const a = await sharedGet("lorassign:" + state.traineeId); L.assign = a && typeof a === "object" ? a : null; }catch(err){} }
+    const n = myCaseNo(); if(n) url += (url.includes("?") ? "&" : "?") + "case=" + n;
+  }
   if(typeof LSHToolLinks === "object" && LSHToolLinks.ticketed) LSHToolLinks.ticketed(url).then(function(u){ location.href = u; });
   else location.href = url;
 };
+
+/* ---------- 📄 Assign LORs (📋 Batch Sheet → the blue bar's 📄 Assign LORs, a trainer's) ----------
+   Each trainee of the batch gets one of the cases (js/ft-lor-data.js) for the LOR Drafting Activity: a case for each, set one
+   by one, or 🎲 every trainee without one given a case of their own (the cases not yet taken in the batch first). Kept in
+   lorassign:<id> = {case, at} (only admins write it); the trainee's Practice Lab card names it (Your case). */
+const LA = {open: false, key: "", rows: {}, loading: false, busy: false};
+async function laLoad(ppl){
+  const key = ppl.map(p => p.id).join(","); if(LA.key === key || LA.loading) return;
+  LA.loading = true;
+  try{ const v = await sharedGetMany(ppl.map(p => "lorassign:" + p.id)); LA.rows = {}; ppl.forEach((p, i) => { const n = v[i] && Number(v[i].case); if(n >= 1 && n <= CASES.length) LA.rows[p.id] = n; }); LA.key = key; }
+  catch(err){ LA.key = key; }
+  LA.loading = false; if(LA.open) render();
+}
+async function laWrite(id, n){
+  const rec = n ? {case: n, at: new Date().toISOString()} : {case: null, at: new Date().toISOString()};
+  if(await sharedSet("lorassign:" + id, rec) === false) throw new Error("save");
+  if(n) LA.rows[id] = n; else delete LA.rows[id];
+}
+const laPeople = () => (window.FTBatchSheet && FTBatchSheet.people ? FTBatchSheet.people() : []);
+window.FTLorAdmin = {
+  isOpen: () => LA.open,
+  open(o){ if(!adminOn()) return; LA.open = !!o; if(LA.open) LA.key = ""; render(); },
+  html(ppl){
+    if(!adminOn() || !LA.open) return "";
+    ppl = ppl || laPeople(); laLoad(ppl);
+    const given = ppl.filter(p => LA.rows[p.id]).length, taken = {};
+    ppl.forEach(p => { const n = LA.rows[p.id]; if(n) taken[n] = (taken[n] || 0) + 1; });
+    const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? e(caseName(n)) : "Not assigned"}</option>`;
+    return `<div class="bs-le card lor-as"><div class="bs-le-h"><b>📄 Assign LORs <small class="lor-as-n">${given} of ${ppl.length} assigned</small></b>
+      <span><button type="button" class="btn btn-navy btn-sm" ${LA.busy || given === ppl.length ? "disabled" : ""} onclick="FTLorAdmin.all()">🎲 Assign every trainee a case</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="FTLorAdmin.open(false)">✕ Close</button></span></div>
+      <p class="lor-as-note">Each trainee drafts the 1P and 3P LORs from their own case. They see it on the 📄 LOR Drafting Activity card in 🛠 Practice Lab.</p>
+      ${LA.loading && !LA.key ? `<p class="lor-as-note">Loading…</p>` : `<div class="lor-as-g">${ppl.map(p => { const n = LA.rows[p.id] || 0;
+        return `<label class="lor-as-c"><b>${e(p.name)}</b><select aria-label="LOR case for ${e(p.name)}" onchange="FTLorAdmin.set('${e(p.id)}', this.value)">${[0, ...CASES.map((c, i) => i + 1)].map(k => opt(k, n)).join("")}</select>${n && taken[n] > 1 ? `<small class="lor-as-dup">also given to another trainee</small>` : ""}</label>`; }).join("")}</div>`}</div>`;
+  },
+  async set(id, v){
+    if(!adminOn()) return; const n = Number(v) || 0;
+    try{ await laWrite(id, n >= 1 && n <= CASES.length ? n : 0); toast(n ? `📄 ${caseName(n)} assigned.` : "LOR case taken off."); }
+    catch(err){ toast("Couldn’t save the case. Try again."); }
+    render();
+  },
+  // 🎲 each trainee without a case gets one: the cases no one in the batch has yet first, in order, then again from Case 1
+  async all(){
+    if(!adminOn() || LA.busy) return; const ppl = laPeople(), need = ppl.filter(p => !LA.rows[p.id]); if(!need.length) return;
+    LA.busy = true; render();
+    const used = new Set(Object.values(LA.rows)), free = CASES.map((c, i) => i + 1).filter(n => !used.has(n)), order = free.concat(CASES.map((c, i) => i + 1));
+    let k = 0, bad = 0;
+    for(const p of need){ try{ await laWrite(p.id, order[k++ % order.length]); }catch(err){ bad++; } }
+    LA.busy = false; toast(bad ? `Assigned ${need.length - bad}; ${bad} couldn’t be saved. Try again.` : `📄 ${need.length} trainee${need.length === 1 ? "" : "s"} given a case.`); render();
+  }
+};
+(function(){ const s = document.createElement("style"); s.textContent = `
+.lor-as .bs-le-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;}
+.lor-as-n{font-weight:600;color:#5A6175;margin-left:6px;}
+.lor-as-note{margin:0 0 8px;color:#3A4058;font:600 13.5px/1.4 Arial,sans-serif;}
+.lor-as-g{column-count:3;column-gap:24px;padding-bottom:12px;}
+.lor-as-c{display:flex;flex-direction:column;gap:3px;break-inside:avoid;margin:0 0 8px;font:700 14px Arial,sans-serif;color:#1E2340;}
+.lor-as-c select{font:700 13.5px Arial,sans-serif;padding:4px 6px;border:2px solid #3B4A8C;border-radius:8px;color:#1E2340;max-width:100%;}
+.lor-as-dup{color:#9A5B00;font-weight:600;}
+@media(max-width:900px){.lor-as-g{column-count:1;}}`; document.head.appendChild(s); })();
 
 /* ---------- wiring into the engine ---------- */
 const __render = window.render;
