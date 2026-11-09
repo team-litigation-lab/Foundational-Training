@@ -577,8 +577,8 @@ function reviewAct(scn, events){
   if(!C) return {kind:"activity", score:0, max:0, pct:0, passed:false, items:[], done:0, extras:[], rows:[], check:{met:0, total:0, pct:0}, sim:{met:0, total:0}, entries:{}, error:"The Calendar Activity Check isn’t loaded: reload the page."};
   const K = keyList(), m = matchAct(events), entries = {}, taken = {};
   K.forEach(o => { const x = m[o.n]; if(x){ entries[o.n] = entryOf(x, o.n); taken[x.id] = 1; } });
-  // the Check's verdict on every field of the 18 events (an older Check's "11", the 19th screenshot and the upload, is no longer asked, and was never this calendar's)
-  const rows = C.checkAll({entries}).filter(r => r[0] !== "11"), simRows = [];
+  // the Check's verdict on every field of the 18 events
+  const rows = C.checkAll({entries}), simRows = [];
   const items = K.map(o => {
     const x = m[o.n], mine = rows.filter(r => r[0] === o.n && r[2] !== null), sims = x ? simChecks(C, o, x) : simList(C, o).map(([key, label]) => ({key, label, ok:false, why:"Add the event", info:""}));
     sims.forEach(c => simRows.push([o.n, c.label, c.ok, c.why]));

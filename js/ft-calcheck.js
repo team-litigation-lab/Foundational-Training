@@ -385,9 +385,9 @@ function summaryHtml(){
 function fixHtml(){
   const miss = checkAll(R.rec, anchorOf(R.rec)).filter(c => c[2] === false), byItem = {}; miss.forEach(c => (byItem[c[0]] = byItem[c[0]] || []).push(c));
   // (only the events with something typed: an untouched one shows what it expects in its own card)
-  Object.keys(byItem).forEach(n => { if(n !== "11" && !touched(R.rec.entries[n])) delete byItem[n]; });
+  Object.keys(byItem).forEach(n => { if(!touched(R.rec.entries[n])) delete byItem[n]; });
   const count = Object.keys(byItem).reduce((a, n) => a + byItem[n].length, 0);
-  return `${started() && count ? `<details class="cc-fix" ${R.open.fix ? "open" : ""} ontoggle="FTCalCheck.toggle('fix', this.open)"><summary>What to fix (${count})</summary><ul>${Object.keys(byItem).map(n => `<li><b>${e(n)} ${e(n === "11" ? "Entire Calendar" : keyOf(n).name)}</b>: ${byItem[n].map(c => `${e(c[1])} → ${e(c[3])}`).join("; ")}</li>`).join("")}</ul></details>` : ""}`;
+  return `${started() && count ? `<details class="cc-fix" ${R.open.fix ? "open" : ""} ontoggle="FTCalCheck.toggle('fix', this.open)"><summary>What to fix (${count})</summary><ul>${Object.keys(byItem).map(n => `<li><b>${e(n)} ${e(keyOf(n).name)}</b>: ${byItem[n].map(c => `${e(c[1])} → ${e(c[3])}`).join("; ")}</li>`).join("")}</ul></details>` : ""}`;
 }
 // the in-place painters behind edit()
 const paintStatus = () => { const el = document.querySelector(".cc-total small"); if(el) el.textContent = R.status; };
@@ -459,7 +459,7 @@ async function loadAdmin(){
 function checksTable(rows){
   const by = {}; (rows || []).filter(c => Array.isArray(c) && c.length === 4).forEach(c => (by[c[0]] = by[c[0]] || []).push(c));
   return `<div class="cc-atbl">${Object.keys(by).map(n => { const on = by[n].filter(c => c[2] !== null), m = on.filter(c => c[2]).length;
-    return `<div class="cc-arow"><b>${e(n)} ${e(n === "11" ? "Entire Calendar & upload" : (keyOf(n) || {}).name || "")}</b> <span class="cc-sc ${pctCls(on.length ? m / on.length * 100 : 0)}">${m}/${on.length}</span>
+    return `<div class="cc-arow"><b>${e(n)} ${e((keyOf(n) || {}).name || "")}</b> <span class="cc-sc ${pctCls(on.length ? m / on.length * 100 : 0)}">${m}/${on.length}</span>
       <ul class="cc-res">${on.map(c => `<li class="${c[2] ? "" : "miss"}">${chip(c[2])}<span><b>${e(c[1])}</b>${c[2] ? "" : `<small>${e(c[3])}</small>`}</span></li>`).join("")}</ul></div>`; }).join("")}</div>`;
 }
 function adminHtml(){
