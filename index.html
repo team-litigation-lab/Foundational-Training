@@ -6246,16 +6246,19 @@ function completedCount(){
 }
 
 /* ---------- seal / brand mark (signature visual element) ---------- */
-function sealSvg({size=120, label="", sub="", fill="var(--orange)", ink="#241304", scale=1, done=true, pulse=false}={}){
-  const points = 14, r1=48, r2=41, cx=50, cy=50;
+// the seals' 14-point star around (cx, cy), as an SVG path
+function starPath(cx, cy){
+  const points = 14, r1=48, r2=41;
   let path="";
   for(let i=0;i<points*2;i++){
     const ang = (Math.PI*2*i)/(points*2) - Math.PI/2;
     const r = i%2===0 ? r1 : r2;
-    const x = cx + r*Math.cos(ang), y = cy + r*Math.sin(ang);
-    path += (i===0?"M":"L") + x.toFixed(2) + "," + y.toFixed(2) + " ";
+    path += (i===0?"M":"L") + (cx+r*Math.cos(ang)).toFixed(2) + "," + (cy+r*Math.sin(ang)).toFixed(2) + " ";
   }
-  path += "Z";
+  return path + "Z";
+}
+function sealSvg({size=120, label="", sub="", fill="var(--orange)", ink="#241304", scale=1, done=true, pulse=false}={}){
+  const path = starPath(50, 50);
   const opacity = done ? 1 : 0.35;
   return `<svg class="seal${pulse?' pulse':''}" width="${size}" height="${size}" viewBox="0 0 100 100" style="opacity:${opacity}">
     <path d="${path}" fill="${fill}" stroke="var(--navy)" stroke-width="1.5"/>
@@ -6265,14 +6268,7 @@ function sealSvg({size=120, label="", sub="", fill="var(--orange)", ink="#241304
   </svg>`;
 }
 function completionRibbonSvg(pct, done){
-  const points = 14, r1=48, r2=41, cx=60, cy=52;
-  let path="";
-  for(let i=0;i<points*2;i++){
-    const ang = (Math.PI*2*i)/(points*2) - Math.PI/2;
-    const rr = i%2===0 ? r1 : r2;
-    path += (i===0?"M":"L") + (cx+rr*Math.cos(ang)).toFixed(2) + "," + (cy+rr*Math.sin(ang)).toFixed(2) + " ";
-  }
-  path += "Z";
+  const cx=60, cy=52, path = starPath(cx, cy);
   const finished = pct>=100;
   return `<svg class="seal completion-ribbon" viewBox="0 0 120 160" role="img" aria-label="${pct}% of program complete">
     <defs>
