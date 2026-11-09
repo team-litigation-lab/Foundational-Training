@@ -63,9 +63,9 @@ const failures = []; const fail = (m) => failures.push(m);
     if (bt.error) fail(`the backtrack failed on a B + DDMMYY Batch ID: ${JSON.stringify(bt)}`);
     { const C = get('trackerreview:' + cara).compliance || {};
       if (!C['2026-09-30']) fail(`the batch's first day (30 September) wasn't worked out: ${JSON.stringify(Object.keys(C).sort().slice(0, 3))}`);
-      // (📅 Day 1 is the setup day: what was found is kept, but nothing counts for or against them — no part, no day %)
+      // (📅 Day 1 counts like any day, by what was found that day)
       else { const d1 = C['2026-09-30'];
-        if (!d1.day1 || d1.pct !== null || Object.values(d1.parts || {}).some((v) => v !== null) || !d1.day1Parts) fail(`Day 1 still counts: ${JSON.stringify({ day1: d1.day1, pct: d1.pct, parts: d1.parts, day1Parts: d1.day1Parts })}`);
+        if (d1.day1 || typeof d1.pct !== 'number' || d1.day1v !== 2) fail(`Day 1 isn't counted: ${JSON.stringify({ day1: d1.day1, pct: d1.pct, parts: d1.parts, day1v: d1.day1v })}`);
         const d2 = C['2026-10-01']; if (d2 && (d2.day1 || typeof d2.pct !== 'number')) fail(`Day 2 isn't counted: ${JSON.stringify({ day1: d2.day1, pct: d2.pct })}`); }
       if (Object.keys(C).some((d) => !/^\d{4}-(0\d|1[0-2])-([0-2]\d|3[01])$/.test(d))) fail(`a day that doesn't exist was worked out: ${JSON.stringify(Object.keys(C))}`); }
 
