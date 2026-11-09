@@ -5563,9 +5563,10 @@ window.ftW1Override = {
   comp(rv, b){
     if(!rv || !rv.compliance || !this.on(b)) return rv;
     const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
-    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
-      // (its Day 1 as checked — worker.js keeps a Day 1's parts under day1Parts — counted with Week 1, as before)
-      const parts = Object.assign({}, x.day1 && x.day1Parts ? x.day1Parts : x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
+    // (📅 a Day 1 the Worker kept as the setup day, day1, stays not counted: ftDay1 shows what was found on it — no 0s from
+    // before the trainees' files were linked brought back into the week)
+    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts || x.day1) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
+      const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
       out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
         eodTrainer: {score: 100, note: note + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true, day1: false}); });
     return out;
