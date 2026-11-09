@@ -3298,9 +3298,9 @@ main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-se
 main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
 /* (a document with its note, .ftdd-pdoc-side: the note beside its first page, the page as tall as the slide allows; the other
    pages are in the page viewer, opened from it) */
-.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-row{display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:24px;align-items:start;margin-top:12px;}
+.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-row{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:12px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-side p.ftdd-pdoc-note{margin:0;max-width:none;font-size:21px;line-height:1.55;}
-.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-pages{display:block;margin:0;}
+.ftdd-sheet .ftdd-pdoc-side .ftdd-pdoc-pages{display:flex;justify-content:center;margin:0;}
 .ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-hid{display:none !important;}
 .ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-pg img{height:calc(var(--ftdd-room, 70vh) - 110px);min-height:320px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-side a.ftdd-pdoc-pg span{font-size:15px;color:#B5651F !important;}
