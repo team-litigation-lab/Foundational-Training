@@ -167,7 +167,7 @@ async function workerChecks() {
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
     // a batch card: a batch the 📋 Batch Sheet lists opens there (not an empty sheet), as B103026 does here
     await page.evaluate(() => openBatchFolder('B103026')); await page.waitForTimeout(2500);
-    const toSheet = await page.evaluate(() => ({ tab: state.adminTab, head: ((document.querySelector('.gs-file b') || {}).textContent || '') }));
+    const toSheet = await page.evaluate(() => ({ tab: state.adminTab, head: ((document.querySelector('.ft-banner h2') || {}).textContent || '') + ' · ' + ((document.querySelector('.bs-batchmenu select') || {}).value || '') }));
     if (toSheet.tab !== 'batchsheet' || !/B103026/.test(toSheet.head)) fail(`B103026's card didn't open it on the Batch Sheet: ${JSON.stringify(toSheet)}`);
     // 📦 archive B103026: Drive answered by the test (the test server has no service account)
     const sent = { files: null, trainees: [] };
