@@ -124,10 +124,11 @@ const failures = []; const fail = (m) => failures.push(m);
     if (cur.days['2026-11-02'].trainerScore !== 90 || cur.days['2026-11-02'].comment !== 'Good recovery.') fail(`the backtrack lost a day's trainer score or comment: ${JSON.stringify(cur.days['2026-11-02'])}`);
     if (!cur.compliance || !cur.compliance['2026-10-30']) fail(`each day's compliance wasn't worked out again: ${JSON.stringify(Object.keys(cur.compliance || {}))}`);
     // ✅ the day's compliance reads the entries: the Task Tracker's day afresh (not the 0 from before), the Monitoring Sheet's
-    // discussions due by that day (Day 1's entry 25%: a date, no 5 takeaways…; Day 2's not written: 0), the TAM's entry that day
+    // entry for that day's own discussion (Day 1's entry 25%: a date, no 5 takeaways…; Day 2's not written: 0 — the day's work only,
+    // not every discussion due so far), the TAM's entry that day
     { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
       if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
-      if (c1.monitor !== 25 || c2.monitor !== 13) fail(`the Monitoring Sheet part isn't the discussions due by each day (10/30 25, 11/02 13): ${c1.monitor} / ${c2.monitor}`);
+      if (c1.monitor !== 25 || c2.monitor !== 0) fail(`the Monitoring Sheet part isn't each day's own entry (10/30 25, 11/02 0): ${c1.monitor} / ${c2.monitor}`);
       // (📘 the TAM isn't a daily part: only graded when a trainer asks, for a shadowing activity)
       if (c1.tam != null || c2.tam != null || c3.tam != null || cur.tam) fail(`the TAM is still read or scored daily: ${JSON.stringify({ c1, tam: cur.tam })}`);
       const old = cur.compliance['2026-10-28'] || {};

@@ -56,7 +56,7 @@ const failures = []; const fail = m => failures.push(m);
     const doc = await page.evaluate(() => FTRankSummary.doc());
     if (!/Weekly Progress Report/.test(doc) || !/Rosa Report/.test(doc) || !/Call Handling/.test(doc)) fail('⬇ Word doesn\'t give the report');
     // ⬇ Excel (no ⬇ Word or 🖨 Print buttons on the bar): a real .xlsx of the report
-    { const bar = await page.evaluate(() => (document.querySelector('.rks-bar-acts') || {}).innerText || '');
+    { const bar = await page.evaluate(() => (document.querySelector('.rks-head-acts, .rks-bar-acts') || {}).innerText || '');
       if (!/Excel/.test(bar) || /⬇ Word|Print/.test(bar)) fail(`the summary's bar isn't ⬇ Excel alone: ${bar}`);
       const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRankSummary.excel())]);
       const f = dl.suggestedFilename(), buf = require('fs').readFileSync(await dl.path());

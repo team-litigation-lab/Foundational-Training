@@ -186,10 +186,10 @@ function renderMockScores(){
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></div>` : ""}
-      <button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button>
-      <button class="btn btn-ghost btn-sm fms-tool" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></div>`;
-  // (the pickers sit in the banner's corner: the week, the batch, the activity and the trainee; the Result and 💾 Save are
-  // under the scoresheet, after the weighted average)
+      </div>`;
+  // (the pickers sit in the banner's corner: the week, the batch, the activity and the trainee; 💾 Save and ↻ under the
+  // scoresheet. No Result picker — the Result follows the score, Passed at 3/5 — and no ⬇ Download: the scores go to
+  // management in the Weekly Report)
   const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
     : `<div class="fms-banner">${ctl}</div>`;
   const head = "";
@@ -205,15 +205,13 @@ function renderMockScores(){
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
     <table class="ftms-tbl fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}</th><th>Score</th><th>Remarks</th></tr></thead><tbody>
       ${crit}
       ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
     </tbody></table>
-    <div class="fms-savebar"><label title="Set by the score: Passed at 3/5 (60%) or more, Redo below it. Pick one to change it.">Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-      ${saveBtn}</div>
+    <div class="fms-savebar">${saveBtn}<button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button></div>
     <div class="fms-foot">
       <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
       <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
@@ -254,6 +252,8 @@ window.FTMockScores = {
   },
   batch(b){ MS.batch = b; MS.va = ""; render(); },
   week(w){ MS.wk = w; render(); },
+  // (the Result of the trainee on screen: it follows the score, with no picker of its own)
+  status(){ const d = valOf(MS.va); return d ? d.status : ""; },
   // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
   va(id){ MS.va = id; render(); },
   // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
@@ -545,7 +545,7 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;}
 .fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
 .fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
-.fms-pick .fms-savebtn{margin-left:auto;}
+.fms-pick .fms-savebtn{margin-left:auto;} .fms-save{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0 0;}
 /* (🧑‍🏫 Graders: the pickers in the banner's top-right corner, on its dark blue) */
 .ft-banner.fms-banner{align-items:flex-start;}
 .fms-banner .ft-banner-right{flex:1 1 620px;justify-content:flex-end;min-width:0;}
