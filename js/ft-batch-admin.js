@@ -36,16 +36,12 @@ const labelOf = b => typeof batchLabel === "function" ? batchLabel(b) : b;
 // the trainer-led activities: the Mock Calls and Demos (each with its Training Guide scorecard where it has one)
 const trainerActs = () => (window.FTSessions && typeof FTSessions.trainerActs === "function" ? FTSessions.trainerActs() : []) || [];
 const scoredActs = () => trainerActs().filter(a => RUB().forAct(a) || /mock|demo/i.test(String(a.kind || "") + " " + String(a.title || "")));
-// 📅 the batch's weeks (the banner's: 7 days from the day it started, Weeks 1–6) and the week an activity falls in: the
-// week of its first training day (training day n is the nth weekday from the batch's first day, as on the Batch Sheet)
+// 📅 the batch's weeks (the banner's: 7 days from the day it started, Weeks 1–6), for the Week dropdown
 const WEEKS = 6, DAY = 864e5;
 const t0Of = b => { const s = b && typeof batchStartDate === "function" ? batchStartDate(b) : ""; const t = s ? Date.parse(s + "T00:00:00Z") : NaN; return isFinite(t) ? t : null; };
 function nowWeek(b){ const t0 = t0Of(b); if(t0 == null) return 1;
   const td = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
   return Math.max(1, Math.min(WEEKS, Math.floor((Date.parse(td + "T00:00:00Z") - t0) / (7 * DAY)) + 1)); }
-function dayWeek(b, n){ const t0 = t0Of(b); if(t0 == null || !n) return null; let t = t0, k = 0;
-  for(let i = 0; i < 60; i++, t += DAY){ const wd = new Date(t).getUTCDay(); if(wd >= 1 && wd <= 5 && ++k >= n) return Math.floor((t - t0) / (7 * DAY)) + 1; } return null; }
-const actWeek = (b, a) => { const ds = window.FTDays && typeof FTDays.forAct === "function" ? FTDays.forAct(a.id) : []; return ds.length ? dayWeek(b, Math.min(...ds)) : null; };
 const wkRange = (b, n) => { const t0 = t0Of(b); if(t0 == null) return ""; const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", day: "numeric", timeZone: "UTC"}), a = t0 + (n - 1) * 7 * DAY; return f(a) + " – " + f(a + 6 * DAY); };
 async function api(path, body){
   const res = await authFetch(path, body || {});
@@ -156,11 +152,10 @@ function renderMockScores(){
   }
   const batches = activeBatches(), allActs = scoredActs();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = batches[0] || "";
-  // 📅 the week picked (this week until another is): every mock call is always in the Activity list, whatever the week;
-  // the demos are the week's, or every one when the week has none on the schedule (or "All weeks")
+  // 📅 the week picked (this week until another is): it sets the banner's week and dates; the Activity list always has
+  // every mock call and demo, whatever the week
   const wk = MS.wk === "all" ? "all" : Number(MS.wk) >= 1 ? Number(MS.wk) : nowWeek(MS.batch);
-  const allDemos = allActs.filter(x => !isMock(x)), inWk = wk === "all" ? allDemos : allDemos.filter(x => actWeek(MS.batch, x) === wk);
-  const mocks = allActs.filter(isMock), demos = inWk.length ? inWk : allDemos, acts = mocks.concat(demos);
+  const mocks = allActs.filter(isMock), demos = allActs.filter(x => !isMock(x)), acts = mocks.concat(demos);
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
   const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
   if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
@@ -175,7 +170,7 @@ function renderMockScores(){
   const ctl = `<div class="fms-pick">
       <label>Week <select aria-label="Week" class="fms-wk" onchange="FTMockScores.week(this.value)">${Array.from({length: WEEKS}, (x, i) => i + 1).map(n => `<option value="${n}" ${wk === n ? "selected" : ""}>Week ${n}${hasDates ? " · " + e(wkRange(MS.batch, n)) : ""}${n === nowWeek(MS.batch) && hasDates ? " (this week)" : ""}</option>`).join("")}<option value="all" ${wk === "all" ? "selected" : ""}>All weeks</option></select></label>
       <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
-      <select aria-label="Activity" class="fms-act" title="${wk !== "all" && !inWk.length ? `No demo is scheduled in Week ${wk}: every demo is listed` : ""}" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
+      <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
