@@ -805,16 +805,37 @@ function sectionsHtml(T){
 const stripTags = h => String(h == null ? "" : h).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 // (no View bar: the Batch Sheet is one trainee per page; FTBatchSheet.view('tables') still lays the sheets side by side)
 const viewBar = () => "";
-// 📄 one trainee per page: ◀ Previous · the trainee · Next ▶ · n of N (the page kept while the batch stays the same)
+// 🔎 beside Batch: on 📋 Batch Sheet the trainee whose page is open; on 📊 Weekly Reports one trainee's evidence (FTRanking)
+function whoTopHtml(ppl){
+  if(meOn() || !adminOn() || linksOn() || !ppl.length) return "";
+  if(weeklyOn()) return window.FTRanking && typeof FTRanking.evidenceFor === "function" ? `<label class="bs-who-top">🔎 <select aria-label="One trainee's evidence" onchange="FTRanking.evidenceFor(this.value)"><option value="">One trainee’s evidence…</option>${ppl.map(p => `<option value="${e(p.id)}">${e(p.name)}</option>`).join("")}</select></label>` : "";
+  if(B.view === "tables") return "";
+  const cur = ptCur(ppl);
+  return `<label class="bs-who-top">🔎 <select aria-label="Trainee" onchange="FTBatchSheet.ptPick(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${cur && p.id === cur.id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>`;
+}
+// 📄 one trainee per page: ◀ Previous · Next ▶ · n of N (the trainee picked with 🔎 beside Batch; kept while the batch stays the same)
 function ptCur(ppl){ return ppl.find(p => p.id === B.pt) || ppl[0] || null; }
 function pagerHtml(ppl){
   const cur = ptCur(ppl); if(!cur) return ""; const i = ppl.indexOf(cur);
   return `<div class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
-    <select aria-label="Trainee" onchange="FTBatchSheet.ptPick(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${p.id === cur.id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select>
     <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></div>`;
 }
 // a trainee's row of one table (the same order as people(), else by name)
 function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && rs[i] && stripTags(rs[i][0] && rs[i][0].v) === p.name ? rs[i] : rs.find(r => stripTags(r[0] && r[0].v) === p.name) || null; }
+/* 🔎 EVERY GRADE, in the trainee's own table: each grading system of the 🏅 Scorecard (js/ft-program.js) with each of its items —
+   🛠 the Practice Lab, 🟢 the Practice Sessions, 🎧 Call Listening, 📅 the Calendaring Simulators, Calendaring Activity and
+   Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
+   them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
+const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
+function gradesHtml(p){
+  const sc = (B.data.rec[p.id] || {}).score; if(!sc || !Array.isArray(sc.rows)) return "";
+  const rows = sc.rows.filter(r => r && r.s && !r.s.hidden && (r.items || []).length);
+  const out = rows.map(r => `<tr class="bs-pt-sub"><td class="bs-pt-m">${e(`${r.s.icon || ""} ${r.s.label}`.trim())}</td><td class="bs-pt-v ${e(tone(r.avg))}">${r.avg != null ? r.avg + "%" : "—"}</td><td class="bs-pt-f">${r.avg != null ? `Average of ${r.graded} grade${r.graded === 1 ? "" : "s"}` : "Nothing graded yet"}</td></tr>`
+    + r.items.map(it => { const v = typeof it.pct === "number" && isFinite(it.pct) ? Math.round(it.pct) : null;
+      return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(it.name))}</td><td class="bs-pt-v ${e(tone(v))}">${v != null ? v + "%" : "—"}</td><td class="bs-pt-f">${e(stripTags(it.note || ""))}${it.at ? ` <small>${e(String(it.at).slice(0, 10))}</small>` : ""}</td></tr>`; }).join("")).join("");
+  const btns = REVIEW.map(([tab, label]) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.review('${tab}')">${label}</button>`).join("");
+  return `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>${out}<tr><td colspan="3" class="bs-pt-rv">${btns}</td></tr>`;
+}
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
 function matrixOf(x){
   if(!Array.isArray(x.groups) || !x.groups.length) return null;
@@ -836,7 +857,7 @@ function perTraineeHtml(T){
     const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
     const head = [["Overall", val("Overall %")], ["Scorecard", val("Scorecard overall")], ["Daily compliance", val("Daily compliance")]].filter(([, v]) => v);
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
-    const body = use.map(x => { const r = rowFor(x, p, i, ppl.length); if(!r) return "";
+    const sec = x => { const r = rowFor(x, p, i, ppl.length); if(!r) return "";
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
@@ -844,7 +865,9 @@ function perTraineeHtml(T){
         return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${e(stripTags(c.f) === v ? "" : stripTags(c.f))}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
-      return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; }).join("");
+      return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
+    // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
+    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + gradesHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
@@ -1301,7 +1324,7 @@ function renderSheet(){
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : linksOn() ? "🔗" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
-      <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>
+      <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
         ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
@@ -1340,6 +1363,8 @@ window.FTBatchSheet = {
   // 📄 the trainee's page: by the dropdown, or ◀ Previous / Next ▶
   ptPick(id){ B.pt = id; B.fbWho = ""; render(); try{ window.scrollTo({top: (document.querySelector(".bs-pager") || {}).offsetTop - 80 || 0}); }catch(err){} },
   ptGo(i){ const p = people()[i]; if(p) FTBatchSheet.ptPick(p.id); },
+  // 📅 / 🟢 / 🎧 a review screen with no button of its own on top (js/ft-program.js adminHidden), in this batch
+  review(tab){ if(!adminOn()) return; if(typeof setAdminTab === "function") setAdminTab(tab); else { state.adminTab = tab; render(); } },
   batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; render(); },
   refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
@@ -1843,7 +1868,11 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-menu button:disabled{opacity:.6;cursor:default;}
 .bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
-.bs-pager select{font:800 16px Arial,sans-serif;padding:6px 10px;border:2px solid #C27A12;border-radius:8px;background:#FFF1DC;color:#7A4300;min-width:240px;max-width:100%;} .bs-pager span{color:#5F6368;}
+.bs-pager span{color:#5F6368;}
+/* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
+.bs-card .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .bs-card .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
+.bs-card .bs-batchmenu select{font:800 17px Arial,sans-serif;padding:7px 12px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
+.bs-card .bs-who-top select{border-color:#C27A12;background:#FFF1DC;color:#7A4300;min-width:240px;max-width:100%;}
 .bs-pt-h{padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;border-bottom:1px solid #E6E9F1;} .bs-pt-h b{font-size:19px;} .bs-pt{border:1px solid #DDE1EC;border-radius:12px;background:#fff;}
 .bs-pt > summary{cursor:pointer;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;} .bs-pt[open] > summary{border-bottom:1px solid #E6E9F1;}
 .bs-pt > summary i{font-size:12px;color:#8A5A00;} .bs-pt-k{font-size:16px;color:#3C4043;} .bs-pt-k b{color:#1E2340;}
@@ -1853,6 +1882,8 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;}
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:30%;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:90px;text-align:center;cursor:help;} .bs-pt-mx thead th{min-width:90px;text-align:center;}
+.bs-pt-sub td{background:#EEF1F8;font-weight:800;} .bs-pt-it{padding-left:24px !important;font-weight:600 !important;} .bs-pt-rv{display:flex;flex-wrap:wrap;gap:8px;padding:10px !important;}
+.bs-pt-rv .btn{font-weight:800;font-size:14.5px;border:2px solid #1E2340;}
 .bs-pt-fb{margin-top:12px;} .bs-pt-fbb{margin-top:10px;} .bs-pt-fb .tfb-admin{box-shadow:none;border:1px solid #DDE1EC;}
 .bs-pt-v.gs-hi{background:#E6F4EA;} .bs-pt-v.gs-mid{background:#FFF4E0;} .bs-pt-v.gs-lo{background:#FDE8E8;}
 .bs-more,.bs-rank-sheet{margin:14px 0 6px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;} .bs-more > summary,.bs-rank-sheet > summary{cursor:pointer;padding:10px 14px;font:700 14px Arial,sans-serif;color:#1E2340;list-style:none;}

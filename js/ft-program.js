@@ -63,7 +63,9 @@ window.LSH_PROGRAM = {
   // no button either, set up already, its checks in 📋 Batch Sheet's ✅ Compliance)
   // (🧪 Typing & Spelling and 📝 Send Feedback: no buttons — the tests are in each trainee's table and 📤 Daily outputs, and
   // 📝 Send Feedback opens in each trainee's table on 📋 Batch Sheet; their routes stay)
-  adminHidden: ["skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
+  // (📅 Calendaring, 🟢 Practice Sessions and 🎧 Call Listening: no buttons either — every grade of theirs is in each
+  // trainee's table on 📋 Batch Sheet, whose 📅 / 🟢 / 🎧 Review buttons open these screens)
+  adminHidden: ["calendaring", "sessions", "listening", "skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own

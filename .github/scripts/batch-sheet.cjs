@@ -98,7 +98,7 @@ const failures = []; const fail = m => failures.push(m);
   // 📄 the trainer's Batch Sheet is one trainee per page: ◀ Previous · the trainee · Next ▶, one trainee's table at a time with
   // every measure of theirs, 👥 their own record (status, registered…) at the bottom, no View bar, no rank (📊 Weekly Reports
   // ranks the batch) and no Drive links (they are on 🔗 Drive Links)
-  { const pg = await page.evaluate(() => ({ opts: document.querySelectorAll('.bs-pager select option').length, shown: document.querySelectorAll('.bs-pt').length, view: !!document.querySelector('.bs-view') }));
+  { const pg = await page.evaluate(() => ({ opts: document.querySelectorAll('.bs-batchmenu .bs-who-top select option').length, shown: document.querySelectorAll('.bs-pt').length, view: !!document.querySelector('.bs-view') }));
     if (pg.opts < 3 || pg.shown !== 1 || pg.view) fail(`📄 the Batch Sheet isn't one trainee per page: ${JSON.stringify(pg)}`); }
   await page.evaluate(id => FTBatchSheet.ptPick(id), ids.Ada); await page.waitForTimeout(500);
   { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;

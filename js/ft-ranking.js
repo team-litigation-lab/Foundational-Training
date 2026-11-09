@@ -718,6 +718,8 @@ function explainHtml(){
 }
 window.FTRanking = {
   explain(){ R.explain = R.explain ? null : {}; rerender(); },
+  // 🔎 beside Batch on 📊 Weekly Reports (js/ft-batch-sheet.js): ℹ How it's scored, open on that trainee's evidence
+  evidenceFor(id){ if(!id) return; R.explain = R.explain || {}; FTRanking.explainWho(id); rerender(); },
   async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
     let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
     if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: v[0] || {}, dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
