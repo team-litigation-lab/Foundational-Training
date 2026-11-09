@@ -1,6 +1,6 @@
 // The Practice Lab's real-time Practice Sessions at the trainee's own law firm (js/ft-firms.js, js/ft-sessions.js), the
 // trainer's inputs, and the Knowledge Check's trainer review (js/ft-process.js):
-//   1. Admin → 🏛 Law Firms: the three starting firm profiles, and NO per-trainee assignment — the firm and case
+//   1. No 🏛 Law Firms editor on the Admin screen; the three starting firm profiles, and NO per-trainee assignment — the firm and case
 //      pickers, "Assign this firm to all" and "🎲 Spread cases" are gone, along with their functions.
 //   2. The trainee has the first firm from their first page load, with no assign:<id> written and no trainer named;
 //      🏛 My Firm shows it and its rules, ✓ I've read the rules is saved; no session waits for a case.
@@ -105,7 +105,9 @@ const failures = []; const fail = (m) => failures.push(m);
     // The per-trainee assignment is gone: no firm picker, no case picker, no bulk or spread buttons.
     const adminAll = await page.evaluate(() => document.querySelector('main').innerText);
     if (/Assign this firm to all|Spread cases/.test(adminAll)) fail('Admin → Law Firms still offers the removed assignment actions');
-    const pickers = await page.evaluate(() => ({ fn: ['batch', 'setFirm', 'setCase', 'bulkFirm', 'spread', 'saveRow', 'saveAll'].filter(k => typeof FTFirmsAdmin[k] === 'function'),
+    // (and no Law Firms editor at all: FTFirmsAdmin is gone)
+    if (await page.evaluate(() => typeof window.FTFirmsAdmin !== 'undefined')) fail('the 🏛 Law Firms editor (FTFirmsAdmin) is still loaded');
+    const pickers = await page.evaluate(() => ({ fn: ['batch', 'setFirm', 'setCase', 'bulkFirm', 'spread', 'saveRow', 'saveAll'].filter(k => typeof (window.FTFirmsAdmin || {})[k] === 'function'),
         selects: document.querySelectorAll('.ff-tbl select').length }));
     if (pickers.fn.length) fail(`the assignment actions are still wired up: ${pickers.fn.join(', ')}`);
     if (pickers.selects) fail(`the per-trainee assignment table is still rendered (${pickers.selects} pickers)`);
