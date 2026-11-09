@@ -8781,7 +8781,7 @@ function restoreAfterUpdate(){
   let st = null; try{ st = JSON.parse(sessionStorage.getItem("lsh_resume_after_update")||"null"); sessionStorage.removeItem("lsh_resume_after_update"); }catch(e){}
   if(!st || !st.view || st.view==="login") return false;
   ["adminTab","orientIdx"].forEach(k=>{ if(st[k]!=null) state[k] = st[k]; });
-  if(st.view==="day" && st.dayId){ goto("day", st.dayId); if(typeof st.lessonSlide==="number"){ state.lessonSlide = Math.min(st.lessonSlide, Math.max(state.maxSlideReached||0, st.lessonSlide)); render(); } }
+  if(st.view==="day" && st.dayId){ goto("day", st.dayId); if(typeof st.lessonSlide==="number"){ state.lessonSlide = st.lessonSlide; render(); } }
   else if(st.view==="tool" && st.toolId){ state.labWizard = {toolId:st.toolId, idx:st.wizardIndex||0}; goto("tool", st.toolId); }
   // (✍️ Knowledge Check: the same module's page, and the graded view's lesson)
   else if(st.view==="process" && st.pqLesson) goto("process", st.pqLesson);
@@ -12606,8 +12606,7 @@ function pdfSafe(t){
     .replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/\u2026/g,"...")
     .replace(/\u2192/g,"->").replace(/\u2190/g,"<-").replace(/[\u2022\u25CF]/g,"-").replace(/\u2713|\u2705/g,"[x]").replace(/\u274C|\u2715/g,"[ ]")
     .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{2B00}-\u{2BFF}\u{1F1E6}-\u{1F1FF}]\s?/gu,"")
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g,"")
-    .replace(/^[ \t]+(?=\S)/, m=>m);
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g,"");
 }
 function safeDoc(doc){
   // Sanitise every string drawn into this PDF (emoji and some symbols can't be
