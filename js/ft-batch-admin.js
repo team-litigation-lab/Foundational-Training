@@ -173,6 +173,8 @@ function renderMockScores(){
   const nDirty = dirtyIds().length, ready = !!(r && a && MS.loadedFor === sig);
   const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
+  // (the Result follows the score: a scored sheet still on "Not yet" gets Passed or Redo, unless the trainer picked one)
+  if(d && d.status === "Not yet") autoStatus(d);
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
   const hasDates = t0Of(MS.batch) != null;
   const ctl = `<div class="fms-pick">
@@ -209,6 +211,7 @@ function renderMockScores(){
       ${crit}
       ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
     </tbody></table>
+    <div class="fms-savebar">${saveBtn}<button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button></div>
     <div class="fms-foot">
       <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
       <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
@@ -216,7 +219,6 @@ function renderMockScores(){
       <label class="fms-cmt">Comment <span>the trainee sees it</span><textarea rows="2" oninput="FTMockScores.field('${id}','comment',this.value)" placeholder="What went well, what to improve">${e(d.comment)}</textarea></label>
     </div>
     ${rb && rb.key === "calendar" ? `<div class="fms-why" data-why="${id}">${whyHtml(r.id)}</div>` : ""}
-    <div class="fms-save">${saveBtn}<button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button></div>
     <p class="fss-muted fms-note">Each criterion 0–5 (half points allowed). The weighted average becomes the score in % unless one is typed. Saved scores reach the trainee’s Practice Lab page, 🏅 My Performance, the Scorecards and the Main Portal.</p></div>`);
 }
 // the average and the score follow what was typed, without drawing the page again (the trainer may be mid-way through a row)
@@ -579,6 +581,13 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms textarea{resize:vertical;overflow:hidden;min-height:30px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;field-sizing:content;}
 .fms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;background:#fff !important;}
 .fms-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0 0;}
+/* (the Result and 💾 Save, under the weighted average) */
+.fms-savebar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:flex-end;margin:10px 0 0;padding:10px 12px;background:#F4F9F0;border:1px solid #CFE3C2;border-radius:10px;}
+.fms-savebar label{font:800 15px Arial,sans-serif;color:#1E2340;display:inline-flex;gap:8px;align-items:center;}
+.fms-savebar select{font:800 15px Arial,sans-serif;padding:6px 10px;border-radius:8px;border:2px solid #6AA84F;}
+.fms-savebar .fms-savebtn{font-size:15px;padding:8px 16px;}
+/* (the weighted average on one line: "2.79/5", never "2.79/" then "5") */
+.fms-tbl [data-avg]{white-space:nowrap;}
 .fms-foot label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--navy);}
 .fms-foot label span{font-weight:500;color:var(--ink-soft);font-size:12px;}
 .fms-foot input{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;} .fms-foot input[type=number]{width:90px;}
