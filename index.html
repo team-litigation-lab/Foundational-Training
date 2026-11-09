@@ -13315,14 +13315,6 @@ async function rejectTrainee(traineeId){
   toast("Rejected.");
   await loadAdminLedger();
 }
-async function confirmRevokeTrainee(traineeId, name){
-  if(!confirm(`Permanently revoke and delete ${name}'s registration? This removes their entire record — approval status and all saved progress — from the system. This cannot be undone; if they come back, they'll need to register fresh. Continue?`)) return;
-  await sharedDelete("trainee:"+traineeId);
-  await sharedDelete("progress:"+traineeId);
-  toast(`Registration deleted for ${name}.`);
-  await loadAdminLedger();
-}
-window.confirmRevokeTrainee = confirmRevokeTrainee;
 window.rejectTrainee = rejectTrainee;
 /* ============================================================
    TRAINEE FEEDBACK (about the program itself)
@@ -13626,38 +13618,10 @@ window.downloadCohortPdf = downloadCohortPdf;
 // batchKey / NO_BATCH come from Rankings below (function declarations hoist; the
 // const is set before any render runs).
 function folderLabel(k){ return k===NO_BATCH ? "No batch" : `Batch ${k}`; }
-function batchMembers(k){ return (state.adminData||[]).filter(r=>batchKey(r)===k && (state.batchShowArchived || !r.archived)); }
 function batchFeedback(k){ return ((state.tfbAdmin||{}).items||[]).filter(x=>(cleanBatch(x.batch)||NO_BATCH)===k); }
-function openBatchFolder(k, sub){ state.batchFolder = k; state.batchSub = sub || state.batchSub || "registry"; render(); }
 function closeBatchFolder(){ state.batchFolder = null; render(); }
 function setBatchSub(sub){ state.batchSub = sub; render(); }
-Object.assign(window, {openBatchFolder, closeBatchFolder, setBatchSub});
-
-function renderAdminBatchFolders(){
-  if(state.adminLoading || !state.adminData){
-    return `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
-  }
-  if(!state.tfbAdmin) setTimeout(()=>loadTraineeFeedbackAdmin(), 0);
-  const keys = Array.from(new Set(state.adminData.map(batchKey))).sort((a,b)=> a===NO_BATCH ? 1 : b===NO_BATCH ? -1 : a.localeCompare(b, undefined, {numeric:true}));
-  if(state.batchFolder && !keys.includes(state.batchFolder)) state.batchFolder = null;
-  if(state.batchFolder) return renderBatchFolder(state.batchFolder);
-  const head = `
-    <p class="eyebrow">Admin Dashboard</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Batch Folders</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:72ch;margin:0 0 18px;">Each batch has its own folder: the trainees registered in it, their rankings, the feedback they sent and their latest activity — kept apart from every other batch.</p>`;
-  if(!keys.length) return head + `<div class="empty-note">No trainees yet — a folder appears for each batch as trainees register.</div>`;
-  return head + `<div class="batch-folder-grid">${keys.map(k=>{
-    const all = state.adminData.filter(r=>batchKey(r)===k);
-    const active = all.filter(r=>!r.archived);
-    const done = active.length ? Math.round(active.reduce((a,r)=>a+adminDayStats(r).done,0)/active.length/DAYS.length*100) : 0;
-    const fb = batchFeedback(k).length;
-    return `<button type="button" class="batch-folder" onclick="openBatchFolder('${esc(k)}','registry')">
-      <span class="bf-icon">📁</span>
-      <span class="bf-name">${esc(folderLabel(k))}</span>
-      <span class="bf-meta">${active.length} trainee${active.length===1?"":"s"}${all.length>active.length?` · ${all.length-active.length} archived`:""}</span>
-      <span class="bf-meta">${done}% avg completion · ${state.tfbAdmin&&!state.tfbAdmin.loading ? `${fb} feedback` : "feedback…"}</span>
-    </button>`; }).join("")}</div>`;
-}
+Object.assign(window, {closeBatchFolder, setBatchSub});
 function renderBatchFolder(k){
   if(["feedback","activities"].includes(state.batchSub)) state.batchSub = "registry";   // (those two moved: 💬 Trainee Feedback and 📋 Batch Sheet)
   const sub = state.batchSub || "registry";
@@ -13674,7 +13638,7 @@ function renderBatchFolder(k){
         ${k!==NO_BATCH && members.some(r=>!r.archived) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="confirmArchiveBatch('${esc(k)}')">📦 Archive This Batch</button>` : ""}
       </div>
     </div>
-    <div class="bf-tabs">${tabs.map(([id,l])=>`<button type="button" class="${sub===id?"active":""}" onclick="setBatchSub('${id}')">${l}${id==="registry"?` <em>${members.length}</em>`:id==="feedback"&&state.tfbAdmin&&!state.tfbAdmin.loading?` <em>${batchFeedback(k).length}</em>`:""}</button>`).join("")}</div>
+    <div class="bf-tabs">${tabs.map(([id,l])=>`<button type="button" class="${sub===id?"active":""}" onclick="setBatchSub('${id}')">${l}${id==="registry"?` <em>${members.length}</em>`:""}</button>`).join("")}</div>
     <div id="batchFolderBody">${renderBatchFolderBody()}</div>`;
 }
 function renderBatchFolderBody(){
@@ -13682,29 +13646,8 @@ function renderBatchFolderBody(){
   const sub = state.batchSub || "registry";
   const members = batchMembers(k);
   if(sub==="rankings") return renderAdminRankings(k);
-  if(sub==="feedback"){
-    if(!state.tfbAdmin || state.tfbAdmin.loading) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">Loading trainee feedback…</div>`;
-    const items = batchFeedback(k);
-    return items.length ? items.map(tfbItemCard).join("") : `<div class="empty-note">No feedback from ${esc(folderLabel(k))} yet.</div>`;
-  }
   if(!members.length) return `<div class="empty-note">No trainees in ${esc(folderLabel(k))}${state.batchShowArchived?"":" (archived trainees are hidden)"}.</div>`;
   if(members.some(r=>!state.auditExtra[r.id] || Date.now()-state.auditExtra[r.id].at>60000)) setTimeout(()=>loadAuditExtras(), 0);
-  if(sub==="activities"){
-    const rows = members.map(rec=>({rec, day:adminDayStats(rec), practice:adminPracticeStats(rec), a:auditSummary(rec)}))
-      .sort((x,y)=>new Date(y.rec.lastActive||0)-new Date(x.rec.lastActive||0));
-    return `<div class="card" style="padding:0;overflow:hidden;">
-      <div class="bf-act-row bf-act-head"><div>Trainee</div><div>Last active</div><div>Where they are</div><div>Days</div><div>Knowledge Checks</div><div>Practice Lab</div><div>🎲 Tasks</div></div>
-      ${rows.map(({rec,day,practice,a})=>`<div class="bf-act-row">
-        <div><b style="color:var(--navy);">${esc(cleanName(rec.name)||"Unnamed")}</b>${rec.archived?` <span class="studio-badge">archived</span>`:""}</div>
-        <div>${rec.lastActive?esc(fmtDate(rec.lastActive)):"—"}</div>
-        <div>${a.loaded?esc(a.where):"…"}</div>
-        <div>${day.done}/${day.total}</div>
-        <div>${day.avg}% avg</div>
-        <div>${practice.runs} run${practice.runs===1?"":"s"} · ${practice.avg}%</div>
-        <div>${a.loaded&&a.tasksTotal?`${a.tasksDone}/${a.tasksTotal} resolved${a.tasksMissed?` · ${a.tasksMissed} missed`:""}`:a.loaded?"—":"…"}</div>
-      </div>`).join("")}
-    </div>`;
-  }
   const rows = members.map(r=>({rec:r, day:adminDayStats(r), practice:adminPracticeStats(r)})).sort((a,b)=>(a.rec.name||"").localeCompare(b.rec.name||""));
   return `<div class="card" style="padding:0;overflow:hidden;">${rows.map(({rec,day,practice})=>renderAdminRow(rec,day,practice)).join("")}</div>`;
 }
@@ -14940,30 +14883,6 @@ function mergeExtraQuiz(d){
 
 function setAdminTab(t){ state.adminTab=t; render(); }
 window.setAdminTab = setAdminTab;
-async function confirmArchiveBatch(batch){
-  const members = state.adminData.filter(r=>batchKey(r)===batch && !r.archived);
-  if(!members.length){ toast("Nothing to archive in this batch."); return; }
-  if(!confirm(`Archive all ${members.length} trainee(s) in batch "${batchLabel(batch)}"? They'll be hidden from the default view but their data and AI reviews are kept — check "Show archived" to see them again.`)) return;
-  for(const rec of members){
-    rec.archived = true;
-    await sharedSet("trainee:"+rec.id, rec);
-  }
-  toast(`Batch "${batchLabel(batch)}" archived (${members.length} trainee(s)).`);
-  await loadAdminLedger();
-}
-window.confirmArchiveBatch = confirmArchiveBatch;
-async function confirmUnarchiveBatch(batch){
-  const members = state.adminData.filter(r=>batchKey(r)===batch && r.archived);
-  if(!members.length){ toast("Nothing to restore in this batch."); return; }
-  if(!confirm(`Restore all ${members.length} trainee(s) in batch "${batchLabel(batch)}"? They'll show up again in Rankings and Trainee Audit.`)) return;
-  for(const rec of members){
-    rec.archived = false;
-    await sharedSet("trainee:"+rec.id, rec);
-  }
-  toast(`Batch "${batchLabel(batch)}" restored (${members.length} trainee(s)).`);
-  await loadAdminLedger();
-}
-window.confirmUnarchiveBatch = confirmUnarchiveBatch;
 function refreshAdminData(){ state.adminData=null; render(); }
 window.refreshAdminData = refreshAdminData;
 

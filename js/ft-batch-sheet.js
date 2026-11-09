@@ -1335,7 +1335,7 @@ window.FTBatchSheet = {
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   kdWho(id){ if(!adminOn()) return; B.kd = id; render(); },
   // 🗄 one account archived from the Drive link issues list (not a trainee, or one who left): its record marked archived, as
-  // a batch's archive marks each (index.html confirmArchiveBatch), read strictly so a failed read never writes over it
+  // a batch's archive marks each (js/eapa-updates.js confirmArchiveBatch), read strictly so a failed read never writes over it
   async archiveOne(id, name){
     if(!adminOn() || !id || !confirm(`Archive ${name || id}? They leave this batch's sheet and the link issues list. Admin → Batches can bring them back.`)) return;
     try{ const got = typeof readStrict === "function" ? await readStrict("trainee:" + id) : {ok: true, value: await sharedGet("trainee:" + id)};
