@@ -1,22 +1,23 @@
 /* ============================================================
-   📢 ANNOUNCEMENT TICKER — the same broadcast the LSH Training Portal's Training Directory shows: an admin sets it in the
-   Portal's Master Control (Broadcast & Ping), and every page of this platform shows it in a bar under the top bar, with
-   the live clock and its time zone, as the Training Directory does. Read through worker.js /api/announcement (the Portal's
-   public /api/announcement, kept a minute), again every 5 minutes; filled in place, so nothing re-renders for it.
+   📢 ANNOUNCEMENT TICKER — this platform's own, for the Foundational trainees only: a trainer sets it in Admin → 📢
+   Announcements (one for the whole platform and one per lesson; the Main Portal's broadcast isn't shown or edited here),
+   and every page shows it in a bar under the top bar, with the live clock and its time zone, as the Training Directory
+   does. Read through worker.js /api/announcement (its "own"), again every 5 minutes; filled in place, so nothing
+   re-renders for it.
    Loaded last: it wraps renderTopbar as every page has drawn it.
    ============================================================ */
 (function(){
 "use strict";
 const A = {text: "", own: {platform: null, lessons: {}}, at: 0, loading: false};
 // 📢 what the ticker says: this platform's announcement, then the lesson's (the one being shown, else the trainee's current
-// one), then the Portal's broadcast — or, on a Day deck, only that lesson's (a deck stays as large as the screen allows)
+// one) — or, on a Day deck, only that lesson's (a deck stays as large as the screen allows)
 const lessonText = l => l != null && A.own.lessons && A.own.lessons[l] ? A.own.lessons[l].text : "";
 const DD_ = () => window.FTDayDecks || {};
 function shown(){
   const onDeck = typeof state !== "undefined" && state.view === "daydeck";
   if(onDeck) return lessonText(DD_().deckLesson ? DD_().deckLesson() : null);
   let l = null; try{ l = DD_().placeLesson ? DD_().placeLesson() : null; }catch(e){}
-  return [A.own.platform && A.own.platform.text, lessonText(l), A.text].filter(Boolean).join("     ✦     ");
+  return [A.own.platform && A.own.platform.text, lessonText(l)].filter(Boolean).join("     ✦     ");
 }
 // (a trainer — not in 👁 Trainee view — always sees the bar, with ✏️ Edit, so an announcement can be added from any page)
 const isTrainer = () => typeof state !== "undefined" && !!state.isAdmin && !state.adminPreview;
@@ -43,7 +44,7 @@ function bar(){
   const t = shown() || (isTrainer() ? "No announcement yet. Press ✏️ Edit to add one." : "");
   return `<div class="ft-ann no-print" data-ft-ann${t ? "" : " hidden"}><div class="ft-ann-in">
     <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(t)}</span></div></div></div>
-    ${typeof state !== "undefined" && state.isAdmin && !state.adminPreview ? `<button type="button" class="ft-ann-edit" title="Edit this platform's and each lesson's announcement" onclick="state.adminTab='announcements'; goto('admin')">✏️ Edit</button>` : ""}
+    ${typeof state !== "undefined" && state.isAdmin && !state.adminPreview ? `<button type="button" class="ft-ann-edit" title="Edit this platform's and each lesson's announcement" data-ft-ann-edit>✏️ Edit</button>` : ""}
     <div class="ft-ann-clock"><span data-ft-ann-clock>${esc_(clock())}</span><select aria-label="Time zone" onchange="FTAnnouncement.tz(this.value)">${TZS.map(([z, l]) => `<option value="${z}"${z === tz() ? " selected" : ""}>${l}</option>`).join("")}</select></div>
   </div></div>`;
 }
@@ -52,17 +53,15 @@ if(typeof __top === "function") window.renderTopbar = function(){ return __top.a
 setInterval(() => { const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); }, 1000);
 setInterval(() => { A.at = 0; load(); }, 5 * 60 * 1000);
 /* 📝 Admin → 📢 Announcements: this platform's own announcement and each lesson's (settings:announcements, read back through
-   worker.js /api/announcement), and the Main Portal's (its Training Directory's ticker; the Portal's Master Control → Broadcast & Ping
-   edits the same one), sent there through worker.js /api/portal-announcement. */
+   worker.js /api/announcement), for the Foundational trainees only: standalone, the Main Portal's broadcast is the Portal's own. */
 const ED = {rec: null, loading: false, saving: false};
 function editorHtml(){
   if(!ED.rec && !ED.loading){ ED.loading = true; Promise.resolve(typeof sharedGet === "function" ? sharedGet("settings:announcements") : null).then(v => { ED.rec = v && typeof v === "object" ? v : {}; ED.loading = false; if(state.view === "admin") render(); }).catch(() => { ED.rec = {}; ED.loading = false; if(state.view === "admin") render(); }); }
   if(!ED.rec) return `<div class="card" style="padding:20px">Loading the announcements…</div>`;
   const ls = DD_().lessons ? DD_().lessons() : [], nameOf = l => (typeof ftName === "function" ? ftName(l) : "Lesson " + l) + (DD_().lessonFocus && DD_().lessonFocus(l) ? " · " + DD_().lessonFocus(l) : "");
   const val = x => esc_((x && x.text) || ""), when = x => x && x.at ? ` <small class="ann-ed-when">saved ${esc_(new Date(x.at).toLocaleString())}${x.by ? " by " + esc_(x.by) : ""}</small>` : "";
-  return `<div class="card ann-ed"><h3>📢 Announcements</h3>
-    <label class="ann-ed-row"><span>🏠 Main Portal <small class="ann-ed-when">the Training Directory's ticker, shown here too</small></span><textarea data-ann-portal maxlength="500" rows="2" placeholder="Welcome to the Legal Skills Hub.">${esc_(A.text)}</textarea></label>
-    <label class="ann-ed-row"><span>🌐 This platform${when(ED.rec.platform)}</span><textarea data-ann="platform" maxlength="500" rows="2" placeholder="No announcement">${val(ED.rec.platform)}</textarea></label>
+  return `<div class="card ann-ed"><h3>📢 Announcements <small class="ann-ed-when">for the Foundational trainees only</small></h3>
+    <label class="ann-ed-row"><span>🌐 All Foundational trainees${when(ED.rec.platform)}</span><textarea data-ann="platform" maxlength="500" rows="2" placeholder="No announcement">${val(ED.rec.platform)}</textarea></label>
     ${ls.map(l => `<label class="ann-ed-row"><span>📘 ${esc_(nameOf(l))}${when((ED.rec.lessons || {})[l])}</span><textarea data-ann="${l}" maxlength="500" rows="2" placeholder="No announcement">${val((ED.rec.lessons || {})[l])}</textarea></label>`).join("")}
     <div class="ann-ed-act"><button type="button" class="btn btn-primary" onclick="FTAnnouncement.save(this)"${ED.saving ? " disabled" : ""}>💾 Save the announcements</button></div></div>`;
 }
@@ -73,27 +72,32 @@ async function save(btn){
   const next = {platform: null, lessons: {}};
   box.querySelectorAll("[data-ann]").forEach(t => { const text = String(t.value || "").replace(/\s+/g, " ").trim().slice(0, 500), k = t.dataset.ann;
     if(k === "platform") next.platform = keep(cur.platform, text); else { const v = keep((cur.lessons || {})[k], text); if(v) next.lessons[k] = v; } });
-  // 🏠 the Main Portal's, when it was changed: sent to the Portal (worker.js /api/portal-announcement; empty = back to its welcome line)
-  const pt = box.querySelector("[data-ann-portal]"), ptext = pt ? String(pt.value || "").replace(/\s+/g, " ").trim().slice(0, 500) : A.text;
   ED.saving = true; btn.disabled = true;
-  let portalErr = "";
-  if(pt && ptext !== A.text){
-    try{ const j = await (await authFetch("/api/portal-announcement", ptext ? {op: "set", text: ptext, by} : {op: "clear", by})).json();
-      if(j && j.ok) A.text = j.text || ptext; else portalErr = (j && j.error) || "no answer"; }
-    catch(e){ portalErr = "the Portal couldn't be reached"; }
-  }
   const ok = typeof sharedSet === "function" ? await sharedSet("settings:announcements", next) : false;
   ED.saving = false; btn.disabled = false;
-  if(portalErr && typeof toast === "function") toast("⚠ The Main Portal's announcement wasn't changed: " + portalErr);
   if(ok === false){ if(typeof toast === "function") toast("Couldn’t save. Check your connection."); return; }
-  ED.rec = next; if(typeof toast === "function" && !portalErr) toast("✓ Announcements saved: the ticker shows them now.");
+  ED.rec = next; if(typeof toast === "function") toast("✓ Announcements saved: the ticker shows them now.");
   A.at = 0; await load(); if(typeof render === "function") render();
 }
+// ✏️ Edit on the bar: out of 👁 Trainee view if need be, to Admin → 📢 Announcements, read fresh, the first box focused.
+// (a click listener of its own, caught first, so nothing else on the page can take the click)
+function edit(){
+  if(typeof state === "undefined") return;
+  if(state.adminPreview && typeof setAdminViewMode === "function") setAdminViewMode("admin");
+  if(!state.isAdmin){ if(typeof openAdmin === "function") openAdmin(); return; }
+  ED.rec = null; state.adminTab = "announcements";
+  if(typeof goto === "function") goto("admin"); else if(typeof render === "function") render();
+  let n = 0; const focus = () => { const t = document.querySelector('.ann-ed textarea[data-ann="platform"]');
+    if(t){ t.scrollIntoView({block: "center"}); t.focus({preventScroll: true}); } else if(++n < 30) setTimeout(focus, 150); };
+  setTimeout(focus, 100);
+}
+document.addEventListener("click", ev => { const b = ev.target && ev.target.closest && ev.target.closest("[data-ft-ann-edit]"); if(!b) return;
+  ev.preventDefault(); ev.stopPropagation(); edit(); }, true);
 if(typeof ftAdminTab === "function") ftAdminTab("announcements", "📢 Announcements", editorHtml);
 // (each lesson's announcement on its cards, js/ft-day-decks.js)
 const lessonHtml = l => { const x = lessonText(l); return `<div class="ftlc-ann" data-ft-ann-lesson="${esc_(l)}"${x ? "" : " hidden"}><b>📢 Announcement</b> <span>${esc_(x)}</span></div>`; };
 window.FTAnnouncement = {
-  save, lessonHtml,
+  save, lessonHtml, edit,
   tz(v){ try{ localStorage.setItem("ft_ann_tz", v); }catch(e){} const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); },
   text: () => A.text, reload(){ A.at = 0; return load(); }
 };
