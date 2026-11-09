@@ -105,13 +105,13 @@ async function workerChecks() {
   });
   bad.out.forEach(fail);
 
-  // the Practice Lab card and Day 6
-  // the Practice Lab goes by the day: before the trainer opens Day 6's lesson the card isn't there, then it is
+  // the Practice Lab card and Day 7
+  // the Practice Lab goes by the day: before the trainer opens Day 7 the card isn't there, then it is
   await page.evaluate(() => { state.ftOpenDays = { all: [1], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (await page.$('text=Check a booking')) fail('the Booking Rule Check shows on the Practice Lab before its day');
-  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
+  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (!(await page.$('text=Check a booking'))) fail('the Practice Lab has no 📅 Booking Rule Check card');
-  if (!(await page.evaluate(() => (FTDays.of(6).items || []).some(x => x.at === 'tool' && x.id === 'calrules')))) fail('Day 6 doesn\'t point to the Booking Rule Check');
+  if (!(await page.evaluate(() => (FTDays.of(7).items || []).some(x => x.at === 'tool' && x.id === 'calrules')))) fail('Day 7 doesn\'t point to the Booking Rule Check');
 
   // a trainee records a booking with the trainer: a correct one but the reminder (12 rules apply to it)
   await page.click('text=Check a booking'); await page.waitForTimeout(900);

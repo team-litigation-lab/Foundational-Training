@@ -87,20 +87,21 @@ const DAYS = [
   ]},
   {day:5, role:"Reception Training", lessons:[4, 5], items:[
     {t:"Buffer Time for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
-    {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"},
+    {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"}
+  ]},
+  // (📅 Day 6: the Attorney Calendar Management Activity; the Calendar Management Mock Calls on Day 7, as the trainers run them)
+  {day:6, role:"Calendar Management Training", lessons:[5], items:[
     {t:"Attorney Calendar Management Activity on the 📅 Calendaring Simulators (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
     {t:"Attorney Calendar Management Activity (each event entered on the 📅 Calendar Activity Check and submitted there)", kind:"Activity", at:"tool", id:"calcheck"},
-    {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"}
+    {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"},
+    {t:"Training Video Viewing", kind:"Activity", at:"room"}
   ]},
-  {day:6, role:"Calendar Management Training", lessons:[5], items:[
+  {day:7, role:"Intake Training", lessons:[6], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},
     {t:"Calendar Management Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"calendar-live"},
     {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
-    {t:"Training Video Viewing", kind:"Activity", at:"room"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
-    {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
-  ]},
-  {day:7, role:"Intake Training", lessons:[6], items:[
+    {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"},
     {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
