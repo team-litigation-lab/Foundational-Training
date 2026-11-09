@@ -486,7 +486,8 @@ function renderAdminSessions(){
           ${runs.map(([k, v]) => sessionRow(r, k, v)).join("")}</div>`; }).join("") : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
 }
 async function writeReview(id, mut){
-  const cur = (await sharedGet("labreview:" + id)) || {}; mut(cur);
+  // (strict: a failed read throws, never taken for an empty record and saved over the trainer's other reviews)
+  const cur = (await sharedGetStrict("labreview:" + id)) || {}; mut(cur);
   if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
   const row = (AD.rows || []).find(r => r.id === id); if(row) row.rv = cur;
   return cur;
@@ -789,8 +790,10 @@ window.ftSessionItems = ctx => {
   return Object.entries(runs).filter(([k, v]) => v && (v.submittedAt || tScore(rv[k]) != null)).map(([k, v]) => { const [sid, mc] = k.split("|"), s = sessionById(sid);
     const t = tScore(forRun(v, rv[k])), name = (s ? s.title : sid) + (mc !== "-" ? " · " + mc : "");
     const at = (rv[k] && rv[k].at) || v.submittedAt || "";
-    if(t != null) return {name, at, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
-    return {name, at, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
+    // (ref: the item a trainer can edit in place, js/ft-batch-sheet.js; why: the trainer's comment, else the AI's evaluation)
+    const why = String((t != null && rv[k] && rv[k].comment) || (v.ai && v.ai.summary) || "");
+    if(t != null) return {name, ref:"run:" + k, at, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet", why};
+    return {name, ref:"run:" + k, at, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer", why}; });
 };
 // 🎯 a lesson's Mock Call as the trainer scored it on 🧑‍🏫 Graders (labreview:<id>.acts, the scorecard): for the Scorecard's
 // Graded calls (js/ft-program.js), Passed or Failed; null when the trainer hasn't scored it (a Redo stays off until done again)
@@ -800,15 +803,21 @@ window.ftMockCallItem = (ctx, lesson) => {
   if(!a) return null;
   const r = mine[a.id], res = RES(r), t = tScore(r);
   if(res === "Not yet" || res === "Redo") return {redo: res === "Redo"};
-  return {pct: t != null ? t : res === "Passed" ? 100 : null, at: r.at || "", note: `Trainer’s scorecard · ${res}${r.date ? " · " + r.date : ""}${r.facilitator ? " · " + r.facilitator : ""}`};
+  return {ref: "act:" + a.id, pct: t != null ? t : res === "Passed" ? 100 : null, at: r.at || "", why: actWhy(r), note: `Trainer’s scorecard · ${res}${r.date ? " · " + r.date : ""}${r.facilitator ? " · " + r.facilitator : ""}`};
 };
+// (a scored activity's why, for a hover: each criterion scored on its scorecard with its remark, then the trainer's comment)
+function actWhy(r){
+  const rb = r && r.rubric && RUB().list ? RUB().list[r.rubric.key] : null;
+  const crit = rb ? (rb.criteria || []).map((c, i) => { const v = (r.rubric.scores || [])[i], f = (r.rubric.feedback || [])[i]; return v == null || v === "" ? "" : `${c.n} ${v}/5${f ? ": " + f : ""}`; }).filter(Boolean) : [];
+  return [r && r.scoreEdited ? "Score edited by the trainer" : "", crit.join("; "), r && r.comment ? r.comment : ""].filter(Boolean).join(" · ");
+}
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
   // 🎧 a Transcription Activity recording the trainer hasn't scored: its automatic score (trackerreview:<id>.transcribe[n],
   // worker.js gradeTranscription) counts, marked auto (the Weekly Ranking's ⤓ Fill leaves it out until the trainer reviews it)
   const auto = (((ctx.rec["trackerreview:"] || {}).transcribe) || {});
   const autoItem = a => { const m = /^transcription-([12])$/.exec(a.id), g = m && auto[m[1]];
-    return g && typeof g.pct === "number" ? {name:a.title, at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet"} : null; };
+    return g && typeof g.pct === "number" ? {name:a.title, ref:"act:" + a.id, kind:a.kind || "", at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet", why:String(g.summary || g.comment || "")} : null; };
   // (a graded one counts at once, Passed or Failed; a Redo the trainer asked for stays off until it is done again — and is
   // never replaced by the automatic score)
   const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet";
@@ -816,7 +825,7 @@ window.ftTrainerItems = ctx => {
     const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
     const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
-    return {name:a.title, at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    return {name:a.title, ref:"act:" + a.id, kind:a.kind || "", why:actWhy(r), at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `
