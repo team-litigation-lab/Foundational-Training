@@ -336,6 +336,11 @@ const failures = []; const fail = m => failures.push(m);
         || !/Auto Liability Insurance – Assessment/.test(kd) || !/The policy limit/.test(kd) || !/✓ 1 pt\s*Right: the policy limit/.test(kd) || !/✗ 0 pts\s*Nevada requires 25\/50\/20/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
+  // (📅 an answer sheet is expected once its lesson's days are over: a batch that started today has none due yet, so no
+  // "missing" list; a batch long under way expects them all)
+  { const rp = await page.evaluate(() => { const d = FTTrackerRules.ptDate().split('-'), today = 'B' + d[1] + d[2] + d[0].slice(2);
+      return { fresh: FTProcessReport({ sets: {} }, today), old: FTProcessReport({ sets: {} }, 'B010225') }; });
+    if (rp.fresh || !/Out of 8 expected answer sheets, 0 were submitted/.test(rp.old)) fail(`the Process Questions line doesn't follow the batch's progress: ${JSON.stringify(rp)}`); }
       await put('assess:' + ids.Ada, null); { const rv = (await get('trackerreview:' + ids.Ada)) || {}; if (rv.assess) { delete rv.assess['11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C']; await put('trackerreview:' + ids.Ada, rv); } }
       await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
