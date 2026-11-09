@@ -173,6 +173,8 @@ function renderMockScores(){
   const nDirty = dirtyIds().length, ready = !!(r && a && MS.loadedFor === sig);
   const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
+  // (the Result follows the score: a scored sheet still on "Not yet" gets Passed or Redo, unless the trainer picked one)
+  if(d && d.status === "Not yet") autoStatus(d);
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
   const hasDates = t0Of(MS.batch) != null;
   const ctl = `<div class="fms-pick">
@@ -184,11 +186,10 @@ function renderMockScores(){
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></div>` : ""}
-      <label title="Set by the score: Passed at 3/5 (60%) or more, Redo below it. Pick one to change it.">Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-      ${saveBtn}
       <button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button>
       <button class="btn btn-ghost btn-sm fms-tool" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></div>`;
-  // (the pickers sit in the banner's corner: the week, the batch, the activity, the trainee, the result and 💾 Save)
+  // (the pickers sit in the banner's corner: the week, the batch, the activity and the trainee; the Result and 💾 Save are
+  // under the scoresheet, after the weighted average)
   const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
     : `<div class="fms-banner">${ctl}</div>`;
   const head = "";
@@ -211,6 +212,8 @@ function renderMockScores(){
       ${crit}
       ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
     </tbody></table>
+    <div class="fms-savebar"><label title="Set by the score: Passed at 3/5 (60%) or more, Redo below it. Pick one to change it.">Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+      ${saveBtn}</div>
     <div class="fms-foot">
       <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
       <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
@@ -578,6 +581,13 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms textarea{resize:vertical;overflow:hidden;min-height:30px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;field-sizing:content;}
 .fms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;background:#fff !important;}
 .fms-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0 0;}
+/* (the Result and 💾 Save, under the weighted average) */
+.fms-savebar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:flex-end;margin:10px 0 0;padding:10px 12px;background:#F4F9F0;border:1px solid #CFE3C2;border-radius:10px;}
+.fms-savebar label{font:800 15px Arial,sans-serif;color:#1E2340;display:inline-flex;gap:8px;align-items:center;}
+.fms-savebar select{font:800 15px Arial,sans-serif;padding:6px 10px;border-radius:8px;border:2px solid #6AA84F;}
+.fms-savebar .fms-savebtn{font-size:15px;padding:8px 16px;}
+/* (the weighted average on one line: "2.79/5", never "2.79/" then "5") */
+.fms-tbl [data-avg]{white-space:nowrap;}
 .fms-foot label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--navy);}
 .fms-foot label span{font-weight:500;color:var(--ink-soft);font-size:12px;}
 .fms-foot input{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;} .fms-foot input[type=number]{width:90px;}
