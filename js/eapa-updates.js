@@ -1015,27 +1015,9 @@ function bfExportJson(k){
 }
 Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
 
-/* ================= Dashboard day cards: clean cards, topics in a pop-up card =================
-   A day card shows its day and title, Start and short buttons (as in the Foundational course). Its topics
-   open in a pop-up card from "☰ Topics" (showDayTopics), grouped by section. */
+/* ================= Dashboard day cards: the ☰ Topics pop-up card's styles =================
+   (js/ft-updates.js draws the day cards themselves, and js/lsh-dashboard.js gives them the clean look.) */
 (function(){
-  if(typeof moduleCard !== "function" || moduleCard.__clean) return;
-  const __card = moduleCard;
-  moduleCard = function(d){
-    const html = __card(d), t = document.createElement("template"); t.innerHTML = html.trim();
-    const card = t.content.firstElementChild; if(!card) return html;
-    card.querySelectorAll(".module-topic-list, .module-more").forEach(n=>n.remove());
-    const body = card.querySelector(".module-body");   // the day's icon and what it covers fill the card
-    if(body && d.theme) body.insertAdjacentHTML("beforeend", `<div class="module-theme">${esc(d.theme)}</div>`);
-    const n = (d.lessons||[]).length, start = card.querySelector(".module-start-btn");
-    if(n && start) start.insertAdjacentHTML("afterend", `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${n}</span></button>`);
-    // Topics and Finish sit side by side under Start, as two quiet buttons
-    const small = [...card.querySelectorAll(".module-finish-btn")];
-    if(small.length > 1){ const row = document.createElement("div"); row.className = "mc-row"; small[0].before(row); small.forEach(x=>row.appendChild(x)); }
-    card.classList.add("mc-clean");
-    return card.outerHTML;
-  };
-  moduleCard.__clean = true;
   const st = document.createElement("style"); st.id = "clean-day-cards"; st.textContent = `
 .module-card.mc-clean .module-body{flex:1 1 auto;min-height:12px;padding:10px 16px 4px;}
 .module-card.mc-clean .module-body:empty{padding:0;}
