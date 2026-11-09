@@ -109,7 +109,7 @@ function draftOf(id){
   if(!MS.draft[k]){
     const c = cellOf(id, MS.act), rb = RUB().forAct(curAct()), got = c.rubric && rb && c.rubric.key === rb.key ? c.rubric : {};
     MS.draft[k] = {status:window.ftResult ? ftResult(c) : c.status || "Not yet", redo:c.redo === true, score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
-      scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:false, dirty:false};
+      scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:!!c.scoreEdited && tScore(c) != null, dirty:false};
     // (a cell the trainer hasn't scored — no result, no score, no scorecard — starts from the automatic score, not saved
     // until the trainer reviews it: ✓ Accept, or any change, then 💾 Save)
     const auto = autoOf(id, MS.act);
@@ -318,15 +318,18 @@ window.FTMockScores = {
     for(const id of ids){
       const d = valOf(id);
       try{
-        const cur = (await sharedGet("labreview:" + id)) || {};
+        // (strict: a failed read throws, never taken for an empty record and saved over the trainer's other reviews and scores)
+        const cur = (await sharedGetStrict("labreview:" + id)) || {};
         cur.acts = cur.acts || {};
         const avg = rb ? RUB().average(rb, d.scores) : null;
         autoStatus(d);
-        cur.acts[act] = Object.assign({status:d.status || "Not yet", redo:!!d.redo, score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
+        // (merged into what is saved: anything another screen keeps on the activity stays — scoreEdited, from a score typed
+        // in the 📋 Batch Sheet, kept while the score is the trainer's own)
+        cur.acts[act] = Object.assign({}, cur.acts[act] || {}, {scoreEdited:!!d.scoreTyped && d.score !== ""}, {status:d.status || "Not yet", redo:!!d.redo, score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
           comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
-          d.autoFrom ? {source:"auto-reviewed", autoAt:d.autoFrom} : {},
+          d.autoFrom ? {source:"auto-reviewed", autoAt:d.autoFrom} : {source:undefined, autoAt:undefined},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
-            feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : {});
+            feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : rb ? {rubric:undefined} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
         MS.rv[id] = cur; delete MS.draft[dkey(id)]; ok++;
       }catch(err){ /* left as not saved: the button offers it again */ }
