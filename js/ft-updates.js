@@ -964,8 +964,7 @@ window.LSH_HOME_ALIASES = Object.keys(FT_OFF_VIEWS).concat("dashboard");
 const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)
-    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
-    .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search lessons…"');
+    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "");
 };
 
 /* ---------- 6. Drive files open in the pop-out viewer ---------- */
