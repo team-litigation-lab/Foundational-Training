@@ -744,17 +744,13 @@ if(PV_IS_AUDIENCE){
 `; document.head.appendChild(s); })();
 
 /* Orientation deck (and the Blueprint PDF, which is built from it and republishes
-   itself when the build changes): explain split pages and live sessions. */
+   itself when the build changes): explain split pages. (The "Live sessions with your trainer" slide was removed.) */
 const __eapaOrientSlides = window.orientSlides;
 window.orientSlides = function(){
   const slides = __eapaOrientSlides();
   const i = slides.findIndex(x=>x.k==="A day");
   if(i >= 0){
     slides[i] = Object.assign({}, slides[i], {body: slides[i].body.replace("One topic at a time. Next / Previous at the bottom; your place is saved.", "One topic at a time, every slide the same size. Longer topics continue on a second page — watch for the PAGE 1 / 2 badge. Your place is saved.")});
-    const pill = (ic,t,d)=>`<div class="or-pill"><div>${ic}</div><b>${t}</b><span>${d}</span></div>`;
-    slides.splice(i+1, 0, {k:"Live sessions", h:"Live sessions with your trainer", body:`
-     <div class="or-3">${pill("🖥","Follow the shared slides","Your trainer presents the day's slides in Google Meet. They're the same slides you have in the portal — nothing extra to install.")}${pill("💬","Talk it through","At each checkpoint your trainer pauses for discussion. Answer out loud — a first answer is never wrong, it's where the learning starts.")}${pill("📄","Pages & pace","Longer topics have a second page (PAGE 1 / 2). On your own, use Next or the ← → keys, 🔊 Listen, or ⛶ Full screen.")}</div>
-     <div class="or-note"><b>Missed something live?</b> Every slide stays in your portal — reopen the day any time and pick up exactly where you left off.</div>`});
   }
   return slides;
 };

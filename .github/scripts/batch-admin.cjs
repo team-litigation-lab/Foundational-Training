@@ -132,7 +132,12 @@ async function workerChecks() {
     await page.fill('.fms-tbl tbody tr:nth-child(1) textarea', 'Clear intro');
     await page.fill('.fms-cmt textarea', 'Good, with improvements needed.');
     await page.fill('.fms-fac', 'Coach Ana Reyes');
-    await page.selectOption('.fms-pick [data-ms-status]', 'Passed');
+    // (the Result follows the score: 4/5 is over the passing 3/5)
+    if (await page.inputValue('.fms-pick [data-ms-status]') !== 'Passed') fail(`4/5 didn't set the Result to Passed: ${await page.inputValue('.fms-pick [data-ms-status]')}`);
+    await page.fill('.fms-tbl tbody tr:nth-child(1) input[type=number]', '1');
+    for (let i = 1; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '2');
+    if (await page.inputValue('.fms-pick [data-ms-status]') !== 'Redo') fail('under 3/5 didn\'t set the Result to Redo');
+    for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '4');
     const avg = await text('.fms-tbl [data-avg]'), sc = await page.inputValue('.fms-sheet [data-score]');
     if (avg !== '4.00/5' || sc !== '80') fail(`the average and the score don't follow the scores: ${avg} ${sc}`);
     if (!/Save 1 trainee/.test(await text('[data-ms-save]'))) fail(`Save doesn't count the trainee changed: ${await text('[data-ms-save]')}`);
@@ -167,7 +172,7 @@ async function workerChecks() {
     if ((await get('trainee:cara-lim--b103026')).approved !== true) fail('↩ Restore access didn\'t restore Cara');
     // a batch card: a batch the 📋 Batch Sheet lists opens there (not an empty sheet), as B103026 does here
     await page.evaluate(() => openBatchFolder('B103026')); await page.waitForTimeout(2500);
-    const toSheet = await page.evaluate(() => ({ tab: state.adminTab, head: ((document.querySelector('.gs-file b') || {}).textContent || '') }));
+    const toSheet = await page.evaluate(() => ({ tab: state.adminTab, head: ((document.querySelector('.ft-banner h2') || {}).textContent || '') + ' · ' + ((document.querySelector('.bs-batchmenu select') || {}).value || '') }));
     if (toSheet.tab !== 'batchsheet' || !/B103026/.test(toSheet.head)) fail(`B103026's card didn't open it on the Batch Sheet: ${JSON.stringify(toSheet)}`);
     // 📦 archive B103026: Drive answered by the test (the test server has no service account)
     const sent = { files: null, trainees: [] };
