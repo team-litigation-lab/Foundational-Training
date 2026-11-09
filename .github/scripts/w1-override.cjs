@@ -16,14 +16,19 @@ const failures = []; const fail = m => failures.push(m);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
     // (1) the override itself
     const pure = await page.evaluate(() => {
-      const rv = { compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-06': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
+      const rv = { compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-09': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
       const before = JSON.stringify(rv), w = ftW1Override.comp(rv, 'B103026'), c = ftW1Override.comp(rv, 'B020225');
-      return { eod: w.compliance['2026-10-30'].parts.eod, pct: w.compliance['2026-10-30'].pct, wk2: w.compliance['2026-11-06'].pct, same: c === rv, untouched: JSON.stringify(rv) === before,
+      return { eod: w.compliance['2026-10-30'].parts.eod, pct: w.compliance['2026-10-30'].pct, wk2: w.compliance['2026-11-09'].pct, same: c === rv, untouched: JSON.stringify(rv) === before,
         on: ftW1Override.on('b 10-30-26'), d6: ftW1Override.dayOn('B103026', 6), other: ftW1Override.dayOn('B020225', 1), d1: ftW1Override.dayOn('B103026', 1) };
     });
     if (pure.eod !== 100 || pure.pct !== 75) fail(`Week 1's EOD isn't 100 with the day's % worked out again (75): ${JSON.stringify(pure)}`);
     if (pure.wk2 !== 50 || !pure.same || !pure.untouched) fail(`Week 2, another batch or the record itself was changed: ${JSON.stringify(pure)}`);
     if (!pure.on || pure.d6 || pure.other || !pure.d1) fail(`the override's batch and days are wrong: ${JSON.stringify(pure)}`);
+    // (Day 6, 11/06: its EOD alone counted done for B103026 — the rest of the day as scored; another batch untouched)
+    const d6 = await page.evaluate(() => { const rv = { compliance: { '2026-11-06': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
+      const w = ftW1Override.comp(rv, 'B103026').compliance['2026-11-06'], c = ftW1Override.comp(rv, 'B020225').compliance['2026-11-06'];
+      return { eod: w.parts.eod, tests: w.parts.tests, pct: w.pct, other: c.parts.eod }; });
+    if (d6.eod !== 100 || d6.tests !== 0 || d6.pct !== 75 || d6.other !== 0) fail(`Day 6's EOD isn't counted done for B103026 alone: ${JSON.stringify(d6)}`);
     // (2) on the Batch Sheet: a B103026 trainee's Week 1 is done; a control batch's isn't
     const ids = {};
     for (const [f, l, b] of [['Wanda', 'Weekone', 'B103026'], ['Carl', 'Control', 'B020225']]) {
@@ -37,7 +42,7 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(1500);
     // (the records seeded once the sign-ins' own background checks are done, then the sheet read again)
     await page.waitForTimeout(3000);
-    const SEED = { days: {}, compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-06': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
+    const SEED = { days: {}, compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-09': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
     for (const id of Object.values(ids)) await put('trackerreview:' + id, SEED);
     const sheet = async (b, name) => {
       await page.evaluate(b => { FTBatchSheet.batch(b); FTBatchSheet.refresh(); }, b);
