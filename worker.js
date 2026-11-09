@@ -2756,26 +2756,15 @@ export default {
       if (!kv && path.startsWith("/api/storage")) return json({ error: "LSH_KV namespace is not bound on this Worker." }, 500);
 
       /* ---------- auth ---------- */
-      // 📢 THE PORTAL'S ANNOUNCEMENT (the broadcast an admin sets in the LSH Training Portal's Master Control → Broadcast &
-      // Ping, shown on the Training Directory's ticker): read from the Portal's public /api/announcement, kept a minute, and
-      // shown on this platform's ticker too (js/ft-announcement.js). "" when the Portal can't be reached.
+      // 📢 THIS PLATFORM'S OWN ANNOUNCEMENTS, for the Foundational trainees only (js/ft-announcement.js): the platform-wide one and
+      // each lesson's, set in Admin → 📢 Announcements — settings:announcements = {platform: {text, by, at}, lessons: {<lesson>:
+      // {text, by, at}}}; read fresh, so an edit shows at once. Standalone: the Main Portal's broadcast is the Portal's own.
       if (path === "/api/announcement") {
-        // (📢 and this platform's own: the platform-wide one and each lesson's, set in Admin → 📢 Announcements —
-        // settings:announcements = {platform: {text, by, at}, lessons: {<lesson>: {text, by, at}}}; read fresh, so an edit shows at once)
         const ownRaw = kv ? await kv.get("settings:announcements").catch(() => null) : null;
         let own = null; try { own = ownRaw ? JSON.parse(ownRaw) : null; } catch (e) { own = null; }
         const pick = (x) => x && typeof x.text === "string" && x.text.trim() ? { text: x.text.replace(/\s+/g, " ").trim().slice(0, 500) } : null;
         const mine = { platform: pick(own && own.platform), lessons: Object.fromEntries(Object.entries((own && own.lessons) || {}).map(([k, v]) => [String(k).slice(0, 4), pick(v)]).filter(([, v]) => v)) };
-        const now = Date.now(), c = globalThis.__ftAnn;
-        if (c && now - c.at < 60000) return json({ ok: true, text: c.text, own: mine });
-        let text = "";
-        try {
-          const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { headers: { Accept: "application/json" } });
-          const j = r.ok ? await r.json().catch(() => null) : null;
-          text = j && typeof j.text === "string" ? j.text.replace(/\s+/g, " ").trim().slice(0, 500) : "";
-        } catch (e) { text = ""; }
-        if (text || !c) globalThis.__ftAnn = { at: now, text: text || (c && c.text) || "" };
-        return json({ ok: true, text: (globalThis.__ftAnn || {}).text || "", own: mine });
+        return json({ ok: true, text: "", own: mine });
       }
       if (path === "/api/auth/status") return json({ secure, portalOnly: portalOnly(env), portalSecret: !!portalSecret(env) });
       if (path === "/api/auth/admin") {
@@ -3241,23 +3230,6 @@ export default {
         const ids = (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40), out = {};
         for (const id of ids) { try { out[id] = await syncSimScores(env, id); } catch (e) { out[id] = []; } }
         return json({ ok: true, filled: out });
-      }
-      // 📢 the Main Portal's announcement (its Training Directory's ticker), changed from Admin → 📢 Announcements: sent to the
-      // Portal's /api/announcement server to server with the shared AI_GATEWAY_SECRET; op "set" (text) or "clear". Trainers only.
-      if (path === "/api/portal-announcement") {
-        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
-        const b = await request.json().catch(() => ({}));
-        if (!gatewayOn(env)) return json({ ok: false, off: true, error: "No AI_GATEWAY_SECRET on this Worker yet" });
-        const text = String(b.text || "").replace(/\s+/g, " ").trim().slice(0, 500), clear = b.op === "clear";
-        if (!clear && !text) return json({ ok: false, error: "Type the announcement" }, 400);
-        try {
-          const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { method: clear ? "DELETE" : "POST",
-            headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, body: clear ? undefined : JSON.stringify({ text, by: String(b.by || "Trainer").slice(0, 60) }) });
-          const j = await r.json().catch(() => ({}));
-          if (!(j && j.success)) return json({ ok: false, error: (j && j.error) || "The Portal answered " + r.status });
-          globalThis.__ftAnn = { at: Date.now(), text: String(j.text || "") };   // (the ticker here shows it at once)
-          return json({ ok: true, text: j.text || "" });
-        } catch (e) { return json({ ok: false, error: "The Portal couldn't be reached" }); }
       }
       if (path === "/api/calsim-card") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
