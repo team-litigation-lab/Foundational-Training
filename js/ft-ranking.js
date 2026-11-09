@@ -162,7 +162,9 @@ function weekRange(){
   if(!isFinite(t)) return null;
   return [iso(t), iso(t + 6 * 864e5)];
 }
-const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
+const PERIODS = [["week", "This week only"], ["all", "Whole training"]];
+// (a column counts its own week's work unless a trainer set it to Whole training: no week carries another's scores)
+const weekly = c => !!c && c.period !== "all";
 // the batch's week now: from its start (the Batch ID's date), 1 to 6
 function weekNow(){
   const R0 = R.week; R.week = 1; const r = weekRange(); R.week = R0; if(!r) return 1;
@@ -212,8 +214,8 @@ async function fillFromPortal(quiet){
     if(gone()){ R.fill = false; return; }
     shared.forEach((k, i) => { sh[k] = vals[want.length + i] || null; });
     // (a column set to "This week only": the grades dated in the week, weekRange; the daily tracker counts that week's days)
-    const range = cols.some(c => c.period === "week") ? weekRange() : null;
-    if(cols.some(c => c.period === "week") && !range && !quiet) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
+    const range = cols.some(c => weekly(c)) ? weekRange() : null;
+    if(cols.some(c => weekly(c)) && !range && !quiet) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
     const inWeek = x => !!(range && x.at && String(x.at).slice(0, 10) >= range[0] && String(x.at).slice(0, 10) <= range[1]);
     let n = 0, undated = 0;
     // 🔄 a cell the platform filled (auto) follows the scorecards: filled again each time, with what they say now — a 0 or a
@@ -231,7 +233,7 @@ async function fillFromPortal(quiet){
       const row = rowOf(p.id);
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(typed(cur)) return;          // never over what the trainer typed
-        const week = c.period === "week"; if(week && !scW) return;
+        const week = weekly(c); if(week && !scW) return;
         if(c.src === "overall"){ const o = (week ? scW : sc).overall; if(o == null){ clear(row, c, cur); return; }
           put(row, c, cur, {raw: fmt(o / 100 * (num(c.max) || 5)), period: week ? "week" : "all", why: `🏅 Scorecard overall${week ? " for the week" : ""}: ${Math.round(o)}% (every grading system averaged) → ${fmt(o / 20)} out of 5.`}); return; }
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
@@ -263,24 +265,24 @@ async function fillFromPortal(quiet){
     if(dayCols.length){
       const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv).map((rv, i) => window.ftDay1 ? ftDay1.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE (and 📅 Day 1 isn't counted)
       if(gone()){ R.fill = false; return; }
-      dayCols.forEach(c => { const k = c.src.slice(4); if(c.period === "week" && !wk) return; ppl.forEach((p, i) => {
+      dayCols.forEach(c => { const k = c.src.slice(4); if(weekly(c) && !wk) return; ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
-        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
+        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (!weekly(c) || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.parts[k], 0) / days.length;
         const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", instructions: "Following Instructions (naming, saving route, deliverables on time, Drive links)"}[k] || k;
-        put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: c.period === "week" ? "week" : "all", days: days.length,
+        put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: weekly(c) ? "week" : "all", days: days.length,
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
     if(compCols.length){
       const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv).map((rv, i) => window.ftDay1 ? ftDay1.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE (and 📅 Day 1 isn't counted)
       if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
-        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (c.period === "week" && !wk)) return;
-        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (weekly(c) && !wk)) return;
+        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (!weekly(c) || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
-        put(row, c, cur, {raw: fmt(pct / 100 * max), period: c.period === "week" ? "week" : "all", days: days.length,
+        put(row, c, cur, {raw: fmt(pct / 100 * max), period: weekly(c) ? "week" : "all", days: days.length,
           why: `Daily Compliance, each day's whole end-of-shift check (Monitoring Sheet, Tracker, tests, EOD, following instructions, outputs, platform; the TAM on a shadowing day): ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.pct}%`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`});
       }));
     }
@@ -383,7 +385,7 @@ function columnsEditor(){
       <input class="rk-sub" value="${e(c.sub)}" placeholder="Dates or items (e.g. 9/28 to 10/06)" onchange="FTRanking.col(${i}, 'sub', this.value)">
       ${c.type === "score" ? `<label class="rk-max">out of <input type="number" min="1" step="any" value="${e(c.max)}" onchange="FTRanking.col(${i}, 'max', this.value)"></label>
       <span class="rk-src"><select title="Where ⤓ Fill takes this column's score from" onchange="FTRanking.col(${i}, 'src', this.value)">${opts.map(o => `<option value="${e(o[0])}"${(c.src || "") === o[0] ? " selected" : ""}>${e(o[1])}</option>`).join("")}</select>
-        ${c.src ? `<select title="⤓ Fill: this week's grades only, or the whole training's" onchange="FTRanking.col(${i}, 'period', this.value)">${PERIODS.map(o => `<option value="${o[0]}"${(c.period || "all") === o[0] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>` : ""}</span>`
+        ${c.src ? `<select title="⤓ Fill: this week's grades only, or the whole training's" onchange="FTRanking.col(${i}, 'period', this.value)">${PERIODS.map(o => `<option value="${o[0]}"${(c.period === "all" ? "all" : "week") === o[0] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>` : ""}</span>`
       : `<span></span><select title="Where ⤓ Fill takes this column's notes from" onchange="FTRanking.col(${i}, 'src', this.value)"><option value="">Typed by the trainer</option><option value="skills"${c.src === "skills" ? " selected" : ""}>🧪 Typing & Spelling log (the column’s dates)</option></select>`}
       <span class="rk-col-ad"><button class="btn btn-ghost btn-sm" title="Move left" ${i ? "" : "disabled"} onclick="FTRanking.moveCol(${i}, -1)">←</button><button class="btn btn-ghost btn-sm" title="Remove the column" onclick="FTRanking.delCol(${i})">🗑</button></span></div>`).join("")}
     <div class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('score')">➕ Score column</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('notes')">➕ Notes column</button>

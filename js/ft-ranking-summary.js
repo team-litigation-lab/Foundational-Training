@@ -33,6 +33,9 @@ const S = {key: "", data: null, loading: false, busy: false, edit: false, err: "
 // (a week has scores once one of its days is over — Pacific time, as the end-of-shift check: until then, nothing to score)
 const ptNow = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
 const begun = r => !!(r && r[0] && ptNow() > r[0]);
+// (a summary drafted before the scores were the week's own work only — it could carry an earlier week's over — isn't used:
+// the week is summarized again, SUMV 2)
+const SUMV = 2;
 const keyOf = (b, w) => `rksum:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
 const redraw = () => { const c = ctx(); if(c && c.rerender) c.rerender(); else if(typeof render === "function") render(); };
@@ -164,7 +167,7 @@ async function load(c){
   const key = keyOf(c.batch, c.week); if(S.key === key) return;   // (once a week: a week not summarized yet isn't read again)
   S.key = key; S.data = null; S.loading = true;
   let d = null; try{ d = (await sharedGet(key)) || null; }catch(err){ d = null; }
-  if(S.key !== key) return; S.data = S.data || d; S.loading = false; redraw();
+  if(S.key !== key) return; S.data = S.data || (d && d.v >= SUMV ? d : null); S.loading = false; redraw();
 }
 async function draft(){
   // (asked while one runs — the automatic one, say —: it runs again as soon as that one is done, with what is asked now)
@@ -181,7 +184,7 @@ async function draft(){
   // (what a trainer edited by hand stays)
   Object.entries(prev.rows || {}).forEach(([id, r]) => { if(rows[id] && r.edited){ rows[id] = Object.assign(rows[id], {scores: Object.assign(rows[id].scores, r.scoresEdited || {}), comments: Object.assign(rows[id].comments, r.commentsEdited || {}), trainer: r.trainerEdited || rows[id].trainer},
     {edited: true, scoresEdited: r.scoresEdited, commentsEdited: r.commentsEdited, trainerEdited: r.trainerEdited}); } });
-  S.data = {batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
+  S.data = {v: SUMV, batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
   if(prev.sharedAt){ S.data.sharedAt = prev.sharedAt; S.data.editedAt = S.data.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
   if(await sharedSet(key, S.data) === false) toast("Couldn’t save the summary. Check your connection.");
   S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
@@ -237,7 +240,7 @@ const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks-tbl th,.rks-tbl th small{word-break:normal !important;overflow-wrap:normal !important;hyphens:none !important;} .rks-tbl thead th:first-child{white-space:nowrap;} .rks-tbl .rks-name,.rks-tbl .rks-name b{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;}   /* (a trainee's name on one line) */ .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
 .rks-tbl .rks-sumh{text-align:left;min-width:480px;width:40%;} .rks-tbl .rks-sum{text-align:left;font-size:14.5px;font-weight:600;line-height:1.45;color:#2B3040;min-width:480px;} .rks-sum p{margin:0 0 4px;} .rks-sum-k{display:block;margin:0 0 2px;font-size:12.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#4B5375;} .rks-sum-fb{color:#14532D;}
 .rks-tbl td[title]{cursor:help;}
-.rks-chip{display:inline-block;min-width:36px;padding:3px 6px;border-radius:8px;font-weight:900;font-size:15px;} .rks-lbl{color:#5F6368;}
+.rks-chip{display:inline-block;min-width:36px;padding:3px 6px;border-radius:8px;font-weight:900;font-size:15px;} .rks-chip.rks-zero{background:#EEF0F4;color:#6B7280;} .rks-lbl{color:#5F6368;}
 /* (the Weekly Ranking's colours: 🔵 high, 🟢 good, 🟡 critical, 🔴 fail) */
 .rks-ex{background:#CFE0FF;color:#0A3A9E;} .rks-gd{background:#CDEFD8;color:#0F5A2A;} .rks-ok{background:#FFE9A3;color:#6B4A00;} .rks-lo{background:#FBCFCB;color:#A0150C;} .rks-na{background:#ECEEF2;color:#5F6368;}
 .rks-legend .rks-ex,.rks-legend .rks-gd,.rks-legend .rks-ok,.rks-legend .rks-lo{border:1px solid #fff;}
@@ -260,6 +263,13 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-head-acts .btn-navy{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;} .rks-head-acts select{font-weight:800;}
 .rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
+// ⏳ a week whose first day isn't over: every trainee at 0.0 for now (grey, "Not started") — no week carries another's scores
+function zeroHtml(c){
+  const ppl = (c.people || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name))), z = `<span class="rks-chip rks-zero">0.0</span>`;
+  return `<p class="sc-empty">Week ${e(c.week)} has no scores yet: its first day isn't over. Each score comes from the week's own work on the scorecards, once a day of it is done.</p>
+    <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th></tr></thead>
+    <tbody>${ppl.map(p => `<tr><td class="rks-rank">—</td><td class="rks-name"><b>${e(p.name)}</b></td>${COMP.map(() => `<td>${z}</td>`).join("")}<td>${z} <small class="rks-lbl">Not started</small></td></tr>`).join("")}</tbody></table>`;
+}
 /* ---------- on the page: above the marks sheet, in 📊 Weekly Ranking ---------- */
 window.FTRankSummary = {
   html(){
@@ -276,7 +286,7 @@ window.FTRankSummary = {
         ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}`;
     S.acts = d && !S.loading ? acts : "";
     return `<div class="rks-wrap">${S.acts ? "" : `<div class="rks-bar-acts">${acts}</div>`}
-      ${!begun(c.range) ? `<p class="sc-empty">No scores yet for Week ${e(c.week)}: its first day isn't over. Each score comes from the week's own work on the scorecards, once a day of it is done.</p>` : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
+      ${!begun(c.range) ? zeroHtml(c) : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line
   weekSummary(id){
