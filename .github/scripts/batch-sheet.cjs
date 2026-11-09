@@ -165,7 +165,7 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     const sb3 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
     const cell = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'compliance').rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => c.v).join(' | ') : ''; });
-    if (!/Ada Active[\s\S]*Monitoring Sheet\s+Not in their Drive/.test(sb3) || !/Drive searched/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
+    if (!/Ada Active[\s\S]*Monitoring Sheet\s+Not in their Drive/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
     if (!/✗ Not in Drive/.test(cell)) fail(`✅ Compliance doesn't show her Monitoring Sheet as ✗ Not in Drive: ${cell}`);
     delete rv.notFound; await put('trackerreview:' + ids.Ada, rv); }
   // ✓ fixed by the VA (her link now opens): she drops off the list by herself

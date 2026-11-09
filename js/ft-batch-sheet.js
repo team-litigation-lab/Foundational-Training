@@ -712,7 +712,7 @@ function issueWhy(p, it){
   if(x.nf) return "Not in their Drive";
   if(x.st === "none") return "Not linked";
   if(x.st === "unchecked") return "Couldn’t check it";
-  if(x.st === "bad" && ACCESS(err)) return "Can’t open it: not shared";
+  if(x.st === "bad" && ACCESS(err)) return /not.?found|404/i.test(String((x.c || {}).why || "")) ? "Can’t open it: not shared, or the file is gone" : "Can’t open it: not shared";
   let m;
   if(/blank template/i.test(err)) return "Blank template, not their copy";
   if((m = err.match(/This is batch (B\d{6})/i))) return `Batch ${e(m[1].toUpperCase())}’s file, not theirs`;
@@ -750,10 +750,11 @@ function shareBanner(){
   // (the same problem on several links that aren't linked at all — nothing in their Drive yet — is one row, not one per link)
   const rowsOf = (p, its) => {
     const why = its.map(it => issueWhy(p, it)), same = its.length > 1 && its.every((it, i) => !it.x.link && why[i] === why[0]);
-    if(same) return [{its, l: its.length === LINKS.length ? `All ${LINKS.length} links` : its.map(it => e(it.l)).join("<br>"), why: why[0], tip: "", at: "", act: fixes(p, its[0])}];
-    return its.map((it, i) => ({its: [it], l: e(it.l), why: why[i], tip: (it.x.c || {}).err || "", at: (it.x.c || {}).at || "", act: fixes(p, it)}));
+    const at = it => it.x.nf && it.x.nf !== true ? it.x.nf : (it.x.c || {}).at || "";
+    const tip = it => { const c = it.x.c || {}; return it.x.nf ? "The batch’s Drive was searched and has no such file with their name: they need to make it from the template and link it." : [c.err, c.why ? "Google: " + c.why : ""].filter(Boolean).join(" "); };
+    if(same) return [{its, l: its.length === LINKS.length ? `All ${LINKS.length} links` : its.map(it => e(it.l)).join("<br>"), why: why[0], tip: tip(its[0]), at: at(its[0]), act: fixes(p, its[0])}];
+    return its.map((it, i) => ({its: [it], l: e(it.l), why: why[i], tip: tip(it), at: at(it), act: fixes(p, it)}));
   };
-  const searched = withIssues.map(r => r.its.map(it => it.x.nf).find(v => v && v !== true)).find(Boolean);
   const list = `<table class="bs-li"><thead><tr><th>Trainee</th><th>Right</th><th>Link</th><th>Problem</th><th>Checked</th><th>Fix</th></tr></thead>${withIssues.map(({p, its}) => {
     const rows = rowsOf(p, its);
     return `<tbody class="bs-li-p">${rows.map((r, i) => `<tr>${i ? "" : `<td class="bs-li-who" rowspan="${rows.length}"><b>${e(p.name)}</b><button class="btn btn-ghost btn-sm bs-arch1" type="button" data-id="${e(p.id)}" data-name="${e(p.name)}" onclick="FTBatchSheet.archiveOne(this.dataset.id, this.dataset.name)" title="Archive this account (someone who isn't a trainee, or who left): off the sheet and this list; Admin → Batches brings it back">🗄 Archive</button></td><td class="bs-li-n" rowspan="${rows.length}">${LINKS.length - its.length} of ${LINKS.length}</td>`}<td class="bs-li-l">${r.l}</td><td class="bs-li-why"${r.tip ? ` title="${e(r.tip)}"` : ""}>${r.why}</td><td class="bs-li-at">${r.at ? e(when(r.at)) : "—"}</td><td>${r.act}</td></tr>`).join("")}</tbody>`;
@@ -763,7 +764,7 @@ function shareBanner(){
   const head = h => `<div class="bs-li-top"><div class="bs-li-h">${h}</div>${recheck}</div>`;
   // (most of the batch can't be opened at all: the batch's folder isn't shared yet — one share covers everyone)
   if(access.length && opens <= access.length) return `<div class="bs-warn bs-share">${head(`📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> · ${access.length} of ${ppl.length} trainees`)}${shareTo}${list}</div>`;
-  return `<div class="bs-warn bs-share">${head(`🔗 <b>${withIssues.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"} ${withIssues.length === 1 ? "has" : "have"} Drive link issues</b> · Batch ${e(B.batch)}${searched ? ` · Drive searched ${e(when(searched))}` : ""}`)}${access.length ? shareTo : ""}${list}</div>`;
+  return `<div class="bs-warn bs-share">${head(`🔗 <b>${withIssues.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"} ${withIssues.length === 1 ? "has" : "have"} Drive link issues</b> · Batch ${e(B.batch)}`)}${access.length ? shareTo : ""}${list}</div>`;
 }
 // the page: the Score Card and the compliance first, then the Weekly Ranking and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
