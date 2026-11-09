@@ -1107,8 +1107,10 @@ function practiceTable(){
           const a = sc.length ? Math.round(sc.reduce((x, y) => x + y, 0) / sc.length) : null, last = xs.map(w => t(w.at)).filter(Boolean).sort((x, y) => y - x)[0];
           return {n: xs.length, a, f: xs.length ? `${c.label}: ${xs.length} attempt${xs.length === 1 ? "" : "s"}${a != null ? `, average ${a}%` : ""}${last ? ` · last ${last.toLocaleString()}` : ""}${xs.length ? ` · ${[...new Set(xs.map(w => w.label).filter(Boolean))].slice(0, 4).join(", ")}` : ""}` : `${c.label}: not used yet`};
         }
-        const x = R.score && R.score.rows ? R.score.rows.find(y => y.s === c.s) : null, n = x ? x.graded : 0;
-        return {n, a: x ? x.avg : null, f: n ? `${c.label}: ${n} graded${x.avg != null ? `, average ${x.avg}%` : ""}${x.items ? ` · ${x.items.filter(i => typeof i.pct === "number").slice(0, 4).map(i => i.name).join(", ")}` : ""}` : `${c.label}: not used yet`};
+        // (🧪 Typing & Spelling: every test taken is an attempt — the tests are scored on compliance, not one by one)
+        const x = R.score && R.score.rows ? R.score.rows.find(y => y.s === c.s) : null, k = R.skills || {};
+        const n = c.id === "skills" ? Math.max(x ? x.graded : 0, (k.typing || []).length + (k.spelling || []).length) : x ? x.graded : 0;
+        return {n, a: x ? x.avg : null, f: n ? `${c.label}: ${n} ${c.id === "skills" ? "taken" : "graded"}${x && x.avg != null ? `, average ${x.avg}%` : ""}${x && x.items ? ` · ${x.items.filter(i => typeof i.pct === "number").slice(0, 4).map(i => i.name).join(", ")}` : ""}` : `${c.label}: not used yet`};
       };
       const cells = cols.map(cell), used = cells.filter(c => c.n > 0).length, total = cells.reduce((x, c) => x + c.n, 0);
       const last = all.filter(ev => ev.p.id === p.id && PRACTICE.has(ev.what)).map(ev => ev.at)[0];
