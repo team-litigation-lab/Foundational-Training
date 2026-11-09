@@ -225,7 +225,8 @@ function renderMockScores(){
   const c = cellOf(r.id, a.id), id = e(r.id), auto = autoOf(r.id, a.id), isTr = /^transcription-[12]$/.test(a.id);
   // 🎧 the automatic score: where it came from, ✓ Accept (it then saves as the trainer's), and 🔁 Grade now (the Worker again)
   // (🔁 a scorecard filled from a simulator — worker.js syncSimScores — says so; a score typed here replaces it)
-  const simC = r && a ? cellOf(r.id, a.id) : {}, simBar = simC.source === "simulator" ? `<div class="fms-auto">🔁 <b>From the ${e(simC.simFrom || "simulator")}</b>${simC.simBy ? " · " + e(simC.simBy) : ""}${simC.simAt ? " · " + e(String(simC.simAt).slice(0, 10)) : ""} · it follows the simulator until a score is saved here</div>` : "";
+  const simC = r && a ? cellOf(r.id, a.id) : {}, simBar = simC.source === "simulator" ? `<div class="fms-auto">🔁 <b>From the ${e(simC.simFrom || "simulator")}</b>${simC.simBy ? " · " + e(simC.simBy) : ""}${simC.simAt ? " · " + e(String(simC.simAt).slice(0, 10)) : ""} · it follows the simulator until a score is saved here</div>`
+    : simC.source === "portal" ? `<div class="fms-auto">🔁 <b>From the Google Calendar Simulator</b> · saved there by the trainer (worker.js /api/calsim-card-in)</div>` : "";
   const autoBar = !isTr ? "" : `<div class="fms-auto">${auto ? `🤖 <b>Auto-scored ${e(new Date(auto.at).toLocaleDateString())}</b> · ${auto.pct == null ? "—" : e(auto.pct) + "%"} on ${e(auto.scored)} of ${e(auto.scores.length)} criteria${auto.ai ? "" : " (no AI: you score the rest)"}${d.autoFrom && !d.dirty ? ` · review and Save
       <button class="btn btn-navy btn-sm" type="button" data-ms-accept onclick="FTMockScores.accept('${id}')">✓ Accept the automatic score</button>` : ""}` : `🤖 No automatic score yet (scored when the trainee submits the recording).`}
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTMockScores.regrade('${id}')" title="Score the trainee’s submitted minutes again">🔁 Grade now</button></div>`;
