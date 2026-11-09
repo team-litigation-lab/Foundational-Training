@@ -36,12 +36,6 @@ function stepsFor(batch){ const o = state.ftDay1Steps || {}, sc = window.FTDayLo
 const ownSteps = batch => ((state.ftDay1Steps || {}).batches || {})[key(batch)] != null;
 function active(){
   return false;   // ✂ the segment locks are off: Day 1 opens as a whole with its lesson (js/ft-day-locks.js enforced)
-  if(!state.traineeId || state.isAdmin || state.adminPreview || !state.ftOpenDays) return false;   // (nothing decided before the open lessons load)
-  const p = (state.progress || {})[1]; if(p && p.done) return false;
-  const o = state.ftOpenDays || {}, open = [].concat(o.all || [], (o.batches || {})[key(state.traineeBatch)] || []).map(Number);
-  // the batch is past Day 1 already, unless the trainer set its Day 1 steps themselves (🔓 Segment lock on the deck)
-  if(open.some(id => id > 1 && id !== 12) && !ownSteps(state.traineeBatch)) return false;
-  return stepsFor(state.traineeBatch) < FINISH;
 }
 const at = () => stepsFor(state.traineeBatch);
 const step = n => STEPS[n - 1];
@@ -185,7 +179,6 @@ const st = document.createElement("style"); st.id = "ft-day1-flow"; st.textConte
 .ftlk > .ftlk-under{filter:blur(7px) grayscale(.35);opacity:.75;pointer-events:none;user-select:none;}
 .ftlk > .ftlk-over{position:absolute;inset:0;z-index:5;min-height:0;background:rgba(255,255,255,.55);backdrop-filter:blur(2px);
   box-shadow:inset 0 0 0 2px rgba(30,35,64,.12);}
-.ftlk-badge{display:inline-flex;align-items:center;gap:6px;}
 .ftd1-steps{list-style:none;margin:0;padding:0;display:grid;gap:6px;}
 .ftd1-steps li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;}
 .ftd1-steps li.on{background:#EAF6EE;border-color:#B9E0C6;} .ftd1-steps li i{font-size:12.5px;color:var(--ink-soft);}
