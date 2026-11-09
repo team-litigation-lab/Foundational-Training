@@ -874,23 +874,20 @@ window.renderAdmin = function(){
   if(["rankings","sop","cues","studio"].includes(state.adminTab)) state.adminTab = "audit";
   const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Lessons</button>`;
   const curTab = `<button class="admin-tab-btn ${state.adminTab==="curriculum"?"active":""}" onclick="setAdminTab('curriculum')">📘 Curriculum</button>`;
-  if(state.adminTab==="curriculum"){
+  // borrow the tab bar from the engine (drawn as another tab, with nothing lit) for a tab of this program's own
+  const borrowBar = tab=>{
     state.adminTab = "tfeedback";
-    let out = __ftRenderAdmin();
-    state.adminTab = "curriculum";
+    const out = __ftRenderAdmin();
+    state.adminTab = tab;
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtCurriculum();
-  }
+    return ftTrimAdminTabs(out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>", odTab + curTab);
+  };
+  if(state.adminTab==="curriculum") return borrowBar("curriculum") + renderFtCurriculum();
   if(state.adminTab==="opendays"){
-    state.adminTab = "tfeedback";                    // borrow the tab bar from the engine…
-    let out = __ftRenderAdmin();
-    state.adminTab = "opendays";
-    const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
+    const bar = borrowBar("opendays");
     if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
     if(!state.ftOpenVideos) ftLoadOpenDays().then(()=>{ if(state.adminTab==="opendays") render(); });
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays() + (window.renderFtDay1Steps ? renderFtDay1Steps() : "") + renderFtOpenVideos();
+    return bar + renderFtOpenDays() + (window.renderFtDay1Steps ? renderFtDay1Steps() : "") + renderFtOpenVideos();
   }
   return ftTrimAdminTabs(__ftRenderAdmin(), odTab + curTab);
 };
