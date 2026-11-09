@@ -37,11 +37,18 @@ function fitPage(){
   const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ft-s")) || 1;
   const pad = (parseFloat(getComputedStyle(m).paddingTop) || 0) + (parseFloat(getComputedStyle(m).paddingBottom) || 0);
   const room = m.clientHeight - pad, need = m.scrollHeight - pad;
-  // 🏅 My Performance is made to fit one screen (down to 0.66); other pages only when a little taller (down to 0.8)
+  // 🏅 My Performance and 📦 Intake Packets are made to fit one screen (down to 0.66); other pages only when a little taller
+  // (down to 0.8)
   // (the Practice Lab goes by the day now and scrolls like any page: it is no longer squeezed onto one screen)
-  const lab = !!m.querySelector(".ftmp-focus");   // 🏅 My Performance
+  const lab = !!m.querySelector(".ftmp-focus, .ftis-admin");   // 🏅 My Performance, 📦 Intake Packets
   if(need <= room + 1 || (!lab && need > room * 1.35)) return;
-  m.style.setProperty("--ft-page-s", Math.max(lab ? 0.66 : 0.8, s * room / need * 0.99).toFixed(3));
+  const set = v => m.style.setProperty("--ft-page-s", v.toFixed(3)), fits = () => m.scrollHeight - pad <= room + 1;
+  let lo = Math.max(lab ? 0.66 : 0.8, s * room / need * 0.99), hi = s;
+  set(lo);
+  // (a page drawn smaller often gets shorter than its scale alone says, its lines reflowing into the wider room, so the
+  // first guess leaves the bottom of the screen empty: the largest scale that still fits is found in a few steps)
+  if(fits()) for(let i = 0; i < 5 && hi - lo > 0.01; i++){ const mid = (lo + hi) / 2; set(mid); if(fits()) lo = mid; else hi = mid; }
+  set(lo);
 }
 let pageT = 0;
 new MutationObserver(() => { cancelAnimationFrame(pageT); pageT = requestAnimationFrame(fitPage); }).observe(document.getElementById("app") || document.body, {childList: true});

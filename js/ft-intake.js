@@ -333,16 +333,17 @@ function adminHtml(){
   if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).catch(() => {}); } });
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
-  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>. Each packet brings its 🎬 demo case for the Day 8 Intake Demo. Their packet and subfolder links, 🔎 the accuracy &amp; completeness check, the demo case and the Intake Worksheet are on each trainee’s page of <a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a>, with their 🏅 Score Card.</p></div>
+  const set = Object.keys(pk).filter(n => pk[n] && (pk[n].client || pk[n].url)).length, given = rows.filter(r => AD.assign[r.id]).length;
+  // (fits on one screen: the trainees side by side in three columns, and the packets' clients and links in three columns)
+  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Each trainee sees their packet on Day 8’s slide (<b>Your Assigned Packet</b>) with its 🎬 demo case, from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">packets folder ↗</a>. Their work on it: their <a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a> page.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <h4>Assign the packets</h4>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl ftis-assign"><thead><tr><th>Trainee</th><th>Packet</th></tr></thead><tbody>
-      ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
-        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td></tr>`).join("")}
-    </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
-    <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
-    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
-    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets</button></div></div>`;
+    <h4>Assign the packets <small class="ftis-count">${given} of ${rows.length} assigned</small></h4>
+    ${rows.length ? `<div class="ftis-assign">${rows.map(r => `<div class="ftis-acell"><b title="${e(r.name)}${r.batch ? " · " + e(r.batch) : ""}">${e(r.name)}${AD.batch ? "" : `<span class="fss-muted"> ${e(r.batch)}</span>`}</b>
+        <select aria-label="Packet for ${e(r.name)}" onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></div>`).join("")}</div>`
+      : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
+    <div class="ftis-phead"><h4>The packets <small class="ftis-count">${set} of ${NPACK} set</small></h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link, shared “Anyone with the link can view”.</p>
+      <button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets</button></div>
+    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<div class="ftis-prow"><b>${n}</b><input id="ftisC${n}" aria-label="Packet ${n}: client’s name" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" aria-label="Packet ${n}: Drive link" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}"></div>`).join("")}</div></div>`;
 }
 /* 📦 A trainee's Intake Packet on their page of 📋 Batch Sheet (js/ft-batch-sheet.js perTraineeHtml), with their 🏅 Score
    Card: the packet assigned, their packet and subfolder links, 🔎 the accuracy & completeness check (with 🔎 Check), the
@@ -568,9 +569,7 @@ window.FTIntake = {
 .ftis-min-h{margin:0 0 8px;text-align:center;font:800 15px 'Poppins','Inter',sans-serif;color:#262B45;letter-spacing:.04em;}
 /* (🗂 Intake Packets for the trainer: bigger and bolder, to read at a glance) */
 .ftis-admin{font-size:16.5px;} .ftis-admin h3{font-size:24px !important;} .ftis-admin .fss-muted{font-size:16px !important;font-weight:600;color:#262B45;line-height:1.55;}
-.ftis-admin table th{font-size:14.5px !important;font-weight:800 !important;color:#262B45 !important;}
-.ftis-admin table td{font-size:16.5px !important;font-weight:700;color:#1B1E2E;padding-top:10px !important;padding-bottom:10px !important;}
-.ftis-admin select{font:800 16px Arial,sans-serif !important;padding:7px 10px !important;border:2px solid #3B4A8C !important;border-radius:8px;color:#1E2340;}
+.ftis-admin select{font:800 15px Arial,sans-serif !important;padding:4px 8px !important;border:2px solid #3B4A8C !important;border-radius:8px;color:#1E2340;}
 .ftis-admin .ftis-case-auto{font-size:16.5px;font-weight:600;}
 .ftis-admin .btn{font-weight:800;font-size:15px;}
 .ftis-min table{width:100%;border-collapse:collapse;} .ftis-min th, .ftis-min td{border:1px solid #CBD2DF;padding:5px 8px;text-align:left;vertical-align:top;}
@@ -617,8 +616,15 @@ window.FTIntake = {
 .ftis-form{display:block;background:#fff;border:1px solid #DCE0EA;border-left:5px solid #DB8437;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;margin:8px 0;}
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
 .ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
-.ftis-admin{padding:18px 20px;margin-bottom:16px;}
-.ftis-admin h4{margin:16px 0 6px;color:#262B45;}
+.ftis-admin{padding:12px 20px 14px;margin-bottom:0;}
+.ftis-admin h4{margin:8px 0 4px;color:#262B45;} .ftis-admin .ff-bar{margin-bottom:2px;} .ftis-admin .ff-bar h3{margin:0;} .ftis-admin .ff-bar .fss-muted{margin:2px 0 0;font-size:15px !important;}
+.ftis-count{font:700 13px 'Inter',sans-serif;color:#5B6178;margin-left:6px;}
+/* (fixed column counts on a computer, so the page's height follows its scale and js/ft-screen-fit.js fits it in one pass) */
+.ftis-assign{column-count:3;column-gap:28px;}
+.ftis-acell{break-inside:avoid;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid #E6E9F2;}
+.ftis-acell b{font-size:15.5px;color:#1B1E2E;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ftis-acell select{flex:0 0 auto;width:190px;max-width:55%;}
+.ftis-phead{display:flex;align-items:center;flex-wrap:wrap;gap:4px 14px;margin-top:10px;} .ftis-phead h4{margin:0;} .ftis-phead .fss-muted{margin:0;flex:1 1 320px;font-size:14.5px !important;} .ftis-phead .btn{margin-left:auto;}
 .ftis-banner{margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#FDF0E1;border:1px solid #F0C99A;color:#3A2A14;font-size:14px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box;}
 .ftis-dedit{background:#F6F8FC;border:1px solid #D9DFEA;border-radius:10px;padding:10px 14px;margin:8px 0;text-align:left;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px;}
 .ftis-dedit > p, .ftis-dedit > .ftis-asave{grid-column:1/-1;margin:0;} .ftis-dedit label{display:flex;flex-direction:column;font-size:12.5px;gap:2px;} .ftis-dedit input{padding:5px 8px;border:1px solid #C9D1E0;border-radius:6px;font:inherit;}
@@ -637,10 +643,11 @@ window.FTIntake = {
 .ftis-mc-t summary{cursor:pointer;color:#262B45;font-size:14.5px;padding:2px 0;} .ftis-mc-t p{margin:6px 0;} .ftis-mc-t ul{margin:2px 0 6px;padding-left:20px;}
 .ftis-mc-ring{background:#F6F7FB;border-radius:8px;padding:6px 10px;}
 .ftms .ftis-mcase{margin:6px 0;}
-.ftis-aedit{display:grid;grid-template-columns:84px minmax(0,300px) minmax(0,520px);gap:6px 12px;align-items:center;justify-content:start;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
-.ftis-aedit input{box-sizing:border-box;width:100%;font:inherit;padding:6px 9px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
-.ftis-aedit b{font-size:13px;color:var(--ink-soft,#5B6178);} .ftis-asave{margin-top:12px;}
-@media(max-width:800px){.ftis-aedit,.ftis-aedit-d{grid-template-columns:1fr;}}
+.ftis-aedit{column-count:3;column-gap:22px;margin-top:6px;}
+@media(max-width:1000px){.ftis-assign{column-count:auto;columns:300px;} .ftis-aedit{column-count:auto;columns:420px;}}
+.ftis-prow{break-inside:avoid;display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.5fr);gap:6px;align-items:center;padding:2px 0;}
+.ftis-aedit input{box-sizing:border-box;width:100%;font:600 14px 'Inter',sans-serif;padding:4px 8px;border:1px solid var(--line,#d6d9e0);border-radius:7px;}
+.ftis-prow b{font-size:14px;color:#5B6178;text-align:right;} .ftis-asave{margin-top:12px;}
 @media(max-width:800px){.ftis-calls{grid-template-columns:minmax(0,1fr);}}
 `; document.head.appendChild(s); })();
 })();
