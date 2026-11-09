@@ -224,7 +224,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(500);
   const ov = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'scores'); const r = t.rows.find(x => /Una/.test(x[0].v)); return { head: t.head, row: r && r.map(c => c.v) }; });
   const col = h => ov.head.indexOf(h);
-  if (!ov.row || ov.row[col('Daily compliance')] !== '70%' || ov.row[col('Weeks average (/5)')] !== '3.50' || !/%$/.test(ov.row[col('Overall %')]) || String(ov.row[col('Rank')]) !== '1')
+  if (!ov.row || ov.row[col('Daily compliance')] !== '70%' || ov.row[col('Weeks average (/5)')] !== '3.50' || !/%$/.test(ov.row[col('Overall %')]) || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
     fail(`📋 Batch Sheet → 🏅 Scores reads: ${JSON.stringify(ov)}`);
   const out = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'outputs'); const r = t.rows.find(x => /Una/.test(x[0].v)); return r && r.map(c => c.v); });
   if (!out || out[1] !== '70%' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);

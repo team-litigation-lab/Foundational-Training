@@ -53,7 +53,7 @@ window.LSH_PROGRAM = {
     modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["calendaring", "sessions", "listening", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
-    scorecard: ["batchsheet", "skilltests", "sendfeedback", "graders", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
+    scorecard: ["batchsheet", "drivelinks", "skilltests", "sendfeedback", "graders", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
   // (💬 Trainee Feedback: removed)
@@ -61,7 +61,9 @@ window.LSH_PROGRAM = {
   // (👥 Trainees & Batches: removed: the Main Portal approves trainees, and one it signs in is approved here; 📋 Task Trackers:
   // no button, the end-of-day check runs by itself and its results are in 📋 Batch Sheet's 📤 Daily outputs; 📁 Drive Trackers:
   // no button either, set up already, its checks in 📋 Batch Sheet's ✅ Compliance)
-  adminHidden: ["ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
+  // (🧪 Typing & Spelling and 📝 Send Feedback: no buttons — the tests are in each trainee's table and 📤 Daily outputs, and
+  // 📝 Send Feedback opens in each trainee's table on 📋 Batch Sheet; their routes stay)
+  adminHidden: ["skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
