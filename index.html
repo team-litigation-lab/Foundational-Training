@@ -5287,13 +5287,6 @@ const TRAVEL_SCENARIO = {
   title:"Personal Travel — The Thorne Family, Spain",
   text:"Elias is taking Sarah, Leo (8), and Maya (5) to Spain for a week — Madrid, then Barcelona. Nothing is pre-built. Create the full itinerary sheet yourself: flights, lodging, and day notes for each leg, applying everything you know about how Elias travels."
 };
-const TRAVEL_REQUIREMENTS = [
-  {id:"seat", label:"Seat preference addressed (aisle, near the front)", keywords:["aisle"]},
-  {id:"direct", label:"No connecting flights noted", keywords:["direct","nonstop","non-stop","no connection","no layover"]},
-  {id:"dietary", label:"Dietary needs flagged (strict Paleo, zero dairy)", keywords:["paleo","dairy","dietary"]},
-  {id:"family", label:"Something age-appropriate planned for Leo and/or Maya", keywords:["leo","maya","kid","child","family-friendly","family friendly"]},
-  {id:"contingency", label:"A contingency / delay-monitoring note included somewhere", keywords:["delay","backup","rebook","contingency","monitor"]}
-];
 
 /* ---------- 5. Call Handling Studio ---------- */
 const CALL_SCENARIOS = [
@@ -6061,8 +6054,6 @@ function approvalFromRecord(rec){
 async function getApprovalStatus(traineeId){
   return approvalFromRecord(await sharedGet("trainee:"+traineeId));
 }
-
-const SUBMISSION_INLINE_LIMIT = 200*1024; // 200KB — stored in full; larger files record metadata only
 
 async function loadAll(){
   // These keys don't depend on each other, so they are read together rather
