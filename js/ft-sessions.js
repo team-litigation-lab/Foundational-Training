@@ -177,6 +177,8 @@ const sessionCase = s => isTrainee() ? caseFor(s) : previewCase(s);
 const runOf = (s, c) => (S.data && S.data.runs[keyOf(s, c)]) || null;
 const reviewOf = key => ((S.review || {}).sessions || {})[key] || null;
 const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
+// ☎ 🗂 what a mock call was scored beside (the graded call on its Ring Channel line, the CMS record), js/ft-mockcall-links.js
+const mockSources = (id, actId) => { const a = acts().find(x => x.id === actId); return a && window.FTMockLinks ? FTMockLinks.sources(id, a) : undefined; };
 function scoreOf(run, rv){ const t = tScore(rv); return t != null ? t : run && run.auto ? run.auto.pct : null; }
 // a trainer's review counts for the attempt it was given on: a session submitted again after it is a new attempt, to review
 // again (the review records the attempt it scored; an older review without one is compared by its time)
@@ -559,7 +561,7 @@ function renderTrainerInputs(){
       return `<div class="fss-rvform fss-cellform"><b>${e(r.name)} · ${e(a.title)}</b>
         ${au ? `<p class="fss-wide fss-muted">🤖 Filled in from the automatic check of ${e(new Date(au.at).toLocaleString())} (${au.pct == null ? "—" : e(au.pct) + "%"}): review it and Save. Your score replaces it on the trainee’s Scorecard.</p>` : ""}
         <label title="Passed at 3/5 (60%) or more, Failed below; Redo keeps it off the scorecards until it is done again">Result <select data-status>${STATUSES.map(s => `<option ${s === (c.redo === true ? "Redo" : "By the score") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-        ${rubricForm(a, au ? {rubric:{key:au.key, scores:au.scores, feedback:au.feedback}} : c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}
+        ${rubricForm(a, au ? {rubric:{key:au.key, scores:au.scores, feedback:au.feedback}} : c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}${typeof window.ftMockLinks === "function" ? window.ftMockLinks(r, a) : ""}
         <label>Score <input type="number" min="0" max="100" data-score value="${tScore(c) != null ? tScore(c) : au && au.pct != null ? au.pct : ""}"> %</label>
         <label>Date <input type="date" data-date value="${e(c.date || new Date().toISOString().slice(0, 10))}"></label>
         <label class="fss-wide">Comment<textarea rows="3" data-comment placeholder="What went well, what to improve (the trainee sees it)">${e(c.comment || "")}</textarea></label>
@@ -627,7 +629,9 @@ Return ONLY JSON: {"comment":"..."}`;
     try{ await writeReview(id, cur => { cur.acts = cur.acts || {}; const redo = box.querySelector("[data-status]").value === "Redo", score = sv === "" ? null : Math.round(Number(sv));
       cur.acts[act] = Object.assign({status:RES({score, redo, status:cur.acts[act] && cur.acts[act].status}), redo, score,
         date:box.querySelector("[data-date]").value, comment:String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000), at:new Date().toISOString()},
-        rr && rr.scores.some(v => v != null) ? {rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}} : {}); });
+        rr && rr.scores.some(v => v != null) ? {rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}} : {},
+        // (☎ 🗂 the graded call and the CMS record the mock call was scored beside, js/ft-mockcall-links.js)
+        mockSources(id, act) ? {sources:mockSources(id, act)} : {}); });
       TI.cell = null; toast("✓ Saved. The trainee sees it on their Practice Lab page."); }
     catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; render();
@@ -717,6 +721,7 @@ function metricsSheet(key){
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     ${a.id === "intake-packet-demo" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
+    ${row && typeof window.ftMockLinks === "function" ? window.ftMockLinks(row, a, true) : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
       ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
         <td><textarea rows="1" data-fb="${i}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)">${e((got.feedback || [])[i] || "")}</textarea></td></tr>`).join("")}
@@ -771,7 +776,7 @@ window.FTMetrics = {
           date:prev.date || new Date().toISOString().slice(0, 10), facilitator, at:new Date().toISOString(),
           rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}},
           // (the CMS call the trainee was assigned, js/ft-intake.js; null when none, so an earlier case isn't carried over)
-          played !== undefined ? {case:played} : {}); });
+          played !== undefined ? {case:played} : {}, mockSources(id, act) ? {sources:mockSources(id, act)} : {}); });
       delete MS.draft[key + "|" + act + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
     }catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; redraw();
@@ -781,6 +786,10 @@ window.FTMetrics = {
 // 📬 My Feedback (js/ft-trainer-feedback.js) names the trainer-led activities and the sessions
 FTSessions.trainerActs = () => acts();
 FTSessions.sessionTitle = id => (sessionById(id) || {}).title || id;
+// ☎ 🗂 a session's title and form fields ([name, label, type]), for the mock call scorecards' CMS record (js/ft-mockcall-links.js)
+FTSessions.sessionInfo = id => { const s = sessionById(id); if(!s) return null; let fl = [];
+  try{ fl = s.fields((FF() && FF().firms()[0]) || {attorneys:[], team:[], tz:""}) || []; }catch(err){ fl = []; }
+  return {id:s.id, title:s.title, lesson:s.lesson, fields:fl.map(x => [x[0], x[1], x[2]])}; };
 
 // the Scorecard's sources (js/ft-program.js): the sessions (the trainer's score, else the automated %) and the trainer inputs
 window.ftSessionItems = ctx => {
