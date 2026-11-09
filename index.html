@@ -13735,11 +13735,7 @@ async function resetTraineeLabAttempts(traineeId){
   rec.labAttemptsByDay = {};
   rec.labAttemptsResetAt = new Date().toISOString();
   await sharedSet("trainee:"+traineeId, rec);
-  if(state.adminData){
-    const idx = state.adminData.findIndex(x=>x.id===traineeId);
-    if(idx!==-1) state.adminData[idx] = rec;
-    refreshAdminRows();
-  }
+  putAdminRec(traineeId, rec);
   toast(`Practice Lab attempts reset for ${rec.name||"trainee"}. Their open page updates within about 10 seconds.`);
 }
 window.resetTraineeLabAttempts = resetTraineeLabAttempts;
@@ -14293,11 +14289,7 @@ async function assignRoleplayToTrainee(traineeId){
   if(!rec) return;
   rec.assignedRoleplay = {categoryId, topicId, categoryLabel:category.label, topicLabel:topic.label, assignedAt:new Date().toISOString()};
   await sharedSet("trainee:"+traineeId, rec);
-  if(state.adminData){
-    const idx = state.adminData.findIndex(r=>r.id===traineeId);
-    if(idx!==-1) state.adminData[idx] = rec;
-    refreshAdminRows();
-  }
+  putAdminRec(traineeId, rec);
   toast(`Assigned "${topic.label}" to ${rec.name||"trainee"}.`);
 }
 window.assignRoleplayToTrainee = assignRoleplayToTrainee;
@@ -14306,11 +14298,7 @@ async function clearAssignedRoleplay(traineeId){
   if(!rec) return;
   rec.assignedRoleplay = null;
   await sharedSet("trainee:"+traineeId, rec);
-  if(state.adminData){
-    const idx = state.adminData.findIndex(r=>r.id===traineeId);
-    if(idx!==-1) state.adminData[idx] = rec;
-    refreshAdminRows();
-  }
+  putAdminRec(traineeId, rec);
 }
 window.clearAssignedRoleplay = clearAssignedRoleplay;
 
@@ -14359,6 +14347,13 @@ function renderAiReviewBlock(rec){
 function starString(n){
   n = Math.max(0, Math.min(5, Math.round(n||0)));
   return "★".repeat(n) + "☆".repeat(5-n);
+}
+// a trainee's record saved: put it in the loaded ledger (when there is one) and redraw the rows
+function putAdminRec(id, rec){
+  if(!state.adminData) return;
+  const idx = state.adminData.findIndex(r=>r.id===id);
+  if(idx!==-1) state.adminData[idx] = rec;
+  refreshAdminRows();
 }
 function refreshAdminRows(){
   const wrap = document.getElementById("adminRowsWrap");
