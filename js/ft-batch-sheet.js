@@ -125,6 +125,7 @@ async function loadData(){
     ppl.forEach((p, i) => {
       const at = j => vals[i * per + j] || null, sc = {};
       S.forEach((s, j) => { sc[s.key] = at(own.length + j); });
+      if(window.ftW1Override) sc["trackerreview:"] = ftW1Override.comp(sc["trackerreview:"], p.batch);   // W1-OVERRIDE
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
@@ -466,16 +467,18 @@ function dayDeliverables(p, d){
   const out = [], acts = (((R.src["labreview:"] || {}).acts) || {}), list = dayStatus(p, d), L = lastDayOf();
   const later = k => L[k] != null && L[k] !== d.day ? L[k] : null;
   list.forEach(x => {
+    // (W1-OVERRIDE: a Week 1 activity with no score reads Done, with the note)
+    const push = (...os) => out.push(...os.map(o => x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o));
     const it = x.it, lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
-    if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ out.push(trainerCtx(acts[it.id], it.t)); return; }
-    if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ out.push(c); return; } }
-    if(it.assess){ const c = assessCtx(R, it); if(c){ out.push(c); return; } }
-    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ out.push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
+    if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
+    if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ push(c); return; } }
+    if(it.assess){ const c = assessCtx(R, it); if(c){ push(c); return; } }
+    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
-      const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ out.push(...cs); return; }
+      const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
       if(ls.length && !here_.length) return; }
-    out.push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
+    push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
   });
   // 📒 the day's Monitoring Sheet update, graded on Submit (js/ft-buffer.js ACTS[…].submit, trackerreview:<id>.items)
   const ACTS = (window.FTBuffer && FTBuffer.ACTS) || {}, items = ((R.src["trackerreview:"] || {}).items) || {};
@@ -1139,7 +1142,8 @@ const DAILY_T = /^(Typing Test \(morning|Spelling Test \(once a day\)|Free Commu
 const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 // (not on the scorecards: the classroom lessons and discussions, the buffer times and Mock Call Preparation — nothing is
 // scored there — and the daily tests, which have their own compliance)
-const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation/i.test(it.t || "");
+// (nor the Confidentiality & Call Response Exercise: off the scorecards, it stays in Day 3's deck)
+const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response/i.test(it.t || "");
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
@@ -1219,7 +1223,8 @@ function scoreOf(R, d, it, p){
 function dayStatus(p, d){
   const R = B.data.rec[p.id] || {}, man = ((R.daycheck || {}).items) || {};
   return dayItems(d).map(it => { const a = autoDone(R, d, it, p), m = man[ckKey(d, it)], sc = scoreOf(R, d, it, p);
-    return {it, key: ckKey(d, it), auto: a, score: sc, manual: !!(m && m.done), mAt: m && m.at, done: !!(m && m.done) || !!(a && a.done)}; });
+    const w1 = !!(window.ftW1Override && ftW1Override.dayOn(p.batch, d.day)) && !(m && m.done) && !(a && a.done);   // W1-OVERRIDE
+    return {it, key: ckKey(d, it), auto: w1 ? {done: true, how: ftW1Override.NOTE} : a, score: sc, manual: !!(m && m.done), mAt: m && m.at, done: w1 || !!(m && m.done) || !!(a && a.done), w1}; });
 }
 // a set of activities as a score: the average of the scored ones, with each one's score for the bar above the sheet
 const scoreLine = xs => { const sc = xs.filter(y => y.score); return {avg: sc.length ? Math.round(avgOf(sc.map(y => y.score.pct))) : null, n: sc.length,
