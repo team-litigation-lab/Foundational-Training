@@ -261,9 +261,7 @@ if(typeof window.addEventListener === "function") window.addEventListener("ft-ro
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const vals = []; const keys = people.map(r => "calrules:" + r.id).concat(["settings:calrules"]);
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     const st = vals.pop(); if(st && st.lunch !== undefined) X.lunch = st.lunch;

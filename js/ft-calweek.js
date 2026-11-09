@@ -183,9 +183,7 @@ if(typeof window.addEventListener === "function") window.addEventListener("ft-ro
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const got = {};
     for(let i = 0; i < people.length; i += 300){ const j = await call("list", {ids: people.slice(i, i + 300).map(r => r.id)}); AD.next = j.next; (j.rows || []).forEach(r => { got[r.id] = r; }); }
     AD.rows = people.map(r => Object.assign({name: r.name || r.id, batch: r.batch || ""}, got[r.id] || {id: r.id})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));

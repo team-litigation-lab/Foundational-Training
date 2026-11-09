@@ -304,9 +304,7 @@ const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: "", paired:
 async function loadAdmin(){
   AD.loading = true;
   try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
+    const people = await ftActiveRoster();
     const keys = people.map(r => "intakeassign:" + r.id), vals = [], subs = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     // (each trainee's submitted Intake Worksheet link: actsub:<id>.items.intakews)
