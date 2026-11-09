@@ -1719,14 +1719,6 @@ button.module-more span{font-size:14px;margin-left:2px;}
 /* Headline marker highlight */
 .dash-hero h1 span.hl{background:linear-gradient(transparent 0%, #F0C08A 0%);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 6px;border-radius:3px;}
 
-/* Presenter character on every training slide — one fixed spot, lower right,
-   flipped so she points left toward the lesson. Content gets right padding so
-   she never covers text or the Next button. */
-.slide-presenter{position:fixed;right:max(18px, calc((100vw - 1400px) / 2 + 18px));bottom:0;width:clamp(170px,16vw,250px);height:auto;transform:scaleX(-1);
-  z-index:5;pointer-events:none;user-select:none;filter:drop-shadow(0 10px 18px rgba(38,43,69,.18));}
-main.has-presenter{padding-right:calc(clamp(170px,16vw,250px) + 16px);}
-@media(max-width:1000px){.slide-presenter{display:none;} main.has-presenter{padding-right:20px;}}
-
 /* =================== MOBILE (phones) =================== */
 .mobile-menu-btn{display:none;}
 @media(max-width:760px){
@@ -1747,7 +1739,6 @@ main.has-presenter{padding-right:calc(clamp(170px,16vw,250px) + 16px);}
   .topbar.nav-open .nav button{text-align:left;padding:12px 12px;font-size:15px;}
   /* page spacing */
   main{padding:18px 12px 56px;}
-  main.has-presenter{padding-right:12px;}
   main{overflow-x:clip;}
   input,select,textarea{font-size:16px !important;} /* stops iOS zooming into fields */
   .btn{min-height:40px;}
@@ -8084,8 +8075,7 @@ function render(){
   else if(state.view==="admin") body=renderAdmin();
   else if(state.view==="facilitatorguide") body=renderFacilitatorGuide();
   else if(state.view==="orientation") body = state.isAdmin ? renderOrientation() : renderDashboard();
-  const presenterView = false;   // the presenter now lives inside the lesson stage
-  app.innerHTML = renderTopbar() + `<main class="${state.view==="dashboard"?"main-dash":""}${presenterView?" has-presenter":""}"><div id="navBackSlot"></div>${body}</main>` + (presenterView ? `<img class="slide-presenter" src="${PRESENTER_IMG}" alt="" aria-hidden="true">` : "")
+  app.innerHTML = renderTopbar() + `<main class="${state.view==="dashboard"?"main-dash":""}"><div id="navBackSlot"></div>${body}</main>`
     + ((state.traineeId && !state.isAdmin && !["login","pendingApproval","registrationDenied","dashboard","day"].includes(state.view)) ? `<button type="button" class="tfb-fab" onclick="openTraineeFeedback(${state.view==="day"?state.dayId:"null"})" title="Share feedback about the platform, lessons or facilitator" aria-label="Share feedback">💬<span class="fab-label"> Feedback</span></button>` : "")
     + renderFooter();
   afterRender();
