@@ -841,7 +841,7 @@ const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writi
   '<div class="ftdd-cards2">' +
   '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ For each of the 3 cases</p><ol><li><b>Send the LOR</b>, the right file attached, named by the convention</li><li><b>Request the Dec Pages</b> and the policy limits</li><li><b>Request the claim information</b>: claim number, adjuster, coverage, status</li></ol></div>' +
   '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
-  "</div>\n<p>All 12 emails are graded: each out of 5 for the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone. 📝 Submit for Grading when you’re done; your score is on 🏅 My Performance.</p>\n" +
+  "</div>\n<p><b>This is for practice only: it isn’t counted on your scorecards.</b> 📝 Submit for Grading when you’re done to get feedback on each email: the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone.</p>\n" +
   '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Simulator.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Simulator →</button></div></div>\n';
 // Day 15: the rules for a scheduled demonstration, in three cards (the trainers' wording)
 const DEMO_GUIDELINES = '<p><b>Guidelines for Scheduled Trainee Demonstrations</b></p>\n' +

@@ -9,7 +9,7 @@
    Each email, as sent (To, Cc, Subject, the attachments, the body), is an answer of the on-platform assessment
    "claims-email": it saves in assess:<id> through js/ft-assess.js (one copy of that record on the page), and
    📝 Submit for Grading has worker.js grade the twelve emails against assess-keys.js (out of 5 each, by the AI; else
-   the trainer). The score is on 🏅 My Performance (js/ft-drive.js ftDriveItems). The drafts save as d_<item>.
+   the trainer). Practice only: graded for the feedback, never counted on a scorecard (window.ftPracticeDocs, js/ft-drive.js). The drafts save as d_<item>.
    ============================================================ */
 (function(){
 "use strict";
@@ -106,10 +106,10 @@ const graded = () => window.FTAssess ? FTAssess.graded(DOC) : null;
 function page(){
   const c = caseOf(), n = ITEMS.filter(sent).length, g = graded();
   return `<section class="ce-hero"><p class="ce-eyebrow">Day 11 · PM · Graded activity</p><h1>✉️ Insurance Email Simulator</h1>
-      <p>Three cases. For each, write the emails a claims specialist sends to open the claim: the <b>LOR</b>, the <b>Dec Pages / policy limits request</b> and the <b>claim information request</b>. Then the adjuster answers, and you reply to get the <b>claim number</b>. Use the case file, attach the right file, and write as you would to a real carrier. All 12 emails are graded.</p>
+      <p>Three cases. For each, write the emails a claims specialist sends to open the claim: the <b>LOR</b>, the <b>Dec Pages / policy limits request</b> and the <b>claim information request</b>. Then the adjuster answers, and you reply to get the <b>claim number</b>. Use the case file, attach the right file, and write as you would to a real carrier. All 12 emails get feedback. <b>This is practice only: it isn’t counted on your scorecards.</b></p>
       <div class="ce-tabs">${CASES.map((x, i) => `<button type="button" class="ce-tab${i === C.n ? " on" : ""}" onclick="FTClaimsMail.go(${i})">Case ${i + 1}<small>${e(x.title)} · ${TASKS.filter(t => sent(x.id + "_" + t.k)).length}/4 sent</small></button>`).join("")}</div></section>
     <div class="ce-grid">${caseFile(c)}<div class="ce-main"><div class="ce-tasks">${TASKS.map(t => taskRow(c, t)).join("")}</div>${compose(c)}</div></div>
-    <div class="ce-foot card">${g ? `<p class="ce-done">✓ Graded ${e(g.when || "")}: <b>${g.score}/${g.max}</b> (${g.pct}%)${g.pending ? " · your trainer grades the rest" : ""}. Your score is on 🏅 My Performance. You can edit your emails and submit again.</p>` : `<p class="ce-muted">${n}/12 emails sent.</p>`}
+    <div class="ce-foot card">${g ? `<p class="ce-done">✓ Graded ${e(g.when || "")}: <b>${g.score}/${g.max}</b> (${g.pct}%)${g.pending ? " · your trainer grades the rest" : ""} (practice: not on your scorecards). You can edit your emails and submit again.</p>` : `<p class="ce-muted">${n}/12 emails sent.</p>`}
       <button type="button" class="btn btn-primary" onclick="FTClaimsMail.submit()"${C.busy ? " disabled" : ""}>${C.busy ? "Grading…" : "📝 Submit for Grading"}</button></div>`;
 }
 
@@ -136,7 +136,7 @@ window.FTClaimsMail = {
     const left = ITEMS.filter(id => !sent(id)).length;
     if(left && !confirm(`${left} of 12 emails aren’t sent yet: they score 0. Submit for grading anyway?`)) return;
     C.busy = true; render();
-    try{ await FTAssess.grade(DOC); toast("✓ Graded. Your score is on 🏅 My Performance."); }
+    try{ await FTAssess.grade(DOC); toast("✓ Graded: see the feedback on each email. Practice only, not on your scorecards."); }
     catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
     C.busy = false; render();
   },
@@ -166,7 +166,7 @@ window.render = function(){
   const back = C.ret ? `<a class="back-link" onclick="FTClaimsMail.toDeck()">&larr; Back to the deck${C.ret.h ? ": " + e(C.ret.h) : ""}</a>`
     : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-ce">${back}${adminOn() ? `<p class="ce-copy card">👁 Your test copy: the trainees’ graded emails are on their 🏅 My Performance.</p>` : ""}${wait ? `<p class="ce-muted card ce-copy">Loading your emails…</p>` : page()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-ce">${back}${adminOn() ? `<p class="ce-copy card">👁 Your test copy: practice only: the trainees’ emails are graded for feedback but not counted on their scorecards.</p>` : ""}${wait ? `<p class="ce-muted card ce-copy">Loading your emails…</p>` : page()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
 

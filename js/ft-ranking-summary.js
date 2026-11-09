@@ -67,7 +67,7 @@ async function evidence(p, range){
   const rvW = window.ftDay1 ? ftDay1.comp(rvW0, p.batch) : rvW0;   // 📅 Day 1 isn't counted
   const comp = Object.entries((rvW && rvW.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
-  const assess = Object.values((rv && rv.assess) || {}).filter(x => x && x.score != null);
+  const assess = Object.entries((rv && rv.assess) || {}).filter(([doc, x]) => x && x.score != null && !(window.ftPracticeDocs || ["claims-email"]).includes(doc)).map(([, x]) => x);   // (practice only: off the scorecards)
   const days = Object.entries((fb && fb.days) || {}).filter(([l, x]) => x && x.status === "sent").map(([l, x]) => ({l, rating: x.rating || "", summary: clip(x.summary, 400), at: x.sentAt}));
   const sent = Object.values((tfb && tfb.items) || {}).filter(x => x && (has(x.comment) || x.score != null)).map(x => ({title: x.title, verdict: x.verdict || "", score: x.score, comment: clip(x.comment, 400), at: x.at}));
   const runs = Object.values((ses && ses.runs) || {}).filter(r => r && r.submittedAt && inW(r.submittedAt)).map(r => (r.auto || {}).pct).filter(v => typeof v === "number");
