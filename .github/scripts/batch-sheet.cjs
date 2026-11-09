@@ -128,7 +128,7 @@ const failures = []; const fail = m => failures.push(m);
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
   // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
-  if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗' || ca[3] !== '✓' || ca[4] !== '⏳' || ca.slice(5, 8).some(v => v !== '✓')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
+  if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗' || ca[3] !== '✓' || ca[4] !== '✗' || ca.slice(5, 8).some(v => v !== '✓')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
   if (await page.$('#bs-compliance table select')) fail('the compliance table still has a dropdown');   // (🔗 Link a trainee's files by hand, under it, picks a trainee)
   // (why a link is wrong: on a hover, the cell's title, and on a click, the formula bar)
   const why = await page.evaluate(() => { const r = [...document.querySelectorAll('#bs-compliance tbody tr')].find(tr => /Ada/.test(tr.innerText)); const td = r && r.querySelector('td[data-c="2"]'); return td ? td.title : ''; });
