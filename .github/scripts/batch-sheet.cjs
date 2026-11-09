@@ -214,7 +214,9 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$('#bs-ranking')) fail('the 📊 Weekly Ranking is still on the 📋 Batch Sheet');
   { await page.evaluate(() => { state.adminTab = 'weeklyreports'; render(); }); await page.waitForTimeout(1500);
     const wr = await page.evaluate(() => ({ rk: !!document.querySelector('#bs-ranking .rk-bar'), comp: !!document.getElementById('bs-compliance'), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('button, a')].some(b => /📊 Weekly Reports/.test(b.textContent)) }));
-    if (!wr.rk || wr.comp || !/^Weekly Reports · B\d{6}/.test(wr.title) || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
+    const wr2 = await page.evaluate(() => ({ strip: !!document.querySelector('.bs-weekly .gs-top'), acts: (document.querySelector('.rks-bar-acts') || {}).innerText || '', pick: !!document.querySelector('#bs-ranking .rk-pick select') }));
+    if (wr2.strip || !/Download/.test(wr2.acts) || !/Refresh/.test(wr2.acts) || !/Update all scores/.test(wr2.acts) || !wr2.pick)   // (⬇ Excel joins them once the week's summary is written) fail(`📊 Weekly Reports still has the header strip, or the actions aren't beside ⬇ Excel: ${JSON.stringify(wr2)}`);
+    if (!wr.rk || wr.comp || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
     await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800); }
 
   // 👥 everyone registered, from the moment they register
@@ -390,12 +392,14 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(1200);
   await page.evaluate(() => FTBatchSheet.batch('B03101')); await page.waitForTimeout(1500);
   if (!(await page.$('.bs-warn'))) fail('a batch name that isn\'t a Batch ID gets no warning');
-  await page.evaluate(() => FTBatchSheet.fixOpen()); await page.waitForTimeout(200);
+  // (✏️ is on 🛡 Admin Master Control → 📁 Batches now, for the same batch)
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); FTBatchSheet.fixOpen(); }); await page.waitForTimeout(400);
   if ((await page.$$('.bs-fix-list input:checked')).length !== 1) fail('✏️ Fix the batch name doesn\'t tick the batch\'s trainees');
   await page.fill('#bsFixTo', 'not a batch'); await page.evaluate(() => FTBatchSheet.fixSave()); await page.waitForTimeout(300);
   if (!(await page.$('.bs-fix-err'))) fail('a wrong Batch ID is not refused');
   if ((await get('trainee:' + dee)).batch !== 'B03101') fail('a refused move still moved the trainee');
-  await page.fill('#bsFixTo', BATCH.toLowerCase()); await page.evaluate(() => FTBatchSheet.fixSave());
+  await page.fill('#bsFixTo', BATCH.toLowerCase()); await page.evaluate(() => FTBatchSheet.fixSave()); await page.waitForTimeout(1500);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); });
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
   const moved = await get('trainee:' + dee);
   if (moved.batch !== BATCH || moved.batchFrom !== 'B03101' || moved.batchMovedBy !== 'trainer') fail(`the move: ${JSON.stringify({ batch: moved.batch, from: moved.batchFrom, by: moved.batchMovedBy })}`);
@@ -413,9 +417,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
 
   // ✎ Fix a date: Ben's registration was recorded wrong; the trainer sets it, and the sheet marks it
-  await page.evaluate(() => FTBatchSheet.dateOpen()); await page.waitForTimeout(200);
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); FTBatchSheet.dateOpen(); }); await page.waitForTimeout(400);
   await page.selectOption('#bsDateWho', ids.Ben); await page.waitForTimeout(200);
-  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave());
+  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave()); await page.waitForTimeout(1500);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); });
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
   const benRec = await get('trainee:' + ids.Ben);
   if (!benRec.registeredAt || new Date(benRec.registeredAt).getDate() !== 30 || !benRec.registeredAtFixedAt || !benRec.registeredAtWas) fail(`✎ Fix a date: ${JSON.stringify({ at: benRec.registeredAt, fixed: benRec.registeredAtFixedAt, was: benRec.registeredAtWas })}`);

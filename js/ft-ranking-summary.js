@@ -194,6 +194,9 @@ const fmtR = r => { if(!r) return ""; const f = d => new Date(d + "T12:00:00Z").
 // the same report, read-only, with no one else in it
 function reportHtml(forDoc, V){
   const c = V ? V.c : (ctx() || {}), d = V ? V.d : S.data, rows = V ? V.rows : ranked(), ed = S.edit && !forDoc && !V;
+  // (📊 the trainer's page is one table: each trainee's scores, a score's comment on a hover, the summary and the trainer's feedback;
+  //  ✎ Edit opens every trainee's competencies to change them, and the trainee's own report keeps its card)
+  const one = !forDoc && !V && !ed;
   const fk = r => V ? `me:${c.batch}|${c.week}` : r.id;   // which card a fold is kept for
   const chip = v => `<span class="rks-chip rks-${tone(v)}">${v == null ? "—" : v.toFixed(1)}</span>`;
   const bar = v => `<span class="rks-bar"><i class="rks-${tone(v)}" style="width:${v == null ? 0 : Math.round(v / 5 * 100)}%"></i></span>`;
@@ -201,9 +204,9 @@ function reportHtml(forDoc, V){
     <div class="rks-head"><div><p class="rks-k">Legal Support Help · Foundational Training</p><h2>${V ? "My Weekly Progress Report" : "Weekly Progress Report"}</h2>
       <p class="rks-sub">Batch <b>${e(c.batch)}</b> · Week <b>${e(c.week)}</b>${d && d.range ? ` · ${e(fmtR(d.range))}` : ""}</p></div>
       <div class="rks-legend">${["ex", "gd", "ok", "lo"].map(t => `<span><i class="rks-${t}"></i>${LBL[t]}</span>`).join("")}<small>Scores out of 5</small></div></div>
-    <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td class="rks-rank">${r.rank || "—"}</td><td class="rks-name"><b>${e(r.name)}</b></td>${COMP.map(([k]) => `<td>${chip(r.scores[k])}</td>`).join("")}<td>${chip(r.overall)} <small class="rks-lbl">${LBL[tone(r.overall)]}</small></td></tr>`).join("")}</tbody></table>
-    ${rows.map(r => {
+    <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th>${one ? `<th class="rks-sumh">Summary & trainer’s feedback</th>` : ""}</tr></thead>
+      <tbody>${rows.map(r => `<tr><td class="rks-rank">${r.rank || "—"}</td><td class="rks-name"><b>${e(r.name)}</b></td>${COMP.map(([k]) => `<td${one && r.comments[k] ? ` title="${e(r.comments[k])}"` : ""}>${chip(r.scores[k])}</td>`).join("")}<td>${chip(r.overall)} <small class="rks-lbl">${LBL[tone(r.overall)]}</small></td>${one ? `<td class="rks-sum">${r.overallComment ? `<p>${e(r.overallComment)}</p>` : ""}${r.trainer ? `<p class="rks-sum-fb"><b>🧑‍🏫</b> ${e(r.trainer)}</p>` : ""}</td>` : ""}</tr>`).join("")}</tbody></table>
+    ${one ? "" : rows.map(r => {
       // ▸/▾ on the page each trainee's card folds to its heading (rank, name, the eight scores and the overall); ✎ Edit opens them
       // all, and the Word and Print copies are always open. Which are open is kept while the page is (S.open).
       const head = `<span class="rks-rk">#${r.rank || "—"}${V && r.rank && r.of ? `<small> of ${r.of}</small>` : ""}</span><b>${e(r.name)}</b>${forDoc ? "" : `<span class="rks-mini">${COMP.map(([k, ic, n]) => `<span title="${e(n)}">${ic}${chip(r.scores[k])}</span>`).join("")}</span>`}<span class="rks-ov">${chip(r.overall)} ${LBL[tone(r.overall)]}</span>`;
@@ -222,6 +225,8 @@ const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;} .rks-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;} .rks-legend small{color:#C9D1E8;}
 .rks-tbl{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:18px;font-weight:800;} .rks-tbl th{background:#F1F3F9;color:#1E2340;font-weight:800;padding:8px 6px;text-align:center;border-bottom:2px solid #DB8437;font-size:16px;}
 .rks-tbl th small{font-size:14px;font-weight:900;color:#1E2340;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
+.rks-tbl .rks-sumh{text-align:left;min-width:320px;} .rks-tbl .rks-sum{text-align:left;font-size:14px;font-weight:600;line-height:1.45;color:#2B3040;max-width:520px;} .rks-sum p{margin:0 0 4px;} .rks-sum-fb{color:#14532D;}
+.rks-tbl td[title]{cursor:help;}
 .rks-chip{display:inline-block;min-width:52px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:19px;} .rks-lbl{color:#5F6368;}
 /* (the Weekly Ranking's colours: 🔵 high, 🟢 good, 🟡 critical, 🔴 fail) */
 .rks-ex{background:#CFE0FF;color:#0A3A9E;} .rks-gd{background:#CDEFD8;color:#0F5A2A;} .rks-ok{background:#FFE9A3;color:#6B4A00;} .rks-lo{background:#FBCFCB;color:#A0150C;} .rks-na{background:#ECEEF2;color:#5F6368;}
@@ -253,7 +258,7 @@ window.FTRankSummary = {
       (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     const d = S.data;
     return `<div class="rks-wrap"><div class="rks-bar-acts"><select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
-        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(true)">▾ Expand all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.foldAll(false)">▸ Collapse all</button><button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}</div>
+        ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}</div>
       ${S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line
