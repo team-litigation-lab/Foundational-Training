@@ -299,26 +299,16 @@ function paint(){
   if(any) refit();
 }
 
-/* ---------- 🧑‍🏫 Admin → 📦 Intake Packets ---------- */
+/* ---------- 🧑‍🏫 Admin → 📦 Intake Packets: assigning the packets, and nothing else ----------
+   The page is for assigning: each trainee's packet (its demo case pairs with it, pairedCall) and each packet's client and
+   Drive link. What the trainee then does with it (their packet and subfolder links, 🔎 the accuracy & completeness check, the
+   demo case and the Intake Worksheet) is on their page of 📋 Batch Sheet, with their 🏅 Score Card (FTIntake.cardHtml). */
 const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: "", paired: {}};
 async function loadAdmin(){
   AD.loading = true;
   try{
     const people = await ftActiveRoster();
-    const keys = people.map(r => "intakeassign:" + r.id), vals = [], subs = [];
-    vals.push(...await sharedGetMany(keys));
-    // (each trainee's submitted Intake Worksheet link: actsub:<id>.items.intakews)
-    // (and each trainee's own packet link: drive:<id>.intakePacket)
-    const dvs = []; const dkeys = people.map(r => "drive:" + r.id);
-    dvs.push(...await sharedGetMany(dkeys));
-    AD.pk = {}; AD.pf = {}; people.forEach((r, i) => { const u = dvs[i] && dvs[i].intakePacket, f = dvs[i] && dvs[i].intakeFolder; if(u && /^https:\/\//.test(String(u))) AD.pk[r.id] = String(u); if(f && /^https:\/\//.test(String(f))) AD.pf[r.id] = String(f); });
-    // (🔎 each trainee's packet check: intakecheck:<id>, worker.js checkIntakePacket)
-    const cks = [], ckeys = people.map(r => "intakecheck:" + r.id);
-    cks.push(...await sharedGetMany(ckeys));
-    AD.ck = {}; people.forEach((r, i) => { const c = cks[i]; if(c && Array.isArray(c.rules)) AD.ck[r.id] = c; });
-    const skeys = people.map(r => "actsub:" + r.id);
-    subs.push(...await sharedGetMany(skeys));
-    AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
+    const vals = await sharedGetMany(people.map(r => "intakeassign:" + r.id));
     AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     AD.assign = {}; AD.recs = {}; people.forEach((r, i) => { const v = vals[i] && typeof vals[i] === "object" ? vals[i] : null; if(v) AD.recs[r.id] = v; if(v && v.packet) AD.assign[r.id] = Number(v.packet); });
     if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
@@ -326,34 +316,76 @@ async function loadAdmin(){
   }catch(err){ AD.rows = AD.rows || []; AD.at = Date.now(); }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
 }
+const onIntake = () => state.view === "admin" && state.adminTab === "intake";
 function adminHtml(){
-  if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
+  // (the roster and the packets' settings load apart, each drawing the page once when it comes: loading the roster again
+  // while the settings were still on their way drew the page again at once, over and over, and the page froze)
+  if(!AD.rows || !K.set){
+    if(!AD.rows && !AD.loading) loadAdmin();
+    if(!K.set && !AD.kWait){ AD.kWait = true; loadK().then(() => { AD.kWait = false; if(onIntake()) render(); }); }
+    return `<div class="card" style="padding:24px;">Loading…</div>`;
+  }
   const pk = packets(), calls = mockCalls();
-  if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
+  if(!calls && !PK.failed && !AD.pkWait){ AD.pkWait = true; packs().then(() => { if(onIntake()) render(); }, () => { if(onIntake()) render(); }); }
   // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
   // (an assignment made before the client was kept with it gets its case's client, once)
   if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}, c = v.call && !v.client && !AD.paired[r.id] ? callById(v.call) : null; if(c && c.name){ AD.paired[r.id] = 1; writeAssign(r.id, {client: String(c.name)}).catch(() => {}); } });
-  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => {}); } });
-  const caseCell = id => { const c = callById((AD.recs[id] || {}).call); return c ? `<span class="ftis-case-auto" title="The Day 8 demo case, paired with the packet: play it from Ring Channel’s Scenario Picker">${e(c.title)} · ${e(c.name)}</span>`
-    : `<span class="fss-muted">${!calls ? (PK.failed ? "Cases didn’t load" : "Loading…") : AD.assign[id] ? "Pairing…" : "Follows the packet"}</span>`; };
+  if(calls) AD.rows.forEach(r => { const v = AD.recs[r.id] || {}; if(v.packet && !v.call && !AD.paired[r.id]){ AD.paired[r.id] = 1; const c = pairedCall(v.packet); if(c) writeAssign(r.id, {call: c.id, callAt: new Date().toISOString(), client: String(c.name || "")}).catch(() => {}); } });
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
-  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>. Each trainee edits their own copy (renamed, every document extracted and named), uploads it with its documents into a subfolder named after the client and links both: 🔎 checks them for accuracy and completeness on the Saving Intake Packet rubric, the packet’s own pages read by the AI.</p></div>
+  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>. Each packet brings its 🎬 demo case for the Day 8 Intake Demo. Their packet and subfolder links, 🔎 the accuracy &amp; completeness check, the demo case and the Intake Worksheet are on each trainee’s page of <a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a>, with their 🏅 Score Card.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <h4>Assign the packets (each packet brings its demo case)</h4>
-    <p class="ftis-banner">🎬 <b>Demo case</b>: the call for the trainee’s Day 8 Intake Demo (<i>Saving the Intake Packet and Extracted Intake Documents to SA</i>), one of the CMS’s intake calls, which Ring Channel plays too. It pairs with the packet automatically: the call whose caller is the packet’s client, otherwise packet N’s is the Nth intake call. The trainee sees their case on the demo slide and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.</p>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Their packet link</th><th>🔎 Accuracy &amp; completeness</th><th>Demo case</th><th>Worksheet</th></tr></thead><tbody>
+    <h4>Assign the packets</h4>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl ftis-assign"><thead><tr><th>Trainee</th><th>Packet</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
-        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
-        <td>${(AD.pk || {})[r.id] ? `<a href="${e(AD.pk[r.id])}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>${(AD.pf || {})[r.id] ? ` · <a href="${e(AD.pf[r.id])}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : ""}` : `<span class="fss-muted">Not linked</span>`}</td>
-        <td class="ftis-ckcell">${(AD.ck || {})[r.id] ? `<details><summary><span class="ftis-ck-pct ftis-${AD.ck[r.id].pct >= 100 ? "ok" : AD.ck[r.id].pct >= 70 ? "mid" : "bad"}">${AD.ck[r.id].pct}%</span> details</summary>${checkHtml(AD.ck[r.id], true)}</details>` : `<span class="fss-muted">Not checked</span>`}
-          ${(AD.pk || {})[r.id] ? `<button type="button" class="btn btn-ghost btn-sm" ${(AD.checking || {})[r.id] ? "disabled" : ""} onclick="FTIntakeAdmin.check('${e(r.id)}')">${(AD.checking || {})[r.id] ? "Checking…" : "🔎 Check"}</button>` : ""}</td>
-        <td>${caseCell(r.id)}</td>
-        <td>${(AD.ws || {})[r.id] && wsLink(AD.ws[r.id].answer) ? `<a href="${e(AD.ws[r.id].answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a><span class="fss-muted"> ${e(new Date(AD.ws[r.id].submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}</span>` : `<span class="fss-muted">Not submitted</span>`}</td></tr>`).join("")}
+        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
     <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
     <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
     <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets</button></div></div>`;
+}
+/* 📦 A trainee's Intake Packet on their page of 📋 Batch Sheet (js/ft-batch-sheet.js perTraineeHtml), with their 🏅 Score
+   Card: the packet assigned, their packet and subfolder links, 🔎 the accuracy & completeness check (with 🔎 Check), the
+   🎬 demo case and the 📝 Intake Worksheet. Rows of the trainee's table (Measure · Score / value · How it was worked out).
+   Read for that trainee alone, kept a minute; the page is drawn once more when it comes. */
+const TC = {};
+// (drawn again only where the card is: 📋 Batch Sheet; a load finishing on another tab doesn't redraw that tab)
+const onSheet = () => state.view === "admin" && state.adminTab === "batchsheet";
+function loadCard(id){
+  const x = TC[id] = TC[id] || {};
+  if(x.loading || (x.at && Date.now() - x.at < 60000)) return;
+  x.loading = true;
+  Promise.all(["intakeassign:", "drive:", "intakecheck:", "actsub:"].map(k => sharedGet(k + id).catch(() => null)))
+    .then(([a, d, ck, w]) => { x.a = a && typeof a === "object" ? a : null; x.d = d && typeof d === "object" ? d : null;
+      x.ck = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; x.ws = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; })
+    .catch(() => {})
+    .then(() => { x.loading = false; x.at = Date.now(); if(onSheet()) render(); });
+}
+function cardHtml(id){
+  if(!id || !(state.isAdmin && !state.adminPreview)) return "";
+  loadCard(id);
+  if(!K.set && !TC.kWait){ TC.kWait = true; loadK().then(() => { TC.kWait = false; if(onSheet()) render(); }); }
+  // (the CMS's cases: drawn again whether they come or not — not coming says so — and asked for again once that is reset)
+  if(!mockCalls() && !PK.failed && !TC.pkWait){ TC.pkWait = true; const done = () => { TC.pkWait = false; if(onSheet()) render(); }; packs().then(done, done); }
+  const x = TC[id] || {}, head = `<tr class="bs-pt-sec"><th colspan="3">📦 Intake Packet (Day 8)</th></tr>`;
+  if(!x.at) return head + `<tr><td colspan="3" class="bs-pt-f">Loading…</td></tr>`;
+  // (a packet saved without its demo case — the cases didn't load then — is paired here, once, as 📦 Intake Packets does)
+  const v = x.a || {};
+  if(mockCalls() && v.packet && !v.call && !AD.paired[id]){ AD.paired[id] = 1; const pc = pairedCall(v.packet);
+    if(pc) writeAssign(id, {call: pc.id, callAt: new Date().toISOString(), client: String(pc.name || "")}).then(() => { if(onSheet()) render(); }, () => {}); }
+  const row = (m, v, f, cls) => `<tr><td class="bs-pt-m">${m}</td><td class="bs-pt-v ${cls || ""}">${v}</td><td class="bs-pt-f">${f}</td></tr>`;
+  const a = x.a || {}, n = Number(a.packet) || 0, pk = packets()[n] || {}, d = x.d || {};
+  const link = u => /^https:\/\//.test(String(u || "")) ? String(u) : "";
+  const pkU = link(d.intakePacket), fU = link(d.intakeFolder), ck = x.ck, c = callById(a.call), ws = x.ws;
+  const pctCls = p => p >= 100 ? "gs-hi" : p >= 70 ? "gs-mid" : "gs-lo";
+  const checking = (AD.checking || {})[id];
+  return head
+    + row("📦 Packet", n ? `Packet ${n}` : "—", n ? `${pk.client ? e(pk.client) + " · " : ""}assigned in 📦 Intake Packets` : `Not assigned yet: <a href="#" onclick="state.adminTab = 'intake'; render(); return false;">📦 Intake Packets</a>`)
+    + row("🔗 Their packet", pkU ? `<a href="${e(pkU)}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : "—", pkU ? (fU ? `<a href="${e(fU)}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : "No client subfolder linked") : "Not linked yet: the trainee links it on Day 8’s slide")
+    + row("🔎 Accuracy &amp; completeness", ck ? `${ck.pct}%` : "—",
+      `${ck ? `<details><summary>The Saving Intake Packet rubric, rule by rule</summary>${checkHtml(ck, true)}</details>` : "Not checked"}${pkU ? ` <button type="button" class="btn btn-ghost btn-sm" ${checking ? "disabled" : ""} onclick="FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : ""}`, ck ? pctCls(ck.pct) : "")
+    + row("🎬 Demo case", c ? e(c.title) : "—", c ? `${e(c.name)} · the Day 8 Intake Demo’s call: play it from Ring Channel’s Scenario Picker` : !mockCalls() ? (PK.failed ? "The cases didn’t load from the CMS" : "Loading the cases…") : n ? "Pairing with the packet…" : "Follows the packet")
+    + row("📝 Intake Worksheet", ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—", ws && wsLink(ws.answer) ? `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}` : "Not submitted");
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the demo case never overwrite each other, whoever changed the other one and however quickly
@@ -364,6 +396,7 @@ function writeAssign(id, patch){
     const next = Object.assign({}, saved && typeof saved === "object" ? saved : (AD.recs[id] || {}), patch);
     if(await sharedSet("intakeassign:" + id, next) === false) throw new Error("save");
     AD.recs[id] = next; AD.assign[id] = Number(next.packet) || 0; if(!AD.assign[id]) delete AD.assign[id];
+    if(TC[id]) TC[id].a = next;
     return next;
   });
   chain[id] = run;
@@ -377,10 +410,11 @@ window.FTIntakeAdmin = {
     AD.checking = AD.checking || {}; if(AD.checking[id]) return;
     AD.checking[id] = true; render();
     let j = null, r = null;
-    try{ const n = Number((AD.recs[id] || {}).packet) || 0, pk = packets()[n] || {}, c = callById((AD.recs[id] || {}).call);
+    const rec = AD.recs[id] || (TC[id] || {}).a || {};
+    try{ const n = Number(rec.packet) || 0, pk = packets()[n] || {}, c = callById(rec.call);
       r = await authFetch("/api/intake/check", {id, client: pk.client || (c && c.name) || ""}); j = await r.json().catch(() => null); }catch(err){}
     delete AD.checking[id];
-    if(r && r.ok && j && j.check){ AD.ck = AD.ck || {}; AD.ck[id] = j.check; toast(`🔎 ${j.check.pct}%`); } else toast((j && j.error) || "The check didn’t finish. Try again in a moment.");
+    if(r && r.ok && j && j.check){ (TC[id] = TC[id] || {}).ck = j.check; toast(`🔎 ${j.check.pct}%`); } else toast((j && j.error) || "The check didn’t finish. Try again in a moment.");
     render();
   },
   async assign(id, v){
@@ -448,6 +482,8 @@ document.addEventListener("play", ev => { if(!ev.target.classList || !ev.target.
 
 window.FTIntake = {
   data,
+  cardHtml,   // 📦 a trainee's Intake Packet on their 📋 Batch Sheet page
+  cardReload(){ Object.keys(TC).forEach(k => { if(TC[k] && typeof TC[k] === "object") TC[k].at = 0; }); },   // (↻ Refresh)
   // the trainee's assigned mock call (its CMS call id), for the trainer's scoring sheet to keep with the score
   // (read fresh from the saved record; undefined when it can't be known: the cases didn't load, or the read failed)
   async callOf(id){

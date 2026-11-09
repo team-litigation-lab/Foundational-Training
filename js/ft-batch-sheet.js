@@ -570,9 +570,9 @@ function complianceTable(){
   // the six links side by side, each its own column (no dropdown to go through): ✓ Correct, ✗ Wrong (why: on a hover or a
   // click, in the formula bar), ⏳ Pending or — Not linked; how many of the six are correct first
   return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links side by side — ✓ Correct (the system opened it and it is ${meOn() ? "your" : "their"} own, right file or folder), ✗ Wrong (why: hover over it, or click it), ⏳ Pending (not checked yet) or — Not linked — and progress on the platform.`,
-    groups: [{label: "", span: 1}, {label: "Drive Links", span: 1 + LINKS.length}, {label: "Progress", span: 3}],
-    head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
-    rows: ppl.map(p => { const {L} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
+    groups: [{label: "", span: 1}, {label: "Drive Links", span: 2 + LINKS.length}, {label: "Progress", span: 3}],
+    head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Last checked", "Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
+    rows: ppl.map(p => { const {L, checked} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
       const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
       const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""], m = markOf(x);
@@ -582,6 +582,7 @@ function complianceTable(){
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["— Not linked"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")}]
         .concat(LINKS.map(([k]) => linkCol(k)), [
+        {v: checked ? when(checked) : "Not yet", f: checked ? `Links last checked ${checked.toLocaleString()} (${ago(checked)})` : "Not checked yet: the check runs at the end of every shift", cls: checked ? "" : "gs-lo"},
         {v: `${decks} / ${ls.length}`, f: `${decks} of the ${ls.length} lesson decks finished`, cls: "gs-num"},
         {v: `${kcs} / ${kl.length}`, f: `${kcs} of the ${kl.length} lessons' Knowledge Checks passed (${kl.map(d => "Lesson " + d.id).join(", ")})`, cls: "gs-num"},
         {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}]);
@@ -798,7 +799,7 @@ function sectionsHtml(T){
   // (📊 Weekly Reports: the Weekly Ranking alone; the Batch Sheet without it — a trainee's page keeps their own report)
   if(weeklyOn()) return rankingHtml();
   // (🔗 Drive Links: the Drive links alone)
-  if(linksOn()) return driveBanner() + shareBanner() + one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "") + (at("drive") >= 0 ? one(T[at("drive")], at("drive")) : "");
+  if(linksOn()) return driveBanner() + shareBanner() + one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "");
   // (the trainee's 📋 My Progress: everything as before, their own Drive links and report included)
   if(meOn()) return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
@@ -820,7 +821,7 @@ const viewBar = () => "";
 // 🔎 beside Batch: on 📋 Batch Sheet the trainee whose page is open; on 📊 Weekly Reports one trainee's evidence (FTRanking)
 function whoTopHtml(ppl){
   if(meOn() || !adminOn() || linksOn() || !ppl.length) return "";
-  if(weeklyOn()) return window.FTRanking && typeof FTRanking.evidenceFor === "function" ? `<label class="bs-who-top">🔎 <select aria-label="One trainee's evidence" onchange="FTRanking.evidenceFor(this.value)"><option value="">One trainee’s evidence…</option>${ppl.map(p => `<option value="${e(p.id)}">${e(p.name)}</option>`).join("")}</select></label>` : "";
+  if(weeklyOn()) return "";   // (📊 Weekly Reports: no trainee picker; ℹ How it's scored has one trainee's evidence)
   if(B.view === "tables") return "";
   const cur = ptCur(ppl);
   return `<label class="bs-who-top">🔎 <select aria-label="Trainee" onchange="FTBatchSheet.ptPick(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${cur && p.id === cur.id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>`;
@@ -829,8 +830,8 @@ function whoTopHtml(ppl){
 function ptCur(ppl){ return ppl.find(p => p.id === B.pt) || ppl[0] || null; }
 function pagerHtml(ppl){
   const cur = ptCur(ppl); if(!cur) return ""; const i = ppl.indexOf(cur);
-  return `<div class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
-    <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></div>`;
+  return `<span class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
+    <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></span>`;
 }
 // a trainee's row of one table (the same order as people(), else by name)
 function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && rs[i] && stripTags(rs[i][0] && rs[i][0].v) === p.name ? rs[i] : rs.find(r => stripTags(r[0] && r[0].v) === p.name) || null; }
@@ -852,7 +853,7 @@ function lessonDaysHtml(p){
     hist.forEach(h => { const k = at(h.date || h.at, "kcs"); if(k && typeof h.score === "number") k.push({l: lessonName(l.id), s: h.score, ok: !!h.passed || h.score >= 70}); });
     if(!hist.length && typeof x.score === "number"){ const k = at(x.date, "kcs"); if(k) k.push({l: lessonName(l.id), s: x.score, ok: x.score >= 70}); } });
   const keys = Object.keys(days).sort().reverse();
-  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"});
+  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
   const rows = keys.map(d => { const x = days[d];
     return `<tr><td class="bs-pt-m">${e(nice(d))}</td><td class="bs-pt-v">${x.decks.length ? `📚 ${x.decks.length} deck${x.decks.length === 1 ? "" : "s"}` : "—"}${x.kcs.length ? `<br>✍️ ${x.kcs.filter(k => k.ok).length} of ${x.kcs.length} passed` : ""}</td>
       <td class="bs-pt-f">${x.decks.length ? `<b>Finished:</b> ${e(x.decks.join(", "))}` : "No lesson deck finished"}${x.kcs.length ? `<br><b>Knowledge Checks:</b> ${x.kcs.map(k => `${e(k.l)} <b class="bs-sbox ${tone(k.s)}">${Math.round(k.s)}%</b> ${k.ok ? "✓ passed" : "✗ not passed (70% passes)"}`).join(" · ")}` : ""}</td></tr>`; }).join("");
@@ -882,13 +883,13 @@ const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / asse
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch, or ◀ Previous / Next ▶)
-  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 1 + LINKS.length);
+  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 2 + LINKS.length);
   // (👥 the trainee's own record — status, registered, last on the platform, lessons… — at the bottom of their table)
   // (🏅 Score Card after the day-by-day detail; then 🔎 every grade; 👥 the trainee's own record at the very bottom)
   const use = T.filter(x => !["drive", "trainees", "scorecard"].includes(x.id)).concat(T.filter(x => x.id === "scorecard"), T.filter(x => x.id === "trainees"));
   const cur = ptCur(ppl);
   const sc = T.find(x => x.id === "scores"), col = h => sc ? sc.head.indexOf(h) : -1;
-  return pagerHtml(ppl) + `<div class="bs-pts">${ppl.map((p, i) => { if(p !== cur) return "";
+  return `<div class="bs-pts">${ppl.map((p, i) => { if(p !== cur) return "";
     const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
     const head = [["Overall", val("Overall %")], ["Scorecard", val("Scorecard overall")], ["Daily compliance", val("Daily compliance")]].filter(([, v]) => v);
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
@@ -903,7 +904,9 @@ function perTraineeHtml(T){
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
+    const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
+    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
@@ -927,7 +930,7 @@ const rowOpen = id => { const v = ofold().rows[id]; return v == null ? true : !!
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
-  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC"}); };
+  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
   return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
@@ -1360,11 +1363,11 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : linksOn() ? "🔗" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
-        ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
+${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
-      ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
+</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
     ${dupHtml()}
@@ -1380,19 +1383,6 @@ function renderSheet(){
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
-  // 📦 Archive batch (the batch menu): the archive dialog for the batch on screen (js/ft-batch-admin.js confirmArchiveBatch: Google
-  // Drive backup, then the clear, or 🗑 Delete the batch), on the trainee list it reads; the sheet reads its trainees again after
-  async archive(){
-    if(!adminOn() || meOn() || typeof window.confirmArchiveBatch !== "function") return;
-    if(!(state.adminDataAll || state.adminData) && typeof window.loadAdminLedger === "function"){ try{ await window.loadAdminLedger(); }catch(err){ /* the dialog says if nothing is there */ } }
-    const p = (B.people || []).find(x => bLabel(x.batch) === B.batch);
-    const key = p && typeof window.batchKey === "function" ? window.batchKey(p) : (p ? p.batch : B.batch);
-    window.confirmArchiveBatch(key);
-    // (when the dialog closes, archived or not: read the batches again)
-    const ov = document.querySelector(".fba-ov"); if(!ov || typeof MutationObserver !== "function") return;
-    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.picked = false; render(); } });
-    mo.observe(document.body, {childList: true});
-  },
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
@@ -1427,7 +1417,7 @@ window.FTBatchSheet = {
   // 📅 / 🟢 / 🎧 a review screen with no button of its own on top (js/ft-program.js adminHidden), in this batch
   review(tab){ if(!adminOn()) return; if(typeof setAdminTab === "function") setAdminTab(tab); else { state.adminTab = tab; render(); } },
   batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; render(); },
-  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; render(); },
+  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; if(window.FTIntake && FTIntake.cardReload) FTIntake.cardReload(); render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
   // 🔄 Update all scores: everything below, in order (FTBatchSheet.sync)
@@ -1859,7 +1849,8 @@ window.render = function(){
   const same = key && key === B.keepKey;
   B.drawing = true;
   let out; try{ out = __render.apply(this, arguments); } finally { B.drawing = false; }
-  try{ document.body.classList.toggle("bs-wide", on()); }catch(err){}
+  // (🧑‍🏫 Graders' scoresheets are wide too: the criterion, the score and the Remarks across the screen)
+  try{ document.body.classList.toggle("bs-wide", on() || (state.view === "admin" && state.adminTab === "graders")); }catch(err){}
   B.keepKey = key;
   if(!same) B.keepY = key ? window.scrollY : 0;
   else if(y && Math.abs(window.scrollY - y) > 2){ window.scrollTo(0, y); requestAnimationFrame(() => { if(B.keepKey === key && B.data && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }); }
@@ -1923,13 +1914,15 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-view button{border:1px solid #C9CEDA;background:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font:600 13px Arial,sans-serif;color:#1E2340;} .bs-view button.on{background:#1E2340;color:#fff;border-color:#1E2340;} .bs-view .bs-view-all{border-radius:8px;}
 .bs-pts{display:flex;flex-direction:column;gap:10px;}
 /* (the sheet's actions: real buttons, bold and bigger) */
-.bs-card .gs-menu{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
-.bs-card .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 15.5px Arial,sans-serif;padding:7px 14px;border-radius:8px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.06);}
+.bs-card .gs-menu{display:flex;flex-wrap:nowrap;gap:5px;margin-top:6px;overflow-x:auto;align-items:center;}
+.bs-card .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 13px Arial,sans-serif;padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.06);}
 .bs-card .gs-menu button:hover{background:#EEF1F8;} .bs-card .gs-menu button.bs-upd-all{background:#1E2340;color:#fff;margin-left:0;vertical-align:baseline;} .bs-card .gs-menu button.bs-upd-all:hover{background:#2C3566;}
 .bs-card .gs-menu button:disabled{opacity:.6;cursor:default;}
 .bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
-.bs-pager span{color:#5F6368;}
+.bs-pager span{color:#3C4043;font:800 16px Arial,sans-serif;}
+.bs-card .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} .bs-card .gs-menu .bs-pager{gap:5px;} .bs-card .gs-menu .bs-pager button{font-size:13px;padding:5px 9px;} .bs-card .gs-menu .bs-pager span{font-size:13px;white-space:nowrap;}
+.bs-card .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
 /* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
 .bs-card .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .bs-card .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
 .bs-card .bs-batchmenu select{font:800 17px Arial,sans-serif;padding:7px 12px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
@@ -1940,9 +1933,12 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;}
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t thead th:nth-child(1){width:24%;} .bs-pt-t thead th:nth-child(2){width:13%;}
+.bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
+.bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
+.bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
-.bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:30%;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:90px;text-align:center;cursor:help;} .bs-pt-mx thead th{min-width:90px;text-align:center;}
+.bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
 .bs-pt-sub td{background:#EEF1F8;font-weight:800;} .bs-pt-it{padding-left:24px !important;font-weight:600 !important;} .bs-pt-rv{display:flex;flex-wrap:wrap;gap:8px;padding:10px !important;}
 .bs-pt-rv .btn{font-weight:800;font-size:14.5px;border:2px solid #1E2340;}
 .bs-pt-fb{margin-top:12px;} .bs-pt-fbb{margin-top:10px;} .bs-pt-fb .tfb-admin{box-shadow:none;border:1px solid #DDE1EC;}

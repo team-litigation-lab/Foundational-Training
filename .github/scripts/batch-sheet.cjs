@@ -128,7 +128,7 @@ const failures = []; const fail = m => failures.push(m);
   // 🔗 Drive Links: a button of its own beside 📋 Batch Sheet (🏅 Scorecard), the same batch: ✅ Compliance and 📁 Drive links
   await page.evaluate(() => { state.adminTab = 'drivelinks'; render(); }); await page.waitForTimeout(1200);
   { const dl = await page.evaluate(() => ({ secs: [...document.querySelectorAll('.bs-card > .bs-sec')].map(x => x.id), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].some(b => /Drive Links/.test(b.innerText)) }));
-    if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance', 'bs-drive']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
+    if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
   // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
   // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
@@ -136,7 +136,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
   // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
-  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Last checked', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
   // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
   if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗' || ca[3] !== '✓' || ca[4] !== '✗' || ca.slice(5, 8).some(v => v !== '✓')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
   if (await page.$('#bs-compliance table select')) fail('the compliance table still has a dropdown');   // (🔗 Link a trainee's files by hand, under it, picks a trainee)
@@ -486,16 +486,17 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
   const foot = await page.evaluate(() => ({ people: !!document.getElementById('bs-people'), link: /Approvals &|Trainees &/.test((document.querySelector('.bs-jump') || {}).innerText || '') }));
   if (foot.people || foot.link) fail(`the Batch Sheet still has 👥 Approvals & Batches: ${JSON.stringify(foot)}`);
-  // the batch menu: the Batch picker and 📦 Archive batch, which opens the archive dialog (js/ft-batch-admin.js) for the batch on screen
+  // the batch menu: the Batch picker, and no 📦 Archive batch (🛡 Admin Master Control → 📁 Batches archives a batch, from its card)
   if (!(await page.$('.bs-batchmenu select'))) fail('the batch menu has no Batch picker');
-  if (!(await page.$('.bs-archive'))) fail('the batch menu has no 📦 Archive batch');
-  else {
-    await page.click('.bs-archive'); await page.waitForTimeout(1500);
+  if (await page.$('.bs-archive')) fail('📦 Archive batch is still on the 📋 Batch Sheet');
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); }); await page.waitForTimeout(2500);
+  { const opened = await page.evaluate(b => { const x = [...document.querySelectorAll('.bf-arch')].find(el => (el.getAttribute('onclick') || '').includes(b)) || document.querySelector('.bf-arch'); if (x) x.click(); return !!x; }, BATCH);
+    await page.waitForTimeout(1500);
     const dlg = await page.evaluate(() => { const o = document.querySelector('.fba-ov'); return o ? o.innerText : ''; });
-    if (!/Archive/.test(dlg) || !dlg.includes(BATCH) || !/Google Drive folder link/.test(dlg) || !/Delete the batch/.test(dlg)) fail(`📦 Archive batch doesn't open the batch's archive dialog: ${dlg.slice(0, 200)}`);
+    if (!opened || !/Archive/.test(dlg) || !/Google Drive folder link/.test(dlg)) fail(`📁 Batches' 📦 Archive doesn't open the batch's archive dialog: ${dlg.slice(0, 200)}`);
     if (await page.$('.fba-ov [data-cancel]')) { await page.click('.fba-ov [data-cancel]'); await page.waitForTimeout(1500); }
-    if (await page.$('.fba-ov')) fail('the archive dialog didn\'t close on Cancel');
-  }
+    if (await page.$('.fba-ov')) fail('the archive dialog didn\'t close on Cancel'); }
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(1500);
   await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
   if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('approveTrainee didn\'t approve Cy');
   const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });

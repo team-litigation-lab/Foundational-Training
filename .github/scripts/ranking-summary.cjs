@@ -55,6 +55,12 @@ const failures = []; const fail = m => failures.push(m);
     if (!r || r.scores.call !== 4) fail(`without the AI, Call Handling isn't the mock call's 4.0: ${r && r.scores.call}`);
     const doc = await page.evaluate(() => FTRankSummary.doc());
     if (!/Weekly Progress Report/.test(doc) || !/Rosa Report/.test(doc) || !/Call Handling/.test(doc)) fail('⬇ Word doesn\'t give the report');
+    // ⬇ Excel (no ⬇ Word or 🖨 Print buttons on the bar): a real .xlsx of the report
+    { const bar = await page.evaluate(() => (document.querySelector('.rks-bar-acts') || {}).innerText || '');
+      if (!/Excel/.test(bar) || /⬇ Word|Print/.test(bar)) fail(`the summary's bar isn't ⬇ Excel alone: ${bar}`);
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRankSummary.excel())]);
+      const f = dl.suggestedFilename(), buf = require('fs').readFileSync(await dl.path());
+      if (!/\.xlsx$/.test(f) || buf.slice(0, 2).toString() !== 'PK' || !buf.toString('latin1').includes('Rosa Report')) fail(`⬇ Excel isn't the report as an .xlsx: ${f}`); }
     // another week picked while a week is being summarized: nothing is saved over the first week's summary, and the week now
     // on screen isn't shown the first week's (the AI made slow, so Week 2 is picked mid-way)
     await put(`rksum:${BATCH}:w2`, null);
