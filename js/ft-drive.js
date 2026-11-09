@@ -36,7 +36,7 @@ const safeUrl = u => { u = String(u == null ? "" : u).trim(); return /^https?:\/
 // a day key as the page writes it (YYYY-MM-DD): any other key in a trainee's drive:<id>.days is left out
 const isDay = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
 const tScore = r => r && r.trainerScore != null && r.trainerScore !== "" && isFinite(Number(r.trainerScore)) ? Math.round(Number(r.trainerScore)) : null;
-const D = {id:null, drive:null, review:null, loading:null, at:0, day:null, busy:false, saving:null};
+const D = {id:null, drive:null, review:null, loading:null, at:0, day:null};
 function load(force){
   if(!isTrainee() || D.loading) return D.loading;
   if(!force && D.id === state.traineeId && Date.now() - D.at < 120000) return null;
@@ -330,17 +330,6 @@ window.FTDrive = {
     if(t.length < 40){ toast("Paste the EOD email you sent: its subject and the message."); return; }
     const d = day(); D.drive.days[d] = Object.assign({}, D.drive.days[d] || {}, {eod: {text: t.slice(0, 8000), at: new Date().toISOString()}});
     toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ Today’s EOD is submitted."); render();
-  },
-  async check(){
-    if(D.busy || previewOnly()) return;
-    if(!D.drive.tracker && !D.drive.monitor){ toast("Save your Google Drive links first."); return; }
-    D.busy = true; render(); paintLinkModal();
-    try{
-      const r = await authFetch("/api/drive/check", {date:day()}), j = await r.json().catch(() => ({}));
-      if(!r.ok) toast(j.error || "Couldn’t check right now.");
-      else { if(j.review) D.review = Object.assign({days:{}}, j.review); toast("✓ Checked."); }
-    }catch(err){ toast("Couldn’t check right now. Check your connection."); }
-    D.busy = false; render(); paintLinkModal();
   }
 };
 (function(){ const st = document.createElement("style"); st.textContent = `
