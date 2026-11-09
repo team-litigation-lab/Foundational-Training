@@ -8785,9 +8785,7 @@ function showUpdateBanner(){
   if(!state.presenting) return;
   if(document.getElementById("updateBanner")) return;
   const b = document.createElement("div"); b.id = "updateBanner"; b.className = "update-banner";
-  b.innerHTML = state.presenting
-    ? `<span>✨ A new version of the portal is ready (e.g. updated speaker notes). Click Update now between slides — Presenter view will need reopening.</span><button type="button" onclick="applyUpdate()">Update now</button>`
-    : `<span>✨ A new version of the portal is ready. It will update automatically in a moment — your progress is saved.</span><button type="button" onclick="applyUpdate()">Update now</button>`;
+  b.innerHTML = `<span>✨ A new version of the portal is ready (e.g. updated speaker notes). Click Update now between slides — Presenter view will need reopening.</span><button type="button" onclick="applyUpdate()">Update now</button>`;
   document.body.appendChild(b);
 }
 function restoreAfterUpdate(){
