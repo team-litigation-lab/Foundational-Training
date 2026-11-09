@@ -5563,9 +5563,10 @@ window.ftW1Override = {
   comp(rv, b){
     if(!rv || !rv.compliance || !this.on(b)) return rv;
     const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
-    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
-      // (its Day 1 as checked — worker.js keeps a Day 1's parts under day1Parts — counted with Week 1, as before)
-      const parts = Object.assign({}, x.day1 && x.day1Parts ? x.day1Parts : x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
+    // (📅 a Day 1 the Worker kept as the setup day, day1, stays not counted: ftDay1 shows what was found on it — no 0s from
+    // before the trainees' files were linked brought back into the week)
+    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts || x.day1) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
+      const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
       out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
         eodTrainer: {score: 100, note: note + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true, day1: false}); });
     return out;
@@ -14096,7 +14097,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.09-4c9ec7a3";
+var APP_BUILD = "ft-2026.11.09-3936fef0";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14158,10 +14159,10 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=0797321290"></script>
 <script src="/js/ft-ranking-summary.js?v=c45e0a0aff"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=6f279c2a85"></script>
+<script src="/js/ft-batch-sheet.js?v=9b5c0eee2e"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=e8da54fc4f"></script>
-<script src="/js/ft-calrules.js?v=adaad052d7"></script>
+<script src="/js/ft-calrules.js?v=bdbffab39a"></script>
 <script src="/js/ft-writing.js?v=f939b19609"></script>
 <script src="/js/ft-calweek-core.js?v=d64da960e4"></script>
 <script src="/js/ft-calweek.js?v=c0d840e5dd"></script>
