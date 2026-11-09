@@ -54,6 +54,7 @@ window.LSH_PROGRAM = {
     lab: ["calendaring", "sessions", "listening", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],
+    intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
     scorecard: ["batchsheet", "drivelinks", "skilltests", "sendfeedback", "graders", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
@@ -69,7 +70,8 @@ window.LSH_PROGRAM = {
   adminHidden: ["calendaring", "sessions", "listening", "skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}],
+  // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "intake", label: "📦 Intake Packets"}],
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
