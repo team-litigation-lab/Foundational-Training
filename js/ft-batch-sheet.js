@@ -119,7 +119,10 @@ async function loadData(){
     // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
     if(state.isAdmin && typeof authFetch === "function")
-      for(let i = 0; i < ppl.length; i += 40){ try{ await authFetch("/api/sim-scores/sync", {ids: ppl.slice(i, i + 40).map(p => p.id)}); }catch(err){} }
+      for(let i = 0; i < ppl.length; i += 40){ const ids = ppl.slice(i, i + 40).map(p => p.id);
+        try{ await authFetch("/api/sim-scores/sync", {ids}); }catch(err){}
+        // (✅ and today's compliance worked out again now: today's EOD email, answer sheets and tests show at once, worker.js /api/compliance/today)
+        try{ await authFetch("/api/compliance/today", {ids}); }catch(err){} }
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
@@ -502,7 +505,11 @@ function dayDeliverables(p, d){
     if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
-      if(ls.length && !here_.length) return; }
+      if(ls.length && !here_.length) return;
+      // (answered, its Knowledge Check not graded yet: "Submitted", not "Not yet")
+      const D_ = dayDate(d.day), ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
+      const subm = Object.entries(((R.process || {}).sets) || {}).filter(([, s_]) => s_ && s_.submittedAt && ptd(s_.submittedAt) === D_);
+      if(subm.length){ push({name: it.t, pct: null, status: "Submitted", why: `Answer sheet submitted ${subm.map(([, s_]) => new Date(s_.submittedAt).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})).join(", ")} · the Knowledge Check isn't graded yet`, best: [], improve: [], by: ""}); return; } }
     // (only what can carry a grade is listed while it has none — a mock call or demo, a Practice Session, an answer sheet, an
     // assessment, the Process Questions; a reading, a breakout's handouts, the fillable forms, the call listening and the idle
     // time's material aren't graded, so they aren't on the scores)
@@ -1067,7 +1074,7 @@ function perTraineeHtml(T){
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
           : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
-            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read from the Task Tracker and Monitoring Sheet</button>` : "")
+            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
@@ -1641,6 +1648,10 @@ async function readCheck(id, date){
       ${M.note ? `<p class="bs-rc-bad">${e(M.note)}</p>` : ""}
       <p><b>Entries found (${e((M.entries || []).length)}):</b></p>${list((M.entries || []).map(x => `${e(x.topic)} · date read: <b>${e(x.date || "none")}</b> · ${e(x.pct)}% (${(x.checks || []).map(c => (c.ok ? "✓ " : "✗ ") + e(c.label)).join(", ")})`))}
       ${M.forDay ? `<p><b>The entry taken for ${e(date)}:</b> ${e(M.forDay.topic)}</p><pre>${e(M.forDay.text)}</pre>` : ""}`}
+    <h4>✉️ EOD email</h4>${!j.eod ? "<p>—</p>" : j.eod.received ? `<p>Received ${e(String(j.eod.received.at || "").slice(0, 16).replace("T", " "))} (${e(j.eod.received.via)}${j.eod.received.from ? " from " + e(j.eod.received.from) : ""}): “${e(j.eod.received.subject || "no subject")}”</p>`
+      : `<p class="bs-rc-bad">No EOD email was received for this trainee that day.</p><p>Address on file for their EOD: <b>${e(j.eod.fromOnFile || "none")}</b> (an email from another address is matched by the sender's name only).</p>${(j.eod.unmatched || []).length ? `<p><b>EOD emails that day matched to nobody, from a similar name:</b></p>${list(j.eod.unmatched.map(x => `${e(x.from)} · “${e(x.subject)}” · ${e(String(x.at).slice(0, 16).replace("T", " "))}`))}` : ""}`}
+    <h4>✍️ Process Questions</h4>${!j.process ? "<p>—</p>" : `<p><b>Answer sheets submitted that day:</b></p>${list((j.process.sheets || []).map(x => `${e(x.sheet)} · ${e(x.answers)} answers · ${e(String(x.at).slice(0, 16).replace("T", " "))}`))}
+      <p><b>Knowledge Checks graded:</b></p>${list((j.process.kc || []).map(x => `Lesson ${e(x.lesson)}: ${x.best == null ? "not graded" : e(x.best) + "%"} · ${e(x.attempts)} attempt${x.attempts === 1 ? "" : "s"}${x.at ? " · " + e(String(x.at).slice(0, 10)) : ""}`))}`}
     <h4>💾 Saved for the day</h4><p>${S ? `Parts: ${e(JSON.stringify(S.parts || S.day1Parts || {}))} · AI grade: tracker ${e(S.trackerAi == null ? "—" : S.trackerAi + "%")}, Monitoring Sheet ${e(S.monitorAi == null ? "—" : S.monitorAi + "%")} · checked ${e(String(S.checkedAt || "").slice(0, 16).replace("T", " "))}` : "Nothing saved for the day yet."}${j.ai ? "" : " · ⚠ No AI is set up on the server, so no AI grade can be given."}</p>`;
 }
 window.FTBatchSheet = {
