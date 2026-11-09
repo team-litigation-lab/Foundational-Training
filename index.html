@@ -5526,7 +5526,8 @@ window.ftWeeks = {
   now(b, d){ d = d || (window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10));
     for(let n = 1; n <= 6; n++){ const r = this.range(b, n); if(!r) return 1; if(d <= r[1]) return n; } return 6; }
 };
-// 📅 A batch's Day 1 (its first weekday from the Batch ID's date) is the setup day: its Daily compliance doesn't count,
+// 📅 A batch's Day 1 (its first weekday from the Batch ID's date) counts like any other day (it was held back as a setup day
+// once: such a record is counted from its day1Parts here). Earlier note, kept for the record: its Daily compliance didn't count,
 // for or against a trainee. Each part is kept under day1Parts to show what was found, the parts are left out (null) and the
 // day's % is null, so every average skips it (worker.js dailyCompliance writes new days the same way; this covers the days
 // checked before it did). Applied where the browser reads trackerreview:<id>.
@@ -5541,7 +5542,10 @@ window.ftDay1 = {
     const D = this.date(b), T = window.FTTrackerRules ? FTTrackerRules.ptDate() : "", x = D ? rv.compliance[D] : null, y = T ? rv.compliance[T] : null;
     const hold = (z, f) => Object.assign({}, z, {[f]: true, [f + "Parts"]: z.parts, parts: Object.fromEntries(Object.keys(z.parts).map(k => [k, null])), pct: null});
     const add = {};
-    if(x && x.parts && !x.day1 && !x.w1) add[D] = hold(x, "day1");
+    // (📅 Day 1 counts like any day, scored by the day's own input: a Day 1 the Worker held back as a setup day — its parts
+    // under day1Parts — is counted from them, its % the average of its parts)
+    if(x && x.day1 && x.day1Parts && !x.w1){ const parts = Object.assign({}, x.day1Parts), v = Object.values(parts).filter(n => typeof n === "number");
+      add[D] = Object.assign({}, x, {parts, pct: v.length ? Math.round(v.reduce((a, n) => a + n, 0) / v.length) : null, day1: false}); }
     if(y && y.parts && !y.final && !y.day1 && !y.w1 && T !== D) add[T] = hold(y, "open");
     return Object.keys(add).length ? Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance, add)}) : rv;
   }
@@ -5563,10 +5567,9 @@ window.ftW1Override = {
   comp(rv, b){
     if(!rv || !rv.compliance || !this.on(b)) return rv;
     const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
-    // (📅 a Day 1 the Worker kept as the setup day, day1, stays not counted: ftDay1 shows what was found on it — no 0s from
-    // before the trainees' files were linked brought back into the week)
-    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts || x.day1) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
-      const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
+    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
+      // (its Day 1 as checked — a Day 1 held back as a setup day keeps its parts under day1Parts — counted with Week 1)
+      const parts = Object.assign({}, x.day1 && x.day1Parts ? x.day1Parts : x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
       out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
         eodTrainer: {score: 100, note: note + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true, day1: false}); });
     return out;
@@ -14097,7 +14100,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.09-373523d8";
+var APP_BUILD = "ft-2026.11.09-9f514a0a";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14159,7 +14162,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=514006eedb"></script>
 <script src="/js/ft-ranking-summary.js?v=2a29a3fce7"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=351c9ca192"></script>
+<script src="/js/ft-batch-sheet.js?v=1d78703f67"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=e8da54fc4f"></script>
 <script src="/js/ft-calrules.js?v=bdbffab39a"></script>
