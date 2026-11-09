@@ -190,12 +190,6 @@ function nextSlide(){
     refreshLessonSlide();
   }
 }
-function goToKnowledgeCheckWithInterstitial(){
-  if((state.slidePages||1) > 1 && (state.slidePage||0) < state.slidePages-1){ showSlidePage((state.slidePage||0)+1); return; }
-  state.dayViewMode = "knowledgeCheck";
-  render();
-  window.scrollTo({top:0, behavior:"smooth"});
-}
 function prevSlide(){
   if((state.slidePages||1) > 1 && (state.slidePage||0) > 0){ showSlidePage(state.slidePage-1); return; }
   if((state.lessonSlide||0) > 0){
@@ -470,8 +464,6 @@ function setAdminViewMode(mode){
   }
 }
 window.setAdminViewMode = setAdminViewMode;
-const __eapaDayUnlocked = window.dayUnlocked;
-window.dayUnlocked = function(id){ return state.adminPreview ? true : __eapaDayUnlocked(id); };
 const __eapaGoto = window.goto;
 window.goto = function(view, id){ __eapaGoto(view, id); if(view==="day" && state.adminPreview && state.maxSlideReached !== 9999){ state.maxSlideReached = 9999; render(); } };
 const __eapaOpenAdmin = window.openAdmin;

@@ -911,7 +911,6 @@ async function ftFinishDay(id){
   goto("dashboard");
 }
 window.finishTrainingForDay = ftFinishDay;
-window.goToKnowledgeCheckWithInterstitial = function(){ ftFinishDay(state.dayId); };
 
 /* ---------- 5. dashboard, day cards, top bar ---------- */
 /* One icon per lesson, shown in the middle of its card. The engine's DAY_ICONS is the
