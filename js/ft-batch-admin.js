@@ -81,12 +81,15 @@ const everyone = () => state.adminDataAll || state.adminData || [];
 /* ---------- the batches: a Batch ID is B + MMDDYY, the day it started, so the current batch is the active one that started last ---------- */
 // (a batch's first day as a time, for ordering: index.html batchStartDate — a B + DDMMYY Batch ID reads as its day; 0 when not a date)
 const startOf = b => { const d = typeof batchStartDate === "function" ? batchStartDate(b) : ""; return d ? Date.parse(d + "T00:00:00Z") : 0; };
+// (👥 an active trainee, the rule every trainer's list uses — js/ft-roster.js ftActiveTrainee: approved, and not archived,
+// rejected, offboarded, cleared or on the platform's block list — so a trainee removed elsewhere is off Graders too)
+const active = r => !!r && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r));
 function activeBatches(){
-  const ks = new Set((state.adminData || []).filter(r => r.approved === true && !r.archived && !r.rejected).map(keyOf));
+  const ks = new Set((state.adminData || []).filter(active).map(keyOf));
   if(typeof NO_BATCH !== "undefined") ks.delete(NO_BATCH);
   return [...ks].sort((a, b) => startOf(b) - startOf(a) || String(b).localeCompare(String(a)));
 }
-const registered = b => (state.adminData || []).filter(r => r.approved === true && !r.archived && !r.rejected && keyOf(r) === b)
+const registered = b => (state.adminData || []).filter(r => active(r) && keyOf(r) === b)
   .sort((x, y) => String(x.name || "").localeCompare(String(y.name || "")));
 
 /* ============================================================
