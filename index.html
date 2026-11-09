@@ -6355,18 +6355,18 @@ function orientSlides(){
   const pill = (i,t,d)=>`<div class="or-pill"><div>${i}</div><b>${t}</b><span>${d}</span></div>`;
   return [
    {k:"Welcome", h:"Welcome to the LSH Foundational Training Program", body:`
-     <p class="or-lead">Ten days to work like a strategic, trusted Executive &amp; Personal Assistant to an attorney — built around one realistic client, from Day 1 to Day 10.</p>
-     <div class="or-3">${pill("📚","Learn",`${topics} short topics across 10 days`)}${pill("🧪","Practice",`${PRACTICE_TOOLS.length} hands-on Practice Labs & live calls`)}${pill("✅","Prove","A Knowledge Check each day — and a certificate at the end")}</div>
+     <p class="or-lead">${DAYS.length} lessons to work like a strategic, trusted Executive &amp; Personal Assistant to an attorney — built around one realistic client, from the first lesson to the last.</p>
+     <div class="or-3">${pill("📚","Learn",`${topics} short topics across ${DAYS.length} lessons`)}${pill("🧪","Practice",`${PRACTICE_TOOLS.length} hands-on Practice Labs & live calls`)}${pill("✅","Prove","A Knowledge Check each day — and a certificate at the end")}</div>
      <div class="or-note"><b>You'll need:</b> Chrome or Edge on a computer, a headset with a microphone for the live calls, and a stable connection. Your progress saves to your account automatically.</div>`},
-   {k:"Roadmap", h:"Your 10-day roadmap", body:`<div class="or-days">${DAYS.map(dayTile).join("")}</div>
+   {k:"Roadmap", h:`Your ${DAYS.length}-lesson roadmap`, body:`<div class="or-days">${DAYS.map(dayTile).join("")}</div>
      <p class="or-foot">Days open one at a time — each builds on the one before.</p>`},
    {k:"A day", h:"How every day works", body:`
-     <div class="or-flow">${step(1,"🖥","Lesson slides","One topic at a time, with Quick Checks between them. Next / Previous at the bottom; your place is saved.")}<i>→</i>${step(2,"📝","Knowledge Check","Pass at 70% to mark the day complete ✓.")}<i>→</i>${step(3,"🧪","Practice Lab","Do the real task. Graded with written feedback — or “coming soon” on days without one yet.")}<i>→</i>${step(4,"🔓","Next day opens","Finishing the Practice Lab unlocks tomorrow.")}</div>
+     <div class="or-flow">${step(1,"🖥","Lesson slides","One topic at a time. Next / Previous at the bottom; your place is saved.")}<i>→</i>${step(2,"📝","Knowledge Check","Pass at 70% to mark the day complete ✓.")}<i>→</i>${step(3,"🧪","Practice Lab","Do the real task. Graded with written feedback — or “coming soon” on days without one yet.")}<i>→</i>${step(4,"🔓","Next day opens","Finishing the Practice Lab unlocks tomorrow.")}</div>
      <div class="or-note">Didn't pass the Knowledge Check? That's a <b>“not yet”</b>, not a “no” — you can still move on. Each Knowledge Check is taken once, so submit when your answers are final; if a technical problem affects it, your trainer can grant a retry.</div>`},
    {k:"Dashboard", h:"Your dashboard at a glance", body:`
      <div class="or-bp">
        <div class="or-bp-main">
-         <div class="or-box or-hero"><span class="or-num">1</span><b>Progress track</b><em>Days 1–10 · ✓ = passed · every day is open</em></div>
+         <div class="or-box or-hero"><span class="or-num">1</span><b>Progress track</b><em>Lessons 1–${DAYS.length} · ✓ = passed · every day is open</em></div>
          <div class="or-box or-cards"><span class="or-num">2</span><b>Day cards</b><em>Start / Review a day · 💬 trainer feedback appears here</em></div>
          <div class="or-box"><span class="or-num">3</span><b>Resume &amp; certificate</b><em>Jump back to where you left off · download your certificate when earned</em></div>
          <div class="or-box"><span class="or-num">4</span><b>Competency profile</b><em>Eight skills that grow as your work is graded</em></div>
@@ -6397,7 +6397,7 @@ function orientSlides(){
      <div class="or-3">${pill("💬","Trainer feedback","Your trainer writes feedback on each day's work — it lights up on the day card and in 🎯 Focus.")}${pill("🎯","Focus","Your trainer's priorities for you, plus suggestions from your own work. Tick items off as you go.")}${pill("📈","Competency profile","Eight skills — accuracy, judgment, risk, efficiency, communication, composure, knowledge and real-time task handling.")}</div>`},
    {k:"Certificate", h:"Earning your certificate", body:`
      <div class="or-cert"><div class="or-ribbon">🏅</div><div>
-       <p class="or-lead" style="margin-top:0">Pass all <b>10 Knowledge Checks</b> (70%+) and your <b>Certificate of Completion</b> unlocks — download it as a PDF from your dashboard.</p>
+       <p class="or-lead" style="margin-top:0">Pass all <b>${DAYS.length} Knowledge Checks</b> (70%+) and your <b>Certificate of Completion</b> unlocks — download it as a PDF from your dashboard.</p>
        <ul class="or-list"><li>It shows your name <b>exactly as you registered it</b> — check your spelling.</li><li>Signed by your trainer, the Training Head and the General Manager.</li><li>“With Distinction” for a 90%+ average.</li></ul></div></div>`},
    {k:"Ground rules", h:"Ground rules", body:`
      <ul class="or-list big"><li>🔒 <b>Confidentiality first</b> — never paste real client or firm information into any tool.</li><li>🤖 <b>AI is a tool, not the answer</b> — its use depends on each attorney's preferences; always review its output.</li><li>✍ <b>Your own work</b> — the feedback only helps if it's your thinking.</li><li>🙋 <b>Stuck?</b> Ask your trainer, or use 💬 Feedback to tell us what's unclear.</li></ul>`},
@@ -13005,7 +13005,7 @@ async function buildAndSavePdf(title, subtitle, bodyLines, filenameBase){
 
 /* ============================================================
    CERTIFICATE OF COMPLETION
-   Eligible when all 10 Knowledge Checks are passed (70%+).
+   Eligible when every Knowledge Check is passed (70%+; js/ft-updates.js: every lesson finished).
    Preview on screen, download as a landscape PDF, or print.
    Each issued certificate gets an ID and a record at "cert:<id>".
    Signatory names come from Admin → Trainee Audit (settings:certificate).

@@ -3010,7 +3010,7 @@ if(document.querySelector(".topbar")) render();
     const card = (n, cls)=>`<div class="or-d2-card ${cls||""}"><span>${ftName(n)}</span><i>Start</i><u>☰ Topics · ✓ Finish</u></div>`;
     const DASH = `
      <div class="or-dash2">
-       <div class="or-box or-hero"><span class="or-num">1</span><b>Banner &amp; progress track</b><em>Days 1–10 · ✓ = passed · click a circle to jump to that day</em></div>
+       <div class="or-box or-hero"><span class="or-num">1</span><b>Banner &amp; progress track</b><em>Lessons 1–${DAYS.length} · ✓ = passed · click a circle to jump to that day</em></div>
        <div class="or-box or-cards"><span class="or-num">2</span><b>Day cards fill the screen</b><em>Start a day · ☰ Topics lists its topics · ✓ Finish Training · 💬 trainer feedback appears on the card</em>
          <div class="or-d2-row">${[1,2,3,4,5].map(n=>card(n, n%3===2 ? "or" : "")).join("")}</div></div>
        <div class="or-box or-band"><span class="or-num">3</span><b>Scores band, under the lessons</b><em>Program complete · best competency score · quiz average · days done · 💬 your feedback · ranking</em></div>
