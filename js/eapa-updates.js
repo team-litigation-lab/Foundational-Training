@@ -889,7 +889,7 @@ function bfCard(k){
   const fb = batchFeedback(k).length, fbTxt = state.tfbAdmin && !state.tfbAdmin.loading ? `${fb} feedback` : "feedback…";
   const extraArch = !arch && all.length>shown.length ? ` · ${all.length-shown.length} archived` : "";
   const at = arch ? bfArchivedAt(k) : null;
-  const kq = esc(k).replace(/'/g, "&#39;");
+  const kq = esc(k);
   return `<div class="batch-folder ${arch?"is-archived":""}" role="button" tabindex="0" onclick="openBatchFolder('${kq}','registry')" onkeydown="if(event.key==='Enter'){openBatchFolder('${kq}','registry')}">
     <span class="bf-icon">${arch?"🗄":"📁"}</span>
     <span class="bf-name">${esc(folderLabel(k))}</span>
@@ -953,7 +953,7 @@ function renderAdminBatchFolders(){
 const __bfRenderFolder12 = window.renderBatchFolder;
 window.renderBatchFolder = function(k){
   let html = __bfRenderFolder12(k);
-  const kq = esc(k).replace(/'/g, "&#39;");
+  const kq = esc(k);
   const dl = `<button class="btn btn-ghost btn-sm" onclick="bfExportCsv('${kq}')" title="Spreadsheet of every trainee's progress and scores">⬇ Records (CSV)</button>
         <button class="btn btn-ghost btn-sm" onclick="bfExportJson('${kq}')" title="Complete backup of this batch's records and feedback">⬇ Full backup (JSON)</button>`;
   html = html.replace(/(<button class="btn btn-ghost btn-sm" onclick="refreshAdminData\(\);loadTraineeFeedbackAdmin\(\)">)/, dl + "\n        $1");
