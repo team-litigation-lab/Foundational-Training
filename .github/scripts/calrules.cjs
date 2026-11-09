@@ -174,7 +174,7 @@ async function workerChecks() {
 
   // 📋 Mock Call Scorecards (🧑‍🏫 Graders), the Calendar Management Mock Call, one VA: the booking check fills its rule
   // criteria there too, and 🧾 Score summary explains the score from what is entered
-  await page.evaluate(([b, id]) => { state.adminTab = 'mockscores'; render(); FTMockScores.batch(b); FTMockScores.act('calendar-live'); FTMockScores.va(id); }, [BATCH, id]); await page.waitForTimeout(2500);
+  await page.evaluate(([b, id]) => { state.adminTab = 'graders'; render(); FTMockScores.batch(b); FTMockScores.act('calendar-live'); FTMockScores.va(id); }, [BATCH, id]); await page.waitForTimeout(2500);
   const fa = await page.evaluate(() => (document.querySelector('.fms-assist') || {}).innerText || '');
   if (!/11 of 12 rules met/.test(fa)) fail(`the Calendar Mock Call scorecard doesn't show the booking check: ${fa}`);
   if (!/Score the criteria above/.test(await page.evaluate(() => (document.querySelector('.fms-why') || {}).innerText || ''))) fail('the 🧾 Score summary isn\'t there before any score');
