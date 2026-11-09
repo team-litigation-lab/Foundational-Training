@@ -51,12 +51,13 @@ window.LSH_PROGRAM = {
     // (📅 Calendaring, 🟢 Practice Sessions and 🎧 Call Listening: the screens where a trainer reviews them, here as tabs of their own)
     admin: ["attendance", "batches", "sops", "dbmaint", "orientation", "calendaring", "sessions", "listening"],   // (📁 Batches: archive, records, the Archive shelf, offboarded VAs, js/ft-batch-admin.js)   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
-    modules: ["opendays", "curriculum", "monitor", "fbstyle", "announcements"],   // (📢 Announcements: this platform's and each lesson's, js/ft-announcement.js)   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
+    modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],
     intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
     lorassign: ["lorassign"],   // 📄 Assign LORs: its own section beside 📦 Intake Packets (js/ft-lor.js)
+    announcements: ["announcements"],   // 📢 Announcements: its own section, beside 📄 Assign LORs (this platform's and each lesson's, js/ft-announcement.js)
     // 🔗 Drive Links and 🧑‍🏫 Graders: Mock Calls & Demos, section buttons of their own beside 📊 Weekly Reports (adminSections)
     drivelinks: ["drivelinks"],
     graders: ["graders"],
@@ -76,10 +77,10 @@ window.LSH_PROGRAM = {
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}],
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}, {id: "announcements", label: "📢 Announcements"}],
   adminLead: {scorecard: "batchsheet"},
   // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
-  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "admin", "modules", "lab"],
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "announcements", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [
