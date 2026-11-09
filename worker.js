@@ -2797,6 +2797,38 @@ export default {
         return json(await receiveEod(env, { from: String(b.from), subject: String(b.subject || ""), date: String(b.date || ""), text: String(b.text) }));
       }
 
+      /* ---------- 🗓 a CALENDAR MANAGEMENT MOCK CALL scorecard saved on the Training Portal's Google Calendar Simulator, mirrored here
+         (the Portal's functions/api/calsim.js sends it, server to server with the shared AI_GATEWAY_SECRET): kept as the trainee's
+         Calendar Management Mock Call with the trainer (labreview:<id>.acts["calendar-live"], as 🧑‍🏫 Graders saves it: its rubric,
+         remarks, score and Result, Passed at 3/5), so 🧑‍🏫 Graders shows it filled and every scorecard counts it. A newer one saved here
+         stays; a card that came from here (source "foundational") isn't taken back. ---------- */
+      if (path === "/api/calsim-card-in") {
+        const key = String(env.AI_GATEWAY_SECRET || "").trim(), got = String(request.headers.get("x-gateway-key") || "").trim();
+        if (!key || !got || !safeEqual(key, got)) return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({})), card = b && b.card;
+        if (!card || !Array.isArray(card.rows) || !String(b.name || "").trim()) return json({ error: "A trainee and a scorecard are needed." }, 400);
+        if (card.source === "foundational") return json({ ok: true, skipped: "from here" });
+        const ids = candidateIds(String(b.name), String(b.batch || "")), kvx = kvOf(env);
+        let id = "", rec = null;
+        for (const c of [ids.newId, ids.rawId]) { const r = JSON.parse((await kvx.get(`trainee:${c}`)) || "null"); if (r && !r.archived) { id = c; rec = r; break; } }
+        if (!rec) return json({ ok: false, error: "No trainee here by that name and batch." }, 404);
+        const CRIT = ["Professional Introduction & Call Control", "Client Comprehension & Flow Control", "Information Verification & Accuracy",
+          "Slot Identification & Scheduling Rule Compliance", "Alternative Time Offering", "Calendar Creation & Attorney Reminder Setup", "Notes, Recap & Call Closing"];
+        const rowOf = (n, i) => card.rows.find((r) => r && r.metric === n) || card.rows[i] || {};
+        const scores = CRIT.map((n, i) => { const v = Number(rowOf(n, i).score); return isFinite(v) ? Math.max(0, Math.min(5, v)) : null; });
+        if (scores.some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
+        const feedback = CRIT.map((n, i) => String(rowOf(n, i).feedback || "").slice(0, 600));
+        const avg = scores.reduce((a, v) => a + v, 0) / scores.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
+        const rk = `labreview:${id}`, cur = JSON.parse((await kvx.get(rk)) || "null") || {};
+        cur.acts = cur.acts || {}; const was = cur.acts["calendar-live"] || null;
+        if (was && was.at && String(was.at) > at && was.source !== "portal") return json({ ok: true, skipped: "a newer scorecard here" });
+        cur.acts["calendar-live"] = Object.assign({}, was || {}, { status: avg >= 3 ? "Passed" : "Failed", redo: false, score: pct, scoreEdited: false, date: at.slice(0, 10),
+          facilitator: String(card.by || (was && was.facilitator) || "Trainer").slice(0, 120), comment: (was && was.comment) || "", at, source: "portal",
+          rubric: { key: "calendar", scores, feedback, avg: Math.round(avg * 100) / 100 } });
+        await kvx.put(rk, JSON.stringify(cur));
+        return json({ ok: true, id, score: pct, status: cur.acts["calendar-live"].status });
+      }
+
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 

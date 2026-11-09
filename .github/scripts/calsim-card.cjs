@@ -33,6 +33,22 @@ const failures = []; const fail = (m) => failures.push(m);
   const p = (await call({ id, op: 'put', rows, by: 'Coach Tess' }, admin)).body || {};
   const s1 = seen[seen.length - 1] || {};
   if (!p.ok || s1.method !== 'POST' || !s1.body || s1.body.rows.length !== 7 || s1.body.by !== 'Coach Tess' || s1.body.batch !== 'B103026') fail(`the scorecard wasn't sent to the Portal: ${JSON.stringify({ p, s1 })}`);
+  // 🗓 a scorecard saved on the Portal, mirrored here: the Calendar Management Mock Call with the trainer, filled (rubric, remarks,
+  // score, Result) — only with the shared secret; one that came from here isn't taken back; a newer one saved here stays
+  const inCall = async (body, key) => { const res = await worker.fetch(new Request('http://x/api/calsim-card-in', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, key ? { 'X-Gateway-Key': key } : {}), body: JSON.stringify(body) }), env, { waitUntil() {} });
+    return { status: res.status, body: await res.json().catch(() => null) }; };
+  const pcard = { rows: [4, 3, 4, 3, 5, 4, 4].map((v, i) => ({ score: v, feedback: i === 0 ? 'Great tone, NATO slip' : '' })), by: 'Coach Tess', at: '2026-11-09T16:00:00Z' };
+  if ((await inCall({ name: 'Abesh Dawn Jamon', batch: 'B103026', card: pcard }, 'wrong')).status !== 403) fail('a scorecard was taken in without the secret');
+  const ok = (await inCall({ name: 'Abesh Dawn Jamon', batch: 'b103026', card: pcard }, 'gw-secret')).body || {};
+  const act = ((JSON.parse(store.get('ft:labreview:' + id) || 'null') || {}).acts || {})['calendar-live'] || {};
+  if (!ok.ok || act.score !== 77 || act.status !== 'Passed' || act.source !== 'portal' || !act.rubric || act.rubric.key !== 'calendar' || act.rubric.scores.join() !== '4,3,4,3,5,4,4' || act.rubric.feedback[0] !== 'Great tone, NATO slip' || act.facilitator !== 'Coach Tess')
+    fail(`the Portal's scorecard wasn't kept as the Calendar Management Mock Call: ${JSON.stringify({ ok, act })}`);
+  const back = (await inCall({ name: 'Abesh Dawn Jamon', batch: 'B103026', card: Object.assign({}, pcard, { source: 'foundational' }) }, 'gw-secret')).body || {};
+  if (back.skipped !== 'from here') fail(`a card that came from here was taken back: ${JSON.stringify(back)}`);
+  { const lr = JSON.parse(store.get('ft:labreview:' + id)); lr.acts['calendar-live'] = Object.assign(lr.acts['calendar-live'], { source: undefined, at: '2026-11-10T09:00:00Z', score: 90 }); store.set('ft:labreview:' + id, JSON.stringify(lr));
+    const old = (await inCall({ name: 'Abesh Dawn Jamon', batch: 'B103026', card: pcard }, 'gw-secret')).body || {};
+    if (!old.skipped || JSON.parse(store.get('ft:labreview:' + id)).acts['calendar-live'].score !== 90) fail(`an older Portal card wrote over a newer one saved here: ${JSON.stringify(old)}`); }
+  if ((await inCall({ name: 'Nobody Here', batch: 'B103026', card: pcard }, 'gw-secret')).status !== 404) fail('a scorecard for no trainee here wasn\'t refused');
   down = true; const d = (await call({ id, op: 'get' }, admin)).body || {};
   if (d.ok || !/unreachable/.test(d.error || '')) fail(`the Portal down didn't give a clear error: ${JSON.stringify(d)}`);
   delete env.AI_GATEWAY_SECRET; const o = (await call({ id, op: 'get' }, admin)).body || {};
