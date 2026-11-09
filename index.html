@@ -5949,80 +5949,6 @@ function orientSlides(){
   ];
 }
 
-/* ---------- Download the Orientation blueprint as a PDF (one landscape page per slide) ---------- */
-async function ensureHtml2Canvas(){
-  if(window.html2canvas) return true;
-  for(const u of ["https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js","https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"]){
-    try{ await new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src=u; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); setTimeout(rej,15000); }); if(window.html2canvas) return true; }catch(e){}
-  }
-  return false;
-}
-async function downloadOrientationPdf(){
-  const btn = document.getElementById("orPdfBtn"); const label = btn ? btn.innerHTML : "";
-  const say = (t)=>{ if(btn) btn.innerHTML = t; };
-  try{
-    say("⏳ Preparing…");
-    const doc = await buildOrientationPdfDoc(say);
-    doc.save("LSH_FT_Platform_Orientation.pdf");
-    toast("Orientation blueprint downloaded (PDF).");
-  }catch(e){
-    console.error(e); document.querySelectorAll(".or-export-host").forEach(x=>x.remove());
-    toast("Couldn't build the PDF here — use Print instead and choose “Save as PDF”.");
-  }finally{ if(btn) btn.innerHTML = label; }
-}
-async function buildOrientationPdfDoc(say){
-  say = say || (()=>{});
-  {
-    if(!(await ensureJsPdf()) || !(await ensureHtml2Canvas())) throw new Error("PDF tools couldn't load");
-    const slides = orientSlides();
-    const W = 1280, H = 720;
-    const host = document.createElement("div");
-    host.className = "or-export-host";
-    document.body.appendChild(host);
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({orientation:"landscape", unit:"px", format:[W, H], hotfixes:["px_scaling"]});
-    if(document.fonts && document.fonts.ready) await document.fonts.ready;
-    for(let k=0;k<slides.length;k++){
-      const sl = slides[k];
-      say(`⏳ Page ${k+1} of ${slides.length}…`);
-      host.innerHTML = `<div class="or-slide or-export">
-        <div class="or-kicker">${String(k+1).padStart(2,"0")} · ${esc(sl.k)}</div>
-        <h2>${esc(sl.h)}</h2>${sl.body}
-        <img class="or-logo" src="${LOGO_FULL_SRC}" alt="">
-        <div class="or-export-foot">LSH Foundational Training Program · Platform Orientation · ${k+1} / ${slides.length}</div>
-      </div>`;
-      await new Promise(r=>setTimeout(r, 60));
-      const canvas = await window.html2canvas(host.firstElementChild, {scale:2, backgroundColor:"#FFFDF8", useCORS:true, logging:false, width:W, height:H, windowWidth:W});
-      if(k) doc.addPage([W, H], "landscape");
-      doc.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, W, H);
-    }
-    host.remove();
-    return doc;
-  }
-}
-/* ---------- Auto-publish the blueprint on every platform update ----------
-   When an admin opens the portal and the stored blueprint is from an older
-   build, their browser quietly rebuilds the PDF and uploads it. Everyone
-   (trainers and trainees) always gets the latest at /blueprint.pdf. */
-async function autoPublishBlueprint(){
-  if(!state.isAdmin || state.blueprintJob) return;
-  try{
-    const meta = await sharedGet("blueprint:meta");
-    state.blueprintMeta = meta || null;
-    if(meta && meta.build===APP_BUILD) return;
-    if(meta && meta.lockUntil && Date.now() < meta.lockUntil && meta.lockBuild===APP_BUILD) return;   // another admin is building it
-    state.blueprintJob = true;
-    await sharedSet("blueprint:meta", Object.assign({}, meta||{}, {lockUntil:Date.now()+5*60*1000, lockBuild:APP_BUILD}));
-    const doc = await buildOrientationPdfDoc();
-    const b64 = doc.output("datauristring").split(",")[1];
-    const at = new Date().toISOString();
-    const ok = await sharedSet("blueprint:pdf", {build:APP_BUILD, at, b64});
-    if(ok){ state.blueprintMeta = {build:APP_BUILD, at, pages:orientSlides().length}; await sharedSet("blueprint:meta", state.blueprintMeta); if(state.view==="orientation") render(); }
-  }catch(e){ console.warn("blueprint auto-publish skipped:", e); }
-  finally{ state.blueprintJob = false; }
-}
-async function republishBlueprint(){ state.blueprintMeta = null; await sharedSet("blueprint:meta", {build:"", at:""}); toast("Rebuilding the blueprint PDF…"); await autoPublishBlueprint(); toast(state.blueprintMeta && state.blueprintMeta.build===APP_BUILD ? "✅ Blueprint PDF updated." : "Couldn't rebuild the blueprint — try again in a moment."); }
-window.republishBlueprint = republishBlueprint;
 function printOrientation(){
   const slides = orientSlides();
   const css = [...document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
@@ -6033,9 +5959,8 @@ function printOrientation(){
   }</body></html>`);
   w.document.close(); setTimeout(()=>{ w.focus(); w.print(); }, 600);
 }
-Object.assign(window, {downloadOrientationPdf, printOrientation});
+window.printOrientation = printOrientation;
 function renderOrientation(){
-  if(state.isAdmin && !state.blueprintMeta && !state.blueprintMetaLoading){ state.blueprintMetaLoading = true; sharedGet("blueprint:meta").then(m=>{ state.blueprintMeta = m||null; if(state.view==="orientation") render(); }).finally(()=>{ state.blueprintMetaLoading=false; }); }
   const slides = orientSlides();
   const i = Math.max(0, Math.min(state.orientIdx||0, slides.length-1)); state.orientIdx = i;
   const s = slides[i];
@@ -8367,8 +8292,9 @@ function restoreAfterUpdate(){
   setTimeout(()=>{ window.scrollTo(0, st.scroll||0); }, 300);   // (quietly: no "updated" toast)
   return true;
 }
-setInterval(()=>{ if(state.isAdmin && document.visibilityState==="visible" && !isTyping()) autoPublishBlueprint(); }, 10*60*1000);
-setTimeout(()=>{ if(state.isAdmin) autoPublishBlueprint(); }, 15000);
+// (js/lsh-blueprint-course.js defines autoPublishBlueprint: the Trainee blueprint, republished after a deploy)
+setInterval(()=>{ if(state.isAdmin && document.visibilityState==="visible" && !isTyping() && typeof autoPublishBlueprint==="function") autoPublishBlueprint(); }, 10*60*1000);
+setTimeout(()=>{ if(state.isAdmin && typeof autoPublishBlueprint==="function") autoPublishBlueprint(); }, 15000);
 function startUpdateChecks(){
   if(updateTimer) return;
   updateTimer = setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); else if(document.visibilityState!=="hidden") checkForUpdate(); }, POLL.update);
