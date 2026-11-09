@@ -72,9 +72,10 @@ if(typeof __top === "function") window.renderTopbar = function(){
 };
 
 const __admin = window.renderAdmin;
-if(typeof __admin === "function") window.renderAdmin = function(){
-  return `<div class="ft-admin-screen">${__admin.apply(this, arguments)}</div>`;
-};
+if(typeof __admin === "function"){ const me = window.renderAdmin = function(){
+  const out = `<div class="ft-admin-screen">${__admin.apply(this, arguments)}</div>`;
+  return typeof window.lshAdminOut === "function" ? window.lshAdminOut(me, out) : out;   // (the last wrapper groups the tabs)
+}; }
 // the Admin screen's page is wide: a class on <main> once it is drawn (main.ft-admin-main below), not only main:has(…), which
 // a browser without :has() (or a stylesheet loaded before the screen) leaves at the page's usual 1400 px
 const __after = window.afterRender;

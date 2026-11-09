@@ -446,8 +446,11 @@ Object.entries(CFG.adminGroupLabels || {}).forEach(([id, label]) => { const g = 
 if(Array.isArray(CFG.adminOrder)){ const o = CFG.adminOrder, at = g => { const i = o.indexOf(g.id); return i < 0 ? o.length : i; }; GROUPS.sort((a, b) => at(a) - at(b)); }
 const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
 function groupTabs(out){
+  if(out.indexOf("lp-admin-tabs") >= 0) return out;   // (grouped already)
   const a = out.indexOf('<div class="admin-tabs"'); if(a < 0) return out;
-  const b = out.indexOf("</div>", a) + 6;
+  // (the strip's own closing tag, nested <div>s counted: a tab added later — 📢 Announcements, 📧 EOD Inbox — sits after one)
+  let b = -1; { const re = /<div\b|<\/div>/g; re.lastIndex = a; let depth = 0, m; while((m = re.exec(out))){ depth += m[0] === "</div>" ? -1 : 1; if(!depth){ b = m.index + 6; break; } } }
+  if(b < 0) return out;
   const t = document.createElement("template"); t.innerHTML = out.slice(a, b);
   const tabs = [...t.content.querySelectorAll(".admin-tab-btn")].map(x => ({id:((x.getAttribute("onclick") || "").match(/setAdminTab\('([^']+)'\)/) || [])[1], html:x.outerHTML})).filter(x => x.id && !(CFG.adminHidden || []).includes(x.id));
   if(!tabs.length) return out;
@@ -464,8 +467,12 @@ function groupTabs(out){
     <div class="lp-admin-row"${solo(open) ? " hidden" : ""}>${open.tabs.map(x => x.html).join("")}</div></div>`;
   return out.slice(0, a) + bar + out.slice(b);
 }
+// (the tabs are grouped by whichever wrapper of renderAdmin runs last — window.lshAdminOut — so a tab a later script adds
+// (ftAdminTab: 📢 Announcements, 📧 EOD Inbox) is in its section like the rest, not left loose in the bar)
+window.lshGroupTabs = groupTabs;
+window.lshAdminOut = (me, out) => window.renderAdmin === me ? groupTabs(out) : out;
 const __admin = window.renderAdmin;
-window.renderAdmin = function(){
+const lshAdmin = window.renderAdmin = function(){
   // a program can fold the 🏅 Scorecards tab into a page of its own (LSH_PROGRAM.adminScorecardsTab: the tab to open instead)
   if(CFG.adminScorecardsTab && state.adminTab === "scorecards") state.adminTab = CFG.adminScorecardsTab;
   const tab = CFG.adminScorecardsTab ? "" : `<button class="admin-tab-btn ${state.adminTab === "scorecards" ? "active" : ""}" onclick="setAdminTab('scorecards')">🏅 Scorecards</button>`;
@@ -474,11 +481,11 @@ window.renderAdmin = function(){
     const out = __admin.apply(this, arguments);
     state.adminTab = "scorecards";
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    return groupTabs(out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderAdminScores());
+    return lshAdminOut(lshAdmin, out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderAdminScores());
   }
   const out = __admin.apply(this, arguments);
   const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-  return groupTabs(end > 0 ? out.slice(0, end) + tab + out.slice(end) : out);
+  return lshAdminOut(lshAdmin, end > 0 ? out.slice(0, end) + tab + out.slice(end) : out);
 };
 
 // 🛡 Admin Master Control (SOPs, Database Maintenance, Orientation, Attendance, Batches), 🔓 Open Lessons (Open Lessons,
@@ -512,8 +519,8 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 .topbar .nav .nav-portal{display:none !important;}
 /* the Admin screen's tabs, grouped: the sections, then the open section's tabs */
 .admin-tabs.lp-admin-tabs{display:block !important;border-bottom:1px solid var(--line);margin-bottom:20px;white-space:normal;overflow:visible;}
-.lp-admin-secs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
-.lp-admin-sec{font:inherit;font-size:13.5px;font-weight:700;border:1px solid #DDE1EC;background:#fff;color:var(--navy);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.lp-admin-secs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;margin-bottom:6px;padding-bottom:2px;}   /* (one line, as the trainer asked; it scrolls sideways when the screen is narrower) */
+.lp-admin-sec{font:inherit;font-size:13px;font-weight:800;border:1px solid #DDE1EC;background:#fff;color:var(--navy);border-radius:999px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;}
 .lp-admin-sec span{font-size:11px;font-weight:800;background:#ECEEF5;color:#4A5070;border-radius:999px;padding:1px 7px;}
 .lp-admin-sec:hover{border-color:#353B57;} .lp-admin-sec.active{background:var(--navy);border-color:var(--navy);color:#fff;} .lp-admin-sec.active span{background:rgba(255,255,255,.2);color:#fff;}
 .lp-admin-row{display:flex;gap:8px;flex-wrap:wrap;} .lp-admin-row[hidden]{display:none !important;}
@@ -527,7 +534,7 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 }
 /* 🛡 Admin Master Control, 🔓 Open Lessons and 🏅 Scorecard: bigger, bolder text */
 body.lp-sec-admin main summary{font-size:16.5px;}
-body.lp-sec-admin main .lp-admin-sec{font-size:14px;font-weight:800;}
+body.lp-sec-admin main .lp-admin-sec{font-size:13px;font-weight:800;}
 body.lp-sec-admin main .lp-admin-row .admin-tab-btn{font-size:16.5px;font-weight:800;}
 /* (max(…, 1em): never smaller than the text around it, so nothing that was already bigger shrinks) */
 body.lp-sec-admin main p, body.lp-sec-admin main li, body.lp-sec-admin main label{font-size:max(16px, 1em);line-height:1.6;}
