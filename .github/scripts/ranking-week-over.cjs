@@ -35,14 +35,16 @@ const failures = []; const fail = m => failures.push(m);
     for (let n = 0; n < 5; n++) {
       const t0 = Date.now();
       await page.evaluate(b => { if (state.adminTab !== 'ranking' || state.view !== 'admin') { state.adminTab = 'ranking'; goto('admin'); } FTRanking.batch(b); FTRanking.week(1); }, BATCH).catch(() => {});
-      const ok = await page.waitForFunction(() => /is over|hasn.t been started/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).then(() => true, () => false);
+      // (a week that has begun drafts its report at once: the page then shows the report itself)
+      const ok = await page.waitForFunction(() => /is over|is under way|hasn.t been started|Week 1 ·|Final average/i.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).then(() => true, () => false);
       if (ok) break;
       if (Date.now() - t0 < 9000) await page.waitForTimeout(2000);
     }
     // (and the report read once it says so: a re-draw right after the wait above left it empty for a moment on a busy runner)
     await page.waitForFunction(() => /Week 1 is over/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).catch(() => {});
     const txt = await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '');
-    if (!/Week 1 is over/.test(txt)) { const d = await page.evaluate(() => ({ view: state.view, tab: state.adminTab, admin: state.isAdmin, rk: !!document.querySelector('.rk'), url: location.hash, body: document.body.innerText.replace(/\s+/g, ' ').slice(0, 300) })).catch(e => String(e));
+    // (the week is over by FTRanking.over(), whatever the page shows: its report may already be drafted, being under way too)
+    if (!(await page.evaluate(() => FTRanking.over()).catch(() => false))) { const d = await page.evaluate(() => ({ view: state.view, tab: state.adminTab, admin: state.isAdmin, rk: !!document.querySelector('.rk'), url: location.hash, body: document.body.innerText.replace(/\s+/g, ' ').slice(0, 300) })).catch(e => String(e));
       fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)} · the page: ${JSON.stringify(d)}`); }
   } catch (e) { fail(e.stack || String(e)); }
   try {

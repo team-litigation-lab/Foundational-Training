@@ -18,8 +18,8 @@
    Each score starts from the week's evidence (base), the AI writes the comments in the facilitator's DNA and may adjust a
    score the evidence clearly shows otherwise; without the AI, the base scores and comments built from the evidence stand.
    The trainer can ✎ edit any score or comment. Kept in rksum:<batch>:w<N> (a trainer's).
-   🔄 Updated daily: while a week's scores can still come in (the week and the two days after it), a summary drafted on an
-   earlier day is drafted again the first time a trainer opens the Weekly Report that day — the trainer's hand edits kept — and a
+   🔄 Updated by itself: from the week's first day, and while its scores can still come in (the week and the two days after it),
+   a summary an hour old or more is drafted again when a trainer has the Weekly Report open (checked every 10 minutes) — the trainer's hand edits kept — and a
    week already shared with the trainees is shared again, so each trainee's card follows the scores as they are given.
    ============================================================ */
 (function(){
@@ -33,17 +33,19 @@ const COMP = [
   ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["instructions", "📏", "Following Instructions"], ["timely", "⏱", "Timely Submission (Time Management)"],
   ["communication", "💬", "Communication Proficiency"], ["english", "🔤", "English Proficiency"], ["call", "📞", "Call Handling"], ["tools", "🛠", "Tools Utilization"]];
 const S = {key: "", data: null, loading: false, busy: false, edit: false, err: ""};
-// (a week has scores once one of its days is over — Pacific time, as the end-of-shift check: until then, nothing to score)
+// (a week is scored from its first day on — Pacific time — with the work done so far: an initial score that grows as the days
+// go by, as the daily scorecards do; before its first day, nothing to score)
 const ptNow = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
-const begun = r => !!(r && r[0] && ptNow() > r[0]);
+const begun = r => !!(r && r[0] && ptNow() >= r[0]);
 // (a summary drafted before the scores were the week's own work only — it could carry an earlier week's over — isn't used:
 // the week is summarized again, SUMV 2)
 const SUMV = 2;
-// 🔄 a summary drafted on an earlier day (Pacific time) of a week whose scores can still come in: the week itself and the two
-// days after it (the last day's end-of-shift check, a mock call scored the next morning)
+// 🔄 a summary drafted an hour or more ago, of a week whose scores can still come in: the week itself and the two days after it
+// (the last day's end-of-shift check, a mock call scored the next morning) — so it follows the daily scorecards by itself
 const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
 const plusDays = (iso, n) => { const t = Date.parse(`${iso}T12:00:00Z`); return isFinite(t) ? new Date(t + n * 864e5).toISOString().slice(0, 10) : ""; };
-const stale = (d, r) => !!(d && d.at && r && r[1] && begun(r) && ptOf(d.at) < ptNow() && ptNow() <= plusDays(r[1], 2));
+const FRESH = 60 * 60 * 1000;
+const stale = (d, r) => !!(d && d.at && r && r[1] && begun(r) && Date.now() - Date.parse(d.at) >= FRESH && ptNow() <= plusDays(r[1], 2));
 const keyOf = (b, w) => `rksum:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
 const redraw = () => { const c = ctx(); if(c && c.rerender) c.rerender(); else if(typeof render === "function") render(); };
@@ -110,7 +112,74 @@ async function evidence(p, range){
     // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
     // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
     tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
-  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell, prog};
+  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell, prog, how: howOf(rvW, range, {use, kcs, assess, runs, spell, prog})};
+}
+/* 🔎 HOW THE SCORES WERE WORKED OUT, for the trainee's own card (📤 Share): what each competency is made of, with the week's
+   numbers, and every day of the week as the end-of-shift check saw it — the Daily compliance and its parts, and each issue found
+   in the day's outputs, the Task Tracker, the Monitoring Sheet, the EOD email, the tests and the instructions. Built from the
+   records the scores come from (trackerreview:<id>), so it says exactly what was counted. */
+const PART = {tracker: "📋 Task Tracker", monitor: "📒 Monitoring Sheet", tests: "🧪 Typing & Spelling Tests", outputs: "📤 Day's outputs", instructions: "📏 Following instructions", eod: "✉️ EOD email", platform: "🛠 Work on the platform"};
+const MADE = {attention: "the accuracy criteria of your mock calls and demos (Attention to Detail, Authentication, Comprehension…), your Knowledge Checks and assessments, and your Task Tracker's daily score",
+  compliance: "the average of each day's Daily compliance (the end-of-shift check: Task Tracker, Monitoring Sheet, tests, outputs, instructions, EOD)",
+  instructions: "each day's naming convention, saving route and folders, deliverables on time and Drive links",
+  timely: "your EOD sent before the end of the shift, your Monitoring Sheet entries on time and each day's outputs handed in",
+  communication: "the communication criteria of your mock calls and demos, their overall scores, your practice calls in the simulators, your graded written output and your EOD emails",
+  english: "the grammar, spelling, writing and speech criteria of your mock calls, your spelling tests and your Knowledge Checks",
+  call: "your mock calls' scoresheets with the trainer",
+  tools: "your demos' scoresheets, your Practice Sessions, the system and tool criteria, and your daily work on the platform's tools"};
+function howOf(rv, range, x){
+  rv = rv || {}; const inW = d => !range || (d >= range[0] && d <= range[1]);
+  const pc = v => typeof v === "number" && isFinite(v) ? Math.round(v) + "%" : "–";
+  const days = Object.keys(rv.compliance || {}).filter(inW).sort().map(D => {
+    const c = rv.compliance[D] || {}, P = c.parts || {}, iss = {};
+    const add = (k, t) => { if(has(t)) (iss[k] = iss[k] || []).push(clip(t, 260)); };
+    // 📋 the tracker: its checks that missed, and the AI's read of the day's rows
+    const td = (rv.days || {})[D] || {};
+    (td.rules || []).filter(r => r && !r.pass).forEach(r => add("tracker", `${r.label}${r.detail ? ": " + r.detail : ""}`));
+    if(c.trackerAi){ (c.trackerAi.flags || []).forEach(f => add("tracker", f)); if(c.trackerAi.aiLikely) add("tracker", "The entries read as AI-generated rather than your own words."); if(has(c.trackerAi.feedback)) add("tracker", "Feedback: " + c.trackerAi.feedback); }
+    // 📒 the Monitoring Sheet's entry dated that day: its checks that missed, the AI's read
+    const me = (((rv.monitor || {}).entries) || []).find(en => en && en.date === D);
+    if(P.monitor != null && !me) add("monitor", "No Monitoring Sheet entry dated this day was found.");
+    if(me) (me.checks || []).filter(k => !k.ok).forEach(k => add("monitor", `${me.topic}: ${k.label} missing`));
+    if(c.monitorAi){ (c.monitorAi.flags || []).forEach(f => add("monitor", f)); if(c.monitorAi.aiLikely) add("monitor", "The takeaways read as AI-generated rather than your own words."); if(has(c.monitorAi.feedback)) add("monitor", "Feedback: " + c.monitorAi.feedback); }
+    // ✉️ the EOD email against its template
+    if(c.eodCheck) (c.eodCheck.rules || []).filter(r => r && !r.pass).forEach(r => add("eod", `${r.label}${r.detail ? ": " + r.detail : ""}`));
+    else if(P.eod != null) add("eod", "No EOD email was received for this day.");
+    // 🧪 the tests
+    const T = c.tests || {}; if(P.tests != null) [["AM", "AM Typing Test"], ["PM", "PM Typing Test"], ["SP", "Spelling Test"]].forEach(([k, n]) => { if(!T[k]) add("tests", `${n} not taken`); });
+    // 📤 the outputs: nothing handed in, and each graded piece's score
+    if(P.outputs === 0) add("outputs", "Nothing was handed in or saved to your folder this day.");
+    if(c.folderError) add("outputs", "Your Assessments/Activities folder couldn't be read: " + c.folderError);
+    (c.graded || []).forEach(g => add("outputs", `${g.what}: ${pc(g.pct)}`));
+    // 📏 the instructions
+    (((c.instr || {}).issues) || []).forEach(i => add("instructions", i.why));
+    (c.unreadable || []).forEach(k => add(k, "The sheet couldn't be opened: share it with the platform so it can be checked."));
+    return {d: D, pct: c.pct == null ? null : Math.round(c.pct), final: !!c.final, parts: Object.fromEntries(Object.keys(PART).filter(k => P[k] != null).map(k => [k, Math.round(P[k])])), issues: iss};
+  });
+  const avgP = xs => { const v = xs.filter(n => typeof n === "number"); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+  const nums = {
+    attention: [x.kcs.length ? `Knowledge Checks ${pc(avgP(x.kcs.map(k => k.pct)))}` : "", x.assess.length ? `assessments ${pc(avgP(x.assess.map(a => a.pct)))}` : "", days.some(d => d.parts.tracker != null) ? `Task Tracker ${pc(avgP(days.map(d => d.parts.tracker)))}` : "", x.use.length ? `${x.use.length} scoresheet(s)` : ""],
+    compliance: [days.length ? `${days.length} day(s) checked, average ${pc(avgP(days.map(d => d.pct)))}` : ""],
+    instructions: [days.some(d => d.parts.instructions != null) ? `average ${pc(avgP(days.map(d => d.parts.instructions)))}` : ""],
+    timely: [days.some(d => d.parts.outputs != null) ? `day's outputs ${pc(avgP(days.map(d => d.parts.outputs)))}` : "", days.some(d => d.parts.eod != null) ? `EOD ${pc(avgP(days.map(d => d.parts.eod)))}` : ""],
+    communication: [x.use.length ? `${x.use.length} scoresheet(s)` : "", x.prog && x.prog.callsN ? `${x.prog.callsN} practice call(s) ${pc(x.prog.calls)}` : "", x.prog && x.prog.writtenN ? `${x.prog.writtenN} written output(s) ${pc(x.prog.written)}` : ""],
+    english: [x.spell.length ? `spelling tests ${pc(avgP(x.spell))}` : "", x.kcs.length ? `Knowledge Checks ${pc(avgP(x.kcs.map(k => k.pct)))}` : ""],
+    call: [x.use.filter(u => u.mock).map(u => `${u.title} ${u.avg5 != null ? u.avg5.toFixed(2) + "/5" : "–"}`).join(", ")],
+    tools: [x.runs.length ? `Practice Sessions ${pc(avgP(x.runs))}` : "", days.some(d => d.parts.platform != null) ? `platform work ${pc(avgP(days.map(d => d.parts.platform)))}` : "", x.use.filter(u => !u.mock).length ? `${x.use.filter(u => !u.mock).length} demo(s)` : ""]};
+  return {comp: Object.fromEntries(COMP.map(([k]) => [k, {made: MADE[k], from: (nums[k] || []).filter(has).join(" · ") || "no evidence this week"}])), days};
+}
+function howHtml(h){
+  if(!h || !h.comp) return "";
+  const md = d => { const t = Date.parse(d + "T12:00:00Z"); return isFinite(t) ? new Date(t).toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", timeZone: "UTC"}) : d; };
+  return `<details class="rks-how"><summary>🔎 How these scores were worked out</summary>
+    <p class="rks-how-k">Each score is out of 5 (a % ÷ 20), from the week's own work:</p>
+    <ul>${COMP.map(([k, ic, n]) => { const c = h.comp[k] || {}; return `<li><b>${ic} ${e(n)}</b>: ${e(c.made || "")}. <i>This week: ${e(c.from || "no evidence this week")}.</i></li>`; }).join("")}</ul>
+    <p class="rks-how-k">📅 Day by day (the end-of-shift check)</p>
+    ${(h.days || []).length ? (h.days || []).map(d => { const ks = Object.keys(d.issues || {});
+      return `<div class="rks-how-day"><b>${e(md(d.d))} · Daily compliance ${d.pct == null ? "–" : d.pct + "%"}${d.final ? "" : " (today, not final)"}</b>
+        <p>${Object.entries(d.parts || {}).map(([k, v]) => `${e(PART[k] || k)} ${v}%`).join(" · ") || "No parts checked"}</p>
+        ${ks.length ? `<ul>${ks.map(k => `<li><b>${e(PART[k] || k)}</b><ul>${d.issues[k].map(t => `<li>${e(t)}</li>`).join("")}</ul></li>`).join("")}</ul>` : `<p class="rks-how-ok">✓ No issues found.</p>`}</div>`; }).join("")
+      : `<p>No day of this week has been checked yet.</p>`}</details>`;
 }
 // the evidence as the AI reads it
 function brief(ev){
@@ -181,12 +250,12 @@ async function draft(opts){
   // (asked while one runs — the automatic one, say —: it runs again as soon as that one is done, with what is asked now)
   const daily = !!(opts && opts.daily);
   const c = ctx(); if(!c) return; if(S.busy){ S.again = true; return; } const key = keyOf(c.batch, c.week), ppl = c.people || [];
-  if(!begun(c.range)){ toast(`Week ${c.week} has no scores yet: its first day isn't over.`); return; }
+  if(!begun(c.range)){ toast(`Week ${c.week} hasn't begun yet.`); return; }
   if(!ppl.length){ toast("No approved trainee in this batch."); return; }
   S.busy = true; S.err = ""; redraw();
   const voice = typeof window.fbStyleBlock === "function" ? (window.fbStyleBlock() || "") : "";
   const rows = {}; let ai = 0;
-  for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name}, sm); }catch(err){} if(S.key !== key) break; }
+  for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){} if(S.key !== key) break; }
   // (another week picked meanwhile: nothing is saved over this week's summary, nor shown as that week's)
   if(S.key !== key){ S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); } redraw(); return; }
   const prev = S.data || {};
@@ -238,7 +307,7 @@ function reportHtml(forDoc, V){
       ${r.overallComment ? `<p class="rks-ovc"><b class="rks-sum-k">📑 Overall${r.overall != null ? ` ${r.overall.toFixed(1)}/5` : ""}: the week's ${COMP.length} scores</b> ${e(r.overallComment)}</p>` : ""}
       <div class="rks-grid">${COMP.map(([k, ic, n]) => `<div class="rks-comp"><div class="rks-comp-h"><span>${ic} ${e(n)}</span>${ed ? `<input type="number" min="0" max="5" step="0.1" value="${r.scores[k] == null ? "" : r.scores[k]}" onchange="FTRankSummary.set('${e(r.id)}','score','${k}',this.value)">` : chip(r.scores[k])}</div>${bar(r.scores[k])}
         ${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','comment','${k}',this.value)">${e(r.comments[k] || "")}</textarea>` : `<p>${e(r.comments[k] || "")}</p>`}</div>`).join("")}</div>
-      <div class="rks-fb"><b>🧑‍🏫 Feedback from the trainer</b>${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','trainer','',this.value)">${e(r.trainer || "")}</textarea>` : `<p>${e(r.trainer || "")}</p>`}</div>${forDoc ? "</section>" : "</details>"}`; }).join("")}
+      <div class="rks-fb"><b>🧑‍🏫 Feedback from the trainer</b>${ed ? `<textarea rows="3" onchange="FTRankSummary.set('${e(r.id)}','trainer','',this.value)">${e(r.trainer || "")}</textarea>` : `<p>${e(r.trainer || "")}</p>`}</div>${forDoc ? "" : howHtml(r.how)}${forDoc ? "</section>" : "</details>"}`; }).join("")}
     ${d && (V || forDoc) ? `<p class="rks-foot">${V ? "Shared with you" : "Prepared"} ${e(new Date(d.at).toLocaleString())} from the platform's records of the week${d.ai ? ", summarized in the facilitator's voice" : ""}.</p>` : ""}</div>`;
 }
 const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
@@ -270,18 +339,25 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-fb{margin:10px 0 0;padding:9px 11px;border-left:4px solid #DB8437;background:#FFF8EF;border-radius:8px;font-size:14px;} .rks-fb p{margin:4px 0 0;line-height:1.5;}
 .rks textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13.5px;margin-top:6px;padding:6px 8px;border:1px solid #C9D1E0;border-radius:8px;} .rks input[type=number]{width:64px;font:inherit;padding:2px 4px;}
 .rks-foot{color:#80868B;font-size:12px;margin:6px 0 0;}
+.rks-how{margin:10px 0 0;padding:9px 11px;border:1px solid #DDE1EC;border-radius:8px;background:#fff;font-size:13.5px;line-height:1.5;} .rks-how>summary{cursor:pointer;font-weight:800;color:#1E2340;}
+.rks-how-k{font-weight:800;margin:10px 0 4px;color:#1E2340;} .rks-how ul{margin:4px 0 6px 18px;padding:0;} .rks-how-day{border-top:1px solid #EEF0F5;padding:6px 0;} .rks-how-day p{margin:2px 0;color:#3C4043;}
+.rks-how-ok{color:#1E6B40;}
 .rks-head-acts{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
 .rks-head-acts .btn-ghost{background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.45) !important;color:#fff !important;}
 .rks-head-acts .btn-navy{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;} .rks-head-acts select{font-weight:800;}
 .rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
-// ⏳ a week whose first day isn't over: every trainee at 0.0 for now (grey, "Not started") — no week carries another's scores
+// ⏳ a week that hasn't begun: every trainee at 0.0 for now (grey, "Not started") — no week carries another's scores
 function zeroHtml(c){
   const ppl = (c.people || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name))), z = `<span class="rks-chip rks-zero">0.0</span>`;
-  return `<p class="sc-empty">Week ${e(c.week)} has no scores yet: its first day isn't over. Each score comes from the week's own work on the scorecards, once a day of it is done.</p>
+  return `<p class="sc-empty">Week ${e(c.week)} hasn't begun yet. From its first day each score comes from the week's own work on the scorecards, and grows as the days go by.</p>
     <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th></tr></thead>
     <tbody>${ppl.map(p => `<tr><td class="rks-rank">—</td><td class="rks-name"><b>${e(p.name)}</b></td>${COMP.map(() => `<td>${z}</td>`).join("")}<td>${z} <small class="rks-lbl">Not started</small></td></tr>`).join("")}</tbody></table>`;
 }
+// (🔄 the Weekly Report left open: looked at again every 10 minutes, so an hour-old summary is drafted again without a click —
+// not while a trainer edits it or types)
+setInterval(() => { try{ if(typeof state === "undefined" || state.view !== "admin" || S.busy || S.edit || (typeof isTyping === "function" && isTyping())) return;
+  if(document.querySelector(".rks-wrap")) redraw(); }catch(err){} }, 10 * 60 * 1000);
 /* ---------- on the page: above the marks sheet, in 📊 Weekly Ranking ---------- */
 window.FTRankSummary = {
   html(){
@@ -293,9 +369,9 @@ window.FTRankSummary = {
       (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     // 🔄 and summarized again once a day while its scores are still coming in (stale), so the report follows the scores as they
     // are given: what the trainer edited by hand stays, and a week already shared is shared again with the new scores
-    else if(!S.loading && S.key === k && S.data && !S.busy && !(S.daily || {})[k] && (c.people || []).length && stale(S.data, c.range)){
-      (S.daily = S.daily || {})[k] = 1; setTimeout(() => { if(S.key === k && S.data && stale(S.data, c.range)) draft({daily: true}); }, 0); }
-    // (⏳ a week whose first day isn't over has no scores: not even a summary drafted early)
+    else if(!S.loading && S.key === k && S.data && !S.busy && Date.now() - ((S.daily || {})[k] || 0) >= FRESH && (c.people || []).length && stale(S.data, c.range)){
+      (S.daily = S.daily || {})[k] = Date.now(); setTimeout(() => { if(S.key === k && S.data && stale(S.data, c.range)) draft({daily: true}); }, 0); }
+    // (⏳ a week that hasn't begun has no scores: not even a summary drafted early)
     const d = begun(c.range) ? S.data : null;
     // (the week and the report's buttons sit in its blue banner once there is a report; before it, on their own line)
     const acts = `<select aria-label="Week" onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${Number(w) === Number(c.week) ? "selected" : ""}>Week ${w}</option>`).join("")}</select><button class="btn btn-navy btn-sm" ${S.busy ? "disabled" : ""} onclick="FTRankSummary.draft()">${S.busy ? "📑 Summarizing the week…" : d ? "🔄 Update from the week's progress" : "📑 Summarize the week for management"}</button>
@@ -327,7 +403,7 @@ window.FTRankSummary = {
     S.sharing = true; redraw(); let bad = 0; const at = new Date().toISOString();
     for(const r of rows){
       const mine = {batch: d.batch, week: d.week, range: d.range || null, ai: !!d.ai, sharedAt: at, name: r.name, rank: r.rank || null, of, overall: r.overall,
-        scores: Object.assign({}, r.scores), comments: Object.assign({}, r.comments), trainer: r.trainer || "", overallComment: r.overallComment || ""};
+        scores: Object.assign({}, r.scores), comments: Object.assign({}, r.comments), trainer: r.trainer || "", overallComment: r.overallComment || "", how: r.how || null};
       try{ const cur = (await sharedGet("rankshare:" + r.id)) || {}; cur.reports = cur.reports || {}; cur.reports[`${d.batch}|${d.week}`] = mine;
         if(await sharedSet("rankshare:" + r.id, cur) === false) bad++; }catch(err){ bad++; }
     }
@@ -343,7 +419,7 @@ window.FTRankSummary = {
     const reps = Object.values(S.mine.reports || {}).filter(r => r && r.scores).sort((a, b) => Number(b.week) - Number(a.week) || String(b.sharedAt).localeCompare(String(a.sharedAt)));
     if(!reps.length) return `<p class="sc-empty">Your trainer hasn’t shared a Weekly Progress Report with you yet. It shows up here once they do.</p>`;
     return reps.map(r => reportHtml(false, {c: {batch: r.batch, week: r.week}, d: {range: r.range, at: r.sharedAt, ai: r.ai},
-      rows: [{id: me.id, name: r.name || me.name, rank: r.rank, of: r.of, overall: r.overall, scores: r.scores || {}, comments: r.comments || {}, trainer: r.trainer, overallComment: r.overallComment}]})).join("");
+      rows: [{id: me.id, name: r.name || me.name, rank: r.rank, of: r.of, overall: r.overall, scores: r.scores || {}, comments: r.comments || {}, trainer: r.trainer, overallComment: r.overallComment, how: r.how}]})).join("");
   },
   fold(el){ (S.open = S.open || {})[el.dataset.id] = el.open; },
   foldAll(open){ S.open = {}; Object.keys((S.data || {}).rows || {}).forEach(id => { S.open[id] = open; });

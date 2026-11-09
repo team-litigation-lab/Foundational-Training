@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
-// (a batch that started yesterday, Pacific time: its Week 1 is the week now and not over, so nothing drafts itself; a Batch ID is
+// (a batch that started yesterday, Pacific time: its Week 1 is the week now, under way and not over, so its report drafts itself; a Batch ID is
 // its first day, B + MMDDYY)
 const ptParts = ms => Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: '2-digit', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
 const bid = ms => { const p = ptParts(ms); return `B${p.month}${p.day}${p.year}`; };
@@ -44,7 +44,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'ranking'; FTRanking.reload(); goto('admin'); });
   await page.waitForTimeout(2500);
   // (its own button, 📊 Weekly Reports: the old tab lands there)
-  if (!(await page.$('#bs-ranking .rk')) || await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the 📊 Weekly Ranking is not on 📊 Weekly Reports');
+  if (!(await page.$('#bs-ranking .rk')) || await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the 📊 Weekly Ranking is not on 📊 Weekly Reports: ' + JSON.stringify(await page.evaluate(() => { const c = FTRanking.ctx(); return { tab: state.adminTab, tid: state.traineeId, admin: state.isAdmin, people: c.people && c.people.length, batch: c.batch, sum: FTRankSummary.busy(), after: (() => { try { render(); } catch (e) { return 'render threw: ' + e.message; } return /Loading the batches/.test(document.body.innerText) ? 'still loading after render()' : 'drawn after render()'; })(), txt: ((document.querySelector('#bs-ranking') || {}).innerText || '').replace(/\s+/g, ' ').slice(-160) }; })));
   if (await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the old 📊 Weekly Ranking tab doesn\'t land on 📊 Weekly Reports');
   const tabs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
   if (!/Weekly Reports/.test(tabs) || /Weekly Ranking/.test(tabs)) fail(`🏅 Scorecard's tabs have no 📊 Weekly Reports (the old 📊 Weekly Ranking tab hidden): ${tabs}`);
@@ -52,7 +52,10 @@ const failures = []; const fail = m => failures.push(m);
     const sc = secs.findIndex(x => /Scorecard/.test(x)), wr = secs.findIndex(x => /Weekly Reports/.test(x));
     if (wr < 0 || sc < 0 || wr !== sc + 1) fail(`📊 Weekly Reports isn't its own section button beside 🏅 Scorecard: ${secs.join(' | ')}`); }
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
-  if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
+  // (🔄 a week under way drafts its own report from its first day, and fills as the days go by)
+  { const ok = await page.waitForFunction(() => FTRanking.begun() && /is under way|Final average|final average/i.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 15000 }).then(() => true, () => false);
+    if (!ok) fail(`a week under way doesn't draft its own report: ${(await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '')).replace(/\s+/g, ' ').slice(0, 300)}`);
+    await page.waitForTimeout(3000); }
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
   // 🔗 connected to every scorecard: the Daily Compliance, the Drive links' compliance and 🏅 the Scorecard's overall, at the end
   const conn = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
