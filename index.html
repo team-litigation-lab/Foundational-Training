@@ -8693,15 +8693,17 @@ let loadedDeployment = "", candidateDeployment = "";
 // Safety net against reload loops: at most 2 automatic reloads per 10 minutes in a tab, and never
 // twice for the same version. After that the banner's Update now button is the only way to reload.
 const AUTO_RELOAD_KEY = "lsh_auto_reloads";
+// the automatic reloads of the last 10 minutes (throws when site storage is blocked: each caller catches it)
+function recentAutoReloads(){ return (JSON.parse(sessionStorage.getItem(AUTO_RELOAD_KEY) || "[]") || []).filter(x=>x && Date.now()-x.at < 10*60*1000); }
 function autoReloadAllowed(target){
   try{
-    const recent = (JSON.parse(sessionStorage.getItem(AUTO_RELOAD_KEY) || "[]") || []).filter(x=>x && Date.now()-x.at < 10*60*1000);
+    const recent = recentAutoReloads();
     return recent.length < 2 && !recent.some(x=>x.target===target);
   }catch(e){ return false; }
 }
 function noteAutoReload(target){
   try{
-    const recent = (JSON.parse(sessionStorage.getItem(AUTO_RELOAD_KEY) || "[]") || []).filter(x=>x && Date.now()-x.at < 10*60*1000);
+    const recent = recentAutoReloads();
     recent.push({target, at:Date.now()});
     sessionStorage.setItem(AUTO_RELOAD_KEY, JSON.stringify(recent));
   }catch(e){}
