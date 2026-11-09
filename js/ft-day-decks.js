@@ -274,12 +274,12 @@ function visual(html){
     // and its name under it. A click anywhere on the card plays it bigger in the pop-up viewer (the
     // preview only shows it: it takes no clicks)
     const prevSrc = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
-    if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-vwrap, .ftdd-tile.k-video"))){
+    if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-tile.k-video"))){
       const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-vcards") ? p.previousElementSibling : null;
       const grid = last || document.createElement("div"); grid.className = "ftdd-vcards";
       tiles.forEach((x, j) => {
-        const card = x.matches(".ftdd-vwrap") ? x : document.createElement("div");
-        if(card !== x) card.appendChild(x);
+        const card = document.createElement("div");
+        card.appendChild(x);
         card.className = "ftdd-vcard";
         const tile = card.querySelector(".ftdd-tile"), pic = document.createElement("span");
         pic.className = "ftdd-vcard-pic";
@@ -293,14 +293,13 @@ function visual(html){
     }
     // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it. So does every video the platform can play (Drive, Loom, YouTube): it is watched on the slide, not
     // through a link (a line of several videos, a player each); an interview recording keeps its 🎧 Transcribe tile
-    const embedOf = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
-    const isVid = x => !!(x && x.matches && (x.matches(".ftdd-tile.k-video") || (x.matches(".ftdd-vwrap") && x.querySelector(".ftdd-tile.k-video"))));
-    const embeds = as.length === 1 && as[0].hasAttribute("data-embed") && embedOf(as[0]) ? [0]
-      : as.every((a, j) => isVid(tiles[j]) && embedOf(a)) ? as.map((a, j) => j) : [];
+    const isVid = x => !!(x && x.matches && x.matches(".ftdd-tile.k-video"));
+    const embeds = as.length === 1 && as[0].hasAttribute("data-embed") && prevSrc(as[0]) ? [0]
+      : as.every((a, j) => isVid(tiles[j]) && prevSrc(a)) ? as.map((a, j) => j) : [];
     if(embeds.length){
       const boxes = embeds.map(j => {
-      const a = as[j], src = embedOf(a);
-      const x = tiles[j], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video");
+      const a = as[j], src = prevSrc(a);
+      const tile = tiles[j], vid = tile.classList.contains("k-video");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's; a name that is only the guide's address reads as the tile's)
@@ -416,8 +415,7 @@ function visual(html){
     root.querySelectorAll("a.ftdd-tile[href]").forEach(a => {
       const href = a.getAttribute("href");
       if(!seen.has(href)){ seen.add(href); return; }
-      const wrap = a.closest(".ftdd-vwrap");
-      (wrap || a).remove();
+      a.remove();
     });
     root.querySelectorAll("p, span").forEach(x => {
       if(x.querySelector("a, img, iframe") || x.closest(".trainer-slot")) return;
@@ -427,7 +425,6 @@ function visual(html){
     });
   })();
   // tiles that ended up next to each other share one grid
-  root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
   // 📌 a trainer's guide the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): on the trainer's
   // deck, a button that opens it as a sheet over the slide (FTDayDecks.tsheet); on a trainee's, nothing
@@ -2344,7 +2341,6 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:700;}
 .ftdd-sheet.ftdd-hw ul, .ftdd-sheet.ftdd-hw ol{display:inline-block;text-align:left;}
 .ftdd-sheet.ftdd-hw .ftdd-tiles, .ftdd-sheet.ftdd-hw .url-list{justify-content:center;}
 .ftdd-sheet.ftdd-hw .url-list > span{display:block;}
-.ftdd-sheet.ftdd-hw .ftdd-vwrap{justify-content:center;}
 .ftdd-sheet.ftdd-hw .ftdd-tile b{font-size:18px;}
 /* Days 6–15: bigger, bolder, higher-contrast type; the content centred on the sheet, across and down; nothing split */
 .ftdd-sheet.ftdd-d615{display:flex;flex-direction:column;justify-content:safe center;align-items:center;text-align:center;gap:6px;}
@@ -2362,7 +2358,7 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;c
 .ftdd-sheet.ftdd-d615 p.li{text-align:left;align-self:center;}
 .ftdd-sheet.ftdd-d615 table{margin-left:auto;margin-right:auto;}
 .ftdd-sheet.ftdd-d615 :is(tr,li,figure,img,table,.ftdd-step,.ftdd-inline){break-inside:avoid;page-break-inside:avoid;}
-.ftdd-sheet.ftdd-d615 :is(.ftdd-tiles,.url-list,.ftdd-vwrap,.shots){justify-content:center;}
+.ftdd-sheet.ftdd-d615 :is(.ftdd-tiles,.url-list,.shots){justify-content:center;}
 /* a screenshot or sample fits the slide: it shrinks to the sheet instead of making it scroll */
 .ftdd-sheet img{max-width:100%;height:auto;max-height:min(58vh,560px);object-fit:contain;}
 /* an embedded deck keeps its 16:9 but never grows past the slide (js/ft-updates.js gives it a padding-top box) */
@@ -2422,7 +2418,6 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-tile-t b{font-size:15px;line-height:1.5;color:#1F5B39;text-decoration:underline;text-underline-offset:2px;display:inline;overflow:visible;}
 .ftdd-tile.k-video .ftdd-tile-t b{font-size:15.5px;}
 .ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-left:8px;white-space:nowrap;}
-.ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
 /* …except a set of videos the trainee is to watch one after another (Day 3's five CRM/CMS videos, data-card): cards side
    by side, each with the video's preview, so the set reads as what to watch, and a click plays it bigger */
 /* (a row of one or two videos sits in the middle of the slide, not on the left with empty columns beside it) */
