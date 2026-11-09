@@ -42,7 +42,8 @@ const failures = []; const fail = m => failures.push(m);
     // (and the report read once it says so: a re-draw right after the wait above left it empty for a moment on a busy runner)
     await page.waitForFunction(() => /Week 1 is over/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).catch(() => {});
     const txt = await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '');
-    if (!/Week 1 is over/.test(txt)) fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)}`);
+    if (!/Week 1 is over/.test(txt)) { const d = await page.evaluate(() => ({ view: state.view, tab: state.adminTab, admin: state.isAdmin, rk: !!document.querySelector('.rk'), url: location.hash, body: document.body.innerText.replace(/\s+/g, ' ').slice(0, 300) })).catch(e => String(e));
+      fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)} · the page: ${JSON.stringify(d)}`); }
   } catch (e) { fail(e.stack || String(e)); }
   try {
     if (id) { const r = await get('trainee:' + id); r.archived = true; await put('trainee:' + id, r); }
