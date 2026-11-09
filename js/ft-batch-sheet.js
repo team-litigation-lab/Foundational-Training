@@ -1882,6 +1882,16 @@ window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.
 
 // 🟦 the dark page banner (the Weekly Progress Report's look): Legal Support Help · Foundational Training, the page's
 // name, and Batch · Week · its dates under it; js/ft-batch-admin.js (🧑‍🏫 Graders) draws it too
+// 🟦 the same banner over 📘 Curriculum, 📒 Feedback and Monitoring Rubric and 🗣 Feedback Style (📚 Open Lessons' other tabs), put
+// under the tab row after each draw: their pages are drawn elsewhere (js/ft-curriculum…, js/ft-monitoring.js, js/ft-activities.js)
+const BANNER_TABS = {curriculum: "Curriculum", monitor: "Feedback and Monitoring Rubric", fbstyle: "Feedback Style"};
+(function(){ const was = window.afterRender;
+  window.afterRender = function(){ const out = was ? was.apply(this, arguments) : undefined;
+    try{ const t = typeof state === "object" && state.view === "admin" && state.isAdmin ? BANNER_TABS[state.adminTab] : "";
+      if(t && !document.querySelector(".ft-banner[data-tab]")){ const bar = document.querySelector(".lp-admin-tabs") || document.querySelector(".admin-tabs");
+        if(bar){ bar.insertAdjacentHTML("afterend", window.ftBanner(t, "", "").replace('<div class="ft-banner">', `<div class="ft-banner" data-tab="${state.adminTab}">`)); } } }catch(err){}
+    return out; };
+})();
 window.ftBanner = function(title, batch, right){
   const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
   let wk = "";
