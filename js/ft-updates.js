@@ -813,31 +813,22 @@ function renderFtOpenVideos(){
       ${renderFtVideoRequests()}
     </div>`;
 }
-window.ftToggleOpenVideo = async function(id, on){
+// ✓ / ✗ a lesson (or its video) for the batch picked above, or for all batches: field is the state record, key its setting
+async function ftToggleOpen(field, key, what, onWord, offWord, id, on){
   await ftLoadOpenDays();
-  const o = state.ftOpenVideos;
+  const o = state[field];
   const sel = state.ftOdBatch || "__all";
   const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
   on ? list.add(id) : list.delete(id);
   const arr = [...list].sort((a,b)=>a-b);
   if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
-  const ok = await sharedSet("settings:openvideos", o);
-  toast(ok ? `${ftName(id)} video ${on ? "unlocked" : "locked"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
+  const ok = await sharedSet(key, o);
+  toast(ok ? `${ftName(id)}${what} ${on ? onWord : offWord} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
   render();
-};
+}
+window.ftToggleOpenVideo = (id, on) => ftToggleOpen("ftOpenVideos", "settings:openvideos", " video", "unlocked", "locked", id, on);
 window.ftSetOdBatch = function(v){ state.ftOdBatch = v; render(); };
-window.ftToggleOpenDay = async function(id, on){
-  await ftLoadOpenDays();
-  const o = state.ftOpenDays;
-  const sel = state.ftOdBatch || "__all";
-  const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
-  on ? list.add(id) : list.delete(id);
-  const arr = [...list].sort((a,b)=>a-b);
-  if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
-  const ok = await sharedSet("settings:opendays", o);
-  toast(ok ? `${ftName(id)} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
-  render();
-};
+window.ftToggleOpenDay = (id, on) => ftToggleOpen("ftOpenDays", "settings:opendays", "", "opened", "closed", id, on);
 /* Admin → 📘 Curriculum: the whole Training Guide (facilitator content included) from
    /trainer/curriculum.json, which the Worker sends only to a signed-in trainer.
    Log-in credentials are not in it: they point to the credentials document. */
