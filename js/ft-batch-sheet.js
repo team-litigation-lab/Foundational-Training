@@ -34,7 +34,7 @@ const weeklyOn = () => state.view === "admin" && state.adminTab === WEEKLY && ad
 const e = v => esc(String(v == null ? "" : v));
 // (a link the trainee saved goes into an href only as an http(s) address, escaped: a javascript: one is never a link)
 const safeHref = u => /^https?:\/\//i.test(String(u || "").trim()) ? e(String(u).trim()) : "";
-const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", sel: null, recent: 14, fix: null};
+const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", recent: 14, fix: null};
 const canon = v => typeof canonicalBatch === "function" ? canonicalBatch(v) : "";
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const lessons = () => (typeof DAYS !== "undefined" && Array.isArray(DAYS) ? DAYS : []);
@@ -1183,7 +1183,7 @@ function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
   // (opened: the latest batch, unless one was picked while here)
-  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; B.sel = null; } }
+  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; } }
   if(!B.batch) return `<div class="card gs-card"><p class="sc-empty">No trainee has registered yet. They appear here as soon as they register.</p></div>`;
   loadData();
   const ppl = people(), D = B.data, ready = !!D && !D.error && (!D.batch || D.batch === B.batch) && ppl.every(p => (D.rec || {})[p.id]) && (!B.dataLoading || !!D.batch);
@@ -1215,7 +1215,7 @@ function renderSheet(){
 
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
-if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; B.sel = null; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
   // 📦 Archive batch (the batch menu): the archive dialog for the batch on screen (js/ft-batch-admin.js confirmArchiveBatch: Google
   // Drive backup, then the clear, or 🗑 Delete the batch), on the trainee list it reads; the sheet reads its trainees again after
@@ -1227,11 +1227,11 @@ window.FTBatchSheet = {
     window.confirmArchiveBatch(key);
     // (when the dialog closes, archived or not: read the batches again)
     const ov = document.querySelector(".fba-ov"); if(!ov || typeof MutationObserver !== "function") return;
-    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.picked = false; render(); } });
+    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.picked = false; render(); } });
     mo.observe(document.body, {childList: true});
   },
-  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
-  refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
+  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; render(); },
+  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
   // 🔄 Update all scores: everything below, in order (FTBatchSheet.sync)
@@ -1570,7 +1570,7 @@ window.FTBatchSheet = {
     B.fix = null;
     toast(moved === ids.length ? `✓ Moved ${moved} trainee${moved === 1 ? "" : "s"} to ${to}.` : `Moved ${moved} of ${ids.length}. Press ✏️ Fix the batch name again for the rest.`);
     if(typeof state === "object") state.adminData = null;
-    B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
+    B.people = null; B.data = null; B.dataKey = ""; B.batch = moved ? to : from; render();
   },
   open(){ state.adminTab = TAB; goto("admin"); },
   // 🔗 a trainee's Drive links compliance, % of the six ✓ Correct (📊 the Weekly Ranking's Drive Links Compliance column)
@@ -1587,8 +1587,6 @@ window.FTBatchSheet = {
     if(!B.data) return; const T = tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
     const r = Number(td.getAttribute("data-r")), c = Number(td.getAttribute("data-c")), cell = (T.rows[r] || [])[c]; if(!cell) return;
     document.querySelectorAll(".bs-card .gs td.gs-sel").forEach(x => x.classList.remove("gs-sel")); td.classList.add("gs-sel");
-    B.sel = {ref: `${T.title.replace(/^\S+\s/, "")}!${letter(c)}${r + 2}`, f: cell.f || String(cell.v || "")};
-    const ref = document.getElementById("bsRef"), bar = document.getElementById("bsBar"); if(ref) ref.textContent = B.sel.ref; if(bar) bar.value = B.sel.f;
   },
   csv(only){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
@@ -1637,7 +1635,7 @@ function renderMine(){
       : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
-FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };
+FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; render(); };
 FTBatchSheet.openMine = function(){ goto(ME); };
 
 // #/mysheet: a trainee's own page; anyone else is sent to the 📚 Dashboard
@@ -1721,7 +1719,6 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-head th{max-width:220px;min-width:110px;word-break:normal;overflow-wrap:normal;hyphens:none;}
 #bs-lessons .gs-head th{min-width:170px;}
 .bs-lesson{text-align:center;white-space:nowrap;}
-#bsBar{flex:1 1 auto;border:0;padding:6px 10px;font:inherit;color:#1F1F1F;background:#fff;outline:none;min-width:0;}
 .bs-card .gs-txt{min-width:260px;max-width:520px;}
 .bs-none{color:#5F6368;font-style:italic;text-align:left !important;}
 .bs-how{font-size:13.5px;}
@@ -1790,6 +1787,6 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-fix-row input[type=datetime-local]{width:auto;}
 .bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
 .bs-fix-err{color:#C5221F;margin:8px 0 0 !important;}
-@media print{ .bs-card .gs-menu,.bs-card .gs-fbar,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
+@media print{ .bs-card .gs-menu,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
 `; document.head.appendChild(s); })();
 })();
