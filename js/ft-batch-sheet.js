@@ -838,7 +838,7 @@ function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && 
    Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
    them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
 const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
-function gradesHtml(p){
+function everyGradeHtml(p){
   const sc = (B.data.rec[p.id] || {}).score; if(!sc || !Array.isArray(sc.rows)) return "";
   const rows = sc.rows.filter(r => r && r.s && !r.s.hidden && (r.items || []).length);
   const out = rows.map(r => `<tr class="bs-pt-sub"><td class="bs-pt-m">${e(`${r.s.icon || ""} ${r.s.label}`.trim())}</td><td class="bs-pt-v ${e(tone(r.avg))}">${r.avg != null ? r.avg + "%" : "—"}</td><td class="bs-pt-f">${r.avg != null ? `Average of ${r.graded} grade${r.graded === 1 ? "" : "s"}` : "Nothing graded yet"}</td></tr>`
@@ -883,7 +883,7 @@ function perTraineeHtml(T){
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + gradesHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + everyGradeHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
