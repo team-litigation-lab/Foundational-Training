@@ -10,7 +10,7 @@
      • The attorney's color rule (COLOR_RULE): an event is colored by how long it is: 30 minutes Tangerine, 45 minutes
        Blueberry, 1 hour Tomato. The trainee picks the color; the review checks it.
      • review() is the automated review: it matches the events to the tasks by their names, then checks every task
-       against the attorney's rules (days, time window, before/after an event, travel buffer, 15-minute gap between
+       against the attorney's rules (days, time window, before an event, travel buffer, 15-minute gap between
        events, and the details a task calls for: description, Google Meet, email reminder, the color rule). Scored out of 100,
        80% passes. A trainer's manual feedback comes on top.
      • A second track, 🗓 Attorney Calendar Management Activity (Day 5; its scenario has kind:"activity"), is the attorney's
@@ -159,8 +159,6 @@ function checks(scn, k, x, evs){
   if(r.from != null || r.to != null){ const lo = r.from != null ? r.from : OPEN, hi = r.to != null ? r.to : CLOSE; add(me.start >= lo && me.end <= hi, "Right time of day", `Must fall between ${fmt(lo)} and ${fmt(hi)}.`); }
   if(r.beforeEvent){ const ev = scn.fixed.find(f => f.id === r.beforeEvent.id), gap = r.beforeEvent.gap || 0;
     add(ev && (x.day < ev.day || (x.day === ev.day && me.end + gap <= ev.start)), `Before “${ev ? ev.title : ""}”`, `Must finish${gap ? " " + gap + " minutes" : ""} before “${ev ? ev.title : ""}” (${ev ? DAYS[ev.day] + " " + fmt(ev.start) : ""}).`); }
-  if(r.afterEvent){ const ev = scn.fixed.find(f => f.id === r.afterEvent.id), gap = r.afterEvent.gap || 0;
-    add(ev && (x.day > ev.day || (x.day === ev.day && me.start >= ev.end + gap)), `After “${ev ? ev.title : ""}”`, `Must start${gap ? " at least " + gap + " minutes" : ""} after “${ev ? ev.title : ""}” ends (${ev ? DAYS[ev.day] + " " + fmt(ev.end) : ""}).`); }
   if(r.beforeDay != null) add(x.day < r.beforeDay, "Early enough", `Must be before ${DAYS[r.beforeDay]}.`);
   if(r.buffer){ const tight = others.find(o => overlap(me, o, r.buffer)); add(!tight, `${r.buffer}-minute travel buffer`, tight ? `Within ${r.buffer} minutes of “${tight.title}”.` : ""); }
   return out;
@@ -261,8 +259,8 @@ function pacOf(x){ if(x.allDay) return {day:dIdx(x.date), start:0, end:1440, all
 const fromPac = (day, start, tz) => fromAbs(absAt(dIso(day), start, CAL_TZ), tz);
 
 // "July 6 to 19" / "Oct 26 to Nov 8": the calendar's days 0 to `last`, at the current anchor
-const spanText = last => { const a = new Date(BASE), b = new Date(BASE + last * 864e5), M = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  return a.getUTCMonth() === b.getUTCMonth() ? `${M[a.getUTCMonth()]} ${a.getUTCDate()} to ${b.getUTCDate()}` : `${M[a.getUTCMonth()].slice(0, 3)} ${a.getUTCDate()} to ${M[b.getUTCMonth()].slice(0, 3)} ${b.getUTCDate()}`; };
+const spanText = last => { const a = new Date(BASE), b = new Date(BASE + last * 864e5);
+  return a.getUTCMonth() === b.getUTCMonth() ? `${MONTHS_LONG[a.getUTCMonth()]} ${a.getUTCDate()} to ${b.getUTCDate()}` : `${MONTHS_LONG[a.getUTCMonth()].slice(0, 3)} ${a.getUTCDate()} to ${MONTHS_LONG[b.getUTCMonth()].slice(0, 3)} ${b.getUTCDate()}`; };
 const dYear = i => new Date(BASE + i * 864e5).getUTCFullYear();
 function setAnchor(iso){
   iso = okAnchor(iso) ? iso : BASE_FROM;
@@ -324,7 +322,6 @@ const PEOPLE = [
   {name:"John Michael Dela Cruz", email:"john.delacruz@legalsupporthelp.com"},
   {name:"Lei Lee Ann Abut", email:"team-litigation@legalsupporthelp.com"}
 ];
-const [MA, MV, JD, LL] = PEOPLE.map(p => p.email), ALL4 = [MA, MV, JD, LL];
 const who = em => (PEOPLE.find(p => p.email === em) || {name:em}).name;
 // The activity's color legend in Google Calendar's colors (the first is the legend's; the others are accepted shades).
 const CATS = {
