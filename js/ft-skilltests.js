@@ -469,8 +469,7 @@ function adminTile(){
 // the tiles take a fifth column on this program's dashboard, so the two rows stay two rows (js/lsh-program.js lays out four)
 (function(){ const st = document.createElement("style"); st.textContent = `@media (min-width:1001px) and (min-height:640px){
   main.main-dash .dash-pair-now .dash-side-inner:has(> .st-dash){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
-  /* the trainer's one row: the feedback tile's button keeps its words */
-  main.main-dash .dash-pair-now .dash-side-inner:has(> .st-dash-a){grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) !important;} }
+ }
 .dash-side .stat.st-dash .num.ok{color:#6EE7A0 !important;} .dash-side .stat.st-dash .num.mid{color:#FDBA74 !important;} .dash-side .stat.st-dash .num.bad{color:#FCA5A5 !important;}`; document.head.appendChild(st); })();
 if(canSpeak()){ try{ speechSynthesis.onvoiceschanged = () => { S.voice = pickVoice(); }; }catch(err){} }
 
