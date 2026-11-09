@@ -276,6 +276,12 @@ const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</
 
 /* ---------- the slides ---------- */
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
+// numbered "Part N" cards: a heading, the steps (a step [text, [sub-steps]] has its own lettered list) and a tip
+const partCards = parts => parts.map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<ol type="a" class="ftr-sub-ol">${x[1].map(y=>`<li>${esc(y)}</li>`).join("")}</ol></li>` : `<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("");
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
 
@@ -326,11 +332,7 @@ const SLIDES = [
       <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>
     ${fig(FIGS.todo())}</div>`; }],
   // the steps on the left, the picture (Part 2) big on the right
-  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-notes"><div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>
+  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-notes"><div class="ftr-parts">${partCards(NOTE_PARTS)}</div>
     ${NOTE_PARTS.filter(p=>p.fig).map(p=>fig(FIGS[p.fig]())).join("")}</div>`],
   ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
     <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
@@ -397,16 +399,12 @@ const SLIDES = [
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
     ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
-  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${partCards([
       {h:"Name It", steps:["Naming Conventions are provided by trainers.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
       {h:"Save It", steps:["Save it in your Assessment and Activities Folder. Link your outputs on the platform so trainers can monitor them.", "Do it the same day, before your shift ends.",
         ["Your daily output is automatically monitored and scored on:", ["Naming Convention", "Timely Submission", "Accuracy and Attention to Detail", "Quality of Output"]]]},
       {h:"It Is Checked", steps:["You are expected to consistently follow this workflow all throughout your training."]},
-    ].map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<ol type="a" class="ftr-sub-ol">${x[1].map(y=>`<li>${esc(y)}</li>`).join("")}</ol></li>` : `<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`],
+    ])}</div>`],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   // (the shift wrap-up, deliverables to the filled-in entry: one heading on every slide of it)
   ["deliverables", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
@@ -456,16 +454,12 @@ const SLIDES = [
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js). Only the Task Tracker is
   // given at onboarding: the Monitoring Sheet is downloaded here (MON_PARTS, the sheet in js/ft-monitoring.js), put in
   // the trainee's own Drive and linked with the rest
-  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how ftr-drive">${[
+  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how ftr-drive">${partCards([
       {h:"Your Task Tracker", steps:["It is in the Google Drive you got during onboarding."]},
       MON_PARTS[0], MON_PARTS[1],
       {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
       {h:"Link Them Once", steps:["Paste the links of your six: Monitoring Sheet, TAM, Typing Tests and Spelling Tests folders, Assessments/Activities folder and Task Tracker.", "Use your own copies: each has your Batch ID and name in its name.", "Save: the system checks each link and tells you if one isn’t right."], link:true},
-    ].map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>
+    ])}</div>
     <div class="ftr-links ftr-mon ftr-drive-acts">${monGet()}${!FT_AUDIENCE() ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button>` : ""}</div>`]
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
