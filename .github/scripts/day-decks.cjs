@@ -244,6 +244,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
       if (!has) fail(`Day ${n}'s slide ${r.ids[i]} is empty`);
     }
     if (n === 2 && !/^Law Firm Communication$/.test(r.title.trim())) fail(`Day 2's deck is headed "${r.title}"`);
+    // (Day 5 teaches Calendar Management: its deck says so, though its Task Tracker line keeps the role's "Reception Training Day 3")
+    if (n === 5 && !/^Calendar Management Training$/.test(r.title.trim())) fail(`Day 5's deck is headed "${r.title}"`);
   }
   // Day 2's Breakout Session: its four handouts on one stop (one handouts row on the card); the lesson's AI discussion
   // video is not on the deck (its lesson card's 🎬 Video on 📚 Dashboard only)

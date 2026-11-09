@@ -577,7 +577,10 @@ function inCardOrder(n, out){
 // a deck's title: the day's role, except where the guide's day title isn't the day's lesson (Day 2 is Law Firm
 // Communication, not the VA Essentials its day file is filed under)
 const DECK_LESSON = {2: 2};
-const deckTitle = (n, info, d) => DECK_LESSON[n] ? lessonTitle(DECK_LESSON[n]) : (info.role || d.title);
+// (and a deck named for what the day teaches where its role, which names the day's Task Tracker lines, says otherwise:
+// Day 5 is the Calendar Management day, though its To-Do keeps "Reception Training Day 3")
+const DECK_TITLE = {5: "Calendar Management Training"};
+const deckTitle = (n, info, d) => DECK_TITLE[n] || (DECK_LESSON[n] ? lessonTitle(DECK_LESSON[n]) : (info.role || d.title));
 // the day's card rows, as its card lists them (dayCard)
 function dayRows(n){
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return [];
