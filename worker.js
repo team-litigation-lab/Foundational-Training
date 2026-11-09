@@ -3163,6 +3163,16 @@ export default {
               note: !g.entries.length ? "No discussion title from the Training Guide was found in the sheet." : !take ? `No entry's date reads as ${TR.fmtDate(D)}.` : "" };
           } catch (e) { out.monitor = { error: String(e && e.message || e).slice(0, 200) }; }
         }
+        // ✉️ the day's EOD email as received (by email from the address on file, or pasted), and the EOD emails nobody was matched
+        // to that day whose sender's name resembles theirs (an address not on file reaches no one)
+        { const e0 = ((drive.days || {})[D] || {}).eod || null, un = (JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || {}).items || [];
+          const nm = normName(rec.name || ""), first = nm.split(" ")[0] || "", last = nm.split(" ").slice(-1)[0] || "";
+          out.eod = { received: e0 ? { via: e0.via || "pasted", from: e0.from || "", subject: String(e0.subject || "").slice(0, 200), at: e0.at || "" } : null, fromOnFile: drive.eodFrom || "",
+            unmatched: un.filter((x) => TR.ptDate(new Date(x.at)) === D && (normName(x.from).includes(first) || normName(x.from).includes(last))).map((x) => ({ from: String(x.from || "").slice(0, 200), subject: String(x.subject || "").slice(0, 200), at: x.at })).slice(0, 5) }; }
+        // ✍️ the answer sheets submitted that day and each lesson's Knowledge Check
+        { const pr = JSON.parse((await kv.get(`process:${id}`)) || "null") || {};
+          out.process = { sheets: Object.entries(pr.sets || {}).filter(([, x]) => x && x.submittedAt && TR.ptDate(new Date(x.submittedAt)) === D).map(([sid, x]) => ({ sheet: sid, at: x.submittedAt, answers: (x.answers || []).filter((a) => String(a || "").trim()).length })),
+            kc: Object.entries(pr.kc || {}).map(([l, x]) => ({ lesson: l, best: x && typeof x.best === "number" ? x.best : null, attempts: (x && x.attempts) || 0, at: x && x.last && x.last.at || "" })) }; }
         const rv = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, c = (rv.compliance || {})[D] || null;
         out.saved = c ? { parts: c.parts || null, day1Parts: c.day1Parts || null, trackerAi: c.trackerAi ? c.trackerAi.score : null, monitorAi: c.monitorAi ? c.monitorAi.score : null, checkedAt: c.checkedAt || "" } : null;
         out.ai = aiOn(env);
@@ -3208,6 +3218,16 @@ export default {
       // server with the shared AI_GATEWAY_SECRET; without it: {ok: false, off: true}. Trainers only.
       // 🔁 the simulators' scores onto the standard mock call scorecards (syncSimScores), for trainees ids (🧑‍🏫 Graders opening a
       // batch). Trainers only; up to 40 trainees a call.
+      // ✅ TODAY'S COMPLIANCE, worked out again now for trainees ids (📋 Batch Sheet opening): today's EOD email, answer sheets,
+      // tests and work show as soon as the sheet is opened, not only after the end-of-shift check. Trainers only; 40 a call.
+      if (path === "/api/compliance/today") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const ids = (Array.isArray(b.ids) ? b.ids : []).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40), D = TR.ptDate(), out = {};
+        if (!TR.isWeekday(D)) return json({ ok: true, date: D, skipped: "weekend" });
+        for (const id of ids) { try { const c = await dailyCompliance(env, id, D); out[id] = c ? c.pct : null; } catch (e) { out[id] = null; } }
+        return json({ ok: true, date: D, done: out });
+      }
       if (path === "/api/sim-scores/sync") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
