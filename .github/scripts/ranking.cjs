@@ -153,6 +153,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!/REDUCTION \/ CLOSING & SETTLEMENT DEMO/.test(await page.evaluate(() => (document.querySelector('.ti-rub-tbl th') || {}).innerText || ''))) fail('the Reduction / Closing & Settlement Demo has no scorecard in Trainer Inputs');
   await page.evaluate(() => FTInputs.cell()); 
 
+  // 🎧 an automatic Transcription Activity score no trainer has reviewed (trackerreview:<id>.transcribe, marked auto) counts on
+  // the trainee's 🏅 Scorecard, but not in what ⤓ Fill ranks (lshProgram.compute reviewedOnly)
+  { const tr = await page.evaluate(() => { const ctx = o => Object.assign({ id: 'x', progress: {}, shared: {}, rec: { 'labreview:': {}, 'trackerreview:': { transcribe: { 1: { key: 'transcription', pct: 70, at: '2026-11-02T10:00:00Z', scores: [] } } } } }, o);
+      const items = sc => ((sc.rows.find(r => r.s.id === 'trainer') || {}).items || []).map(x => `${x.name} ${x.pct}${x.auto ? ' auto' : ''}`);
+      return { all: items(lshProgram.compute(ctx({}))), ranked: items(lshProgram.compute(ctx({ reviewedOnly: true }))) }; });
+    if (tr.all.length !== 1 || !/Recording 1.* 70 auto$/.test(tr.all[0]) || tr.ranked.length) fail(`an unreviewed automatic score isn't on the Scorecard alone, kept out of the ranking: ${JSON.stringify(tr)}`); }
+
   // ⤓ fill: Sam's Reception Mock Calls from that scorecard, its own weighted average (4.14/5, as the trainee's card reads, not
   // 83% turned back into 4.15); Rhea's typed scores untouched
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); }); await page.waitForTimeout(800);

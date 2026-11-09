@@ -214,8 +214,9 @@ async function fillFromPortal(quiet){
       row.cells[c.id] = nx; if(!(cur && cur.auto && Object.keys(v).filter(k => k !== "why").every(k => String(cur[k]) === String(nx[k])))) n++; };
     ppl.forEach((p, i) => {
       const rec = {}; S.forEach((s, j) => { rec[s.key] = vals[i * S.length + j] || null; });
-      const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since});
-      const scW = range ? lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since, range}) : null;
+      // (reviewedOnly: an automatic score no trainer has reviewed yet — the Transcription Activity's — doesn't rank until they do)
+      const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since, reviewedOnly: true});
+      const scW = range ? lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since, range, reviewedOnly: true}) : null;
       const row = rowOf(p.id);
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(typed(cur)) return;          // never over what the trainer typed

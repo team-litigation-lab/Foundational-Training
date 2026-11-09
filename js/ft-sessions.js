@@ -429,9 +429,10 @@ async function loadAdmin(quiet){
     // (a cached list with no approved trainee, say one loaded before the approvals, is read again from storage)
     if(!people || !people.some(ok)){ const keys = await sharedList("trainee:"), got = []; got.push(...(await sharedGetMany(keys)).filter(Boolean)); people = got; }
     people = people.filter(ok);   // (an offboarded VA leaves the trainer's tabs and the deck's metrics sheet: js/ft-batch-admin.js)
-    const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id]), vals = [];
+    // (and trackerreview:, the Transcription Activity's automatic scores and writing checks, worker.js gradeTranscription)
+    const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id, "trackerreview:" + r.id]), vals = [];
     vals.push(...await sharedGetMany(keys));
-    AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
+    AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 3] || {runs:{}}, rv:vals[i * 3 + 1] || {}, tr:vals[i * 3 + 2] || {}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
     // the trainer-led activities as the trainer listed them (Admin → Trainer Inputs → ✏️ Edit the activities), so the deck's
@@ -534,6 +535,10 @@ function renderTrainerInputs(){
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort();
   const rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch), list = acts();
   const cellOf = (r, a) => (((r.rv || {}).acts) || {})[a.id] || {};
+  // 🎧 the automatic score of a recording the trainer hasn't scored (no result, no score, no scorecard): shown in its cell
+  // and filled into its form, saved only when the trainer saves
+  const autoOf = (r, a, c) => { const m = /^transcription-([12])$/.exec(a.id), g = m && (((r.tr || {}).transcribe) || {})[m[1]];
+    return g && Array.isArray(g.scores) && !c.status && tScore(c) == null && !c.rubric ? g : null; };
   const editing = TI.cell && rows.find(r => r.id === TI.cell[0]) && list.find(a => a.id === TI.cell[1]);
   return `<div class="card fss-admin"><div class="ff-bar"><div><h3>🧑‍🏫 Trainer Inputs</h3><p class="fss-muted">The trainee–trainer activities that can’t be simulated (the demos, the live mock calls with you). Record each trainee’s result: it shows on their Practice Lab page and their Scorecard.</p></div>
       <span><select onchange="FTSessionsAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
@@ -543,13 +548,14 @@ function renderTrainerInputs(){
       <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTInputs.saveList(this)">💾 Save the activities</button></div></div>` : ""}
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl fss-grid"><thead><tr><th>Trainee</th>${list.map(a => `<th title="${e(a.title)}">${e(a.title.length > 28 ? a.title.slice(0, 26) + "…" : a.title)}</th>`).join("")}</tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>${list.map(a => { const c = cellOf(r, a), sc = tScore(c);
-        return `<td><button class="fss-cell ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}" onclick="FTInputs.cell('${e(r.id)}','${e(a.id)}')">${c.status ? e(c.status) + (sc != null ? " " + sc + "%" : "") : "＋"}</button></td>`; }).join("")}</tr>`).join("")}
+        return `<td><button class="fss-cell ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}" onclick="FTInputs.cell('${e(r.id)}','${e(a.id)}')">${c.status ? e(c.status) + (sc != null ? " " + sc + "%" : "") : autoOf(r, a, c) ? `🤖 ${e(autoOf(r, a, c).pct)}%` : "＋"}</button></td>`; }).join("")}</tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
-    ${editing ? (() => { const r = rows.find(x => x.id === TI.cell[0]), a = list.find(x => x.id === TI.cell[1]), c = cellOf(r, a);
+    ${editing ? (() => { const r = rows.find(x => x.id === TI.cell[0]), a = list.find(x => x.id === TI.cell[1]), c = cellOf(r, a), au = autoOf(r, a, c);
       return `<div class="fss-rvform fss-cellform"><b>${e(r.name)} · ${e(a.title)}</b>
+        ${au ? `<p class="fss-wide fss-muted">🤖 Filled in from the automatic check of ${e(new Date(au.at).toLocaleString())} (${au.pct == null ? "—" : e(au.pct) + "%"}): review it, pick the result and Save. Your score replaces it on the trainee’s Scorecard.</p>` : ""}
         <label>Result <select data-status>${STATUSES.map(s => `<option ${s === (c.status || "Not yet") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-        ${rubricForm(a, c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}
-        <label>Score <input type="number" min="0" max="100" data-score value="${tScore(c) != null ? tScore(c) : ""}"> %</label>
+        ${rubricForm(a, au ? {rubric:{key:au.key, scores:au.scores, feedback:au.feedback}} : c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}
+        <label>Score <input type="number" min="0" max="100" data-score value="${tScore(c) != null ? tScore(c) : au && au.pct != null ? au.pct : ""}"> %</label>
         <label>Date <input type="date" data-date value="${e(c.date || new Date().toISOString().slice(0, 10))}"></label>
         <label class="fss-wide">Comment<textarea rows="3" data-comment placeholder="What went well, what to improve (the trainee sees it)">${e(c.comment || "")}</textarea></label>
         ${RUB().forAct(a) ? `<button class="btn btn-ghost btn-sm" onclick="FTInputs.draft(this)">✨ Draft the comment in the facilitator’s voice</button>` : ""}
@@ -782,7 +788,13 @@ window.ftSessionItems = ctx => {
 };
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
-  return list.filter(a => mine[a.id] && mine[a.id].status).map(a => { const r = mine[a.id], t = tScore(r);
+  // 🎧 a Transcription Activity recording the trainer hasn't scored: its automatic score (trackerreview:<id>.transcribe[n],
+  // worker.js gradeTranscription) counts, marked auto (the Weekly Ranking's ⤓ Fill leaves it out until the trainer reviews it)
+  const auto = (((ctx.rec["trackerreview:"] || {}).transcribe) || {});
+  const autoItem = a => { const m = /^transcription-([12])$/.exec(a.id), g = m && auto[m[1]];
+    return g && typeof g.pct === "number" ? {name:a.title, at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet"} : null; };
+  return list.filter(a => (mine[a.id] && mine[a.id].status) || autoItem(a)).map(a => { if(!(mine[a.id] && mine[a.id].status)) return autoItem(a);
+    const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
     const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
     return {name:a.title, at:r.at || "", pct:t != null ? t : r.status === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });

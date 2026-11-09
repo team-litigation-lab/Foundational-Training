@@ -73,4 +73,4 @@ function average(rubric, scores){
   return w ? sum / w : null;
 }
 root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, keys: () => Object.keys(R)};
-})(typeof window !== "undefined" ? window : this);
+})(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this));
