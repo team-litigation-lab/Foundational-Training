@@ -48,7 +48,8 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.waitForTimeout(2000);
   await page.evaluate(b => FTFeedback.batch(b), BATCH); await page.waitForTimeout(2500);
   const tabs = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
-  if (!/Send Feedback/.test(tabs)) fail(`📝 Send Feedback is not in the Scorecard section: ${tabs}`);
+  // (no button of its own: 📝 Send Feedback opens in each trainee's table on 📋 Batch Sheet; its route stays)
+  if (/Send Feedback/.test(tabs) || /Typing & Spelling/.test(tabs)) fail(`📝 Send Feedback or 🧪 Typing & Spelling still has a button in the Scorecard section: ${tabs}`);
   const rows = await page.$$eval('.tfb-tbl tbody tr', t => t.map(r => r.innerText.replace(/\s+/g, ' ')));
   for (const w of ['Transcription Activity Interview Recording 1', 'LOR Drafting Activity', 'Process Guide Sending the MedLOR']) if (!rows.some(r => r.includes(w))) fail(`"To review" has no ${w}: ${JSON.stringify(rows)}`);
   // (🎬 Video Notes is gone: a trainee's old notes don't come back as something to review)
@@ -81,6 +82,16 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.click('.tfb-tbl tbody tr:has-text("Sending the MedLOR")'); await page.waitForTimeout(1500);
   if (!(await page.$('.tfb-guide ol li'))) fail('the guide wasn\'t shown to the trainer');
   if (await page.evaluate(() => window.__pwned) || /onerror|<script/i.test(await page.evaluate(() => (document.querySelector('.tfb-guide') || {}).innerHTML || ''))) fail('code in a trainee\'s guide reached the trainer\'s page');
+
+  // 📋 Batch Sheet: 📝 Send Feedback opens in the trainee's own table, their work alone, the Batch Sheet's batch (no batch picker)
+  await page.evaluate(() => { FTFeedback.close(); state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800);
+  await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
+  await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the Batch Sheet never finished loading'));
+  await page.evaluate(() => FTBatchSheet.view('trainee'));
+  await page.evaluate(tid => FTBatchSheet.fbOpen(tid), id); await page.waitForTimeout(2500);
+  { const inl = await page.evaluate(tid => { const c = document.querySelector('#bs-pt-' + CSS.escape(tid) + ' .tfb-inline'); return c ? { text: c.innerText, picker: !!c.querySelector('select[onchange*="FTFeedback.batch"]'), rows: c.querySelectorAll('.tfb-tbl tbody tr').length } : null; }, id);
+    if (!inl || inl.picker || !inl.rows || !/Send Feedback/.test(inl.text)) fail(`📝 Send Feedback doesn't open in the trainee's table on 📋 Batch Sheet: ${JSON.stringify(inl)}`); }
+  await page.evaluate(() => FTBatchSheet.fbOpen(''));
 
   /* ---------- the trainee ---------- */
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; try { localStorage.removeItem('ft_fb_seen'); } catch (e) {} }, [id]);
