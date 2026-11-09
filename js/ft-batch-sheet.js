@@ -48,6 +48,8 @@ const ago = v => { const d = t(v); if(!d) return ""; const m = Math.round((Date.
   return m < 2 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} day${Math.round(m / 1440) === 1 ? "" : "s"} ago`; };
 const pct = n => typeof n === "number" && isFinite(n) ? Math.round(n) + "%" : "";
 const tone = v => typeof v !== "number" ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
+// one CSV cell, quoted, with a leading = + - @ tab or CR defused so a spreadsheet doesn't run it as a formula
+const csvQ = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
 const letter = i => { let s = ""; i++; while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
@@ -1346,7 +1348,7 @@ window.FTBatchSheet = {
   // ⬇ the Knowledge Checks' breakdown: a row per answer
   kdCsv(){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
-    const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const q = csvQ;
     const lines = [["Trainee", "Knowledge Check", "Score", "How it was scored", "Graded summary", "Trainer's overall comment", "#", "Question", "Answer", "Grade /10", "Feedback", "Trainer's comment"].map(q).join(",")];
     people().forEach(p => kcRows(p).forEach(({k, g}) => { const base = [p.name, k.title, g.pct != null ? g.pct + "%" : "", g.how, (g.last && g.last.summary) || "", (g.rv || {}).comment || ""];
       if(!g.items.length) lines.push(base.map(q).join(","));
@@ -1576,7 +1578,7 @@ window.FTBatchSheet = {
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
     const pick = typeof only === "string" && only ? tables().filter(T => T.id === only) : null;
     if(pick && !pick.length){ toast("That scorecard isn’t on the page."); return; }
-    const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const q = csvQ;
     const lines = [];
     (pick || tables()).forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.csv != null ? c.csv : c.v)).join(","))); lines.push(""); });
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv"}));
