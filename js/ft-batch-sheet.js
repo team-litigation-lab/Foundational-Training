@@ -1859,7 +1859,8 @@ window.renderTopbar = function(){
 const __render = window.render;
 window.render = function(){
   // (the Scorecard left: it opens on the latest batch again next time)
-  try{ if(!on() && B.picked && !meOn()){ B.picked = false; B.batch = ""; B.data = null; B.dataKey = ""; } }catch(err){}
+  // (🛡 Admin Master Control → 📁 Batches' 🛠 Batch tools keep the batch the trainer was on)
+  try{ if(!on() && !toolsOn() && B.picked && !meOn()){ B.picked = false; B.batch = ""; B.data = null; B.dataKey = ""; } }catch(err){}
   // (a redraw of the same page keeps its place: a background update empties the sheet for a moment — "Loading…" — and the
   //  browser would jump to the top; only opening another page, tab or batch starts at the top)
   let key = "", y = 0;
