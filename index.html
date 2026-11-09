@@ -8820,7 +8820,7 @@ function updateIsSafe(){
   if(state.view==="day" && state.dayViewMode==="knowledgeCheck" && !state.quizSubmitted && Object.keys(state.quizAnswers||{}).length) return false;
   if(isTyping() && !(state.view==="tool" && Date.now()-lastKeyAt > 20000)) return false;
   if(document.querySelector(".overlay")) return false;
-  if(state.loginBusy || state.studioBusy) return false;
+  if(state.loginBusy) return false;
   if(document.querySelector('[data-busy="1"]')) return false;
   if(state.presenting) return false;   // reloading would close Presenter view mid-session: the banner's Update now is there instead
   if(sharedInFlight > 0) return false;   // a save on its way: the update waits for it
@@ -8833,7 +8833,7 @@ async function applyUpdate(){
   try{
     if(state.view==="tool" && typeof saveLabNow==="function" && state.labDrafts){ await storeSet("lab-drafts", state.labDrafts); }
     if(state.traineeId && !state.isAdmin) await cloudSaveNow();
-    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, pqLesson:state.pqLesson, lessonSlide:state.lessonSlide, toolId:state.toolId, wizardIndex:(state.view==="tool" && toolState && toolState.wizardIndex) || 0, adminTab:state.adminTab, cuesDay:state.cuesDay, sopDay:state.sopDay, studioDay:state.studioDay, orientIdx:state.orientIdx, scroll:window.scrollY}));
+    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, pqLesson:state.pqLesson, lessonSlide:state.lessonSlide, toolId:state.toolId, wizardIndex:(state.view==="tool" && toolState && toolState.wizardIndex) || 0, adminTab:state.adminTab, orientIdx:state.orientIdx, scroll:window.scrollY}));
   }catch(e){}
   location.reload();
 }
@@ -8856,7 +8856,7 @@ function showUpdateBanner(){
 function restoreAfterUpdate(){
   let st = null; try{ st = JSON.parse(sessionStorage.getItem("lsh_resume_after_update")||"null"); sessionStorage.removeItem("lsh_resume_after_update"); }catch(e){}
   if(!st || !st.view || st.view==="login") return false;
-  ["adminTab","cuesDay","sopDay","studioDay","orientIdx"].forEach(k=>{ if(st[k]!=null) state[k] = st[k]; });
+  ["adminTab","orientIdx"].forEach(k=>{ if(st[k]!=null) state[k] = st[k]; });
   if(st.view==="day" && st.dayId){ goto("day", st.dayId); if(typeof st.lessonSlide==="number"){ state.lessonSlide = Math.min(st.lessonSlide, Math.max(state.maxSlideReached||0, st.lessonSlide)); render(); } }
   else if(st.view==="tool" && st.toolId){ state.labWizard = {toolId:st.toolId, idx:st.wizardIndex||0}; goto("tool", st.toolId); }
   // (✍️ Knowledge Check: the same module's page, and the graded view's lesson)
@@ -14922,13 +14922,12 @@ function renderPresenterNote(d, l, part, secs, allSecs, pg){
   </div>`;
 }
 /* ============================================================
-   CONTENT STUDIO (admin) — scales the program to 40 topics/day
-   with AI drafting + human review. Nothing reaches trainees until
-   an admin publishes it.
+   PUBLISHED ADD-ON CONTENT (the engine's Content Studio wrote these;
+   this program has no Content Studio): only published entries
+   reach trainees.
      lessonx:day<N>      → { "<lesson title>": {sections, status, at} }
      extralessons:day<N> → { lessons:[ {h, fourPart, trainerCue, status} ] }
    ============================================================ */
-const TARGET_TOPICS = 40;
 state.lessonExp = state.lessonExp || {};
 state.extraLessons = state.extraLessons || {};
 function mergeExtraLessons(d){
@@ -14962,258 +14961,16 @@ function renderExpansionPanel(sec, open){
     ${sec.scenario ? blk("Scenario", `<p><i>${esc(sec.scenario.situation||"")}</i></p>${sec.scenario.whatToDo?`<p><b>What a strong EA/PA does:</b> ${esc(sec.scenario.whatToDo)}</p>`:""}`) : ""}
   </details>`;
 }
-function studioContext(d){ return `Program: LSH (Legal Support Help) 10-day Foundational Training Program for Legal Executive & Personal Assistants (many are remote VAs supporting US law firms). Running client case: Elias Thorne, Managing Owner & CEO of Thorne & Partners Law Group. ${ftName(d.id)}: ${d.title}. Day objective: ${d.objective||""}`; }
-function expansionPrompt(d, l){
-  const {principles, steps} = lessonParts(l);
-  return `${studioContext(d)}
-
-Write expanded teaching content for the lesson "${l.h}".
-Existing key points: ${principles.join(" | ")}
-Existing steps: ${steps.join(" | ")}
-
-Return ONLY a JSON object (no markdown) with these keys:
-"introduction": 2-3 sentences that open the topic in plain English,
-"purpose": 2-3 sentences on why it matters to an EA/PA and the firm,
-"explanation": 2 short paragraphs (separate with \\n) teaching the concept thoroughly, with one concrete example,
-"context": 2-3 sentences of additional context (firm size, practice area, remote vs in-office),
-"lawsAndRules": the laws, professional rules or regulations that genuinely apply (US-focused; e.g., ABA Model Rules such as 1.6 confidentiality or 5.3 responsibilities regarding nonlawyer assistance, CAN-SPAM, TCPA, HIPAA, state bar advertising rules, GDPR for EU contacts) - name only rules you are confident apply, add "confirm specifics with the firm's policy or counsel", and if no specific law applies say so plainly instead of inventing one,
-"challenges": array of 3 common real-world challenges, one sentence each,
-"scenario": {"situation": a 2-3 sentence scenario involving Elias Thorne, "whatToDo": 2-3 sentences on what a strong EA/PA does}.`;
-}
-function newLessonPrompt(d, title){
-  return `${studioContext(d)}
-Existing topics today: ${d.lessons.map(l=>l.h).join(" | ")}
-
-Write a new lesson titled "${title}" that does not repeat the existing topics. Balance theory with practical, job-ready steps.
-Return ONLY a JSON object (no markdown):
-{"h":"${title.replace(/"/g,"'")}","fourPart":{"corePrinciples":[3 sentences],"howTo":[4 actionable steps],"bestPractices":[3 items, at least one starting "Pitfall:"],"discussionCase":"a 2-sentence discussion case involving Elias Thorne"},"trainerCue":"one sentence telling the trainer how to run a short activity"}`;
-}
-function proposeTopicsPrompt(d, n){
-  return `${studioContext(d)}
-Existing topics: ${d.lessons.map(l=>l.h).join(" | ")}
-Propose EXACTLY ${n} additional lesson titles for this day that fill genuine gaps (theory, laws/rules, practical workflows, common challenges, tools) without duplicating existing topics.
-Return ONLY a JSON array of objects: [{"h":"Title","why":"one sentence on the gap it fills"}]`;
-}
 async function runPool(items, worker, limit, onProgress){
   let i = 0, done = 0; const res = {ok:0, failed:0, errors:[]};
   const next = async ()=>{ while(i < items.length){ const idx = i++; try{ await worker(items[idx], idx); res.ok++; }catch(e){ console.warn(e); res.failed++; res.errors.push(e && e.message || String(e)); } done++; onProgress && onProgress(done, items.length, res); } };
   await Promise.all(Array.from({length:Math.min(limit, items.length)}, next));
   return res;
 }
-function studioResultMessage(what, res){
-  if(!res.failed) return `✅ ${res.ok} ${what} drafted — review them below, then publish.`;
-  const why = String(res.errors[0] || "unknown error").replace(/[.\s]+$/,"");
-  const hint = /x-api-key|API key not valid/i.test(why) ? " The AI key on the server looks invalid — check GEMINI_API_KEY in Cloudflare."
-    : /GEMINI_API_KEY|No AI key|not configured/i.test(why) ? " No AI key is set on the server — add GEMINI_API_KEY in Cloudflare."
-    : /401|sign-in/i.test(why) ? " Your admin sign-in expired — sign in to Admin again."
-    : /429|rate/i.test(why) ? " The AI service is rate-limiting — wait a minute and run it again; finished items are kept."
-    : /timed out/i.test(why) ? " Some requests were slow — run it again to finish the rest; finished items are kept."
-    : " Run it again to retry the rest; finished items are kept.";
-  return `${res.ok ? "⚠ "+res.ok+" "+what+" drafted, " : "❌ "}${res.failed} failed — ${why}.${hint}`;
-}
-function studioShow(msg){ state.studioMsg = msg; studioProgress(msg); }
-async function studioTestAI(){
-  studioShow("Testing the AI connection…");
-  const t0 = Date.now();
-  try{
-    const out = await callAIText("Reply with exactly: OK", 10, 30000, "trainer");
-    studioShow(`✅ AI connection works (${((Date.now()-t0)/1000).toFixed(1)}s, reply: "${out.slice(0,20)}"). The Studio buttons will draft content.`);
-  }catch(e){ studioShow(studioResultMessage("test", {ok:0, failed:1, errors:[e.message||String(e)]})); }
-}
-window.studioTestAI = studioTestAI;
-function studioProgress(text){ const el=document.getElementById("studioProgress"); if(el) el.textContent = text; }
-let studioSaveChain = Promise.resolve();
-function studioSave(key, value){ studioSaveChain = studioSaveChain.then(()=>sharedSet(key, value)); return studioSaveChain; }
-async function studioDraftExpansions(dayId){
-  const d = DAYS.find(x=>x.id===dayId);
-  const bundle = state.lessonExp[dayId] = state.lessonExp[dayId] || {};
-  const todo = d.lessons.filter(l=>!bundle[l.h]);
-  if(!todo.length){ studioShow("Every topic already has an explanation — see the list below."); return; }
-  studioShow(`Drafting explanations… 0/${todo.length} (about 15–40 seconds each, 2 at a time)`);
-  const res = await runPool(todo, async (l)=>{
-    const sec = await callAIJson(expansionPrompt(d, l), 2500, 120000, "trainer");
-    if(!sec || typeof sec!=="object" || !(sec.introduction || sec.explanation)) throw new Error("the reply was missing the expected sections");
-    bundle[l.h] = {sections:sec, status:"draft", at:new Date().toISOString()};
-    await studioSave("lessonx:day"+dayId, bundle);
-    studioRefreshList();
-  }, 1, (n,t,rs)=>studioShow(`Drafting explanations… ${n}/${t}${rs.failed?` (${rs.failed} failed so far)`:""}`));
-  state.studioMsg = studioResultMessage("explanations", res);
-  render();
-}
-async function studioPublishAllExpansions(dayId){
-  const bundle = state.lessonExp[dayId] || {};
-  Object.values(bundle).forEach(v=>v.status="published");
-  await studioSave("lessonx:day"+dayId, bundle); render(); toast("Published — trainees now see the full explanations.");
-}
-async function studioToggleExpansion(dayId, title){
-  const b = state.lessonExp[dayId]; if(!b || !b[title]) return;
-  b[title].status = b[title].status==="published" ? "draft" : "published";
-  await studioSave("lessonx:day"+dayId, b); render();
-}
-async function studioRegenerateExpansion(dayId, title){
-  const d = DAYS.find(x=>x.id===dayId); const l = d.lessons.find(x=>x.h===title); if(!l) return;
-  studioProgress("Rewriting…");
-  try{
-    const sec = await callAIJson(expansionPrompt(d, l), 1800, 90000, "trainer");
-    state.lessonExp[dayId][title] = {sections:sec, status:"draft", at:new Date().toISOString()};
-    await studioSave("lessonx:day"+dayId, state.lessonExp[dayId]); render();
-  }catch(e){ studioProgress("Couldn't rewrite — try again."); }
-}
-async function studioProposeTopics(dayId){
-  const d = DAYS.find(x=>x.id===dayId);
-  const n = TARGET_TOPICS - d.lessons.length - (state.extraLessons[dayId]||[]).filter(l=>l.status!=="published").length;
-  if(n <= 0){ toast(`${ftName(dayId)} already has ${TARGET_TOPICS} topics (including drafts).`); return; }
-  studioProgress(`Proposing ${n} new topics…`);
-  try{
-    const list = await callAIJson(proposeTopicsPrompt(d, n), 2000, 90000, "trainer");
-    state.studioProposals = {dayId, items:(Array.isArray(list)?list:[]).slice(0,n)};
-    state.studioMsg = ""; render();
-  }catch(e){ studioShow(studioResultMessage("topics", {ok:0, failed:1, errors:[e.message]})); }
-}
-async function studioDraftSelectedTopics(dayId){
-  const d = DAYS.find(x=>x.id===dayId);
-  const picks = [...document.querySelectorAll(".studio-prop:checked")].map(x=>x.value);
-  if(!picks.length){ toast("Tick at least one proposed topic."); return; }
-  const list = state.extraLessons[dayId] = state.extraLessons[dayId] || [];
-  studioShow(`Drafting new lessons… 0/${picks.length}`);
-  const res = await runPool(picks, async (title)=>{
-    const lesson = await callAIJson(newLessonPrompt(d, title), 2200, 120000, "trainer");
-    if(!lesson || !lesson.fourPart) throw new Error("the reply wasn't a complete lesson");
-    lesson.h = title; lesson.status = "draft"; list.push(lesson); await studioSave("extralessons:day"+dayId, {lessons:list});
-  }, 1, (n,t,rs)=>studioShow(`Drafting new lessons… ${n}/${t}${rs.failed?` (${rs.failed} failed so far)`:""}`));
-  state.studioProposals = null; state.studioMsg = studioResultMessage("new lessons", res); render();
-}
-async function studioSetExtraStatus(dayId, idx, status){
-  const d = DAYS.find(x=>x.id===dayId); const list = state.extraLessons[dayId]; if(!list||!list[idx]) return;
-  if(status==="delete"){ if(!confirm(`Delete "${list[idx].h}"?`)) return; list.splice(idx,1); }
-  else list[idx].status = status;
-  await studioSave("extralessons:day"+dayId, {lessons:list}); mergeExtraLessons(d); render();
-}
-
 /* extraquiz:day<N> = {questions:[{q,opts,a,r,forLesson,status}]} — published ones join the day's Knowledge Check */
 function mergeExtraQuiz(d){
   d.quiz = d.quiz.filter(q=>!q.__extra);
   ((state.extraQuiz||{})[d.id]||[]).filter(q=>q.status==="published").forEach(q=>d.quiz.push(Object.assign({}, q, {__extra:true})));
-}
-function quizPrompt(d, l){
-  const {principles, steps, pitfalls} = lessonParts(l);
-  return `${studioContext(d)}
-Write 2 multiple-choice Knowledge Check questions for the lesson "${l.h}".
-Key points: ${principles.join(" | ")}
-Steps: ${steps.join(" | ")}
-Pitfalls: ${pitfalls.join(" | ")}
-Test application and judgment (short realistic situations with Elias Thorne), not word-for-word recall. Exactly one correct option; three plausible distractors.
-Return ONLY a JSON array: [{"q":"question","opts":["A","B","C","D"],"a":<index 0-3 of the correct option>,"r":"one-sentence rationale"}]`;
-}
-async function studioDraftQuiz(dayId){
-  const d = DAYS.find(x=>x.id===dayId);
-  state.extraQuiz = state.extraQuiz || {};
-  const list = state.extraQuiz[dayId] = state.extraQuiz[dayId] || [];
-  const covered = new Set(list.map(q=>q.forLesson));
-  const todo = d.lessons.filter(l=>l.__extra && !covered.has(l.h));
-  if(!todo.length){ studioShow("Every published new topic already has Knowledge Check questions."); return; }
-  studioShow(`Drafting questions… 0/${todo.length}`);
-  const res = await runPool(todo, async (l)=>{
-    const qs = await callAIJson(quizPrompt(d, l), 1400, 90000, "trainer");
-    const ok = (Array.isArray(qs)?qs:[]).filter(q=>q && q.q && Array.isArray(q.opts) && q.opts.length>=3 && Number.isInteger(q.a) && q.a>=0 && q.a<q.opts.length);
-    if(!ok.length) throw new Error("the reply had no usable questions");
-    ok.slice(0,2).forEach(q=>list.push({q:q.q, opts:q.opts.slice(0,4), a:q.a, r:q.r||"", forLesson:l.h, status:"draft"}));
-    await studioSave("extraquiz:day"+dayId, {questions:list}); studioRefreshList();
-  }, 1, (n,t,rs)=>studioShow(`Drafting questions… ${n}/${t}${rs.failed?` (${rs.failed} failed so far)`:""}`));
-  state.studioMsg = studioResultMessage("question sets", res); render();
-}
-async function studioSetQuizStatus(dayId, idx, status){
-  const d = DAYS.find(x=>x.id===dayId); const list = (state.extraQuiz||{})[dayId]; if(!list||!list[idx]) return;
-  if(status==="delete"){ list.splice(idx,1); } else list[idx].status = status;
-  await studioSave("extraquiz:day"+dayId, {questions:list}); mergeExtraQuiz(d); render();
-}
-async function studioPublishAllQuiz(dayId){
-  const d = DAYS.find(x=>x.id===dayId); const list = (state.extraQuiz||{})[dayId]||[];
-  list.forEach(q=>q.status="published"); await studioSave("extraquiz:day"+dayId, {questions:list}); mergeExtraQuiz(d); render();
-  toast("Questions published — they're now part of the day's Knowledge Check.");
-}
-Object.assign(window, {studioDraftQuiz, studioSetQuizStatus, studioPublishAllQuiz});
-function setStudioDay(id){ state.studioDay = id; state.studioProposals = null; state.studioMsg = ""; render(); }
-let studioListTimer = null;
-function studioRefreshList(){ clearTimeout(studioListTimer); studioListTimer = setTimeout(()=>{ if(state.view==="admin" && state.adminTab==="studio"){ const keep = state.studioMsg; render(); state.studioMsg = keep; } }, 400); }
-Object.assign(window, {studioDraftExpansions, studioPublishAllExpansions, studioToggleExpansion, studioRegenerateExpansion, studioProposeTopics, studioDraftSelectedTopics, studioSetExtraStatus, setStudioDay});
-function renderAdminStudio(){
-  const dayId = state.studioDay || 1;
-  const d = DAYS.find(x=>x.id===dayId);
-  const bundle = state.lessonExp[dayId] || {};
-  const extras = state.extraLessons[dayId] || [];
-  const pubTopics = d.lessons.length;
-  const pendingNew = extras.filter(l=>l.status!=="published").length;
-  const expPub = d.lessons.filter(l=>bundle[l.h] && bundle[l.h].status==="published").length;
-  const expDraft = d.lessons.filter(l=>bundle[l.h] && bundle[l.h].status!=="published").length;
-  const props = state.studioProposals && state.studioProposals.dayId===dayId ? state.studioProposals.items : null;
-  const gap = Math.max(0, TARGET_TOPICS - pubTopics - pendingNew);
-  const scripts = d.lessons.filter(l=>(window.SLIDE_SCRIPTS||{})[`${d.id}::${l.h}`]).length;   // hand-written, in js/days/dayN/scripts.js
-  return `
-    <p class="eyebrow">Admin Only</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Content Studio</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:80ch;margin:0 0 10px;">Grow every day to ${TARGET_TOPICS} topics, add full explanations (introduction, purpose, context, laws &amp; rules, challenges, scenario), Knowledge Check questions and conversational trainer scripts. AI drafts everything; <b>nothing reaches trainees until you publish it</b>.</p>
-    <details class="studio-checklist"><summary>✅ Review checklist before you publish</summary><ul>
-      <li><b>Accuracy:</b> names, figures, deadlines and steps are correct for your firm's practice.</li>
-      <li><b>Laws &amp; rules:</b> any statute, bar rule or regulation named genuinely applies — check anything you're unsure of with the supervising attorney.</li>
-      <li><b>No duplication:</b> the new topic doesn't repeat an existing one.</li>
-      <li><b>Tone:</b> growth-minded ("not yet / not this way"), plain English, Elias Thorne scenarios are realistic.</li>
-      <li><b>Confidentiality:</b> no real client names or matters.</li>
-      <li><b>Knowledge Check:</b> exactly one correct answer; the rationale explains why.</li>
-    </ul></details>
-    <div class="cues-day-tabs">${DAYS.map(x=>`<button class="${x.id===dayId?'active':''}" onclick="setStudioDay(${x.id})">${ftName(x.id)}</button>`).join("")}</div>
-    <div class="studio-stats">
-      <div class="card stat"><div class="num">${pubTopics} / ${TARGET_TOPICS}</div><div class="lbl">Published topics${pendingNew?` · ${pendingNew} in review`:""}</div></div>
-      <div class="card stat"><div class="num">${expPub} / ${pubTopics}</div><div class="lbl">Explanations live${expDraft?` · ${expDraft} in review`:""}</div></div>
-      <div class="card stat"><div class="num">${scripts} / ${pubTopics}</div><div class="lbl">Full trainer scripts</div></div>
-    </div>
-    <div class="studio-diag"><button class="btn btn-ghost btn-sm" onclick="studioTestAI()">🩺 Test AI connection</button><span>Run this first if the buttons below don't seem to work.</span></div>
-    <div id="studioProgress" class="studio-progress">${esc(state.studioMsg||"")}</div>
-    <div class="card studio-card">
-      <h3>1 · Topics</h3>
-      <p>Propose new topics that fill real gaps for ${ftName(dayId)}, tick the ones you want, and the AI drafts full lessons as <b>drafts</b> for you to review and publish.</p>
-      <button class="btn btn-navy btn-sm" onclick="studioProposeTopics(${dayId})" ${gap<=0?"disabled":""}>✨ Propose ${gap} new topic${gap===1?"":"s"}</button>
-      ${props ? `<div class="studio-props">${props.map(p=>`<label><input type="checkbox" class="studio-prop" value="${esc(p.h)}" checked> <div><b>${esc(p.h)}</b><span>${esc(p.why||"")}</span></div></label>`).join("")}
-        <button class="btn btn-primary btn-sm" onclick="studioDraftSelectedTopics(${dayId})">Draft the selected lessons</button></div>` : ""}
-      ${extras.length ? `<div class="studio-list">${extras.map((l,i)=>`
-        <details><summary><span class="studio-badge ${l.status}">${l.status}</span> ${esc(l.h)}</summary>
-          <div class="studio-preview">${renderLessonCard(Object.assign({__preview:true},l), 0, d, "", 1)}${renderLessonCard(Object.assign({__preview:true},l), 0, d, "", 2)}</div>
-          <div class="studio-actions">
-            ${l.status==="published" ? `<button class="btn btn-ghost btn-sm" onclick="studioSetExtraStatus(${dayId},${i},'draft')">Unpublish</button>` : `<button class="btn btn-primary btn-sm" onclick="studioSetExtraStatus(${dayId},${i},'published')">Publish</button>`}
-            <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="studioSetExtraStatus(${dayId},${i},'delete')">Delete</button>
-          </div>
-        </details>`).join("")}</div>` : ""}
-    </div>
-    <div class="card studio-card">
-      <h3>2 · Full explanations</h3>
-      <p>Adds a "📖 Full explanation" panel to each lesson: introduction, purpose, explanation, additional context, laws/rules/regulations, common challenges and a scenario.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-navy btn-sm" onclick="studioDraftExpansions(${dayId})">✨ Draft explanations for topics without one</button>
-        ${expDraft ? `<button class="btn btn-primary btn-sm" onclick="studioPublishAllExpansions(${dayId})">Publish all ${expDraft} drafts</button>` : ""}
-      </div>
-      <div class="studio-list">${d.lessons.filter(l=>bundle[l.h]).map(l=>`
-        <details><summary><span class="studio-badge ${bundle[l.h].status}">${bundle[l.h].status}</span> ${esc(l.h)}</summary>
-          <div class="studio-preview">${renderExpansionPanel(bundle[l.h].sections, true)}</div>
-          <div class="studio-actions">
-            <button class="btn btn-ghost btn-sm" onclick='studioToggleExpansion(${dayId}, ${esc(JSON.stringify(l.h))})'>${bundle[l.h].status==="published"?"Unpublish":"Publish"}</button>
-            <button class="btn btn-ghost btn-sm" onclick='studioRegenerateExpansion(${dayId}, ${esc(JSON.stringify(l.h))})'>Rewrite</button>
-          </div>
-        </details>`).join("")}</div>
-    </div>
-    ${(()=>{ const qs = (state.extraQuiz||{})[dayId]||[]; const qDraft = qs.filter(q=>q.status!=="published").length; const newTopics = d.lessons.filter(l=>l.__extra).length;
-      return `<div class="card studio-card">
-      <h3>3 · Knowledge Check questions for new topics</h3>
-      <p>Adds 2 questions for each topic published from this Studio, so new material is tested too. The day's check currently has <b>${d.quiz.length}</b> questions${qs.filter(q=>q.status==="published").length?` (${qs.filter(q=>q.status==="published").length} added here)`:""}.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-navy btn-sm" onclick="studioDraftQuiz(${dayId})" ${newTopics?"":"disabled title='Publish new topics first'"}>✨ Draft questions for new topics</button>
-        ${qDraft ? `<button class="btn btn-primary btn-sm" onclick="studioPublishAllQuiz(${dayId})">Publish all ${qDraft} questions</button>` : ""}
-      </div>
-      ${qs.length ? `<div class="studio-list">${qs.map((q,i)=>`<details><summary><span class="studio-badge ${q.status}">${q.status}</span> ${esc(q.q)}</summary>
-          <div class="studio-preview"><div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Topic: ${esc(q.forLesson||"")}</div><ol type="A" style="margin:0;padding-left:20px;">${q.opts.map((o,oi)=>`<li style="font-size:13px;${oi===q.a?"font-weight:800;color:var(--success);":""}">${esc(o)}${oi===q.a?" ✓":""}</li>`).join("")}</ol><p style="font-size:12.5px;color:var(--ink-soft);">${esc(q.r||"")}</p></div>
-          <div class="studio-actions">${q.status==="published"?`<button class="btn btn-ghost btn-sm" onclick="studioSetQuizStatus(${dayId},${i},'draft')">Unpublish</button>`:`<button class="btn btn-primary btn-sm" onclick="studioSetQuizStatus(${dayId},${i},'published')">Publish</button>`}
-          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="studioSetQuizStatus(${dayId},${i},'delete')">Delete</button></div></details>`).join("")}</div>` : ""}
-    </div>`; })()}
-`;
 }
 
 function setAdminTab(t){ state.adminTab=t; render(); }
@@ -15289,7 +15046,6 @@ function showActionError(e, label){
     : "";
   const text = `${label ? label+" failed: " : ""}${friendly || msg}`;
   toast("⚠ "+text);
-  const box = document.getElementById("studioProgress"); if(box && state.view==="admin" && state.adminTab==="studio"){ state.studioMsg = "❌ "+text+(friendly?` (${msg})`:""); box.textContent = state.studioMsg; }
   console.error(label||"Action failed", e);
 }
 function busyWrap(name, label){
@@ -15307,10 +15063,7 @@ function busyWrap(name, label){
   wrapped.__busy = true;
   window[name] = wrapped;
 }
-[["studioDraftExpansions","Drafting explanations"],["studioProposeTopics","Proposing topics"],["studioDraftSelectedTopics","Drafting lessons"],
-["studioRegenerateExpansion","Rewriting"],["studioPublishAllExpansions","Publishing"],
- ["studioToggleExpansion","Publishing"],["studioSetExtraStatus","Updating lesson"],["studioTestAI","AI test"],
- ["draftDayFeedback","Drafting feedback"],["draftAllFeedback","Drafting feedback"],["saveDayFeedback","Saving feedback"],
+[["draftDayFeedback","Drafting feedback"],["draftAllFeedback","Drafting feedback"],["saveDayFeedback","Saving feedback"],
  ["resetTraineeLabAttempts","Reset"]]
  .forEach(([n,l])=>busyWrap(n,l));
 window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e && e.invalidInput) return; if(state.isAdmin) showActionError(e, ""); });
