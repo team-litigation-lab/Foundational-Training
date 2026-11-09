@@ -315,7 +315,7 @@ window.FTMockScores = {
     for(const id of ids){ const s = valOf(id).score; if(s !== "" && !(Number(s) >= 0 && Number(s) <= 100)){ toast("A score is a number from 0 to 100."); return; } }
     MS.saving = true; if(btn) btn.disabled = true;
     ids.forEach(id => keepFac(String(valOf(id).facilitator || "").trim()));
-    let ok = 0;
+    let ok = 0, sent = 0, unsent = 0;
     for(const id of ids){
       const d = valOf(id);
       try{
@@ -333,10 +333,17 @@ window.FTMockScores = {
             feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : rb ? {rubric:undefined} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
         MS.rv[id] = cur; delete MS.draft[dkey(id)]; ok++;
+        // (🗓 a Calendar Management Mock Call with every criterion scored: sent to the trainee's Google Calendar Simulator
+        // scorecards on the Training Portal too, js/ft-calrules.js pushCard, so both sides show the same card)
+        if(rb && rb.key === "calendar" && window.FTCalRules && FTCalRules.pushCard){
+          const p = await FTCalRules.pushCard(id, rb.criteria.map((k, i) => d.scores[i]), rb.criteria.map((k, i) => String(d.feedback[i] || "").trim()), String(d.facilitator || "").trim() || "Trainer");
+          if(p === true) sent++; else if(p === false) unsent++;
+        }
       }catch(err){ /* left as not saved: the button offers it again */ }
     }
     MS.saving = false;
-    toast(ok === ids.length ? `✓ Saved ${ok} scorecard${ok === 1 ? "" : "s"}. Each VA sees theirs on their Practice Lab page.` : `Saved ${ok} of ${ids.length}. The rest weren’t saved: check your connection and save again.`);
+    toast((ok === ids.length ? `✓ Saved ${ok} scorecard${ok === 1 ? "" : "s"}. Each VA sees theirs on their Practice Lab page.` : `Saved ${ok} of ${ids.length}. The rest weren’t saved: check your connection and save again.`)
+      + (sent ? ` 🗓 ${sent} also on the Google Calendar Simulator.` : "") + (unsent ? ` ${unsent} couldn’t be sent to the Google Calendar Simulator.` : ""));
     render();
   }
 };

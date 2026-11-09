@@ -2951,6 +2951,31 @@ export default {
           return json({ ok: true, day: D, grade: (fin.tamGrades || {})[D] || null, tam: fin.tam || null, pct: c && c.pct });
         } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
       }
+      // 📅 THE CALENDAR MANAGEMENT MOCK CALL SCORECARD, one with the Training Portal's Google Calendar Simulator: the trainee's
+      // scorecards there (the Portal's /api/calsim-scorecard, found by their name and batch), read for 🧑‍🏫 Graders to fill from
+      // (op "get"), and a scorecard saved in 🧑‍🏫 Graders sent there (op "put"), so both sides show the same card. Server to
+      // server with the shared AI_GATEWAY_SECRET; without it: {ok: false, off: true}. Trainers only.
+      if (path === "/api/calsim-card") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100); if (!id) return json({ error: "Missing trainee" }, 400);
+        if (!gatewayOn(env)) return json({ ok: false, off: true });
+        const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+        if (!rec || !rec.name) return json({ ok: false, error: "No such trainee" }, 404);
+        const base = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/calsim-scorecard";
+        const hdr = { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, batch = canonicalBatch(rec.batch) || String(rec.batch || "");
+        try {
+          if (b.op === "put") {
+            const rows = Array.isArray(b.rows) ? b.rows.slice(0, 7).map((x) => ({ score: x && x.score, feedback: String((x && x.feedback) || "").slice(0, 600) })) : [];
+            const r = await fetch(base, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr), body: JSON.stringify({ name: rec.name, batch, rows, by: String(b.by || "Trainer").slice(0, 80) }) });
+            const j = await r.json().catch(() => ({}));
+            return json(j && j.success ? { ok: true, card: j.card } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+          }
+          const r = await fetch(base + "?" + new URLSearchParams({ name: rec.name, batch }), { headers: hdr });
+          const j = await r.json().catch(() => ({}));
+          return json(j && j.success ? { ok: true, username: j.username || "", cards: Array.isArray(j.cards) ? j.cards.slice(-5) : [] } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+        } catch (e) { return json({ ok: false, error: "The Portal is unreachable: " + String(e && e.message || e).slice(0, 160) }); }
+      }
       // ✍ A TRAINER'S EOD SCORE for a training day (one the EOD monitoring missed, or before it was set up): kept in
       // trackerreview:<id>.eodTrainer[<date>] — a record only the Worker and trainers write, so a trainee can neither forge it nor
       // overwrite it with their own saves — and the day worked out again as it was (its Task Tracker and Monitoring Sheet parts,
