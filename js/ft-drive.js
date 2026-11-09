@@ -498,6 +498,9 @@ FTDrive.saveTrainerScore = async function(id, which, score, comment){
 ftAdminTab("drivetrackers", "📁 Drive Trackers", renderAdminDrive);
 
 // the Scorecard (js/ft-program.js): the tracker days and the Monitoring Sheet, the trainer's score else the check
+// ✏️ the on-platform activities that are practice only: graded for the feedback, never counted on a scorecard
+// (Day 11's ✉️ Insurance Email Simulator, js/ft-claims-email.js)
+window.ftPracticeDocs = ["claims-email"];
 window.ftDriveItems = ctx => {
   const rv = ctx.rec["trackerreview:"] || {}, out = [];
   // (ctx.range: a week's dates, from ⤓ Fill in the Weekly Ranking: the tracker's days in it only; at: each item's date)
@@ -520,7 +523,8 @@ window.ftDriveItems = ctx => {
   // (an activity answered in the 🎧 Call Listening log — Day 3's Reception Listening Activity — counts there instead, with the
   // listening it belongs to: js/ft-listening.js ftListenItems; here as well, it would count twice in the overall)
   const inListening = doc => !!(window.FTListen && (FTListen.sets || []).some(s => s.activity && s.id === doc));
-  Object.entries(rv.assess || {}).forEach(([doc, x]) => { if(!x || x.score == null || inListening(doc)) return;
+  // (a practice activity is graded for its feedback but kept off the scorecards: window.ftPracticeDocs)
+  Object.entries(rv.assess || {}).forEach(([doc, x]) => { if(!x || x.score == null || inListening(doc) || ftPracticeDocs.includes(doc)) return;
     out.push({name:`📄 ${x.title || "Assessment"}`, ref:"assess:" + doc, why:String(x.comment || x.summary || x.feedback || ""), pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
   Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
     out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, ref:"items:" + k, why:String(x.result.context || ""), pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
