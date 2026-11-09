@@ -57,7 +57,7 @@
             ".lesson-stage #lessonSlideWrap ol.fp-howto-list > li::before", ".lesson-stat",
             ".lesson-threebox .tbox:nth-child(3n+1)", ".lp-admin-sec.active",
             ".match-zone:nth-child(4n+1) .match-zone-label", ".mini-table th", ".ob-call-btn",
-            ".or-bp-side", ".or-step-n", ".pill-tabs button.active", ".practice-sidebar button.active",
+            ".or-bp-side", ".or-step-n", ".pill-tabs button.active",
             ".quiz-grid-letter", ".section-title .tag", ".si-icon", ".sopf-step h4 .n::before",
             ".sopx-mode button.on", ".sopx-n", ".sopx-s-table th", ".step-circle.st-done",
             ".tab-btn.active", ".tfb-fab", ".toast", ".tool-card .tool-open-btn", ".tool-day-banner",
@@ -109,7 +109,7 @@
         /* The pale tints: the green "done / correct" boxes and the red "stop / wrong" ones. */
         "success-bg": [
             ".att-today", ".audit-btn.active-valid", ".callout-tip", ".drill-btn.correct",
-            ".fact-row.fact-correct", ".fb-chip.sent", ".fp-pill.ok",
+            ".fb-chip.sent", ".fp-pill.ok",
             ".fp-st.st-done", ".ftm-pill.ok", ".kc-fb.kc-ok",
             ".lesson-stage #lessonSlideWrap .quiz-opt.correct", ".module-finish-btn:hover",
             ".pill-done", ".pref-ok", ".qns-ok", ".quiz-opt.correct", ".rv.sent", ".st-done",
@@ -117,7 +117,7 @@
         ],
         "danger-bg": [
             ".ai-result.ai-error", ".audit-btn.active-unrelated", ".callout-warning",
-            ".drill-btn.incorrect", ".fa-pri.high", ".fact-row.fact-wrong",
+            ".drill-btn.incorrect", ".fa-pri.high",
             ".fp-pill.bad", ".ftm-help", ".ftm-pill.bad", ".ftr-rule", ".kc-fb.kc-low",
             ".lab-attempt-banner.lab-attempt-locked", ".lab-disclaimer.locked",
             ".lesson-stage #lessonSlideWrap .quiz-opt.incorrect", ".pref-bad",
@@ -126,10 +126,10 @@
         /* The white cards and the page itself. */
         paper: [".card", ".eval-report", ".ftr-chan", ".ftr-part", ".quiz-grid-opt"],
         page: [
-            ".act-card", ".dropzone", ".fp-report", ".fp-st.st-none", ".ftm-afb pre", ".ftm-eg",
+            ".act-card", ".fp-report", ".fp-st.st-none", ".ftm-afb pre", ".ftm-eg",
             ".ftm-mtype", ".ftm-n", ".ftm-rubric code", ".ftr-code", ".ftr-eg", ".ftr-to",
             ".ftr-todo-n", ".iz-quad", ".iz-score-banner", ".kc-stats", ".lesson-compare .cbox",
-            ".link-preview-box", ".match-tray", ".pill-tabs", ".practice-sidebar button:hover",
+            ".link-preview-box", ".match-tray", ".pill-tabs",
             ".pref-ref-grid div", ".st-none", "body"
         ]
     };
