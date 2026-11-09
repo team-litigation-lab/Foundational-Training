@@ -38,6 +38,9 @@ const failures = []; const fail = m => failures.push(m);
     // (a trainer sees it too)
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(800);
     if (!(await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return !!b && !b.hidden && /Mock calls/.test(b.textContent); }))) fail('a trainer doesn\'t see the announcement');
+    // (not on a Day deck, a presentation drawn as large as the screen allows)
+    await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(1); }).catch(() => {});
+    if (await page.evaluate(() => state.view === 'daydeck' && !!document.querySelector('.ft-ann'))) fail('the ticker shows on a Day deck');
     // (none: no ticker)
     text = ''; await page.evaluate(() => FTAnnouncement.reload()); await page.waitForTimeout(400);
     if (!(await page.evaluate(() => [...document.querySelectorAll('.ft-ann')].every(b => b.hidden)))) fail('an empty announcement still shows the ticker');

@@ -23,7 +23,10 @@ async function load(){
   try{ const r = await fetch("/api/announcement", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}", cache: "no-store"}); const j = r.ok ? await r.json() : null; A.text = j && typeof j.text === "string" ? j.text : A.text; }catch(e){}
   A.at = Date.now(); A.loading = false; fill();
 }
+// (not on a Day deck: a deck is a presentation, drawn as large as the screen allows)
+const OFF_VIEWS = ["daydeck"];
 function bar(){
+  if(typeof state !== "undefined" && OFF_VIEWS.includes(state.view)) return "";
   load();
   return `<div class="ft-ann no-print" data-ft-ann${A.text ? "" : " hidden"}><div class="ft-ann-in">
     <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(A.text)}</span></div></div></div>
