@@ -752,7 +752,7 @@ window.FTRanking = {
     const txt = el.tagName === "TEXTAREA", k = ev.key;
     const go = (dr, dc) => { if(moveFrom(el, dr, dc)) ev.preventDefault(); };
     if(k === "ArrowDown" && !txt) go(1, 0); else if(k === "ArrowUp" && !txt) go(-1, 0);
-    else if(k === "Enter" && !ev.shiftKey && !txt){ if(el.tagName === "INPUT") el.blur(); go(ev.shiftKey ? -1 : 1, 0); }
+    else if(k === "Enter" && !ev.shiftKey && !txt){ if(el.tagName === "INPUT") el.blur(); go(1, 0); }
     else if(k === "ArrowRight" && (el.tagName === "TD" || (el.tagName === "INPUT" && el.selectionStart === el.value.length))) go(0, 1);
     else if(k === "ArrowLeft" && (el.tagName === "TD" || (el.tagName === "INPUT" && el.selectionStart === 0))) go(0, -1);
   },
