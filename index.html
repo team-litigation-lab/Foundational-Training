@@ -14404,16 +14404,6 @@ function lessonParts(l){
   return {principles, steps, pitfalls, callout: l.callout && l.callout.text};
 }
 
-/* Which slides a lesson occupies, using the same numbering trainees see ("Step X of N"). */
-function lessonSlideSteps(d, i){
-  const slides = buildDaySlides(d);
-  const idx = slides.map((s,k)=>(s.type==="topic" && s.lessonIndex===i) ? k+1 : null).filter(Boolean);
-  return {first: idx[0]||null, last: idx[idx.length-1]||null, total: slides.length};
-}
-function slideLabel(d, i){
-  const st = lessonSlideSteps(d, i); if(!st.first) return "";
-  return st.first===st.last ? `Step ${st.first} of ${st.total}` : `Steps ${st.first}–${st.last} of ${st.total}`;
-}
 /* Speech-friendly text: whole sentences, never cut mid-thought, no "…". */
 function speakable(t, max){
   t = String(t||"").replace(/\s+/g," ").trim().replace(/^[\-•*\d.)\s]+/, "");
@@ -14465,22 +14455,16 @@ function buildDiscussionScript(d, l, i){
   ];
   const ask = quoted ? quoted[1] : (direct || asks[i % asks.length]);
   const p0 = speakable(splitLabel(principles[0] || "").rest || principles[0] || "", 150);
-  const p1 = "";
   const listen = steps.slice(0,2).map(x=>asSentence(shortPhrase(splitLabel(x).label || x, 90)));
-  const probeStep = steps[1] ? shortPhrase(steps[1], 80) : "";
   const correctRaw = pitfalls.map(x=>String(x).replace(/^pitfall:\s*/i,"")).find(x=>!listen.some(y=>x.startsWith(y.slice(0,30))));
   const wrapSrc = splitLabel(callout || [...steps].reverse().find(x=>!/next topic|covered (earlier|elsewhere|in)|per day|day \d/i.test(x)) || principles[0] || "").rest;
   const title = l.h.replace(/[.?!:]+$/,"");
   return {
-    slides: slideLabel(d, i),
-    open: `"Next up: ${title}. ${asSentence(p0)}${p1 ? " "+asSentence(p1) : ""}"`,
+    open: `"Next up: ${title}. ${asSentence(p0)}"`,
     ask: `"${ask}"`,
-    facilitator: (cue && !quoted && !direct) ? cue : "",
     listen,
-    probe: probeStep ? `"What goes wrong if we skip this — ${lowerFirst(shortPhrase(probeStep, 55))}?"` : `"What would a less experienced assistant get wrong here?"`,
     correct: correctRaw ? asSentence(speakable(correctRaw, 120)) : "",
-    wrap: `"To sum up: ${lowerFirst(speakable(wrapSrc, 150)).replace(/[.!?]["”’')]?$/,"")}.${next ? ` Next, we'll look at ${next.h.replace(/[.?!:]+$/,"")}.` : " That's the last topic for today — next is the Practice Lab."}"`,
-    minutes: "2–3 min"
+    wrap: `"To sum up: ${lowerFirst(speakable(wrapSrc, 150)).replace(/[.!?]["”’')]?$/,"")}.${next ? ` Next, we'll look at ${next.h.replace(/[.?!:]+$/,"")}.` : " That's the last topic for today — next is the Practice Lab."}"`
   };
 }
 /* ---------- trainer speaker notes (hardcoded in js/days/dayN/notes.js) ----------
@@ -14605,7 +14589,6 @@ function slideScriptSections(d, l, part){
 // Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
 // ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper (used for the "On this page" summary when
 // a slide is split over pages).
-const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Best Practices & Pitfalls", 4:"Go Deeper"};
 /* ---------- The spoken script for one slide ----------
    Every slide's script follows the same four beats:
      ① The why      — the punchline: why this slide matters, in one quick sentence
