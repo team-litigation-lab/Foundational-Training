@@ -7,29 +7,40 @@
    ============================================================ */
 (function(){
 "use strict";
-const A = {text: "", at: 0, loading: false};
+const A = {text: "", own: {platform: null, lessons: {}}, at: 0, loading: false};
+// 📢 what the ticker says: this platform's announcement, then the lesson's (the one being shown, else the trainee's current
+// one), then the Portal's broadcast — or, on a Day deck, only that lesson's (a deck stays as large as the screen allows)
+const lessonText = l => l != null && A.own.lessons && A.own.lessons[l] ? A.own.lessons[l].text : "";
+const DD_ = () => window.FTDayDecks || {};
+function shown(){
+  const onDeck = typeof state !== "undefined" && state.view === "daydeck";
+  if(onDeck) return lessonText(DD_().deckLesson ? DD_().deckLesson() : null);
+  let l = null; try{ l = DD_().placeLesson ? DD_().placeLesson() : null; }catch(e){}
+  return [A.own.platform && A.own.platform.text, lessonText(l), A.text].filter(Boolean).join("     ✦     ");
+}
 const TZS = [["Asia/Manila", "Manila (PHT)"], ["UTC", "UTC"], ["America/New_York", "New York (ET)"], ["America/Los_Angeles", "Los Angeles (PT)"]];
 const esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const tz = () => { try{ const v = localStorage.getItem("ft_ann_tz"); if(TZS.some(([z]) => z === v)) return v; }catch(e){} return "Asia/Manila"; };
 const clock = () => { try{ return new Intl.DateTimeFormat("en-US", {year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: tz(), hour12: true}).format(new Date()); }catch(e){ return ""; } };
 function fill(){
-  document.querySelectorAll("[data-ft-ann-text]").forEach(el => { if(el.textContent !== A.text) el.textContent = A.text; });
-  document.querySelectorAll("[data-ft-ann]").forEach(el => { el.hidden = !A.text; });
+  const t = shown();
+  document.querySelectorAll("[data-ft-ann-text]").forEach(el => { if(el.textContent !== t) el.textContent = t; });
+  document.querySelectorAll("[data-ft-ann]").forEach(el => { el.hidden = !t; });
+  document.querySelectorAll("[data-ft-ann-lesson]").forEach(el => { const x = lessonText(Number(el.dataset.ftAnnLesson)); el.hidden = !x; const b = el.querySelector("b + span"); if(b && b.textContent !== x) b.textContent = x; });
 }
 // (POST: the Worker's /api/ routes are POST only)
 async function load(){
   if(A.loading || (A.at && Date.now() - A.at < 5 * 60 * 1000)) return;
   A.loading = true;
-  try{ const r = await fetch("/api/announcement", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}", cache: "no-store"}); const j = r.ok ? await r.json() : null; A.text = j && typeof j.text === "string" ? j.text : A.text; }catch(e){}
+  try{ const r = await fetch("/api/announcement", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}", cache: "no-store"}); const j = r.ok ? await r.json() : null; A.text = j && typeof j.text === "string" ? j.text : A.text; if(j && j.ok) A.own = {platform: (j.own && j.own.platform) || null, lessons: (j.own && j.own.lessons) || {}}; }catch(e){}
   A.at = Date.now(); A.loading = false; fill();
 }
-// (not on a Day deck: a deck is a presentation, drawn as large as the screen allows)
-const OFF_VIEWS = ["daydeck"];
+// (on a Day deck: only the lesson's own announcement, when it has one — a deck is drawn as large as the screen allows)
 function bar(){
-  if(typeof state !== "undefined" && OFF_VIEWS.includes(state.view)) return "";
   load();
-  return `<div class="ft-ann no-print" data-ft-ann${A.text ? "" : " hidden"}><div class="ft-ann-in">
-    <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(A.text)}</span></div></div></div>
+  const t = shown();
+  return `<div class="ft-ann no-print" data-ft-ann${t ? "" : " hidden"}><div class="ft-ann-in">
+    <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(t)}</span></div></div></div>
     <div class="ft-ann-clock"><span data-ft-ann-clock>${esc_(clock())}</span><select aria-label="Time zone" onchange="FTAnnouncement.tz(this.value)">${TZS.map(([z, l]) => `<option value="${z}"${z === tz() ? " selected" : ""}>${l}</option>`).join("")}</select></div>
   </div></div>`;
 }
@@ -37,7 +48,39 @@ const __top = window.renderTopbar;
 if(typeof __top === "function") window.renderTopbar = function(){ return __top.apply(this, arguments) + bar(); };
 setInterval(() => { const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); }, 1000);
 setInterval(() => { A.at = 0; load(); }, 5 * 60 * 1000);
+/* 📝 Admin → 📢 Announcements: this platform's own announcement and each lesson's (settings:announcements, read back through
+   worker.js /api/announcement). The Portal's broadcast is edited on the Portal (Master Control → Broadcast & Ping). */
+const ED = {rec: null, loading: false, saving: false};
+function editorHtml(){
+  if(!ED.rec && !ED.loading){ ED.loading = true; Promise.resolve(typeof sharedGet === "function" ? sharedGet("settings:announcements") : null).then(v => { ED.rec = v && typeof v === "object" ? v : {}; ED.loading = false; if(state.view === "admin") render(); }).catch(() => { ED.rec = {}; ED.loading = false; if(state.view === "admin") render(); }); }
+  if(!ED.rec) return `<div class="card" style="padding:20px">Loading the announcements…</div>`;
+  const ls = DD_().lessons ? DD_().lessons() : [], nameOf = l => (typeof ftName === "function" ? ftName(l) : "Lesson " + l) + (DD_().lessonFocus && DD_().lessonFocus(l) ? " · " + DD_().lessonFocus(l) : "");
+  const val = x => esc_((x && x.text) || ""), when = x => x && x.at ? ` <small class="ann-ed-when">saved ${esc_(new Date(x.at).toLocaleString())}${x.by ? " by " + esc_(x.by) : ""}</small>` : "";
+  return `<div class="card ann-ed"><h3>📢 Announcements</h3>
+    <p class="ann-ed-note">What the ticker under the top bar says. <b>This platform</b> shows on every page; <b>a lesson's</b> shows while a trainee is on that lesson (its cards and Day decks). The <b>Portal's broadcast</b> (Master Control → Broadcast &amp; Ping) shows after them${A.text ? `: “${esc_(A.text)}”` : ""}. Leave a box empty for none. 500 characters at most.</p>
+    <label class="ann-ed-row"><span>🌐 This platform${when(ED.rec.platform)}</span><textarea data-ann="platform" maxlength="500" rows="2" placeholder="No announcement">${val(ED.rec.platform)}</textarea></label>
+    ${ls.map(l => `<label class="ann-ed-row"><span>📘 ${esc_(nameOf(l))}${when((ED.rec.lessons || {})[l])}</span><textarea data-ann="${l}" maxlength="500" rows="2" placeholder="No announcement">${val((ED.rec.lessons || {})[l])}</textarea></label>`).join("")}
+    <div class="ann-ed-act"><button type="button" class="btn btn-primary" onclick="FTAnnouncement.save(this)"${ED.saving ? " disabled" : ""}>💾 Save the announcements</button></div></div>`;
+}
+async function save(btn){
+  const box = btn.closest(".ann-ed"); if(!box) return;
+  const by = String(state.certName || state.adminName || "Trainer").slice(0, 80), at = new Date().toISOString(), cur = ED.rec || {};
+  const keep = (old, text) => !text ? null : old && old.text === text ? old : {text, by, at};
+  const next = {platform: null, lessons: {}};
+  box.querySelectorAll("[data-ann]").forEach(t => { const text = String(t.value || "").replace(/\s+/g, " ").trim().slice(0, 500), k = t.dataset.ann;
+    if(k === "platform") next.platform = keep(cur.platform, text); else { const v = keep((cur.lessons || {})[k], text); if(v) next.lessons[k] = v; } });
+  ED.saving = true; btn.disabled = true;
+  const ok = typeof sharedSet === "function" ? await sharedSet("settings:announcements", next) : false;
+  ED.saving = false; btn.disabled = false;
+  if(ok === false){ if(typeof toast === "function") toast("Couldn’t save. Check your connection."); return; }
+  ED.rec = next; if(typeof toast === "function") toast("✓ Announcements saved: the ticker shows them now.");
+  A.at = 0; await load(); if(typeof render === "function") render();
+}
+if(typeof ftAdminTab === "function") ftAdminTab("announcements", "📢 Announcements", editorHtml);
+// (each lesson's announcement on its cards, js/ft-day-decks.js)
+const lessonHtml = l => { const x = lessonText(l); return `<div class="ftlc-ann" data-ft-ann-lesson="${esc_(l)}"${x ? "" : " hidden"}><b>📢 Announcement</b> <span>${esc_(x)}</span></div>`; };
 window.FTAnnouncement = {
+  save, lessonHtml,
   tz(v){ try{ localStorage.setItem("ft_ann_tz", v); }catch(e){} const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); },
   text: () => A.text, reload(){ A.at = 0; return load(); }
 };
@@ -61,5 +104,11 @@ window.FTAnnouncement = {
 .ft-ann-clock select option{color:#0b1733;}
 @media (max-width:640px){.ft-ann-in{padding:7px 16px;gap:8px 14px;}}
 @media (prefers-reduced-motion:reduce){.ft-ann-tag::before{animation:none;}.ft-ann-track{animation:none;padding-left:0;}}
-@media print{.ft-ann{display:none;}}`; document.head.appendChild(s); })();
+@media print{.ft-ann{display:none;}}
+.ftlc-ann{margin:0 0 10px;padding:8px 10px;border-radius:10px;background:#FFF7ED;border:1px solid #FDBA74;color:#7C2D12;font:600 13.5px/1.4 Arial,sans-serif;}
+.ftlc-ann[hidden]{display:none;} .ftlc-ann b{color:#C2410C;margin-right:4px;}
+.ann-ed{padding:20px 24px;max-width:980px;} .ann-ed-note{color:#475569;margin:4px 0 14px;}
+.ann-ed-row{display:block;margin:0 0 12px;} .ann-ed-row span{display:block;font-weight:700;color:#1E2340;margin-bottom:4px;} .ann-ed-when{font-weight:500;color:#64748B;}
+.ann-ed-row textarea{width:100%;box-sizing:border-box;font:15px/1.4 Arial,sans-serif;padding:8px 10px;border:1px solid #CBD5E1;border-radius:8px;}
+.ann-ed-act{display:flex;justify-content:flex-end;margin-top:6px;}`; document.head.appendChild(s); })();
 })();
