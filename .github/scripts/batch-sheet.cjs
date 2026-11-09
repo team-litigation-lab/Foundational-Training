@@ -486,16 +486,17 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.adminTab = 'batchsheet'; state.adminData = null; render(); }); await page.waitForTimeout(2500);
   const foot = await page.evaluate(() => ({ people: !!document.getElementById('bs-people'), link: /Approvals &|Trainees &/.test((document.querySelector('.bs-jump') || {}).innerText || '') }));
   if (foot.people || foot.link) fail(`the Batch Sheet still has 👥 Approvals & Batches: ${JSON.stringify(foot)}`);
-  // the batch menu: the Batch picker and 📦 Archive batch, which opens the archive dialog (js/ft-batch-admin.js) for the batch on screen
+  // the batch menu: the Batch picker, and no 📦 Archive batch (🛡 Admin Master Control → 📁 Batches archives a batch, from its card)
   if (!(await page.$('.bs-batchmenu select'))) fail('the batch menu has no Batch picker');
-  if (!(await page.$('.bs-archive'))) fail('the batch menu has no 📦 Archive batch');
-  else {
-    await page.click('.bs-archive'); await page.waitForTimeout(1500);
+  if (await page.$('.bs-archive')) fail('📦 Archive batch is still on the 📋 Batch Sheet');
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); }); await page.waitForTimeout(2500);
+  { const opened = await page.evaluate(b => { const x = [...document.querySelectorAll('.bf-arch')].find(el => (el.getAttribute('onclick') || '').includes(b)) || document.querySelector('.bf-arch'); if (x) x.click(); return !!x; }, BATCH);
+    await page.waitForTimeout(1500);
     const dlg = await page.evaluate(() => { const o = document.querySelector('.fba-ov'); return o ? o.innerText : ''; });
-    if (!/Archive/.test(dlg) || !dlg.includes(BATCH) || !/Google Drive folder link/.test(dlg) || !/Delete the batch/.test(dlg)) fail(`📦 Archive batch doesn't open the batch's archive dialog: ${dlg.slice(0, 200)}`);
+    if (!opened || !/Archive/.test(dlg) || !/Google Drive folder link/.test(dlg)) fail(`📁 Batches' 📦 Archive doesn't open the batch's archive dialog: ${dlg.slice(0, 200)}`);
     if (await page.$('.fba-ov [data-cancel]')) { await page.click('.fba-ov [data-cancel]'); await page.waitForTimeout(1500); }
-    if (await page.$('.fba-ov')) fail('the archive dialog didn\'t close on Cancel');
-  }
+    if (await page.$('.fba-ov')) fail('the archive dialog didn\'t close on Cancel'); }
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(1500);
   await page.evaluate(id => approveTrainee(id), ids.Cy); await page.waitForTimeout(2500);
   if (!((await get('trainee:' + ids.Cy)) || {}).approved) fail('approveTrainee didn\'t approve Cy');
   const cyRow = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'trainees').rows.find(r => /Cy/.test(r[0].v)); return r ? r[1].v : ''; });

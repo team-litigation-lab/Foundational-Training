@@ -820,7 +820,7 @@ const viewBar = () => "";
 // 🔎 beside Batch: on 📋 Batch Sheet the trainee whose page is open; on 📊 Weekly Reports one trainee's evidence (FTRanking)
 function whoTopHtml(ppl){
   if(meOn() || !adminOn() || linksOn() || !ppl.length) return "";
-  if(weeklyOn()) return window.FTRanking && typeof FTRanking.evidenceFor === "function" ? `<label class="bs-who-top">🔎 <select aria-label="One trainee's evidence" onchange="FTRanking.evidenceFor(this.value)"><option value="">One trainee’s evidence…</option>${ppl.map(p => `<option value="${e(p.id)}">${e(p.name)}</option>`).join("")}</select></label>` : "";
+  if(weeklyOn()) return "";   // (📊 Weekly Reports: no trainee picker; ℹ How it's scored has one trainee's evidence)
   if(B.view === "tables") return "";
   const cur = ptCur(ppl);
   return `<label class="bs-who-top">🔎 <select aria-label="Trainee" onchange="FTBatchSheet.ptPick(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${cur && p.id === cur.id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>`;
@@ -1362,7 +1362,7 @@ function renderSheet(){
     <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : linksOn() ? "🔗" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
-        ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div>
+${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
 </div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
@@ -1380,19 +1380,6 @@ function renderSheet(){
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
-  // 📦 Archive batch (the batch menu): the archive dialog for the batch on screen (js/ft-batch-admin.js confirmArchiveBatch: Google
-  // Drive backup, then the clear, or 🗑 Delete the batch), on the trainee list it reads; the sheet reads its trainees again after
-  async archive(){
-    if(!adminOn() || meOn() || typeof window.confirmArchiveBatch !== "function") return;
-    if(!(state.adminDataAll || state.adminData) && typeof window.loadAdminLedger === "function"){ try{ await window.loadAdminLedger(); }catch(err){ /* the dialog says if nothing is there */ } }
-    const p = (B.people || []).find(x => bLabel(x.batch) === B.batch);
-    const key = p && typeof window.batchKey === "function" ? window.batchKey(p) : (p ? p.batch : B.batch);
-    window.confirmArchiveBatch(key);
-    // (when the dialog closes, archived or not: read the batches again)
-    const ov = document.querySelector(".fba-ov"); if(!ov || typeof MutationObserver !== "function") return;
-    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.picked = false; render(); } });
-    mo.observe(document.body, {childList: true});
-  },
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
@@ -1923,14 +1910,14 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-view button{border:1px solid #C9CEDA;background:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font:600 13px Arial,sans-serif;color:#1E2340;} .bs-view button.on{background:#1E2340;color:#fff;border-color:#1E2340;} .bs-view .bs-view-all{border-radius:8px;}
 .bs-pts{display:flex;flex-direction:column;gap:10px;}
 /* (the sheet's actions: real buttons, bold and bigger) */
-.bs-card .gs-menu{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
-.bs-card .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 15.5px Arial,sans-serif;padding:7px 14px;border-radius:8px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.06);}
+.bs-card .gs-menu{display:flex;flex-wrap:nowrap;gap:5px;margin-top:6px;overflow-x:auto;align-items:center;}
+.bs-card .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 13px Arial,sans-serif;padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.06);}
 .bs-card .gs-menu button:hover{background:#EEF1F8;} .bs-card .gs-menu button.bs-upd-all{background:#1E2340;color:#fff;margin-left:0;vertical-align:baseline;} .bs-card .gs-menu button.bs-upd-all:hover{background:#2C3566;}
 .bs-card .gs-menu button:disabled{opacity:.6;cursor:default;}
 .bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
 .bs-pager span{color:#3C4043;font:800 16px Arial,sans-serif;}
-.bs-card .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} .bs-card .gs-menu .bs-pager button{font-size:16.5px;padding:8px 16px;}
+.bs-card .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} .bs-card .gs-menu .bs-pager{gap:5px;} .bs-card .gs-menu .bs-pager button{font-size:13px;padding:5px 9px;} .bs-card .gs-menu .bs-pager span{font-size:13px;white-space:nowrap;}
 .bs-card .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
 /* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
 .bs-card .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .bs-card .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
