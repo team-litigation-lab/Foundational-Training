@@ -106,7 +106,7 @@ async function loadData(){
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
-    for(let i = 0; i < want.length; i += 100) vals.push(...await sharedGetMany(want.slice(i, i + 100)));
+    vals.push(...await sharedGetMany(want));
     const sh = {}, shv = shared.length ? await sharedGetMany(shared) : [];
     shared.forEach((k, i) => { sh[k] = shv[i] || null; });
     const per = own.length + S.length, rec = {};

@@ -431,10 +431,10 @@ async function loadAdmin(quiet){
     const ok = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt && (!window.ftActiveTrainee || ftActiveTrainee(r));
     let people = state.adminData;
     // (a cached list with no approved trainee, say one loaded before the approvals, is read again from storage)
-    if(!people || !people.some(ok)){ const keys = await sharedList("trainee:"), got = []; for(let i = 0; i < keys.length; i += 99) got.push(...(await sharedGetMany(keys.slice(i, i + 99))).filter(Boolean)); people = got; }
+    if(!people || !people.some(ok)){ const keys = await sharedList("trainee:"), got = []; got.push(...(await sharedGetMany(keys)).filter(Boolean)); people = got; }
     people = people.filter(ok);   // (an offboarded VA leaves the trainer's tabs and the deck's metrics sheet: js/ft-batch-admin.js)
     const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id]), vals = [];
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    vals.push(...await sharedGetMany(keys));
     AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);

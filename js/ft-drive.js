@@ -367,7 +367,7 @@ async function loadAdmin(){
   try{
     const people = await ftActiveRoster();
     const keys = people.flatMap(r => ["drive:" + r.id, "trackerreview:" + r.id]), vals = [];
-    for(let i = 0; i < keys.length; i += 100) vals.push(...await sharedGetMany(keys.slice(i, i + 100)));
+    vals.push(...await sharedGetMany(keys));
     DA.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", drive:vals[i * 2] || null, rv:vals[i * 2 + 1] || {days:{}}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!DA.batch){ const bs = [...new Set(DA.rows.map(r => r.batch).filter(Boolean))].sort(); DA.batch = bs[bs.length - 1] || ""; }

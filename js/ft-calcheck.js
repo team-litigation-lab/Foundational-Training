@@ -446,7 +446,7 @@ async function loadAdmin(){
   try{
     const people = await ftActiveRoster();
     const vals = []; const keys = people.map(r => "calcheck:" + r.id);
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    vals.push(...await sharedGetMany(keys));
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].entries && typeof vals[i].entries === "object" ? clean(vals[i]) : null}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
