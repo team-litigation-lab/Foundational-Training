@@ -1361,7 +1361,9 @@ function renderSheet(){
     try{ last = Number(localStorage.getItem("ft_bs_sync:" + B.batch)) || 0; }catch(err){}
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
-  return `<div class="card gs-card bs-card">
+  const banner = weeklyOn() ? "" : ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", B.batch,
+    `<span>${ppl.length} trainee${ppl.length === 1 ? "" : "s"}</span><span>${approved} approved</span>${waiting ? `<span class="warn">${waiting} waiting</span>` : ""}`);
+  return `${banner}<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : linksOn() ? "🔗" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
@@ -1859,7 +1861,29 @@ window.render = function(){
 // (where the page is: remembered while the sheet is on screen — not while it's being redrawn or still loading)
 window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.data || (meOn() && B.me)) && on()) B.keepY = window.scrollY; }catch(err){} }, {passive: true});
 
+// 🟦 the dark page banner (the Weekly Progress Report's look): Legal Support Help · Foundational Training, the page's
+// name, and Batch · Week · its dates under it; js/ft-batch-admin.js (🧑‍🏫 Graders) draws it too
+window.ftBanner = function(title, batch, right){
+  const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
+  let wk = "";
+  const s0 = batch && typeof batchStartDate === "function" ? batchStartDate(batch) : "", t0 = s0 ? Date.parse(s0 + "T00:00:00Z") : NaN;
+  if(isFinite(t0)){
+    const today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
+    const n = Math.max(1, Math.min(6, Math.floor((Date.parse(today + "T00:00:00Z") - t0) / (7 * 864e5)) + 1)), a = t0 + (n - 1) * 7 * 864e5;
+    const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "long", day: "numeric", year: "numeric", timeZone: "UTC"});
+    wk = ` · Week <b>${n}</b> · ${esc(f(a))} – ${esc(f(a + 6 * 864e5))}`;
+  }
+  return `<div class="ft-banner"><div><p class="ft-banner-k">Legal Support Help · Foundational Training</p><h2>${title}</h2>
+    ${batch ? `<p class="ft-banner-sub">Batch <b>${esc(batch)}</b>${wk}</p>` : ""}</div>${right ? `<div class="ft-banner-right">${right}</div>` : ""}</div>`;
+};
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-sheet"; s.textContent = `
+.ft-banner{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,#1E2340,#33406B);color:#fff;margin:0 0 12px;}
+.ft-banner h2{margin:2px 0 !important;font:800 26px 'Fraunces',Georgia,serif !important;color:#fff !important;}
+.ft-banner .ft-banner-k{margin:0 !important;font:800 12px Arial,sans-serif !important;letter-spacing:.08em;text-transform:uppercase;color:#F6C08F !important;}
+.ft-banner .ft-banner-sub{margin:2px 0 0 !important;color:#E8ECF7 !important;font:600 15px Arial,sans-serif !important;} .ft-banner .ft-banner-sub b{color:#fff !important;}
+.ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
+.ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
 body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px;}
 .bs-card .gs-file b{font-size:20px;}
 .bs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 14px 10px;background:#F9FBFD;font:14px Arial,sans-serif;color:#1F1F1F;}

@@ -409,9 +409,10 @@ function groupTabs(out){
   // a section's lead tab (LSH_PROGRAM.adminLead, e.g. {scorecard: "batchsheet"}) comes first, so the section's button opens on it
   const lead = CFG.adminLead || {};
   const secs = GROUPS.map(g => ({g, tabs:tabs.filter(x => groupOf(x.id) === g.id).sort((a, b) => (b.id === lead[g.id]) - (a.id === lead[g.id]))})).filter(x => x.tabs.length);
-  // (a program's own section with one tab — 📊 Weekly Reports, 📦 Intake Packets — is a button of its own: no count, and no row
-  // under it repeating the same button; the row stays in the page, hidden, so the open tab is still there)
-  const own = new Set((CFG.adminSections || []).map(x => x && x.id)), solo = x => own.has(x.g.id) && x.tabs.length === 1;
+  // (a section with one tab — 📊 Weekly Reports, 🔗 Drive Links, 📦 Intake Packets, a 🏅 Scorecard left with its Batch Sheet — is a
+  // button of its own: no count, and no row under it repeating the same button; the row stays in the page, hidden, so the open
+  // tab is still there)
+  const solo = x => x.tabs.length === 1;
   const open = secs.find(x => x.g.id === cur) || secs[0];
   const bar = `<div class="admin-tabs lp-admin-tabs"><div class="lp-admin-secs">${secs.map(x => `<button type="button" class="lp-admin-sec${x.g.id === cur ? " active" : ""}" onclick="setAdminTab('${x.tabs[0].id}')">${x.g.label}${solo(x) ? "" : `<span>${x.tabs.length}</span>`}</button>`).join("")}</div>
     <div class="lp-admin-row"${solo(open) ? " hidden" : ""}>${open.tabs.map(x => x.html).join("")}</div></div>`;
