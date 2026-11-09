@@ -30,10 +30,14 @@ const failures = []; const fail = m => failures.push(m);
     await page.waitForTimeout(2000);
     // (the batch and week picked, then the report read: either the draft starting or the offer to start it; picked again if
     //  the Batch Sheet, still loading, drew over it — up to three times)
-    for (let n = 0; n < 3; n++) {
-      await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, BATCH);
+    // (on a busy runner the admin page can still be drawing, or re-drawn from scratch, when the report is picked: a wait that
+    //  ends at once — the page re-rendered under it — is followed by a pause and the Ranking tab opened again, up to five times)
+    for (let n = 0; n < 5; n++) {
+      const t0 = Date.now();
+      await page.evaluate(b => { if (state.adminTab !== 'ranking' || state.view !== 'admin') { state.adminTab = 'ranking'; goto('admin'); } FTRanking.batch(b); FTRanking.week(1); }, BATCH).catch(() => {});
       const ok = await page.waitForFunction(() => /is over|hasn.t been started/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).then(() => true, () => false);
       if (ok) break;
+      if (Date.now() - t0 < 9000) await page.waitForTimeout(2000);
     }
     const txt = await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '');
     if (!/Week 1 is over/.test(txt)) fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)}`);

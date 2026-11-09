@@ -2179,6 +2179,28 @@ async function autoLinkBatch(env, batch) {
   return { ok: true, batch: B, trainees: roster.length, searched: tagged.length + monitors.length, linked, missing, as: tokens.subOk ? env.GDRIVE_SA_SUBJECT : env.GDRIVE_SA_EMAIL };
 }
 
+/* 📋 the Daily Task Tracker read once and checked for each of the given days by that day's own entries (TR.checkDay: the rows
+   dated that day), into cur.days[<date>] — a day's trainer score, comment and notes review are kept. Returns the days checked;
+   throws "kind" / "layout" / a fetch error when the sheet can't be read. */
+async function trackerDays(env, drive, start, days, cur) {
+  const f = TR.googleFile(drive.tracker);
+  if (f.kind !== "sheet") throw new Error("kind");
+  const csv = await fetchGoogle(f.exportUrl, env);
+  if (!cur.days) cur.days = {};
+  const at = new Date().toISOString(); let n = 0;
+  for (const D of days) {
+    const t = TR.fromSheetCsv(csv, { today: D, startDate: drive.startDate || start });
+    if (!t) throw new Error("layout");
+    t.drive = drive;
+    const res = TR.checkDay(t, D); if (res.na) continue;
+    const prev = cur.days[D] || {};
+    cur.days[D] = Object.assign({}, res, { source: "drive", url: String(drive.tracker).slice(0, 500), review: prev.review || "", checkedAt: at, backtracked: true,
+      comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+    n++;
+  }
+  return n;
+}
+
 /* ⏪ BACKTRACK A TRAINEE FROM DAY 1 (📋 Batch Sheet → 🔄 Update): every past training day checked again against what is in
    their Drive now — the Daily Task Tracker read once and checked for each day since the batch started (a day's trainer
    score, comment and notes review are kept), the Monitoring Sheet and the test screenshots read again — and then each day's
@@ -2193,22 +2215,8 @@ async function backtrack(env, id) {
   const out = { id, days: 0, tracker: "", monitor: "", shots: "" };
   if (drive.tracker && days.length && driveSA(env)) {
     try {
-      const f = TR.googleFile(drive.tracker);
-      if (f.kind !== "sheet") throw new Error("kind");
-      const csv = await fetchGoogle(f.exportUrl, env);
       const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
-      if (!cur.days) cur.days = {};
-      const at = new Date().toISOString();
-      for (const D of days) {
-        const t = TR.fromSheetCsv(csv, { today: D, startDate: drive.startDate || start });
-        if (!t) throw new Error("layout");
-        t.drive = drive;
-        const res = TR.checkDay(t, D); if (res.na) continue;
-        const prev = cur.days[D] || {};
-        cur.days[D] = Object.assign({}, res, { source: "drive", url: String(drive.tracker).slice(0, 500), review: prev.review || "", checkedAt: at, backtracked: true,
-          comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
-        out.days++;
-      }
+      out.days = await trackerDays(env, drive, start, days, cur);
       await kv.put(rk, JSON.stringify(cur));
       out.tracker = "ok";
     } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
@@ -2234,12 +2242,17 @@ async function redoCompliance(env, id, ro = {}) {
   if (!start) return 0;
   const today = TR.ptDate(), want = weekdaysSince(start, today);
   if (!want.length) return 0;
+  // (📅 the Task Tracker and the Monitoring Sheet scored by each day's own input: the Monitoring Sheet read again — its entries
+  // by their dates — and the Task Tracker checked day by day by the rows dated that day, before the days are worked out)
+  if (!ro.fresh && driveSA(env)) { const dv = await get(`drive:${id}`); if (dv && dv.monitor) { try { await checkDrive(env, id, today, { ai: false, tracker: false }); } catch (e) {} } }
   const [drive, skills, proc, tr, prog, ses, cur] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`), get(`trackerreview:${id}`)]);
+  let byDay = !!ro.fresh;
+  if (!ro.fresh && drive && drive.tracker && cur && driveSA(env)) { try { await trackerDays(env, drive, start, want, cur); byDay = true; } catch (e) {} }
   let files = null; if (drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
   const pre = { drive, skills, proc, tr, prog, ses, cur: cur || { days: {} }, daycheck: (await get(`daycheck:${id}`)) || {} };
   for (const d of want) {
     const had = (pre.cur.compliance || {})[d];
-    await dailyCompliance(env, id, d, { pre, redo: true, fresh: !!ro.fresh, rec, files: files || undefined, backfill: !had && d < today });
+    await dailyCompliance(env, id, d, { pre, redo: true, fresh: byDay, rec, files: files || undefined, backfill: !had && d < today });
   }
   await kv.put(`trackerreview:${id}`, JSON.stringify(pre.cur));
   return want.length;
