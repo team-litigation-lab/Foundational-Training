@@ -376,7 +376,8 @@ function kdOneHtml(p, single){
     // (graded "of" the sheets due by now — a lesson not reached yet isn't counted — and any already graded)
     const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
     const due = rows.filter(x => x.g.pct != null || x.g.subm || !window.ftSheetDue || ftSheetDue({lesson: x.k.l}, p.batch || B.batch));
-    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
+    // (one trainee's page: no name over it, their name heads the page already)
+    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${single ? "" : e(p.name) + " "}<em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
