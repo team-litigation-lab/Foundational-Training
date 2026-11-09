@@ -1220,7 +1220,8 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-pill{border-radius:999px;padding:2px 9px;font-size:12.5px;} .fp-pill.ok{background:var(--success-bg);color:var(--success);} .fp-pill.mid{background:#FEF7C3;color:#7a5d00;} .fp-pill.bad{background:var(--danger-bg);color:var(--danger);}
 .fp-report{white-space:pre-wrap;font-family:inherit;font-size:14px;background:var(--bg);border-radius:8px;padding:10px 12px;margin:8px 0;}
 .fp-asheet{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;} .fp-asheet-hd{cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14.5px;color:var(--navy);}
-.fp-aans{margin:8px 0 0;padding-left:22px;font-size:14px;} .fp-aans li{margin:8px 0;} .fp-aans li div{font-weight:500;margin-top:3px;}
+.fp-aans{margin:8px 0 0;padding-left:22px;font-size:19px;line-height:1.55;} .fp-aans li{margin:12px 0;} .fp-aans li > b{font-size:19.5px;} .fp-aans li div{font-weight:600;margin-top:4px;font-size:18.5px;color:#141A2E;}
+/* (the trainer reads the score and feedback at a glance: larger and bold) */ .fp-aans .kc-fb{font-weight:700;font-size:18.5px;line-height:1.5;} .fp-aans .kc-fb > b{font-size:20px;}
 .fp-kcadmin{margin-top:10px;} .fp-kcadmin-h{display:block;color:var(--navy);font-size:14.5px;margin-bottom:2px;}
 .fp-kcform{padding:6px 0 4px;} .fp-kcform textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;margin-top:6px;resize:vertical;}
 .fp-kclabel{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-top:8px;}
