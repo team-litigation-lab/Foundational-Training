@@ -15359,7 +15359,7 @@ async function loadMyFeedbackCore(){
   const newOnes = Object.entries(sent).filter(([k,v])=>!v.readAt).map(([k])=>k);
   const changed = JSON.stringify(sent) !== JSON.stringify(state.myFeedback||{});
   state.myFeedback = sent; state.myFeedbackRaw = fb;
-  if(newOnes.length && !state.feedbackToastShown){ state.feedbackToastShown = true; toast(`💬 New trainer feedback for ${ftName(newOnes.join(", Day "))}.`); }
+  if(newOnes.length && !state.feedbackToastShown){ state.feedbackToastShown = true; toast(`💬 New trainer feedback for ${ftName(newOnes)}.`); }
   if(changed) render();
 }
 function feedbackButton(dayId){
