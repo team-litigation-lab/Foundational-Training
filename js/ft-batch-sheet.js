@@ -1395,7 +1395,11 @@ function daysTable(){
   const ppl = people(), D = dayList();
   return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Mock Call / Demo the trainer scored, the tools' grades, a 📝 Answer Sheet graded on the platform). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score.  ✓ = every activity of the day done.`,
     head: ["Trainee", "Average score", "Days complete"].concat(KINDS.map(k => k[1]), D.map(d => `Day ${d.day}`)),
-    rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), full = st.filter(x => x.length && x.every(y => y.done)).length;
+    // (a day with nothing to hand in — Day 5's classroom discussion and buffer time — is complete once it is over, or by the
+    // Week 1 override: else no trainee could ever have every day complete)
+    rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), today = ptToday();
+      const emptyDone = i => { const d = D[i], dt = dayDate(d.day); return !!((window.ftW1Override && ftW1Override.dayOn(p.batch, d.day)) || (dt && dt < today)); };   // W1-OVERRIDE
+      const full = st.filter((x, i) => x.length ? x.every(y => y.done) : emptyDone(i)).length;
       const all = st.flat(), kind = k => all.filter(y => kindOf(y.it) === k), dayAvgs = st.map(x => scoreLine(x).avg), avg = avgOf(dayAvgs);
       const scored = dayAvgs.map((a, i) => a == null ? null : `Day ${D[i].day} ${a}%`).filter(Boolean);
       return [{v: p.name, f: p.name, cls: "gs-name"},
