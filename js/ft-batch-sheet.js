@@ -1930,8 +1930,10 @@ const BANNER_TABS = {curriculum: "Curriculum", monitor: "Feedback and Monitoring
         if(bar){ bar.insertAdjacentHTML("afterend", window.ftBanner(t, "", "").replace('<div class="ft-banner">', `<div class="ft-banner" data-tab="${state.adminTab}">`)); } } }catch(err){}
     return out; };
 })();
-// (opts.week: the week to show, 1–6, instead of this week — 🧑‍🏫 Graders' Week dropdown; opts.cls: a class on the banner)
+// (controls: the controls in the banner, under its title — 📋 Batch Sheet's; opts.week: the week to show, 1–6, instead of this
+// week — 🧑‍🏫 Graders' Week dropdown; opts.cls: a class on the banner. An object as the 4th argument is opts.)
 window.ftBanner = function(title, batch, right, controls, opts){
+  if(controls && typeof controls === "object"){ opts = controls; controls = ""; }
   const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
   opts = opts || {};
   let wk = "";

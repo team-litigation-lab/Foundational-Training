@@ -189,7 +189,7 @@ function renderMockScores(){
       <button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button>
       <button class="btn btn-ghost btn-sm fms-tool" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></div>`;
   // (the pickers sit in the banner's corner: the week, the batch, the activity, the trainee, the result and 💾 Save)
-  const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, "", {week: wk === "all" ? null : wk, cls: "fms-banner"})
+  const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
     : `<div class="fms-banner">${ctl}</div>`;
   const head = "";
   const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
