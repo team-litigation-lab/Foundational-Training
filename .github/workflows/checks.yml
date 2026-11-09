@@ -65,6 +65,8 @@ jobs:
         run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)
         run: node .github/scripts/assess-grade.cjs
+      - name: The Transcription Activity's automatic score (the shared checks and one AI call, clamped to half points; cached, throttled and capped for a trainee; without the AI the trainer scores the rest)
+        run: node .github/scripts/transcribe-grade.cjs
       - name: Day 8's Intake Packet checked (the corrected packet and its client subfolder; missing, misidentified and misnamed documents)
         run: node .github/scripts/intake-packet.cjs
       - name: Who sees what of the Batch Sheet and My Progress (a trainee only their own; only a trainer moves a batch)

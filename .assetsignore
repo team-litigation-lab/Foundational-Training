@@ -1,6 +1,7 @@
 worker.js
 calweek-api.js
 assess-keys.js
+transcribe-keys.js
 wrangler.json
 *.md
 build

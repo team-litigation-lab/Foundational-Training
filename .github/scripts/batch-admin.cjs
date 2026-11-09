@@ -166,6 +166,44 @@ async function workerChecks() {
     const lr2 = await get('labreview:ana-cruz--b103026'), c2 = ((lr2 || {}).acts || {})['reception-live'] || {};
     if (c2.status !== 'Redo' || c2.redo !== true || c2.score !== 80) fail(`the Redo wasn't saved with the score kept: ${JSON.stringify(c2)}`);
     if ((await counted(lr2)).length) fail(`a mock call sent back for a Redo still counts on the scorecards: ${await counted(lr2)}`);
+    // 🎧 the Transcription Activity's automatic score (trackerreview:<id>.transcribe, worker.js gradeTranscription): Ben's
+    // scoresheet starts from it, not saved and still "Not yet" until the trainer reviews it; ✓ Accept and Save make it the
+    // trainer's (source auto-reviewed); Ana's own saved score (no scorecard) is never replaced by hers
+    const autoG = { at: '2026-11-02T15:00:00Z', submittedAt: '2026-11-02T14:58:00Z', key: 'transcription', act: 'transcription-1', pct: 83, scored: 7, ai: true,
+      scores: [null, null, null, 5, 3.5, null, 5, 4, 2.5, 4, 5], feedback: ['', '', '', '8 of 8 parts', '2 timestamps', '', '2 lines', 'Mostly clean.', 'No link', '3 of 4 parts', '15 min'],
+      writing: { score: 4, grammar: ['"was went" → "went"'], spelling: [], format: [], summary: 'Mostly clean.' } };
+    await put('trackerreview:ben-diaz--b103026', { days: {}, transcribe: { 1: autoG } });
+    await put('trackerreview:ana-cruz--b103026', { days: {}, transcribe: { 1: autoG } });
+    { const lr0 = await get('labreview:ana-cruz--b103026'); lr0.acts['transcription-1'] = { status: 'Redo', score: 40, date: '2026-11-03', at: '2026-11-03T10:00:00Z' }; await put('labreview:ana-cruz--b103026', lr0); }
+    const autoView = () => page.evaluate(() => ({ bar: (document.querySelector('.fms-auto') || {}).innerText || '', c3: (document.querySelector('.fms-tbl tbody tr:nth-child(4) input') || {}).value,
+      c0: (document.querySelector('.fms-tbl tbody tr:nth-child(1) input') || {}).value, score: (document.querySelector('.fms-sheet [data-score]') || {}).value, status: FTMockScores.status(),
+      save: (document.querySelector('[data-ms-save]') || {}).textContent || '', opts: [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'),
+      wr: (document.querySelector('.fms-assist .wr-assist') || {}).innerText || '' }));
+    await page.evaluate(() => { FTMockScores.refresh(); }); await page.waitForTimeout(1500);
+    await page.evaluate(() => { FTMockScores.act('transcription-1'); FTMockScores.va('ben-diaz--b103026'); }); await page.waitForTimeout(800);
+    let av = await autoView();
+    if (!/Auto-scored/.test(av.bar) || !/83%/.test(av.bar) || av.c3 !== '5' || av.c0 !== '' || av.score !== '83') fail(`Ben's scoresheet doesn't start from the automatic score: ${JSON.stringify(av)}`);
+    if (av.status !== 'Not yet') fail(`the automatic score set the Result before the trainer reviewed it: ${av.status}`);
+    if (/Save 1 trainee/.test(av.save) || /not saved/.test(av.opts)) fail(`an automatic score the trainer hasn't touched is flagged not saved: ${av.save} | ${av.opts}`);
+    if (!/auto-scored, to review/.test(av.opts)) fail(`the trainee dropdown doesn't mark Ben's automatic score: ${av.opts}`);
+    if (!/Checked automatically/.test(av.wr) || !/was went/.test(av.wr)) fail(`the stored writing check isn't shown on Graders without a paste: ${av.wr.slice(0, 300)}`);
+    // (read again: still filled in from the automatic score)
+    await page.evaluate(() => FTMockScores.refresh()); await page.waitForTimeout(1500);
+    await page.evaluate(() => { FTMockScores.act('transcription-1'); FTMockScores.va('ben-diaz--b103026'); }); await page.waitForTimeout(800);
+    av = await autoView();
+    if (av.c3 !== '5' || !/Auto-scored/.test(av.bar)) fail(`a reload didn't fill Ben's scoresheet from the automatic score again: ${JSON.stringify(av)}`);
+    await page.click('[data-ms-accept]'); await page.waitForTimeout(300);
+    if (await page.evaluate(() => FTMockScores.status()) !== 'Passed') fail(`✓ Accept didn't set the Result from the score: ${await page.evaluate(() => FTMockScores.status())}`);
+    await page.fill('.fms-tbl tbody tr:nth-child(1) input[type=number]', '3');
+    if (!/Save 1 trainee/.test(await text('[data-ms-save]'))) fail('Ben\'s reviewed scoresheet can\'t be saved');
+    await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
+    const bt = (((await get('labreview:ben-diaz--b103026')) || {}).acts || {})['transcription-1'] || {};
+    if (bt.source !== 'auto-reviewed' || bt.autoAt !== autoG.at || !bt.rubric || bt.rubric.scores[3] !== 5 || bt.rubric.scores[0] !== 3 || bt.status !== 'Passed') fail(`Ben's reviewed automatic score wasn't saved as the trainer's: ${JSON.stringify(bt)}`);
+    await page.evaluate(() => FTMockScores.va('ana-cruz--b103026')); await page.waitForTimeout(500);
+    av = await autoView();
+    if (av.score !== '40' || av.c3 !== '' || /Accept/.test(av.bar)) fail(`Ana's own saved score was replaced by the automatic one: ${JSON.stringify(av)}`);
+    const anaT = (((await get('labreview:ana-cruz--b103026')) || {}).acts || {})['transcription-1'] || {};
+    if (anaT.score !== 40 || anaT.status !== 'Redo') fail(`Ana's saved transcription score changed: ${JSON.stringify(anaT)}`);
     // 🚫 offboard Cara
     page.once('dialog', d => d.accept('Offboarded: resigned'));
     await page.evaluate(() => confirmRevokeTrainee('cara-lim--b103026', 'Cara Lim')); await page.waitForTimeout(1500);

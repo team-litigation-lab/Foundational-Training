@@ -2,7 +2,7 @@
 //   the card in the Practice Lab's 🧰 Drafting Tools → #/transcribe → the attorney's request → ▶ start (the recording
 //   and the stopwatch) → the minutes with timestamps (Alt+T) → the file name and its Drive link → the report back →
 //   every check passes → ⬇ the Word file is named by the convention → 📤 submit, saved in transcribe:<id> and kept
-//   read-only; an admin sees the trainee's minutes; Day 9's step points at the tool; Trainer Inputs lists both recordings.
+//   read-only, and scored by the Worker (trackerreview:<id>.transcribe, shown as not reviewed by the trainer yet); an admin sees the trainee's minutes; Day 9's step points at the tool; Trainer Inputs lists both recordings.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/transcribe.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
@@ -88,6 +88,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!(await page.$eval('#tr-discussion', el => el.disabled))) fail('a submitted transcription can still be edited');
   txt = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/Submitted/.test(txt)) fail('the page doesn\'t say it was submitted');
+  // 🤖 the Worker scored it (the test server has no AI: the shared checks' criteria, the rest left to the trainer), in
+  // trackerreview:<id>, and the page shows the automatic score, labelled not reviewed; the 7 checks still show
+  const auto = ((await get('trackerreview:' + id)) || {}).transcribe;
+  const g1 = auto && auto['1'];
+  if (!g1 || g1.ai !== false || g1.submittedAt !== r1.submittedAt || g1.scores[3] !== 5 || g1.scores[8] !== 5 || g1.scores[0] !== null || typeof g1.pct !== 'number') fail(`the submission wasn't scored automatically: ${JSON.stringify(g1 && { ai: g1.ai, s: g1.scores, pct: g1.pct })}`);
+  if (!/not reviewed by your trainer yet/.test(txt) || !/trainer scores the rest/.test(txt)) fail(`the page doesn't show the automatic score as not reviewed: ${txt.slice(txt.indexOf('Submitted'), txt.indexOf('Submitted') + 300)}`);
+  if ((await page.$$('.tr-checks ul li')).length !== 7) fail('the 7 checks no longer show once submitted');
   // Recording 2 is its own assignment
   await page.evaluate(() => FTTranscribe.tab(2)); await page.waitForTimeout(500);
   if (!/Transcription - Recording 2 \(Tara\)/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('Recording 2 doesn\'t ask for its own file name');

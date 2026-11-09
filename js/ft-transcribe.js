@@ -7,8 +7,10 @@
      4. 🏷 name & file   the naming convention (Transcription - Recording N (first name)), ⬇ Word download,
                         filed in the Assessments/Activities folder and its Drive link pasted back
      5. 💬 report back   the reply to the attorney: done, where it is
-     6. 📤 submit        the self-checks, an evaluation in the facilitator's feedback DNA, and the trainer's
-                        score (🧑‍🏫 Trainer Inputs: transcription-1 / transcription-2, which reach the Scorecard)
+     6. 📤 submit        the self-checks (js/ft-minutes-rules.js), then the Worker's automatic score, writing check and
+                        evaluation in the facilitator's feedback DNA (/api/transcribe/grade → trackerreview:<id>.transcribe),
+                        which counts on the Scorecard until the trainer's own score replaces it (🧑‍🏫 Graders or Trainer
+                        Inputs: transcription-1 / transcription-2)
    Two recordings, one assignment each. Record: transcribe:<id> = {v, r: {1: run, 2: run}}, the trainee's own
    (worker.js lets the trainee write it; admins read it). An admin, and 👁 Trainee view, work on a test copy
    that is never saved. Admins see every trainee's minutes on the same page.
@@ -16,7 +18,6 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
-const has = v => String(v == null ? "" : v).trim().length > 0;
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;
 const saves = () => isTrainee();
@@ -30,21 +31,11 @@ const RECS = {
   2: {src: "/ft/day9/audio/interview-recording-2.mp3", title: "Interview Recording 2", dur: "4:42"}
 };
 const SAMPLE = "1CAGSbA5_REY8UqvCAfn2khyDEL4QMR0m";
-// the minutes, in the order the document runs
-const FIELDS = [
-  ["date", "Date of the meeting", "date"], ["time", "Time", "text", "e.g. 10:00 AM – 10:40 AM (PST)"],
-  ["attendees", "Attendees", "text", `${ATTY}; the client (full name as said on the recording)`],
-  ["purpose", "Purpose of the meeting", "text", "e.g. Initial consultation on the client’s car accident"],
-  ["discussion", "Discussion — what was said, in order", "area", "Type what was discussed, in order. Put a [mm:ss] timestamp at each new point (Alt+T)."],
-  ["concerns", "The client’s concerns and questions", "area", "What the client worried about or asked"],
-  ["advice", "The attorney’s advice and answers", "area", "What the attorney explained or advised"],
-  ["actions", "Action items and next steps (one per line: who does what, by when)", "area", "e.g. Client to send the police report by Friday"]
-];
+// the minutes, in the order the document runs, and the checks: js/ft-minutes-rules.js (the Worker grades with the same rules)
+const MR = window.FTMinutesRules, FIELDS = MR.FIELDS;
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
-const fileWant = n => `Transcription - Recording ${n} (${firstName() || "VA’s first name"})`;
-const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
-const stamps = s => (String(s || "").match(/\[\d{1,2}:\d{2}(?::\d{2})?\]/g) || []).length;
-const isDriveLink = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || "").trim());
+const fileWant = n => MR.fileWant(n, firstName());
+const {words, stamps, isDriveLink} = MR;
 
 /* ---------- the record ---------- */
 const T = {id: null, rec: null, loading: null, saving: null, savedOk: true, n: 1, busy: false, sw: {acc: 0, at: 0, on: false}, tick: null, admin: null};
@@ -71,22 +62,7 @@ function save(){
 function paintSave(t){ const el = document.getElementById("trSave"); if(el) el.textContent = saves() ? t : "Test copy — nothing here is saved."; }
 
 /* ---------- the checks: what a careful VA hands in ---------- */
-function checks(n){
-  const r = run(n), f = r.f || {};
-  const filled = FIELDS.filter(([k]) => has(f[k])).length;
-  const acts = String(f.actions || "").split("\n").filter(x => x.trim().length > 3).length;
-  const first = firstName().toLowerCase(), file = String(r.file || "").trim();
-  const rep = String(r.report || "");
-  return [
-    ["Every part of the minutes filled in", filled === FIELDS.length, `${filled} of ${FIELDS.length}`],
-    ["The discussion in detail (200 words or more)", words(f.discussion) >= 200, `${words(f.discussion)} words`],
-    ["Timestamps at the points discussed (3 or more)", stamps(f.discussion) >= 3, `${stamps(f.discussion)} timestamps`],
-    ["Action items, one per line (2 or more)", acts >= 2, `${acts}`],
-    ["The file named by the convention", new RegExp(`^Transcription - Recording ${n} \\([^()]+\\)$`).test(file) && (!first || file.toLowerCase().includes("(" + first + ")")), fileWant(n)],
-    ["Filed in your Assessments/Activities folder (its Drive link)", isDriveLink(r.link), ""],
-    ["Reported back to the attorney: greeting, what’s done, where it is, thanks", /\b(hi|hello|good (morning|afternoon|day|evening)|dear)\b/i.test(rep) && /minutes|transcri/i.test(rep) && (isDriveLink((rep.match(/https?:\/\/\S+/) || [""])[0]) || /assessments|folder|drive/i.test(rep)) && /thank|regards/i.test(rep), ""]
-  ];
-}
+function checks(n){ return MR.checks(run(n), n, firstName()).map(x => [x.label, x.ok, x.detail]); }
 const pctOf = cs => Math.round(cs.filter(c => c[1]).length / cs.length * 100);
 
 // the steps and the checks follow the typing, without redrawing the fields being typed in
@@ -211,7 +187,7 @@ function renderTrainee(){
         <small class="tr-muted">As you would in the GC or by e-mail: what is done, where it is (the link), and a thank-you.</small></section>
       <section class="card tr-box tr-checks"><h3>✅ Before you submit <span class="tr-pct ${pct >= 80 ? "ok" : "mid"}">${pct}%</span></h3>
         <ul>${cs.map(c => `<li class="${c[1] ? "ok" : "miss"}">${c[1] ? "✓" : "○"} ${e(c[0])}${c[2] ? `<small>${e(c[2])}</small>` : ""}</li>`).join("")}</ul>
-        ${r.submittedAt ? `<p class="tr-sub">📤 Submitted ${e(new Date(r.submittedAt).toLocaleString())} · ${r.minutes || 1} min</p>${r.ai ? `<div class="tr-ai"><b>🤖 Facilitator-style evaluation</b><p>${r.ai.pending ? "Writing your evaluation…" : e(r.ai.summary || r.ai.error || "")}</p></div>` : ""}
+        ${r.submittedAt ? `<p class="tr-sub">📤 Submitted ${e(new Date(r.submittedAt).toLocaleString())} · ${r.minutes || 1} min</p>${r.ai ? `<div class="tr-ai"><b>🤖 Facilitator-style evaluation</b>${typeof r.ai.pct === "number" ? `<span class="tr-pct mid">${e(r.ai.pct)}%</span><small>automatic check, not reviewed by your trainer yet</small>` : ""}<p>${r.ai.pending ? "Writing your evaluation…" : e(r.ai.summary || r.ai.error || "")}</p></div>` : ""}
             <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.redo()">🔁 Revise and resubmit</button>`
           : `<button type="button" class="btn btn-navy" id="trSubmit" ${r.startedAt ? "" : "disabled"} onclick="FTTranscribe.submit()">📤 Submit to your trainer</button>`}
         <p class="tr-muted" id="trSave">${saves() ? (r.updatedAt ? "All changes saved" : "") : "Test copy — nothing here is saved."}</p></section>
@@ -244,7 +220,7 @@ function renderAdmin(){
       <p><b>File</b><br>${e(r.file || "—")}${isDriveLink(r.link) ? ` · <a href="${e(r.link)}" target="_blank" rel="noopener noreferrer">open ↗</a>` : ""}</p><p><b>Report</b><br>${e(r.report || "—").replace(/\n/g, "<br>")}</p>
       ${r.ai && r.ai.summary ? `<p><b>🤖 Evaluation</b><br>${e(r.ai.summary)}</p>` : ""}</div></details></td>`; };
   return `<section class="card tr-admin"><h2>🧑‍🏫 Trainees’ minutes</h2>
-      <p class="tr-muted">Read each trainee’s minutes and report here; record the score in Admin → 🧑‍🏫 Trainer Inputs (<i>Minutes Transcription: Recording 1 / 2</i>), which reaches the Scorecard.</p>
+      <p class="tr-muted">Read each trainee’s minutes and report here. Each submission is scored automatically when it comes in: review that score in 🏅 Scorecard → 🧑‍🏫 Graders (<i>Minutes Transcription: Recording 1 / 2</i>), where it is filled in, and Save. Your score replaces it on the trainee’s Scorecard.</p>
       ${!rows ? `<p>Loading…</p>` : !rows.length ? `<p class="tr-muted">No approved trainees yet.</p>` : `<table class="tr-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Recording 1</th><th>Recording 2</th></tr></thead>
       <tbody>${rows.map(x => `<tr><td>${e(x.p.name || x.id)}</td><td>${e(x.p.batch || "")}</td>${cell(x, 1)}${cell(x, 2)}</tr>`).join("")}</tbody></table>`}
       <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.reloadAdmin()">↻ Refresh</button></section>
@@ -289,27 +265,19 @@ window.FTTranscribe = {
     r.submittedAt = new Date().toISOString();
     r.minutes = Math.max(1, Math.round((new Date(r.submittedAt) - new Date(r.startedAt)) / 60000));
     r.checks = cs.map(c => ({label: c[0], ok: !!c[1]})); r.pct = pct; r.ai = {pending: true};
-    save(); render();
-    try{
-      const f = r.f || {};
-      const prompt = `You are the training facilitator of Legal Support Help evaluating a trainee Legal VA's Transcription Activity: the minutes of a client-to-attorney interview (${RECS[n].title}) for ${ATTY}, then filing them and reporting back. They took ${r.minutes} minutes. You have not heard the recording: judge only what the minutes show — structure, completeness, clarity, professional wording, timestamps, usable action items — and the file name and report-back.
-THE MINUTES:
-${FIELDS.map(([k, l]) => `${l}: ${String(f[k] || "(empty)").slice(0, 2500)}`).join("\n")}
-File name: ${r.file || "(none)"} (the convention: ${fileWant(n)})
-Report to the attorney: ${r.report || "(none)"}
-The automated checks (${pct}%): ${cs.map(c => `${c[1] ? "PASS" : "MISS"} ${c[0]}`).join("; ")}
-
-The minutes are scored on these metrics: ${((window.FT_RUBRICS && FT_RUBRICS.forAct({id: "transcription-" + n})) || {criteria: []}).criteria.map(c => c.n).join("; ")}. Name the weakest of them.
-
-Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming what was done well, then "However, improvement is needed in …" naming each gap, then the habit that prevents it. 3-5 sentences, third person.
-
-FACILITATOR'S FEEDBACK DNA:
-${window.ftDnaGuide ? ftDnaGuide() : String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
-
-Return ONLY JSON: {"summary":"..."}`;
-      const out = await callAIJson(prompt, 900, undefined, "grading");
-      r.ai = {summary: String((out && out.summary) || "").slice(0, 2000), at: new Date().toISOString()};
-    }catch(err){ r.ai = {error: "The AI evaluation isn’t available right now. Your checks and your trainer’s review still count."}; }
+    render();
+    // (saved first, then the Worker grades what was saved: the 11 criteria, the writing check and the evaluation, kept in
+    // trackerreview:<id>.transcribe[n], which a trainee never writes; r.ai is only what this page shows. A test copy isn't
+    // graded: nothing of it is saved)
+    if(saves()){
+      clearTimeout(T.saving);
+      T.savedOk = await sharedSet("transcribe:" + T.id, T.rec) !== false;
+      try{
+        const res = await authFetch("/api/transcribe/grade", {id: state.traineeId, n}), j = await res.json().catch(() => ({}));
+        if(!res.ok || !j.grade) throw new Error(j.error || "grade");
+        r.ai = {summary: String(j.grade.summary || "").slice(0, 2000), pct: j.grade.pct, at: j.grade.at};
+      }catch(err){ r.ai = {error: "The automatic evaluation isn’t available right now. Your checks and your trainer’s review still count."}; }
+    } else r.ai = {summary: "Test copy: the automatic score and evaluation are worked out when a trainee submits."};
     T.busy = false; save(); render();
     toast(`📤 Submitted to your trainer · ${pct}% on the checks`);
   },
@@ -423,7 +391,7 @@ a.tr-ref{display:block;padding:10px 12px;border-radius:10px;background:#EAF1FF;c
 .tr-checks li.ok{background:#EEF8F2;color:#1F5B39;} .tr-checks li small{display:block;color:var(--ink-soft);font-size:12px;margin-left:18px;}
 .tr-pct{margin-left:auto;border-radius:999px;padding:2px 10px;font-size:13px;} .tr-pct.ok{background:#EEF8F2;color:#1F5B39;} .tr-pct.mid{background:#FFF1E2;color:#B5651F;}
 .tr-sub{margin:0;font-weight:700;color:#1F5B39;font-size:13.5px;}
-.tr-ai{background:#F6F7FB;border-radius:10px;padding:10px 12px;font-size:13.5px;} .tr-ai p{margin:4px 0 0;}
+.tr-ai{background:#F6F7FB;border-radius:10px;padding:10px 12px;font-size:13.5px;} .tr-ai p{margin:4px 0 0;} .tr-ai .tr-pct{margin-left:8px;} .tr-ai small{display:block;color:var(--ink-soft);font-size:12px;}
 .tr-admin{padding:16px 18px;} .tr-admin h2{margin:0 0 4px;color:#262B45;}
 .tr-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;} .tr-tbl th, .tr-tbl td{border-bottom:1px solid var(--line,#e5e7eb);padding:8px;text-align:left;vertical-align:top;}
 .tr-read{max-height:320px;overflow:auto;background:#F6F7FB;border-radius:8px;padding:8px 10px;margin-top:6px;} .tr-read p{margin:0 0 8px;}

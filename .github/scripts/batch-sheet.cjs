@@ -372,6 +372,28 @@ const failures = []; const fail = m => failures.push(m);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
   if (await page.evaluate(() => !!document.getElementById('bs-process') || /Scoring rationale/.test(document.querySelector('.bs-card').innerText))) fail('the ✍️ Process Questions table or its scoring rationale is still on the page');
 
+  // 🎧 Ben's Recording 1, scored automatically (trackerreview:<id>.transcribe, worker.js gradeTranscription): it counts on Day 9
+  // as "automatic check, not reviewed" while it is the submission it was worked out from, never as a Passed or a Redo, and the
+  // trainer's own score replaces it (Ben's records are put back as they were after)
+  { const sub = iso(now - 900e3), tr = { key: 'transcription', act: 'transcription-1', at: iso(now - 800e3), submittedAt: sub, pct: 83, scored: 6, ai: false, scores: [null, null, null, 5, 5, null, 5, null, 2.5, 4, 5], feedback: [] };
+    const day9 = async () => { await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
+      await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(500);
+      return page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'days'), r = t.rows.find(r => /Ben/.test(r[0].v)); return r ? r[t.head.indexOf('Day 9')] : null; }); };
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
+    await put('trackerreview:' + ids.Ben, { days: {}, transcribe: { 1: tr } });
+    let c9 = await day9();
+    if (!c9 || c9.v !== '83%' || !/Recording 1[^;]* 83% \(automatic check, not reviewed/.test(c9.f) || /Passed|Redo/.test(c9.f)) fail(`Ben's Day 9 doesn't count his automatic score as not reviewed: ${JSON.stringify(c9)}`);
+    // (resubmitted since: the score was for the submission before, so it doesn't count)
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: iso(now - 60e3) } } });
+    c9 = await day9();
+    if (c9 && c9.v === '83%') fail(`an automatic score of an earlier submission still counts on Day 9: ${JSON.stringify(c9)}`);
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
+    await put('labreview:' + ids.Ben, { acts: { 'transcription-1': { status: 'Passed', score: 90, at: iso(now - 60e3) } } });
+    c9 = await day9();
+    if (!c9 || c9.v !== '90%' || !/90% \(trainer's score/.test(c9.f) || /automatic check/.test(c9.f)) fail(`the trainer's score didn't replace Ben's automatic one on Day 9: ${JSON.stringify(c9)}`);
+    for (const k of ['transcribe:', 'trackerreview:', 'labreview:']) await put(k + ids.Ben, null);
+    await day9(); }
+
   // 🕒 Recent progress: newest first, every kind
   const rc = by('recent').rows, kinds = rc.map(r => r[2]);
   for (const k of ['Registered', 'Finished a lesson deck', 'Knowledge Check', 'Practice in a tool', 'Typing test', 'Simulator practice', 'Opened']) if (!kinds.includes(k)) fail(`🕒 Recent progress has no "${k}": ${kinds}`);

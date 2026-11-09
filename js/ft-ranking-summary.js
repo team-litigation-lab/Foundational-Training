@@ -42,7 +42,8 @@ async function progOf(p, range){
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     const vals = await sharedGetMany(S.map(s => s.key + p.id).concat(shared)), rec = {}, sh = {};
     S.forEach((s, i) => { rec[s.key] = vals[i] || null; }); shared.forEach((k, i) => { sh[k] = vals[S.length + i] || null; });
-    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since}, range ? {range} : {}));
+    // (reviewedOnly: an automatic score no trainer has reviewed yet stays out of the management summary, as out of the ranking)
+    const sc = lshProgram.compute(Object.assign({id: p.id, progress: p.progress || {}, rec, shared: sh, since: p.since, reviewedOnly: true}, range ? {range} : {}));
     const row = id => (sc.rows || []).find(r => r.s.id === id), graded = it => (it || []).filter(x => typeof x.pct === "number" && isFinite(x.pct));
     const calls = graded(((row("calls") || {}).items || []).concat(((row("portalsims") || {}).items || []).filter(x => /call|recept|intake|phone|voice/i.test(x.name || ""))));
     const written = graded(((row("drive") || {}).items || []).filter(x => /^📄/.test(x.name || "")).concat((row("listening") || {}).items || [], (row("process") || {}).items || [], (row("transcribe") || {}).items || [], (row("lor") || {}).items || []));
