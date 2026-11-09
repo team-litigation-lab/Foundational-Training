@@ -240,7 +240,7 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-fb{margin:10px 0 0;padding:9px 11px;border-left:4px solid #DB8437;background:#FFF8EF;border-radius:8px;font-size:14px;} .rks-fb p{margin:4px 0 0;line-height:1.5;}
 .rks textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13.5px;margin-top:6px;padding:6px 8px;border:1px solid #C9D1E0;border-radius:8px;} .rks input[type=number]{width:64px;font:inherit;padding:2px 4px;}
 .rks-foot{color:#80868B;font-size:12px;margin:6px 0 0;}
-.rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
+.rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
 /* ---------- on the page: above the marks sheet, in 📊 Weekly Ranking ---------- */
 window.FTRankSummary = {

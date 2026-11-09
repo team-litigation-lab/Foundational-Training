@@ -1785,7 +1785,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .gs-batch.bs-batchmenu{gap:8px;flex-wrap:wrap;} .bs-batchmenu label{display:inline-flex;align-items:center;gap:6px;} .bs-archive{white-space:nowrap;}
 .bs-h{margin:0 0 2px;font:700 18px Arial,sans-serif;color:#1F1F1F;} .bs-h span{font:400 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-note{margin:0 0 8px;font:13.5px Arial,sans-serif;color:#444746;}
-.bs-period select{font:13px Arial,sans-serif;padding:3px 6px;border:1px solid #C4C7C5;border-radius:4px;margin:0 6px 0 4px;}
+.bs-period select{font:700 13.5px Arial,sans-serif;padding:3px 6px;border:1px solid #C4C7C5;border-radius:4px;margin:0 6px 0 4px;}
 .bs-wrap{max-height:none;border:1px solid #E1E3E1;border-radius:4px;}
 .bs-card .gs{font-size:16px;} .bs-card .gs th,.bs-card .gs td{height:30px;padding:7px 11px;}
 /* (bold and bigger: the trainer reads the scorecards on a projector and across the room) */
@@ -1865,7 +1865,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-ctx{margin:4px 0 0;padding:5px 9px;border-radius:6px;} .bs-ctx b{font-size:12.5px;} .bs-ctx p{margin:2px 0 0;} .bs-ctx ul{margin:2px 0 0;padding-left:18px;}
 .bs-why{background:#F1F3F4;} .bs-best{background:#E6F4EA;} .bs-imp{background:#FEF7E0;} .bs-ctx-none{margin:3px 0 0;color:#5F6368;font-size:12.5px;}
 .bs-rank{padding-top:6px;} .bs-rank .rk-pick select:first-child{display:none;}
-.bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
+.bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:700 15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
 .bs-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:8px;}
 .bs-day{border:1px solid #E1E3E1;border-radius:8px;padding:8px 10px;background:#fff;font:13.5px Arial,sans-serif;}
 .bs-day-h{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;} .bs-day-h span{color:#5F6368;font-size:12.5px;} .bs-day-h em{margin-left:auto;font-style:normal;font-weight:700;color:#137333;}

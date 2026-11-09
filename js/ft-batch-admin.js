@@ -515,14 +515,14 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;} .fms-top h3{margin:0;} .fms-tools{margin-left:auto;display:flex;gap:6px;}
 .fms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;}
 .fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
-.fms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
+.fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
 .fms-pick .fms-savebtn{margin-left:auto;}
 .fms-step{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;} .fms-step em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
-.fms-pick select.fms-va{min-width:200px;font-weight:700;} .fms-pick select.fms-act{min-width:200px;}
+.fms-pick select.fms-va{min-width:200px;font-weight:700;} .fms-pick select.fms-act{min-width:200px;font-weight:700;}
 .fms-who{margin:0 0 8px;font-size:14px;color:var(--navy);overflow-wrap:anywhere;}
 .fms-tbl{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13.5px;}
 .fms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:6px 10px;font-weight:800;white-space:normal !important;overflow-wrap:anywhere;}
-.fms-tbl th:nth-child(1){width:40% !important;} .fms-tbl th:nth-child(2){width:90px !important;text-align:center;} .fms-tbl th:nth-child(3){width:auto !important;min-width:0 !important;}
+.fms-tbl th:nth-child(1){width:28% !important;} .fms-tbl th:nth-child(2){width:76px !important;text-align:center;}   /* (the criterion narrower, the score to its left: the Remarks get the room) */ .fms-tbl th:nth-child(3){width:auto !important;min-width:0 !important;}
 .fms-tbl td{padding:4px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;word-break:normal;}
 .fms-tbl td em{color:#7a5d00;font-style:normal;font-weight:600;}
 .fms-tbl tbody tr:nth-child(odd) td{background:#EEF4E8;}
@@ -542,7 +542,7 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-why-ok{color:#1E6B3A;font-weight:700;} .fms-why-imp{color:#8A3B12;font-weight:700;} .fms-assist{margin-top:8px;}
 .fms-tag{display:inline-block;margin-left:4px;font-size:11.5px;font-weight:800;border-radius:999px;padding:1px 8px;background:#EEF0F6;color:#4A5070;}
 .fms-tag.ok{color:#1E7F4F;background:#E7F5EE;} .fms-tag.mid{color:#7a5d00;background:#FEF7C3;} .fms-tag.dirty{background:#FEF7C3;color:#7a5d00;}
-@media (max-width:640px){ .fms-tbl{font-size:12.5px;} .fms-tbl th, .fms-tbl td{padding:4px 5px;} .fms-tbl th:nth-child(1){width:42% !important;} .fms-tbl th:nth-child(2){width:52px !important;}
+@media (max-width:640px){ .fms-tbl{font-size:12.5px;} .fms-tbl th, .fms-tbl td{padding:4px 5px;} .fms-tbl th:nth-child(1){width:34% !important;} .fms-tbl th:nth-child(2){width:52px !important;}
   .fms-tbl input[type=number]{width:44px;padding:4px 2px;} .fms-pick .fms-savebtn{margin-left:0;} .fms-pick select.fms-va, .fms-pick select.fms-act{min-width:0;flex:1 1 180px;} }
 .fba-ov{z-index:9000;} .fba-ov .fba-card{max-width:620px;width:100%;max-height:92vh;overflow:auto;padding:22px 24px;}
 .fba-card h3 span{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:6px;}
