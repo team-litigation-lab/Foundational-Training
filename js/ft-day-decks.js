@@ -1411,9 +1411,10 @@ const LESSON_CARDS = {
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
       {t: "CMS Demo and Mock Call", sub: "SA tutorial video · Prototype CMS & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
-      // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
-      {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 9, s: "s2"},
-      // (Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on the metrics slide, s2)
+      // (Part 2 closes on the Intake Mock Calls Metrics: Day 9's metrics slide, moved to Day 8's deck as mcm by
+      // build/day-decks.cjs MOVE; Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on it)
+      {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 8, s: "mcm"},
+      // (Part 3: the Transcription Activity; no Buffer Time)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
