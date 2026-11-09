@@ -1239,7 +1239,7 @@ const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 // (nor the 📘 Process Guides the trainee builds before a demo: off the scorecards, they stay on the Practice Lab and the decks)
 // (nor the Attorney Calendar Management Activity a second time: "on the Calendaring Simulators" and "on the Calendar
 // Activity Check" are the same activity, graded once through the check — calcheck: — so only the check counts)
-const UNSCORED = it => (it.at === "tool" && it.id === "calactivity") || it.at === "room" || /^Buffer/i.test(it.kind || "") || (it.at === "tool" && it.id === "guide") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response|^📘 Process Guide/i.test(it.t || "");
+const UNSCORED = it => !!it.sample || (it.at === "tool" && it.id === "calactivity") || it.at === "room" || /^Buffer/i.test(it.kind || "") || (it.at === "tool" && it.id === "guide") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response|^📘 Process Guide/i.test(it.t || "");
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
@@ -1549,11 +1549,11 @@ function renderSheet(){
   const waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
-  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="${B.leOpen ? "bs-le-on" : ""}" onclick="FTBatchSheet.leOpen(${B.leOpen ? "false" : "true"})">🔗 Link files by hand</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="${B.leOpen ? "bs-le-on" : ""}" onclick="FTBatchSheet.leOpen(${B.leOpen ? "false" : "true"})">🔗 Link files by hand</button>` : ""}${adminOn() && !meOn() && window.FTLorAdmin ? `<button class="${FTLorAdmin.isOpen() ? "bs-le-on" : ""}" onclick="FTLorAdmin.open(${FTLorAdmin.isOpen() ? "false" : "true"})">📄 Assign LORs</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
 ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div></div>`;
   const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", "", "", controls);
-  return `${banner}${linksEditHtml()}<div class="card gs-card bs-card">
+  return `${banner}${linksEditHtml()}${adminOn() && !meOn() && window.FTLorAdmin ? FTLorAdmin.html(people()) : ""}<div class="card gs-card bs-card">
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
 </div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, use <b>✏️ Fix the batch name</b> in 🛡 Admin Master Control → 📁 Batches.</div>` : ""}
@@ -1568,6 +1568,8 @@ ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `U
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
+  // (the batch's trainees on the sheet now: 📄 Assign LORs, js/ft-lor.js)
+  people: () => people(),
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
