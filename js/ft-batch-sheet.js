@@ -1033,6 +1033,8 @@ function perTraineeHtml(T){
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
           : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
+            // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
+            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read from the Task Tracker and Monitoring Sheet</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
@@ -1585,7 +1587,34 @@ if(typeof window.addEventListener === "function") window.addEventListener("ft-ro
 if(!window.__bsKdOne){ window.__bsKdOne = true;
   document.addEventListener("toggle", ev => { const d = ev.target; if(!d || !d.matches || !d.matches("details.bs-kd") || !d.open) return;
     document.querySelectorAll("details.bs-kd[open]").forEach(o => { if(o !== d) o.open = false; }); }, true); }
+// 🔎 what the system reads in a trainee's sheets for a day, in a pop-up (worker.js /api/drive/read-check): the tracker's
+// header row and date columns, the day's rows, the Monitoring Sheet's entries and their dates, what is saved for the day
+async function readCheck(id, date){
+  const box = document.createElement("div"); box.className = "bs-rc-wrap";
+  const close = () => box.remove();
+  box.innerHTML = `<div class="bs-rc card"><div class="bs-rc-h"><b>🔎 What was read for ${e(date)}</b><button type="button" class="btn btn-ghost btn-sm">✕ Close</button></div><div class="bs-rc-b">Reading the sheets…</div></div>`;
+  box.querySelector("button").onclick = close; box.onclick = ev => { if(ev.target === box) close(); };
+  document.body.appendChild(box);
+  let j = null; try{ j = await (await authFetch("/api/drive/read-check", {id, date})).json(); }catch(err){ j = {error: "unreachable"}; }
+  const b = box.querySelector(".bs-rc-b"); if(!b) return;
+  if(!j || j.error){ b.textContent = "Couldn't read the sheets: " + ((j && j.error) || "no answer"); return; }
+  const T = j.tracker, M = j.monitor, S = j.saved;
+  const list = xs => xs.length ? `<ul>${xs.map(x => `<li>${x}</li>`).join("")}</ul>` : "<p>—</p>";
+  b.innerHTML = `<h4>📋 Task Tracker</h4>${!T ? "<p>No Task Tracker linked.</p>" : T.error ? `<p class="bs-rc-bad">${e(T.error)}</p>` : `
+      ${T.note ? `<p class="bs-rc-bad">${e(T.note)}</p>` : ""}
+      <p>Header row: ${T.headerRow ? "row " + e(T.headerRow) : "not found"} · tasks read: ${e(T.rows)} · a Daily Notes column for ${e(date)}: <b>${T.hasDay ? "yes" : "no"}</b></p>
+      <p><b>Headers:</b> ${e((T.headers || []).join(" | ") || "—")}</p>
+      <p><b>Daily Notes dates read:</b> ${e((T.dateColumns || []).join(", ") || "none")}</p>
+      <p><b>The day's check:</b></p>${list((T.check || []).map(r => `${r.pass ? "✓" : "✗"} ${e(r.label)}${r.detail ? " — " + e(r.detail) : ""}`))}
+      <p><b>The day's rows sent to the grader:</b></p><pre>${e(T.excerpt || "(none: no task received, completed or noted on that day)")}</pre>`}
+    <h4>📒 Monitoring Sheet</h4>${!M ? "<p>No Monitoring Sheet linked.</p>" : M.error ? `<p class="bs-rc-bad">${e(M.error)}</p>` : `
+      ${M.note ? `<p class="bs-rc-bad">${e(M.note)}</p>` : ""}
+      <p><b>Entries found (${e((M.entries || []).length)}):</b></p>${list((M.entries || []).map(x => `${e(x.topic)} · date read: <b>${e(x.date || "none")}</b> · ${e(x.pct)}% (${(x.checks || []).map(c => (c.ok ? "✓ " : "✗ ") + e(c.label)).join(", ")})`))}
+      ${M.forDay ? `<p><b>The entry taken for ${e(date)}:</b> ${e(M.forDay.topic)}</p><pre>${e(M.forDay.text)}</pre>` : ""}`}
+    <h4>💾 Saved for the day</h4><p>${S ? `Parts: ${e(JSON.stringify(S.parts || S.day1Parts || {}))} · AI grade: tracker ${e(S.trackerAi == null ? "—" : S.trackerAi + "%")}, Monitoring Sheet ${e(S.monitorAi == null ? "—" : S.monitorAi + "%")} · checked ${e(String(S.checkedAt || "").slice(0, 16).replace("T", " "))}` : "Nothing saved for the day yet."}${j.ai ? "" : " · ⚠ No AI is set up on the server, so no AI grade can be given."}</p>`;
+}
 window.FTBatchSheet = {
+  readCheck,
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
@@ -2205,6 +2234,11 @@ body.bs-wide .ft-admin-screen{padding-left:10px;padding-right:10px;}
 body.bs-wide .bs-card{padding-left:10px !important;padding-right:10px !important;}
 body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
 body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !important;}   /* (📦 Intake Packets, wide the same way) */
+.bs-readchk{margin-top:6px;}
+.bs-rc-wrap{position:fixed;inset:0;background:rgba(10,15,35,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;}
+.bs-rc{max-width:980px;width:100%;padding:18px 20px;font:15px/1.5 Arial,sans-serif;} .bs-rc-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.bs-rc h4{margin:14px 0 4px;color:#1E2340;} .bs-rc pre{white-space:pre-wrap;background:#F6F7FB;border:1px solid #E1E5EE;border-radius:8px;padding:8px 10px;max-height:260px;overflow:auto;font:13px/1.45 Consolas,monospace;}
+.bs-rc-bad{color:#B42318;font-weight:700;}
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}

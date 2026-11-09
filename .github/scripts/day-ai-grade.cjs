@@ -72,6 +72,10 @@ const failures = []; const fail = (m) => failures.push(m);
   await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
   { const P = day().parts || {}; if (P.tracker !== 50 || P.monitor !== 75) fail(`without the AI the checks' scores don't stand: ${JSON.stringify(P)}`); }
 
+  // 5. 🔎 what was read: trainers only; the day's saved parts come back (the sheets themselves can't be fetched here: each says why)
+  { const r = (await call('/api/drive/read-check', { id, date: D }, admin)).body || {};
+    if (!r.ok || !r.saved || !r.saved.parts || !r.tracker || !r.tracker.error || !r.monitor || !r.monitor.error) fail(`the read check didn't answer with the day and why each sheet couldn't be read: ${JSON.stringify(r).slice(0, 300)}`);
+    if ((await call('/api/drive/read-check', { id, date: D })).status !== 401 && (await call('/api/drive/read-check', { id, date: D })).status !== 403) fail('the read check answered without a trainer\'s sign-in'); }
   if (failures.length) { console.error('Day AI grade test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Day AI grade test passed (each day\'s Task Tracker rows and Monitoring Sheet entry graded on compliance, completeness & accuracy, personal input, effort, attention to detail and professionalism; only that day\'s input sent; graded once until it changes; the checks\' score without the AI; dates written other ways read).');
 })().catch((e) => { console.error('Day AI grade test FAILED:', e && e.stack || e); process.exit(1); });

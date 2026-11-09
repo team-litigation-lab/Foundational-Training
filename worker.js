@@ -2542,7 +2542,9 @@ async function dailyCompliance(env, id, D, o = {}) {
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
-  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monDated) parts.monitor = was.parts.monitor; }
+  // (only what couldn't be read again is kept: a day with a fresh tracker check for it, or a Monitoring Sheet read now, is
+  // worked out from that, never from an older score — an old cumulative Monitoring Sheet % kept a day at 5–13%)
+  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number" && !tk) parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monRead) parts.monitor = was.parts.monitor; }
   // 🤖 the day's own input graded: the Task Tracker's rows for the day and the Monitoring Sheet's entry for it, each read by
   // the AI on compliance, completeness & accuracy, personal input (not AI-generated), effort, attention to detail and
   // professionalism (aiDayGrade); the part is that grade. A day with no input for it keeps the checks' score (0: nothing
@@ -3115,6 +3117,47 @@ export default {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
         try { return json(await autoLinkBatch(env, b.batch)); } catch (e) { return json({ error: "drive", detail: String(e && e.message || e).slice(0, 200) }); }
+      }
+      // 🔎 WHAT WAS READ — for a trainee and a day, what the system finds in their Task Tracker and Monitoring Sheet now, so a
+      // trainer can see why a day reads 0%: the tracker's header row, the Daily Notes date columns it found (and the headers
+      // it couldn't read as a date), the rows for that day (received, completed or with a note for it) and the day's check;
+      // the Monitoring Sheet's entries found (each one's discussion, the date read from it and its checks) and the one taken
+      // for the day. Trainers only. Read-only: nothing is saved.
+      if (path === "/api/drive/read-check") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100), D = String(b.date || "").slice(0, 10);
+        if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(D)) return json({ error: "Missing trainee or date" }, 400);
+        const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {}, rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null") || {};
+        const out = { ok: true, date: D, tracker: null, monitor: null };
+        if (drive.tracker) {
+          try {
+            const f = TR.googleFile(drive.tracker); if (f.kind !== "sheet") throw new Error("The Task Tracker link isn't a Google Sheets link.");
+            const csv = await fetchGoogle(f.exportUrl, env), rows = TR.parseCsv(csv), hi = rows.findIndex((r) => r.some((c) => /task\s*details/i.test(c)));
+            const t = TR.fromSheetCsv(csv, { today: D, startDate: drive.startDate || batchStartDate(rec.batch) || "" });
+            const head = hi >= 0 ? rows[hi].map((c) => String(c || "").trim()) : [];
+            const noteDates = t ? t.tracker.noteDates : [];
+            const res = t ? TR.checkDay(Object.assign(t, { drive }), D) : null;
+            out.tracker = { found: hi >= 0, headerRow: hi >= 0 ? hi + 1 : null, headers: head.filter(Boolean).slice(0, 40), dateColumns: noteDates.slice(0, 60),
+              hasDay: noteDates.includes(D), rows: t ? t.tracker.rows.length : 0, excerpt: t ? TR.dayExcerpt(t, D) : "", check: res && !res.na ? (res.rules || []).map((r) => ({ label: r.label, pass: r.pass, detail: r.detail })) : [],
+              note: hi < 0 ? "No header row with \"Task Details\" was found: is the link to the Daily Task Tracker tab?" : !noteDates.length ? "No column between \"Accountable VA\" and \"VA Notes\" (or the row above or below) reads as a date." : "" };
+          } catch (e) { out.tracker = { error: String(e && e.message || e).slice(0, 200) }; }
+        }
+        if (drive.monitor) {
+          try {
+            const text = await driveText(env, drive.monitor), set = JSON.parse((await kv.get("settings:monitor")) || "null");
+            const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((x) => typeof x === "string" ? { title: x } : x);
+            const g = TR.gradeMonitorText(text, topics), dated = g.entries.some((x) => x && x.date);
+            const take = (dated && g.entries.find((x) => x.date === D)) || null;
+            out.monitor = { entries: g.entries.map((x) => ({ topic: x.topic, date: x.date || "", pct: x.pct, checks: x.checks })).slice(0, 30), forDay: take ? { topic: take.topic, pct: take.pct, text: String(take.text || "").slice(0, 1500) } : null,
+              lines: String(text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean).length,
+              note: !g.entries.length ? "No discussion title from the Training Guide was found in the sheet." : !take ? `No entry's date reads as ${TR.fmtDate(D)}.` : "" };
+          } catch (e) { out.monitor = { error: String(e && e.message || e).slice(0, 200) }; }
+        }
+        const rv = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}, c = (rv.compliance || {})[D] || null;
+        out.saved = c ? { parts: c.parts || null, day1Parts: c.day1Parts || null, trackerAi: c.trackerAi ? c.trackerAi.score : null, monitorAi: c.monitorAi ? c.monitorAi.score : null, checkedAt: c.checkedAt || "" } : null;
+        out.ai = aiOn(env);
+        return json(out);
       }
       if (path === "/api/drive/backtrack") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
