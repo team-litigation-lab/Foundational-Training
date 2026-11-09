@@ -37,18 +37,14 @@
 const e = v => esc(String(v == null ? "" : v));
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const norm = v => String(v == null ? "" : v).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/^atty\.?\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
-const same = (a, b) => has(a) && has(b) && norm(a) === norm(b);
 const near = (a, b) => { const x = norm(a), y = norm(b); return !!x && !!y && (x === y || x.includes(y) || y.includes(x)); };
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const FF = () => window.FTFirms;
 const PASS = 80;
 // dates: "MM/DD/YYYY" (the case files) and "YYYY-MM-DD" (date inputs)
-const toISO = s => { const m = String(s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : String(s || "").slice(0, 10); };
 const addYears = (iso, n) => { const m = String(iso).match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? `${Number(m[1]) + n}-${m[2]}-${m[3]}` : ""; };
 const mins = t => { const m = String(t || "").match(/^(\d{1,2}):(\d\d)/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 const fmtDate = iso => { const m = String(iso || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? `${m[2]}/${m[3]}/${m[1]}` : String(iso || ""); };
-const PHASES = ["Intake", "Treating", "Pending Demand", "BI Demanded", "BI Settlement Negotiations", "BI Settled", "UM or UIM Demanded", "UM or UIM Settled", "Litigation Discovery", "Mediation", "Arbitration", "Deposition", "Disbursement"];
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 /* 📞 Every mock call is taken on ☎ LSH Ring Channel, the training phone (the Call Simulator): the Main Portal opens it
    signed in — /simulators/call.html → /api/launch?tool=ringchannel&to=calls — on the session's line, with the phone's own
