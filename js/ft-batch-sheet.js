@@ -370,7 +370,7 @@ function kdOneHtml(p, single){
     const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
     const due = rows.filter(x => x.g.pct != null || x.g.subm || !window.ftSheetDue || ftSheetDue({lesson: x.k.l}, p.batch || B.batch));
     return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
-      ${rep ? `<pre class="bs-kd-rep">${e(rep)}</pre>` : ""}
+      ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
         return `<details class="bs-kd"${single && (g.pct != null || g.subm) ? " open" : ""}><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
@@ -383,7 +383,7 @@ function kdOneHtml(p, single){
               ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
-        return `<h5 class="bs-kd-sub">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
+        return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
           return `<details class="bs-kd"${single && (g || x.answered) ? " open" : ""}><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
               ${g ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
@@ -962,7 +962,7 @@ function activitiesHtml(p){
   const gr = ((((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}, forms = window.FTAssess && typeof FTAssess.docs === "function" ? FTAssess.docs() : [];
   const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
   if(!items.length) return "";
-  return `<h5 class="bs-kd-sub">📝 Activities</h5>` + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
+  return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
     return `<details class="bs-kd"${g ? " open" : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}</details>`; }).join("");
@@ -2197,7 +2197,11 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-card .gs td{font-weight:700;color:#141A2E;} .bs-card .gs .gs-head th{font:800 15.5px Arial,sans-serif;color:#141A2E;} .bs-card .gs td.gs-name{font-weight:800;}
 .bs-card .gs .gs-group th{font-size:14.5px;} .bs-card .bs-h{font:800 21px Arial,sans-serif;} .bs-card .bs-note{font:600 14.5px Arial,sans-serif;color:#2E3450;}
 .bs-kdw .bs-dl{margin-left:10px;} .bs-kd-p{margin:12px 0 18px;} .bs-kd-p h5{margin:0 0 6px;font:800 17px Arial,sans-serif;color:#141A2E;} .bs-kd-p h5 em{font-style:normal;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:14px;} .bs-kd-p h5 small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
-.bs-kd-rep{white-space:pre-wrap;margin:6px 0 10px;padding:10px 14px;background:#EEF1F8;border-radius:8px;font:700 14px Arial,sans-serif;color:#141A2E;}
+.bs-kd-rep{white-space:pre-wrap;margin:8px 0 10px;padding:10px 14px;background:#2E3A75;border-left:6px solid #8EA2FF;border-radius:8px;font:800 14.5px Arial,sans-serif;color:#fff;}
+/* (✍️ Knowledge Checks, 📄 Assessments and 📝 Activities: a coloured band each, so the three groups stand apart) */
+.bs-kd-sub.bs-kd-sub-as,.bs-kd-sub.bs-kd-sub-act{margin:18px 0 8px;padding:9px 14px;border-radius:8px;color:#fff;font:800 16px Arial,sans-serif;}
+.bs-kd-sub.bs-kd-sub-as{background:#0F766E;border-left:6px solid #5EEAD4;}
+.bs-kd-sub.bs-kd-sub-act{background:#B45309;border-left:6px solid #FCD34D;}
 .bs-kd{margin:8px 0;border:1px solid #E1E3E1;border-radius:10px;background:#fff;padding:0 14px;} .bs-kd > summary{cursor:pointer;padding:10px 0;font:700 15.5px Arial,sans-serif;color:#1E2340;} .bs-kd > summary small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-kd-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font:800 14px Arial,sans-serif;background:#EEF0F6;}
 .bs-kd-q{margin:6px 0 12px;padding-left:22px;font:14px Arial,sans-serif;color:#1F1F1F;} .bs-kd-q > li{margin:0 0 12px;} .bs-kd-q > li > b{font-weight:800;}
