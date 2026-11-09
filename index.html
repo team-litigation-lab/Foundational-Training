@@ -6218,7 +6218,7 @@ window.burstConfetti = burstConfetti;
    so a trainee who fails still moves on. Days with no Practice Lab fall back
    to "Knowledge Check attempted" (any score). */
 function dayLabDone(dayId){
-  const tools = PRACTICE_TOOLS.filter(t=>(String(t.relates||"").match(/\d+/g)||[]).map(Number).includes(dayId));
+  const tools = relatedTools(dayId);
   if(!tools.length){ const p = state.progress[dayId]; return !!(p && (p.done || typeof p.score==="number")); }
   const pp = state.practiceProgress || {};
   return tools.every(t=>pp[t.id] && (pp[t.id].runs||0) >= 1);
@@ -6238,7 +6238,7 @@ function dayReached(id){
   return dayReached(id-1) && dayLabDone(id-1);
 }
 function dayLockReason(id){
-  const t = PRACTICE_TOOLS.find(x=>(String(x.relates||"").match(/\d+/g)||[]).map(Number).includes(id-1));
+  const t = relatedTools(id-1)[0];
   return t ? `Complete the ${ftName(id-1)} Practice Lab (“${t.title}”) to unlock — any score counts.` : `Take the ${ftName(id-1)} Knowledge Check to unlock — any score counts.`;
 }
 function completedCount(){
@@ -8885,7 +8885,7 @@ window.switchTaskTab = switchTaskTab;
 
 function relatedTools(dayId){
   return PRACTICE_TOOLS.filter(t=>{
-    const nums = (t.relates.match(/\d+/g)||[]).map(Number);
+    const nums = (String(t.relates||"").match(/\d+/g)||[]).map(Number);
     return nums.includes(dayId);
   });
 }
