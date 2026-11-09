@@ -7845,8 +7845,6 @@ function scrollToModule(id){
   }, 30);
 }
 window.scrollToModule = scrollToModule;
-/* Where a trainee should land when they come back to a day: the slide they
-   were last on, falling back to the furthest slide they've reached. */
 /* Topics grouped by their "section" (Day 3 so far): [{section, items:[{l, i}]}], or null when the day has none. */
 function lessonSections(d){
   if(!d || !d.lessons.some(l=>l.section)) return null;
@@ -7855,8 +7853,6 @@ function lessonSections(d){
     if(g && g.section===sec) g.items.push({l,i}); else groups.push({section:sec, items:[{l,i}]}); });
   return groups;
 }
-/* Each day's topics were regrouped into sections. A trainee's saved "resume here" slide and Quick Check
-   answers were stored by position in the old order, so move them once to the same topic in the new order. */
 async function migrateDayOrder(){
   state.dayOrderMigrated = state.dayOrderMigrated || {};
   // The first layout was recorded as dayOrderMigrated[<day>] = true; later ones as "<id>:<day>".
@@ -7927,6 +7923,8 @@ async function migrateDayOrder(){
   if(qaChanged) await storeSet("quick-check-answers", state.qcAnswers);
   if(flagsChanged) await storeSet("day-order-migrated", state.dayOrderMigrated);
 }
+/* Where a trainee should land when they come back to a day: the slide they
+   were last on, falling back to the furthest slide they've reached. */
 function resumeSlideFor(dayId){
   const d = DAYS.find(x=>x.id===dayId); if(!d) return 0;
   const total = buildDaySlides(d).length;
@@ -9688,7 +9686,6 @@ function checkQuickCheck(gi, correctIdx){
   storeSet("quick-check-answers", state.qcAnswers);
   refreshQuickCheck(gi);
 }
- // legacy
 Object.assign(window, {selectQuickCheck, checkQuickCheck});
 
 function renderQuiz(d){
@@ -12453,7 +12450,6 @@ function saveBlob(blob, filename){
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 1500);
 }
-/* Embedded Excel workbooks for the tracker handouts (built-in files, no server needed). */
 /* The handout workbooks used to be inlined here as 90 KB of base64 —
    downloaded by everyone, opened by almost no one. They are files now, fetched
    only when a trainee asks for one. */
@@ -12593,10 +12589,6 @@ function drawPdfHeader(doc, title, subtitle){
   doc.setTextColor(27,30,46);
 }
 
-/** Generic line-based report builder for Practice Lab downloads.
- *  Lines: plain strings (wrapped body text), "---" for a divider,
- *  or strings starting with "## " for a bold sub-heading. */
-
 /* PDF text sanitiser: jsPDF's standard fonts only cover basic Latin, so emoji
    and some symbols came out as garbled glyphs. Normalise every string once. */
 function pdfSafe(t){
@@ -12618,6 +12610,9 @@ function safeDoc(doc){
   doc.__lshSafe = true;
   return doc;
 }
+/** Generic line-based report builder for Practice Lab downloads.
+ *  Lines: plain strings (wrapped body text), "---" for a divider,
+ *  or strings starting with "## " for a bold sub-heading. */
 async function buildAndSavePdf(title, subtitle, bodyLines, filenameBase){
   // jsPDF is fetched on demand (it is no longer in the page head), so make sure
   // it is here before using it.
