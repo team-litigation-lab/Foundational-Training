@@ -533,6 +533,12 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-tbl td:nth-child(2){text-align:center;}
 .fms-tbl input, .fms-tbl textarea{font:inherit;font-weight:600;width:100%;box-sizing:border-box;padding:4px 7px;border:1px solid #C9D6BE;border-radius:6px;background:#fff;color:#262B45;}
 .fms-tbl input[type=number]{width:64px;text-align:center;}
+/* (bigger and bolder, for the trainer to read and type at a glance) */
+.fms-top h3{font-size:26px;} .fms-pick{font-size:16px;} .fms-pick label{font-size:16px;} .fms-pick select{font-size:16.5px;padding:6px 10px;}
+.fms-who{font-size:16.5px;font-weight:700;}
+.fms-tbl{font-size:16.5px;} .fms-tbl th{font-size:16px;padding:9px 12px;} .fms-tbl td{padding:7px 12px;color:#2F4A16;font-weight:800;}
+.fms-tbl input, .fms-tbl textarea{font-size:16px;font-weight:700;padding:6px 9px;} .fms-tbl input[type=number]{width:70px;font-size:17px;font-weight:800;}
+.fms-tbl .ftms-avg td{font-size:17.5px;}
 .fms textarea{resize:vertical;overflow:hidden;min-height:30px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;field-sizing:content;}
 .fms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;background:#fff !important;}
 .fms-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0 0;}

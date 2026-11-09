@@ -1847,7 +1847,8 @@ window.render = function(){
   const same = key && key === B.keepKey;
   B.drawing = true;
   let out; try{ out = __render.apply(this, arguments); } finally { B.drawing = false; }
-  try{ document.body.classList.toggle("bs-wide", on()); }catch(err){}
+  // (🧑‍🏫 Graders' scoresheets are wide too: the criterion, the score and the Remarks across the screen)
+  try{ document.body.classList.toggle("bs-wide", on() || (state.view === "admin" && state.adminTab === "graders")); }catch(err){}
   B.keepKey = key;
   if(!same) B.keepY = key ? window.scrollY : 0;
   else if(y && Math.abs(window.scrollY - y) > 2){ window.scrollTo(0, y); requestAnimationFrame(() => { if(B.keepKey === key && B.data && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }); }
