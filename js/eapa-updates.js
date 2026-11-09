@@ -551,37 +551,12 @@ function presenterCountText(d){
   const total = buildDaySlides(d).length, pages = state.presentPages||1;
   return `Step ${(state.lessonSlide||0)+1} of ${total}` + (pages > 1 ? ` · Page ${Math.max(0,state.presentPage||0)+1} of ${pages}` : "");
 }
+// The cues for this program's slides (ftDivider, ftSection) come from js/ft-updates.js, which passes
+// anything else on to here; buildDaySlides makes no other kind, so only a missing slide arrives (and,
+// as before, reading its type throws).
 function presenterCues(d, slide){
-  const out = [];
-  if(slide.type==="topic"){
-    const l = d.lessons[slide.lessonIndex];
-    out.push(`<h3>${esc(l.h)}${l.singleSlide ? "" : ` <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small>`}</h3>`);
-    const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
-    out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null,
-      pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/days/dayN/scripts.js
-  }else if(slide.type==="block"){
-    const b = dayBlock(d, slide.lessonIndex), first = b.lessons[0].num, last = b.lessons[b.lessons.length-1].num;
-    out.push(`<h3>Part ${b.n} of ${b.of}: ${esc(b.title)}</h3><p>Topics ${first}–${last}${b.sections.length > 1 ? `, in ${b.sections.length} sections` : ""}. Tell the room what this part of the day covers and why it matters, then move on to Topic ${first}.</p>`);
-  }else if(slide.type==="divider"){
-    const l = d.lessons[slide.lessonIndex];
-    out.push(`<h3>Topic ${slide.lessonIndex+1} of ${d.lessons.length}: ${esc(l.h)}</h3><p>${l.section ? `Section: ${esc(l.section)}. ` : ""}Name the topic, then move on to its first slide.</p>`);
-  }else if(slide.type==="quickCheck"){
-    out.push(`<h3>Quick Check</h3><p>Let the room answer first — then reveal and use the rationale.</p>`);
-    (d.quickChecks||[]).filter(c=>c.afterIndex===slide.lessonIndex).forEach(c=>{
-      out.push(`<p><b>${esc(c.q)}</b></p><div class="pv-ans">✓ ${esc((c.opts||[])[c.a] || "")}</div>${c.r ? `<p>${esc(c.r)}</p>` : ""}`);
-    });
-  }else if(slide.type==="meetClient"){
-    out.push(`<h3>Meet Elias Thorne — Live Q&amp;A</h3>` + renderMeetClientTrainerGuide());
-  }else if(slide.type==="discussion"){
-    out.push(`<h3>Trainer Checkpoint</h3><p><b>Say:</b> "Before we close ${ftName(d.id)}, let's step back and talk about this together."</p><p><b>Ask:</b> ${esc(d.discussionQuestion||"")}</p><p>Take 2–3 answers, connect each one to a lesson from today, then move on to the Knowledge Check.</p>`);
-  }else if(slide.type==="practiceLab"){
-    out.push(`<h3>Practice Lab</h3><p>Trainees complete the exercise now. Once it's finished, pause for a live debrief — have them walk through what they did, why, and where their judgment differed from the model answer.</p>`);
-  }else if(slide.type==="video"){
-    out.push(`<h3>Video Recap</h3><p>Play the recap video (or summarise the day's three biggest ideas if it isn't ready yet), then move to the Practice Lab.</p>`);
-  }else if(slide.type==="taskOverview"){
-    out.push(`<h3>Task Overview</h3><p>Walk the room through today's real-world task before the lessons start — ask who has done something like it before.</p>`);
-  }
-  return out.join("") || `<p class="pv-empty">No trainer cue for this slide.</p>`;
+  void slide.type;
+  return `<p class="pv-empty">No trainer cue for this slide.</p>`;
 }
 function presenterNextText(d){
   const slides = buildDaySlides(d), idx = state.lessonSlide||0;
