@@ -259,6 +259,40 @@ function scoresTable(){
         [{v: pct(r.overall), f: r.overall == null ? "Nothing to average yet" : `Overall % = the average of the Scorecard ${pct(r.sc && r.sc.overall) || "–"}, the Daily compliance ${pct(r.comp.pct) || "–"}${me ? "" : ` and the weeks ${r.wavg == null ? "–" : Math.round(r.wavg / 5 * 100) + "%"}`} = ${Math.round(r.overall)}%`, cls: "gs-num gs-calc gs-bold " + tone(r.overall)}],
         [])))};
 }
+/* 📈 OVERALL PERFORMANCE (📊 Weekly Reports → 📈 Overall Performance): the whole training on one sheet, beside the week-by-week
+   reports — a row per trainee, ranked: each week's final average out of 5 (its 📊 Weekly Ranking report; the week open in the
+   report as it is now), the weeks' average, the Scorecard overall, the Daily compliance and the Overall % (the average of the
+   three, as 🏅 Scores works it out), and the rank by the Overall %. */
+function ovWeeks(){
+  const reps = B.data.reps || [], s0 = typeof batchStartDate === "function" ? batchStartDate(B.batch) : "", t0 = s0 ? Date.parse(s0 + "T00:00:00Z") : NaN;
+  const today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
+  const now = isFinite(t0) ? Math.max(1, Math.min(6, Math.floor((Date.parse(today + "T00:00:00Z") - t0) / (7 * 864e5)) + 1)) : 1;
+  const last = Math.max(now, ...reps.map((r, i) => r ? i + 1 : 0));
+  return Array.from({length: last}, (x, i) => i + 1);
+}
+// (the week open in 📊 Weekly Ranking, as it is on screen: its averages may be newer than the saved reports read with the sheet)
+function liveWeek(){
+  try{ const c = window.FTRanking && FTRanking.ctx ? FTRanking.ctx() : null, r = c && c.batch === B.batch && FTRanking.report ? FTRanking.report() : null;
+    if(!r) return null; const m = {}; r.ranked.forEach(x => { m[x.id] = x.avg == null ? null : Number(x.avg); }); return {week: c.week, m}; }catch(err){ return null; }
+}
+function overallTable(){
+  const ppl = people(), reps = B.data.reps || [], weeks = ovWeeks(), live = liveWeek();
+  const rows = ppl.map(p => { const sc = (B.data.rec[p.id] || {}).score, comp = compOf(p);
+    const ws = weeks.map(w => live && live.week === w ? (live.m[p.id] == null ? null : live.m[p.id]) : weekMark(reps[w - 1], p.id)), wavg = avgOf(ws);
+    const overall = avgOf([sc && sc.overall, comp.pct, wavg == null ? null : wavg / 5 * 100]); return {p, sc, comp, ws, wavg, overall}; });
+  const order = rows.filter(r => r.overall != null).sort((a, b) => b.overall - a.overall);
+  order.forEach((r, i) => { r.rank = i && Math.round(order[i - 1].overall) === Math.round(r.overall) ? order[i - 1].rank : i + 1; });
+  const sorted = order.concat(rows.filter(r => r.overall == null).sort((a, b) => String(a.p.name).localeCompare(String(b.p.name))));
+  const m5 = v => v == null ? null : v / 5 * 100, n2 = v => v == null ? "" : v.toFixed(2);
+  return {id: "overall", title: "📈 Overall Performance", note: `${B.batch}: the whole training, a row per trainee, ranked by the Overall %. Each week's final average out of 5 comes from its 📊 Weekly Ranking report (blank: no report for that week yet); the Overall % is the average of the Scorecard overall, the Daily compliance and the weeks' average (as a %). Hover a cell for how it was worked out.`,
+    head: ["Trainee", "Rank"].concat(weeks.map(w => `W${w} final average (/5)`), ["Weeks average (/5)", "Scorecard overall", "Daily compliance", "Overall %"]),
+    rows: sorted.map(r => [{v: r.p.name, f: r.p.name, cls: "gs-name"}, {v: r.rank == null ? "" : String(r.rank), f: r.rank == null ? "Not ranked: nothing to average yet" : `Rank ${r.rank} of ${order.length}, by the Overall %`, cls: "gs-rank"}]
+      .concat(weeks.map((w, i) => ({v: n2(r.ws[i]), f: r.ws[i] == null ? `Week ${w}: ${reps[w - 1] || (live && live.week === w) ? "no score for this trainee in the report yet" : "no 📊 Weekly Ranking report yet"}` : `Week ${w}'s final average (📊 Weekly Ranking) = ${r.ws[i].toFixed(2)}/5`, cls: "gs-num " + tone(m5(r.ws[i]))})),
+        [{v: n2(r.wavg), f: r.wavg == null ? "No week reported yet" : `The average of the weeks reported (${weeks.map((w, i) => r.ws[i] == null ? null : `W${w} ${r.ws[i].toFixed(2)}`).filter(Boolean).join(", ")}) = ${r.wavg.toFixed(2)}/5`, cls: "gs-num gs-calc " + tone(m5(r.wavg))},
+         {v: pct(r.sc && r.sc.overall), f: r.sc && r.sc.overall != null ? `Scorecard overall = the average of the grading systems = ${r.sc.overall}%` : "Nothing graded yet", cls: "gs-num " + tone(r.sc && r.sc.overall)},
+         {v: pct(r.comp.pct), f: r.comp.pct == null ? "No day checked yet (the check runs at the end of every shift)" : `The average of ${r.comp.n} day${r.comp.n === 1 ? "" : "s"}' compliance = ${Math.round(r.comp.pct)}%`, cls: "gs-num " + tone(r.comp.pct)},
+         {v: pct(r.overall), f: r.overall == null ? "Nothing to average yet" : `Overall % = the average of the Scorecard ${pct(r.sc && r.sc.overall) || "–"}, the Daily compliance ${pct(r.comp.pct) || "–"} and the weeks ${r.wavg == null ? "–" : Math.round(m5(r.wavg)) + "%"} = ${Math.round(r.overall)}%`, cls: "gs-num gs-calc gs-bold " + tone(r.overall)}]))};
+}
 /* the Process Questions answer sheets and each one's score as the Scorecard counts it (the trainer's final score, else the
    graded best of its Knowledge Check; Day 1's 📖 Reading Task its own), for 🏅 Score Card's ✍️ Knowledge Checks. Read from
    process:<id> (the trainee's answers and graded attempts) and kcreview:<id> (the trainer's review). */
@@ -488,11 +522,14 @@ function rankingHtml(){
   // 🔒 a trainee: their own Weekly Progress Report, as the trainer shared it with them (rankshare:<id>: only theirs), in the
   // report's own styling — no one else's row, no editing, no ranking sheet
   if(meOn()) return window.FTRankSummary && FTRankSummary.mine ? `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 My Weekly Progress Report</h3>${FTRankSummary.mine(B.me)}</section>` : "";
-  if(!window.FTRanking || !FTRanking.embed) return "";
+  // (📊 Weekly Reports: 📅 the week's report, or 📈 Overall Performance — the whole training on one sheet)
+  const sw = weeklyOn() ? `<div class="bs-wkswitch" role="tablist"><button role="tab" class="${B.wkTab !== "overall" ? "on" : ""}" onclick="FTBatchSheet.wkTab('week')">📅 Weekly report</button><button role="tab" class="${B.wkTab === "overall" ? "on" : ""}" onclick="FTBatchSheet.wkTab('overall')">📈 Overall Performance</button></div>` : "";
+  if(weeklyOn() && B.wkTab === "overall") return sw + sheetHtml(Object.assign(overallTable(), {tools: `<p class="bs-ovtools"><button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.csv('overall')">⬇ Download this sheet (.csv)</button></p>`}), "ov");
+  if(!window.FTRanking || !FTRanking.embed) return sw;
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
-  if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
-  return `<section class="bs-sec bs-rank" id="bs-ranking">${FTRankSummary.html()}
+  if(!window.FTRankSummary) return `${sw}<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
+  return `${sw}<section class="bs-sec bs-rank" id="bs-ranking">${FTRankSummary.html()}
     <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
@@ -1561,6 +1598,8 @@ window.FTBatchSheet = {
     F.g = on ? T.groups.map((g, gi) => g.label && g.span > 1 ? gi : -1).filter(gi => gi >= 0) : []; foldRender(id); },
   hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
+  // 📊 Weekly Reports: 📅 the week's report or 📈 Overall Performance
+  wkTab(t){ B.wkTab = t === "overall" ? "overall" : "week"; render(); },
   rkSheet(open){ B.rkSheet = !!open; },
   // 🔁 Test again: the connection, then every link of the batch that isn't ✓ checked again now, and what it found
   async dstat(){
@@ -1776,13 +1815,13 @@ window.FTBatchSheet = {
   ofDays(shut){ const F = ofold(); F.days = {}; if(shut){ const ds = new Set(); people().forEach(p => Object.keys(((((B.data || {}).rec || {})[p.id] || {}).src || {})["trackerreview:"]?.compliance || {}).forEach(d => ds.add(d))); ds.forEach(d => { F.days[d] = true; }); } ofoldSave(); rerender(); },
   go(id){ const el = document.getElementById("bs-" + id); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); return false; },
   pick(td){
-    if(!B.data) return; const T = tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
+    if(!B.data) return; const T = td.getAttribute("data-t") === "ov" ? overallTable() : tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
     const r = Number(td.getAttribute("data-r")), c = Number(td.getAttribute("data-c")), cell = (T.rows[r] || [])[c]; if(!cell) return;
     document.querySelectorAll(".bs-card .gs td.gs-sel").forEach(x => x.classList.remove("gs-sel")); td.classList.add("gs-sel");
   },
   csv(only){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
-    const pick = typeof only === "string" && only ? tables().filter(T => T.id === only) : null;
+    const pick = only === "overall" && adminOn() && !meOn() ? [overallTable()] : typeof only === "string" && only ? tables().filter(T => T.id === only) : null;
     if(pick && !pick.length){ toast("That scorecard isn’t on the page."); return; }
     const q = csvQ;
     const lines = [];
@@ -1913,6 +1952,9 @@ window.ftBanner = function(title, batch, right, opts){
 .ft-banner h2{margin:2px 0 !important;font:800 26px 'Fraunces',Georgia,serif !important;color:#fff !important;}
 .ft-banner .ft-banner-k{margin:0 !important;font:800 12px Arial,sans-serif !important;letter-spacing:.08em;text-transform:uppercase;color:#F6C08F !important;}
 .ft-banner .ft-banner-sub{margin:2px 0 0 !important;color:#E8ECF7 !important;font:600 15px Arial,sans-serif !important;} .ft-banner .ft-banner-sub b{color:#fff !important;}
+.bs-wkswitch{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;padding:10px 14px 0;}
+.bs-wkswitch button{font:800 15px Arial,sans-serif;padding:8px 16px;border-radius:999px;border:2px solid #33406B;background:#fff;color:#1E2340;cursor:pointer;}
+.bs-wkswitch button.on{background:#1E2340;color:#fff;} .bs-ovtools{margin:0 0 8px;}
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
