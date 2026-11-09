@@ -87,11 +87,12 @@ window.LSH_PROGRAM = {
       items: ctx => DAYS.filter(d => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(d.id).length).map(d => {
         const p = ctx.progress[d.id] || {}, rv = (((ctx.rec["kcreview:"] || {}).lessons) || {})[d.id];
         const t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
-        if(t != null) return {name:d.title, pct:t, note:`${t >= 70 ? "Passed" : "Not yet · 70% passes"} · trainer’s final score`};
+        // (ref: the item a trainer can edit in place, js/ft-batch-sheet.js; why: what the score rests on, for a hover)
+        if(t != null) return {name:d.title, ref:"kc:" + d.id, pct:t, note:`${t >= 70 ? "Passed" : "Not yet · 70% passes"} · trainer’s final score`, why:rv.comment || ""};
         // (a trainer's score taken away, before the trainee's page has caught up: the graded best kept beside it)
         const sc = p.trainerScore != null && "gradedScore" in p ? p.gradedScore : p.score;
-        if(typeof sc !== "number") return {name:d.title, pct:null, note:"Not taken yet"};
-        return {name:d.title, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`};
+        if(typeof sc !== "number") return {name:d.title, ref:"kc:" + d.id, pct:null, note:"Not taken yet"};
+        return {name:d.title, ref:"kc:" + d.id, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""};
       }).flatMap((it, k, arr) => {
         // 📖 a lesson's Reading Task (Day 1's PI Overview), scored on its own (js/ft-process.js): its own line after the lesson's
         const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
@@ -99,16 +100,16 @@ window.LSH_PROGRAM = {
         if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
         // (the trainer's final score for it, kcreview:<id>.read[lesson], straight from their review, as the lesson's is)
         const rv = (((ctx.rec["kcreview:"] || {}).read) || {})[d.id], t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
-        if(t != null) return [it, {name:`📖 ${rs.title}`, pct:t, note:"Reading Task · trainer’s final score"}];
+        if(t != null) return [it, {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:t, note:"Reading Task · trainer’s final score", why:rv.comment || ""}];
         const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
-        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
+        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""} : {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
       items: ctx => CALL_LESSONS.map(id => {
         const b = ((ctx.rec["callsim:"] || {}).best || {})["lesson" + id], name = title(id) + " · Mock Calls";
         const t = typeof window.ftMockCallItem === "function" ? window.ftMockCallItem(ctx, id) : null;
-        if(t && t.pct != null) return {name, pct:t.pct, at:t.at, note:t.note + (b ? ` · Call Simulator best ${Number(b.score)}%` : "")};
+        if(t && t.pct != null) return {name, ref:t.ref, pct:t.pct, at:t.at, note:t.note + (b ? ` · Call Simulator best ${Number(b.score)}%` : ""), why:t.why || ""};
         const redo = t && t.redo ? "The trainer asked for a redo · " : "";
         return b ? {name, pct:Number(b.score), note:redo + "Best of " + plural(b.calls || 1, "graded call")} : {name, pct:null, note:redo ? redo + "not scored yet" : "No graded call yet"};
       })},

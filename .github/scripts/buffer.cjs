@@ -54,18 +54,17 @@ async function workerChecks() {
     openWas = await get(t, 'settings:opendays');
     await put(t, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8, 9], batches: {} });
     await t.evaluate(() => typeof ftLoadOpenDays === 'function' && ftLoadOpenDays());
-    // where Activity Locks run (js/ft-day-locks.js), Day 9 is opened to its mock calls
+    // where Activity Locks run (js/ft-day-locks.js), Day 8 is opened to the Intake Mock Calls Metrics that close it (mcm)
     // (Day 9's Intake mock calls: Day 6's One-on-One slide, which this checked before, is off the deck)
     locks = await t.evaluate(() => !!window.FTDayLocks);
     if (locks) {
       stepsWas = await get(t, 'settings:daysteps');
-      await t.evaluate(() => FTDayDecks.open(9, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 9's steps are known)
-      const s9 = await t.evaluate(() => { const i = FTDayDecks.at(9, 's2'); const x = FTDayLocks.steps(9).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
-      if (!s9) fail('Day 9\'s mock call step isn\'t among its Activity Locks steps');
-      // (its records keep 9:s3)
-      const all = Object.assign({}, (stepsWas || {}).all || {}, { 9: s9 });
+      await t.evaluate(() => FTDayDecks.open(8, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 8's steps are known)
+      const s8 = await t.evaluate(() => { const i = FTDayDecks.at(8, 'mcm'); const x = FTDayLocks.steps(8).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      if (!s8) fail('the Intake Mock Calls Metrics step isn\'t among Day 8\'s Activity Locks steps');
+      const all = Object.assign({}, (stepsWas || {}).all || {}, { 8: s8 });
       // (a count in card-row steps, flagged so: js/ft-day-locks.js reads an unflagged one as a count of the old slide steps)
-      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 9: 1 }), batches: {} };
+      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 8: 1 }), batches: {} };
       await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {}, rows }));
       await t.evaluate(() => ftLoadOpenDays());
     }
@@ -105,13 +104,13 @@ async function workerChecks() {
     if (!(await t.evaluate(() => ['9:s3b', '8:s3', '12:s1d', '14:s1e', '15:s1b', '16:s2'].every(k => FTBuffer.ACTS[k].simple)))) fail('a Days 8–16 mock call or demo is not in Day 4\'s format (simple)');
 
     // ☎ Day 9's Intake mock calls: no slide of their own (build/day-decks.cjs PREP_OFF): the Call Simulator and CMS Intake
-    // links sit beside the metrics on the Intake Mock Calls Metrics slide, s2; no panel, no Done, and no case (the packet's
+    // links sit beside the metrics on the Intake Mock Calls Metrics slide, which closes Part 2 (Day 8's mcm); no panel, no Done, and no case (the packet's
     // case is the Day 8 demo's, on its preparation slide)
     if (await t.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
-    await open(t, 9, 's2');
+    await open(t, 8, 'mcm');
     const m9 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), metrics: !!s.querySelector('.ftdd-score .ftms-tbl'), cas: !!s.querySelector('.ftis-mockcall'),
       sim: !!s.querySelector('a[href*="call.html"][href*="track=intake"]'), cms: !!s.querySelector('a[href*="program=intake"]') }; });
-    if (m9.panel || !m9.metrics || m9.cas || !m9.sim || !m9.cms) fail(`Day 9's metrics slide isn't the metrics with the two practice links beside them (and no case): ${JSON.stringify(m9)}`);
+    if (m9.panel || !m9.metrics || m9.cas || !m9.sim || !m9.cms) fail(`Part 2's metrics slide isn't the metrics with the two practice links beside them (and no case): ${JSON.stringify(m9)}`);
 
     // ☎ Day 4's Reception mock calls: no "Mock Calls Ongoing" box; the trainee reads the slide's metrics, read only
     await open(t, 4, 's3');

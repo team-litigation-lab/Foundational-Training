@@ -271,18 +271,60 @@ function renderModules(){
 window.renderModules = renderModules;
 
 /* ---------- 🏅 the Scorecard: every grading system's items, its average, and the overall ---------- */
+// ✎ a trainer's own score on an item (labreview:<id>.overrides[ref] = {pct, note, at, by}): only for the items whose ref is in
+// OVERRIDABLE, which have no trainer's field of their own (an answer sheet's grade, a Monitoring Sheet items' review). Every
+// other editable item (EDITABLE: a Knowledge Check, a mock call or demo, a Practice Session, the Monitoring Sheet) is edited in
+// its own trainer's field, so it reads like any trainer's score. No ref, no edit: never matched by name.
+const EDITABLE = /^(?:(?:kc|kcread|act|run|assess|items):.+|monitor)$/;
+const OVERRIDABLE = /^(?:assess|items):.+$/;
+const numPct = v => v != null && v !== "" && isFinite(Number(v)) ? Math.max(0, Math.min(100, Math.round(Number(v)))) : null;
+const overrideOf = (rec, ref) => { const o = ref && OVERRIDABLE.test(ref) ? ((((rec || {})["labreview:"] || {}).overrides) || {})[ref] : null; return o && numPct(o.pct) != null ? o : null; };
+// (+ the trainer's added points, labreview:<id>.extra = {points, note, at, by}: straight onto the overall, which stays at 100 at most)
+const extraOf = rec => { const x = (((rec || {})["labreview:"] || {}).extra) || null, n = x && x.points != null && x.points !== "" && isFinite(Number(x.points)) ? Math.round(Number(x.points) * 10) / 10 : 0;
+  return n ? {points:n, note:String(x.note || ""), at:x.at || "", by:x.by || ""} : null; };
 function compute(ctx){
   const rows = CFG.sources.map(s => {
     let items = [];
     // (ctx.reviewedOnly: without the automatic scores no trainer has reviewed yet, items marked auto — the Weekly Ranking's ⤓ Fill)
     try{ items = (s.items(ctx) || []).filter(x => x && !(ctx.reviewedOnly && x.auto)); }catch(err){ items = []; }
+    // (✎ an override keeps the item's own date, so a week's ⤓ Fill still places it in its week)
+    items = items.map(x => { const o = overrideOf(ctx.rec, x.ref); return o ? Object.assign({}, x, {orig:x.pct, pct:numPct(o.pct), overridden:true, auto:false,
+      why:`Trainer’s score ${numPct(o.pct)}% (was ${typeof x.pct === "number" ? Math.round(x.pct) + "%" : "—"})${o.note ? ": " + o.note : ""}${x.why || x.note ? " · " + (x.why || x.note) : ""}`}) : x; });
     const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct));
     return {s, items, graded:g.length, avg:g.length ? Math.round(g.reduce((n, x) => n + x.pct, 0) / g.length) : null};
   });
   // (a source marked noOverall is shown with its own average but left out of the overall: its scores come from the others)
   const have = rows.filter(r => r.avg != null && !r.s.noOverall);
-  return {rows, overall:have.length ? Math.round(have.reduce((n, r) => n + r.avg, 0) / have.length) : null,
-    graded:have.reduce((n, r) => n + r.graded, 0), systems:have.length, done:doneIn(ctx.progress), total:lessons().length};
+  const base = have.length ? Math.round(have.reduce((n, r) => n + r.avg, 0) / have.length) : null;
+  // (+ points: on the whole training's overall only, not a week's — they carry no week)
+  const extra = ctx.range ? null : extraOf(ctx.rec);
+  const overall = extra && base != null ? Math.max(0, Math.min(100, Math.round(base + extra.points))) : base;
+  return {rows, overall, overallBase:base, extra, graded:have.reduce((n, r) => n + r.graded, 0), systems:have.length, done:doneIn(ctx.progress), total:lessons().length};
+}
+// how the overall was worked out, in words (for a hover)
+const overallWhy = sc => !sc || sc.overall == null ? "Nothing graded yet" : `The average of ${sc.systems} grading system${sc.systems === 1 ? "" : "s"} = ${sc.overallBase}%`
+  + (sc.extra ? ` · base ${sc.overallBase}% ${sc.extra.points < 0 ? "−" : "+"} ${Math.abs(sc.extra.points)} point${Math.abs(sc.extra.points) === 1 ? "" : "s"}${sc.extra.note ? " (" + sc.extra.note + ")" : ""} = ${sc.overall}%${sc.overallBase + sc.extra.points > 100 ? " (100% at most)" : ""}` : "");
+// ✎ the trainer's writes (labreview:<id>): read strictly — a failed read throws, never taken for an empty record and saved over
+// the trainer's other reviews — merged into the fresh record, then the Scorecards read again
+async function writeLab(id, mut){
+  const cur = (await sharedGetStrict("labreview:" + id)) || {};
+  mut(cur);
+  if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
+  AS.rows = null; SC.at = 0;
+  return cur;
+}
+async function setOverride(id, ref, o){
+  if(!id || !OVERRIDABLE.test(String(ref || ""))) throw new Error("ref");
+  const v = o ? numPct(o.pct) : null;
+  return writeLab(id, cur => { cur.overrides = cur.overrides || {};
+    if(v == null) delete cur.overrides[ref];
+    else cur.overrides[ref] = {pct:v, note:String((o && o.note) || "").trim().slice(0, 600), at:new Date().toISOString(), by:"trainer"}; });
+}
+async function setExtra(id, x){
+  if(!id) throw new Error("id");
+  const n = x && x.points != null && String(x.points).trim() !== "" && isFinite(Number(x.points)) ? Math.max(-100, Math.min(100, Math.round(Number(x.points) * 10) / 10)) : null;
+  return writeLab(id, cur => { if(!n) delete cur.extra;
+    else cur.extra = {points:n, note:String((x && x.note) || "").trim().slice(0, 600), at:new Date().toISOString(), by:"trainer"}; });
 }
 const keyed = () => CFG.sources.filter(s => s.key);
 // the trainee's own records
@@ -307,13 +349,13 @@ function detail(sc){
   return `<div class="sc-grid">${sc.rows.filter(r => !r.s.hidden).map(r => `<div class="card sc-src">
       <div class="sc-src-h"><span class="sc-src-ic">${r.s.icon}</span><b>${e(r.s.label)}</b><span class="sc-pill t-${tier(r.avg)}">${pctTxt(r.avg)}</span></div>
       ${r.s.about ? `<p class="sc-about">${e(r.s.about)}</p>` : ""}
-      ${r.items.length ? `<table class="sc-tbl"><tbody>${r.items.map(x => `<tr><td>${e(x.name)}${x.note ? `<span>${e(x.note)}</span>` : ""}</td><td class="sc-n t-${tier(x.pct)}">${pctTxt(x.pct)}</td></tr>`).join("")}</tbody></table>`
+      ${r.items.length ? `<table class="sc-tbl"><tbody>${r.items.map(x => `<tr><td>${e(x.name)}${x.note ? `<span>${e(x.note)}</span>` : ""}${x.why && x.why !== x.note ? `<details class="sc-why"><summary>Why</summary>${e(x.why)}</details>` : ""}</td><td class="sc-n t-${tier(x.pct)}" title="${e(x.why || x.note || "")}">${pctTxt(x.pct)}${x.overridden ? ` <small aria-label="the trainer’s score">✎</small>` : ""}</td></tr>`).join("")}</tbody></table>`
         : `<p class="sc-empty">Nothing graded here yet.</p>`}
     </div>`).join("")}</div>`;
 }
-function ring(pct){
+function ring(pct, why){
   const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
-  return `<div class="sc-ring t-${tier(pct)}" style="--p:${p}"><span>${pctTxt(pct)}</span><small>overall</small></div>`;
+  return `<div class="sc-ring t-${tier(pct)}" style="--p:${p}"${why ? ` title="${e(why)}"` : ""}><span>${pctTxt(pct)}</span><small>overall</small></div>`;
 }
 // (a source marked hidden has no card or column of its own: its items are shown on another's, js/ft-program.js)
 const shown = () => CFG.sources.filter(s => !s.hidden);
@@ -322,7 +364,7 @@ const HOW = "Each grading system’s score is the average of its graded items; t
 function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
   return `<div class="card sc-hero">
-      ${ring(loaded ? sc.overall : null)}
+      ${ring(loaded ? sc.overall : null, loaded ? overallWhy(sc) : "")}
       <div class="sc-hero-t"><p class="lp-eyebrow">📚 Dashboard · My Performance</p><h1>🏅 My Performance</h1>
         <p>Every grade the platform gives you, collected from all of its grading systems: ${shown().map(s => e(s.label)).join(", ")}.</p>
         <div class="sc-facts"><span><b>${sc.done} / ${sc.total}</b> lessons finished</span><span><b>${sc.graded}</b> graded item${sc.graded === 1 ? "" : "s"}</span><span><b>${sc.systems} / ${shown().length}</b> grading systems with a score</span></div></div>
@@ -384,7 +426,7 @@ function renderAdminScores(){
       <span><select onchange="lshProgram.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="lshProgram.refresh()">↻ Refresh</button></span></div>
     ${rows.length ? `<div class="sc-scroll"><table class="sc-tbl sc-admin-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Lessons</th>${shown().map(s => `<th>${s.icon} ${e(s.label)}</th>`).join("")}<th>Overall</th></tr></thead><tbody>
-      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.filter(x => !x.s.hidden).map(x => cell(x.avg)).join("")}${cell(r.sc.overall)}</tr>
+      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.filter(x => !x.s.hidden).map(x => cell(x.avg)).join("")}${cell(r.sc.overall).replace("<td ", `<td title="${e(overallWhy(r.sc))}" `)}</tr>
         ${AS.open[r.id] ? `<tr class="sc-open"><td colspan="${shown().length + 4}">${detail(r.sc)}</td></tr>` : ""}`).join("")}
     </tbody></table></div>` : `<p class="sc-empty">No approved trainees${AS.batch ? " in this batch" : ""} yet.</p>`}
     <p class="sc-how">${HOW}</p></div>`;
@@ -450,6 +492,10 @@ if(typeof __lpRender === "function") window.render = function(){
 
 window.lshProgram = {
   compute, section, mine:() => compute(mineCtx()),
+  // ✎ the trainer's edits (js/ft-batch-sheet.js FTBatchSheet.editScore): which refs can be edited, the override on one, and
+  // the writes; overallWhy(sc): the overall in words
+  editable:ref => EDITABLE.test(String(ref || "")), overridable:ref => OVERRIDABLE.test(String(ref || "")),
+  override:(rec, ref) => overrideOf(rec, ref), extra:rec => extraOf(rec), setOverride, setExtra, overallWhy,
   // 🏅 My Performance as a block, for 📋 My Progress (js/ft-batch-sheet.js): one page for the trainee's grades and progress
   performanceHtml(){ if(!isTrainee()) return ""; loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000); return renderScorecard(); },
   scorecard(){ if(adminOn()){ state.adminTab = CFG.adminScorecardsTab || "scorecards"; goto("admin"); } else goto("scorecard"); },
@@ -680,7 +726,8 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
 .sc-tbl{width:100%;border-collapse:collapse;font-size:13.5px;}
 .sc-tbl td, .sc-tbl th{padding:7px 8px;border-top:1px solid #ECEEF4;text-align:left;vertical-align:top;}
 .sc-tbl td span{display:block;font-size:12px;color:#8A90A6;margin-top:1px;}
-.sc-tbl .sc-n{text-align:right;font-weight:800;white-space:nowrap;}
+.sc-tbl .sc-n{text-align:right;font-weight:800;white-space:nowrap;cursor:help;}
+.sc-why{margin-top:2px;font-size:12px;color:#5A6078;} .sc-why summary{cursor:pointer;color:#8A90A6;font-weight:700;}
 .sc-empty{margin:0;font-size:13px;color:#8A90A6;}
 .sc-how{margin:16px 2px 0;font-size:12.5px;color:#8A90A6;}
 .sc-admin{padding:18px 20px;} .sc-admin-bar{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px;}
