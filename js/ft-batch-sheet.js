@@ -366,6 +366,8 @@ function kdOneHtml(p, single){
   const fbTone = v => typeof v !== "number" ? "" : v >= 8 ? "gs-hi" : v >= 7 ? "gs-mid" : "gs-lo";
   const one = p => { const rows = kcRows(p), R = B.data.rec[p.id] || {};
     let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}, p.batch || B.batch) : ""; }catch(err){}
+    // (no "COMPLETE" on the band: it heads the Knowledge Checks; what is missing or partial still follows it)
+    rep = String(rep || "").replace(/^Process Questions Responses: COMPLETE(; however, )?/, (m, h) => "Process Questions Responses" + (h ? ": " : ""));
     // (graded "of" the sheets due by now — a lesson not reached yet isn't counted — and any already graded)
     const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
     const due = rows.filter(x => x.g.pct != null || x.g.subm || !window.ftSheetDue || ftSheetDue({lesson: x.k.l}, p.batch || B.batch));
