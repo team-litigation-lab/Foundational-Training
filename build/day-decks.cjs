@@ -1467,6 +1467,10 @@ const PREP = {
 // 📥 a slide a day gains that its guide day doesn't have: Day 14 (the Medical Records training's day 2) also teaches Saving
 // Medical Bills & Records (the guide's Day 17, build/lessons/off/lesson09.js d17-s2), after the Gentle Reminders
 const INSERT = {14: [{after: "s1d", id: "s1m", h: "AM: Saving Medical Bills & Records", html: SLOT(14, "s1m-1") + "\n" + "<p>Today you will also learn how to save medical bills and records. Please go to the links below and follow the process.</p>\n<p><b>Topic: Saving Medical Bills &amp; Records </b></p>\n<p>Task 1 - Go to this link and learn the step-by-step process.</p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"Topic: Saving Medical Bills &amp; Records\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing</a></p>\n<p>Task 2 - Watch this sample demo</p>\n<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link</a></p>\n<p><b>Note:</b> Create your own work guide/notes.</p>\n<hr class=\"stars\">\n<h4>You may add these in your notes.</h4>\n<p>Complete Naming Convention:</p>\n<p>MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Extracted Docs:</p>\n<p>BILL</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21  (Michelle)</p>\n<p>------------</p>\n<p>RECORDS</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p>\n<p>-----------</p>\n<p>LIEN</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Report Format on Notes tab:</p>\n<p>Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p>\n<p><b>Note:</b> Highlight the filename, right click and paste the internal link. </p>\n<p>--------------</p>\n<p>Report Format on Tasks tab:</p>\n<p>mm.dd.yyyy Received bills &amp; records from <u>lien holder(medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p>"}]};
+// 🧰 a preparation slide's link to the tool its demo uses (the tool's card in 🛠 Practice Lab, scored on the 🏅 Score Card)
+const PREP_LEAD = {
+  12: {s1dp: '<div class="ftdd-pq-go ftdd-lor-go"><p><b>🧰 Your 1P and 3P LORs</b>: the demo uploads and sends the letters you draft in the LOR Drafting Activity (🛠 Practice Lab → 🧰 Drafting Tools). Its score is on your 🏅 Score Card.</p>' +
+    '<button type="button" class="btn btn-navy" onclick="lshOpenPortalDrafting()">🧰 Open the LOR Drafting Activity →</button> <button type="button" class="btn btn-ghost" onclick="goto(\'simulators\')">🛠 Practice Lab</button></div>\n'}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
@@ -1539,6 +1543,11 @@ for(let n = 1; n <= 16; n++){
   }
   for(const x of INSERT[n] || []){ const i = slides.findIndex(y => y.id === x.after); if(i < 0) throw new Error(`Day ${n} has no ${x.after} to put ${x.id} after`);
     slides.splice(i + 1, 0, {id: x.id, h: x.h, html: x.html}); }
+  // (and what a preparation slide opens with: Day 12's demo uploads and sends the LORs drafted in the LOR Drafting Activity)
+  for(const [id, h] of Object.entries(PREP_LEAD[n] || {})){
+    const x = slides.find(y => y.id === id); if(!x) throw new Error(`Day ${n} has no ${id} to open with its link`);
+    x.html = h + x.html;
+  }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
