@@ -71,7 +71,6 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 // own dashboard is always one.
 const HOME = "modules";
 const atHome = v => ["dashboard", "home"].concat(window.LSH_HOME_ALIASES || []).includes(v);
-const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview);
 const __goto = window.goto;
 window.goto = function(view){ if(atHome(view)) arguments[0] = HOME; return __goto.apply(this, arguments); };
 
@@ -192,24 +191,6 @@ function homeActions(done, total){
       ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
       : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate (${done}/${total} lessons finished)">🎓 Certificate · ${done}/${total}</span>`) : "");
   return html ? `<div class="lp-home-acts">${html}</div>` : "";
-}
-// The compact stat band the sibling courses show under their lessons (their dashboard's dash-side-inner):
-// program %, best/avg competency, average quiz score, days completed, the feedback card and the ranking
-// card, plus whatever else a file registers in window.LSH_HOME_STATS (e.g. js/ft-simulators.js's graded-calls tile).
-function statsBand(done, total){
-  const pct = total ? Math.round(done / total * 100) : 0;
-  const ocs = typeof overallCompetencyScore === "function" ? overallCompetencyScore() : { score: 0, tier: null };
-  const avgC = typeof averageCompetencyScore === "function" ? averageCompetencyScore().score : 0;
-  const quiz = typeof avgScore === "function" ? avgScore() : 0;
-  const fb = typeof window.renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : "";
-  const rank = typeof window.renderRankingCard === "function" ? renderRankingCard() : "";
-  return `<div class="lp-home-stats">
-    <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
-    <div class="card stat"><div class="num">${ocs.score}%</div><div class="lbl">${ocs.tier ? `Best Competency — ${e(displayTier(ocs.tier))}` : "Best Competency Score"}<span style="display:block;font-weight:400;margin-top:2px;">Avg across all attempts: ${avgC}%</span></div></div>
-    <div class="card stat"><div class="num">${quiz}%</div><div class="lbl">Average quiz score</div></div>
-    <div class="card stat"><div class="num">${done} / ${total}</div><div class="lbl">Lessons completed</div></div>
-    ${fb}${rank}${hooks("LSH_HOME_STATS")}
-  </div>`;
 }
 // The step-timeline (a circle per lesson, under the hero) is gone: the lesson cards sit right below it and say
 // the same thing, and the row it took is the room the day cards needed on one screen.
@@ -601,8 +582,8 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
 .lp-pages{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:22px 0 0;}
 .lp-pages .lp-page{display:inline-flex;align-items:center;gap:7px;}
 .lp-pages .lp-page.active{border-color:var(--orange);color:var(--navy);background:#FFF3E6;}
-/* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
-   cards instead of its own dark panel — see statsBand() in js/lsh-program.js) */
+/* the compact stat-card row under the lessons (the sibling courses' dashboard side band, here a plain row of
+   cards instead of its own dark panel; also used by js/ft-admin-ops.js) */
 .lp-home-stats{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 0;}
 .lp-home-stats .card.stat{flex:1 1 128px;padding:10px 12px;min-width:0;}
 .lp-home-stats .card.stat .num{font-size:21px;font-weight:800;color:var(--navy);line-height:1.1;}
