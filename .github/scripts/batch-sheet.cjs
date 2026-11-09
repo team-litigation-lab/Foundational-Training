@@ -348,6 +348,10 @@ const failures = []; const fail = m => failures.push(m);
       return { fresh: FTProcessReport({ sets: {} }, today), old: FTProcessReport({ sets: {} }, 'B010225') }; });
     if (rp.fresh || !/Out of 8 expected answer sheets, 0 were submitted/.test(rp.old)) fail(`the Process Questions line doesn't follow the batch's progress: ${JSON.stringify(rp)}`); }
       await put('assess:' + ids.Ada, null); { const rv = (await get('trackerreview:' + ids.Ada)) || {}; if (rv.assess) { delete rv.assess['11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C']; await put('trackerreview:' + ids.Ada, rv); } }
+      // (no grade yet: the day's Process Questions row says why — answered and not submitted, submitted with no grade back, not started)
+      { const why = await page.evaluate(() => { const d = { lessons: [6] }, it = { at: 'tool', id: 'process' }, R = s => ({ data: { 'day-progress': {} }, process: { sets: s }, src: {} });
+          return [R({ 'intake-specialist': { answers: ['My answer'] } }), R({ 'intake-specialist': { answers: ['My answer'], submittedAt: '2026-11-09T10:00:00Z' } }), R({})].map(r => FTBatchSheet.autoDone(r, d, it, {}).how); });
+        if (!/Answered but not submitted yet/.test(why[0]) || !/Submitted for grading, but no grade came back yet/.test(why[1]) || !/not started yet/.test(why[2])) fail(`the Process Questions row doesn't say why there's no grade: ${JSON.stringify(why)}`); }
       await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null);
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     } else fail('no Knowledge Check questions for the first lesson');
