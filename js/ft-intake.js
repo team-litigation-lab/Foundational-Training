@@ -349,6 +349,8 @@ function adminHtml(){
    🎬 demo case and the 📝 Intake Worksheet. Rows of the trainee's table (Measure · Score / value · How it was worked out).
    Read for that trainee alone, kept a minute; the page is drawn once more when it comes. */
 const TC = {};
+// (drawn again only where the card is: 📋 Batch Sheet; a load finishing on another tab doesn't redraw that tab)
+const onSheet = () => state.view === "admin" && state.adminTab === "batchsheet";
 function loadCard(id){
   const x = TC[id] = TC[id] || {};
   if(x.loading || (x.at && Date.now() - x.at < 60000)) return;
@@ -357,15 +359,20 @@ function loadCard(id){
     .then(([a, d, ck, w]) => { x.a = a && typeof a === "object" ? a : null; x.d = d && typeof d === "object" ? d : null;
       x.ck = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; x.ws = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; })
     .catch(() => {})
-    .then(() => { x.loading = false; x.at = Date.now(); if(state.view === "admin") render(); });
+    .then(() => { x.loading = false; x.at = Date.now(); if(onSheet()) render(); });
 }
 function cardHtml(id){
   if(!id || !(state.isAdmin && !state.adminPreview)) return "";
   loadCard(id);
-  if(!K.set && !TC.kWait){ TC.kWait = true; loadK().then(() => { TC.kWait = false; if(state.view === "admin") render(); }); }
-  if(!mockCalls() && !PK.failed && !TC.pkWait){ TC.pkWait = true; packs().then(() => { if(state.view === "admin") render(); }, () => {}); }
+  if(!K.set && !TC.kWait){ TC.kWait = true; loadK().then(() => { TC.kWait = false; if(onSheet()) render(); }); }
+  // (the CMS's cases: drawn again whether they come or not — not coming says so — and asked for again once that is reset)
+  if(!mockCalls() && !PK.failed && !TC.pkWait){ TC.pkWait = true; const done = () => { TC.pkWait = false; if(onSheet()) render(); }; packs().then(done, done); }
   const x = TC[id] || {}, head = `<tr class="bs-pt-sec"><th colspan="3">📦 Intake Packet (Day 8)</th></tr>`;
   if(!x.at) return head + `<tr><td colspan="3" class="bs-pt-f">Loading…</td></tr>`;
+  // (a packet saved without its demo case — the cases didn't load then — is paired here, once, as 📦 Intake Packets does)
+  const v = x.a || {};
+  if(mockCalls() && v.packet && !v.call && !AD.paired[id]){ AD.paired[id] = 1; const pc = pairedCall(v.packet);
+    if(pc) writeAssign(id, {call: pc.id, callAt: new Date().toISOString(), client: String(pc.name || "")}).then(() => { if(onSheet()) render(); }, () => {}); }
   const row = (m, v, f, cls) => `<tr><td class="bs-pt-m">${m}</td><td class="bs-pt-v ${cls || ""}">${v}</td><td class="bs-pt-f">${f}</td></tr>`;
   const a = x.a || {}, n = Number(a.packet) || 0, pk = packets()[n] || {}, d = x.d || {};
   const link = u => /^https:\/\//.test(String(u || "")) ? String(u) : "";
@@ -375,7 +382,7 @@ function cardHtml(id){
   return head
     + row("📦 Packet", n ? `Packet ${n}` : "—", n ? `${pk.client ? e(pk.client) + " · " : ""}assigned in 📦 Intake Packets` : `Not assigned yet: <a href="#" onclick="state.adminTab = 'intake'; render(); return false;">📦 Intake Packets</a>`)
     + row("🔗 Their packet", pkU ? `<a href="${e(pkU)}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : "—", pkU ? (fU ? `<a href="${e(fU)}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : "No client subfolder linked") : "Not linked yet: the trainee links it on Day 8’s slide")
-    + row("🔎 Accuracy & completeness", ck ? `${ck.pct}%` : "—",
+    + row("🔎 Accuracy &amp; completeness", ck ? `${ck.pct}%` : "—",
       `${ck ? `<details><summary>The Saving Intake Packet rubric, rule by rule</summary>${checkHtml(ck, true)}</details>` : "Not checked"}${pkU ? ` <button type="button" class="btn btn-ghost btn-sm" ${checking ? "disabled" : ""} onclick="FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : ""}`, ck ? pctCls(ck.pct) : "")
     + row("🎬 Demo case", c ? e(c.title) : "—", c ? `${e(c.name)} · the Day 8 Intake Demo’s call: play it from Ring Channel’s Scenario Picker` : !mockCalls() ? (PK.failed ? "The cases didn’t load from the CMS" : "Loading the cases…") : n ? "Pairing with the packet…" : "Follows the packet")
     + row("📝 Intake Worksheet", ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—", ws && wsLink(ws.answer) ? `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}` : "Not submitted");
@@ -476,6 +483,7 @@ document.addEventListener("play", ev => { if(!ev.target.classList || !ev.target.
 window.FTIntake = {
   data,
   cardHtml,   // 📦 a trainee's Intake Packet on their 📋 Batch Sheet page
+  cardReload(){ Object.keys(TC).forEach(k => { if(TC[k] && typeof TC[k] === "object") TC[k].at = 0; }); },   // (↻ Refresh)
   // the trainee's assigned mock call (its CMS call id), for the trainer's scoring sheet to keep with the score
   // (read fresh from the saved record; undefined when it can't be known: the cases didn't load, or the read failed)
   async callOf(id){
