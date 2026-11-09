@@ -9133,7 +9133,8 @@ window.applyUpdate = applyUpdate;
     : Promise.resolve(null);
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
-  if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
+  let resumeAfterUpdate = null; try{ resumeAfterUpdate = sessionStorage.getItem("lsh_resume_after_update"); }catch(e){}   // (site storage blocked: no resume, but the page still boots)
+  if(resumeAfterUpdate && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
   setTimeout(resendUnsent, 1500);   // anything saved on this device that didn't reach the server last time
   // (the routes below need every page script run first: js/lsh-program.js adds #/modules to the routes, js/ft-day-decks.js
   // FTDayDecks. On a slow device the awaits above can finish while the scripts after this one still load, and a reload of
@@ -9712,7 +9713,7 @@ function renderCalloutFlow(title){
 const Narrator = {
   playing:false, utts:[], token:0,
   get supported(){ return "speechSynthesis" in window; },
-  rate(){ return parseFloat(localStorage.getItem("lsh_audio_rate")||"1") || 1; },
+  rate(){ try{ return parseFloat(localStorage.getItem("lsh_audio_rate")||"1") || 1; }catch(e){ return 1; } },
   voice(){
     const vs = speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
     return vs.find(v=>/natural|neural|aria|jenny|google us english|samantha/i.test(v.name)) || vs.find(v=>/en-US/i.test(v.lang)) || vs[0] || null;
@@ -9765,7 +9766,7 @@ function toggleAudioMode(){
   else { Narrator.stop(); toast("Audio mode off."); }
   Narrator.paint();
 }
-function setAudioRate(v){ localStorage.setItem("lsh_audio_rate", v); if(Narrator.playing) Narrator.play(); }
+function setAudioRate(v){ try{ localStorage.setItem("lsh_audio_rate", v); }catch(e){} if(Narrator.playing) Narrator.play(); }
 Object.assign(window, {narrToggle, toggleAudioMode, listenToggle, setAudioRate});
 if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = ()=>{};
 
