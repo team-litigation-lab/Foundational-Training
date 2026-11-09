@@ -9444,7 +9444,6 @@ const Narrator = {
     setTimeout(()=>{ if(tok!==this.token) return; try{ speechSynthesis.resume(); }catch(e){} this.utts.forEach(u=>speechSynthesis.speak(u)); }, 60);
     this.paint();
   },
-  pause(){ if(speechSynthesis.speaking && !speechSynthesis.paused){ speechSynthesis.pause(); this.paint(); } else if(speechSynthesis.paused){ speechSynthesis.resume(); this.paint(); } },
   stop(silent){ this.token++; this.playing = false; try{ speechSynthesis.cancel(); }catch(e){} if(!silent) this.paint(); },
   finished(){
     if(!state.audioMode || state.view!=="day") return;
@@ -9455,26 +9454,18 @@ const Narrator = {
   afterSlideChange(){ this.stop(true); if(state.audioMode && state.view==="day" && state.dayViewMode!=="knowledgeCheck") setTimeout(()=>this.play(), 350); else this.paint(); },
   paint(){
     const b = document.getElementById("narrBtn"); if(b){ const on = !!state.audioMode || this.playing; b.classList.toggle("on", on); b.innerHTML = on ? "⏸ Stop" : "🎧 Listen"; }
-    const m = document.getElementById("audioModeBtn"); if(m){ m.classList.toggle("on", !!state.audioMode); m.innerHTML = state.audioMode ? "🎧 Audio mode: on" : "🎧 Audio mode"; }
   }
 };
 state.audioMode = false;   // 🎧 Listen starts fresh on each visit (it is one button now: read aloud and move on)
 try{ localStorage.removeItem("lsh_audio_mode"); }catch(e){}
-function narrToggle(){ if(Narrator.playing) Narrator.pause(); else Narrator.play(); }
 // 🎧 Listen (Listen and Audio mode in one): reads this slide aloud and moves on by itself; pressed again, it stops
 function listenToggle(){
   if(state.audioMode || Narrator.playing){ state.audioMode = false; Narrator.stop(); }
   else { state.audioMode = true; Narrator.play(); }
   Narrator.paint();
 }
-function toggleAudioMode(){
-  state.audioMode = !state.audioMode; localStorage.setItem("lsh_audio_mode", state.audioMode ? "1" : "0");
-  if(state.audioMode){ toast("🎧 Audio mode on — each slide is read aloud and moves on by itself. Press Pause any time."); Narrator.play(); }
-  else { Narrator.stop(); toast("Audio mode off."); }
-  Narrator.paint();
-}
 function setAudioRate(v){ try{ localStorage.setItem("lsh_audio_rate", v); }catch(e){} if(Narrator.playing) Narrator.play(); }
-Object.assign(window, {narrToggle, toggleAudioMode, listenToggle, setAudioRate});
+Object.assign(window, {listenToggle, setAudioRate});
 if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = ()=>{};
 
 function renderLessonCard(l,i,d,unused,part){
