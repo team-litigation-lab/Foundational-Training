@@ -25,11 +25,11 @@
                                🏅 My Performance (#/scorecard), a page under 📚 Dashboard
      👁 Switch View            an admin sees the program exactly as a trainee does, and switches back
      🛡 Admin                  the Admin screen (admins only, never in the trainee view)
-     🏠 Main Portal            the LSH Training Portal: it signs everyone in, and it holds the log out
+     🎓 Training Directory     the LSH Training Portal: it signs everyone in, and it holds the log out
 
-   So a trainee's bar is 📚 Dashboard · 📁 Client Profile · 🎯 Focus · 🏠 Main Portal (🛠 Practice Lab and
+   So a trainee's bar is 📚 Dashboard · 📁 Client Profile · 🎯 Focus · 🎓 Training Directory (🛠 Practice Lab and
    ✍️ Knowledge Check are hidden in the trainee view), and a trainer's is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
-   🏅 Scorecards · 👁 Switch View · 🛡 Admin · 🏠 Main Portal. Nothing else belongs in the bar: no search box,
+   🏅 Scorecards · 👁 Switch View · 🛡 Admin · 🎓 Training Directory. Nothing else belongs in the bar: no search box,
    no full screen, no log out.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
    (js/ft-program.js here):
@@ -96,9 +96,10 @@ function section(){
 }
 // The top bar, in the order the spec sets: 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
 // then 🎯 Focus for a trainee, or 🏅 Scorecards (every trainee's) · 👁 Switch View · 🛡 Admin for a trainer, and
-// 🏠 Main Portal last. A trainee's own pages (My Performance, My Notes, Task Tracker, Monitoring Sheet) are
+// 🎓 Training Directory last. A trainee's own pages (My Performance, My Notes, Task Tracker, Monitoring Sheet) are
 // 📚 Dashboard pages, so the bar stays the six buttons the spec lists.
 const PORTAL_HOME = "https://cm-training-activity.pages.dev/";
+const PORTAL_DIRECTORY = PORTAL_HOME + "programs.html";   // 🎓 Training Directory (the Portal's programs page) ends the bar
 function barSection(){
   const v = state.view, sec = section();
   if(v === "process" || v === "kc") return "process";
@@ -134,13 +135,13 @@ window.renderTopbar = function(){
     // 🔓 Open Lessons, one click from every page for a trainer (a program that lists it: LSH_PROGRAM.adminTopOpenLessons)
     + (adminOn() && CFG.adminTopOpenLessons ? btn("opendays", "🔓 Open Lessons", "state.adminTab='opendays'; goto('admin')", "Open a lesson for a batch, or for one trainee") : "")
     + (adminOn() ? (CFG.adminTopScorecards === false ? "" : btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard")) : state.traineeId && !state.isAdmin ? focusBtn() : "");   // 🎯 Focus: a signed-in trainee only, never an admin (nor an admin's 👁 Switch View)
-  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal — it holds the log out">🏠 Main Portal</button>`;
+  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_DIRECTORY}'" title="The LSH Training Portal's Training Directory: every program">🎓 Training Directory</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
   if(home) home.insertAdjacentHTML("beforebegin", secs), home.remove();
   else nav.insertAdjacentHTML("afterbegin", secs);
   const adm = [...nav.children].find(b => onc(b) === "openAdmin()");
   if(adm){ adm.innerHTML = "🛡 Admin"; adm.title = "Admin Master Control"; adm.classList.add("lp-sec"); adm.classList.toggle("active", sec === "admin"); }
-  // the spec's order ends the bar 👁 Switch View · 🛡 Admin · 🏠 Main Portal
+  // the spec's order ends the bar 👁 Switch View · 🛡 Admin · 🎓 Training Directory
   const sw = [...nav.children].find(b => b.classList.contains("nav-viewswitch"));
   if(sw && adm) nav.insertBefore(sw, adm);
   nav.insertAdjacentHTML("beforeend", portal);
@@ -507,7 +508,7 @@ window.lshProgram = {
 const st = document.createElement("style"); st.id = "lsh-program"; st.textContent = `
 /* the sections in the top bar */
 .topbar .nav button.lp-sec{font-weight:700;}
-/* 🏠 Main Portal ends the bar, so js/portal-link.js's own ← Training Directory button isn't shown */
+/* 🎓 Training Directory ends the bar, so js/portal-link.js's own ← Training Directory button isn't shown */
 .topbar .nav .nav-portal{display:none !important;}
 /* the Admin screen's tabs, grouped: the sections, then the open section's tabs */
 .admin-tabs.lp-admin-tabs{display:block !important;border-bottom:1px solid var(--line);margin-bottom:20px;white-space:normal;overflow:visible;}
