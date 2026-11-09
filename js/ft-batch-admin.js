@@ -1,10 +1,10 @@
 /* ============================================================
    🗂 THE BATCH'S VAs: their mock call scorecards, offboarding, and archiving a batch to Google Drive
    ------------------------------------------------------------
-   📋 Mock Call Scorecards (Admin → 🛠 Practice Lab → 📋 Mock Call Scorecards): one Mock Call or Demo at a time, for the
-      VAs registered in a batch (the current batch first: the active batch that started last). The activity's scorecard
-      (js/ft-rubrics.js) runs down the side, a column per VA: each criterion 0–5, the feedback notes on a mock call, the
-      weighted average, the score in %, the result, the date and the comment. 💾 Save writes each VA changed into
+   🧑‍🏫 Graders: Mock Calls & Demos (Admin → 🏅 Scorecard → 🧑‍🏫 Graders): every mock call and demo graded on one sheet,
+      for the VAs registered in a batch (the current batch first: the active batch that started last). The activity's
+      scorecard (js/ft-rubrics.js) in the Training Guide's format: criterion | Score | Remarks, the weighted average, then
+      the score in %, the result, the date and the comment; one VA at a time. 💾 Save writes each VA changed into
       labreview:<id>.acts[<activity>], exactly as 🧑‍🏫 Trainer Inputs does (js/ft-sessions.js), so it reaches their
       Practice Lab page, 🏅 My Performance, the Scorecards and the Main Portal.
    🚫 Offboard (the Trainee Audit's and a batch folder's Revoke): the VA's access closes (POST /api/batch/offboard: a Portal
@@ -18,8 +18,8 @@
       record stays, slimmed, with a snapshot of the scorecard, for the Main Portal's 📊 Progress & Feedback, which reads
       this program's records. The batch then shows on the Archive shelf as ☁ Saved to Drive, with the folder's link
       (batchbackup:<batch>, admins only). A batch archived earlier gets ☁ Save to Drive & clear on its card.
-   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the 📋 Mock Call Scorecards tab in
-   🛠 Practice Lab and the 📁 Batches tab (batchesTab, below) in 🛡 Admin Master Control.
+   Loaded after js/ft-sessions.js and js/ft-admin-ops.js and before js/ft-program.js, which puts the 🧑‍🏫 Graders tab in
+   🏅 Scorecard and the 📁 Batches tab (batchesTab, below) in 🛡 Admin Master Control.
    ============================================================ */
 (function(){
 "use strict";
@@ -75,14 +75,14 @@ const registered = b => (state.adminData || []).filter(r => r.approved === true 
 /* ============================================================
    📋 Admin → Mock Call Scorecards
    ============================================================ */
-const MS = {batch:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, notes:true, saving:false};
+const MS = {batch:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, saving:false};
 const cellOf = (id, act) => ((((MS.rv[id] || {}).acts) || {})[act]) || {};
 const dkey = id => MS.act + "|" + id;
 function draftOf(id){
   const k = dkey(id);
   if(!MS.draft[k]){
     const c = cellOf(id, MS.act), rb = RUB().forAct(curAct()), got = c.rubric && rb && c.rubric.key === rb.key ? c.rubric : {};
-    MS.draft[k] = {status:c.status || "Not yet", score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "",
+    MS.draft[k] = {status:c.status || "Not yet", score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
       scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:false, dirty:false};
   }
   return MS.draft[k];
@@ -102,8 +102,7 @@ async function msLoad(force){
     MS.loadedFor = sig;
   }catch(err){ toast("Couldn’t load the scorecards. Check your connection."); }
   MS.loading = false;
-  // (🧑‍🏫 Graders: Mock Calls & Demos draws this page too, under its graders: it redraws there as well)
-  if(state.view === "admin" && ["mockscores", "graders"].includes(state.adminTab) && !isTyping()) render();
+  if(state.view === "admin" && state.adminTab === "graders" && !isTyping()) render();
 }
 /* 🧾 Score summary (the Calendar Management Mock Call's scorecard): the score's rationale in words, from what the trainer
    entered — the weighted average from each criterion's score and weight, the % it makes, the strongest criteria and those
@@ -124,6 +123,21 @@ function whyHtml(id){
     ${left.length ? `<p class="fss-muted">Not scored yet (the average counts only what is scored): ${left.map(x => e(x.n)).join(", ")}.</p>` : ""}
     <p>Result: <b>${e(d.status || "Not yet")}</b>${d.comment ? ` · Comment: ${e(String(d.comment).slice(0, 400))}` : ""}</p>`;
 }
+// mock call or demo: by the scorecard's title, else the activity's (for the Activity list's two groups)
+const isMock = a => { const rb = RUB().forAct(a); return /mock call/i.test(rb ? rb.title : "") || (!rb && /mock/i.test(String(a.kind || "") + " " + String(a.title || ""))); };
+// (a Remarks or Comment box grows with what is typed, so the text wraps and stays in view)
+const grow = t => { if(t && t.tagName === "TEXTAREA"){ t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; } };
+const growAll = () => document.querySelectorAll(".fms textarea").forEach(grow);
+// 🧑‍🏫 who facilitated the mock call or demo: typed by the trainer, offered again next time (this device), saved with the scores
+const FAC_KEY = "ft-facilitator";
+const lastFac = () => { try{ return localStorage.getItem(FAC_KEY) || ""; }catch(err){ return ""; } };
+const keepFac = v => { try{ if(v) localStorage.setItem(FAC_KEY, v); }catch(err){} };
+const facNames = () => [...new Set([lastFac(), ...Object.values(MS.rv).flatMap(rv => Object.values((rv && rv.acts) || {}).map(c => c && c.facilitator))].map(x => String(x || "").trim()).filter(Boolean))].sort();
+window.addEventListener("resize", () => requestAnimationFrame(growAll));
+/* 🧑‍🏫 Graders: Mock Calls & Demos — every mock call and demo scored on this one sheet, the Training Guide's format: the
+   batch, the activity and the trainee picked at the top, then criterion | Score | Remarks (green header, banded rows) and the
+   WEIGHTED AVERAGE; the score in %, the result, the date and the comment under it; 💾 Save. One trainee at a time
+   (‹ › through the batch); what is typed for another trainee is kept until saved. */
 function renderMockScores(){
   if(state.adminLoading || !state.adminData){
     if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(() => loadAdminLedger(), 0);
@@ -133,64 +147,74 @@ function renderMockScores(){
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = batches[0] || "";
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
   const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
-  // one VA's scorecard at a time, picked from the VA dropdown (the batch's first by name until one is picked)
   if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
-  const people = all.filter(r => r.id === MS.va), at = all.findIndex(r => r.id === MS.va);
-  const sig = MS.batch + "|" + all.map(r => r.id).join(",");
+  const r = all.find(x => x.id === MS.va) || null, at = all.findIndex(x => x.id === MS.va);
+  const sig = MS.batch + "|" + all.map(x => x.id).join(",");
   if(MS.loadedFor !== sig) setTimeout(() => msLoad(), 0);
-  const nDirty = dirtyIds().length;
-  const head = `<div class="ff-bar"><div><h3>📋 Mock Call &amp; Demo Scorecards</h3>
-      <p class="fss-muted">Score one Mock Call or Demo, one VA at a time: pick the activity and the VA (‹ Previous / Next › to go through the batch). Each criterion 0–5 (half points allowed) with its feedback note; the weighted average becomes the score. Saved scores go to the VA’s Practice Lab page, their 🏅 My Performance, the Scorecards and the Main Portal.</p></div>
-      <span class="fms-ctl"><label>Batch <select onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select></label>
-      <label>Activity <select onchange="FTMockScores.act(this.value)">${acts.map(x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select></label>
-      ${all.length ? `<label>VA <select class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(r => { const d = MS.draft[MS.act + "|" + r.id], c = a ? cellOf(r.id, a.id) : {};
-          const tag = d && d.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : " · not scored";
-          return `<option value="${e(r.id)}" ${r.id === MS.va ? "selected" : ""}>${e(r.name || r.id)}${tag}</option>`; }).join("")}</select></label>
-        <span class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous VA">‹ Previous</button><b>${at + 1} / ${all.length}</b><button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next VA">Next ›</button></span>` : ""}
-      ${rb && rb.feedback ? `<label class="fss-check"><input type="checkbox" ${MS.notes ? "checked" : ""} onchange="FTMockScores.notes(this.checked)"> feedback notes</label>` : ""}
-      <button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button>
-      <button class="btn btn-ghost btn-sm" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and feedback)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></span></div>`;
-  if(!batches.length) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No active batch: a batch shows here once its VAs are registered and approved.</p></div>`;
-  if(!a) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p></div>`;
-  if(!people.length) return `<div class="card fss-admin fms">${head}<p class="fss-muted">No VAs registered in ${e(labelOf(MS.batch))} yet.</p></div>`;
-  if(MS.loadedFor !== sig) return `<div class="card fss-admin fms">${head}<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p></div>`;
-  const v = id => valOf(id) || draftOf(id);
-  const col = (r, inner) => `<td data-va="${e(r.id)}">${inner}</td>`;
-  const savedTag = r => { const c = cellOf(r.id, a.id), d = valOf(r.id);
-    return d && d.dirty ? `<span class="fms-tag dirty">● not saved</span>` : c.status ? `<span class="fms-tag ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : `<span class="fms-tag">not scored</span>`; };
-  const crit = rb ? rb.criteria.map((k, i) => `<tr><th scope="row">${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</th>${people.map(r => { const d = v(r.id), sv = d.scores[i];
-      return col(r, `<input type="number" min="0" max="5" step="0.5" value="${e(sv == null ? "" : sv)}" aria-label="${e(k.n)} · ${e(r.name)}" oninput="FTMockScores.crit('${e(r.id)}',${i},this.value)">${rb.feedback && MS.notes ? `<input class="fms-fb" value="${e(d.feedback[i] || "")}" placeholder="feedback" oninput="FTMockScores.fb('${e(r.id)}',${i},this.value)">` : ""}`); }).join("")}</tr>`).join("") : "";
-  const avgRow = rb ? `<tr class="fms-avg"><th scope="row">WEIGHTED AVERAGE</th>${people.map(r => col(r, `<b data-avg>${avgTxt(RUB().average(rb, v(r.id).scores))}</b>`)).join("")}</tr>` : "";
-  return `<div class="card fss-admin fms">${head}
+  const nDirty = dirtyIds().length, ready = !!(r && a && MS.loadedFor === sig);
+  const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
+  const mocks = acts.filter(isMock), demos = acts.filter(x => !isMock(x));
+  const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
+  const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
+  const head = `<div class="fms-top"><h3>📋 Mock Call &amp; Demo Scorecards</h3>
+      <span class="fms-tools"><button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button>
+      <button class="btn btn-ghost btn-sm" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></span></div>
+    <div class="fms-pick"><b>🧑‍🏫 Score a trainee</b>
+      <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
+      <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
+      ${all.length ? `<span class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
+        <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
+          const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
+          return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
+        <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></span>` : ""}
+      <label>Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+      ${saveBtn}</div>`;
+  const wrap = inner => `<div class="card fss-admin fms">${head}${inner}</div>`;
+  if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
+  if(!a) return wrap(`<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
+  if(!r) return wrap(`<p class="fss-muted">No trainees registered in ${e(labelOf(MS.batch))} yet.</p>`);
+  if(!ready) return wrap(`<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p>`);
+  setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
+  const c = cellOf(r.id, a.id), id = e(r.id);
+  const tag = d.dirty ? `<span class="fms-tag dirty">● not saved</span>` : c.status ? `<span class="fms-tag ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : `<span class="fms-tag">not scored yet</span>`;
+  const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
+      <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
+      <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
+  return wrap(`<div class="fms-sheet" data-va="${id}">
+    <p class="fms-who"><b>${e(r.name || r.id)}</b> · ${e(a.title)} · ${e(labelOf(MS.batch))}${c.facilitator ? ` · facilitated by ${e(c.facilitator)}` : ""} ${tag}</p>
     ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
-    ${rb && rb.key === "calendar" && people[0] && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(people[0], a)}</div>` : ""}
-    <div class="fms-scroll fms-one"><table class="fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}<span>VA ${at + 1} of ${all.length} · ${e(labelOf(MS.batch))}</span></th>
-      ${people.map(r => `<th data-va="${e(r.id)}"><b>${e(r.name || r.id)}</b>${savedTag(r)}</th>`).join("")}</tr></thead><tbody>
-      ${crit}${avgRow}
-      <tr class="fms-sum"><th scope="row">Score (%)</th>${people.map(r => col(r, `<input type="number" min="0" max="100" data-score value="${e(v(r.id).score)}" oninput="FTMockScores.score('${e(r.id)}',this.value)">`)).join("")}</tr>
-      <tr class="fms-sum"><th scope="row">Result</th>${people.map(r => col(r, `<select onchange="FTMockScores.field('${e(r.id)}','status',this.value)">${STATUSES.map(s => `<option ${s === v(r.id).status ? "selected" : ""}>${s}</option>`).join("")}</select>`)).join("")}</tr>
-      <tr class="fms-sum"><th scope="row">Date</th>${people.map(r => col(r, `<input type="date" value="${e(v(r.id).date)}" onchange="FTMockScores.field('${e(r.id)}','date',this.value)">`)).join("")}</tr>
-      <tr class="fms-sum"><th scope="row">Comment<span>the VA sees it</span></th>${people.map(r => col(r, `<textarea rows="4" oninput="FTMockScores.field('${e(r.id)}','comment',this.value)" placeholder="What went well, what to improve">${e(v(r.id).comment)}</textarea>`)).join("")}</tr>
-    </tbody></table></div>
-    ${people[0] && rb && rb.key === "calendar" ? `<div class="fms-why" data-why="${e(people[0].id)}">${whyHtml(people[0].id)}</div>` : ""}
-    <div class="fp-actions fms-save"><button class="btn btn-navy btn-sm" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)">💾 Save ${nDirty ? nDirty + " VA" + (nDirty === 1 ? "’s" : "s’") + " scorecard" + (nDirty === 1 ? "" : "s") : "the scorecards"}</button>
-      <span class="fss-muted">Only the VAs you changed are saved. A score typed in % stays as typed; otherwise it follows the weighted average.</span></div></div>`;
+    ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
+    ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
+    <table class="ftms-tbl fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}</th><th>Score</th><th>Remarks</th></tr></thead><tbody>
+      ${crit}
+      ${rb ? `<tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(RUB().average(rb, d.scores))}</td><td></td></tr>` : ""}
+    </tbody></table>
+    <div class="fms-foot">
+      <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
+      <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
+      <label>Date <input type="date" data-date value="${e(d.date)}" onchange="FTMockScores.field('${id}','date',this.value)"></label>
+      <label class="fms-cmt">Comment <span>the trainee sees it</span><textarea rows="2" oninput="FTMockScores.field('${id}','comment',this.value)" placeholder="What went well, what to improve">${e(d.comment)}</textarea></label>
+    </div>
+    ${rb && rb.key === "calendar" ? `<div class="fms-why" data-why="${id}">${whyHtml(r.id)}</div>` : ""}
+    <p class="fss-muted fms-note">Each criterion 0–5 (half points allowed). The weighted average becomes the score in % unless one is typed. Saved scores reach the trainee’s Practice Lab page, 🏅 My Performance, the Scorecards and the Main Portal.</p></div>`);
 }
-// a column's average and score follow what was typed, without drawing the page again (the trainer may be mid-way through a row)
+// the average and the score follow what was typed, without drawing the page again (the trainer may be mid-way through a row)
 function refreshCol(id){
   const d = valOf(id), rb = RUB().forAct(curAct()); if(!d) return;
   d.dirty = true;
   if(!d.date) d.date = today();
-  document.querySelectorAll(`.fms-tbl [data-va="${CSS.escape(id)}"]`).forEach(td => {
+  const box = document.querySelector(`.fms-sheet[data-va="${CSS.escape(id)}"]`);
+  if(box){
     const avg = rb ? RUB().average(rb, d.scores) : null;
-    const a = td.querySelector("[data-avg]"); if(a) a.textContent = avgTxt(avg);
-    const s = td.querySelector("[data-score]"); if(s && !d.scoreTyped){ d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); s.value = d.score; }
-    const dt = td.querySelector('input[type="date"]'); if(dt && !dt.value) dt.value = d.date;
-    const tag = td.querySelector(".fms-tag"); if(tag){ tag.className = "fms-tag dirty"; tag.textContent = "● not saved"; }
-  });
+    const av = box.querySelector("[data-avg]"); if(av) av.textContent = avgTxt(avg);
+    const s = box.querySelector("[data-score]"); if(s && !d.scoreTyped){ d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); s.value = d.score; }
+    const dt = box.querySelector("[data-date]"); if(dt && !dt.value) dt.value = d.date;
+    const tag = box.querySelector(".fms-tag"); if(tag){ tag.className = "fms-tag dirty"; tag.textContent = "● not saved"; }
+    if(document.activeElement && box.contains(document.activeElement)) grow(document.activeElement);
+  }
   const w = document.querySelector(`.fms-why[data-why="${CSS.escape(id)}"]`); if(w) w.innerHTML = whyHtml(id);
   const n = dirtyIds().length, btn = document.querySelector("[data-ms-save]");
-  if(btn){ btn.disabled = !n || MS.saving; btn.textContent = `💾 Save ${n} VA${n === 1 ? "’s" : "s’"} scorecard${n === 1 ? "" : "s"}`; }
+  if(btn){ btn.disabled = !n || MS.saving; btn.textContent = `💾 Save ${n} trainee${n === 1 ? "’s" : "s’"} scores`; }
 }
 window.FTMockScores = {
   // ⬇ the batch's Mock Call & Demo Scorecards (the same file as its ⬇ Records: every criterion, score and feedback)
@@ -211,16 +235,16 @@ window.FTMockScores = {
     render(); return n; },
   step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
-  notes(on){ MS.notes = on; render(); },
   refresh(){ MS.loadedFor = ""; if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
   crit(id, i, val){ const d = draftOf(id), t = String(val).trim(); d.scores[i] = t === "" ? null : Math.max(0, Math.min(5, Number(t))); refreshCol(id); },
   fb(id, i, val){ draftOf(id).feedback[i] = String(val).slice(0, 600); refreshCol(id); },
   score(id, val){ const d = draftOf(id); d.score = String(val).trim(); d.scoreTyped = d.score !== ""; refreshCol(id); },
-  field(id, f, val){ draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : String(val); refreshCol(id); },
+  field(id, f, val){ draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : f === "facilitator" ? String(val).slice(0, 120) : String(val); refreshCol(id); },
   async save(btn){
     const ids = dirtyIds(), act = MS.act, rb = RUB().forAct(curAct());
     for(const id of ids){ const s = valOf(id).score; if(s !== "" && !(Number(s) >= 0 && Number(s) <= 100)){ toast("A score is a number from 0 to 100."); return; } }
     MS.saving = true; if(btn) btn.disabled = true;
+    ids.forEach(id => keepFac(String(valOf(id).facilitator || "").trim()));
     let ok = 0;
     for(const id of ids){
       const d = valOf(id);
@@ -229,7 +253,7 @@ window.FTMockScores = {
         cur.acts = cur.acts || {};
         const avg = rb ? RUB().average(rb, d.scores) : null;
         cur.acts[act] = Object.assign({status:d.status || "Not yet", score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
-          comment:String(d.comment || "").trim().slice(0, 4000), at:new Date().toISOString()},
+          comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
             feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
@@ -241,7 +265,7 @@ window.FTMockScores = {
     render();
   }
 };
-ftAdminTab("mockscores", "📋 Mock Call Scorecards", renderMockScores);
+ftAdminTab("graders", "🧑‍🏫 Graders: Mock Calls & Demos", renderMockScores);
 
 /* ============================================================
    🚫 Offboarding a VA (the Trainee Audit's and a batch folder's Revoke)
@@ -309,10 +333,10 @@ function buildFiles(batch, rows){
     .concat(rows.map(g => [name(g), B, g.r.archived ? "Archived" : "Active", g.sc ? `${g.sc.done}/${g.sc.total}` : "",
       ...(g.sc ? g.sc.rows.filter(x => !x.s.hidden).map(x => pct(x.avg)) : srcs.map(() => "")), g.sc ? pct(g.sc.overall) : "",
       ...acts.map(a => { const c = lab(g)[a.id]; return c ? (tScore(c) != null ? tScore(c) : c.status || "") : ""; })]));
-  const cards = [["Trainee", "Batch", "Activity", "Kind", "Result", "Score (%)", "Weighted average (/5)", "Date", "Criterion", "Criterion score (/5)", "Criterion feedback", "Trainer's comment"]];
+  const cards = [["Trainee", "Batch", "Activity", "Kind", "Result", "Score (%)", "Weighted average (/5)", "Date", "Facilitated by", "Criterion", "Criterion score (/5)", "Criterion feedback", "Trainer's comment"]];
   rows.forEach(g => acts.forEach(a => {
     const c = lab(g)[a.id]; if(!c) return;
-    const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || ""];
+    const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || "", c.facilitator || ""];
     if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
     else cards.push([...base, "", "", "", c.comment || ""]);
   }));
@@ -487,40 +511,39 @@ ftAdminTab("batches", "📁 Batches", batchesTab);
 window.FTBatchAdmin = {archive:archiveDialog};
 
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-admin"; s.textContent = `
-.fms .ff-bar{gap:12px;} .fms-ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-.fms-ctl label{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700;color:var(--navy);}
-.fms-ctl select{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;max-width:340px;}
-.fms-scroll{overflow:auto;max-height:calc(100vh - 290px);border:1px solid #C9D9B8;border-radius:10px;margin-top:10px;}
-.fms-tbl{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%;}
-.fms-tbl th, .fms-tbl td{border-bottom:1px solid #DCE6D0;border-right:1px solid #DCE6D0;padding:4px 6px;vertical-align:top;background:#fff;}
-.fms-tbl thead th{position:sticky;top:0;z-index:2;background:#5B9A32;color:#fff;text-align:left;min-width:150px;}
-.fms-tbl thead th b{display:block;font-size:13px;} .fms-tbl thead th > span{display:block;font-weight:600;font-size:11.5px;opacity:.9;}
-.fms-tbl tbody th{position:sticky;left:0;z-index:1;text-align:left;font-weight:600;color:#3F5F1E;background:#EEF5E4;min-width:230px;max-width:300px;}
-.fms-tbl tbody th span{display:block;font-weight:500;font-size:11.5px;color:var(--ink-soft);} .fms-tbl tbody th em{color:#7a5d00;font-style:normal;}
-.fms-tbl thead th:first-child{left:0;z-index:3;}
-.fms-tbl input, .fms-tbl select, .fms-tbl textarea{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:#fff;box-sizing:border-box;width:100%;}
-.fms-tbl input[type=number]{width:70px;text-align:center;} .fms-tbl .fms-fb{margin-top:3px;font-size:12px;}
-.fms-tbl textarea{min-width:180px;resize:vertical;}
-.fms-avg th, .fms-avg td{background:#E3EED6 !important;font-weight:800;color:#2F4A14;}
-.fms-sum th{background:#F3F4F8 !important;color:var(--navy) !important;}
+/* 🧑‍🏫 Graders: the Training Guide's scoresheet (criterion | Score | Remarks), every text wrapping */
+.fms-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;} .fms-top h3{margin:0;} .fms-tools{margin-left:auto;display:flex;gap:6px;}
+.fms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;}
+.fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
+.fms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
+.fms-pick .fms-savebtn{margin-left:auto;}
+.fms-step{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;} .fms-step em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
+.fms-pick select.fms-va{min-width:200px;font-weight:700;} .fms-pick select.fms-act{min-width:200px;}
+.fms-who{margin:0 0 8px;font-size:14px;color:var(--navy);overflow-wrap:anywhere;}
+.fms-tbl{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13.5px;}
+.fms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:6px 10px;font-weight:800;white-space:normal !important;overflow-wrap:anywhere;}
+.fms-tbl th:nth-child(1){width:40% !important;} .fms-tbl th:nth-child(2){width:90px !important;text-align:center;} .fms-tbl th:nth-child(3){width:auto !important;min-width:0 !important;}
+.fms-tbl td{padding:4px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;word-break:normal;}
+.fms-tbl td em{color:#7a5d00;font-style:normal;font-weight:600;}
+.fms-tbl tbody tr:nth-child(odd) td{background:#EEF4E8;}
+.fms-tbl td:nth-child(2){text-align:center;}
+.fms-tbl input, .fms-tbl textarea{font:inherit;font-weight:600;width:100%;box-sizing:border-box;padding:4px 7px;border:1px solid #C9D6BE;border-radius:6px;background:#fff;color:#262B45;}
+.fms-tbl input[type=number]{width:64px;text-align:center;}
+.fms textarea{resize:vertical;overflow:hidden;min-height:30px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;field-sizing:content;}
+.fms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;background:#fff !important;}
+.fms-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0 0;}
+.fms-foot label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--navy);}
+.fms-foot label span{font-weight:500;color:var(--ink-soft);font-size:12px;}
+.fms-foot input{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;} .fms-foot input[type=number]{width:90px;}
+.fms-foot .fms-fac{width:220px;max-width:100%;} .fms-foot .fms-cmt{flex:1 1 320px;} .fms-foot textarea{font:inherit;font-size:14px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;min-height:56px;}
+.fms-note{margin:10px 0 0;}
 .fms-why{margin:12px 0 4px;padding:12px 16px;border:1px solid #C9D9B8;border-radius:10px;background:#F7FAF2;font-size:15px;line-height:1.5;color:#1B1E2E;}
 .fms-why h4{margin:0 0 6px;font-size:16px;color:#2F4A14;} .fms-why p{margin:0 0 6px;} .fms-why ul{margin:0 0 8px;padding-left:20px;} .fms-why li{margin:2px 0;}
 .fms-why-ok{color:#1E6B3A;font-weight:700;} .fms-why-imp{color:#8A3B12;font-weight:700;} .fms-assist{margin-top:8px;}
-/* one VA at a time, drawn bigger */
-.fms-step{display:inline-flex;align-items:center;gap:8px;} .fms-step b{font-size:13px;color:var(--navy);min-width:48px;text-align:center;}
-.fms-ctl select.fms-va{min-width:260px;font-size:14px;font-weight:700;}
-.fms-one{max-height:none;} .fms-one .fms-tbl{width:100%;font-size:16px;}
-.fms-one .fms-tbl th, .fms-one .fms-tbl td{padding:9px 14px;}
-.fms-one .fms-tbl thead th{font-size:15px;} .fms-one .fms-tbl thead th b{font-size:17px;} .fms-one .fms-tbl thead th > span{font-size:13px;}
-.fms-one .fms-tbl tbody th{min-width:320px;max-width:420px;font-size:16px;} .fms-one .fms-tbl tbody th span{font-size:13px;}
-.fms-one .fms-tbl td{width:100%;}
-.fms-one .fms-tbl input, .fms-one .fms-tbl select, .fms-one .fms-tbl textarea{font-size:16px;padding:7px 10px;border-radius:8px;}
-.fms-one .fms-tbl input[type=number]{width:96px;} .fms-one .fms-tbl .fms-fb{margin-top:6px;font-size:15px;}
-.fms-one .fms-tbl textarea{min-height:110px;} .fms-one .fms-tbl select{max-width:240px;} .fms-one .fms-tbl input[type=date]{max-width:220px;}
-.fms-one .fms-tag{font-size:12.5px;}
-.fms-tag{display:inline-block;margin-top:3px;font-size:11px;font-weight:800;border-radius:999px;padding:1px 8px;background:rgba(255,255,255,.85);color:#4A5070;}
-.fms-tag.ok{color:#1E7F4F;} .fms-tag.mid{color:#7a5d00;} .fms-tag.dirty{background:#FEF7C3;color:#7a5d00;}
-.fms-save{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.fms-tag{display:inline-block;margin-left:4px;font-size:11.5px;font-weight:800;border-radius:999px;padding:1px 8px;background:#EEF0F6;color:#4A5070;}
+.fms-tag.ok{color:#1E7F4F;background:#E7F5EE;} .fms-tag.mid{color:#7a5d00;background:#FEF7C3;} .fms-tag.dirty{background:#FEF7C3;color:#7a5d00;}
+@media (max-width:640px){ .fms-tbl{font-size:12.5px;} .fms-tbl th, .fms-tbl td{padding:4px 5px;} .fms-tbl th:nth-child(1){width:42% !important;} .fms-tbl th:nth-child(2){width:52px !important;}
+  .fms-tbl input[type=number]{width:44px;padding:4px 2px;} .fms-pick .fms-savebtn{margin-left:0;} .fms-pick select.fms-va, .fms-pick select.fms-act{min-width:0;flex:1 1 180px;} }
 .fba-ov{z-index:9000;} .fba-ov .fba-card{max-width:620px;width:100%;max-height:92vh;overflow:auto;padding:22px 24px;}
 .fba-card h3 span{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:6px;}
 .fba-card p, .fba-card li{font-size:13.5px;color:var(--ink);} .fba-card ul{margin:6px 0 12px;padding-left:18px;} .fba-card li{margin:3px 0;}
