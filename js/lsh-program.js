@@ -396,6 +396,8 @@ const GROUPS = [
   {id:"lab", label:"🛠 Practice Lab"}, {id:"scorecard", label:"🏅 Scorecard"}
 ];
 Object.entries(CFG.adminGroupLabels || {}).forEach(([id, label]) => { const g = GROUPS.find(x => x.id === id); if(g) g.label = label; });
+// (a program's own sections, after the four: LSH_PROGRAM.adminSections, e.g. 📊 Weekly Reports beside 🏅 Scorecard)
+(CFG.adminSections || []).forEach(x => { if(x && x.id && !GROUPS.some(g => g.id === x.id)) GROUPS.push({id:x.id, label:x.label || x.id}); });
 const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
 function groupTabs(out){
   const a = out.indexOf('<div class="admin-tabs"'); if(a < 0) return out;

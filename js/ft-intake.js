@@ -530,6 +530,13 @@ window.FTIntake = {
 .ftis-who{margin-right:2px;} .ftis-who.ftis-a{color:#B5651F;} .ftis-who.ftis-b{color:#262B45;}
 .ftis-min{background:#fff;border:1px solid #DCE0EA;border-radius:8px;padding:12px 16px;margin-top:6px;font-size:13.5px;line-height:1.5;}
 .ftis-min-h{margin:0 0 8px;text-align:center;font:800 15px 'Poppins','Inter',sans-serif;color:#262B45;letter-spacing:.04em;}
+/* (🗂 Intake Packets for the trainer: bigger and bolder, to read at a glance) */
+.ftis-admin{font-size:16.5px;} .ftis-admin h3{font-size:24px !important;} .ftis-admin .fss-muted{font-size:16px !important;font-weight:600;color:#262B45;line-height:1.55;}
+.ftis-admin table th{font-size:14.5px !important;font-weight:800 !important;color:#262B45 !important;}
+.ftis-admin table td{font-size:16.5px !important;font-weight:700;color:#1B1E2E;padding-top:10px !important;padding-bottom:10px !important;}
+.ftis-admin select{font:800 16px Arial,sans-serif !important;padding:7px 10px !important;border:2px solid #3B4A8C !important;border-radius:8px;color:#1E2340;}
+.ftis-admin .ftis-case-auto{font-size:16.5px;font-weight:600;}
+.ftis-admin .btn{font-weight:800;font-size:15px;}
 .ftis-min table{width:100%;border-collapse:collapse;} .ftis-min th, .ftis-min td{border:1px solid #CBD2DF;padding:5px 8px;text-align:left;vertical-align:top;}
 .ftis-min th{width:26%;background:#F2F2F2;} .ftis-min h5{margin:10px 0 2px;color:#262B45;font-size:13.5px;} .ftis-min p{margin:0;}
 .ftis-go{display:flex;justify-content:flex-end;}

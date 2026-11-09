@@ -405,7 +405,7 @@ window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || 
 .tfb-rub table{border-collapse:collapse;margin-top:6px;width:100%;} .tfb-rub td{border:1px solid #E3E7F0;padding:3px 8px;}
 .tfb-admin{padding:18px 20px;}
 .tfb-filters{display:flex;gap:6px;flex-wrap:wrap;}
-.tfb-filters select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;}
+.tfb-filters select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-weight:700;}
 .tfb-tbl tbody tr{cursor:pointer;} .tfb-tbl tbody tr:hover td{background:#F7F8FB;} .tfb-tbl tr.tfb-on td{background:#FFF4E6;}
 .tfb-panel{margin-top:14px;border:1px solid #E3E7F0;border-radius:12px;padding:14px;background:#FBFBFD;}
 .tfb-panel-h{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;}
