@@ -6071,10 +6071,10 @@ async function loadAll(){
   // The two batches either side of the migrations keep the original order:
   // everything below was read before migrateDayOrder() ran, and everything in
   // the second batch after it.
-  const [p, n, bt, pr, laGlobal, laByDay, aud, lrs, nt, cla, d10w, sb, rph, sp, ls, qa, dom] =
+  const [p, n, bt, pr, laByDay, aud, lrs, nt, cla, d10w, sb, rph, sp, ls, qa, dom] =
     await Promise.all([
       storeGet("day-progress"), storeGet("trainee-name"), storeGet("trainee-batch"),
-      storeGet("practice-progress"), storeGet("lab-attempts-global"), storeGet("lab-attempts-by-day"),
+      storeGet("practice-progress"), storeGet("lab-attempts-by-day"),
       storeGet("admin-unlocked-days"), storeGet("lab-attempts-reset-seen"), storeGet("notes"),
       storeGet("completed-lab-actions"), storeGet("day10-window"), storeGet("submissions"),
       storeGet("roleplayHistory"), storeGet("slide-progress"), storeGet("last-slide"),
@@ -6084,21 +6084,6 @@ async function loadAll(){
   state.traineeName = n || "";
   state.traineeBatch = bt || "";
   state.practiceProgress = pr || {};
-  if(typeof laGlobal === "number"){
-    state.labAttemptsGlobal = laGlobal;
-  }else{
-    // Migrate any existing per-day attempt data (from before the cap became
-    // program-wide) into the new global counter — sum every day's usage,
-    // Day 7 included, since the cap now applies strictly with no exceptions.
-    const laOld = await storeGet("lab-attempts");
-    if(laOld && typeof laOld === "object"){
-      const migrated = Object.entries(laOld).reduce((sum,[dayId,count])=> sum + (count||0), 0);
-      state.labAttemptsGlobal = Math.min(migrated, LAB_ATTEMPT_CAP);
-      await storeSet("lab-attempts-global", state.labAttemptsGlobal);
-    }else{
-      state.labAttemptsGlobal = 0;
-    }
-  }
   // Per-day repeat counts. Older counts were one shared pool, so they don't carry
   // over — everyone starts with a fresh 3 repeats per day.
   state.labAttemptsByDay = (laByDay && typeof laByDay==="object") ? laByDay : {};
