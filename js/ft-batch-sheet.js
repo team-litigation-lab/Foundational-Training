@@ -399,16 +399,19 @@ function kcDetailHtml(){
 const clip = (v, n = 420) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 const num100 = v => v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null;
 // 🧑‍🏫 a trainer-scored activity (a mock call, a demo): the rubric's criteria, their 0–5 scores and remarks
+// (the Result: Passed / Failed by the score, Redo only when the trainer asked for one — js/ft-rubrics.js ftResult)
+const resOf = a => window.ftResult ? ftResult(a) : (a && a.status) || "Not yet";
 function trainerCtx(a, title){
+  const res = resOf(a), redo = res === "Redo";
   const rb = a.rubric && window.FT_RUBRICS && FT_RUBRICS.list ? FT_RUBRICS.list[a.rubric.key] : null, pct_ = num100(a.score) != null ? num100(a.score) : a.status === "Passed" ? 100 : null;
   const crit = rb && a.rubric ? (rb.criteria || []).map((c, i) => ({n: c.n, s: (a.rubric.scores || [])[i], fb: (a.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : [];
   const byS = crit.slice().sort((x, y) => Number(y.s) - Number(x.s));
   const best = byS.filter(c => Number(c.s) >= 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
   const low = byS.slice().reverse().filter(c => Number(c.s) < 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
   const why = [crit.length ? `The trainer scored ${crit.length} criteria on the ${rb.title} rubric: weighted average ${a.rubric.avg != null ? Number(a.rubric.avg).toFixed(2) : "–"}/5${pct_ != null ? ` = ${pct_}%` : ""}` : pct_ != null ? `The trainer's score: ${pct_}%` : "",
-    a.status ? `Result: ${a.status}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
-  return {name: title, pct: pct_, status: a.status || "", why, best: best.length ? best : (!crit.length && a.status === "Passed" ? ["Passed with the trainer"] : []),
-    improve: low.length ? low : a.status === "Redo" ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer"};
+    res !== "Not yet" ? `Result: ${res}${redo ? " (off the scorecards until it is done again)" : ""}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
+  return {name: title, pct: redo ? null : pct_, status: res === "Not yet" ? "" : res, why, best: best.length ? best : (!crit.length && res === "Passed" ? ["Passed with the trainer"] : []),
+    improve: low.length ? low : redo ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer"};
 }
 // 🟢 a Practice Session: its latest submitted attempt's checks, the trainer's review, the AI's evaluation
 function sessionCtx(R, it){
@@ -1150,8 +1153,9 @@ function autoDone(R, d, it, p){
     return k ? {done: true, how: "Practice Session submitted " + when(runs[k].submittedAt)} : {done: false, how: "Practice Session not submitted yet"}; }
   if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id];
     if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
-    if(a.status === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%)` : "")};
-    return {done: a.status === "Passed" || a.score != null || !!a.status, how: `Trainer: ${a.status || "recorded"}${a.score != null ? ` · ${a.score}%` : ""}`}; }
+    const res = resOf(a);
+    if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
+    return {done: res !== "Not yet", how: `Trainer: ${res === "Not yet" ? "recorded" : res}${a.score != null ? ` · ${a.score}%` : ""}`}; }
   // 📝 done once submitted for grading; until then the trainer's tick still counts (the worksheet, handed in on Drive)
   if(it.assess){ const g = assessOf(R, it); return g && g.at ? {done: true, how: `Submitted for grading ${g.when || when(g.at)}`} : null; }
   if(it.at === "drive"){ const g = gradeByName(R, it); return g ? {done: true, how: `Graded ${g.pct}%`} : null; }
@@ -1197,8 +1201,8 @@ function scoreOf(R, d, it, p){
       return t != null ? {pct: t, how: "trainer's score"} : runs[k].submittedAt && runs[k].auto && typeof runs[k].auto.pct === "number" ? {pct: Math.round(runs[k].auto.pct), how: "automated checks"} : null; }).filter(Boolean);
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: xs.map(x => `${x.pct}% (${x.how})`).join(", ")} : null;
   }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a ? numOr(a.score) : null;
-    return v != null ? {pct: v, how: `trainer's score${a.status ? " · " + a.status : ""}`} : null; }
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null;
+    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : null; }
   if(it.assess){ const g = assessOf(R, it), v = gradePct(g);
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;
