@@ -570,9 +570,9 @@ function complianceTable(){
   // the six links side by side, each its own column (no dropdown to go through): ✓ Correct, ✗ Wrong (why: on a hover or a
   // click, in the formula bar), ⏳ Pending or — Not linked; how many of the six are correct first
   return {id: "compliance", title: "Compliance and Platform Utilization Monitoring", note: `${meOn() ? "Your" : "Each trainee's"} six monitored Drive links side by side — ✓ Correct (the system opened it and it is ${meOn() ? "your" : "their"} own, right file or folder), ✗ Wrong (why: hover over it, or click it), ⏳ Pending (not checked yet) or — Not linked — and progress on the platform.`,
-    groups: [{label: "", span: 1}, {label: "Drive Links", span: 1 + LINKS.length}, {label: "Progress", span: 3}],
-    head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
-    rows: ppl.map(p => { const {L} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
+    groups: [{label: "", span: 1}, {label: "Drive Links", span: 2 + LINKS.length}, {label: "Progress", span: 3}],
+    head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Last checked", "Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
+    rows: ppl.map(p => { const {L, checked} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
       const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
       const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""], m = markOf(x);
@@ -582,6 +582,7 @@ function complianceTable(){
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["— Not linked"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")}]
         .concat(LINKS.map(([k]) => linkCol(k)), [
+        {v: checked ? when(checked) : "Not yet", f: checked ? `Links last checked ${checked.toLocaleString()} (${ago(checked)})` : "Not checked yet: the check runs at the end of every shift", cls: checked ? "" : "gs-lo"},
         {v: `${decks} / ${ls.length}`, f: `${decks} of the ${ls.length} lesson decks finished`, cls: "gs-num"},
         {v: `${kcs} / ${kl.length}`, f: `${kcs} of the ${kl.length} lessons' Knowledge Checks passed (${kl.map(d => "Lesson " + d.id).join(", ")})`, cls: "gs-num"},
         {v: last ? ago(last) : "Not yet", f: last ? when(last) : "Not on the platform yet", cls: last ? "" : "gs-lo"}]);
@@ -798,7 +799,7 @@ function sectionsHtml(T){
   // (📊 Weekly Reports: the Weekly Ranking alone; the Batch Sheet without it — a trainee's page keeps their own report)
   if(weeklyOn()) return rankingHtml();
   // (🔗 Drive Links: the Drive links alone)
-  if(linksOn()) return driveBanner() + shareBanner() + one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "") + (at("drive") >= 0 ? one(T[at("drive")], at("drive")) : "");
+  if(linksOn()) return driveBanner() + shareBanner() + one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "");
   // (the trainee's 📋 My Progress: everything as before, their own Drive links and report included)
   if(meOn()) return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
@@ -882,7 +883,7 @@ const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / asse
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch, or ◀ Previous / Next ▶)
-  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 1 + LINKS.length);
+  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 2 + LINKS.length);
   // (👥 the trainee's own record — status, registered, last on the platform, lessons… — at the bottom of their table)
   // (🏅 Score Card after the day-by-day detail; then 🔎 every grade; 👥 the trainee's own record at the very bottom)
   const use = T.filter(x => !["drive", "trainees", "scorecard"].includes(x.id)).concat(T.filter(x => x.id === "scorecard"), T.filter(x => x.id === "trainees"));

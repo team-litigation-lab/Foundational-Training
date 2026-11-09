@@ -128,7 +128,7 @@ const failures = []; const fail = m => failures.push(m);
   // 🔗 Drive Links: a button of its own beside 📋 Batch Sheet (🏅 Scorecard), the same batch: ✅ Compliance and 📁 Drive links
   await page.evaluate(() => { state.adminTab = 'drivelinks'; render(); }); await page.waitForTimeout(1200);
   { const dl = await page.evaluate(() => ({ secs: [...document.querySelectorAll('.bs-card > .bs-sec')].map(x => x.id), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].some(b => /Drive Links/.test(b.innerText)) }));
-    if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance', 'bs-drive']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
+    if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
   // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
   // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
@@ -136,7 +136,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
   // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
-  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
+  if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Last checked', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
   // (her Monitoring Sheet ✗ Wrong, the Typing Tests folder ⏳ Pending — not checked yet — the other four ✓ Correct: 4 of 6)
   if (!ca || ca[1] !== '4 / 6' || ca[2] !== '✗' || ca[3] !== '✓' || ca[4] !== '✗' || ca.slice(5, 8).some(v => v !== '✓')) fail(`Ada's six links side by side: ${ca && ca.slice(0, 8)}`);
   if (await page.$('#bs-compliance table select')) fail('the compliance table still has a dropdown');   // (🔗 Link a trainee's files by hand, under it, picks a trainee)
