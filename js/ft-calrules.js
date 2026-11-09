@@ -240,7 +240,7 @@ window.ftRubricAssist = (r, a) => {
     <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fill(this, ${JSON.stringify(g)})'>⤓ Fill the rule criteria (${Object.keys(g).map(k => `${k === "info" ? "Information" : k === "slot" ? "Slot & rules" : k === "alt" ? "Alternatives" : "Calendar entry"} ${g[k]}`).join(", ")})</button></div>`;
 };
 FTCalRules.fill = (btn, g) => {
-  // (on 📋 Mock Call Scorecards, the one-VA sheet: its criteria by index, through FTMockScores, never over a typed score)
+  // (on 🧑‍🏫 Graders, the one-VA sheet: its criteria by index, through FTMockScores, never over a typed score)
   if(btn.closest(".fms") && window.FTMockScores && FTMockScores.fillCrit){
     const vals = {}; FT_RUBRICS.list.calendar.criteria.forEach((k, i) => { const grp = Object.keys(CRIT).find(x => CRIT[x].test(k.n)); if(grp && g[grp] != null) vals[i] = g[grp]; });
     const n = FTMockScores.fillCrit(vals);

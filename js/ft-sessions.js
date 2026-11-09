@@ -626,15 +626,7 @@ Return ONLY JSON: {"comment":"..."}`;
   }
 };
 ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
-// 🧑‍🏫 Graders: Mock Calls & Demos, the one tab: 📋 Mock Call Scorecards first (one VA at a time, each criterion with its
-// feedback), then every grader's button at the bottom (drawn by their own pages, without the tab bar). 🧑‍🏫 Trainer Inputs is
-// off this page: the scorecards record the same result (labreview:<id> acts[<activity>]) with the feedback on each score.
-const tabBody = tab => { if(typeof window.renderAdmin !== "function") return ""; const was = state.adminTab; let out = "";
-  try{ state.adminTab = tab; out = window.renderAdmin(); }catch(err){ out = ""; } finally{ state.adminTab = was; }
-  const t = document.createElement("template"); t.innerHTML = out; t.content.querySelectorAll(".admin-tabs, #navBackSlot").forEach(x => x.remove()); return t.innerHTML; };
-ftAdminTab("graders", "🧑‍🏫 Graders: Mock Calls & Demos", () => `<section style="margin-bottom:14px;">${tabBody("mockscores")}</section>
-  <div class="card" style="padding:18px 20px;margin-top:8px;"><h3 style="margin:0 0 4px;">🧑‍🏫 Graders: Mock Calls &amp; Demos</h3>
-  <p class="fss-muted" style="margin:0 0 10px;">Every mock call and demo scoresheet in one place. The same list opens from 🧑‍🏫 Graders under every slide of your deck.</p>${gradersHtml()}</div>`);
+// (🧑‍🏫 Graders: Mock Calls & Demos, the one grading page for every mock call and demo: js/ft-batch-admin.js)
 
 /* 📋 The metrics on a mock-call or demo slide (js/ft-day-decks.js): the Training Guide's table, criterion | Score, and its
    WEIGHTED AVERAGE. A trainee reads it as the guide prints it. A trainer scores on it during the mock calls and the demos:
@@ -716,7 +708,7 @@ function metricsSheet(key){
     ${a.id === "intake-packet-demo" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
       ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
-        <td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td></tr>`).join("")}
+        <td><textarea rows="1" data-fb="${i}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)">${e((got.feedback || [])[i] || "")}</textarea></td></tr>`).join("")}
       <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
 }
 // the pop-up: drawn over the page (outside #app, so the deck's redraws leave it alone), redrawn on a pick or a save
@@ -737,29 +729,7 @@ document.addEventListener("keydown", ev => {
   // (the slides don't turn behind the pop-up)
   if(/^Arrow|^Page/.test(ev.key) && !/INPUT|TEXTAREA|SELECT/.test((ev.target || {}).tagName || "")) ev.stopImmediatePropagation();
 }, true);
-/* 🧑‍🏫 THE GRADERS, in one place: every mock call and demo scoresheet (FT_RUBRICS, not the transcription's, graded on its own
-   page), each opening its scoresheet pop-up (FTMetrics.open). The one 🧑‍🏫 Graders button: Admin → 🛠 Practice Lab →
-   🧑‍🏫 Graders: Mock Calls & Demos (no longer on the bar under the deck's slides). */
-const GRADER_SKIP = ["transcription"];
-const graderKeys = () => Object.keys(RUB().list || {}).filter(k => !GRADER_SKIP.includes(k));
-const isMockKey = k => /mock call/i.test((RUB().list[k] || {}).title || "");
-function gradersHtml(){
-  const L = RUB().list || {}, keys = graderKeys(), btn = k => `<button type="button" class="btn btn-navy ftgr-b" onclick="FTMetrics.closeGraders(); FTMetrics.open('${e(k)}')">${isMockKey(k) ? "📞" : "🖥"} ${e(L[k].title)}</button>`;
-  return `<div class="ftgr"><p class="ftgr-h">📞 Mock calls</p><div class="ftgr-row">${keys.filter(isMockKey).map(btn).join("")}</div>
-    <p class="ftgr-h">🖥 Demos</p><div class="ftgr-row">${keys.filter(k => !isMockKey(k)).map(btn).join("")}</div>
-    <p class="ftgr-note">Pick one: its scoresheet opens, with the batch and the trainee to score, each criterion 0–5 and its remarks, and 💾 Save.</p></div>`;
-}
-function openGraders(){
-  closeGraders();
-  const m = document.createElement("div"); m.id = "ftgrModal"; m.className = "ftms-modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "Graders: mock calls and demos");
-  m.innerHTML = `<div class="ftms-modal-box" style="width:min(820px,100%)"><div class="ftms-modal-h"><b>🧑‍🏫 Graders: Mock Calls &amp; Demos</b><button type="button" class="ftms-x" onclick="FTMetrics.closeGraders()" aria-label="Close">✕</button></div>
-    <div class="ftms-modal-b">${gradersHtml()}</div></div>`;
-  m.addEventListener("click", ev => { if(ev.target === m) closeGraders(); });
-  document.body.appendChild(m);
-}
-function closeGraders(){ const m = document.getElementById("ftgrModal"); if(m) m.remove(); }
 window.FTMetrics = {
-  graders: openGraders, closeGraders, gradersHtml,
   table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric, sheet: metricsSheet,
   // a trainee's saved scoresheet for an activity (any of its rubrics), else null: what makes their mock call done (js/ft-buffer.js)
   scored(act){ if(!state.traineeId || state.isAdmin) return null; if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } if(!MY.rec) loadMyReview();
@@ -819,7 +789,6 @@ window.ftTrainerItems = ctx => {
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `
 .ftms-launch{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0 4px;}
-.ftgr-h{margin:6px 0 6px;font-weight:800;color:#1E2340;} .ftgr-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;} .ftgr-b{font-weight:700;} .ftgr-note{margin:4px 0 0;color:#5F6368;font-size:13px;}
 .ftms-modal{position:fixed;inset:0;z-index:10050;background:rgba(15,18,40,.55);display:flex;align-items:center;justify-content:center;padding:12px;}
 .ftms-modal-box{background:#fff;border-radius:14px;width:min(1100px,100%);max-height:calc(100vh - 24px);display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden;}
 .ftms-modal-h{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--navy,#262B45);color:#fff;font-size:16px;}
@@ -837,6 +806,8 @@ window.ftTrainerItems = ctx => {
 .ftms-modal .ftms-tbl td:nth-child(2){text-align:center;}
 .ftms-modal .ftms-tbl input{font:inherit;font-weight:600;width:100%;box-sizing:border-box;padding:3px 6px;border:1px solid #C9D6BE;border-radius:6px;background:#fff;color:#262B45;}
 .ftms-modal .ftms-tbl input[type=number]{width:64px;text-align:center;}
+.ftms-tbl textarea{font:inherit;font-weight:600;width:100%;box-sizing:border-box;padding:3px 6px;border:1px solid #C9D6BE;border-radius:6px;background:#fff;color:#262B45;resize:vertical;min-height:28px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;field-sizing:content;display:block;}
+.ftms-modal .ftms-tbl th, .ftms-modal .ftms-tbl td{white-space:normal;overflow-wrap:anywhere;}
 .ftms-modal .ftms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;}
 main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fss-hero h1{margin:0 0 6px;color:var(--navy);font-size:27px;} .fss-hero > p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;max-width:820px;}
