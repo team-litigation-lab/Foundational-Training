@@ -21,6 +21,15 @@ window.ftActiveTrainee = function(r, o){
   if(!r || !r.id || r.archived || r.rejected || r.purgedAt || r.offboarded || window.FT_BLOCKED[r.id]) return false;
   return (o && o.pending) ? true : r.approved === true;
 };
+// the active trainees, for a trainer's list: the Admin screen's roster when it has one, else every trainee record read
+// from storage (revoked, offboarded or blocked trainees drop off)
+window.ftActiveRoster = async function(){
+  let p = typeof state === "object" ? state.adminData : null;
+  if(!p){ const keys = await sharedList("trainee:"); p = (await sharedGetMany(keys)).filter(Boolean); }
+  return p.filter(r => window.ftActiveTrainee(r));
+};
+// a trainer's list opens on the newest batch: the last of its rows' batch names, sorted
+window.ftLatestBatch = rows => { const bs = [...new Set(rows.map(r => r.batch).filter(Boolean))].sort(); return bs[bs.length - 1] || ""; };
 // every list reads its trainees again
 window.ftRosterChanged = function(){
   if(typeof state === "object") state.adminData = null;

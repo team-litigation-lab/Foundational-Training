@@ -38,15 +38,17 @@ const defsOf = f => {
   return out;
 };
 const DEFS = Object.fromEntries(JS.map(f => [f, defsOf(f)]));
+const pageHtml = read('index.html');
+const pageFns = [...pageHtml.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]);
 // names every page has (the core's): matching on them would tie every file to every test
 const coreNames = new Set();
 for (const f of JS.filter(f => CORE.some(re => re.test(f)))) DEFS[f].forEach(n => coreNames.add(n));
-for (const m of read('index.html').matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)) coreNames.add(m[1]);
+pageFns.forEach(n => coreNames.add(n));
 // (the names index.html itself defines are every page's: render, goto, state … a file that wraps one of those doesn't tie
 // it to every test. A name only a core script defines, LSH_BLUEPRINT say, is still matched for the other file defining it)
 const pageNames = new Set();
-for (const m of read('index.html').matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)) pageNames.add(m[1]);
-for (const m of read('index.html').matchAll(/\b(?:window|root|globalThis)\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) pageNames.add(m[1]);
+pageFns.forEach(n => pageNames.add(n));
+for (const m of pageHtml.matchAll(/\b(?:window|root|globalThis)\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) pageNames.add(m[1]);
 ['render', 'goto', 'renderTopbar', 'state', 'afterRender', 'toast', 'esc'].forEach(n => pageNames.add(n));
 const owner = new Map();
 for (const f of JS) for (const n of DEFS[f]) if (!coreNames.has(n)) { if (!owner.has(n)) owner.set(n, new Set()); owner.get(n).add(f); }
@@ -71,7 +73,6 @@ const reach = f => {
 // the page parts a test looks for by CSS selector (#dayl-2, .ft-video-ask, .ftmp-focus …) that a file writes: a test that
 // checks what a page draws runs when the file drawing it changes. Only distinctive ones (with a hyphen, or 6 letters or
 // more) and none index.html has too; an id ending in a number (dayl-2) is matched by its stem (dayl-)
-const pageHtml = read('index.html');
 const sel = s => { const out = new Set();
   for (const q of s.matchAll(/(["'`])((?:(?!\1).){1,300})\1/g)) for (const m of q[2].matchAll(/(?:^|[\s>+~,(])[.#]([a-z][\w-]{2,})/gi)) {
     const k = m[1]; if ((k.includes('-') || k.length >= 6) && !pageHtml.includes(k) && !/^(github|scripts|js|html|cjs|mjs)$/.test(k)) out.add(k); }

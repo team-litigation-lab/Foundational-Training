@@ -220,16 +220,16 @@ function miniMonthHTML(){
     row.push(`<span class="${cls}">${d.getDate()}</span>`); } cells += `<div class="gc-mrow">${row.join("")}</div>`; if(r >= 3 && new Date(start.getTime() + (r + 1) * 7 * 864e5).getMonth() !== m0.getMonth()) break; }
   return `<div class="gc-mini"><div class="gc-mini-hd">${MONTHS[m0.getMonth()]} ${m0.getFullYear()}</div><div class="gc-mrow gc-mdow">${head}</div>${cells}</div>`;
 }
+const CREATE_SVG = `<svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>`;
 function tasksHTML(){
   const s = scn();
-  return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()"><svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
+  return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()">${CREATE_SVG}Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
     <p class="cs-hint">Put each of these on the week as an event, named after the task, with a description. Drag on an empty part of the calendar to add one.</p>
     <p class="cs-hint cs-rule">🎨 <b>Attorney’s color rule:</b> ${e(C.COLOR_RULE_TEXT)}</p>
     ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span>${(r.needs || {}).meet ? '<span class="cs-dur cs-chip">📹 Google Meet</span>' : ""}${(r.needs || {}).remind ? '<span class="cs-dur cs-chip">🔔 Reminder</span>' : ""}<p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
 
 /* ---------- 🗓 the Attorney Calendar Management Activity: the attorney's Google Calendar, two weeks in Pacific Time ---------- */
-const CREATE_SVG = `<svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>`;
 const gmt = abs => { const o = X.offAt(X.CAL_TZ, abs), a = Math.abs(o); return `GMT${o < 0 ? "-" : "+"}${String(Math.floor(a / 60)).padStart(2, "0")}${a % 60 ? ":" + String(a % 60).padStart(2, "0") : ""}`; };
 const dayParts = d => X.dLabel(d).split(" ");          // ["Mon", "Jul", "6"], at the page's anchor
 const weekOf = day => day >= 7 ? 1 : 0;
@@ -366,8 +366,8 @@ function finalHTML(s, r, sub){
 function reviewHTML(g, notes){
   notes = notes || {};
   if(g.kind === "activity") return actReviewHTML(g, notes);
-  const act = g.kind === "activity", info = g.extras.filter(x => !x.why.length && x.info);
-  return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? (act ? "✅ Passes" : "✅ Meets the attorney’s rules") : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} ${act ? "events perfect" : "tasks perfect"}</span></div>
+  const info = g.extras.filter(x => !x.why.length && x.info);
+  return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Meets the attorney’s rules" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} tasks perfect</span></div>
     ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b> <span>${i.pts} / ${i.weight}</span></div>
       ${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li><b>${e(c.label)}:</b> ${e(c.why)}</li>`).join("")}</ul>`}${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
     ${g.extras.filter(x => x.why.length).length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${g.extras.filter(x => x.why.length).map(x => `<li><b>${e(x.title)}</b> (${x.when ? e(x.when) : C.DAYS[x.day].slice(0, 3) + " " + hh(x.start)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}</div>`;
@@ -581,6 +581,17 @@ function endDrag(){
 }
 // The event editor, as in Google Calendar: title, when, guests, Google Meet, an email reminder and a description.
 function closeModal(){ const m = document.getElementById("csModal"); if(m) m.remove(); }
+// an event editor's buttons and keys: Save (or Enter in the title), 🗑 Delete, and Escape, ✕ or a click outside to close
+function wireModal(m, title, save, done){
+  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
+  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+}
+// an event editor's colour swatches: the picked one is on, its value in `colorSel`, its name in `nameSel`
+function wireSwatches(m, colorSel, nameSel, defLabel){
+  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; m.querySelector(colorSel).value = id;
+    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
+    m.querySelector(nameSel).textContent = (C.colorOf(id) || {}).name || defLabel; }; });
+}
 function editor(x, isNew, done){
   closeModal();
   const opts = (from, to, sel, f) => { let o = ""; for(let m = from; m <= to; m += C.STEP) o += `<option value="${m}" ${m === sel ? "selected" : ""}>${f(m)}</option>`; return o; };
@@ -602,15 +613,12 @@ function editor(x, isNew, done){
   const q = sel => m.querySelector(sel), title = q("#csmTitle"), st = q("#csmStart"), en = q("#csmEnd");
   const setMeet = on => { q("#csmMeet").checked = on; const b = q("#csmMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#csmMeetOff").hidden = !on; };
   q("#csmMeetBtn").onclick = () => setMeet(true); q("#csmMeetOff").onclick = () => setMeet(false);
-  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; q("#csmColor").value = id;
-    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
-    q("#csmColorName").textContent = (C.colorOf(id) || {}).name || "Default color"; }; });
+  wireSwatches(m, "#csmColor", "#csmColorName", "Default color");
   st.onchange = () => { if(+en.value <= +st.value) en.value = String(Math.min(BOTTOM, +st.value + C.STEP)); };
   const save = () => { const t = title.value.trim(); if(!t){ toast("Add a title."); title.focus(); return; }
     if(+en.value <= +st.value){ toast("The event has to end after it starts."); return; }
     const v = {title:t.slice(0, 80), day:+q("#csmDay").value, start:+st.value, dur:+en.value - +st.value, guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, color:C.colorOf(q("#csmColor").value) ? q("#csmColor").value : "", desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
-  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
-  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+  wireModal(m, title, save, done);
   title.focus();
 }
 /* ---------- 🗓 the activity's event editor, like Google Calendar's: title, date and time, all day, the event's own time zone,
@@ -649,9 +657,7 @@ function actEditor(x, isNew, done){
   let meet = !!x.meet;
   const setMeet = on => { meet = on; const b = q("#camMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#camMeetOff").hidden = !on; };
   q("#camMeetBtn").onclick = () => setMeet(true); q("#camMeetOff").onclick = () => setMeet(false);
-  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; q("#camColor").value = id;
-    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
-    q("#camColorName").textContent = (C.colorOf(id) || {}).name || "No color"; }; });
+  wireSwatches(m, "#camColor", "#camColorName", "No color");
   // what the form holds now
   const val = () => all.checked ? {date:dt.value, allDay:true, span:+q("#camUntil").value || 1, start:0, dur:1440, tz:X.CAL_TZ}
     : {date:dt.value, allDay:false, span:1, start:+st.value, dur:+en.value - +st.value, tz:tz.value};
@@ -695,8 +701,7 @@ function actEditor(x, isNew, done){
     const v = Object.assign(w, {title:t.slice(0, 100), loc:q("#camLoc").value.trim().slice(0, 200), guests:G.slice(0, 10), meet, reminders:R.map(r => ({type:r.type, n:r.n, unit:r.unit})),
       color:C.colorOf(q("#camColor").value) ? q("#camColor").value : "", desc:q("#camDesc").value.trim().slice(0, 600)});
     closeModal(); done(v); };
-  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
-  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+  wireModal(m, title, save, done);
   title.focus();
 }
 const openEditor = (x, isNew, done) => isAct(scn()) ? actEditor(x, isNew, done) : editor(x, isNew, done);

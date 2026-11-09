@@ -132,7 +132,6 @@ const CAL_CARDS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 // (8, with its four parts of the trip, on a slide of its own)
 const CAL_GROUPS = [[0, 4], [4, 7], [7, 8], [8, 10]];
 const calRange = ([a, b]) => b - a === 1 ? CAL_CARDS[a] : `${CAL_CARDS[a]}–${CAL_CARDS[b - 1]}`;
-const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney’s Calendar", href: "#/calsim/attorney-activity"};
 // beside it, the same activity on the Main Portal's Google Calendar Simulator: its Calendaring Simulators' Standard Training -
 // Calendar Management Activity track (calsim.html?program=FT&track=activity, js/ft-simulators.js ftsCalsim), in its own tab;
 // where ftsCalsim isn't loaded, the Practice Lab
@@ -680,11 +679,10 @@ s4: html => {
 // caller, a speakerphone echo, a fast-talking adjuster in a loud call centre), played on the slide. The calls,
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
-const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
 // the activity's own calls (s1d, the trainer's key, the Word worksheet): the newer Harbor & Pine set, VA Oscar's five
 // reception recordings redone as personal injury calls (a wrong birth year, a frustrated repeat caller, an unclear request,
 // a short call, a ride that fell through), kept as made in build/calls/pi_reception_calls.py at d499bf1, audio
-// ft/day3/audio/pi-activity-N.mp3. The calls with a challenge on the line (PI_CALLS) are the optional Listening Activity.
+// ft/day3/audio/pi-activity-N.mp3.
 const ACT_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-activity.json"), "utf8"));
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // a "link coming" or placeholder box
@@ -700,33 +698,6 @@ function piCallRows(extra){
   const cards = ACT_CALLS.calls.map(card).concat(extra ? [extra] : []);
   for(let i = 0; i < cards.length; i += 3) rows.push(`<div class="ftdd-pic-row">${cards.slice(i, i + 3).join("")}</div>`);
   return rows.join("\n") + "\n";
-}
-/* 🎧 Day 3's supplementary reception recordings, optional (Carlos's are off it: the Harbor & Pine calls replace them): one card per recording, played in the
-   slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
-   Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
-const REF_RECS = [
-  // (audio: recordings kept on the platform, ft/day3/audio, each a card that plays in a pop-up player: js/ft-day-decks.js
-  // ftdd-acard; [title, file, length])
-  // the PI Reception Activity's five calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
-  // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
-  {h: "PI Reception Calls: Harbor & Pine Injury Law", folders: [], recs: [], pi: true},
-  // (no recordings of VA Oscar's on the deck)
-  ];
-function REF_RECS_HTML(){
-  const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
-    `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
-  // (a recording whose file id is in, recs: [title, id], is a card that plays it in the pop-up viewer when clicked, as Day 3's
-  // CRM/CMS videos are, data-card: js/ft-day-decks.js visual; until then its folder plays in the slide)
-  const rec = ([t, id]) => `<p><a class="viewer-link" data-card data-kind="video" data-title="${hx(t)}" href="https://drive.google.com/file/d/${id}/view">https://drive.google.com/file/d/${id}/view</a></p>\n`;
-  const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
-  const acard = ([t, f, len, tag]) => `<button type="button" class="ftdd-acard" data-audio="${f.startsWith("/") ? f : "/ft/day3/audio/" + f}" data-title="${hx(t)}">` +
-    `<span class="ftdd-acard-ic">🎧</span><b>${hx(t)}</b>${tag ? `<span class="ftdd-acard-tag">${hx(tag)}</span>` : ""}<small>${len} · ▶ Play</small></button>`;
-  const mmss = n => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
-  REF_RECS.filter(g => g.pi).forEach(g => { g.audio = PI_CALLS.calls.map(c => [c.title, c.file, mmss(c.secs), `${c.challenge} · VA ${c.va}`]); });
-  // (a group's heading and its cards are one block, which the deck never splits over two pages)
-  return REF_RECS.filter(g => !g.hide).map(g => (g.audio || []).length ? `<div class="ftdd-recgroup">\n<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-acards">${g.audio.map(acard).join("")}</div>\n</div>\n` : `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
-      : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
-    note;
 }
 // the activity: Day 3's Reception Listening Activity row (ROWS[3].s1), on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
@@ -941,8 +912,6 @@ const LOR_GUIDE = () => {
 // written on Day 10's deck as a slide of its own, after the Claims Specialist discussion and before the Digital Handouts, in
 // place of the PDF on the afternoon's videos slide
 const SAMPLE_SOP = () => fs.readFileSync(path.join(R, "build/days/sample-3p-sop.html"), "utf8").trim() + "\n";
-// the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
-const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
 // Day 10's What to Share, in cards on one page: Do NOT share, What you CAN share (with what the 3P check may also take), and
 // the note; the guide's wording, and the build stops if it changes under it
 function D10_SHARE(x){
@@ -1135,8 +1104,7 @@ const ROWS = {
   },
   3: {
     // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
-    // sample recordings and SOP; then Reception Listening Activity (the PI practice calls, in place of Carlos's recordings),
-    // then the Listening Activity (the same calls, optional: REF_RECS)
+    // sample recordings and SOP; then Reception Listening Activity (the PI practice calls, in place of Carlos's recordings)
     // (the decision trees, then the sample SOP on a slide of its own)
     s1: [{id: "s1", h: "Authorization Decision Tree", parts: [[null, '<div class="ftdd-sop">']]},
       {id: "sop", h: "Sample SOP", parts: [['<div class="ftdd-sop">', null]]},

@@ -34,10 +34,6 @@ window.render = function(){
 .gs-menu{display:flex;gap:2px;} .gs-menu button{border:0;background:none;font:14px Arial,sans-serif;color:#1F1F1F;padding:3px 7px;border-radius:4px;cursor:pointer;} .gs-menu button:hover{background:#E8EAED;}
 .gs-batch{margin-left:auto;font:13px Arial,sans-serif;color:#444746;display:flex;align-items:center;gap:6px;}
 .gs-batch select{font:14px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;background:#fff;}
-.gs-fbar{display:flex;align-items:stretch;border-top:1px solid #E1E3E1;border-bottom:1px solid #E1E3E1;background:#fff;font:13px Arial,sans-serif;}
-.gs-ref{min-width:70px;padding:6px 10px;border-right:1px solid #E1E3E1;color:#1F1F1F;}
-.gs-fx{padding:6px 10px;color:#80868B;font-style:italic;border-right:1px solid #E1E3E1;}
-#gsBar{flex:1 1 auto;border:0;padding:6px 10px;font:inherit;color:#1F1F1F;background:#fff;outline:none;min-width:0;}
 .gs-wrap{overflow:auto;max-height:62vh;background:#fff;}
 .gs{border-collapse:separate;border-spacing:0;font:13px Arial,sans-serif;color:#1F1F1F;}
 .gs th,.gs td{border-right:1px solid #E2E3E3;border-bottom:1px solid #E2E3E3;padding:4px 8px;white-space:nowrap;height:21px;}

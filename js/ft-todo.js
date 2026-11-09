@@ -204,63 +204,6 @@ window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.
   const k = countDone(rec), n = Object.keys(SHADOW).length;
   return [{name: "👥 Shadowing sessions logged", pct: Math.round(k / n * 100), note: `${k} of ${n} sessions written up (Days ${days.join(", ")} started)`}]; };
 
-/* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 👥 Shadowing & To-Do ---------- */
-const AD = {rows: null, loading: false, batch: "", open: {}, day: 11};
-async function loadAdmin(){
-  AD.loading = true;
-  try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r)));
-    const keys = people.map(r => "shadow:" + r.id), vals = [];
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
-    AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && vals[i].logs ? vals[i] : {logs: {}}}))
-      .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
-  }catch(err){ AD.rows = AD.rows || []; }
-  AD.loading = false; if(state.view === "admin" && state.adminTab === "shadowing") render();
-}
-if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { AD.rows = null; });   // a revoked trainee drops off the table
-function adminHtml(){
-  if(!AD.rows || !X.data){ if(!AD.loading) loadAdmin(); loadTodo(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
-  const sd = Object.keys(SHADOW).map(Number), day = AD.day, own = (X.data.days || {})[day] || {}, d = DAYS().find(x => x.day === day) || {role: ""};
-  return `<div class="card td-admin"><div class="ff-bar"><div><h3>📋 Hubstaff To-Do</h3><p class="fss-muted">The exact To-Do text the trainees copy each day; trainees see a change within two minutes.</p></div>
-      <span><select onchange="FTShadowAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <div class="td-aedit"><label>Day <select onchange="FTShadowAdmin.day(this.value)">${DAYS().map(x => `<option value="${x.day}" ${x.day === day ? "selected" : ""}>Day ${x.day}${isShadowDay(x.day) ? " · shadowing" : ""} — ${e(x.role)}</option>`).join("")}</select></label>
-      <label>The day’s To-Do line <input id="tdaTodo" value="${e(own.todo || "")}" placeholder="${e(discussionLine(d))}"></label>
-      ${isShadowDay(day) ? `<label>Buddy’s name <input id="tdaBuddy" value="${e(own.buddy || "")}" placeholder="the person they shadow"></label>
-      <label>The shadowing line <input id="tdaShadow" value="${e(own.shadow || "")}" placeholder="${e(shadowLine(day, own.buddy))}"></label>` : ""}
-      <label class="w">A note for the day (the session’s time, for instance) <input id="tdaNote" value="${e(own.note || "")}"></label>
-      ${isShadowDay(day) ? `<label class="w">The recorded videos for when no buddy is free — one a line, <code>Title | link</code>; the title is what the trainee clicks (leave it empty to keep the guide’s ${videosFor(day).length} video${videosFor(day).length === 1 ? "" : "s"})
-        <textarea id="tdaVideos" rows="3" placeholder="${e((VIDEOS[day] || []).map(([t, u]) => `${t} | ${u}`).join("\n"))}">${e(own.videos || "")}</textarea></label>` : ""}
-      <div class="w"><button class="btn btn-navy btn-sm" onclick="FTShadowAdmin.save()">💾 Save Day ${day}</button>
-        <span class="fss-muted">Trainees copy: <code>To-Do: ${e(linesFor(day).join("</code>, <code>To-Do: "))}</code></span></div></div>
-    ${!sd.length ? "" : rows.length ? `<div class="ff-scroll"><table class="ff-tbl td-atbl"><thead><tr><th>Trainee</th>${sd.map(x => `<th>Day ${x}</th>`).join("")}<th>Read</th></tr></thead><tbody>
-      ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
-        ${sd.map(x => { const g = (r.rec.logs || {})[x]; return `<td class="${done(g) ? "ok" : g && Object.keys(g).length ? "mid" : ""}">${done(g) ? "✓" : g && Object.keys(g).length ? "part" : "—"}</td>`; }).join("")}
-        <td><button class="btn btn-ghost btn-sm" onclick="FTShadowAdmin.open('${e(r.id)}')">${AD.open[r.id] ? "Hide ▾" : "Read ▸"}</button></td></tr>
-        ${AD.open[r.id] ? `<tr class="td-aopen"><td colspan="${sd.length + 2}">${sd.map(x => { const g = (r.rec.logs || {})[x]; if(!g || !Object.keys(g).length) return "";
-          return `<div class="td-alog"><b>Day ${x} · ${e(g.role || SHADOW[x])} Role</b>${done(g) ? `<span class="td-ok">✓ complete</span>` : `<span class="td-part">partly filled in</span>`}
-            ${FIELDS.map(f => has(g[f[0]]) ? `<p><em>${e(f[1])}:</em> ${e(g[f[0]])}</p>` : "").join("")}</div>`; }).join("") || `<p class="fss-muted">Nothing logged yet.</p>`}</td></tr>` : ""}`).join("")}
-    </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
-}
-window.FTShadowAdmin = {
-  batch(b){ AD.batch = b; render(); }, day(n){ AD.day = Number(n); render(); }, open(id){ AD.open[id] = !AD.open[id]; render(); }, reload: () => loadAdmin(),
-  async save(){
-    // read the form first: loading the saved wording re-renders the page and the form with it
-    const v = id => String((document.getElementById(id) || {}).value || "").trim();
-    const day = AD.day, next = {todo: v("tdaTodo"), buddy: v("tdaBuddy"), shadow: v("tdaShadow"), note: v("tdaNote"), videos: v("tdaVideos")};
-    await loadTodo(true);
-    X.data.days = X.data.days || {}; X.data.days[day] = next;
-    const ok = await sharedSet("settings:todo", X.data);
-    toast(ok === false ? "Couldn’t save. Check your connection." : `✓ Day ${day} saved — trainees see it within two minutes.`);
-    X.at = Date.now(); render();
-  }
-};
-// The trainer's 📋 Hubstaff To-Do tab was taken off Admin (Nov 2026): the To-Do lines are the guide's own wording.
-// adminHtml / FTShadowAdmin stay unused, so a saved settings:todo still shows to the trainees.
-
 (function(){ const st = document.createElement("style"); st.id = "ft-todo"; st.textContent = `
 main.main-td{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 .td-hero h1{margin:0 0 4px;} .td-hero p{margin:0;color:var(--ink-soft);max-width:76ch;}
@@ -289,13 +232,6 @@ main.main-td{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;f
 .td-grid label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;font-weight:600;color:var(--ink-soft);} .td-grid label.w,.td-grid .w{grid-column:1/-1;}
 .td-grid input,.td-grid textarea{box-sizing:border-box;width:100%;min-width:0;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;background:var(--card,#fff);color:var(--ink);}
 .td-ok{color:#1E6B40;font-weight:700;} .td-part{color:#8A5A00;font-weight:700;}
-.td-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-.td-aedit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;padding:10px 0 14px;}
-.td-aedit label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-soft);} .td-aedit .w{grid-column:1/-1;}
-.td-aedit input,.td-aedit select,.td-aedit textarea{box-sizing:border-box;width:100%;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
-.td-aedit code{font:600 12.5px ui-monospace,SFMono-Regular,Menlo,monospace;}
-.td-atbl td.ok{color:#1E6B40;font-weight:700;} .td-atbl td.mid{color:#8A5A00;font-weight:700;}
-.td-alog{padding:8px 0;border-top:1px solid var(--line,#eceef2);} .td-alog p{margin:3px 0;} .td-alog em{color:var(--ink-soft);font-style:normal;}
-@media (max-width:720px){ .td-grid,.td-aedit{grid-template-columns:1fr;} }
+@media (max-width:720px){ .td-grid{grid-template-columns:1fr;} }
 `; document.head.appendChild(st); })();
 })();

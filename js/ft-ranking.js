@@ -752,7 +752,7 @@ window.FTRanking = {
     const txt = el.tagName === "TEXTAREA", k = ev.key;
     const go = (dr, dc) => { if(moveFrom(el, dr, dc)) ev.preventDefault(); };
     if(k === "ArrowDown" && !txt) go(1, 0); else if(k === "ArrowUp" && !txt) go(-1, 0);
-    else if(k === "Enter" && !ev.shiftKey && !txt){ if(el.tagName === "INPUT") el.blur(); go(ev.shiftKey ? -1 : 1, 0); }
+    else if(k === "Enter" && !ev.shiftKey && !txt){ if(el.tagName === "INPUT") el.blur(); go(1, 0); }
     else if(k === "ArrowRight" && (el.tagName === "TD" || (el.tagName === "INPUT" && el.selectionStart === el.value.length))) go(0, 1);
     else if(k === "ArrowLeft" && (el.tagName === "TD" || (el.tagName === "INPUT" && el.selectionStart === 0))) go(0, -1);
   },
@@ -798,7 +798,7 @@ window.FTRanking = {
   print(){ const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print."); return; } w.document.write(wordDoc()); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); },
   // for the checks
   report: () => R.data && {title: title(), ranked: ranked().map(x => ({id: x.p.id, name: x.p.name, avg: x.avg == null ? null : fix2(x.avg), rank: x.rank}))},
-  html: () => wordDoc(), mark, reload(){ R.people = null;
+  reload(){ R.people = null;
     // (🤖 a draft still being written is the newest the report can be: kept on screen, not read back from what it has saved so far)
     if(!(R.draftRun && R.draftRun === R.key && R.data)){ R.key = ""; R.data = null; }
     render(); }

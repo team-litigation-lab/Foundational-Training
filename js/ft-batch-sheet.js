@@ -34,7 +34,7 @@ const weeklyOn = () => state.view === "admin" && state.adminTab === WEEKLY && ad
 const e = v => esc(String(v == null ? "" : v));
 // (a link the trainee saved goes into an href only as an http(s) address, escaped: a javascript: one is never a link)
 const safeHref = u => /^https?:\/\//i.test(String(u || "").trim()) ? e(String(u).trim()) : "";
-const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", sel: null, recent: 14, fix: null};
+const B = {auto: [], people: null, loading: false, batch: "", data: null, dataKey: "", dataLoading: false, q: "", recent: 14, fix: null};
 const canon = v => typeof canonicalBatch === "function" ? canonicalBatch(v) : "";
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const lessons = () => (typeof DAYS !== "undefined" && Array.isArray(DAYS) ? DAYS : []);
@@ -48,6 +48,8 @@ const ago = v => { const d = t(v); if(!d) return ""; const m = Math.round((Date.
   return m < 2 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} day${Math.round(m / 1440) === 1 ? "" : "s"} ago`; };
 const pct = n => typeof n === "number" && isFinite(n) ? Math.round(n) + "%" : "";
 const tone = v => typeof v !== "number" ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
+// one CSV cell, quoted, with a leading = + - @ tab or CR defused so a spreadsheet doesn't run it as a formula
+const csvQ = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
 const letter = i => { let s = ""; i++; while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
@@ -104,7 +106,7 @@ async function loadData(){
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
-    for(let i = 0; i < want.length; i += 100) vals.push(...await sharedGetMany(want.slice(i, i + 100)));
+    vals.push(...await sharedGetMany(want));
     const sh = {}, shv = shared.length ? await sharedGetMany(shared) : [];
     shared.forEach((k, i) => { sh[k] = shv[i] || null; });
     const per = own.length + S.length, rec = {};
@@ -217,13 +219,14 @@ function compOf(p){ const c = (((B.data.rec[p.id] || {}).src || {})["trackerrevi
 /* 💬 the day-by-day feedback a trainer sends (👥 Trainees & Batches → ✍ Feedback; feedback:<id>.days[lesson]): how many
    lessons have it, the latest one's rating, and in the bar every sent one's rating and summary. Drafts are the trainer's
    own (a trainee never sees one), so only sent feedback counts here, for the trainer and the trainee alike. */
+const ratingTone = r => /Strong/i.test(r || "") ? "gs-hi" : /Needs/i.test(r || "") ? "gs-lo" : "gs-mid";
 function fbCell(p){
   const days = (((B.data.rec[p.id] || {}).feedback || {}).days) || {};
   const sent = Object.entries(days).filter(([, v]) => v && v.status === "sent").sort((a, b) => String(b[1].sentAt || "").localeCompare(String(a[1].sentAt || "")));
   const drafts = meOn() ? 0 : Object.values(days).filter(v => v && v.status === "draft").length;
   if(!sent.length) return {v: drafts ? `${drafts} draft${drafts === 1 ? "" : "s"}` : "", f: drafts ? `No feedback sent yet · ${drafts} draft${drafts === 1 ? "" : "s"} waiting to be sent (✍ Feedback)` : "No day-by-day feedback sent yet", cls: drafts ? "gs-txt gs-lo" : "gs-txt"};
-  const [l0, f0] = sent[0], tone_ = r => /Strong/i.test(r || "") ? "gs-hi" : /Needs/i.test(r || "") ? "gs-lo" : "gs-mid";
-  return {v: `${sent.length} sent · ${f0.rating || "—"}`, cls: "gs-txt " + tone_(f0.rating),
+  const f0 = sent[0][1];
+  return {v: `${sent.length} sent · ${f0.rating || "—"}`, cls: "gs-txt " + ratingTone(f0.rating),
     f: sent.map(([l, v]) => `${lessonName(Number(l))}: ${v.rating || "—"}${v.sentAt ? " (" + day(v.sentAt) + ")" : ""}${v.summary ? " — " + String(v.summary).replace(/\s+/g, " ").slice(0, 220) : ""}`).join("  ·  ") + (drafts ? `  ·  ${drafts} draft${drafts === 1 ? "" : "s"} not sent yet` : "")};
 }
 function scoresTable(){
@@ -343,7 +346,6 @@ function kcDetailHtml(){
    and comment, a Practice Session's automated checks, the trainer's review and the AI evaluation, a Knowledge Check's graded
    answers (each answer's feedback) and summary, a Monitoring Sheet update's review, and the trainer's day-by-day feedback.
    The table: a column per day, the average of the day's scores; under it, a trainee's days in detail. */
-const firstLine = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = t.match(/^(.{20,260}?[.!?])(\s|$)/); return m ? m[1] : t.slice(0, 260); };
 const clip = (v, n = 420) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 const num100 = v => v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null;
 // 🧑‍🏫 a trainer-scored activity (a mock call, a demo): the rubric's criteria, their 0–5 scores and remarks
@@ -539,7 +541,7 @@ function scoreCardTable(){
             {v: pct(x.pr), f: x.pr == null ? `${nm} · Practice: nothing scored yet` : `${nm} · Practice: ${x.prs.map(y => `${y.t.replace(/\s*\(.*$/, "")} ${y.pct}%`).join("; ")}`, cls: "gs-num " + tone(x.pr)},
             {v: pct(x.cl), f: x.cl == null ? `${nm} · Classroom & outputs: no checked day yet` : `${nm} · Classroom & outputs: ${x.cds.map(y => `Day ${y.n} (${y.date}) ${y.pct}%`).join("; ")} — the end-of-shift check`, cls: "gs-num " + tone(x.cl)},
             {v: pct(x.avg), f: x.avg == null ? `${nm}: nothing to average yet` : `${nm} · Average = the average of ${[x.kc, x.pr, x.cl].filter(v => v != null).length} (${[x.kc, x.pr, x.cl].filter(v => v != null).map(v => Math.round(v) + "%").join(" + ")}) = ${Math.round(x.avg)}%`, cls: "gs-num gs-calc gs-bold " + tone(x.avg)},
-            {v: x.fb ? (x.fb.rating || "Sent") : "", f: x.fb ? `${nm} · Trainer: ${x.fb.rating || ""}${x.fb.summary ? " — " + String(x.fb.summary).replace(/\s+/g, " ").slice(0, 400) : ""}` : `${nm}: no feedback sent yet`, cls: "gs-txt " + (x.fb ? (/Strong/i.test(x.fb.rating || "") ? "gs-hi" : /Needs/i.test(x.fb.rating || "") ? "gs-lo" : "gs-mid") : "")}]; }));
+            {v: x.fb ? (x.fb.rating || "Sent") : "", f: x.fb ? `${nm} · Trainer: ${x.fb.rating || ""}${x.fb.summary ? " — " + String(x.fb.summary).replace(/\s+/g, " ").slice(0, 400) : ""}` : `${nm}: no feedback sent yet`, cls: "gs-txt " + (x.fb ? ratingTone(x.fb.rating) : "")}]; }));
     })};
   return T;
 }
@@ -1183,7 +1185,7 @@ function renderSheet(){
   if(!B.people){ if(!B.loading) loadPeople(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading the batches…</div>`; }
   const bs = batches();
   // (opened: the latest batch, unless one was picked while here)
-  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; B.sel = null; } }
+  if(!B.picked && !meOn() && B.people){ const lb = latestBatch(); if(lb && lb !== B.batch){ B.batch = lb; B.data = null; B.dataKey = ""; } }
   if(!B.batch) return `<div class="card gs-card"><p class="sc-empty">No trainee has registered yet. They appear here as soon as they register.</p></div>`;
   loadData();
   const ppl = people(), D = B.data, ready = !!D && !D.error && (!D.batch || D.batch === B.batch) && ppl.every(p => (D.rec || {})[p.id]) && (!B.dataLoading || !!D.batch);
@@ -1214,7 +1216,7 @@ function renderSheet(){
 
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
-if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; B.sel = null; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
+if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
   // 📦 Archive batch (the batch menu): the archive dialog for the batch on screen (js/ft-batch-admin.js confirmArchiveBatch: Google
   // Drive backup, then the clear, or 🗑 Delete the batch), on the trainee list it reads; the sheet reads its trainees again after
@@ -1226,11 +1228,11 @@ window.FTBatchSheet = {
     window.confirmArchiveBatch(key);
     // (when the dialog closes, archived or not: read the batches again)
     const ov = document.querySelector(".fba-ov"); if(!ov || typeof MutationObserver !== "function") return;
-    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.picked = false; render(); } });
+    const mo = new MutationObserver(() => { if(!document.body.contains(ov)){ mo.disconnect(); B.people = null; B.data = null; B.dataKey = ""; B.picked = false; render(); } });
     mo.observe(document.body, {childList: true});
   },
-  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.sel = null; render(); },
-  refresh(){ B.people = null; B.data = null; B.dataKey = ""; B.sel = null; if(typeof state === "object") state.adminData = null; render(); },
+  batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; render(); },
+  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
   // 🔄 Update all scores: everything below, in order (FTBatchSheet.sync)
@@ -1346,7 +1348,7 @@ window.FTBatchSheet = {
   // ⬇ the Knowledge Checks' breakdown: a row per answer
   kdCsv(){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
-    const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const q = csvQ;
     const lines = [["Trainee", "Knowledge Check", "Score", "How it was scored", "Graded summary", "Trainer's overall comment", "#", "Question", "Answer", "Grade /10", "Feedback", "Trainer's comment"].map(q).join(",")];
     people().forEach(p => kcRows(p).forEach(({k, g}) => { const base = [p.name, k.title, g.pct != null ? g.pct + "%" : "", g.how, (g.last && g.last.summary) || "", (g.rv || {}).comment || ""];
       if(!g.items.length) lines.push(base.map(q).join(","));
@@ -1367,7 +1369,6 @@ window.FTBatchSheet = {
   hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
   rkSheet(open){ B.rkSheet = !!open; },
-  ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   // 🔁 Test again: the connection, then every link of the batch that isn't ✓ checked again now, and what it found
   async dstat(){
     if(!adminOn() || B.dtest) return;
@@ -1460,7 +1461,6 @@ window.FTBatchSheet = {
     }catch(err){ toast("Couldn’t save the links. Try again."); }
     B.leBusy = false; B.data = null; B.dataKey = ""; render();
   },
-  lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
     if(!adminOn()) return;
@@ -1471,21 +1471,9 @@ window.FTBatchSheet = {
       cur.updatedAt = new Date().toISOString();
       if(await sharedSet("daycheck:" + id, cur) === false) throw new Error("save");
       if(B.data && B.data.rec[id]) B.data.rec[id].daycheck = cur;
-      B.lk = id; toast(ok ? "✓ Marked as opening." : "Mark taken off.");
+      toast(ok ? "✓ Marked as opening." : "Mark taken off.");
     }catch(err){ toast("Couldn't save. Try again."); }
     render();
-  },
-  // 🔁 the end-of-shift check, now, for one trainee: the tracker and Monitoring Sheet (/api/drive/check), the folder (/api/drive/shots)
-  async lkCheck(id){
-    if(!adminOn() || B.lkBusy) return;
-    B.lkBusy = true; B.lk = id; render();
-    let bad = 0;
-    for(const [u, body] of [["/api/drive/verify", {id}], ["/api/drive/check", {id}], ["/api/drive/shots", {ids: [id]}]]){
-      try{ const r = await authFetch(u, body); if(!r.ok && r.status !== 400) bad++; }catch(err){ bad++; }
-    }
-    B.lkBusy = false;
-    toast(bad ? "Checked, with an error reading part of it. Try again in a minute." : "✓ Checked.");
-    B.data = null; B.dataKey = ""; render();
   },
   // ✅ a trainer ticks (or unticks) an activity for a trainee: daycheck:<id>, which only a trainer writes
   async tick(id, key, on){
@@ -1569,9 +1557,8 @@ window.FTBatchSheet = {
     B.fix = null;
     toast(moved === ids.length ? `✓ Moved ${moved} trainee${moved === 1 ? "" : "s"} to ${to}.` : `Moved ${moved} of ${ids.length}. Press ✏️ Fix the batch name again for the rest.`);
     if(typeof state === "object") state.adminData = null;
-    B.people = null; B.data = null; B.dataKey = ""; B.sel = null; B.batch = moved ? to : from; render();
+    B.people = null; B.data = null; B.dataKey = ""; B.batch = moved ? to : from; render();
   },
-  open(){ state.adminTab = TAB; goto("admin"); },
   // 🔗 a trainee's Drive links compliance, % of the six ✓ Correct (📊 the Weekly Ranking's Drive Links Compliance column)
   linksPct(id){ try{ if(!B.data || !B.data.rec || !B.data.rec[id]) return null; const p = people().find(x => x.id === id); if(!p) return null;
     const {L} = linkState(p); if(LINKS.every(([q]) => L[q].st === "none")) return null;
@@ -1586,14 +1573,12 @@ window.FTBatchSheet = {
     if(!B.data) return; const T = tables()[Number(td.getAttribute("data-t"))]; if(!T) return;
     const r = Number(td.getAttribute("data-r")), c = Number(td.getAttribute("data-c")), cell = (T.rows[r] || [])[c]; if(!cell) return;
     document.querySelectorAll(".bs-card .gs td.gs-sel").forEach(x => x.classList.remove("gs-sel")); td.classList.add("gs-sel");
-    B.sel = {ref: `${T.title.replace(/^\S+\s/, "")}!${letter(c)}${r + 2}`, f: cell.f || String(cell.v || "")};
-    const ref = document.getElementById("bsRef"), bar = document.getElementById("bsBar"); if(ref) ref.textContent = B.sel.ref; if(bar) bar.value = B.sel.f;
   },
   csv(only){
     if(!B.data || B.dataLoading){ toast("The sheet is still loading."); return; }
     const pick = typeof only === "string" && only ? tables().filter(T => T.id === only) : null;
     if(pick && !pick.length){ toast("That scorecard isn’t on the page."); return; }
-    const q = v => { const s = String(v == null ? "" : v); return `"${(/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const q = csvQ;
     const lines = [];
     (pick || tables()).forEach(T => { lines.push(q(T.title.replace(/^\S+\s/, ""))); lines.push(T.head.map(q).join(",")); T.rows.forEach(r => lines.push(r.map(c => q(c.csv != null ? c.csv : c.v)).join(","))); lines.push(""); });
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv"}));
@@ -1636,8 +1621,7 @@ function renderMine(){
       : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
-FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; B.sel = null; render(); };
-FTBatchSheet.openMine = function(){ goto(ME); };
+FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; render(); };
 
 // #/mysheet: a trainee's own page; anyone else is sent to the 📚 Dashboard
 const __routeRender = window.render;
@@ -1720,11 +1704,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-head th{max-width:220px;min-width:110px;word-break:normal;overflow-wrap:normal;hyphens:none;}
 #bs-lessons .gs-head th{min-width:170px;}
 .bs-lesson{text-align:center;white-space:nowrap;}
-#bsBar{flex:1 1 auto;border:0;padding:6px 10px;font:inherit;color:#1F1F1F;background:#fff;outline:none;min-width:0;}
 .bs-card .gs-txt{min-width:260px;max-width:520px;}
 .bs-none{color:#5F6368;font-style:italic;text-align:left !important;}
 .bs-how{font-size:13.5px;}
-.bs-lk-rows{display:flex;flex-direction:column;gap:6px;margin:8px 0;} .bs-lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font:14px Arial,sans-serif;} .bs-lk-n{min-width:240px;} .bs-lk-row b{min-width:96px;} .bs-lk-why{flex-basis:100%;color:#7A5A00;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
 .gs .gs-fold{display:none;}
 .gs .gs-group th.gs-shut{max-width:150px;overflow:hidden;text-overflow:ellipsis;}
@@ -1763,13 +1745,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
 .bs-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:8px;}
 .bs-day{border:1px solid #E1E3E1;border-radius:8px;padding:8px 10px;background:#fff;font:13.5px Arial,sans-serif;}
-.bs-day.is-done{border-color:#A8DAB5;background:#F3FBF5;}
 .bs-day-h{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;} .bs-day-h span{color:#5F6368;font-size:12.5px;} .bs-day-h em{margin-left:auto;font-style:normal;font-weight:700;color:#137333;}
-.bs-item{display:flex;align-items:flex-start;gap:7px;padding:3px 0;cursor:pointer;line-height:1.35;} .bs-item input{margin-top:2px;width:16px;height:16px;flex:none;}
-.bs-item.is-done span{color:#137333;} .bs-item small{font-size:11px;font-weight:700;color:#5F6368;background:#F1F3F4;border-radius:999px;padding:0 6px;margin-left:3px;}
 .bs-gr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:3px 0;border-bottom:1px dashed #EEF0F2;} .bs-gr small{grid-column:1 / -1;color:#5F6368;font-size:12px;}
-.bs-item small.bs-redo{color:#C5221F;background:#FCE8E6;}
-.bs-isc{font-size:12px;margin-left:4px;} .bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
+.bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
 .bs-rat-avg{font:14px Arial,sans-serif;margin:4px 0 6px;} .bs-rat-avg b{font-size:16px;} .bs-rat-avg span{color:#5F6368;}
 .bs-rat-how{margin:2px 0 6px;font-size:12.5px;color:#444746;line-height:1.4;}
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
@@ -1789,6 +1767,6 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-fix-row input[type=datetime-local]{width:auto;}
 .bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
 .bs-fix-err{color:#C5221F;margin:8px 0 0 !important;}
-@media print{ .bs-card .gs-menu,.bs-card .gs-fbar,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
+@media print{ .bs-card .gs-menu,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
 `; document.head.appendChild(s); })();
 })();
