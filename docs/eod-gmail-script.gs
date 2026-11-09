@@ -21,7 +21,7 @@
  */
 const PLATFORM = 'https://foundational-training.legalsupporthelp.workers.dev/api/eod/inbound';
 const ADDRESS = 'team-litigation@legalsupporthelp.com';
-const SEARCH = '{to:' + ADDRESS + ' cc:' + ADDRESS + '} subject:(EOD OR "Daily Report" OR "EOD Report") newer_than:3d -from:me';
+const SEARCH = '{to:' + ADDRESS + ' cc:' + ADDRESS + '} subject:(EOD OR "Daily Report" OR "EOD Report" OR "End of Day") newer_than:3d -from:me';
 const LABEL = 'EOD-sent';
 
 function sendEods() {
@@ -39,7 +39,7 @@ function sendEods() {
       const id = m.getId();
       if (seen.has(id)) return;
       const subject = m.getSubject() || '';
-      if (!/\b(EOD|Daily Report)\b/i.test(subject)) return;   // (a reply in the thread that isn't an EOD)
+      if (!/\b(EOD|Daily Report|End of Day)\b/i.test(subject)) return;   // (a reply in the thread that isn't an EOD)
       const res = UrlFetchApp.fetch(PLATFORM, {
         method: 'post', contentType: 'application/json', muteHttpExceptions: true,
         headers: { 'X-EOD-Key': key },
