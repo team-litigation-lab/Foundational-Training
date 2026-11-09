@@ -96,12 +96,15 @@ async function load(rows, key){
   if(state.view === "admin" && state.adminTab === "sessions") render();
 }
 
-/* the measures, for the batch */
-function measure(rows){
-  const now = new Date(), today = ymd(now);
-  const ms = rows.map(r => {
-    const d = (U.data || {})[r.id] || {rec: {}, ev: []}, tr = d.rec["trainee:"] || {}, ev = d.ev;
-    const reg = t(tr.registeredAt) || (ev.length ? ev[ev.length - 1].at : null);
+/* the measures, one trainee at a time: the same on this card and on the trainee's 🏅 Scorecard (js/ft-program.js 🛠 Practice Lab)
+   rec: their records (OWN), ev: eventsOf(rec), regAt: the day they registered (else their first activity) */
+// 🔥 practice volume is held to a steady 3 attempts a training day (not the batch's busiest trainee), so a trainee's score
+// is their own: the same on this card, their Scorecard and the Weekly Ranking, whoever else is in the batch
+const PER_DAY = 3;
+function measureOne(r, rec, ev, regAt){
+  const today = ymd(new Date()), tr = rec["trainee:"] || {};
+  {
+    const reg = t(regAt) || t(tr.registeredAt) || (ev.length ? ev[ev.length - 1].at : null);
     // the training days since they registered (weekdays, the 16 of the training at most)
     const days = []; if(reg){ const c = new Date(reg); c.setHours(12, 0, 0, 0); while(ymd(c) <= today && days.length < 16){ if(wk(c)) days.push(ymd(c)); c.setDate(c.getDate() + 1); } }
     const pr = ev.filter(x => x.kind === "practice"), byDay = {};
@@ -115,21 +118,45 @@ function measure(rows){
     const imp = deltas.length ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
     const kcTries = ev.filter(x => x.tool === "kc").length, decks = ev.filter(x => x.tool === "deck").length;
     const last = [ev[0] && ev[0].at, t(tr.lastActive)].filter(Boolean).sort((a, b) => b - a)[0] || null;
-    return {r, ev, pr, days, byDay, active, extra, consistency, used, items, again, imp, kcTries, decks, last, reg};
-  });
-  const top = Math.max(1, ...ms.map(m => m.pr.length));
-  ms.forEach(m => {
+    const m = {r, ev, pr, days, byDay, active, extra, consistency, used, items, again, imp, kcTries, decks, last, reg};
+    const top = Math.max(1, PER_DAY * days.length);
     m.util = Math.round(100 * (0.5 * m.used / TOOLS.length + 0.5 * m.consistency));
-    const vol = m.pr.length / top, pers = m.items ? Math.min(1, m.again / m.items) : 0, better = m.imp == null ? (m.again ? 0.5 : 0) : Math.max(0, Math.min(1, (m.imp + 20) / 40));
+    const vol = Math.min(1, m.pr.length / top), pers = m.items ? Math.min(1, m.again / m.items) : 0, better = m.imp == null ? (m.again ? 0.5 : 0) : Math.max(0, Math.min(1, (m.imp + 20) / 40));
     m.eager = m.ev.length ? Math.round(100 * (0.35 * m.consistency + 0.25 * vol + 0.2 * pers + 0.2 * better) + Math.min(5, m.extra * 2.5)) : 0;
     m.eager = Math.min(100, m.eager);
     m.why = [`showed up on ${m.active} of ${m.days.length} training day${m.days.length === 1 ? "" : "s"} (${Math.round(100 * m.consistency)}%)`,
-      `${m.pr.length} practice attempt${m.pr.length === 1 ? "" : "s"}${top > 1 ? ` (the batch's most: ${top})` : ""}`,
+      `${m.pr.length} practice attempt${m.pr.length === 1 ? "" : "s"} (${PER_DAY} a training day is full marks: ${top})`,
       `went back to practice again ${m.again} time${m.again === 1 ? "" : "s"}`,
       m.imp == null ? "no repeated scored practice yet to see improvement" : `scores ${m.imp >= 0 ? "up" : "down"} ${Math.abs(m.imp)} points from first try to latest`]
       .concat(m.extra ? [`practiced on ${m.extra} weekend day${m.extra === 1 ? "" : "s"} too`] : []);
-  });
-  return ms;
+    return m;
+  }
+}
+/* the measures, for the batch */
+function measure(rows){
+  return rows.map(r => { const d = (U.data || {})[r.id] || {rec: {}, ev: []}; return measureOne(r, d.rec, d.ev); });
+}
+// 🏅 the trainee's Scorecard (js/ft-program.js 🛠 Practice Lab): the Utilization, the Eagerness, and the scores of the AI
+// practice tools, roleplays and random tasks (the work log: each one's latest score, what the other grading systems don't
+// already count), from the records the Scorecard reads (ctx.rec) and the day they registered (ctx.since)
+function scoreItems(ctx){
+  const rec = ctx.rec || {}; if(!Object.keys(rec).some(k => rec[k])) return [];
+  // (ctx.since is the bare date they registered: read at midday, so it is that day wherever the trainer is)
+  const since = /^\d{4}-\d{2}-\d{2}$/.test(String(ctx.since || "")) ? ctx.since + "T12:00:00" : ctx.since || null;
+  const ev = eventsOf(rec), m = measureOne({id: ctx.id, name: ""}, rec, ev, since);
+  if(!m.reg) return [];
+  // (no practice at all yet: shown, not graded, as every grading system shows work not done yet, so it doesn't pull the overall to 0)
+  if(!m.pr.length) return [{name: "📈 Practice Lab Utilization", pct: null, note: "No practice yet"}, {name: "🔥 Eagerness to Learn", pct: null, note: "No practice yet"}];
+  const last = ev[0] ? ev[0].at.toISOString() : "";
+  const out = [
+    {name: "📈 Practice Lab Utilization", pct: m.util, note: `${m.used} of ${TOOLS.length} tools used · active ${m.active} of ${m.days.length} training day${m.days.length === 1 ? "" : "s"}`, at: last},
+    {name: "🔥 Eagerness to Learn", pct: m.eager, note: `${level(m.eager)[0]} · ${m.pr.length} practice attempt${m.pr.length === 1 ? "" : "s"}, ${m.again} again${m.imp == null ? "" : ` · scores ${m.imp >= 0 ? "+" : ""}${m.imp} from first try`}`, at: last}];
+  const lab = {};   // the work log's scored practice: each item's latest score (ev is newest first)
+  ev.filter(x => (x.tool === "lab" || x.tool === "roleplay" || x.tool === "task") && x.score != null).forEach(x => {
+    const k = x.item; if(!lab[k]) lab[k] = {name: `${x.tool === "roleplay" ? "🎭" : x.tool === "task" ? "🎲" : "🤖"} ${x.what}`, pct: Math.max(0, Math.min(100, Math.round(x.score))), n: 0, at: x.at.toISOString()};
+    lab[k].n++; });
+  Object.values(lab).forEach(x => out.push({name: x.name, pct: x.pct, note: `Latest of ${x.n} attempt${x.n === 1 ? "" : "s"}`, at: x.at}));
+  return out;
 }
 const level = v => v >= 75 ? ["🔥 Very eager", "ut-hi"] : v >= 50 ? ["👍 Engaged", "ut-mid"] : v >= 25 ? ["⚠ Needs a nudge", "ut-lo"] : ["🛑 Inactive", "ut-no"];
 const uLevel = v => v >= 70 ? "ut-hi" : v >= 40 ? "ut-mid" : v > 0 ? "ut-lo" : "ut-no";
@@ -171,7 +198,7 @@ function card(rows, batches, batch){
     ${(() => { const m = ms.find(x => x.r.id === U.sel); return m ? `<div class="ut-hist"><div class="ut-hist-h"><b>🕘 ${e(m.r.name)}: everything since they registered${m.reg ? " (" + e(m.reg.toLocaleDateString()) + ")" : ""}</b><button class="btn btn-ghost btn-sm" onclick="FTUtil.open('${e(m.r.id)}')">Close</button></div>${hist(m)}</div>` : ""; })()}
     <details class="ut-how"><summary>How it's measured</summary><ul>
       <li><b>📈 Utilization</b>: half the Practice Lab tools used (of ${TOOLS.length}: ${TOOLS.map(x => x.label).join(", ")}), half the training days since they registered with any activity.</li>
-      <li><b>🔥 Eagerness</b> (of 100): showing up every training day 35%, practice attempts against the batch's most 25%, going back to practice something again 20%, scores getting better from first try to latest 20%; a few points more for weekend practice. 75+ 🔥 Very eager · 50+ 👍 Engaged · 25+ ⚠ Needs a nudge · below 🛑 Inactive.</li>
+      <li><b>🔥 Eagerness</b> (of 100): showing up every training day 35%, practice attempts against a steady 3 a training day 25%, going back to practice something again 20%, scores getting better from first try to latest 20%; a few points more for weekend practice. 75+ 🔥 Very eager · 50+ 👍 Engaged · 25+ ⚠ Needs a nudge · below 🛑 Inactive.</li>
       <li><b>The day strip</b>: one square per training day (weekdays, the last 20), the number of things done that day; grey before they registered.</li>
       <li>Nothing is entered here: it is all read from the trainee's own records, back to the day they registered. A trainer's reviews are not counted as the trainee's activity.</li></ul></details></div>`;
 }
@@ -181,7 +208,7 @@ function hist(m){
   return `<div class="ut-why"><b>🔥 Eagerness ${m.eager}:</b> ${e(m.why.join("; "))}.</div><div class="ut-days">${Object.keys(by).sort().reverse().map(k => `<details${k === Object.keys(by).sort().reverse()[0] ? " open" : ""}><summary><b>${e(new Date(k + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}))}</b> · ${by[k].length} thing${by[k].length === 1 ? "" : "s"}</summary>
     <ul>${by[k].map(x => `<li><span>${e(x.at.toLocaleTimeString(undefined, {hour: "numeric", minute: "2-digit"}))}</span> ${x.kind === "learn" ? "📚" : "🛠"} ${e(x.what)}${x.score != null ? ` <b>${Math.round(x.score)}%</b>` : ""}</li>`).join("")}</ul></details>`).join("")}</div>`;
 }
-window.FTUtil = {card, eventsOf, open(id){ U.sel = U.sel === id ? "" : id; render(); }, refresh(){ U.key = ""; U.data = null; render(); }};
+window.FTUtil = {card, eventsOf, scoreItems, open(id){ U.sel = U.sel === id ? "" : id; render(); }, refresh(){ U.key = ""; U.data = null; render(); }};
 
 const st = document.createElement("style");
 st.textContent = `
