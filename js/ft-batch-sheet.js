@@ -375,7 +375,7 @@ function kdOneHtml(p, single){
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
-        return `<details class="bs-kd"${single && (g.pct != null || g.subm) ? " open" : ""}><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
             ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}</summary>
           ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
           ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
@@ -386,7 +386,7 @@ function kdOneHtml(p, single){
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
         return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
-          return `<details class="bs-kd"${single && (g || x.answered) ? " open" : ""}><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
+          return `<details class="bs-kd" name="bs-kd"><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
               ${g ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
                 <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
@@ -972,9 +972,17 @@ function activitiesHtml(p){
   const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
   if(!items.length) return "";
   return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd"${g ? " open" : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : "not submitted"}</span>
+    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}</summary>
-      ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}</details>`; }).join("");
+      ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${actItemsHtml(it, g)}</details>`; }).join("");
+}
+// (each graded answer of an activity, in the calls' order: ✓ right, ✗ marked down with the grading's note, ⏳ for the trainer)
+function actItemsHtml(it, g){
+  const its = Object.entries((g && g.items) || {}).filter(([, x]) => x);
+  if(!its.length) return g && g.score != null ? "" : `<p class="bs-kd-none">Nothing graded yet.</p>`;
+  const nm = k => window.FTListen && FTListen.answerName ? FTListen.answerName(it.assess, k) : k, callOf = k => Number((/^c(\d+)_/.exec(k) || [])[1]) || 0;
+  its.sort((a, b) => callOf(a[0]) - callOf(b[0]));
+  return `<ul class="bs-kd-items">${its.map(([k, x]) => `<li class="${x.pending ? "is-wait" : x.ok ? "is-ok" : "is-no"}"><b>${x.pending ? "⏳" : x.ok ? "✓" : "✗"}</b> ${e(nm(k))}${x.pts != null ? ` <small>(${e(String(x.pts))} pt${Number(x.pts) === 1 ? "" : "s"})</small>` : ""}${x.note ? ` — ${e(x.note)}` : ""}</li>`).join("")}</ul>`;
 }
 // 📤 a date's extra lines on a trainee's page, under its activities in 📤 Daily outputs: 📅 that training day's own activities
 // and their score (as 📅 Day by Day works it out), and 💬 the trainer's feedback sent that day
@@ -1566,6 +1574,11 @@ ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `U
 // 👥 a trainee revoked, rejected, offboarded, restored or approved: the sheet reads its trainees again
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
+// ✍️ Knowledge Checks, Assessments & Activities: one open at a time — opening one closes the others (the details share a
+// name, which the browser keeps exclusive; this does the same where it doesn't)
+if(!window.__bsKdOne){ window.__bsKdOne = true;
+  document.addEventListener("toggle", ev => { const d = ev.target; if(!d || !d.matches || !d.matches("details.bs-kd") || !d.open) return;
+    document.querySelectorAll("details.bs-kd[open]").forEach(o => { if(o !== d) o.open = false; }); }, true); }
 window.FTBatchSheet = {
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
@@ -2213,6 +2226,9 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 /* (✍️ Knowledge Checks, 📄 Assessments and 📝 Activities: a coloured band each, so the three groups stand apart) */
 .bs-kd-sub.bs-kd-sub-as,.bs-kd-sub.bs-kd-sub-act{margin:18px 0 8px;padding:9px 14px;border-radius:8px;color:#fff;font:800 16px Arial,sans-serif;}
 .bs-kd-sub.bs-kd-sub-as{background:#0F766E;border-left:6px solid #5EEAD4;}
+.bs-kd-items{margin:6px 0 10px;padding-left:4px;list-style:none;font:600 13.5px/1.45 Arial,sans-serif;color:#1E2340;}
+.bs-kd-items li{padding:2px 0;} .bs-kd-items li.is-ok b{color:#15803D;} .bs-kd-items li.is-no b{color:#B91C1C;} .bs-kd-items li.is-wait b{color:#9A5B00;}
+.bs-kd-none{margin:6px 0;color:#5A6175;font:600 13px Arial,sans-serif;}
 .bs-kd-sub.bs-kd-sub-act{background:#B45309;border-left:6px solid #FCD34D;}
 .bs-kd{margin:8px 0;border:1px solid #E1E3E1;border-radius:10px;background:#fff;padding:0 14px;} .bs-kd > summary{cursor:pointer;padding:10px 0;font:700 15.5px Arial,sans-serif;color:#1E2340;} .bs-kd > summary small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-kd-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font:800 14px Arial,sans-serif;background:#EEF0F6;}
@@ -2274,7 +2290,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:170px;} .bs-pt-t col.bs-pt-c2{width:78px;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (the Score column only as wide as a score) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:210px;} .bs-pt-t col.bs-pt-c2{width:220px;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (wide enough for a value on one line: Approved, a date and time, a score) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
