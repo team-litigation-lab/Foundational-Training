@@ -2258,6 +2258,8 @@ async function redoCompliance(env, id, ro = {}) {
   return want.length;
 }
 
+// ✏️ practice-only activities: graded for feedback, never on a scorecard (js/ft-drive.js window.ftPracticeDocs)
+const PRACTICE_DOCS = ["claims-email"];
 /* ✅ A trainee's daily compliance: at the end of every shift (the cron, runTrackerChecks, and an admin's ✅ Check now), what the
    day asked of them and what was found, kept in trackerreview:<id>.compliance[<date>] = {pct, parts: {tracker, monitor, tests,
    outputs, eod}, submissions, checkedAt}. Each part is a % (null where the day had nothing to check, e.g. no Drive links yet):
@@ -2300,6 +2302,17 @@ async function dailyCompliance(env, id, D, o = {}) {
   Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { if (x && onD(x.submittedAt)) subs.push("Process Questions: " + sid); });
   Object.entries((tr || {}).r || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt)) subs.push("Transcription · Recording " + n); });
   Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
+  // 🏅 the scores of what was graded that day — each Knowledge Check, assessment, Transcription, Monitoring Sheet items'
+  // review and Practice Session handed in that day — for the Day's outputs (a practice-only activity, the Insurance Email
+  // Simulator, isn't counted)
+  const graded = [], pctN = (v) => typeof v === "number" && isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : null;
+  // (a Knowledge Check's score: the trainer's final where given — kcreview:<id> — else the graded best)
+  const kcr = Object.keys((proc || {}).kc || {}).length ? ((await get(`kcreview:${id}`)) || {}).lessons || {} : {};
+  Object.entries((proc || {}).kc || {}).forEach(([l, x]) => { const t = kcr[l] && pctN(kcr[l].score); if (x && x.last && onD(x.last.at) && (t != null || pctN(x.best) != null)) graded.push({ what: "Knowledge Check: Lesson " + l, pct: t != null ? t : pctN(x.best) }); });
+  Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at) && x.score != null && pctN(x.pct) != null && !PRACTICE_DOCS.includes(doc)) graded.push({ what: "Assessment: " + (x.title || doc), pct: pctN(x.pct) }); });
+  Object.entries(cur.transcribe || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt || x.at) && pctN(x.pct) != null) graded.push({ what: "Transcription · Recording " + n, pct: pctN(x.pct) }); });
+  Object.entries(cur.items || {}).forEach(([k, x]) => { if (x && x.result && onD(x.at) && pctN(x.result.score) != null) graded.push({ what: "Monitoring Sheet items #" + k.split("-").join(", #"), pct: pctN(x.result.score) }); });
+  Object.entries((ses || {}).runs || {}).forEach(([k, r]) => { if (r && onD(r.submittedAt) && r.auto && pctN(r.auto.pct) != null) graded.push({ what: "Practice Session: " + k.split("|")[0], pct: pctN(r.auto.pct) }); });
   const tk = (cur.days || {})[D];
   // 🖥 what they did on the platform itself that day (progress:<id>, the trainee's own saved progress; sessions:<id>): a lesson
   // deck finished, a Knowledge Check attempt, a Practice Session submitted, practice in the tools, a test taken, an answer sheet
@@ -2406,7 +2419,9 @@ async function dailyCompliance(env, id, D, o = {}) {
     instructions: instr ? instr.pct : null,
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
-    outputs: links || saved || subs.length ? 100 : 0,
+    // (handing in counts once, and each score of what was graded that day counts beside it: the average)
+    outputs: graded.length ? Math.round(graded.map((g) => g.pct).concat(links || saved || subs.length ? [100] : []).reduce((a, v) => a + v, 0) / (graded.length + (links || saved || subs.length ? 1 : 0)))
+      : links || saved || subs.length ? 100 : 0,
     // (📧 the EOD checked against its template, TR.checkEod: its %, not 100 for anything there)
     // (✍ a trainer's own EOD score for the day — one the EOD monitoring missed, or before it was set up — stands:
     // trackerreview:<id>.eodTrainer[<date>] = {score, note, at}, a record only the Worker and trainers write)
@@ -2430,7 +2445,7 @@ async function dailyCompliance(env, id, D, o = {}) {
       if (dd) { const its = (dd.items || []).filter((x) => !/^(Typing Test|Spelling Test|Free Communication)/.test(x.t || ""));
         const handIn = its.some((x) => x.at === "drive" || x.assess || (x.at === "gc" && !/Metrics/i.test(x.t || "")) || (x.at === "offline" && /folder|upload|submit/i.test(x.t || "")));
         const onPlatform = its.some((x) => x.at === "tool" || x.at === "session");
-        if (!handIn) parts.outputs = null;
+        if (!handIn && !graded.length) parts.outputs = null;
         if (!onPlatform) parts.platform = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
@@ -2445,7 +2460,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
-  cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
+  cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), graded: graded.slice(0, 20), platform: done.slice(0, 12), opened: seen.length,
     unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
     final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
