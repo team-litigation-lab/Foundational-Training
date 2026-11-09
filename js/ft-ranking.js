@@ -101,7 +101,9 @@ async function loadPeople(){
     // (opened on the batch's week now)
     if(!R.weekSet && R.batch){ R.week = weekNow(); R.weekSet = true; }
   }catch(err){ R.people = []; }
-  R.loading = false; rerender();
+  // (redrawn after the render that asked for the batches: with the trainees already in hand — state.adminData — this runs within
+  // that render, and a redraw asked for from inside it would be drawn over by its "Loading the batches…")
+  R.loading = false; setTimeout(rerender, 0);
 }
 const batches = () => [...new Set((R.people || []).map(p => bLabel(p.batch)).filter(Boolean))].sort();
 async function loadWeek(){
