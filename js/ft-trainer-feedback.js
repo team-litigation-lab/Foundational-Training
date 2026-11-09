@@ -83,7 +83,7 @@ function markSeenShown(keys, items){ const set = shownNow(); keys.forEach(k => {
 function fbCard(it, k){
   return `<div class="tfb-item${isNew(k, it) ? " tfb-new" : ""}"><div class="tfb-item-h"><b>${e(it.title)}</b>${isNew(k, it) ? `<span class="tfb-badge">NEW</span>` : ""}
       ${it.score != null && it.score !== "" ? `<span class="tfb-score">${e(it.score)}%</span>` : ""}<span class="tfb-when">${e(when(it.at))}</span></div>
-    ${it.verdict ? `<p class="tfb-verdict">${e(it.verdict)}</p>` : ""}${paras(it.comment)}</div>`;
+    ${it.verdict ? `<p class="tfb-verdict">${e(it.verdict)}</p>` : ""}${it.facilitator ? `<p class="tfb-fac">🧑‍🏫 Facilitated by <b>${e(it.facilitator)}</b></p>` : ""}${paras(it.comment)}</div>`;
 }
 // "🧑‍🏫 Feedback from your trainer" at the top of the activity's page
 function pageCard(act){
@@ -125,7 +125,7 @@ async function loadAll(){
     Object.entries((lab && lab.acts) || {}).forEach(([aid, r]) => { if(!r || !(r.status || has(r.comment) || r.score != null)) return;
       const a = acts.find(x => x.id === aid) || {title: aid};
       out.push({k: "act:" + aid, icon: "🧑‍🏫", what: a.kind || "With your trainer", title: a.title, at: r.at || r.date, score: r.score, verdict: r.status && r.status !== "Not yet" ? r.status : "",
-        comment: r.comment, rubric: r.rubric && window.FT_RUBRICS ? {rb: FT_RUBRICS.list[r.rubric.key], r: r.rubric} : null}); });
+        comment: r.comment, facilitator: r.facilitator || "", rubric: r.rubric && window.FT_RUBRICS ? {rb: FT_RUBRICS.list[r.rubric.key], r: r.rubric} : null}); });
     Object.entries((lab && lab.sessions) || {}).forEach(([key, r]) => { if(!r || !(has(r.comment) || r.score != null)) return;
       out.push({k: "ses:" + key, icon: "🟢", what: "Practice Session", title: window.FTSessions && FTSessions.sessionTitle ? FTSessions.sessionTitle(key.split("|")[0]) : key.split("|")[0], at: r.at, score: r.score, comment: r.comment}); });
     Object.entries((kc && kc.lessons) || {}).forEach(([l, r]) => { if(!r || !(has(r.comment) || r.score != null)) return;
@@ -383,6 +383,7 @@ window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || 
 @keyframes tfbPopIn{from{transform:translateY(12px);opacity:0;}to{transform:none;opacity:1;}}
 .tfb-item-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .tfb-item p{margin:4px 0 0;font-size:14px;line-height:1.5;}
+.tfb-fac{margin:4px 0;font-size:13.5px;color:#4A5070;}
 .tfb-verdict{font-weight:800;color:#1F2A44;}
 .tfb-badge{background:#DB8437;color:#fff;border-radius:999px;font-size:10.5px;font-weight:800;padding:1px 7px;}
 .tfb-score{font-weight:800;color:#1E7F4F;background:#E7F5EE;border-radius:999px;padding:1px 8px;font-size:12.5px;}
