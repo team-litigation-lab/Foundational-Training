@@ -906,7 +906,10 @@ function perTraineeHtml(T){
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
     // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    // (Compliance and Platform Utilization Monitoring and 📚 Lessons at the very bottom, after the trainee's own record)
+    const last = ["compliance", "lessons"];
+    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id)).map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("")
+      + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
@@ -1884,7 +1887,11 @@ window.ftBanner = function(title, batch, right){
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
-body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px;}
+body.bs-wide main{max-width:none !important;padding-left:6px;padding-right:6px;}
+/* (wider still: the panels around the sheet keep thin sides, so the tables have the window's width) */
+body.bs-wide .ft-admin-screen{padding-left:10px;padding-right:10px;}
+body.bs-wide .bs-card{padding-left:10px !important;padding-right:10px !important;}
+body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
 .bs-card .gs-file b{font-size:20px;}
 .bs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 14px 10px;background:#F9FBFD;font:14px Arial,sans-serif;color:#1F1F1F;}
 .bs-sum b{font-size:16px;} .bs-wait{color:#B06000;} .bs-at{margin-left:auto;color:#5F6368;font-size:12.5px;}
@@ -1955,7 +1962,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-pt > summary{cursor:pointer;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;} .bs-pt[open] > summary{border-bottom:1px solid #E6E9F1;}
 .bs-pt > summary i{font-size:12px;color:#8A5A00;} .bs-pt-k{font-size:16px;color:#3C4043;} .bs-pt-k b{color:#1E2340;}
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
-.bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;}
+.bs-pt-t th,.bs-pt-t td{border:1px solid #C5CBDA;padding:8px 10px;text-align:left;vertical-align:top;}   /* (grid lines a trainer can follow) */ .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
 .bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t thead th:nth-child(1){width:24%;} .bs-pt-t thead th:nth-child(2){width:13%;}
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
@@ -2011,6 +2018,8 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-tt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 2px;} .bs-tt-row input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;}
 .bs-share{padding:12px 14px;} .bs-li-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;} .bs-li-h{font-size:15px;} .bs-li-share{margin:0 0 8px;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;white-space:nowrap;}
 .bs-parts{width:100%;border-collapse:collapse;font-size:13px;line-height:1.4;} .bs-parts th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;background:#F6F7FA;padding:5px 8px;border-bottom:1px solid #E3E6EE;} .bs-parts td{padding:5px 8px;border-top:1px solid #EEF0F4;vertical-align:top;} .bs-parts-n{width:38%;font-weight:600;} .bs-parts-v{width:96px;white-space:nowrap;} .bs-parts-t{color:#4b5563;}
+/* (a day's activities in a grid: every cell lined, so each activity, its score and its details read apart) */
+@media (min-width:761px){ .bs-parts{border:1px solid #C5CBDA;} .bs-parts th,.bs-parts td{border:1px solid #D3D8E4;} .bs-parts th{border-bottom-color:#C5CBDA;} }
 @media (max-width:760px){.bs-parts thead{display:none;} .bs-parts tr{display:block;border-top:1px solid #EEF0F4;padding:4px 0;} .bs-parts td{display:block;width:auto!important;border:0;padding:2px 8px;}}
 .bs-look{margin-left:auto;font-weight:700;color:#1E2340;} .bs-look select{font:600 13px Arial,sans-serif;padding:5px 10px;border:1px solid #C9CEDA;border-radius:999px;background:#fff;color:#1E2340;max-width:260px;}
 .bs-mk{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;border-radius:6px;font:800 14px Arial,sans-serif;border:0;} .bs-mk-ok{color:#166534;background:#DCFCE7;} .bs-mk-wait{color:#92400E;background:#FEF3C7;} button.bs-mk-x,.bs-mk-x{color:#991B1B;background:#FEE2E2;cursor:pointer;} button.bs-mk-x:hover{background:#FCA5A5;}
