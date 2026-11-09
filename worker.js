@@ -1517,9 +1517,18 @@ const GENERIC = { typing: true, spelling: true, folder: true };
 const nameWords = (t) => slugPart(t).split("-").filter(Boolean);
 // a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
 const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
-const nameHits = (person, T) => pWords(person).filter((w) => T.has(w)).length;
+// (a text's words, and its letters run together — "Sheet__CynthiaAquino", "cynthia.aquino@gmail.com": a name written without
+// spaces is still that name)
+const textWords = (text) => { const T = new Set(nameWords(String(text).replace(/_/g, " "))); T.c = slugPart(text).replace(/-/g, ""); return T; };
+const nameHits = (person, T) => {
+  const P = pWords(person), h = P.filter((w) => T.has(w)).length;
+  if (h >= Math.min(2, P.length) || !T.c || P.length < 2) return h;
+  // the whole name (or its first and last word) run together, either way round
+  const joins = [P.join(""), P.slice().reverse().join(""), P[0] + P[P.length - 1], P[P.length - 1] + P[0]];
+  return joins.some((j) => j.length >= 6 && T.c.includes(j)) ? P.length : h;
+};
 // a person's name is in a text when two of its words are there (or the one it has)
-const nameIn = (person, text) => { const P = pWords(person); return !!P.length && nameHits(person, new Set(nameWords(String(text).replace(/_/g, " ")))) >= Math.min(2, P.length); };
+const nameIn = (person, text) => { const P = pWords(person); return !!P.length && nameHits(person, textWords(text)) >= Math.min(2, P.length); };
 const TEMPLATE_RE = /\bVA\s*Name\b|your\s+full\s+name|\bBatch\s*ID\b|\[\s*batch\s*\]/i;
 async function verifyLinks(env, id) {
   const kv = kvOf(env), drive = JSON.parse((await kv.get(`drive:${id}`)) || "null") || {};
@@ -1549,7 +1558,7 @@ async function verifyLinks(env, id) {
     return roster;
   };
   const label = (k) => LINKS_KIND[k].label;
-  async function ownCheck(k, K, fid, name, parents, tokens) {
+  async function ownCheck(k, K, fid, name, parents, tokens, owners) {
     const base = { name: name.slice(0, 200) };
     // the same file as another of their six
     if (seen.has(fid)) return Object.assign(base, { ok: false, mine: false, error: `This is the same link as your ${label(seen.get(fid))}. Link your ${K.label} itself.` });
@@ -1564,16 +1573,20 @@ async function verifyLinks(env, id) {
     }
     const rule = `“${ruleFor(k, myBatch, me.name)}”`;
     // ("B073126_ Ana Cruz", "Sheet__Ana Cruz": an underscore is a space here)
-    const plain = text.replace(/_/g, " "), T = new Set(nameWords(plain)), unread = !!(GENERIC[k] && text === name);
+    const plain = text.replace(/_/g, " "), T = textWords(plain), unread = !!(GENERIC[k] && text === name);
     if (TEMPLATE_RE.test(plain)) return Object.assign(base, { ok: false, mine: false, error: `This is the blank template ("${name.slice(0, 120)}"), not your own copy. Link your own: ${rule}.` });
     // (their batch, or the one a trainer moved them from: their files were named before the move)
     const b = (plain.match(/\bB\d{6}\b/i) || [])[0], mine = [myBatch, String(me.batchFrom || "").toUpperCase()].filter((x) => /^B\d{6}$/.test(x));
     if (b && mine.length && !mine.includes(b.toUpperCase())) return Object.assign(base, { ok: false, mine: false, error: `This is batch ${b.toUpperCase()}'s ${K.label}, not yours: your batch is ${myBatch}. Link your own: ${rule}.` });
     // whose name it carries: theirs, unless a batch-mate's name fits it better (more of their words, or all of them)
-    const myW = pWords(me.name).length, myHits = nameHits(me.name, T), mineName = myW > 0 && myHits >= Math.min(2, myW);
+    const myW = pWords(me.name).length, myHits = nameHits(me.name, T);
+    // (a file named without their name — "Monitoring Sheet__07.08.2026 (1)" — is still theirs when it is in their own Google
+    // account: its owner's name or address is theirs)
+    const ownedByMe = (owners || []).some((o) => nameIn(me.name, `${o.displayName || ""} ${String(o.emailAddress || "").split("@")[0]}`));
+    const mineName = myW > 0 && (myHits >= Math.min(2, myW) || ownedByMe);
     const better = (myHits || !unread) ? (await others()).map((o) => ({ o, h: nameHits(o.name, T), w: pWords(o.name).length }))
       .filter((x) => x.w && x.h >= Math.min(2, x.w) && (x.h > myHits || (x.h === x.w && myHits < myW))).sort((x, y) => y.h - x.h)[0] : null;
-    if (better) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
+    if (better && !ownedByMe) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
     // (a plain-named folder whose parent can't be read can't be told apart by its name: it passes on the other checks)
     if (!mineName && me.name && !unread) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
     // (the rule's Batch ID: their own batch in the name, where the convention has one)
@@ -1608,7 +1621,7 @@ async function verifyLinks(env, id) {
           // (Google's "too many requests" / a hiccup — a batch's links are checked all at once — is tried again, then said as
           // such: only a real "not found / no permission" is "can't open it, share it", never a busy Drive)
           for (let n = 0; n < 3; n++) {
-            res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
+            res = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=id,name,mimeType,parents,owners(displayName,emailAddress)&supportsAllDrives=true`, { headers: { Authorization: "Bearer " + token } });
             j = await res.json().catch(() => ({}));
             busy = driveBusy(res, j);
             if (!busy || n === 2) break;
@@ -1625,7 +1638,7 @@ async function verifyLinks(env, id) {
         else if (k === "monitor" && !/google-apps\.(document|spreadsheet)$/.test(j.mimeType || "") && j.mimeType !== WORD_MIME) r = { ok: false, error: VERIFY_WHY.doc };
         // (it opens: is it the right one? its name says so)
         else if (j.name && !K.re.test(String(j.name))) r = { ok: false, error: `It opens, but it isn't your ${K.label} (its name is "${String(j.name).slice(0, 120)}"). Link the right one.`, name: String(j.name).slice(0, 200) };
-        else r = await ownCheck(k, K, fid, String(j.name || ""), j.parents, tokens);
+        else r = await ownCheck(k, K, fid, String(j.name || ""), j.parents, tokens, j.owners);
       } catch (e) { r = { ok: false, error: "Google Drive didn't answer. Check again in a minute." , retry: true }; }
     }
     out[k] = Object.assign(r, { url: url.slice(0, 500), at, v: VERIFY_V }, fid ? { fid } : {});
@@ -2017,7 +2030,7 @@ async function autoLinkBatch(env, batch) {
   // the trainees' own folders ("LSH Trainee folder – B103026 Ana Cruz"), and what is inside them (two levels)
   // whose file is it: the trainee of the batch with the most name words in it (a tie: nobody's)
   const owner = (text) => {
-    const T = new Set(nameWords(String(text).replace(/_/g, " ")));
+    const T = textWords(text);
     let best = null, hits = 0, tie = false;
     for (const r of roster) { if (!nameIn(r.name, text)) continue; const h = nameHits(r.name, T); if (h > hits) { best = r; hits = h; tie = false; } else if (h === hits) tie = true; }
     return tie ? null : best;
@@ -2043,17 +2056,17 @@ async function autoLinkBatch(env, batch) {
       // the trainee folder's own subfolders: Typing Tests, Spelling Tests, Assessments/Activities (and a Monitoring Sheet kept there)
       for (const c of inside.get(f.id) || []) {
         if (c.mimeType === FOLDER_MIME) { for (const k of ["typing", "spelling", "folder"]) if (LINKS_KIND[k].re.test(c.name) && !(k === "folder" && /typing|spelling/i.test(c.name))) take(r, k, c); }
-        else if (LINKS_KIND.monitor.re.test(c.name) && /google-apps\.(document|spreadsheet)$/.test(c.mimeType)) take(r, "monitor", c);
+        else if (LINKS_KIND.monitor.re.test(c.name) && /google-apps\.(document|spreadsheet)$/.test(c.mimeType) || c.mimeType === WORD_MIME) take(r, "monitor", c);
       }
       if (/assessment|activit/i.test(f.name) && !/trainee folder/i.test(f.name)) take(r, "folder", f);
       continue;
     }
     if (LINKS_KIND.tracker.re.test(f.name) && f.mimeType === "application/vnd.google-apps.spreadsheet") take(r, "tracker", f);
     else if (LINKS_KIND.tam.re.test(f.name)) take(r, "tam", f);
-    else if (LINKS_KIND.monitor.re.test(f.name) && /google-apps\.(document|spreadsheet)$/.test(f.mimeType)) take(r, "monitor", f);
+    else if (LINKS_KIND.monitor.re.test(f.name) && /google-apps\.(document|spreadsheet)$/.test(f.mimeType) || f.mimeType === WORD_MIME) take(r, "monitor", f);
   }
   for (const f of monitors) {
-    if (TEMPLATE_RE.test(f.name) || !/google-apps\.(document|spreadsheet)$/.test(f.mimeType)) continue;
+    if (TEMPLATE_RE.test(f.name) || !(/google-apps\.(document|spreadsheet)$/.test(f.mimeType) || f.mimeType === WORD_MIME)) continue;
     const b = (f.name.match(/\bB\d{6}\b/i) || [])[0]; if (b && b.toUpperCase() !== B) continue;
     take(owner(f.name), "monitor", f);
   }
