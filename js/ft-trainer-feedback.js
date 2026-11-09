@@ -124,7 +124,7 @@ async function loadAll(){
     const acts = (window.FTSessions && FTSessions.trainerActs) ? FTSessions.trainerActs() : [];
     Object.entries((lab && lab.acts) || {}).forEach(([aid, r]) => { if(!r || !(r.status || has(r.comment) || r.score != null)) return;
       const a = acts.find(x => x.id === aid) || {title: aid};
-      out.push({k: "act:" + aid, icon: "🧑‍🏫", what: a.kind || "With your trainer", title: a.title, at: r.at || r.date, score: r.score, verdict: r.status && r.status !== "Not yet" ? r.status : "",
+      out.push({k: "act:" + aid, icon: "🧑‍🏫", what: a.kind || "With your trainer", title: a.title, at: r.at || r.date, score: r.score, verdict: (window.ftResult ? ftResult(r) : r.status) && (window.ftResult ? ftResult(r) : r.status) !== "Not yet" ? (window.ftResult ? ftResult(r) : r.status) : "",
         comment: r.comment, facilitator: r.facilitator || "", rubric: r.rubric && window.FT_RUBRICS ? {rb: FT_RUBRICS.list[r.rubric.key], r: r.rubric} : null}); });
     Object.entries((lab && lab.sessions) || {}).forEach(([key, r]) => { if(!r || !(has(r.comment) || r.score != null)) return;
       out.push({k: "ses:" + key, icon: "🟢", what: "Practice Session", title: window.FTSessions && FTSessions.sessionTitle ? FTSessions.sessionTitle(key.split("|")[0]) : key.split("|")[0], at: r.at, score: r.score, comment: r.comment}); });

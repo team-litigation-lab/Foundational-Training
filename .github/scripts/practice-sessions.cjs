@@ -197,7 +197,7 @@ const failures = []; const fail = (m) => failures.push(m);
         await FTSessionsAdmin.save(id, key, form.querySelector('button'));
         state.adminTab = 'trainerinputs'; render(); await new Promise(r => setTimeout(r, 300));
         FTInputs.cell(id, 'intake-packet-demo'); await new Promise(r => setTimeout(r, 200));
-        const c = document.querySelector('.fss-cellform'); c.querySelector('[data-status]').value = 'Passed'; c.querySelector('[data-score]').value = '88';
+        const c = document.querySelector('.fss-cellform'); c.querySelector('[data-status]').value = 'By the score'; c.querySelector('[data-score]').value = '88';
         await FTInputs.save(c.querySelector('button'));
     }, [id, rec4.key]);
     await page.waitForTimeout(500);
