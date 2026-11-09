@@ -18,7 +18,8 @@ Each slide's heading (for the slide list and Presenter view) is the page's large
 the page's words. Its spoken script (data-say, read by ▶ Listen and Audio mode) is the page's text in reading
 order, a sentence per line, with the logo and repeated text left out. Only a deck's "keep" pages go in the lesson. A deck sent in parts takes each part's PDF in
 order: its pages are numbered straight through (Part 2's first page follows Part 1's last).
-Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
+Output: the images and build/lessons/lessonNN.js. Copy the lesson into index.html by hand afterwards
+(build/build.py, which used to build it in, is retired).
 """
 import html, io, json, os, re, sys
 import pymupdf

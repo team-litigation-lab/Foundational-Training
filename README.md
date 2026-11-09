@@ -155,7 +155,7 @@ Otherwise it stores nothing: it reads `trainee:<id>`, the trainee's saved progre
   - **Turning it on** needs the same secret on both sides: `wrangler secret put PORTAL_SSO_SECRET` here and on the Portal. Until it is set here, `/api/auth/status` reports `portalOnly: false` and the old name + batch form stays, so nothing locks anyone out before the Portal is ready.
   - **The ticket** (the Portal makes one when a trainee opens a program; good for 10 minutes at most, so a copied link is no use later): `payload = base64url(JSON.stringify({first, last, b: <batch>, exp: Date.now() + 5*60*1000}))`, `ticket = payload + "." + base64url(HMAC-SHA256(key = "portal-sso:" + PORTAL_SSO_SECRET, message = payload))`. `first`, `last` and `b` are the trainee's name and batch as registered on the Portal, which must be the same as their records here (the trainee id is made from them). The Portal must sign the ticket on its server, never in the browser, or the secret is public.
   - **Needs the Portal's side** (EA-PA / `cm-training-activity` repo, not this one): its program cards for trainees open this site with a fresh ticket. The *Go to the LSH Training Portal* button here opens `PORTAL_HOME` in `js/portal-gate.js`; change it if the trainees' portal page isn't the site's home page.
-  - The Worker side is `portalOnly`, `readPortalTicket` and `/api/auth/portal` in `worker.js`; `build/build.py` patches the engine's sign-in screen, request and boot to call the gate.
+  - The Worker side is `portalOnly`, `readPortalTicket` and `/api/auth/portal` in `worker.js`; the engine's sign-in screen, request and boot in `index.html` call the gate (first patched in by the retired `build/build.py`).
 
 **📚 Knowledge Base page (`kb.html`).** A separate page, `/kb.html`, for the LSH Knowledge Base (the `lsh-knowledge-base` repo: its own Worker with D1 and R2 storage; nothing from it is copied here). It shows the deployed Knowledge Base in a frame, with a link to open it in a new tab. `KB_URL` at the top of the page's script is the Worker's address (`https://lsh-knowledge-base.legalsupporthelp.workers.dev/`); empty, the page says the Knowledge Base isn't connected. The 🛠 Practice Lab's 📚 Knowledge Base section and Know Your Tools' 📚 LSH Knowledge Base (one of its eight tools) open the Knowledge Base itself, signed in: `js/lsh-tool-links.js` adds the trainee's Portal ticket (`?ticket=`, which the Knowledge Base checks with the Portal's `/api/verify-ticket`), and `?admin=1` for an admin (its Admin Portal tab). Behind the page is the law-office photo `img/kb-bg.webp`, fixed and covering the window at 35% opacity (`body::before` in the page's styles); swap the file to change the picture.
 
@@ -182,7 +182,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 **Lien Negotiator Training** (id 9, `build/lessons/lesson09.js`) is back on the standard training, as the lesson for **Days 17–18**. It had been taken off to become a separate training, which left those two days with no lesson — so nothing on the platform could record them as done, and a trainee could never reach the end of the programme. Its slides are everything the Training Guide asks of the trainee on those two days, in the order they run: Day 17's carryover, Saving Medical Bills & Records and the PM discussion, the Lien Negotiator **Canva deck** at that discussion, **Word Game 1** (`ft/day17/word-game-1.html`), then Day 18's exercise and materials, live demo, shadowing and the instructions for requesting a new role. Like every lesson deck it carries **no process questions** — the Day 18 list was taken off its slide; they are answered in ✍️ Process Questions after the day's activities. They come from the trainee-facing day files (`build/days/day17.js`, `day18.js`), so no facilitator content is in them — only the trainer-slot placeholders, which a trainer in trainer view sees filled with the Day 17–18 facilitator notes. Its **Process Questions** (the `lien-negotiator` set, 12 questions, `js/ft-process.js`) were already written and come back with it. Like every lesson day it runs Lesson → Activities → Process Questions; when those pass, the programme is complete and 📚 Dashboard shows 🎓.
 
-Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
+Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skipped. To bring one back, add its lesson to `index.html` by hand (the retired `build/build.py` is no longer run); it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
 Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer. Lessons are finished from their last slide (📋 Classroom Activity, which opens the lesson's Activity deck). **Videos stay locked** (🔒 Video Presentation) until a trainer unlocks them in **Admin → 📅 Open Lessons → 🎬 Unlock Videos**, for all batches or one batch (`settings:openvideos`, same shape as `settings:opendays`). Trainers and 👁 Trainee view always see them.
 
@@ -207,11 +207,11 @@ Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each pag
 1. Download the deck from Canva as `.pptx` (speaker notes included) and extract it: `build/slides/extract_pptx.py` writes `build/slides/<deck>.json` (each page's text boxes and notes). A deck downloaded as PDF works too: `build/slides/extract_pdf.py <deck.pdf> [<part 2.pdf> …] <deck>` (needs `pip install pymupdf`; a deck downloaded in parts is given in order). A PDF has no speaker notes, so its scripts' talk-through is written in `build/slides/<deck>_script.py` and the walk-through is the slide's own points.
 2. `python3 build/slides/make_lesson.py <deck>` writes `build/lessons/lessonNN.js`. Each page's layout is set in `make_lesson.py`; exact repeats of a page are kept once.
 3. `python3 build/slides/make_scripts.py <deck>` writes that lesson's Presenter view scripts into `trainer/scripts.json` (see *How the program works*). The beats the notes don't have (the why, the question for the room, scenarios) are in `build/slides/<deck>_script.py`.
-4. Rebuild.
+4. Copy the new lesson into `index.html` by hand (`build/build.py`, which used to do this, is retired).
 
 Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. The Rental Claims Services slide follows the revised deck page (`Claims_Specialist (8).pptx`, slide 1): the title on the rental-keys photo with the LSH logo, beside the letter in an orange frame (`cover()` in `make_lesson.py`, `.cs-cover` in `js/ft-slides.js`; the photo and logo are `ft/claims/img/rental-keys.jpg` and `lsh-logo.png`). Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
 
-A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
+A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and the same lesson in `index.html` (the retired `build/build.py` is no longer run).
 
 > **The Calendaring Simulator runs on the Main Portal, built on the Google Calendar Simulator** (Training-Portal repo: `simulators/gcal.html`, `gcal-data.js`, `gcal.js`; branch `claude/gcal-tracks`). This program shows two of its Calendaring Simulators tracks: 🎓 **Standard Training - Mock Call** (`track=standard`, the original Google Calendar Simulator, unchanged, no task list: the Day 6 mock calls' Calendaring Tool, the Practice Session's 📅 tool and Admin → 📅 Calendar Scores) and **Standard Training - Calendar Management Activity** (`track=activity`: the Day 5 activity, linked on each of its slides beside the in-program Calendar Simulator, from a tile beside the 📅 Calendar Activity Check, the slides' top bar, and Admin → 📅 Calendar Scores); the Litigation Week (Case Management) and Executive Week (EA / PA) tracks belong to those programs and aren't shown here. The cards here (`ftsCalsim`) open them through `calsim.html?track=…`, which launches the simulator. The in-repo scheduler described below (`js/ft-calendar.js`) is the earlier version for the Standard weeks; the **🗓 Attorney Calendar Management Activity** (Day 5) is new there and is done and graded in this program (see below). **Evaluations are on the Portal too:** trainers open **📋 Trainee Evaluations** (Admin → 📅 Calendar Scores, `ftsEvaluations()`) on the Portal's `gcal-review.html` (each trainee's submitted calendar with its AI review, the trainer's feedback and the report sent to the trainee, and the trainees' calendars to score), and trainees open **📋 My Evaluations** on their calendar cards (`my-evaluations.html`). The in-repo scheduler's own AI review and evaluations table were not carried over.
 
@@ -745,11 +745,11 @@ Where the token lives:
 
 | Path | What it is |
 |---|---|
-| `index.html` | **Generated** by `build/build.py` from the EA/PA portal. Don't edit it by hand. |
+| `index.html` | First generated by `build/build.py` from the EA/PA portal; now maintained directly. Don't re-run `build/build.py` (see *Build*). |
 | `js/eapa-updates.js` | **Generated**: the EA/PA update pack (Presenter view, Trainee view, slide layout), rebranded. |
 | `js/ft-updates.js` | This program's layer: section slides, trainer-only notes, open days, Finish Day, dashboard, pop-out viewer. |
-| `build/build.py` | The build (see below). |
-| `build/ft_engine_patches.py` | This program's edits to the EA/PA engine (`js/eapa-updates.js`): the Canva deck in the slides window. |
+| `build/build.py` | The original build, retired (see below). Don't run it. |
+| `build/ft_engine_patches.py` | Retired with `build.py`: this program's edits to the EA/PA engine (`js/eapa-updates.js`): the Canva deck in the slides window. |
 | `build/lessons/lessonNN.js` | Each lesson: its Canva deck (one slide per section). This is what trainees see. |
 | `js/ft-slides.js`, `build/slides/` | The design for native slides, and the tools that rebuild a deck as native slides with its scripts. In full screen and the slides window, a native slide (and an orientation slide) fills the screen: no width cap, no presenter column, and the text scales with the screen. |
 | `build/days/dayNN.js` | The curriculum's days as HTML. Not built into the lessons; `build/day-decks.cjs` turns them into the 📋 Day decks (`js/ft-day-decks-data.js`, built on deploy, not committed). |
@@ -782,13 +782,9 @@ Where the token lives:
 
 ## Build
 
-The platform is rebuilt from the EA/PA portal (the `EA-PA-TRAINING` repository), like the CM course:
+**Retired: don't run `build/build.py`.** `index.html` is now maintained directly. `build/build.py` (with `build/ft_engine_patches.py` and `build/ft_perf_patches.py`, which only it imports) no longer matches it: its script list names files that are gone and leaves out about 30 that `index.html` loads, so a rebuild would break the site. The scripts are kept as a record of how the page was first built from the EA/PA portal (the `EA-PA-TRAINING` repository), like the CM course, with `python3 build/build.py ../EA-PA-TRAINING`. Change lessons, scripts and engine edits in `index.html` (and `js/eapa-updates.js`) by hand.
 
-```
-python3 build/build.py ../EA-PA-TRAINING
-```
-
-The script:
+What the script did:
 - swaps the EA/PA days for this program's lessons from `build/lessons/`: it drops the EA/PA day files (`js/days/dayN/lessons.js`, `notes.js`, `scripts.js`) and puts the lessons where the EA/PA page builds `DAYS`
 - switches off what only fits the EA/PA days: the divider slide before each topic (`noDividers`), and the saved-place migrations keyed to EA/PA topic titles (`DAY_LAYOUTS`, `QC_OPTION_MOVES` are left empty)
 - drops the EA/PA-only heavy content, and EA/PA's lesson slide background (the navy LSH template in its `eapa-updates.js`): the lessons here are deck pages, and the Orientation has its own background
@@ -796,11 +792,11 @@ The script:
 - loads `js/portal-gate.js` and `js/portal-link.js` once each, stamped with this build's version
 - adds `js/ft-updates.js`, and `js/ft-theme.js` last of all (the gradient theme has to come after every stylesheet it paints over)
 
-Every edit checks that its anchor exists, so the build stops with an error if the EA/PA portal changed that part. Update the anchor in `build.py` and run it again. Rebuild when EA/PA ships new engine features.
+Every edit checked that its anchor existed, so the build stopped with an error if the EA/PA portal had changed that part.
 
 ### ⚡ First-load speed (`build/ft_perf_patches.py`)
 
-Opening a program from the Training Directory used to sit on a blank cover for several seconds. The engine-level reasons were: jsPDF (~90 KB) and the Google Fonts sheet both blocking the first paint from the page head, `loadAll()` reading 28 storage keys one `await` at a time, and boot fetching `trainee:<id>` twice in a row over the network. `build/ft_perf_patches.py` fixes all four, and `build.py` applies it. First paint on a 1.6 Mbps / 150 ms connection: 1432 ms → 904 ms (headless Chromium, gzipped, median of 7).
+Opening a program from the Training Directory used to sit on a blank cover for several seconds. The engine-level reasons were: jsPDF (~90 KB) and the Google Fonts sheet both blocking the first paint from the page head, `loadAll()` reading 28 storage keys one `await` at a time, and boot fetching `trainee:<id>` twice in a row over the network. `build/ft_perf_patches.py` fixed all four when the retired `build.py` applied it; the fixes are in `index.html` now. First paint on a 1.6 Mbps / 150 ms connection: 1432 ms → 904 ms (headless Chromium, gzipped, median of 7).
 
 Two things to know:
 
@@ -855,7 +851,7 @@ A trainee's page in view now sends about 4 requests a minute (before: about 24, 
 
 Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same rules as `/api/storage/get` for each key, under the `ft:` prefix like every other key), not one request per record: the tasks for every lesson, the Trainee Audit, Rankings and Trainee Feedback, and the trainees' sheets in 📋 Task Trackers, 📒 Monitoring Sheets and ✍️ Process Questions (20 sheets to a request, since a sheet can be up to about 1 MB). A trainee is signed out as revoked only when the server answers that their record is gone or not approved: a server that doesn't answer (offline, or the request limit) no longer signs anyone out, and their open lessons stay open until it answers again.
 
-The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so a rebuild keeps it.
+The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so it matches the engine there.
 
 ## 🗄 Documents in R2
 
