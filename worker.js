@@ -2959,7 +2959,7 @@ export default {
         await kv.put(rk, JSON.stringify(cur));
         const was = (cur.compliance || {})[D];
         const c = await dailyCompliance(env, id, D, { redo: true, backfill: !!(was && was.backfilled) });
-        return json({ ok: true, day: D, eod: (c && c.parts || {}).eod, pct: c && c.pct });
+        return json({ ok: true, day: D, eod: (c && (c.day1Parts || c.parts) || {}).eod, pct: c && c.pct });   // (📅 Day 1: what was saved, though the day isn't counted)
       }
       if (path === "/api/drive/status") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
