@@ -9831,7 +9831,9 @@ Return ONLY a JSON object with this exact shape, no other text:
     growthSuggestions: Array.isArray(raw.growthSuggestions) ? raw.growthSuggestions : []
   };
 }
-function renderRoleplayEvaluationReport(report){
+// an AI evaluation's report card: score ring, tier, the four sub-scores (label, value, out of), the mindset note,
+// Strengths / Not this way / Growth, then what the caller adds (tail)
+function evalReportHtml(report, subs, tail){
   const tierColor = GRADE_TIER_COLOR[report.gradeTier] || "var(--ink-soft)";
   return `
     <div class="eval-report">
@@ -9842,10 +9844,7 @@ function renderRoleplayEvaluationReport(report){
         <div>
           <div class="eval-tier" style="color:${tierColor};">${esc(displayTier(report.gradeTier))}</div>
           <div class="eval-subscore-row">
-            <span>BLUF Adherence ${report.blufScore}/25</span>
-            <span>Risk &amp; Privilege ${report.riskPrivilegeScore}/25</span>
-            <span>Composure &amp; Tone ${report.composureScore}/25</span>
-            <span>ACT Protocol ${report.actProtocolScore}/25</span>
+${subs.map(([label, v, max])=>`            <span>${label} ${v}/${max}</span>`).join("\n")}
           </div>
         </div>
       </div>
@@ -9864,46 +9863,16 @@ function renderRoleplayEvaluationReport(report){
       <div class="eval-section">
         <b>Growth Suggestions</b>
         <ul>${report.growthSuggestions.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
+      </div>` : ""}${tail||""}
     </div>`;
+}
+function renderRoleplayEvaluationReport(report){
+  return evalReportHtml(report, [["BLUF Adherence", report.blufScore, 25], ["Risk &amp; Privilege", report.riskPrivilegeScore, 25], ["Composure &amp; Tone", report.composureScore, 25], ["ACT Protocol", report.actProtocolScore, 25]]);
 }
 
 function renderEvaluationReport(report, dayId){
-  const tierColor = GRADE_TIER_COLOR[report.gradeTier] || "var(--ink-soft)";
   if(dayId){ toolState.lastEvalReport = {report, dayId}; }
-  return `
-    <div class="eval-report">
-      <div class="eval-report-header">
-        <div class="eval-score-ring" style="--ring-color:${tierColor};">
-          <span>${report.totalScore}</span>
-        </div>
-        <div>
-          <div class="eval-tier" style="color:${tierColor};">${esc(displayTier(report.gradeTier))}</div>
-          <div class="eval-subscore-row">
-            <span>Accuracy ${report.accuracyScore}/35</span>
-            <span>Executive Presence ${report.presenceScore}/30</span>
-            <span>Risk &amp; SOP ${report.riskScore}/20</span>
-            <span>Efficiency ${report.efficiencyScore}/15</span>
-          </div>
-        </div>
-      </div>
-      ${mindsetNote(report.totalScore)}
-      ${report.strengths.length ? `
-      <div class="eval-section">
-        <b>Strengths</b>
-        <ul>${report.strengths.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${report.blindspots.length ? `
-      <div class="eval-section">
-        <b>Not this way — what to change</b>
-        <ul>${report.blindspots.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${report.growthSuggestions.length ? `
-      <div class="eval-section">
-        <b>Growth Suggestions</b>
-        <ul>${report.growthSuggestions.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${dayId ? `
+  return evalReportHtml(report, [["Accuracy", report.accuracyScore, 35], ["Executive Presence", report.presenceScore, 30], ["Risk &amp; SOP", report.riskScore, 20], ["Efficiency", report.efficiencyScore, 15]], "\n      " + (dayId ? `
       <div class="eval-action-row">
         <button class="btn btn-ghost btn-sm" onclick="repeatActivity()" ${labAttemptsRemaining(dayId)<=0 ? `disabled title="No repeat attempts left for ${ftName(dayId)} — ask your trainer to reset them"` : ''}>🔁 Repeat Activity${labAttemptsRemaining(dayId)<=0 ? "" : ` (${labAttemptsRemaining(dayId)} left)`}</button>${labAttemptsRemaining(dayId)<=0 ? `<button class="btn btn-ghost btn-sm" onclick="requestMoreLabAttempts(${dayId})" title="Your trainer sees the request in Trainee Audit and can give you a fresh set">🙋 ${state.labResetRequestedAt ? "Asked for more attempts ✓" : "Ask for more attempts"}</button>` : ''}
         <button class="btn btn-navy btn-sm" onclick="retainScoreAndAdvance()">✅ Retain Score &amp; Advance</button>
@@ -9911,8 +9880,7 @@ function renderEvaluationReport(report, dayId){
       <div class="eval-action-row" style="border-top:none;padding-top:0;margin-top:8px;">
         <button class="btn btn-ghost btn-sm" onclick="downloadEvaluationReportPdf()">⬇ Download PDF</button>
         <button class="btn btn-ghost btn-sm" onclick="returnToLessonCard(${dayId})">📚 Jump to Knowledge Base</button>
-      </div>` : ""}
-    </div>`;
+      </div>` : ""));
 }
 async function downloadEvaluationReportPdf(){
   const stored = toolState.lastEvalReport;
@@ -11735,40 +11703,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   };
 }
 function renderIntakeCallEvaluationReport(report){
-  const tierColor = GRADE_TIER_COLOR[report.gradeTier] || "var(--ink-soft)";
-  return `
-    <div class="eval-report">
-      <div class="eval-report-header">
-        <div class="eval-score-ring" style="--ring-color:${tierColor};">
-          <span>${report.totalScore}</span>
-        </div>
-        <div>
-          <div class="eval-tier" style="color:${tierColor};">${esc(displayTier(report.gradeTier))}</div>
-          <div class="eval-subscore-row">
-            <span>Boundary Setting ${report.boundaryScore}/25</span>
-            <span>Stress Management ${report.stressScore}/25</span>
-            <span>Task Management ${report.taskScore}/25</span>
-            <span>Strategic Thinking ${report.strategicScore}/25</span>
-          </div>
-        </div>
-      </div>
-      ${mindsetNote(report.totalScore)}
-      ${report.strengths.length ? `
-      <div class="eval-section">
-        <b>Strengths</b>
-        <ul>${report.strengths.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${report.blindspots.length ? `
-      <div class="eval-section">
-        <b>Not this way — what to change</b>
-        <ul>${report.blindspots.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-      ${report.growthSuggestions.length ? `
-      <div class="eval-section">
-        <b>Growth Suggestions</b>
-        <ul>${report.growthSuggestions.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-      </div>` : ""}
-    </div>`;
+  return evalReportHtml(report, [["Boundary Setting", report.boundaryScore, 25], ["Stress Management", report.stressScore, 25], ["Task Management", report.taskScore, 25], ["Strategic Thinking", report.strategicScore, 25]]);
 }
 
 
