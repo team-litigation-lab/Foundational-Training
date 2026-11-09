@@ -351,7 +351,9 @@ window.ftListenItems = ctx => { const rec = ctx.rec["listening:"], logs = (rec &
     // broken grade waiting to be graded again (ftStaleGrade), is not graded: no score, never a 0. assess: its grade's key,
     // for the 📋 Batch Sheet, which scores it on its own day (js/ft-batch-sheet.js)
     if(s.activity){ const ok = !!g && g.score != null && !ftStaleGrade(g) && typeof g.pct === "number" && isFinite(g.pct);
-      return {name: `${s.icon} Reception Listening Activity`, pct: ok ? g.pct : null, at: (g && g.at) || "", assess: s.id,
+      // (ref: a trainer can edit it in place, js/ft-batch-sheet.js; why: each answer the grading marked down, with its note)
+      const why = ok ? Object.entries(g.items || {}).filter(([, x]) => x && !x.ok && !x.pending).map(([k, x]) => `${FTListen.answerName ? FTListen.answerName(s.id, k) : k}${x.note ? ": " + x.note : ""}`).join("; ") : "";
+      return {name: `${s.icon} Reception Listening Activity`, ref: "assess:" + s.id, why: why ? "Marked down: " + why : "", pct: ok ? g.pct : null, at: (g && g.at) || "", assess: s.id,
         note: ok ? `${g.score} of ${g.max} points${g.when ? " · graded " + g.when : ""}${g.pending ? " · your trainer grades the rest" : ""}`
           : g && g.score != null ? "Being graded again: the earlier grading marked right answers ✗"
           : `Not graded yet · ${c} of ${l.n} calls logged · 📝 Submit for Grading on the Answer Sheet`}; }

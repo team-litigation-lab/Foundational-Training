@@ -475,16 +475,25 @@ window.FTDriveAdmin = {
     if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)){ toast("The score is a number from 0 to 100."); return; }
     btn.disabled = true;
     try{
-      // (strict: a failed read throws, never taken for an empty record and saved over the trainee's checks and grades)
-      const cur = (await sharedGetStrict("trackerreview:" + id)) || {days:{}}; if(!cur.days) cur.days = {};
-      const target = which === "monitor" ? (cur.monitor = cur.monitor || {}) : (cur.days[which.slice(4)] = cur.days[which.slice(4)] || {});
-      target.trainerScore = sv === "" ? null : Math.round(Number(sv)); target.comment = String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000); target.commentAt = new Date().toISOString();
-      if(await sharedSet("trackerreview:" + id, cur) === false) throw new Error("save");
-      const row = DA.rows.find(x => x.id === id); if(row) row.rv = cur;
+      const cur = await FTDrive.saveTrainerScore(id, which, sv, String(box.querySelector("[data-comment]").value || ""));
+      const row = (DA.rows || []).find(x => x.id === id); if(row) row.rv = cur;
       toast("✓ Saved. The trainee sees it under the check.");
     }catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; render();
   }
+};
+// the trainer's score on the Monitoring Sheet ("monitor") or a tracker day ("day:<date>"), trackerreview:<id> — also the
+// 📋 Batch Sheet's edit in place (js/ft-batch-sheet.js); comment: null keeps the one there. Throws when it can't be saved.
+FTDrive.saveTrainerScore = async function(id, which, score, comment){
+  const sv = String(score == null ? "" : score).trim();
+  if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)) throw new Error("range");
+  // (strict: a failed read throws, never taken for an empty record and saved over the trainee's checks and grades)
+  const cur = (await sharedGetStrict("trackerreview:" + id)) || {days:{}}; if(!cur.days) cur.days = {};
+  const target = which === "monitor" ? (cur.monitor = cur.monitor || {}) : (cur.days[which.slice(4)] = cur.days[which.slice(4)] || {});
+  target.trainerScore = sv === "" ? null : Math.round(Number(sv));
+  if(comment != null){ target.comment = String(comment).trim().slice(0, 4000); target.commentAt = new Date().toISOString(); }
+  if(await sharedSet("trackerreview:" + id, cur) === false) throw new Error("save");
+  return cur;
 };
 ftAdminTab("drivetrackers", "📁 Drive Trackers", renderAdminDrive);
 
@@ -500,7 +509,11 @@ window.ftDriveItems = ctx => {
     out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)", at:days.map(([d]) => d).sort().pop()}); }
   const m = rv.monitor;
   // (the trainer's score stands even when the last automated check couldn't open the file)
-  if(m && (tScore(m) != null || !m.error)) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`, at:m.checkedAt || ""});
+  // (ref: the items a trainer can edit in place, js/ft-batch-sheet.js — the Monitoring Sheet in its own trainerScore, an
+  // assessment or a Monitoring Sheet items' review as an override; the Daily Task Tracker, an average of days, has none: its
+  // days are scored one by one in 📁 Drive Trackers. why: what the score rests on, for a hover)
+  if(m && (tScore(m) != null || !m.error)) out.push({name:"Training Progress Monitoring Sheet", ref:"monitor", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`, at:m.checkedAt || "",
+    why:tScore(m) != null ? String(m.comment || "") : m.total ? `${m.found} of ${m.total} discussions found in the sheet at the last check` : ""});
   // 📒 the Monitoring Sheet items a slide's 📤 Submit had graded (Day 2's #5–7: /api/monitor/items, js/ft-buffer.js): the
   // score is here, not on the slide (the slide keeps the feedback)
   // 📄 the on-platform assessments graded by their Submit for Grading (js/ft-assess.js, /api/assess/grade)
@@ -508,9 +521,9 @@ window.ftDriveItems = ctx => {
   // listening it belongs to: js/ft-listening.js ftListenItems; here as well, it would count twice in the overall)
   const inListening = doc => !!(window.FTListen && (FTListen.sets || []).some(s => s.activity && s.id === doc));
   Object.entries(rv.assess || {}).forEach(([doc, x]) => { if(!x || x.score == null || inListening(doc)) return;
-    out.push({name:`📄 ${x.title || "Assessment"}`, pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
+    out.push({name:`📄 ${x.title || "Assessment"}`, ref:"assess:" + doc, why:String(x.comment || x.summary || x.feedback || ""), pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
   Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
-    out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
+    out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, ref:"items:" + k, why:String(x.result.context || ""), pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
   return out;
 };
 
