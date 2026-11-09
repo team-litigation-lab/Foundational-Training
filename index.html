@@ -6303,10 +6303,8 @@ function clientAvatarSvg(){
   return `<img src="${CLIENT_AVATAR_SRC}" class="client-photo-img" alt="Elias Thorne">`;
 }
 
-/* Trainer cues, discussion cases, roleplay scripts and answer keys live ONLY in
-   🖥 Presenter view. Nothing trainer-facing renders inside lessons or the
-   Practice Lab, so a screen-share or a shared device can never expose them. */
-function trainerInline(){ return false; }
+/* (Trainer cues, discussion cases, roleplay scripts and answer keys live only in 🖥 Presenter view:
+   nothing trainer-facing renders inside lessons or the Practice Lab.) */
 /* ============================================================
    ORIENTATION (admin) — a screen-shareable blueprint of the platform
    for the first session. Trainee-safe: no answers, cues or data.
@@ -8967,7 +8965,6 @@ function buildDaySlides(d){
     if((d.quickChecks||[]).some(q=>q.afterIndex===i)) slides.push({type:"quickCheck", lessonIndex:i});
   });
   if(d.recapVideo) slides.push({type:"video"});   // the recap slide only shows once a video link is set
-  if(d.discussionQuestion && trainerInline()) slides.push({type:"discussion"});
   return slides;
 }
 function daySlideTitle(d, slide){
@@ -9044,7 +9041,6 @@ function renderMeetClientSlide(){
       </ul>
       <p class="mc-note">There's no dossier open during this exercise — just listen, and take mental notes. You'll build the real dossier right after this.</p>
     </div>
-    ${trainerInline() ? renderMeetClientTrainerGuide() : ""}
   `;
 }
 function renderMeetClientTrainerGuide(){
@@ -9089,11 +9085,6 @@ function renderPracticeLabSlide(d){
           </div>`).join("")}
       </div>
     </div>
-    ${trainerInline() ? `
-    <div class="trainer-checkpoint">
-      <div class="tc-tag">🧑‍🏫 Trainer Checkpoint</div>
-      <p>Once the exercise above is finished, pause here for a live debrief with your trainer — walk through what you did, why, and where your judgment differed from the model answer. This is where the real learning happens, not just in the exercise itself.</p>
-    </div>` : ""}
   `;
 }
 function renderPracticeLabComingSoon(d){
@@ -9455,15 +9446,13 @@ function renderLessonCard(l,i,d,unused,part){
   // Explicit, hand-authored fourPart content (simple string/array shape) takes
   // priority for new topics. Existing topics without it fall back to the
   // tested automatic derivation from their visual/bullets/example data.
-  // The Applied Discussion Case (section 4) is admin-only facilitation
-  // content — it never renders in the trainee-facing part of the card.
-  let corePrinciplesHtml, howToHtml, bestPracticesHtml, discussionHtml;
+  // (The Applied Discussion Case is Presenter view's: the card never renders it.)
+  let corePrinciplesHtml, howToHtml, bestPracticesHtml;
   if(l.fourPart){
     const fp = l.fourPart;
     corePrinciplesHtml = fp.corePrinciples && fp.corePrinciples.length ? `<ul>${fp.corePrinciples.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
     howToHtml = fp.howTo && fp.howTo.length ? `<ol class="fp-howto-list">${fp.howTo.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>` : "";
     bestPracticesHtml = fp.bestPractices && fp.bestPractices.length ? `<ul>${fp.bestPractices.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
-    discussionHtml = fp.discussionCase ? `<p>${esc(fp.discussionCase)}</p>` : "";
   }else{
     const fp = deriveFourPartStructure(l);
     corePrinciplesHtml = fp.corePrinciples.visualHtml ||
@@ -9474,13 +9463,6 @@ function renderLessonCard(l,i,d,unused,part){
     if(fp.bestPractices.bullets && fp.bestPractices.bullets.length) bestPracticesParts.push(`<ul>${fp.bestPractices.bullets.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`);
     if(fp.bestPractices.callout) bestPracticesParts.push(fp.bestPractices.callout.prominent ? renderProminentDisclaimer(fp.bestPractices.callout) : renderCallout(fp.bestPractices.callout));
     bestPracticesHtml = bestPracticesParts.join("");
-    const discussionParts = [];
-    if(fp.discussionCase.example) discussionParts.push(renderExample(fp.discussionCase.example));
-    if(fp.discussionCase.table) discussionParts.push(renderTable(fp.discussionCase.table));
-    if(!discussionParts.length){
-      discussionParts.push(`<p>Ask the room to discuss: has anyone run into a real situation where "${esc(l.h)}" applied? Have a volunteer walk through what they actually did.</p>`);
-    }
-    discussionHtml = discussionParts.join("");
   }
 
   const hasDiagram = !!(l.svgDiagram || (d && LESSON_DIAGRAMS[d.id+"::"+l.h]) || /svg|lesson-quadrant|lesson-process|lesson-compare|lesson-threebox|lesson-iconlist/.test(howToHtml||""));
@@ -9505,12 +9487,6 @@ function renderLessonCard(l,i,d,unused,part){
       <h4><span class="lnum">0${i+1}</span>${esc(l.h)}</h4>
       ${expSec ? renderExpansionPanel(expSec) : ""}
       ${p===1 ? partAHtml : partBHtml}
-      ${(l.trainerCue || discussionHtml) && trainerInline() && p===2 ?`
-      <div class="trainer-checkpoint">
-        <div class="tc-tag">🧑‍🏫 Trainer Cue</div>
-        ${l.trainerCue ? `<p>${esc(l.trainerCue)}</p>` : ""}
-        ${discussionHtml ? `<div style="margin-top:${l.trainerCue?'10px':'0'};"><b style="font-size:11.5px;color:var(--navy);display:block;margin-bottom:4px;">Applied Discussion Case</b>${discussionHtml}</div>` : ""}
-      </div>` : ""}
     </div>`;
 }
 function renderLessonVisual(l){
@@ -11239,15 +11215,6 @@ function initFinancial(body){
     <button class="btn btn-navy" style="margin-top:12px;" onclick="submitAttnDetail()">Get Review</button>
     <div id="attnDetailSubmitMsg" style="margin-top:8px;font-size:13px;"></div>
     <div id="attnDetailResult" style="margin-top:14px;"></div>
-    ${trainerInline() ? `
-    <div class="trainer-checkpoint" style="margin-top:16px;">
-      <div class="tc-tag">🧑‍🏫 Trainer Cue — AI-Graded, Answer Key Reference</div>
-      <p>This is now graded automatically against the planted errors below — the AI is given this exact list as its answer key, so scoring should be reliable. It's still worth spot-checking a few submissions, since cross-document accuracy checking is a nuanced skill.</p>
-      <p><b>The planted errors are:</b></p>
-      <ul style="margin:8px 0 0;padding-left:20px;">
-        ${ATTENTION_TO_DETAIL_ANSWERS.map(a=>`<li style="font-size:12.8px;margin-bottom:6px;">${esc(a)}</li>`).join("")}
-      </ul>
-    </div>` : ""}
 
     <button class="btn btn-navy btn-sm" style="margin-top:16px;" onclick="downloadFinancialPdf()">⬇ Download My Work</button>
   `;
