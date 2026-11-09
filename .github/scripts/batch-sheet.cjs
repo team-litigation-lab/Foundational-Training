@@ -295,6 +295,8 @@ const failures = []; const fail = m => failures.push(m);
   const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
   if (!/^\d+%$/.test(d1.v.replace('✓ ', '')) || !/Process Questions 90%/.test(d1.f) || !/ [2-9]\d* of \d+ done/.test(d1.f)) fail(`Ada's Day 1 isn't her score with the ticks counted: ${d1.v} · ${d1.f}`);
 
+  // (no 📘 Process Guide among the days' scored activities: the trainee builds it, it isn't scored)
+  if (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.some(r => r.some(c => /Process Guide/.test((c && c.f) || ''))))) fail('a 📘 Process Guide is still on the scorecards');
   // 🛠 Practice Lab: Ada practiced in a tool (82%) and took a typing test; Ben hasn't practiced
   const pl = by('practice'), pa = pl.rows.find(r => /Ada/.test(r[0])), pb = pl.rows.find(r => /Ben/.test(r[0]));
   if (JSON.stringify(pl.head.slice(0, 4)) !== JSON.stringify(['Trainee', 'Tools used', 'Attempts', 'Last practice'])) fail(`🛠 Practice Lab's columns: ${pl.head.slice(0, 4)}`);
