@@ -121,6 +121,9 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   const sc = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/Trainer feedback/.test(sc) || !/Interview Recording 1/.test(sc) || !/88%/.test(sc)) fail('🏅 My Performance has no 📝 Trainer feedback score');
+  // (📘 a Process Guide's review is feedback only: off the 🏅 Scorecard, while a transcription's score counts)
+  { const it = await page.evaluate(() => window.ftTrainerFeedbackItems({ rec: { 'trainerfb:': { items: { a: { act: 'guide', title: 'Saving the LORs', score: 90 }, b: { act: 'transcribe', title: 'Recording 1', score: 80 } } } } }).map(x => x.name).join('|'));
+    if (/Saving the LORs/.test(it) || !/Recording 1/.test(it)) fail(`a Process Guide's review counts on the Scorecard (or a transcription's doesn't): ${it}`); }
   if (!/Weekly Ranking/.test(sc) || !/rank 2 of 9/.test(sc)) fail('🏅 My Performance has no 📊 Weekly Ranking');
   if (!/scorecard 4\.14\/5/.test(sc)) fail('🏅 My Performance doesn\'t show the Reception Mock Call\'s scorecard average');
 
