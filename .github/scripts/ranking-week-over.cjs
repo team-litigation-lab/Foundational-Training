@@ -39,6 +39,8 @@ const failures = []; const fail = m => failures.push(m);
       if (ok) break;
       if (Date.now() - t0 < 9000) await page.waitForTimeout(2000);
     }
+    // (and the report read once it says so: a re-draw right after the wait above left it empty for a moment on a busy runner)
+    await page.waitForFunction(() => /Week 1 is over/.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 10000 }).catch(() => {});
     const txt = await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '');
     if (!/Week 1 is over/.test(txt)) fail(`on the week's Friday at 17:30 PDT (00:30 UTC Saturday) the week isn't over: ${txt.replace(/\s+/g, ' ').slice(-400)}`);
   } catch (e) { fail(e.stack || String(e)); }
