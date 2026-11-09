@@ -14080,9 +14080,8 @@ function openFeedbackFor(id){
 Object.assign(window, {fbcLoad, fbcSave, openFeedbackFor});
 function renderFeedbackAdmin(rec){
   if(typeof state.secureMode!=="boolean") authStatus().then(()=>{ if(state.view==="admin") render(); });
-  if(!state.fbSettings) feedbackSettings();
   if(!state.certSettings){ certSettings().then(()=>{ const m={certTrainer:"trainerName",certTrainerTitle:"trainerTitle",certHead:"headName",certHeadTitle:"headTitle",certGm:"gmName",certGmTitle:"gmTitle"}; Object.entries(m).forEach(([id,k])=>{ const el=document.getElementById(id); if(el && !el.value) el.value = state.certSettings[k]||""; }); }); }
-  if(!state.fbSettings){ feedbackSettings().then(()=>{ const a=document.getElementById("fbAutoDraft"), b=null; if(a) a.checked = !!state.fbSettings.autoDraft; if(b) b.checked = !!state.fbSettings.autoSend; }); }
+  if(!state.fbSettings){ feedbackSettings().then(()=>{ const a=document.getElementById("fbAutoDraft"); if(a) a.checked = !!state.fbSettings.autoDraft; }); }
   const work = state.traineeWork[rec.id];
   if(!work || work.loading){ setTimeout(()=>loadTraineeWork(rec.id), 0); return `<div class="fb-admin"><div class="sidebar-section-lbl" style="padding-left:0;">Day-by-Day Feedback</div><p style="font-size:12.5px;color:var(--ink-soft);">Loading this trainee's work…</p></div>`; }
   const sid = cssId(rec.id);
