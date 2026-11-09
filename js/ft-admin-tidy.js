@@ -75,11 +75,19 @@ const __admin = window.renderAdmin;
 if(typeof __admin === "function") window.renderAdmin = function(){
   return `<div class="ft-admin-screen">${__admin.apply(this, arguments)}</div>`;
 };
+// the Admin screen's page is wide: a class on <main> once it is drawn (main.ft-admin-main below), not only main:has(…), which
+// a browser without :has() (or a stylesheet loaded before the screen) leaves at the page's usual 1400 px
+const __after = window.afterRender;
+window.afterRender = function(){
+  const out = typeof __after === "function" ? __after.apply(this, arguments) : undefined;
+  const m = document.querySelector("#app > main, main"); if(m) m.classList.toggle("ft-admin-main", !!m.querySelector(".ft-admin-screen"));
+  return out;
+};
 
 const st = document.createElement("style"); st.id = "ft-admin-tidy"; st.textContent = `
 /* a solid panel over the background photo, dark bold text */
 /* (the trainer's screens wider: the batch sheets, the day grids and their compliance lines need the room) */
-main:has(.ft-admin-screen){max-width:min(1880px,98vw);padding-left:14px;padding-right:14px;}
+main.ft-admin-main, main:has(.ft-admin-screen){max-width:min(1880px,98vw);padding-left:14px;padding-right:14px;}
 .ft-admin-screen{background:#FFFFFF;border-radius:16px;padding:20px 24px 26px;box-shadow:0 10px 30px rgba(14,18,40,.28);color:#141A2E;font-weight:600;}
 .ft-admin-screen p, .ft-admin-screen li, .ft-admin-screen label, .ft-admin-screen td{color:#141A2E;}
 .ft-admin-screen [style*="--ink-soft"], .ft-admin-screen .ops-muted, .ft-admin-screen .ops-empty, .ft-admin-screen .sc-about,

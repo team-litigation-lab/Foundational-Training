@@ -156,6 +156,8 @@ function renderMockScores(){
   const mocks = acts.filter(isMock), demos = acts.filter(x => !isMock(x));
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
+  const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch,
+    `<span>${all.length} trainee${all.length === 1 ? "" : "s"}</span><span>${mocks.length} mock call${mocks.length === 1 ? "" : "s"}</span><span>${demos.length} demo${demos.length === 1 ? "" : "s"}</span>`) : "";
   const head = `<div class="fms-top"><h3>📋 Mock Call &amp; Demo Scorecards</h3>
       <span class="fms-tools"><button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button>
       <button class="btn btn-ghost btn-sm" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></span></div>
@@ -169,7 +171,7 @@ function renderMockScores(){
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></span>` : ""}
       <label>Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
       ${saveBtn}</div>`;
-  const wrap = inner => `<div class="card fss-admin fms">${head}${inner}</div>`;
+  const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
   if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
   if(!a) return wrap(`<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
   if(!r) return wrap(`<p class="fss-muted">No trainees registered in ${e(labelOf(MS.batch))} yet.</p>`);
