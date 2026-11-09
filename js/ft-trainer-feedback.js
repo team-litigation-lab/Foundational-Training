@@ -376,7 +376,8 @@ setTimeout(() => FTFeedback.checkNew(), 2500);
 setInterval(() => { if(!document.hidden) FTFeedback.checkNew(); }, 60000);
 
 // 🏅 My Performance: the scores the trainer sent (js/ft-program.js lists this source)
-window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || {}).items) || {}).filter(it => it && it.score != null && it.score !== "")
+// (📘 a Process Guide's review is feedback only: not on the 🏅 Scorecard)
+window.ftTrainerFeedbackItems = ctx => Object.values(((ctx.rec["trainerfb:"] || {}).items) || {}).filter(it => it && it.score != null && it.score !== "" && it.act !== "guide")
   .map(it => ({name: `${(ACTS[it.act] || {}).icon || "📝"} ${(ACTS[it.act] || {}).label || it.act} · ${it.title}`, pct: Number(it.score), note: it.verdict || "Trainer’s score"}));
 
 (function(){ const st = document.createElement("style"); st.id = "ft-trainer-feedback"; st.textContent = `

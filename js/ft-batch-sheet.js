@@ -1158,7 +1158,8 @@ const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 // (not on the scorecards: the classroom lessons and discussions, the buffer times and Mock Call Preparation — nothing is
 // scored there — and the daily tests, which have their own compliance)
 // (nor the Confidentiality & Call Response Exercise: off the scorecards, it stays in Day 3's deck)
-const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response/i.test(it.t || "");
+// (nor the 📘 Process Guides the trainee builds before a demo: off the scorecards, they stay on the Practice Lab and the decks)
+const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || (it.at === "tool" && it.id === "guide") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response|^📘 Process Guide/i.test(it.t || "");
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
