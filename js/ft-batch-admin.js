@@ -28,6 +28,14 @@ const e = v => esc(String(v == null ? "" : v));
 const RUB = () => window.FT_RUBRICS || {list:{}, keys:() => [], forAct:() => null, average:() => null};
 const STATUSES = ["Not yet", "Passed", "Redo"];
 const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
+// the passing mark: a weighted average of 3 out of 5 (60%); the Result follows it until the trainer picks one
+const PASS = 3;
+function autoStatus(d){
+  if(!d || d.statusTyped) return;
+  const v = d.score !== "" && isFinite(Number(d.score)) ? Number(d.score) / 20 : null;
+  d.status = v == null ? "Not yet" : v >= PASS ? "Passed" : "Redo";
+  const sel = document.querySelector("[data-ms-status]"); if(sel && valOf(MS.va) === d) sel.value = d.status;
+}
 const avgTxt = v => v == null ? "—" : (Math.round(v * 100) / 100).toFixed(2) + "/5";
 const today = () => new Date().toISOString().slice(0, 10);
 const gone = r => !!(r && (r.offboarded || r.purgedAt));
@@ -169,7 +177,7 @@ function renderMockScores(){
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></span>` : ""}
-      <label>Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+      <label title="Set by the score: Passed at 3/5 (60%) or more, Redo below it. Pick one to change it.">Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
       ${saveBtn}</div>`;
   const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
   if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
@@ -178,12 +186,11 @@ function renderMockScores(){
   if(!ready) return wrap(`<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p>`);
   setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
   const c = cellOf(r.id, a.id), id = e(r.id);
-  const tag = d.dirty ? `<span class="fms-tag dirty">● not saved</span>` : c.status ? `<span class="fms-tag ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : `<span class="fms-tag">not scored yet</span>`;
+  // (no "name · activity · batch · Saved:" line over the scoresheet: the pickers above say whose it is, and ● not saved is in the trainee dropdown)
   const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    <p class="fms-who"><b>${e(r.name || r.id)}</b> · ${e(a.title)} · ${e(labelOf(MS.batch))}${c.facilitator ? ` · facilitated by ${e(c.facilitator)}` : ""} ${tag}</p>
     ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
@@ -210,6 +217,7 @@ function refreshCol(id){
     const avg = rb ? RUB().average(rb, d.scores) : null;
     const av = box.querySelector("[data-avg]"); if(av) av.textContent = avgTxt(avg);
     const s = box.querySelector("[data-score]"); if(s && !d.scoreTyped){ d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); s.value = d.score; }
+    autoStatus(d);
     const dt = box.querySelector("[data-date]"); if(dt && !dt.value) dt.value = d.date;
     const tag = box.querySelector(".fms-tag"); if(tag){ tag.className = "fms-tag dirty"; tag.textContent = "● not saved"; }
     if(document.activeElement && box.contains(document.activeElement)) grow(document.activeElement);
@@ -233,7 +241,7 @@ window.FTMockScores = {
   va(id){ MS.va = id; render(); },
   // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
   fillCrit(vals){ const id = MS.va, d = draftOf(id); let n = 0; Object.entries(vals || {}).forEach(([i, v]) => { if(d.scores[i] == null || d.scores[i] === ""){ d.scores[i] = v; n++; } });
-    if(n){ d.dirty = true; if(!d.date) d.date = today(); if(!d.scoreTyped){ const avg = RUB().average(RUB().forAct(curAct()), d.scores); d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); } }
+    if(n){ d.dirty = true; if(!d.date) d.date = today(); if(!d.scoreTyped){ const avg = RUB().average(RUB().forAct(curAct()), d.scores); d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); } autoStatus(d); }
     render(); return n; },
   step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
@@ -241,7 +249,7 @@ window.FTMockScores = {
   crit(id, i, val){ const d = draftOf(id), t = String(val).trim(); d.scores[i] = t === "" ? null : Math.max(0, Math.min(5, Number(t))); refreshCol(id); },
   fb(id, i, val){ draftOf(id).feedback[i] = String(val).slice(0, 600); refreshCol(id); },
   score(id, val){ const d = draftOf(id); d.score = String(val).trim(); d.scoreTyped = d.score !== ""; refreshCol(id); },
-  field(id, f, val){ draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : f === "facilitator" ? String(val).slice(0, 120) : String(val); refreshCol(id); },
+  field(id, f, val){ if(f === "status") draftOf(id).statusTyped = true; draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : f === "facilitator" ? String(val).slice(0, 120) : String(val); refreshCol(id); },
   async save(btn){
     const ids = dirtyIds(), act = MS.act, rb = RUB().forAct(curAct());
     for(const id of ids){ const s = valOf(id).score; if(s !== "" && !(Number(s) >= 0 && Number(s) <= 100)){ toast("A score is a number from 0 to 100."); return; } }
