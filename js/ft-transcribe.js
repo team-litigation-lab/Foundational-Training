@@ -211,6 +211,8 @@ async function loadAdmin(){
 }
 // (the roster changed: read the trainees again)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { T.admin = null; });
+// (unused: the "Trainees’ minutes" table is no longer drawn on the activity page — each submission is scored automatically
+// and reviewed in 🏅 Scorecard → 🧑‍🏫 Graders)
 function renderAdmin(){
   if(!T.admin) loadAdmin();
   const rows = (T.admin && T.admin.rows) || null;
@@ -306,7 +308,7 @@ window.render = function(){
   // (opened from a deck: its way back is under Submit, backToDeck, and nothing at the top)
   const back = T.ret ? "" : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-tr">${back}${adminOn() ? renderAdmin() : ""}${renderTrainee()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-tr">${back}${renderTrainee()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   fitDesk();
   clearInterval(T.tick); T.tick = setInterval(() => { if(state.view !== "transcribe"){ clearInterval(T.tick); T.tick = null; return; } if(T.sw.on) paintSw(); }, 500);

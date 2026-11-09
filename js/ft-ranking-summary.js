@@ -63,7 +63,8 @@ async function evidence(p, range){
   const week = sheets.filter(x => inW(x.at)), use = week.length ? week : sheets;   // (none this week: the latest ones)
   const kcs = Object.entries((proc && proc.kc) || {}).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),
     weak: (x.last.items || []).filter(q => q.score <= 6).map(q => clip(q.feedback, 160)).slice(0, 2)} : null).filter(Boolean);
-  const rvW = window.ftW1Override ? ftW1Override.comp(rv, p.batch) : rv;   // W1-OVERRIDE
+  const rvW0 = window.ftW1Override ? ftW1Override.comp(rv, p.batch) : rv;   // W1-OVERRIDE
+  const rvW = window.ftDay1 ? ftDay1.comp(rvW0, p.batch) : rvW0;   // 📅 Day 1 isn't counted
   const comp = Object.entries((rvW && rvW.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
   const assess = Object.values((rv && rv.assess) || {}).filter(x => x && x.score != null);

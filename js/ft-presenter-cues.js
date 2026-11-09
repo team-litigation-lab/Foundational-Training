@@ -212,7 +212,8 @@
       m.pre == null ? "" : `AI pre-score ${m.pre}%${comp == null ? "" : `, trainer ${comp}%`}.`].filter(Boolean);
     btn.disabled = true;
     try{
-      const rec = (await sharedGet("labreview:" + m.who)) || {};
+      // (strict: a failed read throws, never taken for an empty record and saved over the trainer's other reviews)
+      const rec = (await sharedGetStrict("labreview:" + m.who)) || {};
       rec.acts = rec.acts || {};
       rec.acts[act] = {status, redo, score:comp, date:new Date().toISOString().slice(0, 10),
         comment:parts.join(" ").slice(0, 4000), at:new Date().toISOString(), source:"presenter:" + key};
