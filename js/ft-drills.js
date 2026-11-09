@@ -106,10 +106,10 @@ const SETS = [
   {id: "bills", icon: "💵", title: "Bills & Records", day: 17, items: [
     () => { const [, p] = pick(PROVIDERS), d = randDate(), va = first(), amt = money();
       return {ask: "The file name of the whole set received (bill, records and lien)", facts: card([["Provider", p], ["HCFA amount", "$" + amt], ["Date of service", ddyyyy(d)], ["You", va]]),
-        answer: `MED - ${p} - HCFA $${amt} & Records DOS ${ddy(d)} with Signed COR and Unsigned Lien (${va})`, rule: "MED - Provider - HCFA $0.00 & Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)"}; },
+        answer: `MED - ${p} - HCFA $${amt} & Records DOS ${ddy(d)} with Signed COR and Unsigned Lien (${va})`, rule: "MED - Provider - HCFA (or HICF) $0.00 & Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)"}; },
     () => { const [, p] = pick(PROVIDERS), d = randDate(), va = first(), amt = money();
       return {ask: "The file name of the bill you extracted", facts: card([["Provider", p], ["HCFA amount", "$" + amt], ["Date of service", ddyyyy(d)], ["You", va]]),
-        answer: `MED - ${p} - HCFA $${amt} DOS ${ddy(d)} (${va})`, rule: "MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)"}; },
+        answer: `MED - ${p} - HCFA $${amt} DOS ${ddy(d)} (${va})`, rule: "MED - Provider - HCFA (or HICF) $0.00 DOS mm.dd.yy (va’s first name)"}; },
     () => { const [, p] = pick(PROVIDERS), d = randDate(), va = first();
       return {ask: "The file name of the records you extracted", facts: card([["Provider", p], ["Date of service", ddyyyy(d)], ["You", va]]),
         answer: `MED - ${p} - Records DOS ${ddy(d)} with Signed COR (${va})`, rule: "MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)"}; },
@@ -152,7 +152,9 @@ const SETS = [
 
 /* ---------- checking: dashes, spacing and capitals forgiven; everything else must match ---------- */
 function norm(s, yearEither){
-  let t = String(s || "").replace(/[–—−]/g, "-").replace(/[‘’]/g, "'").replace(/\s+/g, " ").replace(/\s*-\s*/g, " - ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")").trim().toLowerCase();
+  let t = String(s || "").replace(/[–—−]/g, "-").replace(/[‘’]/g, "'").replace(/\s+/g, " ").replace(/\s*-\s*/g, " - ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")").trim().toLowerCase()
+    // (HCFA or HICF: either name for the bill is right)
+    .replace(/\bhicf\b/g, "hcfa");
   if(yearEither) t = t.replace(/\b(\d{2})\.(\d{2})\.\d{2}(\d{2})\b/g, "$1.$2.$3");
   return t;
 }
