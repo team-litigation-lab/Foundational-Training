@@ -575,10 +575,6 @@ main{flex:1;max-width:1400px;margin:0 auto;padding:36px 20px 80px;width:100%;ani
   display:flex;align-items:center;gap:32px;padding:40px 44px;margin-bottom:30px;
   background:linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
 }
-.client-photo-img{
-  width:150px;height:150px;flex:0 0 auto;object-fit:cover;border-radius:14px;
-  border:3px solid var(--orange);box-shadow:0 8px 20px rgba(0,0,0,.3);
-}
 .client-header-text h2{margin:0 0 8px;font-family:'Fraunces';font-size:32px;color:#fff;}
 .client-header-text p{margin:0 0 10px;font-size:16px;color:#C9CCE6;}
 .client-tagline{font-size:var(--font-body);font-style:italic;color:var(--orange-soft);font-weight:600;}
@@ -1700,7 +1696,6 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
 /* Client Profile on phones */
 @media(max-width:760px){
   .client-header-card{flex-direction:column;align-items:center;text-align:center;gap:14px;padding:24px 18px;margin-bottom:18px;}
-  .client-photo-img{width:112px;height:112px;}
   .client-header-text{min-width:0;width:100%;}
   .client-header-text h2{font-size:24px;line-height:1.2;overflow-wrap:normal;word-break:normal;}
   .client-header-text p{font-size:14px;}
@@ -5177,7 +5172,6 @@ const LOGO_FULL_SRC = "/js/lsh-logo-dark.png";
 /* Empty means "no asset": the render sites below leave the element out rather
    than emitting src="", which makes the browser re-request this page. */
 const ELIAS_VOICE_NOTE_AUDIO_SRC = "";
-const CLIENT_AVATAR_SRC = "";
 
 const state = {
   view:"dashboard",
@@ -5875,13 +5869,6 @@ function brandMark(){
 }
 
 /* ---------- top bar ---------- */
-function clientAvatarSvg(){
-  // No photo configured: leave the element out. An <img src=""> makes the
-  // browser re-request this page as the image, which is a wasted full-document
-  // download and a broken-image icon.
-  if(!CLIENT_AVATAR_SRC) return "";
-  return `<img src="${CLIENT_AVATAR_SRC}" class="client-photo-img" alt="Elias Thorne">`;
-}
 
 /* (Trainer cues, discussion cases, roleplay scripts and answer keys live only in 🖥 Presenter view:
    nothing trainer-facing renders inside lessons or the Practice Lab.) */
@@ -6001,119 +5988,10 @@ document.addEventListener("keydown", (e)=>{
 });
 Object.assign(window, {orientGo, orientFullscreen});
 
-function renderFacilitatorGuide(){
-  if(!state.isAdmin){
-    return `
-      <div class="card" style="padding:40px;text-align:center;">
-        <div style="font-size:34px;margin-bottom:10px;">🔒</div>
-        <h2 style="color:var(--navy);margin:0 0 8px;">Trainers Only</h2>
-        <p style="color:var(--ink-soft);font-size:14px;">The Facilitator Guide, Presenter view's notes and the Discussion Checkpoints are only visible once you're signed in as a trainer.</p>
-        ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>`}
-      </div>`;
-  }
-  return `
-    <p class="eyebrow">For Trainers</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 10px;">Facilitator Guide</h1>
-    <p style="color:var(--ink-soft);font-size:14.5px;max-width:70ch;margin:0 0 26px;">How to actually run a live session using this portal — what trainees see, what only you see, and how to use each built-in facilitation feature.</p>
-
-    <div class="card" style="padding:22px 24px;margin-bottom:16px;background:#F8F9FC;">
-      <h3 style="color:var(--navy);margin:0 0 10px;">Looking for the Full Training Script?</h3>
-      <p style="font-size:13.5px;color:var(--ink);line-height:1.6;margin:0 0 12px;">This page is about running a live session <i>using</i> the portal. For the detailed, day-by-day trainer script itself — the full Upskill Training Guide SOP, with objectives, discussion notes, and every reference table — that lives in the Admin Dashboard's <b>SOP Reference</b> tab.</p>
-      <button class="btn btn-navy btn-sm" onclick="goto('admin'); setAdminTab('sop');">📋 Open SOP Reference</button>
-    </div>
-
-    <div class="card fg-card">
-      <h3>What Trainees See vs. What You See</h3>
-      <p>Trainees get a clean, self-paced flow: one topic per slide (with a 📖 Full explanation panel where you've published one), Quick Checks, the Practice Lab, then the Knowledge Check. <b>Speaker notes, scripts, answer keys and crisis scripts never appear in the lesson slides — even when you're signed in as admin.</b> They're only in <b>🖥 Presenter view</b> (your private console) and the day's <b>Speaker Notes PDF</b> in Admin → SOP Reference, so screen-sharing the lesson is always safe.</p>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Recommended Session Structure (per day)</h3>
-      <ul>
-        <li><b>~75–120 minutes,</b> depending on the day's topic count. Each day's timing plan is in <b>Admin → SOP Reference</b> (every day now has one, auto-built from the live content).</li>
-        <li><b>Run the slides in 🖥 Presenter view</b> and share only the slides window: each slide's notes panel has what's on the slide, the spoken script and the scenario for the room. The day's Speaker Notes PDF is in Admin → SOP Reference.</li>
-        <li><b>Practice Lab is where the learning sticks.</b> Have trainees complete it live, then debrief. Their work auto-saves (💾) and they can resume after a refresh.</li>
-        <li><b>End-of-day discussion</b> is the day's last slide in Presenter view (and in the SOP session plan) — raise it live before the Knowledge Check.</li>
-        <li><b>Knowledge Check:</b> 70% marks the day complete ✓. Failing doesn't block progress. Each Knowledge Check is taken <b>once</b>; for a technical problem, grant a retry in ✍️ Knowledge Check → the trainee → the lesson → ↺ Grant a retry.</li>
-      </ul>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Progression Rules Trainees Follow</h3>
-      <ul>
-        <li><b>Every day is open.</b> Trainees can open any day, any slide and any Practice Lab at any time — nothing is locked.</li>
-        <li><b>Practice Lab attempts:</b> the first submission of each exercise is free; repeats use one of <b>3 attempts per day</b>. Reset them per trainee in Trainee Audit (↺ Reset Attempts).</li>
-        <li><b>Feedback style:</b> grades below 85% are framed as <b>"Not yet"</b> or <b>"Not this way"</b> with concrete next steps — never a flat "no".</li>
-        <li><b>Progress is saved to the server</b> (not just the browser): trainees can log in on any device and pick up on the exact slide or tool they left.</li>
-      </ul>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Your Daily Trainer Workflow</h3>
-      <ol>
-        <li><b>Approve new registrations</b> in Trainee Audit (registration is name + batch).</li>
-        <li><b>Run the session</b> using the SOP plan and 🖥 Presenter view.</li>
-        <li><b>Review daily feedback:</b> when a trainee finishes a day's Knowledge Check or Practice Lab, a review is auto-drafted (setting: <b>💬 Daily reviews</b> at the top of Trainee Audit). Open <b>View Detail → Day-by-Day Feedback</b>, edit, and <b>Send</b> — or use <b>✨ Draft for all active days</b> and <b>📤 Send all drafts</b>. Trainees see it on the day card and in <b>🎯 Focus</b>.</li>
-        <li><b>Set personal Focus items</b> in View Detail → <b>🎯 Trainer focus</b> (priority + day). They're pinned at the top of the trainee's Focus panel; you'll see when they're seen and marked done.</li>
-        <li><b>Check Rankings</b> and each trainee's competency picture; trainees see their own rank within their batch and a 7-skill Competency Profile.</li>
-        <li><b>Random tasks</b>: broadcast from Trainee Audit with a live window. Trainees handle them in <b>🎲 Tasks</b> (acknowledge → plan → resolve); each is graded on timeliness, prioritisation, applying the day's lesson, communication and risk. Missed tasks count as 0. Scores feed the Competency Profile (Real-Time Task Handling), Rankings and the Audit.</li>
-        <li><b>Read trainee feedback</b> about the platform, lessons and facilitation in <b>Admin → Trainee Feedback</b> (star averages by area and day, comments, status, CSV export). Trainees send it from the 💬 Feedback button or right after each Knowledge Check, and can choose to be anonymous.</li>
-      </ol>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Live Calls &amp; Roleplays</h3>
-      <p>The Day 4 Intake Call and Live Roleplay run as real voice calls: ringtone, the caller speaks, trainees answer out loud (Chrome/Edge; they can also type), and Hang Up triggers the evaluation. A headset works best. If a caller is silent, the call card shows a warning and a ↻ Replay button.</p>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Growing the Content (Content Studio)</h3>
-      <p><b>Admin → Content Studio</b>, per day: 🩺 test the AI connection, propose and draft new topics toward 40 per day, draft full explanations, add Knowledge Check questions for new topics, and write conversational scripts for every topic. <b>Everything is a draft until you publish it</b> — use the review checklist in the Studio, and have the supervising attorney check any legal or regulatory statement.</p>
-    </div>
-
-    <div class="card fg-card">
-      <h3>Access, Security &amp; Troubleshooting</h3>
-      <ul>
-        <li><b>Secure mode:</b> once <code>MASTER_ADMIN_PASSWORD</code> is set on the Worker, the admin password is checked on the server, every request needs a signed session, trainees can only read and change their own records (never approval or attempt resets), and the AI can only be used by signed-in users. Admin shows a red warning while this is off.</li>
-        <li><b>Which version is live?</b> The footer shows the build number. If a fix "doesn't work", check the build first — a renamed download (e.g. <i>index (1).html</i>) is the usual cause.</li>
-        <li><b>AI features failing?</b> Every AI button shows the real reason. "Key isn't set / invalid" means <code>GEMINI_API_KEY</code> needs setting on the Worker (Cloudflare → Workers &amp; Pages → ea-pa-training → Settings → Variables and Secrets).</li>
-        <li><b>Revoke</b> deletes a trainee's record and saved progress; invalid names/batches are cleaned automatically.</li>
-      </ul>
-    </div>
-  `;
-}
-function renderClientProfile(){
-  return `
-    <h1 style="color:var(--navy);font-size:28px;margin:0 0 22px;">Client Profile</h1>
-    <p>Everything about Elias Thorne, your client for all 10 days — read this before Day 1 and come back whenever you need a fact, a preference or a quirk.</p>
-
-    <div class="client-intro-banner">
-      <div class="cib-tag">📌 Read This First</div>
-      <h2>Your Client for All 10 Days</h2>
-      <p>Every exercise in this program — every dossier, every calendar, every email, every crisis scenario — is built around <b>one single client: Elias Thorne</b>. This isn't a new persona introduced each day; it's the same person, the same firm, and the same standing rules from Day 1 straight through to Day 10.</p>
-      <p>That's deliberate. In a real role, your value compounds — the calendar rules you learn early inform how you triage an inbox later, and the preferences you document up front are what make later exercises gradeable on real accuracy rather than guesswork. Treat this page as your standing reference: come back to it any time you need to check a fact, a preference, or a quirk before drafting a response.</p>
-      <p>If a later exercise ever seems to contradict something on this page, that's worth raising with your trainer — it's exactly the kind of discrepancy a real EA would catch.</p>
-    </div>
-
-    <div class="card client-header-card">
-      ${clientAvatarSvg()}
-      <div class="client-header-text">
-        <h2>Elias Marcus Thorne</h2>
-        <p>Managing Owner &amp; CEO, Thorne &amp; Partners Law Group</p>
-        <span class="client-tagline">"The Legal Strategist"</span>
-      </div>
-    </div>
-    <div class="profile-grid">
-      ${CLIENT_PROFILE_DOC.map(sec=>`
-        <div class="card profile-section">
-          <h3>${esc(sec.section)}</h3>
-          <ul>${sec.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
-        </div>`).join("")}
-    </div>
-  `;
-}
 
 
+// (renderFacilitatorGuide, renderClientProfile, renderHandouts and the other EA/PA-only views are js/ft-updates.js's
+// redirects to 📚 Dashboard: FT_OFF_VIEWS)
 function renderTopbar(){
   let views = [["dashboard","📚 Dashboard"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
   if(state.isAdmin){
@@ -11910,34 +11788,6 @@ async function saveHandoutLink(day){
 }
 Object.assign(window, {previewHandout, downloadHandoutPdf, downloadHandoutCsv, saveHandoutLink});
 
-function renderHandouts(){
-  if(!state.handoutLinksLoaded){ setTimeout(()=>loadHandoutLinks(), 0); }
-  const cur = state.traineeId ? nextDayId() : 1;
-  const q = (state.hoQuery||"").toLowerCase();
-  const list = handoutList().filter(h=>!q || h.title.toLowerCase().includes(q) || String(h.dayTitle).toLowerCase().includes(q));
-  return `
-    <p class="eyebrow">Reference Library</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 10px;">Handouts &amp; Templates</h1>
-    <p style="color:var(--ink-soft);font-size:14.5px;max-width:72ch;margin:0 0 16px;">Printable checklists, scripts and ready-to-use templates for each day. Download the PDF to print or fill in, or grab the ready-made Excel workbook for any tracker (opens in Excel or Google Sheets).</p>
-    <input class="ho-search" placeholder="Search handouts…" value="${esc(state.hoQuery||"")}" oninput="state.hoQuery=this.value; clearTimeout(window.__hoT); window.__hoT=setTimeout(()=>{render(); const el=document.querySelector('.ho-search'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length);} },250)">
-    <div class="ho-grid">
-    ${list.map(h=>{ const link = handoutLink(h.day); return `
-      <div class="card ho-card ${h.day===cur?"current":""}">
-        <div class="ho-top"><div class="ho-icon">${h.icon}</div><div><div class="ho-day">${ftName(h.day)}${h.day===cur?" · you're here":""}</div><h4>${esc(h.title)}</h4><span>${esc(h.kind||"Handout")} · ${esc(h.dayTitle)}</span></div></div>
-        <p class="ho-desc">${esc(h.intro||"")}</p>
-        <div class="ho-actions">
-          ${link ? `<a class="btn btn-primary btn-sm" href="${esc(link)}" target="_blank" rel="noopener">⬇ Open file</a>` : `
-          <button class="btn btn-primary btn-sm" onclick="downloadHandoutPdf(${h.day})">⬇ PDF</button>
-          ${h.csv?`<button class="btn btn-ghost btn-sm" onclick="downloadHandoutXlsx(${h.day})">⬇ Excel</button>`:""}`}
-          <button class="btn btn-ghost btn-sm" onclick="previewHandout(${h.day})">Preview</button>
-        </div>
-        ${state.isAdmin ? `<div class="ho-admin"><input id="hoLink_${h.day}" placeholder="Admin: https:// link to your own file (optional)" value="${esc(link)}"><button class="btn btn-ghost btn-sm" onclick="saveHandoutLink(${h.day})">Save link</button></div>` : ""}
-      </div>`; }).join("")}
-    </div>
-    ${list.length ? "" : `<div class="empty-note">No handouts match "${esc(state.hoQuery)}".</div>`}
-    ${state.isAdmin ? `<div class="empty-note">Admins: each handout downloads a built-in branded PDF (and spreadsheet for trackers). To use your own version instead, paste a share link (Google Drive, SharePoint, Dropbox) — trainees will get your file.</div>` : ""}
-  `;
-}
 
 /* ============================================================
    PDF EXPORT — shared helpers + Training Record & Certificate
