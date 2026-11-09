@@ -730,11 +730,11 @@ body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padd
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
 /* the Monitoring Sheet preview fills its slide: the sheet as big as the screen allows, on a light frame */
 body.ft-orient #lessonSlideWrap .ftr-mon-entry{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:center;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps{list-style:none;counter-reset:mon;margin:0;padding:0;display:grid;gap:10px;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps li{display:grid !important;grid-template-columns:26px minmax(0,1fr);gap:12px;align-items:start;margin:0 !important;padding:8px 12px !important;border:2px solid #343C66;border-radius:10px;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps{list-style:none;counter-reset:mon;margin:0;padding:0;display:grid;gap:14px;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li{display:grid !important;grid-template-columns:38px minmax(0,1fr);gap:14px;align-items:start;margin:0 !important;padding:12px 16px !important;border:2.5px solid #343C66;border-radius:10px;background:#fff;}
 body.ft-orient #lessonSlideWrap .ftr-mon-steps li::before{content:none !important;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:static !important;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;font:800 14px/26px 'Inter',sans-serif;font-style:normal;text-align:center;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps b{display:block;color:#1E2340;font-size:16px;} body.ft-orient #lessonSlideWrap .ftr-mon-steps span{display:block;color:#2A2F4A;font-size:14px;line-height:1.35;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:static !important;width:38px;height:38px;border-radius:50%;background:#E8590C;color:#fff;font:900 20px/38px 'Inter',sans-serif;font-style:normal;text-align:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps b{display:block;color:#1E2340;font-size:22px;font-weight:900;line-height:1.2;margin-bottom:3px;} body.ft-orient #lessonSlideWrap .ftr-mon-steps span{display:block;color:#2A2F4A;font-size:17px;font-weight:600;line-height:1.4;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig-scroll{background:#EEF1F8;padding:8px;box-shadow:none;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig svg{min-width:0;width:auto;max-width:100%;height:calc(100vh - 360px);max-height:none;margin:0 auto;border-radius:6px;}
