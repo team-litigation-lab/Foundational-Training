@@ -63,7 +63,6 @@ function consultHtml(d){
   const row = (l, v) => `<tr><th>${e(l)}</th><td>${nl(v)}</td></tr>`;
   return `<article class="ftis-call ftis-consult-c">
     <header><span class="ftis-n">📘</span><div><b>${e(k.title)}</b><small>A = Atty. Magdalena (Attorney) · C = Daniel Reyes (Client) · fictional</small></div></header>
-    <p class="ftis-about">${e(k.about)}</p>
     <div class="ftis-play">${player(k)}</div>
     ${transcript(k, ["A"])}
     <details class="ftis-tx"><summary>📄 Sample minutes made from this consultation</summary>
@@ -278,10 +277,22 @@ function docsHtml(el){
     ${isTrainee() && K.edit ? `<div class="ftis-dedit"><p class="ftis-pk-note">Open the <a href="${e(folder)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>, open each document and copy its link from the address bar. A document with no link opens the folder.</p>
       ${DOCS.map((t, i) => `<label><b>${i + 1}. ${e(t)}</b><input type="url" data-doc="${i}" placeholder="https://drive.google.com/file/d/…" value="${e(own[i] || "")}"></label>`).join("")}
       <div class="ftis-asave"><button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.docsSave(this)">💾 Save my document links</button> <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docsEdit()">Close</button></div></div>` : ""}
-    <div class="ftis-docs-g">${DOCS.map((t, i) => { const u = String(own[i] || "").trim() || String(links[i] || "").trim(), src = u && embed(u);
-    return `<a class="viewer-link ftis-doc" data-kind="doc" data-title="${e(t)}" href="${e(u || folder)}">
-      <span class="ftis-doc-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-doc-ic">📄</span>`}</span>
-      <span class="ftis-doc-t">${e(t)}${u ? "" : " <small>(opens the folder)</small>"}</span></a>`; }).join("")}</div>`;
+    ${docViewHtml(own, links, folder)}`;
+}
+// 📄 the documents one at a time, in the platform: the list of them beside the one open, embedded, with ← / → to step through.
+// Each shows the trainee's own link, else the trainer's, else the platform's own copy (LOCAL_DOCS); one with none of these
+// says so and offers the folder.
+const LOCAL_DOCS = {13: "ft/day7/forms/conflict-waiver.html"};
+function docViewHtml(own, links, folder){
+  const n = DOCS.length, i = Math.max(0, Math.min(n - 1, Number(K.di) || 0)), t = DOCS[i];
+  const urlOf = j => String(own[j] || "").trim() || String(links[j] || "").trim();
+  const u = urlOf(i), src = u ? embed(u) : LOCAL_DOCS[i] || "";
+  const pane = src ? `<iframe class="ftis-dv-f" title="${e(t)}" src="${e(src)}" allow="fullscreen"></iframe>`
+    : `<div class="ftis-dv-none"><span>📄</span><p><b>${e(t)}</b> isn't linked in the platform yet.</p><p>${isTrainee() ? "Add its link under ✏️ My document links, or open" : "A trainer adds its link in Admin → 📦 Intake Packets. Until then, open"} the <a href="${e(folder)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>.</p></div>`;
+  return `<div class="ftis-dv"><ol class="ftis-dv-l">${DOCS.map((x, j) => `<li><button type="button" class="${j === i ? "is-on" : ""}${urlOf(j) || LOCAL_DOCS[j] ? "" : " is-none"}" onclick="FTIntake.docGo(${j})"${j === i ? ' aria-current="true"' : ""}>${e(x)}</button></li>`).join("")}</ol>
+    <div class="ftis-dv-main"><div class="ftis-dv-bar"><button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docGo(${i - 1})"${i ? "" : " disabled"}>← Previous</button>
+      <b>${i + 1} of ${n} · ${e(t)}</b>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docGo(${i + 1})"${i < n - 1 ? "" : " disabled"}>Next →</button></div>${pane}</div></div>`;
 }
 // 📋 the sample intake forms: shown in the slide for reference, bigger on a click
 function formsHtml(el){
@@ -496,6 +507,7 @@ window.FTIntake = {
   },
   reload: () => loadK(true),
   docsEdit(){ K.edit = !K.edit; paint(true); },
+  docGo(i){ K.di = Math.max(0, Math.min(DOCS.length - 1, Number(i) || 0)); paint(true); },
   // 🔗 the trainee's own packet link, into drive:<id>.intakePacket (read fresh first: the record holds their other links too)
   async savePacketLink(b){
     if(!isTrainee()) return;
@@ -607,6 +619,21 @@ window.FTIntake = {
 /* (seven to a row: Day 8's fourteen documents in two rows) */
 .ftis-docs-lead{margin:0 0 6px;}
 .ftis-docs-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin:8px 0;}
+.ftis-dv{display:grid;grid-template-columns:minmax(200px,22%) 1fr;gap:14px;margin:8px 0;min-height:60vh;}
+.ftis-dv-l{margin:0;padding:0;list-style:none;counter-reset:dv;display:flex;flex-direction:column;gap:4px;max-height:66vh;overflow:auto;}
+.ftis-dv-l li{counter-increment:dv;}
+.ftis-dv-l button{width:100%;text-align:left;border:1.5px solid #C9CEE0;background:#fff;border-radius:8px;padding:6px 9px;font:700 12.5px/1.3 'Inter',sans-serif;color:#1B1E2E;cursor:pointer;}
+.ftis-dv-l button::before{content:counter(dv) ". ";color:#5A6175;}
+.ftis-dv-l button.is-on{background:#1E2340;color:#fff;border-color:#1E2340;}
+.ftis-dv-l button.is-on::before{color:#FFB37A;}
+.ftis-dv-l button.is-none:not(.is-on){color:#6B7280;border-style:dashed;}
+.ftis-dv-main{display:flex;flex-direction:column;min-width:0;border:1.5px solid #9AA0AB;border-radius:12px;overflow:hidden;background:#F6F7FB;}
+.ftis-dv-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:#fff;border-bottom:1.5px solid #C9CEE0;}
+.ftis-dv-bar b{font:800 14px/1.3 'Poppins','Inter',sans-serif;text-align:center;}
+.ftis-dv-f{flex:1;width:100%;min-height:58vh;border:0;background:#fff;}
+.ftis-dv-none{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:#3A4058;font:600 14px/1.5 'Inter',sans-serif;}
+.ftis-dv-none span{font-size:44px;}
+@media(max-width:900px){.ftis-dv{grid-template-columns:1fr;}.ftis-dv-l{flex-direction:row;flex-wrap:wrap;max-height:none;}.ftis-dv-l li{flex:1 1 45%;}}
 @media(max-width:900px){.ftis-docs-g{grid-template-columns:repeat(2,minmax(0,1fr));}}
 .ftis-doc{display:flex;flex-direction:column;background:#fff;border:1.5px solid #9AA0AB;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;transition:box-shadow .15s,transform .15s;}
 .ftis-doc:hover{box-shadow:0 8px 22px -10px rgba(38,43,69,.45);transform:translateY(-2px);}
