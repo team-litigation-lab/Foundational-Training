@@ -108,7 +108,10 @@ const failures = []; const fail = m => failures.push(m);
     // 🏅 Grades, in one: the Score Card, the Practice Lab's use, every grading system and the lessons, under one heading; no
     // separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade, 📚 Lessons or day-by-day sections repeating the same grades
     if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
-    if (pt && !(/Score Card, lesson by lesson/.test(pt.text) && /Every grading system/.test(pt.text) && /Lessons: the deck and the Knowledge Check/.test(pt.text) && /Overall %/.test(pt.text))) fail(`🏅 Grades doesn't hold the Score Card, the grading systems, the lessons and the Overall %: ${pt.text.slice(0, 300)}`);
+    // (🏅 Grades: the Overall % and every grading system with its grades; no lesson-by-lesson Score Card, Practice Lab or Lessons
+    // in it, no Measure / Score / How header row, no 📅 / 🟢 / 🎧 Review buttons — those are in 🛡 Admin Master Control)
+    if (pt && !(/Overall %/.test(pt.text) && /Knowledge Checks/.test(pt.text))) fail(`🏅 Grades doesn't hold the Overall % and the grading systems: ${pt.text.slice(0, 300)}`);
+    if (pt && /Score Card, lesson by lesson|Lessons: the deck and the Knowledge Check|Every grading system|How it was worked out|Review their calendaring/.test(pt.text)) fail(`Ada's table still has a part that was removed: ${pt.text.slice(0, 300)}`);
     // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
@@ -219,7 +222,7 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$('#bs-ranking')) fail('the 📊 Weekly Ranking is still on the 📋 Batch Sheet');
   { await page.evaluate(() => { state.adminTab = 'weeklyreports'; render(); }); await page.waitForTimeout(1500);
     const wr = await page.evaluate(() => ({ rk: !!document.querySelector('#bs-ranking .rk-bar'), comp: !!document.getElementById('bs-compliance'), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('button, a')].some(b => /📊 Weekly Reports/.test(b.textContent)) }));
-    const wr2 = await page.evaluate(() => ({ strip: !!document.querySelector('.bs-weekly .gs-top'), acts: (document.querySelector('.rks-bar-acts') || {}).innerText || '', pick: !!document.querySelector('#bs-ranking .rk-pick select') }));
+    const wr2 = await page.evaluate(() => ({ strip: !!document.querySelector('.bs-weekly .gs-top'), acts: (document.querySelector('.rks-head-acts, .rks-bar-acts') || {}).innerText || '', pick: !!document.querySelector('#bs-ranking .rk-pick select') }));
     if (wr2.strip || !/Download/.test(wr2.acts) || !/Refresh/.test(wr2.acts) || !/Update all scores/.test(wr2.acts) || !wr2.pick)   // (⬇ Excel joins them once the week's summary is written) fail(`📊 Weekly Reports still has the header strip, or the actions aren't beside ⬇ Excel: ${JSON.stringify(wr2)}`);
     if (!wr.rk || wr.comp || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
     await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800); }
@@ -281,7 +284,9 @@ const failures = []; const fail = m => failures.push(m);
   if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
   // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
   if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
-  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'room') || {}).t);
+  // (a classroom-assigned exercise the trainer ticks — at: "gc", scored by being done; the classroom lessons are off the scorecard)
+  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'gc' && /Exercise/.test(i.t)) || {}).t);
+  if (!roomT) fail('Day 1 has no exercise the trainer ticks');
   await page.evaluate(([id, k]) => FTBatchSheet.tick(id, k, true), [ids.Ada, '1|' + roomT]); await page.waitForTimeout(1500);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);

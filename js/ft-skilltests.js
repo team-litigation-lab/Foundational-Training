@@ -440,8 +440,10 @@ window.ftSkillItems = ctx => {
   const av = averages(rec), c = compliance(rec, ctx.since);
   // 📅 the daily deliverable: every slot due so far, taken here or saved as a screenshot in Drive
   if(c.pct != null) out.push({name: "📅 Daily test compliance", pct: c.pct, note: `${c.done} of ${c.need} tests done since ${md(c.from)}${c.made ? ` (${c.made} made up)` : ""}${c.lacking ? ` · ${c.lacking} lacking` : ""}`});
-  if(av.net != null) out.push({name: "⌨ Typing Test", pct: Math.min(100, Math.round(av.net / TARGET * 100)), note: `${av.net} net WPM · ${av.acc}% accuracy · last ${av.nt} · target ${TARGET} WPM`});
-  if(av.spell != null) out.push({name: "🔤 Spelling Test", pct: av.spell, note: `average of the last ${av.ns}`});
+  // (the tests are scored on doing them: the compliance above is the score — 100% with every test done, less only for a test
+  // missed. The speed and the spelling average are shown beside it, with no score of their own)
+  if(av.net != null) out.push({name: "⌨ Typing Test", pct: null, note: `${av.net} net WPM · ${av.acc}% accuracy · last ${av.nt} · target ${TARGET} WPM (not scored: the compliance is)`});
+  if(av.spell != null) out.push({name: "🔤 Spelling Test", pct: null, note: `${av.spell}% average of the last ${av.ns} (not scored: the compliance is)`});
   return out;
 };
 // 📚 Dashboard: the daily deliverable beside the Task Tracker and Monitoring Sheet tiles: today's three tests (taken here

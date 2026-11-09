@@ -2227,8 +2227,9 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (monRead) {
     const st = batchStartDate(rec.batch) || drive.startDate || "";
     let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
-    const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16)));
-    monDay = n ? Math.round(due.reduce((a, tp) => a + ((mon.entries.find((x) => x.topic === tp) || {}).pct || 0), 0) / due.length) : mon.pct;
+    // (the day's work only: the entry for that day's discussion — the sheet is updated day by day — not every one due so far)
+    const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16))), todays = due[due.length - 1];
+    monDay = n ? Math.round(((mon.entries.find((x) => x.topic === todays) || {}).pct) || 0) : mon.pct;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };

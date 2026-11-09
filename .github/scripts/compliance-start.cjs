@@ -50,10 +50,11 @@ const failures = []; const fail = (m) => failures.push(m);
     // 2. Ana's Day 10: ten topics due (from the batch's start), not one (from the day she saved her links)
     await call('/api/drive/check', { id: ana, date: D, ai: false }, admin);
     { const cur = get('trackerreview:' + ana), c = (cur.compliance || {})[D] || {}, mon = cur.monitor || {};
-      const due = TR.MONITOR_TOPICS.slice(0, 10), want = Math.round(due.reduce((a, tp) => a + (((mon.entries || []).find((x) => x.topic === tp) || {}).pct || 0), 0) / 10);
+      // (the day's work only: the entry for Day 10's discussion, the tenth topic from the batch's start)
+      const want = Math.round(((mon.entries || []).find((x) => x.topic === TR.MONITOR_TOPICS[9]) || {}).pct || 0);
       const one = ((mon.entries || []).find((x) => x.topic === TR.MONITOR_TOPICS[0]) || {}).pct || 0;
       if (!one) fail(`Ana's Day 1 entry wasn't read: ${JSON.stringify(mon)}`);
-      if (!c.parts || c.parts.monitor !== want) fail(`Ana's Day 10 Monitoring Sheet part is ${c.parts && c.parts.monitor} (want ${want}, ten topics due; ${one} is one topic due)`); }
+      if (!c.parts || c.parts.monitor !== want) fail(`Ana's Day 10 Monitoring Sheet part is ${c.parts && c.parts.monitor} (want ${want}, Day 10's entry; ${one} is Day 1's)`); }
 
     // 3. Cara's batch, B300926: the backfill and the backtrack start on 30 September 2026
     const bf = (await call('/api/compliance/backfill', { ids: [cara] }, admin)).body || {};

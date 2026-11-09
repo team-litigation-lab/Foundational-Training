@@ -177,8 +177,8 @@ const DAYS = [
    the homework videos and PPTs, the assessments to finish and upload, the reading and the modules to go
    through while waiting for a turn. They were only in the GC and the day's deck; they are part of the day. */
 const OFFLINE = {
-  1: ["Nitro Pro 12 and Adobe Acrobat Pro: watch the how-to videos and note your takeaways on the Monitoring Sheet",
-      "PI Reading Task (6 questions, 40 points) in your Assessments/Activities folder"],
+  // (no Nitro Pro 12 / Adobe Acrobat Pro videos: off the training)
+  1: ["PI Reading Task (6 questions, 40 points) in your Assessments/Activities folder"],
   2: ["Common Terms Used — Assessment and Auto Liability Insurance — Assessment: finish them and upload both to your Assessments/Activities subfolder",
       "Softphones: watch one sample type from the instructional video for your takeaways",
       "The PPTs on Documents & Spreadsheets, Keyboard Shortcuts and Shadowing Etiquette",

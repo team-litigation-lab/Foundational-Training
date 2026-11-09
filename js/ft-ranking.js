@@ -885,6 +885,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .xl-corner{top:0;z-index:6;}
 .xl-title td{padding:5px 8px;font-size:17px;background:#fff;}
 .xl-head th{position:sticky;top:20px;z-index:3;background:#5B9A32;color:#fff;font-weight:900;font-size:15px;padding:5px 6px;vertical-align:middle;text-align:center;line-height:1.25;white-space:normal;}
+.xl-head th,.xl-head th *{word-break:normal !important;overflow-wrap:normal !important;hyphens:none !important;}   /* (whole words in a heading: "Monitoring", never "Monitorin g") */
 .xl-head th.xl-h-name{min-width:150px;} .xl-head th.xl-h-notes{min-width:150px;max-width:190px;} .xl-head th.xl-h-addl{min-width:190px;}
 .xl-head th.xl-h-calc,.xl-head th.xl-h-avg,.xl-head th.xl-h-rank{background:#4A7F28;}
 .xl .xl-frz{position:sticky;left:34px;z-index:2;background:#fff;}
