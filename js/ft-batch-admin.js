@@ -128,6 +128,10 @@ async function msLoad(force){
   if(MS.loading || (!force && MS.loadedFor === sig)) return;
   MS.loading = true;
   try{
+    // (🔁 first the scores given on the simulators — the Google Calendar Simulator's scorecard, Ring Channel's graded calls —
+    // onto the mock call scorecards nobody scored here, worker.js syncSimScores; once a visit per batch)
+    if(MS.simSynced !== sig && typeof authFetch === "function"){ MS.simSynced = sig;
+      for(let i = 0; i < ids.length; i += 40){ try{ await authFetch("/api/sim-scores/sync", {ids: ids.slice(i, i + 40)}); }catch(err){} } }
     // (and trackerreview:, for the Transcription Activity's automatic scores)
     const vals = await sharedGetMany(ids.flatMap(id => ["labreview:" + id, "trackerreview:" + id]));
     ids.forEach((id, i) => { MS.rv[id] = vals[i * 2] || {}; MS.tr[id] = vals[i * 2 + 1] || {}; });
@@ -220,6 +224,8 @@ function renderMockScores(){
   setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
   const c = cellOf(r.id, a.id), id = e(r.id), auto = autoOf(r.id, a.id), isTr = /^transcription-[12]$/.test(a.id);
   // 🎧 the automatic score: where it came from, ✓ Accept (it then saves as the trainer's), and 🔁 Grade now (the Worker again)
+  // (🔁 a scorecard filled from a simulator — worker.js syncSimScores — says so; a score typed here replaces it)
+  const simC = r && a ? cellOf(r.id, a.id) : {}, simBar = simC.source === "simulator" ? `<div class="fms-auto">🔁 <b>From the ${e(simC.simFrom || "simulator")}</b>${simC.simBy ? " · " + e(simC.simBy) : ""}${simC.simAt ? " · " + e(String(simC.simAt).slice(0, 10)) : ""} · it follows the simulator until a score is saved here</div>` : "";
   const autoBar = !isTr ? "" : `<div class="fms-auto">${auto ? `🤖 <b>Auto-scored ${e(new Date(auto.at).toLocaleDateString())}</b> · ${auto.pct == null ? "—" : e(auto.pct) + "%"} on ${e(auto.scored)} of ${e(auto.scores.length)} criteria${auto.ai ? "" : " (no AI: you score the rest)"}${d.autoFrom && !d.dirty ? ` · review and Save
       <button class="btn btn-navy btn-sm" type="button" data-ms-accept onclick="FTMockScores.accept('${id}')">✓ Accept the automatic score</button>` : ""}` : `🤖 No automatic score yet (scored when the trainee submits the recording).`}
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTMockScores.regrade('${id}')" title="Score the trainee’s submitted minutes again">🔁 Grade now</button></div>`;
@@ -228,7 +234,7 @@ function renderMockScores(){
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}"${d.autoFrom && d.scores[i] == null ? ` placeholder="you" title="The automatic check doesn’t score this one: you do"` : ""} aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    ${autoBar}
+    ${simBar}${autoBar}
     ${rb && (rb.key === "calendar" || rb.key === "transcription") && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
     ${typeof window.ftMockLinks === "function" ? window.ftMockLinks(r, a) : ""}
