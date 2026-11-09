@@ -239,7 +239,7 @@ function portalCard(id){
   const c = P.cache[id];
   if(!c){ P.cache[id] = {loading: true};
     Promise.resolve(typeof authFetch === "function" ? authFetch("/api/calsim-card", {id, op: "get"}).then(r => r.json()) : {ok: false})
-      .then(j => { P.cache[id] = j && j.ok ? {cards: j.cards || [], user: j.username || ""} : {off: !!(j && j.off), error: (j && j.error) || ""}; if(state.view === "admin") render(); })
+      .then(j => { P.cache[id] = j && j.ok ? {cards: j.cards || [], user: j.account || ""} : {off: !!(j && j.off), error: (j && j.error) || ""}; if(state.view === "admin") render(); })
       .catch(() => { P.cache[id] = {error: "unreachable"}; });
     return null; }
   return c.loading ? null : c;

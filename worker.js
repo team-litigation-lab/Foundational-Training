@@ -2973,7 +2973,7 @@ export default {
           }
           const r = await fetch(base + "?" + new URLSearchParams({ name: rec.name, batch }), { headers: hdr });
           const j = await r.json().catch(() => ({}));
-          return json(j && j.success ? { ok: true, username: j.username || "", cards: Array.isArray(j.cards) ? j.cards.slice(-5) : [] } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+          return json(j && j.success ? { ok: true, account: j.username || "", cards: Array.isArray(j.cards) ? j.cards.slice(-5) : [] } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });
         } catch (e) { return json({ ok: false, error: "The Portal is unreachable: " + String(e && e.message || e).slice(0, 160) }); }
       }
       // ✍ A TRAINER'S EOD SCORE for a training day (one the EOD monitoring missed, or before it was set up): kept in

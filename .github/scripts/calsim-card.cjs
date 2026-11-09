@@ -26,7 +26,7 @@ const failures = []; const fail = (m) => failures.push(m);
   const trainee = (await (await worker.fetch(new Request('http://x/api/auth/trainee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Abesh Dawn Jamon', batch: 'B103026' }) }), env, { waitUntil() {} })).json()).token;
   if ((await call({ id, op: 'get' }, trainee)).status !== 403) fail('a trainee read the scorecard through the trainers\' route');
   const g = (await call({ id, op: 'get' }, admin)).body || {};
-  if (!g.ok || g.username !== 'abesh' || !g.cards || g.cards[0].pct !== 80) fail(`the Portal's scorecards weren't read: ${JSON.stringify(g)}`);
+  if (!g.ok || g.account !== 'abesh' || !g.cards || g.cards[0].pct !== 80) fail(`the Portal's scorecards weren't read: ${JSON.stringify(g)}`);
   const s0 = seen[seen.length - 1] || {};
   if (s0.key !== 'gw-secret' || !/name=Abesh\+Dawn\+Jamon/.test(s0.u) || !/batch=B103026/.test(s0.u)) fail(`the read didn't carry the secret, the name and the canonical batch: ${JSON.stringify(s0)}`);
   const rows = [5, 4, 4, 3, 4, 5, 4].map((v) => ({ score: v, feedback: 'ok' }));
