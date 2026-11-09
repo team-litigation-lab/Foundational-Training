@@ -224,7 +224,9 @@ const CSS = `.rks{font-family:'Inter',Arial,sans-serif;color:#1E2340;}
 .rks .rks-head .rks-sub{margin:2px 0 0 !important;color:#E8ECF7 !important;font-size:15px !important;} .rks .rks-head .rks-sub b{color:#fff !important;} .rks .rks-head .rks-legend span{color:#fff !important;}
 .rks-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;} .rks-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;} .rks-legend small{color:#C9D1E8;}
 .rks-tbl{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:18px;font-weight:800;} .rks-tbl th{background:#F1F3F9;color:#1E2340;font-weight:800;padding:8px 6px;text-align:center;border-bottom:2px solid #DB8437;font-size:16px;}
-.rks-tbl th small{font-size:14px;font-weight:900;color:#1E2340;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
+.rks-tbl th small{font-size:14px;font-weight:900;color:#1E2340;}
+/* (a heading breaks between words, never inside one: "Rank", "Compliance" stay whole) */
+.rks-tbl th,.rks-tbl th small{word-break:normal !important;overflow-wrap:normal !important;hyphens:none !important;} .rks-tbl thead th:first-child{white-space:nowrap;} .rks-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #E7EAF1;} .rks-tbl .rks-name{text-align:left;} .rks-rank{font-weight:900;font-size:19px;color:#DB8437;} .rks-tbl .rks-name b{font-size:18.5px;font-weight:900;}
 .rks-tbl .rks-sumh{text-align:left;min-width:320px;} .rks-tbl .rks-sum{text-align:left;font-size:14px;font-weight:600;line-height:1.45;color:#2B3040;max-width:520px;} .rks-sum p{margin:0 0 4px;} .rks-sum-fb{color:#14532D;}
 .rks-tbl td[title]{cursor:help;}
 .rks-chip{display:inline-block;min-width:52px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:19px;} .rks-lbl{color:#5F6368;}

@@ -858,33 +858,14 @@ function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && 
    Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
    them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
 const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
-/* 📅 LESSONS & KNOWLEDGE CHECKS, DAY BY DAY, in the trainee's own table: each day they did something, the lesson decks they
-   finished that day and every Knowledge Check attempt that day (the lesson, the score, passed or not: 70% passes), newest day
-   first — so the lessons are monitored day by day, not only as "5 / 8" (from progress:<id>'s day-progress, as 🕒 Recent progress) */
-function lessonDaysHtml(p){
-  const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, days = {};
-  const day_ = v => { const d = t(v); if(!d) return null; return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-  const at = (v, k) => { const d = day_(v); if(!d) return null; const x = days[d] = days[d] || {decks: [], kcs: []}; return x[k]; };
-  lessons().forEach(l => { const x = dp[l.id] || {};
-    const dk = at(x.studiedAt, "decks"); if(dk) dk.push(lessonName(l.id));
-    const hist = Array.isArray(x.history) ? x.history : [];
-    hist.forEach(h => { const k = at(h.date || h.at, "kcs"); if(k && typeof h.score === "number") k.push({l: lessonName(l.id), s: h.score, ok: !!h.passed || h.score >= 70}); });
-    if(!hist.length && typeof x.score === "number"){ const k = at(x.date, "kcs"); if(k) k.push({l: lessonName(l.id), s: x.score, ok: x.score >= 70}); } });
-  const keys = Object.keys(days).sort().reverse();
-  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
-  const rows = keys.map(d => { const x = days[d];
-    return `<tr><td class="bs-pt-m">${e(nice(d))}</td><td class="bs-pt-v">${x.decks.length ? `📚 ${x.decks.length} deck${x.decks.length === 1 ? "" : "s"}` : "—"}${x.kcs.length ? `<br>✍️ ${x.kcs.filter(k => k.ok).length} of ${x.kcs.length} passed` : ""}</td>
-      <td class="bs-pt-f">${x.decks.length ? `<b>Finished:</b> ${e(x.decks.join(", "))}` : "No lesson deck finished"}${x.kcs.length ? `<br><b>Knowledge Checks:</b> ${x.kcs.map(k => `${e(k.l)} <b class="bs-sbox ${tone(k.s)}">${Math.round(k.s)}%</b> ${k.ok ? "✓ passed" : "✗ not passed (70% passes)"}`).join(" · ")}` : ""}</td></tr>`; }).join("");
-  return `<tr class="bs-pt-sec"><th colspan="3">📅 Lessons & Knowledge Checks, day by day</th></tr>${rows || `<tr><td colspan="3" class="bs-pt-f">No lesson deck finished and no Knowledge Check taken yet.</td></tr>`}`;
-}
-function everyGradeHtml(p){
+function everyGradeHtml(p, bare){
   const sc = (B.data.rec[p.id] || {}).score; if(!sc || !Array.isArray(sc.rows)) return "";
   const rows = sc.rows.filter(r => r && r.s && !r.s.hidden && (r.items || []).length);
   const out = rows.map(r => `<tr class="bs-pt-sub"><td class="bs-pt-m">${e(`${r.s.icon || ""} ${r.s.label}`.trim())}</td><td class="bs-pt-v ${e(tone(r.avg))}">${r.avg != null ? r.avg + "%" : "—"}</td><td class="bs-pt-f">${r.avg != null ? `Average of ${r.graded} grade${r.graded === 1 ? "" : "s"}` : "Nothing graded yet"}</td></tr>`
     + r.items.map(it => { const v = typeof it.pct === "number" && isFinite(it.pct) ? Math.round(it.pct) : null;
       return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(it.name))}</td><td class="bs-pt-v ${e(tone(v))}">${v != null ? v + "%" : "—"}</td><td class="bs-pt-f">${e(stripTags(it.note || ""))}${it.at ? ` <small>${e(String(it.at).slice(0, 10))}</small>` : ""}</td></tr>`; }).join("")).join("");
   const btns = REVIEW.map(([tab, label]) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.review('${tab}')">${label}</button>`).join("");
-  return `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>${out}<tr><td colspan="3" class="bs-pt-rv">${btns}</td></tr>`;
+  return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}<tr><td colspan="3" class="bs-pt-rv">${btns}</td></tr>`;
 }
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
 function matrixOf(x){
@@ -912,21 +893,39 @@ function perTraineeHtml(T){
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
     const cellOf = h => { const k = col(h); return sr && k >= 0 ? sr[k] || {} : {}; };
     const head = [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h))]).filter(([, v]) => v);
-    const sec = x => { const r = rowFor(x, p, i, ppl.length); if(!r) return "";
+    // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
+    const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
-      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
+      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true) : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
-      return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
+      return lines + grid; };
+    const sec = x => { const rows = rowsOf(x); return rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${rows}` : ""; };
+    /* 🏅 GRADES, in one: the Overall % and its parts, the 🏅 Score Card (lesson by lesson), the Practice Lab's use, every grading
+       system with each of its items, and the lessons with their dates — what 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
+       📅 Lessons & Knowledge Checks day by day and 📚 Lessons each showed a part of, the same grades over and over */
+    const byId = id => T.find(x => x.id === id);
+    const sub = t => `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">${t}</td></tr>`;
+    const part = (t, rows) => rows ? sub(t) + rows : "";
+    const grades = `<tr class="bs-pt-sec"><th colspan="3">🏅 Grades</th></tr>`
+      + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average|feedback \(day by day\)/i.test(h))   // (the grading systems: below, with their grades)
+      + part("🏅 Score Card, lesson by lesson", rowsOf(byId("scorecard")))
+      + part("🛠 Practice Lab", rowsOf(byId("practice"), h => /^(Tools used|Attempts|Last practice)$/.test(h) || /Practice tools|Roleplays/.test(h)))
+      + part("🔎 Every grading system, and each of its grades", everyGradeHtml(p, true))
+      + part("📚 Lessons: the deck and the Knowledge Check, with their dates", rowsOf(byId("lessons")));
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
     // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    // (🏅 Grades in place of the 🏅 Score Card; Compliance and Platform Utilization Monitoring at the very bottom, after the
+    // trainee's own record)
+    const inGrades = ["scores", "scorecard", "practice", "lessons"], last = ["compliance"];
+    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + grades + intake + use.filter(x => x.id === "trainees").map(sec).join("")
+      + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t]) => `<span class="bs-pt-k ${e(t)}">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
@@ -1928,7 +1927,14 @@ window.ftBanner = function(title, batch, right, controls){
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
-body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px;}
+body.bs-wide main{max-width:none !important;padding-left:6px;padding-right:6px;}
+/* (wider still: the panels around the sheet keep thin sides, so the tables have the window's width) */
+body.bs-wide .ft-admin-screen{padding-left:10px;padding-right:10px;}
+body.bs-wide .bs-card{padding-left:10px !important;padding-right:10px !important;}
+body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
+body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !important;}   /* (📦 Intake Packets, wide the same way) */
+/* (🏅 Grades' parts: a light band across the table) */
+.bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
 :is(.bs-card,.bs-ctl) .gs-top{flex-wrap:nowrap;gap:10px;align-items:center;overflow-x:auto;}
 :is(.bs-card,.bs-ctl) .gs-file{flex-direction:row;align-items:center;gap:10px;min-width:0;flex:0 1 auto;}
