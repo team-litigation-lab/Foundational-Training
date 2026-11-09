@@ -2319,6 +2319,11 @@ async function dailyCompliance(env, id, D, o = {}) {
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
   if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  // (📅 a batch's first training day: the Task Tracker and the Monitoring Sheet are set up that day, not updated yet, so
+  // they don't count — left out of the day's %, not a 0)
+  { const st1 = batchStartDate(rec.batch) || (drive && drive.startDate) || "";
+    if (st1 && D >= st1) { let k = 0; for (let t = Date.parse(st1 + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 2; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++;
+      if (k === 1) { parts.tracker = null; parts.monitor = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
   const vals = Object.values(parts).filter((v) => typeof v === "number");
