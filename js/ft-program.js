@@ -11,7 +11,7 @@
      🎯 Graded calls            labreview:<id> (the trainer's Mock Call scorecard, js/ft-sessions.js ftMockCallItem), else callsim:<id>, the best graded call
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
-     🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
+     🟢 Practice Sessions       sessions:<id> + labreview:<id>: practice, so not on the Scorecard (hidden, not in the overall; js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
      📅 Calendaring Activity    calweek:<id>, the automated check of the submitted next-week calendar (js/ft-calweek.js)
@@ -131,7 +131,9 @@ window.LSH_PROGRAM = {
           if(pct != null && (!ext[k] || pct > ext[k].pct)) ext[k] = {name:k, pct, note:"Connected simulator · best result"}; });
         return out.concat(Object.values(ext));
       }},
-    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:",
+    // (🟢 Practice Sessions are practice: off the Scorecard — no card, not in the overall — which shows only graded work. Their
+    //  records are still read; each session's checks and the trainer's review stay on the session itself.)
+    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:", hidden:true, noOverall:true,
       about:"Your live Practice Sessions at your firm: your trainer’s score once they review one, until then its automated checks.",
       items: ctx => typeof window.ftSessionItems === "function" ? window.ftSessionItems(ctx) : []},
     {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",
