@@ -129,6 +129,9 @@ const failures = []; const fail = (m) => failures.push(m);
     { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
       if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
       // (10/30 is the batch's Day 1: the Task Tracker and the Monitoring Sheet are set up that day, so neither counts — not a 0)
+      // (a part the day doesn't ask for is left out, not a 0: Day 5, 11/05, has nothing to hand in; Day 2, 11/02, has its assessments)
+      { const c5 = (cur.compliance['2026-11-05'] || {}).parts || null;
+        if (!c5 || c5.outputs !== null || typeof c2.outputs !== 'number') fail(`the Day's outputs aren't left out on a day with nothing to hand in (11/05 ${c5 && c5.outputs}, 11/02 ${c2.outputs})`); }
       if (c1.monitor !== null || c1.tracker !== null || c2.monitor !== 0) fail(`Day 1's sheets aren't left out, or the Monitoring Sheet part isn't each day's own entry (10/30 none, 11/02 0): ${c1.tracker} ${c1.monitor} / ${c2.monitor}`);
       // (📘 the TAM isn't a daily part: only graded when a trainer asks, for a shadowing activity)
       if (c1.tam != null || c2.tam != null || c3.tam != null || cur.tam) fail(`the TAM is still read or scored daily: ${JSON.stringify({ c1, tam: cur.tam })}`);
