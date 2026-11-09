@@ -119,7 +119,10 @@ async function loadData(){
     // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
     if(state.isAdmin && typeof authFetch === "function")
-      for(let i = 0; i < ppl.length; i += 40){ try{ await authFetch("/api/sim-scores/sync", {ids: ppl.slice(i, i + 40).map(p => p.id)}); }catch(err){} }
+      for(let i = 0; i < ppl.length; i += 40){ const ids = ppl.slice(i, i + 40).map(p => p.id);
+        try{ await authFetch("/api/sim-scores/sync", {ids}); }catch(err){}
+        // (✅ and today's compliance worked out again now: today's EOD email, answer sheets and tests show at once, worker.js /api/compliance/today)
+        try{ await authFetch("/api/compliance/today", {ids}); }catch(err){} }
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
@@ -500,7 +503,11 @@ function dayDeliverables(p, d){
     if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
-      if(ls.length && !here_.length) return; }
+      if(ls.length && !here_.length) return;
+      // (answered, its Knowledge Check not graded yet: "Submitted", not "Not yet")
+      const D_ = dayDate(d.day), ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
+      const subm = Object.entries(((R.process || {}).sets) || {}).filter(([, s_]) => s_ && s_.submittedAt && ptd(s_.submittedAt) === D_);
+      if(subm.length){ push({name: it.t, pct: null, status: "Submitted", why: `Answer sheet submitted ${subm.map(([, s_]) => new Date(s_.submittedAt).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})).join(", ")} · the Knowledge Check isn't graded yet`, best: [], improve: [], by: ""}); return; } }
     // (only what can carry a grade is listed while it has none — a mock call or demo, a Practice Session, an answer sheet, an
     // assessment, the Process Questions; a reading, a breakout's handouts, the fillable forms, the call listening and the idle
     // time's material aren't graded, so they aren't on the scores)
@@ -1046,14 +1053,28 @@ function perTraineeHtml(T){
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
+      // (📤 Daily outputs & 📅 Day scores, week by week: a heading row per week — its dates and the average of its days — that
+      // folds the week's days away; the current week open, the weeks before folded, so the page isn't one long scroll)
+      const wkOf = d => { try{ return window.ftWeeks && ftWeeks.now ? ftWeeks.now(p.batch || B.batch, d) : 1; }catch(err){ return 1; } };
+      const dts = x.id === "outputs" && x.dates ? x.dates : null, wks = {};
+      if(dts) dts.forEach((d, j) => { if(!d) return; const w = wkOf(d), c = r[j + 2] || {}, n = parseFloat(stripTags(c.v)); (wks[w] = wks[w] || {days: [], vals: []}).days.push(d); if(isFinite(n)) wks[w].vals.push(n); });
+      const nowWk = dts ? Math.max(...Object.keys(wks).map(Number).concat([1])) : 0;
+      const folded = w => { const k = p.id + "|" + w; return B.fold && k in B.fold ? !!B.fold[k] : w < nowWk; };
+      let lastWk = null;
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
+        const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
+        let wkHead = "";
+        if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, avg = W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null, f = folded(w);
+          const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span><span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span></th></tr>`; }
+        const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
           : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
-            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read from the Task Tracker and Monitoring Sheet</button>` : "")
+            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
-        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -1630,9 +1651,16 @@ async function readCheck(id, date){
       ${M.note ? `<p class="bs-rc-bad">${e(M.note)}</p>` : ""}
       <p><b>Entries found (${e((M.entries || []).length)}):</b></p>${list((M.entries || []).map(x => `${e(x.topic)} · date read: <b>${e(x.date || "none")}</b> · ${e(x.pct)}% (${(x.checks || []).map(c => (c.ok ? "✓ " : "✗ ") + e(c.label)).join(", ")})`))}
       ${M.forDay ? `<p><b>The entry taken for ${e(date)}:</b> ${e(M.forDay.topic)}</p><pre>${e(M.forDay.text)}</pre>` : ""}`}
+    <h4>✉️ EOD email</h4>${!j.eod ? "<p>—</p>" : j.eod.received ? `<p>Received ${e(String(j.eod.received.at || "").slice(0, 16).replace("T", " "))} (${e(j.eod.received.via)}${j.eod.received.from ? " from " + e(j.eod.received.from) : ""}): “${e(j.eod.received.subject || "no subject")}”</p>`
+      : `<p class="bs-rc-bad">No EOD email was received for this trainee that day.</p><p>Address on file for their EOD: <b>${e(j.eod.fromOnFile || "none")}</b> (an email from another address is matched by the sender's name only).</p>${(j.eod.unmatched || []).length ? `<p><b>EOD emails that day matched to nobody, from a similar name:</b></p>${list(j.eod.unmatched.map(x => `${e(x.from)} · “${e(x.subject)}” · ${e(String(x.at).slice(0, 16).replace("T", " "))}`))}` : ""}`}
+    <h4>✍️ Process Questions</h4>${!j.process ? "<p>—</p>" : `<p><b>Answer sheets submitted that day:</b></p>${list((j.process.sheets || []).map(x => `${e(x.sheet)} · ${e(x.answers)} answers · ${e(String(x.at).slice(0, 16).replace("T", " "))}`))}
+      <p><b>Knowledge Checks graded:</b></p>${list((j.process.kc || []).map(x => `Lesson ${e(x.lesson)}: ${x.best == null ? "not graded" : e(x.best) + "%"} · ${e(x.attempts)} attempt${x.attempts === 1 ? "" : "s"}${x.at ? " · " + e(String(x.at).slice(0, 10)) : ""}`))}`}
     <h4>💾 Saved for the day</h4><p>${S ? `Parts: ${e(JSON.stringify(S.parts || S.day1Parts || {}))} · AI grade: tracker ${e(S.trackerAi == null ? "—" : S.trackerAi + "%")}, Monitoring Sheet ${e(S.monitorAi == null ? "—" : S.monitorAi + "%")} · checked ${e(String(S.checkedAt || "").slice(0, 16).replace("T", " "))}` : "Nothing saved for the day yet."}${j.ai ? "" : " · ⚠ No AI is set up on the server, so no AI grade can be given."}</p>`;
 }
 window.FTBatchSheet = {
+  // (📤 Daily outputs, a week folded or shown on a trainee's page: kept for the visit)
+  foldWeek(id, w){ B.fold = B.fold || {}; const k = id + "|" + w, row = document.querySelector(`.bs-pt-wk[onclick*="'${id}', ${w})"]`), now = row ? row.classList.contains("is-folded") : false;
+    B.fold[k] = !now; if(typeof rerender === "function") rerender(); else render(); },
   readCheck,
   autoDone,   // (how a day's activity was found done, or why not: for the tests)
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
@@ -2264,6 +2292,9 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-parts tr.bs-parts-g.bs-parts-top th{background:#1E2340;color:#fff;font-size:14.5px;padding:7px 10px;}
 .bs-parts tr.bs-parts-g .bs-parts-gv{float:right;font-weight:700;color:#FDE68A;}
 .bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;}
+.bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
+.bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
+.bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
