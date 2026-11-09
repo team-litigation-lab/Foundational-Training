@@ -813,31 +813,22 @@ function renderFtOpenVideos(){
       ${renderFtVideoRequests()}
     </div>`;
 }
-window.ftToggleOpenVideo = async function(id, on){
+// ✓ / ✗ a lesson (or its video) for the batch picked above, or for all batches: field is the state record, key its setting
+async function ftToggleOpen(field, key, what, onWord, offWord, id, on){
   await ftLoadOpenDays();
-  const o = state.ftOpenVideos;
+  const o = state[field];
   const sel = state.ftOdBatch || "__all";
   const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
   on ? list.add(id) : list.delete(id);
   const arr = [...list].sort((a,b)=>a-b);
   if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
-  const ok = await sharedSet("settings:openvideos", o);
-  toast(ok ? `${ftName(id)} video ${on ? "unlocked" : "locked"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
+  const ok = await sharedSet(key, o);
+  toast(ok ? `${ftName(id)}${what} ${on ? onWord : offWord} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
   render();
-};
+}
+window.ftToggleOpenVideo = (id, on) => ftToggleOpen("ftOpenVideos", "settings:openvideos", " video", "unlocked", "locked", id, on);
 window.ftSetOdBatch = function(v){ state.ftOdBatch = v; render(); };
-window.ftToggleOpenDay = async function(id, on){
-  await ftLoadOpenDays();
-  const o = state.ftOpenDays;
-  const sel = state.ftOdBatch || "__all";
-  const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
-  on ? list.add(id) : list.delete(id);
-  const arr = [...list].sort((a,b)=>a-b);
-  if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
-  const ok = await sharedSet("settings:opendays", o);
-  toast(ok ? `${ftName(id)} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
-  render();
-};
+window.ftToggleOpenDay = (id, on) => ftToggleOpen("ftOpenDays", "settings:opendays", "", "opened", "closed", id, on);
 /* Admin → 📘 Curriculum: the whole Training Guide (facilitator content included) from
    /trainer/curriculum.json, which the Worker sends only to a signed-in trainer.
    Log-in credentials are not in it: they point to the credentials document. */
@@ -874,23 +865,20 @@ window.renderAdmin = function(){
   if(["rankings","sop","cues","studio"].includes(state.adminTab)) state.adminTab = "audit";
   const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Lessons</button>`;
   const curTab = `<button class="admin-tab-btn ${state.adminTab==="curriculum"?"active":""}" onclick="setAdminTab('curriculum')">📘 Curriculum</button>`;
-  if(state.adminTab==="curriculum"){
+  // borrow the tab bar from the engine (drawn as another tab, with nothing lit) for a tab of this program's own
+  const borrowBar = tab=>{
     state.adminTab = "tfeedback";
-    let out = __ftRenderAdmin();
-    state.adminTab = "curriculum";
+    const out = __ftRenderAdmin();
+    state.adminTab = tab;
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtCurriculum();
-  }
+    return ftTrimAdminTabs(out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>", odTab + curTab);
+  };
+  if(state.adminTab==="curriculum") return borrowBar("curriculum") + renderFtCurriculum();
   if(state.adminTab==="opendays"){
-    state.adminTab = "tfeedback";                    // borrow the tab bar from the engine…
-    let out = __ftRenderAdmin();
-    state.adminTab = "opendays";
-    const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
+    const bar = borrowBar("opendays");
     if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
     if(!state.ftOpenVideos) ftLoadOpenDays().then(()=>{ if(state.adminTab==="opendays") render(); });
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays() + (window.renderFtDay1Steps ? renderFtDay1Steps() : "") + renderFtOpenVideos();
+    return bar + renderFtOpenDays() + (window.renderFtDay1Steps ? renderFtDay1Steps() : "") + renderFtOpenVideos();
   }
   return ftTrimAdminTabs(__ftRenderAdmin(), odTab + curTab);
 };
@@ -911,7 +899,6 @@ async function ftFinishDay(id){
   goto("dashboard");
 }
 window.finishTrainingForDay = ftFinishDay;
-window.goToKnowledgeCheckWithInterstitial = function(){ ftFinishDay(state.dayId); };
 
 /* ---------- 5. dashboard, day cards, top bar ---------- */
 /* One icon per lesson, shown in the middle of its card. The engine's DAY_ICONS is the
@@ -977,8 +964,7 @@ window.LSH_HOME_ALIASES = Object.keys(FT_OFF_VIEWS).concat("dashboard");
 const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)
-    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
-    .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search lessons…"');
+    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "");
 };
 
 /* ---------- 6. Drive files open in the pop-out viewer ---------- */
@@ -1050,14 +1036,18 @@ window.ftOpenVideo = function(id){
   const tabs = [d && d.video ? {label:"🎬 AI Discussion Video", url:d.video} : null, deck ? {label:"🎨 Facilitator Training Deck", url:deck} : null].filter(Boolean);
   if(d && tabs.length) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:tabs[0].url, tabs});
 };
+// what the viewer shows: the embed, or (a link that can't be embedded) a way to open it in a new tab
+function lvFrameHtml(src, clean){
+  return src ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+}
 // one of the viewer's tabs (the video, or the facilitator's deck)
 window.lvTab = function(i){
   const t = (LV.tabs || [])[i]; if(!t) return;
   const holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
   const clean = lvSrc(t.url).trim(), src = lvEmbedUrl(t.url);
   if(clean){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
-  holder.innerHTML = src ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  holder.innerHTML = lvFrameHtml(src, clean);
   document.querySelectorAll("#lecture-viewer-tabs button").forEach((b, k) => b.classList.toggle("on", k === i));
 };
 function lvOpen(item){
@@ -1069,16 +1059,16 @@ function lvOpen(item){
   // (item.noOpen: a reference to look at, not a file to take away: no link out to it, Day 8's sample intake forms)
   if(clean && !item.noOpen){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
   const src = lvEmbedUrl(item.url);
-  holder.innerHTML = src
-    ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  holder.innerHTML = lvFrameHtml(src, clean);
   LV.tabs = item.tabs && item.tabs.length > 1 ? item.tabs : null;
   document.getElementById("lecture-viewer-tabs").innerHTML = LV.tabs ? LV.tabs.map((t, i) => `<button type="button" class="${i ? "" : "on"}" onclick="lvTab(${i})">${esc(t.label)}</button>`).join("") : "";
   p.classList.remove("maximized");
   const fs = document.getElementById("lecture-viewer-fullscreen"); fs.textContent = "⛶"; fs.title = "Full Screen";
   lvReset(); p.classList.add("open"); lvFit();
 }
-function lvClose(){ const p = document.getElementById("lecture-viewer-pane"); if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex) try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } p.classList.remove("open", "maximized"); document.getElementById("lecture-viewer-frame-holder").innerHTML = ""; }
+// leave the browser's full screen if the viewer is what fills it
+function lvExitFs(p){ if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex) try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } }
+function lvClose(){ const p = document.getElementById("lecture-viewer-pane"); lvExitFs(p); p.classList.remove("open", "maximized"); document.getElementById("lecture-viewer-frame-holder").innerHTML = ""; }
 // ⛶ Full Screen: the viewer fills the whole screen with the browser's own full screen (no Chrome tabs or address bar,
 // so sharing the screen in Google Meet shows only the video or the deck). Esc or ⤢ brings it back.
 // If the browser refuses full screen, the viewer still fills the window.
@@ -1099,7 +1089,7 @@ function lvToggleMax(){
     const req = p.requestFullscreen || p.webkitRequestFullscreen;
     if(req && !lvFsEl()){ try{ const r = req.call(p); if(r && r.catch) r.catch(() => {}); }catch(_){} }
   } else {
-    if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex){ try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } }
+    lvExitFs(p);
     lvSetMax(false);
   }
 }
