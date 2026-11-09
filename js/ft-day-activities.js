@@ -62,7 +62,6 @@ const DAYS = [
     {t:"Typing & Spelling Activity (8:00–8:10 AM): the tests set up and named", kind:"Skill test", at:"tool", id:"skills"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Client Identification Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:2, role:"Law Firm Communication", lessons:[1, 2], items:[
     {t:"Buffer Time: Day 1 carryover", kind:"Buffer", at:"room"},
@@ -70,14 +69,12 @@ const DAYS = [
     {t:"Auto Liability Insurance — Assessment", kind:"Assessment", at:"drive"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Escalation Handling Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:3, role:"Reception Training", lessons:[3, 4], items:[
     {t:"Classroom Discussion on PI Workflow", kind:"Discussion", at:"room"},
     {t:"Classroom Discussion on Reception Training (Lesson 4 on the platform)", kind:"Discussion", at:"room"},
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
     // (its t and at stay as they were: the trainer's ticks, daycheck:<id>, and 📝 Send Feedback's list are keyed by them)
     {t:"Reception Listening Activity: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc", assess:"recact"}
   ]},
@@ -107,7 +104,6 @@ const DAYS = [
     {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Intake Scenario Exercise", kind:"Exercise", at:"gc"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
   ]},
   {day:8, role:"Intake Training", lessons:[6], items:[
@@ -131,7 +127,6 @@ const DAYS = [
   {day:10, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"Digital Handouts for Breakout Session (Individual Activity): Claims Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Claims Terminology Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"Claim and Liability Evaluation: Assessment Activities 1 & 2", kind:"Assessment", at:"drive"},
@@ -149,7 +144,6 @@ const DAYS = [
     {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the provider communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Document Detectives Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
