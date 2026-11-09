@@ -718,6 +718,8 @@ function explainHtml(){
 }
 window.FTRanking = {
   explain(){ R.explain = R.explain ? null : {}; rerender(); },
+  // 🔎 beside Batch on 📊 Weekly Reports (js/ft-batch-sheet.js): ℹ How it's scored, open on that trainee's evidence
+  evidenceFor(id){ if(!id) return; R.explain = R.explain || {}; FTRanking.explainWho(id); rerender(); },
   async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
     let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
     if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: v[0] || {}, dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
@@ -819,7 +821,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .rk-bar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 .rk-bar h2{margin:0 0 4px;}
 .rk-pick{display:flex;gap:6px;}
-.rk-pick select{padding:6px 10px;border-radius:8px;border:1px solid var(--line,#dfe3ec);font:inherit;}
+.rk-pick select{padding:6px 10px;border-radius:8px;border:1px solid var(--line,#dfe3ec);font:inherit;font-weight:700;}
 .rk-start{border:1px dashed #C9CFDC;border-radius:12px;padding:16px;background:#F8F9FC;}
 .rk-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .rk-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;}

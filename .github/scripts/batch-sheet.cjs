@@ -95,15 +95,25 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
-  // 👤 the trainer's Batch Sheet opens on one table per trainee: every measure of theirs in one table, folded to a summary
-  // line (their Overall %, Scorecard overall, Daily compliance), no rank (the batch is ranked on 📊 Weekly Reports only),
-  // and no Drive links (they are on 🔗 Drive Links)
-  { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null; d.open = true;
-      return { n: document.querySelectorAll('details.bs-pt').length, sum: d.querySelector('summary').innerText, secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
-    if (!pt || pt.n < 3 || !/Ada Active/.test(pt.sum) || !/Overall/.test(pt.sum)) fail(`👤 One table per trainee doesn't open the Batch Sheet: ${JSON.stringify(pt && { n: pt.n, sum: pt.sum })}`);
+  // 📄 the trainer's Batch Sheet is one trainee per page: ◀ Previous · the trainee · Next ▶, one trainee's table at a time with
+  // every measure of theirs, 👥 their own record (status, registered…) at the bottom, no View bar, no rank (📊 Weekly Reports
+  // ranks the batch) and no Drive links (they are on 🔗 Drive Links)
+  { const pg = await page.evaluate(() => ({ opts: document.querySelectorAll('.bs-batchmenu .bs-who-top select option').length, shown: document.querySelectorAll('.bs-pt').length, view: !!document.querySelector('.bs-view') }));
+    if (pg.opts < 3 || pg.shown !== 1 || pg.view) fail(`📄 the Batch Sheet isn't one trainee per page: ${JSON.stringify(pg)}`); }
+  await page.evaluate(id => FTBatchSheet.ptPick(id), ids.Ada); await page.waitForTimeout(500);
+  { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
+      return { n: document.querySelectorAll('.bs-pt').length, head: (d.querySelector('.bs-pt-h') || {}).innerText || '', secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
+    if (!pt || pt.n !== 1 || !/Ada Active/.test(pt.head) || !/Overall/.test(pt.head)) fail(`📄 Ada's page doesn't open from the trainee dropdown: ${JSON.stringify(pt && { n: pt.n, head: pt.head })}`);
     if (pt && (!pt.secs.some(x => /Score Card/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)) || !pt.secs.some(x => /Scores/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
+    if (pt && !/Trainees/.test(pt.secs[pt.secs.length - 1] || '')) fail(`👥 the trainee's own record isn't at the bottom of their table: ${pt.secs}`);
+    if (pt && !pt.secs.some(x => /day by day/i.test(x) && /Knowledge Checks/.test(x))) fail(`📅 Ada's lessons and Knowledge Checks aren't monitored day by day on her page: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
+  // ▶ Next: the trainee after her, alone on the page
+  { const nx = await page.evaluate(() => { const b = [...document.querySelectorAll('.bs-pager button')].find(x => /Next/.test(x.textContent)); if (b) b.click(); return !!b; });
+    await page.waitForTimeout(400);
+    const after = await page.evaluate(() => ({ n: document.querySelectorAll('.bs-pt').length, head: (document.querySelector('.bs-pt-h') || {}).innerText || '' }));
+    if (!nx || after.n !== 1 || /Ada Active/.test(after.head)) fail(`▶ Next doesn't turn to the next trainee's page: ${JSON.stringify(after)}`); }
   await page.evaluate(() => FTBatchSheet.view('tables')); await page.waitForTimeout(500);
   // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking and
   // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)

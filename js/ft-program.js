@@ -53,6 +53,7 @@ window.LSH_PROGRAM = {
     modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["calendaring", "sessions", "listening", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
+    weekly: ["weeklyreports"],
     scorecard: ["batchsheet", "drivelinks", "skilltests", "sendfeedback", "graders", "audit", "tfeedback"]   // (📊 Weekly Ranking: in 📋 Batch Sheet, under the Day 1–16 scores)
   },
   // tabs that keep their route but have no button (📊 Weekly Ranking: in 📋 Batch Sheet, js/ft-ranking.js toRanking)
@@ -63,8 +64,12 @@ window.LSH_PROGRAM = {
   // no button either, set up already, its checks in 📋 Batch Sheet's ✅ Compliance)
   // (🧪 Typing & Spelling and 📝 Send Feedback: no buttons — the tests are in each trainee's table and 📤 Daily outputs, and
   // 📝 Send Feedback opens in each trainee's table on 📋 Batch Sheet; their routes stay)
-  adminHidden: ["skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
+  // (📅 Calendaring, 🟢 Practice Sessions and 🎧 Call Listening: no buttons either — every grade of theirs is in each
+  // trainee's table on 📋 Batch Sheet, whose 📅 / 🟢 / 🎧 Review buttons open these screens)
+  adminHidden: ["calendaring", "sessions", "listening", "skilltests", "sendfeedback", "ranking", "audit", "trackers", "drivetrackers", "tfeedback", "trainerinputs", "calscores", "calcheck", "calrules", "calweek"],
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
+  // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}],
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
