@@ -44,6 +44,13 @@ const labelOf = b => typeof batchLabel === "function" ? batchLabel(b) : b;
 // the trainer-led activities: the Mock Calls and Demos (each with its Training Guide scorecard where it has one)
 const trainerActs = () => (window.FTSessions && typeof FTSessions.trainerActs === "function" ? FTSessions.trainerActs() : []) || [];
 const scoredActs = () => trainerActs().filter(a => RUB().forAct(a) || /mock|demo/i.test(String(a.kind || "") + " " + String(a.title || "")));
+// 📅 the batch's weeks (the banner's: 7 days from the day it started, Weeks 1–6), for the Week dropdown
+const WEEKS = 6, DAY = 864e5;
+const t0Of = b => { const s = b && typeof batchStartDate === "function" ? batchStartDate(b) : ""; const t = s ? Date.parse(s + "T00:00:00Z") : NaN; return isFinite(t) ? t : null; };
+function nowWeek(b){ const t0 = t0Of(b); if(t0 == null) return 1;
+  const td = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
+  return Math.max(1, Math.min(WEEKS, Math.floor((Date.parse(td + "T00:00:00Z") - t0) / (7 * DAY)) + 1)); }
+const wkRange = (b, n) => { const t0 = t0Of(b); if(t0 == null) return ""; const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", day: "numeric", timeZone: "UTC"}), a = t0 + (n - 1) * 7 * DAY; return f(a) + " – " + f(a + 6 * DAY); };
 async function api(path, body){
   const res = await authFetch(path, body || {});
   const j = await res.json().catch(() => ({}));
@@ -83,7 +90,7 @@ const registered = b => (state.adminData || []).filter(r => r.approved === true 
 /* ============================================================
    📋 Admin → Mock Call Scorecards
    ============================================================ */
-const MS = {batch:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, saving:false};
+const MS = {batch:"", wk:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, saving:false};
 const cellOf = (id, act) => ((((MS.rv[id] || {}).acts) || {})[act]) || {};
 const dkey = id => MS.act + "|" + id;
 function draftOf(id){
@@ -151,8 +158,12 @@ function renderMockScores(){
     if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(() => loadAdminLedger(), 0);
     return `<div class="card" style="padding:24px;">Loading the batches…</div>`;
   }
-  const batches = activeBatches(), acts = scoredActs();
+  const batches = activeBatches(), allActs = scoredActs();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = batches[0] || "";
+  // 📅 the week picked (this week until another is): it sets the banner's week and dates; the Activity list always has
+  // every mock call and demo, whatever the week
+  const wk = MS.wk === "all" ? "all" : Number(MS.wk) >= 1 ? Number(MS.wk) : nowWeek(MS.batch);
+  const mocks = allActs.filter(isMock), demos = allActs.filter(x => !isMock(x)), acts = mocks.concat(demos);
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
   const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
   if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
@@ -161,24 +172,26 @@ function renderMockScores(){
   if(MS.loadedFor !== sig) setTimeout(() => msLoad(), 0);
   const nDirty = dirtyIds().length, ready = !!(r && a && MS.loadedFor === sig);
   const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
-  const mocks = acts.filter(isMock), demos = acts.filter(x => !isMock(x));
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
-  const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch,
-    `<span>${all.length} trainee${all.length === 1 ? "" : "s"}</span><span>${mocks.length} mock call${mocks.length === 1 ? "" : "s"}</span><span>${demos.length} demo${demos.length === 1 ? "" : "s"}</span>`) : "";
-  const head = `<div class="fms-top"><h3>📋 Mock Call &amp; Demo Scorecards</h3>
-      <span class="fms-tools"><button class="btn btn-ghost btn-sm" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again">↻</button>
-      <button class="btn btn-ghost btn-sm" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></span></div>
-    <div class="fms-pick"><b>🧑‍🏫 Score a trainee</b>
+  const hasDates = t0Of(MS.batch) != null;
+  const ctl = `<div class="fms-pick">
+      <label>Week <select aria-label="Week" class="fms-wk" onchange="FTMockScores.week(this.value)">${Array.from({length: WEEKS}, (x, i) => i + 1).map(n => `<option value="${n}" ${wk === n ? "selected" : ""}>Week ${n}${hasDates ? " · " + e(wkRange(MS.batch, n)) : ""}${n === nowWeek(MS.batch) && hasDates ? " (this week)" : ""}</option>`).join("")}<option value="all" ${wk === "all" ? "selected" : ""}>All weeks</option></select></label>
       <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
       <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
-      ${all.length ? `<span class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
+      ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
-        <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></span>` : ""}
+        <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></div>` : ""}
       <label title="Set by the score: Passed at 3/5 (60%) or more, Redo below it. Pick one to change it.">Result <select data-ms-status ${d ? "" : "disabled"} onchange="FTMockScores.field('${e(MS.va)}','status',this.value)">${STATUSES.map(s => `<option ${d && s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-      ${saveBtn}</div>`;
+      ${saveBtn}
+      <button class="btn btn-ghost btn-sm fms-tool" onclick="FTMockScores.refresh()" title="Read the batch and the saved scores again" aria-label="Refresh">↻</button>
+      <button class="btn btn-ghost btn-sm fms-tool" ${MS.dl ? "disabled" : ""} onclick="FTMockScores.download()" title="Download the batch's mock call and demo scorecards (.csv: every criterion, its score and remarks)">${MS.dl ? "Preparing…" : "⬇ Download"}</button></div>`;
+  // (the pickers sit in the banner's corner: the week, the batch, the activity, the trainee, the result and 💾 Save)
+  const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
+    : `<div class="fms-banner">${ctl}</div>`;
+  const head = "";
   const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
   if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
   if(!a) return wrap(`<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
@@ -237,6 +250,7 @@ window.FTMockScores = {
     MS.dl = false; render();
   },
   batch(b){ MS.batch = b; MS.va = ""; render(); },
+  week(w){ MS.wk = w; render(); },
   // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
   va(id){ MS.va = id; render(); },
   // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
@@ -529,6 +543,16 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
 .fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
 .fms-pick .fms-savebtn{margin-left:auto;}
+/* (🧑‍🏫 Graders: the pickers in the banner's top-right corner, on its dark blue) */
+.ft-banner.fms-banner{align-items:flex-start;}
+.fms-banner .ft-banner-right{flex:1 1 620px;justify-content:flex-end;min-width:0;}
+.fms-banner .fms-pick{justify-content:flex-end;margin:0;gap:8px;}
+.fms-banner .fms-pick label{color:#fff;} .fms-banner .fms-step em{color:#E8ECF7;}
+.fms-banner .fms-pick .fms-savebtn{margin-left:0;background:#F6C08F;border-color:#F6C08F;color:#1E2340;font-weight:800;}
+.fms-banner .fms-pick .fms-savebtn:disabled{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#C9D0E6;}
+.fms-banner .fms-pick .btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff;}
+.fms-banner .fms-pick .btn-ghost:disabled{opacity:.45;}
+.fms-pick select.fms-wk{background:#EEF2FF;border:2px solid #F6C08F;color:#1E2340;font-weight:800;}
 .fms-step{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;} .fms-step em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
 .fms-pick select.fms-va{min-width:200px;font-weight:700;}
 /* (each dropdown its own colour, so Batch, Activity and Trainee are told apart at a glance) */
