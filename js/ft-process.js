@@ -573,15 +573,6 @@ window.FTProcess = {
   },
   set(sid, i, v){
     const x = sheet(sid); x.answers[i] = v; x.updatedAt = new Date().toISOString(); queueSave();
-    const set = PROCESS_SETS.find(s=>s.id===sid), c = document.getElementById("fpCount-"+sid), st = document.getElementById("fpSt-"+sid);
-    if(c) c.textContent = `${answered(set, x)} of ${set.questions.length} answered`;
-    if(st){ const s = statusOf(set, x); st.className = "fp-st st-"+s.k; st.textContent = s.t; }
-  },
-  async submit(sid){
-    const set = PROCESS_SETS.find(s=>s.id===sid), x = sheet(sid), n = answered(set, x);
-    if(n < set.questions.length && !confirm(`You’ve answered ${n} of ${set.questions.length} questions. Submit anyway?`)) return;
-    x.submittedAt = new Date().toISOString(); queueSave();
-    toast(`✓ ${set.title} Process Questions submitted.`); render();
   },
   // 📝 Submit on an open sheet before its module is finished (Day 1's Reading Task): every answer in complete sentences, then
   // the sheet is marked submitted (the trainer sees it); it is graded with the module's Knowledge Check once the module is finished
