@@ -904,7 +904,9 @@ function perTraineeHtml(T){
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
+    const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
+    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
@@ -1415,7 +1417,7 @@ window.FTBatchSheet = {
   // 📅 / 🟢 / 🎧 a review screen with no button of its own on top (js/ft-program.js adminHidden), in this batch
   review(tab){ if(!adminOn()) return; if(typeof setAdminTab === "function") setAdminTab(tab); else { state.adminTab = tab; render(); } },
   batch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; render(); },
-  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; render(); },
+  refresh(){ B.people = null; B.data = null; B.dataKey = ""; if(typeof state === "object") state.adminData = null; if(window.FTIntake && FTIntake.cardReload) FTIntake.cardReload(); render(); },
   // 🔄 every approved trainee of the batch, one at a time (worker.js redoCompliance): each training day worked out again from
   // what the platform keeps now, their progress included; then the sheet is read again
   // 🔄 Update all scores: everything below, in order (FTBatchSheet.sync)

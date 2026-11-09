@@ -409,8 +409,12 @@ function groupTabs(out){
   // a section's lead tab (LSH_PROGRAM.adminLead, e.g. {scorecard: "batchsheet"}) comes first, so the section's button opens on it
   const lead = CFG.adminLead || {};
   const secs = GROUPS.map(g => ({g, tabs:tabs.filter(x => groupOf(x.id) === g.id).sort((a, b) => (b.id === lead[g.id]) - (a.id === lead[g.id]))})).filter(x => x.tabs.length);
-  const bar = `<div class="admin-tabs lp-admin-tabs"><div class="lp-admin-secs">${secs.map(x => `<button type="button" class="lp-admin-sec${x.g.id === cur ? " active" : ""}" onclick="setAdminTab('${x.tabs[0].id}')">${x.g.label}<span>${x.tabs.length}</span></button>`).join("")}</div>
-    <div class="lp-admin-row">${(secs.find(x => x.g.id === cur) || secs[0]).tabs.map(x => x.html).join("")}</div></div>`;
+  // (a program's own section with one tab — 📊 Weekly Reports, 📦 Intake Packets — is a button of its own: no count, and no row
+  // under it repeating the same button; the row stays in the page, hidden, so the open tab is still there)
+  const own = new Set((CFG.adminSections || []).map(x => x && x.id)), solo = x => own.has(x.g.id) && x.tabs.length === 1;
+  const open = secs.find(x => x.g.id === cur) || secs[0];
+  const bar = `<div class="admin-tabs lp-admin-tabs"><div class="lp-admin-secs">${secs.map(x => `<button type="button" class="lp-admin-sec${x.g.id === cur ? " active" : ""}" onclick="setAdminTab('${x.tabs[0].id}')">${x.g.label}${solo(x) ? "" : `<span>${x.tabs.length}</span>`}</button>`).join("")}</div>
+    <div class="lp-admin-row"${solo(open) ? " hidden" : ""}>${open.tabs.map(x => x.html).join("")}</div></div>`;
   return out.slice(0, a) + bar + out.slice(b);
 }
 const __admin = window.renderAdmin;
@@ -451,7 +455,7 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 .lp-admin-sec{font:inherit;font-size:13.5px;font-weight:700;border:1px solid #DDE1EC;background:#fff;color:var(--navy);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
 .lp-admin-sec span{font-size:11px;font-weight:800;background:#ECEEF5;color:#4A5070;border-radius:999px;padding:1px 7px;}
 .lp-admin-sec:hover{border-color:#353B57;} .lp-admin-sec.active{background:var(--navy);border-color:var(--navy);color:#fff;} .lp-admin-sec.active span{background:rgba(255,255,255,.2);color:#fff;}
-.lp-admin-row{display:flex;gap:8px;flex-wrap:wrap;}
+.lp-admin-row{display:flex;gap:8px;flex-wrap:wrap;} .lp-admin-row[hidden]{display:none !important;}
 @media(max-width:760px){
   /* a phone: the four sections in a 2 × 2 grid, the open section's tabs as buttons that wrap, so all of them show */
   .lp-admin-secs{display:grid;grid-template-columns:1fr 1fr;gap:6px;}

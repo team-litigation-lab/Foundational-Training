@@ -39,7 +39,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);
 
-    // 🧑‍🏫 Admin → 📦 Intake Packets: a Demo case column beside the packet, with the CMS's intake calls only
+    // 🧑‍🏫 Admin → 📦 Intake Packets: the packets assigned there, each bringing its demo case (the CMS's intake calls only)
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.traineeId = null; state.adminData = null; state.adminTab = 'intake'; goto('admin'); });
     await page.waitForTimeout(2500);
     await page.evaluate(b => FTIntakeAdmin.batch(b), BATCH); await page.waitForTimeout(800);
@@ -48,8 +48,12 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     await page.evaluate(id => FTIntakeAdmin.assign(id, '2'), id); await page.waitForTimeout(800);
     let rec = await get('intakeassign:' + id);
     if (!rec || rec.packet !== 2 || rec.call !== 'ft_in_nicole') fail(`packet 2 didn't bring its demo case: ${JSON.stringify(rec)}`);
-    const cell = await page.evaluate(() => (document.querySelector('.ftis-admin .ftis-case-auto') || {}).textContent || '');
-    if (!/New Intake With a Deadline Close/.test(cell)) fail(`the case column doesn't show the paired case: ${cell}`);
+    // (the page only assigns: the demo case, the trainee's links, 🔎 the check and the worksheet are on their 📋 Batch Sheet page)
+    const heads = await page.evaluate(() => [...document.querySelectorAll('.ftis-admin thead th')].map(t => t.textContent.trim()).join('|'));
+    if (heads !== 'Trainee|Packet') fail(`📦 Intake Packets should only assign the packets: ${heads}`);
+    await page.evaluate(id => FTIntake.cardHtml(id), id); await page.waitForTimeout(1200);
+    const card = await page.evaluate(id => FTIntake.cardHtml(id), id);
+    if (!/📦 Intake Packet \(Day 8\)/.test(card) || !/Packet 2/.test(card) || !/New Intake With a Deadline Close/.test(card) || !/Intake Worksheet/.test(card) || !/Accuracy &amp; completeness/.test(card)) fail(`the trainee's 📦 Intake Packet rows (Batch Sheet) don't show the packet and its paired case: ${card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 300)}`);
     await page.evaluate(id => FTIntakeAdmin.assign(id, '4'), id); await page.waitForTimeout(800);
     rec = await get('intakeassign:' + id);
     if (!rec || rec.packet !== 4 || rec.call !== 'ft_in_derek') fail(`a new packet didn't re-pair the case (packet 4: the list's first again): ${JSON.stringify(rec)}`);
