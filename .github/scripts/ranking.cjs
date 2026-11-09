@@ -23,6 +23,8 @@ const failures = []; const fail = m => failures.push(m);
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+  // (the day's compliance seeded here stands: the 📋 Batch Sheet's re-scoring of today, worker.js /api/compliance/today, is answered empty)
+  await page.route('**/api/compliance/today', r => r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true,"done":{}}' }));
   page.on('pageerror', e => fail(`page error: ${e.message}`));
   page.on('dialog', d => d.accept());
   const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
