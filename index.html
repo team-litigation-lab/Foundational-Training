@@ -2423,7 +2423,6 @@ body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--or
 .di-warm{background:rgba(255,248,239,.66);border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;} .di-warm > span{font-size:12.5px;color:var(--ink-soft);}
 .nav-back-row{margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .nav-back.nav-progress{background:var(--orange);border-color:var(--orange);color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .nav-back.nav-progress span{font-weight:600;opacity:.9;} .nav-back.nav-progress:hover{background:#fff;color:var(--orange);border-color:var(--orange);} .nav-back{font:inherit;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(20,30,60,.06);} .nav-back:hover{border-color:var(--orange);color:var(--orange);}
-.quiz-key-locked{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;font-size:14px;color:var(--ink);margin:0 0 14px;}
 .di-wq{margin-top:10px;} .di-wq-q{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:6px;} .di-wq-opts{display:flex;flex-direction:column;gap:6px;} .di-wq-opt{display:flex;gap:8px;align-items:flex-start;text-align:left;font:inherit;font-size:13.5px;background:#fff;border:1px solid #E6D6C2;border-radius:9px;padding:7px 10px;cursor:pointer;color:var(--ink);} .di-wq-opt span{font-weight:800;color:var(--ink-soft);min-width:14px;} .di-wq-opt:hover:not([disabled]){border-color:var(--orange);background:#FFFDF9;} .di-wq-opt[disabled]{cursor:default;} .di-wq-opt.ok{border-color:#3F7D58;background:#EEF7F1;color:#2E6546;font-weight:700;} .di-wq-opt.no{border-color:#C9544A;background:#FCEFEE;color:#9B3A32;} .di-wq-opt.dim{opacity:.6;} .di-wq-fb{font-size:13px;margin-top:6px;color:var(--ink-soft);} .di-wq-fb.ok b{color:#3F7D58;} .di-wq-fb.no b{color:#9B3A32;} .di-wq-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:italic;}
 .di-warm details{margin-top:8px;} .di-warm summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy);} .di-warm ol{margin:6px 0 0;padding-left:22px;} .di-warm li{font-size:13.5px;} .di-warm li.ok{font-weight:800;color:#3F7D58;} .di-warm p{font-size:13px;color:var(--ink-soft);margin:6px 0 0;}
 @media(max-width:900px){.di-grid{grid-template-columns:1fr;} .di-strip{grid-template-columns:1fr 1fr;}}
@@ -9868,16 +9867,12 @@ async function downloadQuizResultPdf(dayId){
     history.forEach((h,i)=>lines.push(`   Attempt ${i+1}: ${h.score}% — ${h.passed?"Passed":"Not yet"} — ${new Date(h.date).toLocaleDateString()}`));
     lines.push("---");
   }
-  const reveal = quizKeyUnlocked(d);
-  if(!reveal) lines.push("The answer key unlocks once you pass this Knowledge Check (70%+).", "---");
   d.quiz.forEach((q,i)=>{
     const picked = state.quizAnswers[i];
     lines.push(`Q${i+1}: ${q.q}`);
     lines.push(`   Your answer: ${typeof picked==="number" ? q.opts[picked] : "(not answered)"}${picked===q.a ? " (correct)" : " (incorrect)"}`);
-    if(reveal){
-      lines.push(`   Correct answer: ${q.opts[q.a]}`);
-      lines.push(`   Why: ${q.r}`);
-    }
+    lines.push(`   Correct answer: ${q.opts[q.a]}`);
+    lines.push(`   Why: ${q.r}`);
   });
   buildAndSavePdf("LSH Foundational Training Program", `${ftName(dayId)} Knowledge Check — Results`, lines, `LSH_Day${dayId}_Knowledge_Check`);
 }
@@ -9900,29 +9895,14 @@ function retakeQuiz(dayId){
 window.retakeQuiz = retakeQuiz;
 
 /* The full answer key (correct option + rationale) shows after every attempt. */
-function quizKeyUnlocked(d){ return true; }   // no locks: the answer key shows after every attempt
-window.quizKeyUnlocked = quizKeyUnlocked;
 function renderAnswerFeedback(d){
   const el = document.getElementById("answerFeedback");
   if(!el) return;
-  const reveal = quizKeyUnlocked(d);
-  const missed = d.quiz.filter((q,i)=>state.quizAnswers[i]!==q.a).length;
   el.innerHTML = `
     <h2 class="section-title" style="margin-top:34px;">Answer Review</h2>
-    ${reveal ? "" : `<div class="quiz-key-locked">🔒 <b>The answer key unlocks when you pass (70%+).</b> You missed ${missed} question${missed===1?"":"s"}: they're marked ❌ below. Review those topics in the lesson slides, then retake the check.</div>`}
     ${d.quiz.map((q,i)=>{
       const picked = state.quizAnswers[i];
       const isCorrect = picked===q.a;
-      if(!reveal){
-        return `
-      <div class="card quiz-card">
-        <p class="quiz-q">${i+1}. ${esc(q.q)}</p>
-        <div class="quiz-opts">
-          <div class="quiz-opt ${isCorrect?"correct":"incorrect"}">${isCorrect?"✅":"❌"} Your answer: ${typeof picked==="number" ? esc(q.opts[picked]) : "(not answered)"}</div>
-        </div>
-        ${isCorrect ? `<div class="quiz-rationale show">${esc(q.r)}</div>` : `<div class="quiz-rationale show">Not quite. Revisit this topic before you retake.</div>`}
-      </div>`;
-      }
       return `
       <div class="card quiz-card">
         <p class="quiz-q">${i+1}. ${esc(q.q)}</p>
