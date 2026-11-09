@@ -62,6 +62,11 @@ const ME = "mysheet";
 const meOn = () => state.view === ME && isTrainee();
 const on = () => (state.view === "admin" && (state.adminTab === TAB || state.adminTab === WEEKLY || state.adminTab === LINKSTAB) && adminOn()) || meOn();
 // 🛡 Admin Master Control → 📁 Batches: the batch's tools (✏️ Fix the batch name, 🧹 Sweep inactive accounts, ✎ Fix a date)
+// 📊 Weekly Reports: the sheet's ⬇ Download, ↻ Refresh and 🔄 Update all scores, beside the summary's ⬇ Excel (no header strip)
+function weeklyActsHtml(){
+  if(!weeklyOn()) return "";
+  return `<button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.csv()">⬇ Download</button><button class="btn btn-ghost btn-sm" onclick="FTBatchSheet.refresh()">↻ Refresh</button><button class="btn btn-navy btn-sm bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>`;
+}
 const toolsOn = () => state.view === "admin" && state.adminTab === "batches" && adminOn() && !meOn();
 const rerender = () => { if(on() || toolsOn()) render(); };
 
@@ -487,7 +492,7 @@ function rankingHtml(){
   // (📑 the management summary on top, js/ft-ranking-summary.js; the marks sheet under it, folded)
   const sheet = FTRanking.embed(B.batch);
   if(!window.FTRankSummary) return `<section class="bs-sec bs-rank" id="bs-ranking">${sheet}</section>`;
-  return `<section class="bs-sec bs-rank" id="bs-ranking"><h3 class="bs-h">📊 Weekly Ranking${updBtn("ranking")}</h3>${FTRankSummary.html()}
+  return `<section class="bs-sec bs-rank" id="bs-ranking">${FTRankSummary.html()}
     <details class="bs-rank-sheet" ${B.rkSheet !== false ? "open" : ""} ontoggle="FTBatchSheet.rkSheet(this.open)"><summary>▸ The marks sheet: each activity's score out of 5, the week's average and the ranking (⬇ Excel, 📤 Share with the trainees)</summary>${sheet}</details></section>`;
 }
 /* ============================================================
@@ -1363,6 +1368,7 @@ function renderSheet(){
     try{ last = Number(localStorage.getItem("ft_bs_sync:" + B.batch)) || 0; }catch(err){}
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
+  if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
         <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
@@ -1730,6 +1736,7 @@ window.FTBatchSheet = {
         <button type="button" onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button><button type="button" onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button><button type="button" onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button></div>
       ${sweepHtml()}${fixHtml(ppl)}${dateHtml(ppl)}</div>`;
   },
+  weeklyActs: weeklyActsHtml,
   toolsBatch(b){ if(!adminOn()) return; B.batch = b; B.picked = true; B.data = null; B.dataKey = ""; B.fix = null; B.dfix = null; render(); },
   fixOpen(){ if(!adminOn()) return; B.fix = {to: "", skip: {}, busy: false, err: ""}; render(); },
   fixClose(){ B.fix = null; render(); },
@@ -1860,8 +1867,8 @@ window.render = function(){
   const same = key && key === B.keepKey;
   B.drawing = true;
   let out; try{ out = __render.apply(this, arguments); } finally { B.drawing = false; }
-  // (🧑‍🏫 Graders' scoresheets are wide too: the criterion, the score and the Remarks across the screen)
-  try{ document.body.classList.toggle("bs-wide", on() || (state.view === "admin" && state.adminTab === "graders")); }catch(err){}
+  // (🧑‍🏫 Graders' scoresheets and 🗂 Intake Packets are wide too: the criterion, the score and the Remarks across the screen)
+  try{ document.body.classList.toggle("bs-wide", on() || (state.view === "admin" && (state.adminTab === "graders" || state.adminTab === "intake"))); }catch(err){}
   B.keepKey = key;
   if(!same) B.keepY = key ? window.scrollY : 0;
   else if(y && Math.abs(window.scrollY - y) > 2){ window.scrollTo(0, y); requestAnimationFrame(() => { if(B.keepKey === key && B.data && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }); }
@@ -1990,7 +1997,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-ds-h span{font-weight:700;color:#202124;} .bs-ds-h small{color:#5F6368;} .bs-ds-h b{margin-left:auto;padding:1px 8px;border-radius:9px;white-space:nowrap;}
 .bs-ctx{margin:4px 0 0;padding:5px 9px;border-radius:6px;} .bs-ctx b{font-size:12.5px;} .bs-ctx p{margin:2px 0 0;} .bs-ctx ul{margin:2px 0 0;padding-left:18px;}
 .bs-why{background:#F1F3F4;} .bs-best{background:#E6F4EA;} .bs-imp{background:#FEF7E0;} .bs-ctx-none{margin:3px 0 0;color:#5F6368;font-size:12.5px;}
-.bs-rank{padding-top:6px;} .bs-rank .rk-pick select:first-child{display:none;}
+.bs-rank{padding-top:6px;}
 .bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:700 15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
 .bs-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:8px;}
 .bs-day{border:1px solid #E1E3E1;border-radius:8px;padding:8px 10px;background:#fff;font:13.5px Arial,sans-serif;}

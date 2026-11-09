@@ -214,7 +214,9 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$('#bs-ranking')) fail('the 📊 Weekly Ranking is still on the 📋 Batch Sheet');
   { await page.evaluate(() => { state.adminTab = 'weeklyreports'; render(); }); await page.waitForTimeout(1500);
     const wr = await page.evaluate(() => ({ rk: !!document.querySelector('#bs-ranking .rk-bar'), comp: !!document.getElementById('bs-compliance'), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('button, a')].some(b => /📊 Weekly Reports/.test(b.textContent)) }));
-    if (!wr.rk || wr.comp || !/^Weekly Reports · B\d{6}/.test(wr.title) || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
+    const wr2 = await page.evaluate(() => ({ strip: !!document.querySelector('.bs-weekly .gs-top'), acts: (document.querySelector('.rks-bar-acts') || {}).innerText || '', pick: !!document.querySelector('#bs-ranking .rk-pick select') }));
+    if (wr2.strip || !/Update all scores/.test(wr2.acts) || !/Excel/.test(wr2.acts) || !wr2.pick) fail(`📊 Weekly Reports still has the header strip, or the actions aren't beside ⬇ Excel: ${JSON.stringify(wr2)}`);
+    if (!wr.rk || wr.comp || !wr.tab) fail(`📊 Weekly Reports doesn't show the Weekly Ranking alone: ${JSON.stringify(wr)}`);
     await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800); }
 
   // 👥 everyone registered, from the moment they register
