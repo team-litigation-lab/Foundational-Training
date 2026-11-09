@@ -5521,16 +5521,19 @@ window.ftW1Override = {
   dayOn(b, n){ return this.on(b) && Number(n) >= 1 && Number(n) <= 5; },
   // (training days 1–5 from B103026's first day, 10/30/2026: the Batch Sheet's dayDate(1..5))
   DATES: ["2026-10-30", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"],
+  // (and Day 6, 11/06/2026: its EOD email alone counted done for every trainee — the rest of the day as scored)
+  EOD_DATES: ["2026-11-06"],
   NOTE: "Week 1 one-off (B103026): counted done / 100%",
+  EOD_NOTE: "Day 6 EOD one-off (B103026): counted done / 100%",
   // a trackerreview record with Week 1's EOD part at 100 and each day's % worked out again (worker.js dailyCompliance's
   // formula: the average of the numeric parts); the same record, untouched, for any other batch
   comp(rv, b){
     if(!rv || !rv.compliance || !this.on(b)) return rv;
     const out = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance)});
-    this.DATES.forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return;
+    this.DATES.concat(this.EOD_DATES).forEach(D => { const x = out.compliance[D]; if(!x || !x.parts) return; const note = this.DATES.includes(D) ? this.NOTE : this.EOD_NOTE;
       const parts = Object.assign({}, x.parts, {eod: 100}), vals = Object.values(parts).filter(v => typeof v === "number");
       out.compliance[D] = Object.assign({}, x, {parts, pct: vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null,
-        eodTrainer: {score: 100, note: this.NOTE + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true}); });
+        eodTrainer: {score: 100, note: note + (x.eodTrainer && x.eodTrainer.note ? " — " + x.eodTrainer.note : ""), at: x.checkedAt || ""}, eodCheck: null, w1: true}); });
     return out;
   }
 };
@@ -14059,7 +14062,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.09-a7533a71";
+var APP_BUILD = "ft-2026.11.09-e45d50c3";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14147,7 +14150,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-dna-learn.js?v=276b146f1c"></script>
 <script src="/js/ft-admin-ops.js?v=1f18bc546d"></script>
 <script src="/js/ft-attendance.js?v=ae6746fd47"></script>
-<script src="/js/ft-batch-admin.js?v=8096674d65"></script>
+<script src="/js/ft-batch-admin.js?v=31563b7fc1"></script>
 <script src="/js/portal-link.js?v=41a9854349"></script>
 <script src="/js/show-password.js?v=c12df67a51"></script>
 <!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
