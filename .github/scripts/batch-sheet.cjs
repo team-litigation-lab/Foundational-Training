@@ -104,10 +104,13 @@ const failures = []; const fail = m => failures.push(m);
   { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
       return { n: document.querySelectorAll('.bs-pt').length, head: (d.querySelector('.bs-pt-h') || {}).innerText || '', secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
     if (!pt || pt.n !== 1 || !/Ada Active/.test(pt.head) || !/Overall/.test(pt.head)) fail(`📄 Ada's page doesn't open from the trainee dropdown: ${JSON.stringify(pt && { n: pt.n, head: pt.head })}`);
-    if (pt && (!pt.secs.some(x => /Score Card/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)) || !pt.secs.some(x => /Scores/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
-    // (their own record, then Compliance and Platform Utilization Monitoring and 📚 Lessons at the very bottom)
-    if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 3] || '') && /Compliance/.test(pt.secs[pt.secs.length - 2] || '') && /Lessons$/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance and 📚 Lessons, aren't at the bottom of their table: ${pt.secs}`);
-    if (pt && !pt.secs.some(x => /day by day/i.test(x) && /Knowledge Checks/.test(x))) fail(`📅 Ada's lessons and Knowledge Checks aren't monitored day by day on her page: ${pt.secs}`);
+    if (pt && (!pt.secs.some(x => /Grades/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
+    // 🏅 Grades, in one: the Score Card, the Practice Lab's use, every grading system and the lessons, under one heading; no
+    // separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade, 📚 Lessons or day-by-day sections repeating the same grades
+    if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
+    if (pt && !(/Score Card, lesson by lesson/.test(pt.text) && /Every grading system/.test(pt.text) && /Lessons: the deck and the Knowledge Check/.test(pt.text) && /Overall %/.test(pt.text))) fail(`🏅 Grades doesn't hold the Score Card, the grading systems, the lessons and the Overall %: ${pt.text.slice(0, 300)}`);
+    // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
+    if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
   // ▶ Next: the trainee after her, alone on the page
