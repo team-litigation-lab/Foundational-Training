@@ -138,7 +138,6 @@ const codeName = n => e(n).replace(/_/g, "_<wbr>").replace(/ \(/g, " <wbr>(");
 const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
 const ptDay = d => window.FTTrackerRules ? FTTrackerRules.ptDate(d ? new Date(d) : new Date()) : new Date(d || Date.now()).toISOString().slice(0, 10);
 const bare = n => String(n || "").replace(/\.(docx?|pdf|txt|rtf|odt)$/i, "");
-const nameMatches = (set, n) => normName(bare(n)) === normName(fileName(set));
 // a file that is this sheet but named another way: the convention's words in it, whatever the spaces, underscores and capitals
 const key = t => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const looksLike = (set, n) => key(bare(n)).includes(key(set.file));
@@ -157,9 +156,7 @@ async function checkFolder(force){
   let changed = false;
   if(FOLDER.files) PROCESS_SETS.forEach(set => {
     const x = FP.data.sets[set.id]; if(!x || !x.assignedOn) return;
-    const mine = FOLDER.files.filter(f => looksLike(set, f.name)).sort((a, b) => (nameMatches(set, b.name) - nameMatches(set, a.name)) || String(a.created).localeCompare(String(b.created)));
-    const f = mine[0]; if(!f) return;
-    const nf = {name: f.name, link: f.link, at: f.created || f.modified, nameOk: nameMatches(set, f.name), onTime: ptDay(f.created || f.modified) <= x.assignedOn};
+    const nf = findInFolder(set, x, FOLDER.files); if(!nf) return;
     if(JSON.stringify(nf) !== JSON.stringify(x.file || null)){ x.file = nf; changed = true; }
   });
   if(changed) queueSave();   // (nothing on the trainee's page changes: the trainer sees the result)
