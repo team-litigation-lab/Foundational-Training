@@ -57,16 +57,12 @@ const ACTS = {
     plain: "Record your demonstration when your trainer calls you. Your trainer scores it, and it shows as done on your card."},
   "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo", simple: true}
 };
-const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?";
-const RING = SIM + "program=FT";
-const callSim = line => SIM + new URLSearchParams({program: "FT", line});
 const e = v => esc(String(v == null ? "" : v));
 const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const trainee = () => !!state.traineeId && !state.isAdmin && !state.adminPreview;
 // (a mock call has no Done of its own: the trainer scores each trainee on the 🧑‍🏫 Scoresheet, and a trainee whose scoresheet
 // is saved is done, FTMetrics.scored. noTracker on every mock call; a demo keeps the trainee's Done)
 Object.values(ACTS).forEach(a => { if(a.kind === "mock") a.noTracker = true; });
-const what = a => a.kind === "mock" ? "mock call" : a.kind === "demo" ? "demo" : "buffer";
 const tm = iso => { const d = new Date(iso); return isFinite(d) ? d.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"}) : ""; };
 
 // the activity on screen: {day, id, k, a, i} or null
@@ -87,12 +83,6 @@ async function loadMine(){
   M.loading = false; return M.rec;
 }
 const mine = k => ((M.rec || {}).acts || {})[k] || null;
-function scorecard(a){
-  const rb = a.act && root.FT_RUBRICS ? FT_RUBRICS.forAct({id: a.act, title: a.name || ""}) : null; if(!rb) return "";
-  return `<div class="ftbf-card"><p class="ftbf-card-h">📋 How your ${what(a)} is scored: ${e(rb.title)}</p>${rb.time ? `<p class="ftbf-muted">⏱ ${e(rb.time)}</p>` : ""}
-    <ol>${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
-    <p class="ftbf-muted">Your trainer scores each criterion 0–5 and adds comments; you’ll see them on your 🛠 Practice Lab page and your scorecard.</p></div>`;
-}
 function traineePanel(h){
   const a = h.a, d = mine(h.k);
   // (the day's last slide, as Day 4's mock calls are: there is no next slide to go to)
@@ -106,7 +96,6 @@ function traineePanel(h){
   if(d && a.corner) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Submitted</p></div>`;
   // (simple: no scorecard, the Done and the way on, in the middle of the slide; a mock call's own Done, saved before, no longer counts)
   if(d && !a.noTracker) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">✅ Done</p>
-    ${a.kind === "buffer" || a.simple ? "" : scorecard(a)}
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>`
       : `<p>That’s the day’s last activity.</p>`}</div>`;
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
@@ -120,28 +109,7 @@ function traineePanel(h){
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
-  const live = !a.rec;
-  const steps = a.kind === "mock" ? [
-      `While waiting for your turn, practice using the <a href="${e(callSim(a.line))}" target="_blank" rel="noopener">${e(a.name)} Call Simulator</a>.`,
-      `Log in to the <a href="${e(RING)}" target="_blank" rel="noopener">Ring Channel</a> while on standby.`,
-      "Watch the pre-brief demonstration and review the additional instructions in the Ring Channel.",
-      "Wait on standby—the trainer will call you individually for your session."]
-    : live ? [
-      "Go over the tutorial video and your process guide (your notes on each step).",
-      "Rehearse the steps in SA on the training accounts.",
-      "Wait on standby—the trainer will call you individually for your demo."]
-    : [
-      "Watch the tutorial video and build your process guide as you go.",
-      "Record your demonstration, following your process guide.",
-      "Submit it as the instructions above say, then hit Done."];
-  const warn = a.kind === "mock" ? "Only click ‘Done’ after you have completely finished your 1-on-1 mock call with the trainer."
-    : live ? "Only click ‘Done’ after you have completely finished your 1-on-1 demo with the trainer."
-    : "Only click ‘Done’ after you have finished and submitted your recorded demonstration.";
-  return `<div class="ftbf"><p class="ftbf-h">Practice Buffer: ${a.kind === "mock" ? "Mock Call Preparation" : "Demo Preparation"}</p>
-    <p class="ftbf-lead">${a.kind === "mock" ? `Use the remaining time to practice for your mock calls. Mock calls will be conducted ${e(a.when || "today")}.`
-      : live ? "Use the remaining time to prepare for your demo. Demos are conducted one by one with your trainer." : "Use the time to prepare and record your demonstration."}</p>
-    <ol class="ftbf-steps">${steps.map(x => `<li>${x}</li>`).join("")}</ol>
-    <div class="ftbf-foot"><p class="ftbf-warn">⚠️ ${e(warn)}</p><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
+  return "";
 }
 // 📤 a Submit's result (ACTS[…].submit): the items checked and graded (/api/monitor/items, kept in trackerreview:<id>)
 const subKey = a => (a.submit.items || []).join("-");
@@ -184,8 +152,7 @@ function advance(h){
 const __after = root.afterRender;
 root.afterRender = function(){
   const out = __after ? __after.apply(this, arguments) : undefined;
-  // (a trainee's Done record is read as soon as a deck opens, not on the first slide that needs it: a slide that waits
-  // for a Done, FTBuffer.holds, is then shut or open from the first Next)
+  // (a trainee's Done record is read as soon as a deck opens, not on the first slide that needs it)
   try{ if(trainee() && state.view === "daydeck" && !M.rec && !M.loading) loadMine().then(() => { if(state.view === "daydeck") render(); }); }catch(err){}
   try{ paint(); }catch(err){}
   return out;
@@ -222,19 +189,6 @@ function paint(){
 
 root.FTBuffer = {
   ACTS,
-  // is slide i of day n shut until a task's Done (ACTS[…].opens)? Only a trainee is held, and only once their record is read
-  holds(n, i){
-    if(!trainee() || !root.FTDayDecks) return false;
-    const s = (FTDayDecks.list(n) || [])[i]; if(!s) return false;
-    const by = Object.keys(ACTS).find(k => ACTS[k].opens === s.id && k.split(":")[0] === String(n)); if(!by) return false;
-    const k = ACTS[by].key || by;
-    if(!M.rec){ loadMine().then(() => { if(mine(k)) render(); }); toast("One moment: checking your Done…"); return true; }
-    if(mine(k)) return false;
-    // say why Next doesn't move, and where the Done is (the slide carrying the task, by its step number)
-    const list = FTDayDecks.list(n) || [], at = list.findIndex(x => x.id === by.split(":")[1]);
-    toast(`🔒 ${s.h || "The next slide"} opens once you ${ACTS[by].submit ? "📤 Submit" : "mark Done"} “${ACTS[by].title.replace(/^\W+\s*/, "")}”${at >= 0 ? ` (Step ${at + 1})` : ""}.`);
-    return true;
-  },
   ask(){ const h = here(); if(h) confirmBox(h); },
   cancel(){ document.querySelectorAll(".ftbf-modal").forEach(x => x.remove()); },
   async done(){
@@ -288,18 +242,14 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf p{font:700 18px/1.45 'Inter',sans-serif;color:#1E2340;margin:0 0 10px;}
 .ftbf .ftbf-lead{font-size:19px;}
 .ftbf .ftbf-muted{font:500 14px/1.4 'Inter',sans-serif;color:#5B6178;}
-.ftbf-steps{margin:0 0 6px;padding-left:26px;}
-.ftbf-steps li{font:700 18px/1.5 'Inter',sans-serif;color:#1E2340;margin:0 0 6px;}
-.ftbf-steps a, .ftbf p a{color:#E8590C;text-decoration:underline;font-weight:800;}
+.ftbf p a{color:#E8590C;text-decoration:underline;font-weight:800;}
 .ftbf-foot{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:14px;text-align:center;}
-.ftbf .ftbf-warn{font:700 15.5px/1.4 'Inter',sans-serif;color:#9A3412;background:#FFF4E5;border:1px solid #F4B77A;border-radius:10px;padding:8px 14px;margin:0;}
 .btn.ftbf-done{display:inline-flex;align-items:center;justify-content:center;text-align:center;align-self:center;margin:0 auto;min-width:200px;padding:12px 30px;font-size:18px;font-weight:800;background:#E8590C;border-color:#E8590C;color:#fff;box-shadow:0 4px 0 #A33F07;}
 .btn.ftbf-done:hover:not(:disabled){background:#C94C08;}
 .btn.ftbf-done:disabled{background:#C9CCD6;border-color:#C9CCD6;color:#5B6178;box-shadow:none;cursor:not-allowed;opacity:1;}
 .ftbf-go{border-color:#E8590C;}
 .ftbf-card{border:1.5px solid #D6DAE6;border-radius:12px;padding:12px 16px;margin:6px 0 12px;background:#F7F8FC;}
 .ftbf-card .ftbf-card-h{font-size:17px;margin-bottom:6px;}
-.ftbf-card ol{margin:0 0 8px;padding-left:24px;}
 .ftbf-card li{font:600 15.5px/1.45 'Inter',sans-serif;color:#1E2340;}
 /* the confirmation */
 .ftbf-modal{position:fixed;inset:0;z-index:300;background:rgba(17,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;}

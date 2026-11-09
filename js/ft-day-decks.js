@@ -148,9 +148,7 @@ function go(step){
    It stops at the last slide, and any click on Previous/Next or a dot leaves it running from there. */
 // 🔓 Day 1 in order (js/ft-day1-flow.js): a trainee on Day 1 goes slide by slide, only as far as the trainer has unlocked
 // (from the slide showing on that day's deck; from anywhere else, the dashboard or a lesson, it is -1)
-const deckMayGo = (n, i) => (!root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1))
-  // (and a slide that opens with a task's Done, Day 2's Personal Injury readings after the 📤 Submit: js/ft-buffer.js holds)
-  && !(root.FTBuffer && FTBuffer.holds && FTBuffer.holds(Number(n), Number(i)));
+const deckMayGo = (n, i) => (!root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1));
 // is slide i of day n behind a step the trainer hasn't unlocked? (asked quietly: the 🗺 Map draws it 🔒 rather than toast)
 function slideLocked(n, i){
   if(!root.FTDay1 || !FTDay1.mayGo) return false;
@@ -1561,9 +1559,6 @@ function kcNext(s){
 function toAssessNext(a){
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   let i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1;
-  // (the assessment always opens; while the way on is shut until this slide's Done is in, Day 2's 📤 Submit, its way back
-  // is to this slide, to submit there)
-  if(list[i] && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)) i = DD.i;
   const s = list[i] || null;
   const h = !s ? "" : i === DD.i ? String(s.h || "") + ": 📤 Submit" : i === DD.i + 1 && a.next ? a.next : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
