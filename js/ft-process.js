@@ -623,9 +623,24 @@ async function loadAdmin(){
 }
 // a trainee added, revoked or offboarded: the rows are read again
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { FPA.rows = null; });
-// The ranking report's line, in the facilitator's words.
-function reportLine(x){
-  const sets = PROCESS_SETS, done = sets.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt);
+// 📅 an answer sheet is due once its lesson's last training day is over (training day n: the nth weekday from the batch's
+// first day, its Batch ID) — the batch progresses day by day, so a lesson not reached yet isn't "missing". Without a batch
+// date, every sheet is expected (as before).
+function sheetDue(s, batch){
+  const st = batch && typeof batchStartDate === "function" ? batchStartDate(batch) : "";
+  const days = st && window.FTDays && typeof FTDays.forLesson === "function" ? FTDays.forLesson(s.lesson) : [];
+  if(!days.length) return true;
+  const n = Math.max(...days); let t = Date.parse(st + "T12:00:00Z"), k = 0, d = "";
+  for(let i = 0; i < 60; i++, t += 864e5){ const wd = new Date(t).getUTCDay(); if(wd >= 1 && wd <= 5 && ++k >= n){ d = new Date(t).toISOString().slice(0, 10); break; } }
+  const today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
+  return !d || d < today;
+}
+window.ftSheetDue = sheetDue;
+// The ranking report's line, in the facilitator's words (only the sheets due by now, and any already submitted).
+function reportLine(x, batch){
+  const sub = s=>!!((x.p.sets||{})[s.id]||{}).submittedAt;
+  const sets = PROCESS_SETS.filter(s=>sub(s) || sheetDue(s, batch)), done = sets.filter(sub);
+  if(!sets.length) return "";
   const missing = sets.filter(s=>!done.includes(s));
   const partial = done.filter(s=>answered(s, x.p.sets[s.id]) < s.questions.length);
   if(!missing.length) return "Process Questions Responses: COMPLETE" + (partial.length ? "; however, " + partial.map(s=>{ const a = x.p.sets[s.id]; const left = s.questions.map((q,i)=>i+1).filter(i=>!has((a.answers||[])[i-1])); return `Item${left.length>1?"s":""} #${left.join(", #")} under the ${s.title} answer sheet ${left.length>1?"were":"was"} left unanswered`; }).join("; ") + "." : "");
@@ -649,7 +664,7 @@ function renderAdminProcess(){
       return `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTProcessAdmin.batch(${e(JSON.stringify(b))})">${closed?"▸":"▾"} <b>📁 ${e(b ? "Batch "+b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length===1?"":"s"}</span></div>
       ${closed ? "" : groups[b].map(x=>{ const open = !!FPA.open[x.id], sub = PROCESS_SETS.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt).length;
         return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTProcessAdmin.row('${x.id}')">${open?"▾":"▸"} <b>${e(x.name)}</b> <span class="fp-pill ${sub===PROCESS_SETS.length?"ok":sub?"mid":"bad"}">${sub} of ${PROCESS_SETS.length} submitted</span> ${kcPills(x.p)}</div>
-          ${open ? `<pre class="fp-report">${e(reportLine(x))}</pre>
+          ${open ? `<pre class="fp-report">${e(reportLine(x, x.batch))}</pre>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.folder('${x.id}')" ${(FPA.folder[x.id] || {}).busy ? "disabled" : ""}>🔁 Check their folder</button>
             ${kcAdmin(x)}
@@ -759,7 +774,7 @@ async function grantRetry(id, l, read, why){
   return {ok: true, review: cur, allowed: kcAllowed(cur, l, read), used};
 }
 // (the 📋 Batch Sheet's ✍️ Knowledge Checks in detail shows the same report line: p is a trainee's process:<id>)
-window.FTProcessReport = p => reportLine({p: p || {sets: {}}});
+window.FTProcessReport = (p, batch) => reportLine({p: p || {sets: {}}}, batch);
 window.FTKCRetry = {grant: grantRetry, lessons: () => [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a, b) => a - b).filter(l => DAYS.find(d => d.id === l)).map(l => ({l, title: (DAYS.find(d => d.id === l) || {}).title || "Lesson " + l, read: !!readSetOf(l)}))};
 window.FTProcessAdmin = {
   kc(id, l, read){ const k = id + "|" + l + (read ? "|read" : ""); FPA.kcOpen[k] = !FPA.kcOpen[k]; render(); },
@@ -797,7 +812,7 @@ window.FTProcessAdmin = {
   batch(b){ FPA.closed[b] = !FPA.closed[b]; render(); },
   refresh(){ FPA.rows = null; FPA.folder = {}; render(); },
   copy(id){ const x = FPA.rows.find(r=>r.id===id); if(!x) return;
-    (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); },
+    (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x, x.batch)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); },
   toggleQEdit(){ FPA.qeditOpen = !FPA.qeditOpen; render(); },
   async saveQuestions(btn){
     const box = btn.closest(".fp-qedit"), next = {};
