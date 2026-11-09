@@ -928,7 +928,9 @@ function D10_SHARE(x){
     card("✅", "What you CAN share", ul(["Client’s Name (First and Last only – no middle name)", "Vehicle Information (e.g., License Plate Number)"]) +
       "<p><b>To check under the 3P insurance, you may also provide:</b></p>" + ul(["Client’s Address (City and State only)", "Phone Number (Give the law firm’s number)"])) +
     "</div>\n" +
-    card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>") +
+    card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>" +
+      // (the limits are the 3P carrier's: the client's own 1P carrier can be given her details)
+      "<p><b>This is for the 3P only.</b> For the client’s own <b>1P</b> carrier (MedPay/PIP, UM/UIM), you can provide these details when they ask.</p>") +
     "</div>\n";
 }
 // Day 14's notes for the work guide, in cards on two pages, as Day 12's (ftdd-d12: one height to a row, large and bold):
