@@ -46,6 +46,9 @@ const failures = []; const fail = m => failures.push(m);
     const SEED = { days: {}, compliance: { '2026-10-30': { v: 2, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } }, '2026-11-09': { v: 2, final: true, pct: 50, parts: { tracker: 100, tests: 0, eod: 0, outputs: 100 } } } };
     for (const id of Object.values(ids)) await put('trackerreview:' + id, SEED);
     const sheet = async (b, name) => {
+      // (seeded again right before it is read: a sign-in's own background check can land after the first seed and write
+      // over it with today's check alone)
+      await put('trackerreview:' + ids[name], SEED);
       await page.evaluate(b => { FTBatchSheet.batch(b); FTBatchSheet.refresh(); }, b);
       await page.waitForFunction(n => { try { return FTBatchSheet.tables().find(t => t.id === 'days').rows.some(r => r[0].v.includes(n)); } catch (e) { return false; } }, name, { timeout: 20000 });
       return page.evaluate(n => { const T = FTBatchSheet.tables(), days = T.find(t => t.id === 'days'), row = days.rows.find(r => r[0].v.includes(n)), col = days.head.indexOf('Days complete');
