@@ -343,7 +343,6 @@ function kcDetailHtml(){
    and comment, a Practice Session's automated checks, the trainer's review and the AI evaluation, a Knowledge Check's graded
    answers (each answer's feedback) and summary, a Monitoring Sheet update's review, and the trainer's day-by-day feedback.
    The table: a column per day, the average of the day's scores; under it, a trainee's days in detail. */
-const firstLine = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = t.match(/^(.{20,260}?[.!?])(\s|$)/); return m ? m[1] : t.slice(0, 260); };
 const clip = (v, n = 420) => { const t = String(v || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 const num100 = v => v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null;
 // 🧑‍🏫 a trainer-scored activity (a mock call, a demo): the rubric's criteria, their 0–5 scores and remarks
@@ -1368,7 +1367,6 @@ window.FTBatchSheet = {
   hideSec(id){ const F = foldOf(id); F.hide = !F.hide; foldRender(id); },
   more(open){ B.more = !!open; },
   rkSheet(open){ B.rkSheet = !!open; },
-  ocWho(id){ if(!adminOn()) return; B.oc = id; render(); },
   // 🔁 Test again: the connection, then every link of the batch that isn't ✓ checked again now, and what it found
   async dstat(){
     if(!adminOn() || B.dtest) return;
@@ -1461,7 +1459,6 @@ window.FTBatchSheet = {
     }catch(err){ toast("Couldn’t save the links. Try again."); }
     B.leBusy = false; B.data = null; B.dataKey = ""; render();
   },
-  lkWho(id){ if(!adminOn()) return; B.lk = id; render(); },
   // ✓ the trainer's manual override for one link: daycheck:<id>.links[k] = {ok, url (the link it was given for), at}
   async lkMark(id, k, ok){
     if(!adminOn()) return;
@@ -1472,21 +1469,9 @@ window.FTBatchSheet = {
       cur.updatedAt = new Date().toISOString();
       if(await sharedSet("daycheck:" + id, cur) === false) throw new Error("save");
       if(B.data && B.data.rec[id]) B.data.rec[id].daycheck = cur;
-      B.lk = id; toast(ok ? "✓ Marked as opening." : "Mark taken off.");
+      toast(ok ? "✓ Marked as opening." : "Mark taken off.");
     }catch(err){ toast("Couldn't save. Try again."); }
     render();
-  },
-  // 🔁 the end-of-shift check, now, for one trainee: the tracker and Monitoring Sheet (/api/drive/check), the folder (/api/drive/shots)
-  async lkCheck(id){
-    if(!adminOn() || B.lkBusy) return;
-    B.lkBusy = true; B.lk = id; render();
-    let bad = 0;
-    for(const [u, body] of [["/api/drive/verify", {id}], ["/api/drive/check", {id}], ["/api/drive/shots", {ids: [id]}]]){
-      try{ const r = await authFetch(u, body); if(!r.ok && r.status !== 400) bad++; }catch(err){ bad++; }
-    }
-    B.lkBusy = false;
-    toast(bad ? "Checked, with an error reading part of it. Try again in a minute." : "✓ Checked.");
-    B.data = null; B.dataKey = ""; render();
   },
   // ✅ a trainer ticks (or unticks) an activity for a trainee: daycheck:<id>, which only a trainer writes
   async tick(id, key, on){
@@ -1572,7 +1557,6 @@ window.FTBatchSheet = {
     if(typeof state === "object") state.adminData = null;
     B.people = null; B.data = null; B.dataKey = ""; B.batch = moved ? to : from; render();
   },
-  open(){ state.adminTab = TAB; goto("admin"); },
   // 🔗 a trainee's Drive links compliance, % of the six ✓ Correct (📊 the Weekly Ranking's Drive Links Compliance column)
   linksPct(id){ try{ if(!B.data || !B.data.rec || !B.data.rec[id]) return null; const p = people().find(x => x.id === id); if(!p) return null;
     const {L} = linkState(p); if(LINKS.every(([q]) => L[q].st === "none")) return null;
@@ -1636,7 +1620,6 @@ function renderMine(){
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
 FTBatchSheet.refreshMe = function(){ if(!meOn()) return; B.me = null; B.data = null; B.dataKey = ""; render(); };
-FTBatchSheet.openMine = function(){ goto(ME); };
 
 // #/mysheet: a trainee's own page; anyone else is sent to the 📚 Dashboard
 const __routeRender = window.render;
@@ -1722,7 +1705,6 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-txt{min-width:260px;max-width:520px;}
 .bs-none{color:#5F6368;font-style:italic;text-align:left !important;}
 .bs-how{font-size:13.5px;}
-.bs-lk-rows{display:flex;flex-direction:column;gap:6px;margin:8px 0;} .bs-lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font:14px Arial,sans-serif;} .bs-lk-n{min-width:240px;} .bs-lk-row b{min-width:96px;} .bs-lk-why{flex-basis:100%;color:#7A5A00;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
 .gs .gs-fold{display:none;}
 .gs .gs-group th.gs-shut{max-width:150px;overflow:hidden;text-overflow:ellipsis;}
@@ -1761,13 +1743,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
 .bs-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:8px;}
 .bs-day{border:1px solid #E1E3E1;border-radius:8px;padding:8px 10px;background:#fff;font:13.5px Arial,sans-serif;}
-.bs-day.is-done{border-color:#A8DAB5;background:#F3FBF5;}
 .bs-day-h{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;} .bs-day-h span{color:#5F6368;font-size:12.5px;} .bs-day-h em{margin-left:auto;font-style:normal;font-weight:700;color:#137333;}
-.bs-item{display:flex;align-items:flex-start;gap:7px;padding:3px 0;cursor:pointer;line-height:1.35;} .bs-item input{margin-top:2px;width:16px;height:16px;flex:none;}
-.bs-item.is-done span{color:#137333;} .bs-item small{font-size:11px;font-weight:700;color:#5F6368;background:#F1F3F4;border-radius:999px;padding:0 6px;margin-left:3px;}
 .bs-gr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:3px 0;border-bottom:1px dashed #EEF0F2;} .bs-gr small{grid-column:1 / -1;color:#5F6368;font-size:12px;}
-.bs-item small.bs-redo{color:#C5221F;background:#FCE8E6;}
-.bs-isc{font-size:12px;margin-left:4px;} .bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
+.bs-rat{margin:8px 0 14px;} .bs-rat h5{margin:12px 0 4px;font:700 15px Arial,sans-serif;color:#1F1F1F;border-top:1px solid #E1E3E1;padding-top:10px;}
 .bs-rat-avg{font:14px Arial,sans-serif;margin:4px 0 6px;} .bs-rat-avg b{font-size:16px;} .bs-rat-avg span{color:#5F6368;}
 .bs-rat-how{margin:2px 0 6px;font-size:12.5px;color:#444746;line-height:1.4;}
 .bs-rat .bs-days{grid-template-columns:1fr;gap:6px;}
