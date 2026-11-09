@@ -36,7 +36,7 @@ const TEMPLATES = {
   blank: {label: "Only the trackers", cols: BASE}
 };
 /* 🔗 every report is connected to every scorecard: the Daily Compliance (the nightly check), the Drive links' compliance
-   (📋 Batch Sheet → ✅ Compliance: links correct of six) and 🏅 the Scorecard's overall (every grading system of js/ft-program.js,
+   (🔗 Drive Links → ✅ Compliance: links correct of six) and 🏅 the Scorecard's overall (every grading system of js/ft-program.js,
    averaged — the same Overall as 🏅 My Performance). A column already there for one is kept as it is; only the missing ones are
    added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
 // (📘 the TAM isn't a daily deliverable: it is graded only for a shadowing activity, when a trainer asks)
@@ -178,7 +178,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall && !s.hidden).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (📋 Batch Sheet → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["day:instructions", "📅 Following Instructions (the day's six Drive links)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (🔗 Drive Links → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["day:instructions", "📅 Following Instructions (the day's six Drive links)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -685,7 +685,7 @@ const HOW = {
   "day:instructions": "Following Instructions, day by day (strict): the naming convention (answer sheets, test screenshots), the folder structure and saving route (screenshots in the Typing / Spelling Tests folders, the six Drive links), and the deliverables on time (the three tests that day, the EOD before the end of the shift, the Task Tracker updated, answer sheets by their due time). The share followed each day; a day already over keeps what was found then, so fixing something later doesn't undo it. The week's average, out of 5.",
   "day:eod": "The EOD email, day by day: checked against its template (the subject with the date, Accomplishments, 3 learnings of 2 sentences, On queue for tomorrow, sent before the end of the shift). The week’s average, out of 5.",
   compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, Following Instructions, the day’s outputs and work on the platform; the TAM on a day a trainer graded it for shadowing). The week’s average, out of 5.",
-  links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance), out of 5.",
+  links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (🔗 Drive Links → ✅ Compliance), out of 5.",
   overall: "🏅 Scorecard overall: every grading system on the platform averaged (the same Overall as 🏅 My Performance), out of 5."
 };
 const howOf = c => !c.src ? "Typed by the trainer: the platform doesn’t fill it." : HOW[c.src] || (/^kc:/.test(c.src) ? `The Knowledge Check of “${c.src.slice(3)}”: its score.` : /^trainer:/.test(c.src) ? `The trainer’s scorecard for “${c.src.slice(8)}” (Trainer Inputs): its score.` : /^drive:/.test(c.src) ? `The graded “${c.src.slice(6)}” (the answer sheet graded on the platform): its score.` : `The platform’s “${c.src}” grades: their score.`) ;
@@ -702,7 +702,7 @@ function explainHtml(){
     const days = Object.entries(rv.days || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
     const trk = days.length ? days.map(([d, x]) => { const bad = (x.rules || []).find(r => !r.pass); return `<li>${e(d)}: ${pc(x.pct)}${bad ? ` — ${e(bad.label)}${bad.detail ? ": " + e(bad.detail) : ""}` : ""}</li>`; }).join("") : "<li>No day of the Task Tracker checked this week.</li>";
     const m = rv.monitor, mon = !m ? "Not checked yet." : m.error ? "✗ " + e(m.error) : `${m.found} of ${m.total} discussions found, ${pc(m.pct)} complete (checked ${e(String(m.checkedAt || "").slice(0, 10))}).`;
-    const t = rv.tam, tam = "Not part of the daily score: graded only for a shadowing activity (📋 Batch Sheet → ✅ Compliance → 📘 Grade the TAM). " + (!t ? (dv.tam ? "Not graded yet." : "Not linked.") : t.error ? "✗ " + e(t.error) : `Last graded ${e(String(t.checkedAt || "").slice(0, 10))}: ${Object.keys(t.entries || {}).length} dated entr${Object.keys(t.entries || {}).length === 1 ? "y" : "ies"}.`);
+    const t = rv.tam, tam = "Not part of the daily score: graded only for a shadowing activity (📋 Batch Sheet → 📤 Daily outputs → 📘 Grade the TAM). " + (!t ? (dv.tam ? "Not graded yet." : "Not linked.") : t.error ? "✗ " + e(t.error) : `Last graded ${e(String(t.checkedAt || "").slice(0, 10))}: ${Object.keys(t.entries || {}).length} dated entr${Object.keys(t.entries || {}).length === 1 ? "y" : "ies"}.`);
     const sh = rv.shots || {}, shots = (sh.files || []), inW = x => !wk || (x.date >= wk[0] && x.date <= wk[1]);
     const tests = `On the platform: ${(sk.typing || []).filter(inW).length} typing, ${(sk.spelling || []).filter(inW).length} spelling. Screenshots in Drive: ${shots.filter(inW).length}${sh.error ? ` (✗ the folders can’t be read: ${e(sh.error)})` : (sh.unread || []).length ? ` (✗ can’t read: ${e(sh.unread.join(", "))})` : ""}${sh.checkedAt ? `, checked ${e(String(sh.checkedAt).slice(0, 10))}` : ", not checked yet"}.`;
     const comp = Object.entries(rv.compliance || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
