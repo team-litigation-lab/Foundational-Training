@@ -76,6 +76,8 @@ window.LSH_PROGRAM = {
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
   adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}],
   adminLead: {scorecard: "batchsheet", lab: "calendaring"},
+  // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [
