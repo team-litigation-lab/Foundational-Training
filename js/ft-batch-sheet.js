@@ -609,6 +609,17 @@ function linkMarks(p){
   let L = {}; try{ L = linkState(p).L; }catch(err){ return ""; }
   return `<div class="bs-lkg">${LINKS.map(([k, l]) => L[k] ? `<div class="bs-lkc"><span>${e(l).replace("/", "/<wbr>")}</span>${markBtn(p, k, L[k])}</div>` : "").join("")}</div>`;
 }
+// a trainee's lesson decks (kc false) or their lessons' Knowledge Checks (kc true), a cell each like their links: the lesson
+// and ✓ (finished / passed) or ✗, with how far they got or their best score so far on a hover
+function lessonMarks(p, kc){
+  const ls = kc ? kcLessons() : lessons(); if(!ls.length || !B.data) return "";
+  const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
+  return `<div class="bs-lkg bs-lkg-n" style="--n:${ls.length}">${ls.map(d => { const k = deckOf(p, d), x = dp[d.id] || {}, sc = typeof x.score === "number" ? Math.round(x.score) : null;
+    const ok = kc ? !!x.done : k.finished;
+    const tip = kc ? (ok ? `Passed${sc != null ? " with " + sc + "%" : ""}` : sc != null ? `Not passed yet: ${sc}% so far (70% passes)` : "Not taken yet")
+      : ok ? "Finished" : k.seen ? `Not finished: slide ${k.seen} of ${k.total || "?"}` : "Not opened yet";
+    return `<div class="bs-lkc" title="${e(lessonName(d.id))}: ${e(tip)}"><span><b>Lesson ${e(d.id)}</b><br>${e(lessonName(d.id))}</span><span class="bs-mk ${ok ? "bs-mk-ok" : "bs-mk-x"}">${ok ? "✓" : "✗"}</span></div>`; }).join("")}</div>`;
+}
 function complianceTable(){
   const ppl = people();
   // the six links side by side, each its own column (no dropdown to go through): ✓ Correct, ✗ Wrong (why: on a hover or a
@@ -935,14 +946,16 @@ function perTraineeHtml(T){
   const sc = T.find(x => x.id === "scores"), col = h => sc ? sc.head.indexOf(h) : -1;
   return `<div class="bs-pts">${ppl.map((p, i) => { if(p !== cur) return "";
     const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
-    const head = [["Overall", val("Overall %")], ["Scorecard", val("Scorecard overall")], ["Daily compliance", val("Daily compliance")]].filter(([, v]) => v);
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
+    const cellOf = h => { const k = col(h); return sr && k >= 0 ? sr[k] || {} : {}; };
+    const head = [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h))]).filter(([, v]) => v);
     const sec = x => { const r = rowFor(x, p, i, ppl.length); if(!r) return "";
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
-        const f = x.id === "compliance" && k === 1 ? linkMarks(p) : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
+        const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
+          : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true) : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
@@ -952,7 +965,7 @@ function perTraineeHtml(T){
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
     const body = use.filter(x => x.id !== "trainees").map(sec).join("") + intake + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
-      <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
+      <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t]) => `<span class="bs-pt-k ${e(t)}">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
           : `<button type="button" class="btn btn-navy btn-sm bs-pt-fbb" onclick="FTBatchSheet.fbOpen('${e(p.id)}')">📝 Send Feedback to ${e(p.name)}</button>`) : ""}</div></div>`;
@@ -1404,7 +1417,7 @@ function renderSheet(){
   if(ready && adminOn() && !B.sync && !(B.autoSync = B.autoSync || {})[B.batch]){ B.autoSync[B.batch] = 1; let last = 0;
     try{ last = Number(localStorage.getItem("ft_bs_sync:" + B.batch)) || 0; }catch(err){}
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
-  const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
+  const waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
   const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
@@ -2046,11 +2059,19 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-pt > summary{cursor:pointer;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;} .bs-pt[open] > summary{border-bottom:1px solid #E6E9F1;}
 .bs-pt > summary i{font-size:12px;color:#8A5A00;} .bs-pt-k{font-size:16px;color:#3C4043;} .bs-pt-k b{color:#1E2340;}
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
-.bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;}
+.bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
 .bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t thead th:nth-child(1){width:24%;} .bs-pt-t thead th:nth-child(2){width:13%;}
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
+/* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
+.bs-pt-h{justify-content:center;gap:10px 14px;background:linear-gradient(135deg,#1E2340,#33406B);color:#fff;padding:14px 16px !important;border-bottom:0;border-radius:11px 11px 0 0;}
+.bs-pt-h > b{color:#fff !important;font-size:24px !important;margin-right:6px;} .bs-pt-h > i{color:#FFD9A8;}
+.bs-pt-k{display:inline-flex;align-items:baseline;gap:7px;padding:5px 14px;border-radius:999px;background:#fff;border:2px solid #C9D1E6;color:#1E2340 !important;font:700 16px Arial,sans-serif !important;}
+.bs-pt-k b{font-size:22px !important;color:#1E2340 !important;}
+.bs-pt-k.gs-hi{background:#E6F4EA;border-color:#1E8E3E;} .bs-pt-k.gs-hi b{color:#0B5D1E !important;}
+.bs-pt-k.gs-mid{background:#FFF4E0;border-color:#E8A400;} .bs-pt-k.gs-mid b{color:#7A4B00 !important;}
+.bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
@@ -2106,6 +2127,7 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-look{margin-left:auto;font-weight:700;color:#1E2340;} .bs-look select{font:600 13px Arial,sans-serif;padding:5px 10px;border:1px solid #C9CEDA;border-radius:999px;background:#fff;color:#1E2340;max-width:260px;}
 .bs-mk{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;border-radius:6px;font:800 14px Arial,sans-serif;border:0;} .bs-mk-ok{color:#166534;background:#DCFCE7;} .bs-mk-wait{color:#92400E;background:#FEF3C7;} button.bs-mk-x,.bs-mk-x{color:#991B1B;background:#FEE2E2;cursor:pointer;} button.bs-mk-x:hover{background:#FCA5A5;}
 .bs-lkg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid #E3E6EE;border-radius:6px;overflow:hidden;} .bs-lkc{overflow-wrap:normal;word-break:normal;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;text-align:center;font-size:12.5px;line-height:1.25;} .bs-lkc + .bs-lkc{border-left:1px solid #E3E6EE;}
+.bs-lkg-n{grid-template-columns:repeat(var(--n,6),minmax(0,1fr));} .bs-lkg-n .bs-lkc span:first-child{font-size:12px;color:#3C4043;} .bs-lkg-n .bs-lkc b{font-size:13px;color:#1E2340;}
 @media (max-width:760px){.bs-lkg{grid-template-columns:repeat(3,minmax(0,1fr));} .bs-lkc:nth-child(4){border-left:0;} .bs-lkc:nth-child(n+4){border-top:1px solid #E3E6EE;} .bs-look{margin-left:0;}}
 .bs-pop{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;} .bs-pop-box{position:relative;background:#fff;border-radius:10px;max-width:460px;width:100%;padding:18px 20px;box-shadow:0 20px 50px rgba(0,0,0,.3);font:14px Arial,sans-serif;color:#1f2937;}
 .bs-pop-box h4{margin:0 30px 2px 0;font-size:16px;display:flex;gap:8px;align-items:center;} .bs-pop-who{margin:0 0 10px;color:#6b7280;} .bs-pop-why{margin:0 0 6px;font-weight:700;color:#991B1B;} .bs-pop-more{margin:0 0 6px;line-height:1.45;} .bs-pop-at{margin:0 0 10px;color:#6b7280;font-size:12.5px;} .bs-pop-acts .btn{text-decoration:none;} .bs-pop-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;} .bs-pop-x{position:absolute;top:10px;right:10px;border:0;background:none;font-size:16px;cursor:pointer;color:#6b7280;}
