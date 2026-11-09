@@ -829,8 +829,8 @@ function whoTopHtml(ppl){
 function ptCur(ppl){ return ppl.find(p => p.id === B.pt) || ppl[0] || null; }
 function pagerHtml(ppl){
   const cur = ptCur(ppl); if(!cur) return ""; const i = ppl.indexOf(cur);
-  return `<div class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
-    <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></div>`;
+  return `<span class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
+    <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></span>`;
 }
 // a trainee's row of one table (the same order as people(), else by name)
 function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && rs[i] && stripTags(rs[i][0] && rs[i][0].v) === p.name ? rs[i] : rs.find(r => stripTags(r[0] && r[0].v) === p.name) || null; }
@@ -852,7 +852,7 @@ function lessonDaysHtml(p){
     hist.forEach(h => { const k = at(h.date || h.at, "kcs"); if(k && typeof h.score === "number") k.push({l: lessonName(l.id), s: h.score, ok: !!h.passed || h.score >= 70}); });
     if(!hist.length && typeof x.score === "number"){ const k = at(x.date, "kcs"); if(k) k.push({l: lessonName(l.id), s: x.score, ok: x.score >= 70}); } });
   const keys = Object.keys(days).sort().reverse();
-  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"});
+  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"});
   const rows = keys.map(d => { const x = days[d];
     return `<tr><td class="bs-pt-m">${e(nice(d))}</td><td class="bs-pt-v">${x.decks.length ? `📚 ${x.decks.length} deck${x.decks.length === 1 ? "" : "s"}` : "—"}${x.kcs.length ? `<br>✍️ ${x.kcs.filter(k => k.ok).length} of ${x.kcs.length} passed` : ""}</td>
       <td class="bs-pt-f">${x.decks.length ? `<b>Finished:</b> ${e(x.decks.join(", "))}` : "No lesson deck finished"}${x.kcs.length ? `<br><b>Knowledge Checks:</b> ${x.kcs.map(k => `${e(k.l)} <b class="bs-sbox ${tone(k.s)}">${Math.round(k.s)}%</b> ${k.ok ? "✓ passed" : "✗ not passed (70% passes)"}`).join(" · ")}` : ""}</td></tr>`; }).join("");
@@ -888,7 +888,7 @@ function perTraineeHtml(T){
   const use = T.filter(x => !["drive", "trainees", "scorecard"].includes(x.id)).concat(T.filter(x => x.id === "scorecard"), T.filter(x => x.id === "trainees"));
   const cur = ptCur(ppl);
   const sc = T.find(x => x.id === "scores"), col = h => sc ? sc.head.indexOf(h) : -1;
-  return pagerHtml(ppl) + `<div class="bs-pts">${ppl.map((p, i) => { if(p !== cur) return "";
+  return `<div class="bs-pts">${ppl.map((p, i) => { if(p !== cur) return "";
     const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
     const head = [["Overall", val("Overall %")], ["Scorecard", val("Scorecard overall")], ["Daily compliance", val("Daily compliance")]].filter(([, v]) => v);
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
@@ -927,7 +927,7 @@ const rowOpen = id => { const v = ofold().rows[id]; return v == null ? true : !!
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
-  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC"}); };
+  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
   return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
@@ -1360,11 +1360,11 @@ function renderSheet(){
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   return `<div class="card gs-card bs-card">
     <div class="gs-top"><span class="gs-logo">${weeklyOn() ? "📊" : linksOn() ? "🔗" : "📋"}</span><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button><button onclick="FTBatchSheet.fixOpen()">✏️ Fix the batch name</button>${adminOn() && !meOn() ? `<button onclick="FTBatchSheet.sweepOpen()">🧹 Sweep inactive accounts</button>` : ""}<button onclick="FTBatchSheet.dateOpen()">✎ Fix a date</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
-        ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}</span></div>
+        ${adminOn() && !meOn() && typeof window.confirmArchiveBatch === "function" ? `<button type="button" class="btn btn-ghost btn-sm bs-archive" onclick="FTBatchSheet.archive()" title="Save the batch's records to Google Drive and archive it (js/ft-batch-admin.js)">📦 Archive batch</button>` : ""}${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div>
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
-      ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
+</div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, press <b>✏️ Fix the batch name</b>.</div>` : ""}
     ${(() => { const back = (B.auto || []).filter(p => p.batch === B.batch); return back.length ? `<div class="bs-warn bs-back">↩ <b>${back.length} trainee${back.length === 1 ? " was" : "s were"} archived automatically</b> from ${e(B.batch)} (${e(back.slice(0, 6).map(p => p.name).join(", "))}${back.length > 6 ? "…" : ""}), so ${back.length === 1 ? "they are" : "they are"} not on the Scorecard. <button class="btn btn-navy btn-sm" ${B.backBusy ? "disabled" : ""} onclick="FTBatchSheet.bringBack()">${B.backBusy ? "Bringing them back…" : "↩ Bring them back"}</button></div>` : ""; })()}
     ${dupHtml()}
@@ -1929,7 +1929,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-card .gs-menu button:disabled{opacity:.6;cursor:default;}
 .bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
-.bs-pager span{color:#5F6368;}
+.bs-pager span{color:#3C4043;font:800 16px Arial,sans-serif;}
+.bs-card .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} .bs-card .gs-menu .bs-pager button{font-size:16.5px;padding:8px 16px;}
+.bs-card .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
 /* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
 .bs-card .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .bs-card .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
 .bs-card .bs-batchmenu select{font:800 17px Arial,sans-serif;padding:7px 12px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
@@ -1940,9 +1942,12 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;}
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t thead th:nth-child(1){width:24%;} .bs-pt-t thead th:nth-child(2){width:13%;}
+.bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
+.bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
+.bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
-.bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:30%;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:90px;text-align:center;cursor:help;} .bs-pt-mx thead th{min-width:90px;text-align:center;}
+.bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
 .bs-pt-sub td{background:#EEF1F8;font-weight:800;} .bs-pt-it{padding-left:24px !important;font-weight:600 !important;} .bs-pt-rv{display:flex;flex-wrap:wrap;gap:8px;padding:10px !important;}
 .bs-pt-rv .btn{font-weight:800;font-size:14.5px;border:2px solid #1E2340;}
 .bs-pt-fb{margin-top:12px;} .bs-pt-fbb{margin-top:10px;} .bs-pt-fb .tfb-admin{box-shadow:none;border:1px solid #DDE1EC;}
