@@ -10,11 +10,12 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
-// (a batch that starts today, Pacific time: its Week 1 is the week now and not over, so nothing drafts itself; a Batch ID is
+// (a batch that started yesterday, Pacific time: its Week 1 is the week now and not over, so nothing drafts itself; a Batch ID is
 // its first day, B + MMDDYY)
 const ptParts = ms => Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: '2-digit', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
 const bid = ms => { const p = ptParts(ms); return `B${p.month}${p.day}${p.year}`; };
-const BATCH = bid(Date.now());
+// (it started yesterday: a week on its first day, not over yet, has no scores — js/ft-ranking.js fillFromPortal)
+const BATCH = bid(Date.now() - 864e5);
 // (and one that started three weeks ago: its Week 1 is over, so its report drafts itself)
 const PAST = bid(Date.now() - 21 * 864e5);
 const failures = []; const fail = m => failures.push(m);

@@ -192,6 +192,11 @@ function srcOptions(){
 }
 async function fillFromPortal(quiet){
   if(!R.data || R.fill) return;
+  // (⏳ a week on its first day, not over yet, has no scores: the cells the platform filled are cleared, a trainer's typed ones
+  // kept, and nothing is filled until a day of the week is done)
+  { const r = weekRange(), td = ptToday(); if(r && r[0] === td){ let n = 0;
+      Object.values(R.data.rows || {}).forEach(row => Object.entries(row.cells || {}).forEach(([cid, cur]) => { if(cur && cur.auto && (num(cur.raw) != null || cur.note)){ const nx = Object.assign({}, cur); delete nx.raw; if(!cur.noteBy) delete nx.note; row.cells[cid] = nx; n++; } }));
+      if(n) save(); if(!quiet) toast(`Week ${R.week} has no scores yet: its first day isn't over.`); return; } }
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
   const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance"), linkCols = R.data.cols.filter(c => c.type === "score" && c.src === "links");
   const dayCols = R.data.cols.filter(c => c.type === "score" && /^day:/.test(c.src || ""));
