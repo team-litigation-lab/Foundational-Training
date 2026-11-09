@@ -56,6 +56,7 @@ window.LSH_PROGRAM = {
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],
     intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
+    lorassign: ["lorassign"],   // 📄 Assign LORs: its own section beside 📦 Intake Packets (js/ft-lor.js)
     // 🔗 Drive Links and 🧑‍🏫 Graders: Mock Calls & Demos, section buttons of their own beside 📊 Weekly Reports (adminSections)
     drivelinks: ["drivelinks"],
     graders: ["graders"],
@@ -75,10 +76,10 @@ window.LSH_PROGRAM = {
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}],
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}],
   adminLead: {scorecard: "batchsheet"},
   // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
-  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "admin", "modules", "lab"],
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [
@@ -93,9 +94,17 @@ window.LSH_PROGRAM = {
         const sc = p.trainerScore != null && "gradedScore" in p ? p.gradedScore : p.score;
         if(typeof sc !== "number") return {name:d.title, ref:"kc:" + d.id, pct:null, note:"Not taken yet"};
         return {name:d.title, ref:"kc:" + d.id, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""};
+      }).flatMap((it, k, arr) => {
+        // 📖 a lesson's Reading Task (Day 1's PI Overview), scored on its own (js/ft-process.js): its own line after the lesson's
+        const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
+        const rs = [...new Set(window.ftKcQuestions(d.id).map(x => x.set))].find(st => st.open);
+        if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
+        // (the trainer's final score for it, kcreview:<id>.read[lesson], straight from their review, as the lesson's is)
+        const rv = (((ctx.rec["kcreview:"] || {}).read) || {})[d.id], t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
+        if(t != null) return [it, {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:t, note:"Reading Task · trainer’s final score", why:rv.comment || ""}];
+        const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
+        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""} : {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:null, note:"Reading Task · not graded yet"}];
       })},
-    // (no 📖 Reading Task line: Day 1's PI Overview reading isn't one of the Knowledge Checks' grades — the trainers score it
-    // in the 📊 Weekly Ranking's PI Reading Task column)
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
       items: ctx => CALL_LESSONS.map(id => {

@@ -75,58 +75,72 @@ window.lshOpenPortalDrafting = async function(letter){
   else location.href = url;
 };
 
-/* ---------- 📄 Assign LORs (📋 Batch Sheet → the blue bar's 📄 Assign LORs, a trainer's) ----------
-   Each trainee of the batch gets one of the cases (js/ft-lor-data.js) for the LOR Drafting Activity: a case for each, set one
+/* ---------- 📄 Assign LORs (Admin → 📄 Assign LORs, beside 📦 Intake Packets; a trainer's) ----------
+   Each trainee of a batch gets one of the cases (js/ft-lor-data.js) for the LOR Drafting Activity: a case for each, set one
    by one, or 🎲 every trainee without one given a case of their own (the cases not yet taken in the batch first). Kept in
-   lorassign:<id> = {case, at} (only admins write it); the trainee's Practice Lab card names it (Your case). */
-const LA = {open: false, key: "", rows: {}, loading: false, busy: false};
-async function laLoad(ppl){
-  const key = ppl.map(p => p.id).join(","); if(LA.key === key || LA.loading) return;
-  LA.loading = true;
-  try{ const v = await sharedGetMany(ppl.map(p => "lorassign:" + p.id)); LA.rows = {}; ppl.forEach((p, i) => { const n = v[i] && Number(v[i].case); if(n >= 1 && n <= CASES.length) LA.rows[p.id] = n; }); LA.key = key; }
-  catch(err){ LA.key = key; }
-  LA.loading = false; if(LA.open) render();
+   lorassign:<id> = {case, at} (only admins write it); the trainee's Practice Lab card names it (Your case) and the Portal's
+   drafting tool opens on it alone (lshOpenPortalDrafting, ?case=N). */
+const LA = {roster: null, rows: {}, loading: false, busy: false, batch: ""};
+async function laLoad(){
+  if(LA.loading) return; LA.loading = true;
+  try{
+    const people = await ftActiveRoster();
+    const v = await sharedGetMany(people.map(r => "lorassign:" + r.id));
+    LA.roster = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((x, y) => x.batch.localeCompare(y.batch) || x.name.localeCompare(y.name));
+    LA.rows = {}; people.forEach((r, i) => { const n = v[i] && Number(v[i].case); if(n >= 1 && n <= CASES.length) LA.rows[r.id] = n; });
+    if(!LA.batch) LA.batch = window.ftLatestBatch ? ftLatestBatch(LA.roster) : "";
+  }catch(err){ LA.roster = LA.roster || []; }
+  LA.loading = false; if(state.view === "admin" && state.adminTab === "lorassign") render();
 }
 async function laWrite(id, n){
-  const rec = n ? {case: n, at: new Date().toISOString()} : {case: null, at: new Date().toISOString()};
+  const rec = {case: n || null, at: new Date().toISOString()};
   if(await sharedSet("lorassign:" + id, rec) === false) throw new Error("save");
   if(n) LA.rows[id] = n; else delete LA.rows[id];
 }
-const laPeople = () => (window.FTBatchSheet && FTBatchSheet.people ? FTBatchSheet.people() : []);
+const laPeople = () => (LA.roster || []).filter(r => !LA.batch || r.batch === LA.batch);
+function laHtml(){
+  if(!adminOn()) return "";
+  if(!LA.roster){ laLoad(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
+  const ppl = laPeople(), given = ppl.filter(p => LA.rows[p.id]).length, taken = {};
+  ppl.forEach(p => { const n = LA.rows[p.id]; if(n) taken[n] = (taken[n] || 0) + 1; });
+  const batches = [...new Set(LA.roster.map(r => r.batch).filter(Boolean))].sort();
+  const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? e(caseName(n)) : "Not assigned"}</option>`;
+  return `<div class="card lor-as"><div class="lor-as-h"><div><h3>📄 Assign LORs <small class="lor-as-n">${given} of ${ppl.length} assigned</small></h3>
+      <p class="lor-as-note">Each trainee drafts the 1P and 3P LORs from their own case: they see it on the 📄 LOR Drafting Activity card in 🛠 Practice Lab, and the drafting tool opens on that case alone.</p></div>
+    <span class="lor-as-ctl"><select aria-label="Batch" onchange="FTLorAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === LA.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
+      <button type="button" class="btn btn-navy btn-sm" ${LA.busy || !ppl.length || given === ppl.length ? "disabled" : ""} onclick="FTLorAdmin.all()">🎲 Assign every trainee a case</button></span></div>
+    ${ppl.length ? `<div class="lor-as-g">${ppl.map(p => { const n = LA.rows[p.id] || 0;
+      return `<label class="lor-as-c"><b>${e(p.name)}${LA.batch ? "" : ` <small>${e(p.batch)}</small>`}</b><select aria-label="LOR case for ${e(p.name)}" onchange="FTLorAdmin.set('${e(p.id)}', this.value)">${[0, ...CASES.map((c, i) => i + 1)].map(k => opt(k, n)).join("")}</select>${n && taken[n] > 1 ? `<small class="lor-as-dup">also given to another trainee</small>` : ""}</label>`; }).join("")}</div>`
+      : `<p class="lor-as-note">No approved trainees${LA.batch ? " in this batch" : ""}.</p>`}</div>`;
+}
 window.FTLorAdmin = {
-  isOpen: () => LA.open,
-  open(o){ if(!adminOn()) return; LA.open = !!o; if(LA.open) LA.key = ""; render(); },
-  html(ppl){
-    if(!adminOn() || !LA.open) return "";
-    ppl = ppl || laPeople(); laLoad(ppl);
-    const given = ppl.filter(p => LA.rows[p.id]).length, taken = {};
-    ppl.forEach(p => { const n = LA.rows[p.id]; if(n) taken[n] = (taken[n] || 0) + 1; });
-    const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? e(caseName(n)) : "Not assigned"}</option>`;
-    return `<div class="bs-le card lor-as"><div class="bs-le-h"><b>📄 Assign LORs <small class="lor-as-n">${given} of ${ppl.length} assigned</small></b>
-      <span><button type="button" class="btn btn-navy btn-sm" ${LA.busy || given === ppl.length ? "disabled" : ""} onclick="FTLorAdmin.all()">🎲 Assign every trainee a case</button>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="FTLorAdmin.open(false)">✕ Close</button></span></div>
-      <p class="lor-as-note">Each trainee drafts the 1P and 3P LORs from their own case. They see it on the 📄 LOR Drafting Activity card in 🛠 Practice Lab.</p>
-      ${LA.loading && !LA.key ? `<p class="lor-as-note">Loading…</p>` : `<div class="lor-as-g">${ppl.map(p => { const n = LA.rows[p.id] || 0;
-        return `<label class="lor-as-c"><b>${e(p.name)}</b><select aria-label="LOR case for ${e(p.name)}" onchange="FTLorAdmin.set('${e(p.id)}', this.value)">${[0, ...CASES.map((c, i) => i + 1)].map(k => opt(k, n)).join("")}</select>${n && taken[n] > 1 ? `<small class="lor-as-dup">also given to another trainee</small>` : ""}</label>`; }).join("")}</div>`}</div>`;
-  },
+  html: laHtml,
+  reload(){ LA.roster = null; render(); },
+  batch(b){ LA.batch = String(b || ""); render(); },
   async set(id, v){
     if(!adminOn()) return; const n = Number(v) || 0;
     try{ await laWrite(id, n >= 1 && n <= CASES.length ? n : 0); toast(n ? `📄 ${caseName(n)} assigned.` : "LOR case taken off."); }
     catch(err){ toast("Couldn’t save the case. Try again."); }
     render();
   },
-  // 🎲 each trainee without a case gets one: the cases no one in the batch has yet first, in order, then again from Case 1
+  // 🎲 each trainee of the batch without a case gets one: the cases no one in the batch has yet first, in order, then again from Case 1
   async all(){
     if(!adminOn() || LA.busy) return; const ppl = laPeople(), need = ppl.filter(p => !LA.rows[p.id]); if(!need.length) return;
     LA.busy = true; render();
-    const used = new Set(Object.values(LA.rows)), free = CASES.map((c, i) => i + 1).filter(n => !used.has(n)), order = free.concat(CASES.map((c, i) => i + 1));
+    const used = new Set(ppl.map(p => LA.rows[p.id]).filter(Boolean)), free = CASES.map((c, i) => i + 1).filter(n => !used.has(n)), order = free.concat(CASES.map((c, i) => i + 1));
     let k = 0, bad = 0;
     for(const p of need){ try{ await laWrite(p.id, order[k++ % order.length]); }catch(err){ bad++; } }
     LA.busy = false; toast(bad ? `Assigned ${need.length - bad}; ${bad} couldn’t be saved. Try again.` : `📄 ${need.length} trainee${need.length === 1 ? "" : "s"} given a case.`); render();
   }
 };
+if(typeof window.ftAdminTab === "function") ftAdminTab("lorassign", "📄 Assign LORs", laHtml);
 (function(){ const s = document.createElement("style"); s.textContent = `
-.lor-as .bs-le-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;}
+.lor-as{padding:18px 22px;}
+.lor-as-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.lor-as-h h3{margin:0 0 4px;}
+.lor-as-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.lor-as-ctl select{font:700 14px Arial,sans-serif;padding:4px 8px;border:2px solid #3B4A8C;border-radius:8px;color:#1E2340;}
+.lor-as-c small{color:#5A6175;font-weight:600;}
 .lor-as-n{font-weight:600;color:#5A6175;margin-left:6px;}
 .lor-as-note{margin:0 0 8px;color:#3A4058;font:600 13.5px/1.4 Arial,sans-serif;}
 .lor-as-g{column-count:3;column-gap:24px;padding-bottom:12px;}

@@ -303,9 +303,7 @@ function overallTable(){
 const kcSheets = () => { const q = window.ftKcQuestions; if(typeof q !== "function") return [];
   return lessons().filter(d => q(d.id).length).flatMap(d => { const qs = q(d.id), sets = [...new Set(qs.map(x => x.set))], rs = sets.length > 1 ? sets.find(st => st.open) : null;
     const own = {l: d.id, read: false, title: lessonName(d.id), qs: rs ? qs.filter(x => x.set !== rs) : qs};
-    // (no 📖 Reading Task sheet: Day 1's reading isn't one of the Knowledge Checks' grades — the trainers score it in the
-    // 📊 Weekly Ranking's PI Reading Task column)
-    return [own]; }); };
+    return rs ? [own, {l: d.id, read: true, title: "📖 " + rs.title, qs: qs.filter(x => x.set === rs)}] : [own]; }); };
 function sheetGrade(p, k){
   const R = B.data.rec[p.id] || {}, proc = R.process || {}, rvAll = (R.src || {})["kcreview:"] || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   const rec = ((k.read ? proc.kcRead : proc.kc) || {})[k.l] || null, rv = ((k.read ? rvAll.read : rvAll.lessons) || {})[k.l] || {};
@@ -915,23 +913,26 @@ function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && 
    Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
    them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
 const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
-function everyGradeHtml(p, bare){
-  const sc = (B.data.rec[p.id] || {}).score; if(!sc || !Array.isArray(sc.rows)) return "";
-  const rows = sc.rows.filter(r => r && r.s && !r.s.hidden && (r.items || []).length), R = B.data.rec[p.id] || {};
-  // (✎ a trainer edits a score in place — an item with a ref the Scorecard lets them edit, js/lsh-program.js EDITABLE —; the
-  // trainee's own page shows the same grades with no field)
-  const canEdit = it => adminOn() && !meOn() && !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref));
-  const out = rows.map(r => `<tr class="bs-pt-sub"><td class="bs-pt-m">${e(`${r.s.icon || ""} ${r.s.label}`.trim())}</td><td class="bs-pt-v ${e(tone(r.avg))}" title="${e(r.avg != null ? `${r.s.label}: the average of ${r.graded} grade${r.graded === 1 ? "" : "s"} = ${r.avg}%` : `${r.s.label}: nothing graded yet`)}">${r.avg != null ? r.avg + "%" : "—"}</td><td class="bs-pt-f">${r.avg != null ? `Average of ${r.graded} grade${r.graded === 1 ? "" : "s"}` : "Nothing graded yet"}</td></tr>`
-    + r.items.map(it => { const v = typeof it.pct === "number" && isFinite(it.pct) ? Math.round(it.pct) : null, why = whyOf(p, R, it), ed = canEdit(it);
-      const tip = `${stripTags(it.name)}: ${v != null ? v + "%" : "—"}${why ? " — " + why : ""}`;
-      const val = ed ? `<input class="bs-ed" type="number" min="0" max="100" step="1" inputmode="numeric" value="${v != null ? v : ""}" placeholder="—" aria-label="${e("Score for " + stripTags(it.name))}" data-pid="${e(p.id)}" data-ref="${e(it.ref)}" onchange="FTBatchSheet.editRow(this)"><span class="bs-ed-u">%</span>${it.overridden || edited(R, it) ? ` <small class="bs-ed-mk" aria-label="edited by the trainer">✎</small>` : ""}`
-        : `${v != null ? v + "%" : "—"}${it.overridden ? ` <small class="bs-ed-mk" aria-label="the trainer's score">✎</small>` : ""}`;
-      // (an override's own note: what the trainer wrote beside their score, on the items with no trainer's field of their own)
-      const o = ed && lshProgram.overridable(it.ref) ? lshProgram.override(R.src, it.ref) : null;
-      const note = ed && lshProgram.overridable(it.ref) ? ` <input class="bs-ed-note" maxlength="600" value="${e(o ? o.note : "")}" placeholder="Why (optional)" aria-label="${e("Why the score for " + stripTags(it.name))}" data-pid="${e(p.id)}" data-ref="${e(it.ref)}" data-note="1" onchange="FTBatchSheet.editRow(this)">` : "";
-      return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(it.name))}</td><td class="bs-pt-v ${e(tone(v))}" title="${e(tip)}">${val}</td><td class="bs-pt-f">${e(stripTags(it.note || ""))}${it.at ? ` <small>${e(String(it.at).slice(0, 10))}</small>` : ""}${why && why !== stripTags(it.note || "") ? `<details class="bs-why"><summary>Why</summary>${e(why)}</details>` : ""}${note}</td></tr>`; }).join("")).join("");
-  // (📅 / 🟢 / 🎧 Review: buttons in 🛡 Admin Master Control now, not in each trainee's grades)
-  return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}`;
+/* ✎ EDIT A SCORE (a trainer's, on a trainee's page): 🏅 Grades is gone — 📤 Daily outputs & 📅 Day scores and ✍️ Knowledge
+   Checks, Assessments & Activities show every grade — so a trainer's own score goes in here: the grade picked from the list
+   (each one the Scorecard lets a trainer set, js/lsh-program.js EDITABLE, by grading system), its % and, on an override, why;
+   then + points on the Scorecard overall (extraRowHtml). The fields are the same as before (FTBatchSheet.editRow, editExtra). */
+function editBoxHtml(p){
+  if(!adminOn() || meOn()) return "";
+  const sc = (B.data.rec[p.id] || {}).score, R = B.data.rec[p.id] || {};
+  const can = it => !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref));
+  const groups = sc && Array.isArray(sc.rows) ? sc.rows.filter(r => r && r.s && !r.s.hidden).map(r => ({s: r.s, items: (r.items || []).filter(can)})).filter(g => g.items.length) : [];
+  const all = groups.flatMap(g => g.items);
+  B.edSel = B.edSel || {};
+  const ref = all.some(it => it.ref === B.edSel[p.id]) ? B.edSel[p.id] : (all[0] || {}).ref;
+  const it = all.find(x => x.ref === ref) || null, v = it && typeof it.pct === "number" && isFinite(it.pct) ? Math.round(it.pct) : null;
+  const o = it && lshProgram.overridable(it.ref) ? lshProgram.override(R.src, it.ref) : null, why = it ? whyOf(p, R, it) : "";
+  const pick = groups.length ? `<select class="bs-ed-pick" aria-label="The grade to edit" onchange="FTBatchSheet.edPick('${e(p.id)}', this.value)">${groups.map(g =>
+    `<optgroup label="${e(`${g.s.icon || ""} ${g.s.label}`.trim())}">${g.items.map(x => `<option value="${e(x.ref)}" ${x.ref === ref ? "selected" : ""}>${e(stripTags(x.name))}${typeof x.pct === "number" ? " · " + Math.round(x.pct) + "%" : ""}</option>`).join("")}</optgroup>`).join("")}</select>` : "Nothing to edit yet";
+  const row = it ? `<tr class="bs-pt-ed"><td class="bs-pt-m">${pick}</td><td class="bs-pt-v ${e(tone(v))}" title="${e(`${stripTags(it.name)}: ${v != null ? v + "%" : "—"}${why ? " — " + why : ""}`)}"><input class="bs-ed" type="number" min="0" max="100" step="1" inputmode="numeric" value="${v != null ? v : ""}" placeholder="—" aria-label="${e("Score for " + stripTags(it.name))}" data-pid="${e(p.id)}" data-ref="${e(it.ref)}" onchange="FTBatchSheet.editRow(this)"><span class="bs-ed-u">%</span>${it.overridden || edited(R, it) ? ` <small class="bs-ed-mk" aria-label="edited by the trainer">✎</small>` : ""}</td>
+    <td class="bs-pt-f">${e(stripTags(it.note || ""))}${lshProgram.overridable(it.ref) ? ` <input class="bs-ed-note" maxlength="600" value="${e(o ? o.note : "")}" placeholder="Why (optional)" aria-label="${e("Why the score for " + stripTags(it.name))}" data-pid="${e(p.id)}" data-ref="${e(it.ref)}" data-note="1" onchange="FTBatchSheet.editRow(this)">` : ""}</td></tr>`
+    : `<tr class="bs-pt-ed"><td class="bs-pt-m" colspan="3">${pick}</td></tr>`;
+  return `<tr class="bs-pt-sec"><th colspan="3">✎ Edit a score <small>(trainers only)</small></th></tr>${row}${extraRowHtml(p)}`;
 }
 // (✎ a mock call's or demo's score typed by the trainer, not the scorecard's average)
 const edited = (R, it) => /^act:/.test(String(it.ref || "")) && !!(((((R.src || {})["labreview:"] || {}).acts) || {})[String(it.ref).slice(4)] || {}).scoreEdited;
@@ -980,19 +981,6 @@ function dayExtras(p, d, dt){
     out.push({name: "💬 Trainer feedback", v: v.rating || "—", tone: ratingTone(v.rating), text: `${lessonName(Number(l))}${v.summary ? ": " + String(v.summary).replace(/\s+/g, " ").slice(0, 400) : ""}`}));
   return out;
 }
-// 🧑‍🏫 the Graders' Mock Calls & Demos (labreview:<id>.acts): each graded one, its score and its result — ✓ Passed, ↻ Redo or
-// ⏳ Not yet — as 🧑‍🏫 Graders saved it, in the trainee's 🏅 Grades
-function gradersHtml(p){
-  const acts = ((((B.data.rec[p.id] || {}).src || {})["labreview:"] || {}).acts) || {};
-  const list = window.FTSessions && typeof FTSessions.trainerActs === "function" ? (FTSessions.trainerActs() || []) : [];
-  const title = k => { const a = list.find(x => x.id === k); return a ? a.title : k; };
-  const rows = Object.entries(acts).filter(([, a]) => a && (a.status || a.score != null)).sort((x, y) => String(x[1].date || "").localeCompare(String(y[1].date || "")));
-  if(!rows.length) return "";
-  const badge = st => st === "Passed" ? `<b class="bs-res bs-res-ok">✓ Passed</b>` : st === "Redo" ? `<b class="bs-res bs-res-no">↻ Redo</b>` : `<b class="bs-res bs-res-wait">⏳ Not yet</b>`;
-  return `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">🧑‍🏫 Graders: Mock Calls &amp; Demos</td></tr>` + rows.map(([k, a]) => { const v = num100(a.score);
-    return `<tr><td class="bs-pt-m bs-pt-it">${e(stripTags(title(k)))}</td><td class="bs-pt-v ${e(tone(v))}">${v != null ? v + "%" : "—"} ${badge(a.status)}</td>
-      <td class="bs-pt-f">${e([a.date ? "Graded " + a.date : "", a.facilitator ? "by " + a.facilitator : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(" · "))}</td></tr>`; }).join("");
-}
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
 function matrixOf(x){
   if(!Array.isArray(x.groups) || !x.groups.length) return null;
@@ -1040,12 +1028,9 @@ function perTraineeHtml(T){
     const byId = id => T.find(x => x.id === id);
     const sub = t => `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">${t}</td></tr>`;
     const part = (t, rows) => rows ? sub(t) + rows : "";
-    const grades = `<tr class="bs-pt-sec"><th colspan="3">🏅 Grades</th></tr>`
-      // (no Scorecard overall, Daily compliance, Weeks average or Overall %: the trainee's line at the top shows them;
-      // 💬 the day-by-day feedback is on its day, in 📤 Daily outputs)   // (the grading systems: below, with their grades)
-      // (every grading system with each of its grades, in the same 🏅 Grades list; no lesson-by-lesson Score Card, Practice Lab
-      // or Lessons here: the lessons and decks are in Compliance and Platform Utilization Monitoring)
-      + everyGradeHtml(p, true) + gradersHtml(p) + extraRowHtml(p);
+    // (no 🏅 Grades table: every grade is in 📤 Daily outputs & 📅 Day scores and in ✍️ Knowledge Checks, Assessments &
+    // Activities; a trainer's own score and + points go in ✎ Edit a score)
+    const grades = editBoxHtml(p);
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
     // (📦 their Day 8 Intake Packet after the 🏅 Score Card, for a trainer: js/ft-intake.js; the 📦 Intake Packets page only assigns them)
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
@@ -1318,7 +1303,9 @@ function scoreOf(R, d, it, p){
   if(it.id === "process"){
     const rv = src["kcreview:"] || {}, xs = [];
     (d.lessons || []).forEach(l => { const x = dp[l] || {}, t = numOr(((rv.lessons || {})[l] || {}).score), g = t != null ? t : typeof x.score === "number" ? x.score : null;
-      if(g != null) xs.push({pct: g, how: `${lessonName(l)} ${g}%${t != null ? " (trainer's final)" : ""}`}); });
+      if(g != null) xs.push({pct: g, how: `${lessonName(l)} ${g}%${t != null ? " (trainer's final)" : ""}`});
+      const tr = numOr(((rv.read || {})[l] || {}).score), rg = tr != null ? tr : typeof x.readScore === "number" ? x.readScore : null;
+      if(rg != null) xs.push({pct: rg, how: `📖 Reading Task ${rg}%${tr != null ? " (trainer's final)" : ""}`}); });
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: "Knowledge Check: " + xs.map(x => x.how).join(", ")} : null;
   }
   // (less the grading system's items a day scores on their own, assess: Day 3's Reception Listening Activity is in 🎧 Call
@@ -1549,11 +1536,11 @@ function renderSheet(){
   const waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
-  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="${B.leOpen ? "bs-le-on" : ""}" onclick="FTBatchSheet.leOpen(${B.leOpen ? "false" : "true"})">🔗 Link files by hand</button>` : ""}${adminOn() && !meOn() && window.FTLorAdmin ? `<button class="${FTLorAdmin.isOpen() ? "bs-le-on" : ""}" onclick="FTLorAdmin.open(${FTLorAdmin.isOpen() ? "false" : "true"})">📄 Assign LORs</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
+  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="${B.leOpen ? "bs-le-on" : ""}" onclick="FTBatchSheet.leOpen(${B.leOpen ? "false" : "true"})">🔗 Link files by hand</button>` : ""}${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
 ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div></div>`;
   const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", "", "", controls);
-  return `${banner}${linksEditHtml()}${adminOn() && !meOn() && window.FTLorAdmin ? FTLorAdmin.html(people()) : ""}<div class="card gs-card bs-card">
+  return `${banner}${linksEditHtml()}<div class="card gs-card bs-card">
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
 </div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, use <b>✏️ Fix the batch name</b> in 🛡 Admin Master Control → 📁 Batches.</div>` : ""}
@@ -1568,8 +1555,6 @@ ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `U
 // (the roster changed — someone approved, revoked, offboarded —: read again quietly, the sheet on screen staying until then)
 if(typeof window.addEventListener === "function") window.addEventListener("ft-roster-changed", () => { B.dataKey = ""; if(on() && B.people && !B.loading) loadPeople(); else B.people = null; });
 window.FTBatchSheet = {
-  // (the batch's trainees on the sheet now: 📄 Assign LORs, js/ft-lor.js)
-  people: () => people(),
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
@@ -2034,6 +2019,8 @@ FTBatchSheet.editScore = async function(pid, ref, value, note){
   return true;
 };
 // (a row's fields: the score, and — on an override — the note beside it)
+// (✎ Edit a score: the grade picked)
+FTBatchSheet.edPick = function(pid, ref){ B.edSel = B.edSel || {}; B.edSel[pid] = ref; rerender(); };
 FTBatchSheet.editRow = function(el){
   const tr = el && el.closest("tr"); if(!tr) return;
   const sc = tr.querySelector("input.bs-ed[data-ref]"), nt = tr.querySelector("input.bs-ed-note[data-ref]");
@@ -2225,6 +2212,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-arch1{margin-left:8px;padding:2px 10px;font-size:12px;} .bs-kd-sub{margin:16px 0 4px;font:800 16px Arial,sans-serif;color:#1E2340;} .bs-kd-note{margin:4px 0;padding:6px 10px;border-radius:6px;background:#FFF8E1;font-weight:700;}
 .bs-upd{margin-left:12px;border:1px solid #1E2340;background:#1E2340;color:#fff;border-radius:999px;padding:4px 12px;font:700 13px Arial,sans-serif;cursor:pointer;vertical-align:3px;}
 .bs-upd:disabled{background:#EEF0F6;color:#3A4058;border-color:#C9CEDD;cursor:progress;}
+.bs-ed-pick{width:100%;max-width:100%;font:700 13.5px Arial,sans-serif;padding:4px 6px;border:2px solid #3B4A8C;border-radius:8px;color:#1E2340;}
 .bs-le{margin:10px 14px 8px;border:1px solid #E1E3E1;border-radius:10px;background:#FAFBFC;padding:0 14px;} .bs-le > summary{cursor:pointer;padding:10px 0;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-le[open]{padding-bottom:12px;} .bs-le-rows{display:flex;flex-direction:column;gap:8px;margin:8px 0;} .bs-le-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 12px;align-items:center;font:700 14px Arial,sans-serif;}
 .bs-le-row input{font:14px Arial,sans-serif;padding:7px 9px;border:1px solid #C4C7C5;border-radius:6px;min-width:0;} .bs-le-row small{grid-column:2;color:#5F6368;font-weight:600;}
