@@ -1389,7 +1389,7 @@ function tamEntries(text, D) {
     //  "1.5 hours", "2.5-hour", "10.30 am", "at 10.30" — the next match on the line is tried instead)
     const re = /\b(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?\b/g;
     while ((m = re.exec(l))) {
-      if (m[2] === "." && !m[4] && (/^\s*-?\s*(?:hours?|hrs?|h|minutes?|mins?|am|pm|a\.m|p\.m|%)\b/i.test(l.slice(m.index + m[0].length)) || /\bat\s*$/i.test(l.slice(0, m.index)))) continue;
+      if (m[2] === "." && !m[4] && (/^\s*-?\s*(?:(?:hours?|hrs?|h|minutes?|mins?|am|pm|a\.m|p\.m)\b|%)/i.test(l.slice(m.index + m[0].length)) || /\bat\s*$/i.test(l.slice(0, m.index)))) continue;
       if (+m[1] <= 12) return iso(m[4], m[1], m[3]);
       break;
     }
@@ -1517,15 +1517,15 @@ const GENERIC = { typing: true, spelling: true, folder: true };
 const nameWords = (t) => slugPart(t).split("-").filter(Boolean);
 // a person's name words (2 letters or more: "Ma", "Jo", "Li" count; an initial doesn't), and how many of them a text has
 const pWords = (person) => [...new Set(nameWords(person).filter((w) => w.length >= 2))];
-// (a text's words, and its letters run together — "Sheet__CynthiaAquino", "cynthia.aquino@gmail.com": a name written without
-// spaces is still that name)
-const textWords = (text) => { const T = new Set(nameWords(String(text).replace(/_/g, " "))); T.c = slugPart(text).replace(/-/g, ""); return T; };
+// (a text's words — "Sheet__CynthiaAquino" is "sheet" and "cynthiaaquino": a name written without spaces is still that name)
+const textWords = (text) => new Set(nameWords(String(text).replace(/_/g, " ")));
 const nameHits = (person, T) => {
   const P = pWords(person), h = P.filter((w) => T.has(w)).length;
-  if (h >= Math.min(2, P.length) || !T.c || P.length < 2) return h;
-  // the whole name (or its first and last word) run together, either way round
+  if (h >= Math.min(2, P.length) || P.length < 2) return h;
+  // the whole name (or its first and last word) run together, either way round, as a word of the text or the start of one —
+  // never inside one: "Ana Cruz" isn't in "…__Diana Cruz" ("dianacruz" holds "anacruz")
   const joins = [P.join(""), P.slice().reverse().join(""), P[0] + P[P.length - 1], P[P.length - 1] + P[0]];
-  return joins.some((j) => j.length >= 6 && T.c.includes(j)) ? P.length : h;
+  return joins.some((j) => j.length >= 6 && [...T].some((w) => w === j || w.startsWith(j))) ? P.length : h;
 };
 // a person's name is in a text when two of its words are there (or the one it has)
 const nameIn = (person, text) => { const P = pWords(person); return !!P.length && nameHits(person, textWords(text)) >= Math.min(2, P.length); };
@@ -1586,7 +1586,8 @@ async function verifyLinks(env, id) {
     const mineName = myW > 0 && (myHits >= Math.min(2, myW) || ownedByMe);
     const better = (myHits || !unread) ? (await others()).map((o) => ({ o, h: nameHits(o.name, T), w: pWords(o.name).length }))
       .filter((x) => x.w && x.h >= Math.min(2, x.w) && (x.h > myHits || (x.h === x.w && myHits < myW))).sort((x, y) => y.h - x.h)[0] : null;
-    if (better && !ownedByMe) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
+    // (a copy of a batch-mate's file in their own account is still the batch-mate's: "Copy of … | B103026 Ben Diaz")
+    if (better) return Object.assign(base, { ok: false, mine: false, error: `This is ${better.o.name}'s ${K.label}, not yours. Link your own: ${rule}.` });
     // (a plain-named folder whose parent can't be read can't be told apart by its name: it passes on the other checks)
     if (!mineName && me.name && !unread) return Object.assign(base, { ok: false, mine: false, error: `It opens, but it isn't yours: its name ("${name.slice(0, 120)}") doesn't have your name. Link your own: ${rule}.` });
     // (the rule's Batch ID: their own batch in the name, where the convention has one)
@@ -1954,7 +1955,7 @@ async function runTrackerChecks(env, opts) {
     let rec = null, files; try { rec = JSON.parse((await kv.get(k)) || "null"); } catch (e) { continue; }
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
     try { files = await folderOf(id); } catch (e) { files = undefined; }
-    try { const r = await dailyCompliance(env, id, D, { rec, files }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    try { const r = await dailyCompliance(env, id, D, { rec, files, final: !o.id }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
     // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
     if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec, files }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
@@ -1965,6 +1966,8 @@ async function runTrackerChecks(env, opts) {
    tests taken, the outputs and EOD, what was submitted, the tracker's check where it ran), marked backfilled. So the
    scorecards (📤 Daily outputs, 📊 Weekly Ranking's Daily Compliance, 🏅 Scores) count the whole training, not only the days
    since the check began. At most o.max days a call; returns how many. */
+// a day's record made while the day was still on, and never checked after (not the end-of-shift check's, not filled in afterwards)
+const unfinished = (x, d) => !!x && !x.final && !x.backfilled && !!x.checkedAt && TR.ptDate(new Date(x.checkedAt)) <= d;
 async function backfillCompliance(env, id, o = {}) {
   const kv = kvOf(env), rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null");
   if (!rec) return 0;
@@ -1974,13 +1977,15 @@ async function backfillCompliance(env, id, o = {}) {
   const want = [];
   for (let t = Date.parse(start + "T12:00:00Z"); want.length < (o.max || 10); t += 864e5) {
     const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break;
-    if (TR.isWeekday(d) && (!have[d] || !(have[d].v >= 2))) want.push(d);
+    if (TR.isWeekday(d) && (!have[d] || !(have[d].v >= 2) || unfinished(have[d], d))) want.push(d);
   }
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
   // (the nightly check hands over the folder it already listed: o.files)
   let files = o.files || null; if (!files && drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
-  for (const d of want) await dailyCompliance(env, id, d, { backfill: true, rec, files: files || undefined });
+  // (a day checked while it was still on — before the trainee's work was in, e.g. the sheet's update that morning, with the
+  // end-of-shift check never reaching them — is worked out again now it is over: raise, never lower, what it had)
+  for (const d of want) await dailyCompliance(env, id, d, have[d] && have[d].v >= 2 ? { redo: true, raise: true, rec, files: files || undefined } : { backfill: true, rec, files: files || undefined });
   return want.length;
 }
 
@@ -2056,14 +2061,14 @@ async function autoLinkBatch(env, batch) {
       // the trainee folder's own subfolders: Typing Tests, Spelling Tests, Assessments/Activities (and a Monitoring Sheet kept there)
       for (const c of inside.get(f.id) || []) {
         if (c.mimeType === FOLDER_MIME) { for (const k of ["typing", "spelling", "folder"]) if (LINKS_KIND[k].re.test(c.name) && !(k === "folder" && /typing|spelling/i.test(c.name))) take(r, k, c); }
-        else if (LINKS_KIND.monitor.re.test(c.name) && /google-apps\.(document|spreadsheet)$/.test(c.mimeType) || c.mimeType === WORD_MIME) take(r, "monitor", c);
+        else if (LINKS_KIND.monitor.re.test(c.name) && (/google-apps\.(document|spreadsheet)$/.test(c.mimeType) || c.mimeType === WORD_MIME)) take(r, "monitor", c);
       }
       if (/assessment|activit/i.test(f.name) && !/trainee folder/i.test(f.name)) take(r, "folder", f);
       continue;
     }
     if (LINKS_KIND.tracker.re.test(f.name) && f.mimeType === "application/vnd.google-apps.spreadsheet") take(r, "tracker", f);
     else if (LINKS_KIND.tam.re.test(f.name)) take(r, "tam", f);
-    else if (LINKS_KIND.monitor.re.test(f.name) && /google-apps\.(document|spreadsheet)$/.test(f.mimeType) || f.mimeType === WORD_MIME) take(r, "monitor", f);
+    else if (LINKS_KIND.monitor.re.test(f.name) && (/google-apps\.(document|spreadsheet)$/.test(f.mimeType) || f.mimeType === WORD_MIME)) take(r, "monitor", f);
   }
   for (const f of monitors) {
     if (TEMPLATE_RE.test(f.name) || !(/google-apps\.(document|spreadsheet)$/.test(f.mimeType) || f.mimeType === WORD_MIME)) continue;
@@ -2287,7 +2292,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   };
   const wasI = (cur.compliance || {})[D] && cur.compliance[D].instr, over = D < todayPT;
   let instr = wasI || null;
-  if (!over || !wasI || wasI.v !== 2) instr = instrOf(D, wasI && wasI.links) || wasI || null;
+  if (!over || !wasI || wasI.v !== 2 || o.raise) instr = instrOf(D, wasI && wasI.links) || wasI || null;
   // (the past days this trainee has no mark for yet — checked before it was kept — get theirs from what is on record for them)
   Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
     const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {}; x.parts.instructions = I.pct;
@@ -2296,7 +2301,8 @@ async function dailyCompliance(env, id, D, o = {}) {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
     // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
-    tam: tamG && pctOf(tamG.pct) != null ? pctOf(tamG.pct) : null,
+    // (counted only when the day has a TAM entry: no entry dated that day is left out, not a 0)
+    tam: tamG && pctOf(tamG.pct) ? pctOf(tamG.pct) : null,
     instructions: instr ? instr.pct : null,
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
@@ -2311,12 +2317,16 @@ async function dailyCompliance(env, id, D, o = {}) {
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
-  if (o.redo && !o.fresh && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
+  if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
   const vals = Object.values(parts).filter((v) => typeof v === "number");
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG, eodTrainer: eodT, instr,
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
+    // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
+    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
   // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)

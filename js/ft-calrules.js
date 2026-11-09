@@ -23,6 +23,8 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
+// (a stored booking's figures, as numbers only: they are drawn into the trainer's pages)
+const num = v => { const n = Number(v); return Number.isFinite(n) ? Math.round(n) : 0; };
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const norm = v => String(v == null ? "" : v).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const mins = t => { const m = String(t || "").match(/^(\d{1,2}):(\d\d)/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
@@ -143,9 +145,9 @@ function checksHtml(b){
 function bookingRow(b){
   const s = scnOf(b.scn) || {}, open = !!R.open[b.id];
   return `<div class="card cr-book ${b.id === R.last ? "new" : ""}"><button class="cr-bhead" onclick="FTCalRules.toggle('${e(b.id)}')">
-      <span class="cr-pct ${b.pct >= 80 ? "ok" : b.pct >= 60 ? "mid" : "low"}">${b.pct}%</span>
+      <span class="cr-pct ${b.pct >= 80 ? "ok" : b.pct >= 60 ? "mid" : "low"}">${num(b.pct)}%</span>
       <span><b>${e(b.title || s.title || "")}</b><small>${e([`${DAYS[new Date(b.date + "T12:00:00").getDay()] || ""} ${b.date}`, `${hhmm(mins(b.start) || 0)} EST`, `${b.length} min`, b.format, (MODES.find(m => m[0] === b.mode) || MODES[0])[1]].filter(x => String(x || "").trim()).join(" · "))}</small></span>
-      <span class="cr-met">${b.met} of ${b.total} rules</span><span>${open ? "▾" : "▸"}</span></button>
+      <span class="cr-met">${num(b.met)} of ${num(b.total)} rules</span><span>${open ? "▾" : "▸"}</span></button>
     ${open ? `<div class="cr-bbody">${checksHtml(b)}<div class="cr-bact"><button class="btn btn-ghost btn-sm" onclick="FTCalRules.remove('${e(b.id)}')">🗑 Remove</button></div></div>` : ""}</div>`;
 }
 function formHtml(){
@@ -236,7 +238,7 @@ window.ftRubricAssist = (r, a) => {
   if(b === null) return `<p class="fss-wide fss-muted cr-assist">📅 Loading the trainee’s booking rule check…</p>`;
   if(!b) return `<p class="fss-wide fss-muted cr-assist">📅 No booking recorded on the Booking Rule Check yet.</p>`;
   const g = groupScores(b), miss = (b.checks || []).filter(c => c[1] === false).map(c => c[0]);
-  return `<div class="fss-wide cr-assist"><b>📅 Booking rule check</b> (${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1].toLowerCase())}, ${e(b.title || "")}, ${e(b.date)}): <b>${b.met} of ${b.total} rules met</b>${miss.length ? ` · missed: ${e(miss.join("; "))}` : ""}.
+  return `<div class="fss-wide cr-assist"><b>📅 Booking rule check</b> (${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1].toLowerCase())}, ${e(b.title || "")}, ${e(b.date)}): <b>${num(b.met)} of ${num(b.total)} rules met</b>${miss.length ? ` · missed: ${e(miss.join("; "))}` : ""}.
     <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fill(this, ${JSON.stringify(g)})'>⤓ Fill the rule criteria (${Object.keys(g).map(k => `${k === "info" ? "Information" : k === "slot" ? "Slot & rules" : k === "alt" ? "Alternatives" : "Calendar entry"} ${g[k]}`).join(", ")})</button></div>`;
 };
 FTCalRules.fill = (btn, g) => {
@@ -281,9 +283,9 @@ function whyScore(bs){
   bs.forEach(b => (b.checks || []).forEach(c => { if(c[1] === null) return; seen[c[0]] = (seen[c[0]] || 0) + 1;
     if(c[1] === false){ miss[c[0]] = (miss[c[0]] || 0) + 1; if(c[2]) why[c[0]] = c[2]; } else met[c[0]] = (met[c[0]] || 0) + 1; }));
   const missed = Object.entries(miss).sort((a, b) => b[1] - a[1]).slice(0, 3), always = Object.keys(seen).filter(k => !miss[k]);
-  const trend = prev ? (last.pct > prev.pct ? `up from ${prev.pct}%` : last.pct < prev.pct ? `down from ${prev.pct}%` : `the same as the one before`) : "";
+  const trend = prev ? (last.pct > prev.pct ? `up from ${num(prev.pct)}%` : last.pct < prev.pct ? `down from ${num(prev.pct)}%` : `the same as the one before`) : "";
   return `<p><b>${avg}%</b> = the average of ${bs.length} booking${bs.length === 1 ? "" : "s"}, each scored on the scheduling rules it met out of those that applied.</p>`
-    + `<p>Latest: <b>${e(last.title || "booking")}</b> met ${last.met} of ${last.total} rules (${last.pct}%)${trend ? `, ${trend}` : ""}.</p>`
+    + `<p>Latest: <b>${e(last.title || "booking")}</b> met ${num(last.met)} of ${num(last.total)} rules (${num(last.pct)}%)${trend ? `, ${trend}` : ""}.</p>`
     + (missed.length ? `<p class="cr-why-miss">🔧 Missed most: ${missed.map(([k, n]) => `<b>${e(k)}</b> (${n} of ${seen[k]})${why[k] ? ` — ${e(why[k])}` : ""}`).join("; ")}.</p>` : `<p class="cr-why-ok">⭐ No rule missed in any booking.</p>`)
     + (always.length && missed.length ? `<p class="cr-why-ok">⭐ Always met: ${always.slice(0, 4).map(k => e(k)).join(", ")}${always.length > 4 ? ` and ${always.length - 4} more` : ""}.</p>` : "");
 }
@@ -299,8 +301,8 @@ function adminHtml(){
       ${rows.map(r => { const bs = r.rec.bookings, avg = bs.length ? Math.round(bs.reduce((n, b) => n + (b.pct || 0), 0) / bs.length) : null, last = bs[bs.length - 1];
         const why = whyScore(bs);
         return `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td><td>${bs.length ? `<button class="btn btn-ghost btn-sm" onclick="FTCalRulesAdmin.open('${e(r.id)}')">${bs.length} ${AD.open[r.id] ? "▾" : "▸"}</button>` : "—"}</td>
-          <td>${avg != null ? avg + "%" : "—"}</td><td>${last ? `${e(last.title || "")} · ${last.pct}%` : "—"}</td><td class="cr-why">${why}</td></tr>
-          ${AD.open[r.id] ? `<tr class="cr-aopen"><td colspan="5">${bs.slice().reverse().map(b => `<div class="cr-abook"><b>${e(b.title || "")}</b> · ${e(b.date)} ${e(hhmm(mins(b.start) || 0))} · ${e(b.length)} min · ${e(b.format || "")} · ${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1])} · <b>${b.met}/${b.total}</b>${checksHtml(b)}</div>`).join("")}</td></tr>` : ""}`; }).join("")}
+          <td>${avg != null ? avg + "%" : "—"}</td><td>${last ? `${e(last.title || "")} · ${num(last.pct)}%` : "—"}</td><td class="cr-why">${why}</td></tr>
+          ${AD.open[r.id] ? `<tr class="cr-aopen"><td colspan="5">${bs.slice().reverse().map(b => `<div class="cr-abook"><b>${e(b.title || "")}</b> · ${e(b.date)} ${e(hhmm(mins(b.start) || 0))} · ${e(b.length)} min · ${e(b.format || "")} · ${e((MODES.find(m => m[0] === b.mode) || MODES[0])[1])} · <b>${num(b.met)}/${num(b.total)}</b>${checksHtml(b)}</div>`).join("")}</td></tr>` : ""}`; }).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
 }
 window.FTCalRulesAdmin = {
