@@ -328,7 +328,7 @@ async function loadAdmin(){
 }
 function adminHtml(){
   if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
+  const pk = packets(), calls = mockCalls();
   if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
   // (the case is read only: it follows the packet, FTIntakeAdmin.assign; a packet assigned before the pairing gets its case here, once)
   // (an assignment made before the client was kept with it gets its case's client, once)

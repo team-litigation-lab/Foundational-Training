@@ -61,7 +61,7 @@ window.FTWriting = {
     const box = btn.closest(".wr-assist"), k = box.getAttribute("data-wr-key"), text = String(box.querySelector(".wr-text").value || "").trim();
     W.text[k] = text;
     if(text.split(/\s+/).length < 5){ toast("Paste the trainee’s written work first (a few sentences at least)."); return; }
-    const [rid, aid] = k.split("|"), form = btn.closest(".fss-cellform"), title = form ? (form.querySelector("b") || {}).textContent || "" : "";
+    const [, aid] = k.split("|"), form = btn.closest(".fss-cellform"), title = form ? (form.querySelector("b") || {}).textContent || "" : "";
     W.busy = true; btn.disabled = true; btn.textContent = "Checking…";
     try{
       const prompt = `You check the writing of a trainee Legal Virtual Assistant at a US personal injury law firm. The text below is what the trainee wrote for a training activity (${title.split("·").pop().trim() || aid}): notes in the case management system, a call recap, an email, a letter, a task report or meeting minutes.

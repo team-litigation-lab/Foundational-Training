@@ -68,7 +68,7 @@ const SETS = [
     () => { const c = pick(CLIENTS), ins = pick(INSURERS);
       return {ask: "The email subject line for the LOR", facts: card([["Client", fullName(c)], ["Insurance company", ins]]),
         answer: `${fullName(c)} - ${ins} - Letter of Representation`, rule: "Client Name - Insurance Company - Letter of Representation"}; },
-    () => { const ins = pick(INSURERS), va = first();
+    () => { const va = first();
       return {ask: "The first line of the Tasks tab entry after both LORs are sent", facts: card([["You", va]]),
         answer: `Sent LORs to the following insurance providers. Saved in Docs tab. Thank you. (${va})`, rule: "Sent LORs to the following insurance providers. Saved in Docs tab. Thank you. (VA’s Name) — then one line per letter"}; }
   ]},
