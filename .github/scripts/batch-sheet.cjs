@@ -95,16 +95,30 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => fail('the sheet never finished loading'));
   await page.waitForTimeout(500);
+  // 👤 the trainer's Batch Sheet opens on one table per trainee: every measure of theirs in one table, folded to a summary
+  // line (their Overall %, Scorecard overall, Daily compliance), no rank (the batch is ranked on 📊 Weekly Reports only),
+  // and no Drive links (they are on 🔗 Drive Links)
+  { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null; d.open = true;
+      return { n: document.querySelectorAll('details.bs-pt').length, sum: d.querySelector('summary').innerText, secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
+    if (!pt || pt.n < 3 || !/Ada Active/.test(pt.sum) || !/Overall/.test(pt.sum)) fail(`👤 One table per trainee doesn't open the Batch Sheet: ${JSON.stringify(pt && { n: pt.n, sum: pt.sum })}`);
+    if (pt && (!pt.secs.some(x => /Score Card/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)) || !pt.secs.some(x => /Scores/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
+    if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
+    if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
+  await page.evaluate(() => FTBatchSheet.view('tables')); await page.waitForTimeout(500);
   // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking and
   // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)
   const top = await page.evaluate(() => [...document.querySelectorAll('.bs-card > .bs-sec, .bs-card > details.bs-more')].map(x => x.id || (x.classList.contains('bs-more') ? 'more' : '')).filter(Boolean));
-  if (JSON.stringify(top.slice(0, 4)) !== JSON.stringify(['bs-scorecard', 'bs-compliance', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
+  if (JSON.stringify(top.slice(0, 3)) !== JSON.stringify(['bs-scorecard', 'bs-outputs', 'more'])) fail(`the page's order is ${top.join(', ')}`);
   if (await page.evaluate(() => document.querySelector('details.bs-more').open)) fail('▸ More detail is open before the trainer opens it');
   await page.evaluate(() => { FTBatchSheet.more(true); render(); }); await page.waitForTimeout(500);
   const T = await page.evaluate(() => FTBatchSheet.tables().map(t => ({ id: t.id, head: t.head, rows: t.rows.map(r => r.map(c => String(c.v))) })));
   const by = id => T.find(t => t.id === id) || { rows: [], head: [] };
   if (JSON.stringify(T.map(t => t.id)) !== JSON.stringify(['scorecard', 'compliance', 'outputs', 'dayscores', 'trainees', 'drive', 'lessons', 'days', 'practice', 'scores', 'recent'])) fail(`the tables are ${T.map(t => t.id)}`);
-  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 11) fail('the eleven tables are not all on the one page');
+  if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 9) fail('the nine tables (all but the Drive links) are not all on the Batch Sheet');
+  // 🔗 Drive Links: a button of its own beside 📋 Batch Sheet (🏅 Scorecard), the same batch: ✅ Compliance and 📁 Drive links
+  await page.evaluate(() => { state.adminTab = 'drivelinks'; render(); }); await page.waitForTimeout(1200);
+  { const dl = await page.evaluate(() => ({ secs: [...document.querySelectorAll('.bs-card > .bs-sec')].map(x => x.id), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].some(b => /Drive Links/.test(b.innerText)) }));
+    if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance', 'bs-drive']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
   // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
   // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
@@ -177,6 +191,7 @@ const failures = []; const fail = m => failures.push(m);
     rv.verify = JSON.parse(was); await put('trackerreview:' + ids.Ada, rv); }
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(800);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(800);
   // 📅 Day 1–16: Detailed Scores, first: Ada's Day 4 is her Reception Mock Call; under it her days in detail, each score with
   // why it was scored that way, what to improve and what she did best; then the 📊 Weekly Ranking for the batch
   const ds = by('dayscores'), dsa = ds.rows.find(r => /Ada/.test(r[0]));
@@ -265,9 +280,9 @@ const failures = []; const fail = m => failures.push(m);
   // a time, not "just now"
   if (/ago|just now/.test(tr.map(r => r[3]).join(' ')) || !/\d{1,2}:\d{2}/.test(ada[3])) fail(`"Last on the platform" isn't a date and time: ${tr.map(r => r[3])}`);
 
-  // 🏅 the Scorecard's grading systems, Overall and Rank
+  // 🏅 the Scorecard's grading systems and the Overall, with no Rank (the batch is ranked on 📊 Weekly Reports only)
   const sh = by('scores').head;
-  if (sh[sh.length - 2] !== 'Overall %' || sh[sh.length - 1] !== 'Rank' || !sh.includes('Daily compliance') || !sh.includes('Weeks average (/5)') || !sh.includes('Scorecard overall')) fail(`🏅 Scores' columns: ${sh}`);
+  if (sh[sh.length - 1] !== 'Overall %' || sh.includes('Rank') || !sh.includes('Daily compliance') || !sh.includes('Weeks average (/5)') || !sh.includes('Scorecard overall')) fail(`🏅 Scores' columns: ${sh}`);
   // 🔎 a trainee's grades in detail (what 🏅 Scorecards showed): Ada's Knowledge Check 90%
   if (!(await page.evaluate(() => /Grades in detail/.test(document.getElementById('bs-scores').innerText)))) fail('🏅 Scores has no grades in detail');
   if (!(await page.evaluate(() => /Scorecard overall: .*= the average of/.test(document.getElementById('bs-scores').innerText)))) fail('🔎 Grades in detail has no breakdown of the overall');

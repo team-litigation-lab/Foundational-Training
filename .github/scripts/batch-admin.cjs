@@ -107,40 +107,45 @@ async function workerChecks() {
     // (opened where a trainer finds it: 🧑‍🏫 Graders: Mock Calls & Demos, which draws the scorecards under its graders; the
     // sheet must leave "Loading …’s scorecards…" there once the scores are read)
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'graders'; goto('admin'); });
-    await page.waitForFunction(() => document.querySelectorAll('.fms-tbl thead th').length > 1, null, { timeout: 20000 });
-    // (no 🧑‍🏫 Trainer Inputs on the Graders tab: the feedback is written on the scorecard itself)
+    await page.waitForFunction(() => !!document.querySelector('.fms-sheet .fms-tbl'), null, { timeout: 20000 });
+    // (no 🧑‍🏫 Trainer Inputs on the Graders tab, and no separate list of grader buttons: one sheet scores every mock call and demo)
     if (await page.evaluate(() => [...document.querySelectorAll('main h3')].some(h => /Trainer Inputs/.test(h.textContent)))) fail('🧑‍🏫 Trainer Inputs is still on 🧑‍🏫 Graders');
-    // the current batch (started last), a column per registered VA, the Reception scorecard down the side
-    const sel = await page.evaluate(() => { const s = document.querySelector('.fms-ctl select'); return s.options[s.selectedIndex].text; });
+    if (await page.$('.ftgr')) fail('the old list of grader buttons is still on 🧑‍🏫 Graders');
+    // the current batch (started last); the Activity list holds every mock call and demo, in two groups
+    const sel = await page.evaluate(() => { const s = document.querySelector('.fms-pick select[aria-label=Batch]'); return s.options[s.selectedIndex].text; });
     if (!/B103026.*current/.test(sel)) fail(`the sheet didn't open on the current batch: ${sel}`);
-    // one VA's scorecard at a time: the VA dropdown lists the batch's VAs, the sheet shows the one picked (the first by name)
+    const groups = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup')].map(g => g.label));
+    if (groups.join() !== '📞 Mock calls,🖥 Demos') fail(`the Activity list isn't grouped into mock calls and demos: ${groups}`);
+    // one trainee's scorecard at a time: the dropdown lists the batch's trainees, the sheet shows the one picked (the first by name)
     const vas = await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent.split(' · ')[0]));
-    if (vas.join() !== 'Ana Cruz,Ben Diaz,Cara Lim') fail(`the VA dropdown isn't the batch's VAs: ${vas}`);
-    const cols = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th b')].map(b => b.textContent));
-    if (cols.join() !== 'Ana Cruz') fail(`the sheet doesn't show one VA at a time (the first): ${cols}`);
-    if (!(await page.$('.fms-one'))) fail('the one-VA sheet isn\'t drawn bigger (.fms-one)');
-    const rows = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody th')].map(t => t.textContent));
-    if (!rows[0].startsWith('Introduction of Law Firm') || !rows.includes('WEIGHTED AVERAGE') || !rows.some(r => r.startsWith('Score'))) fail(`the scorecard rows aren't there: ${rows.slice(0, 3)}`);
+    if (vas.join() !== 'Ana Cruz,Ben Diaz,Cara Lim') fail(`the trainee dropdown isn't the batch's trainees: ${vas}`);
+    const who = () => page.evaluate(() => (document.querySelector('.fms-sheet') || {}).getAttribute('data-va'));
+    if ((await who()) !== 'ana-cruz--b103026') fail(`the sheet doesn't show the first trainee: ${await who()}`);
+    // the Training Guide's format: criterion | Score | Remarks, then the WEIGHTED AVERAGE
+    const hd = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th')].map(t => t.textContent));
+    if (hd.length !== 3 || hd[1] !== 'Score' || hd[2] !== 'Remarks') fail(`the scorecard's columns aren't criterion | Score | Remarks: ${hd}`);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody tr td:first-child')].map(t => t.textContent));
+    if (!rows[0].startsWith('Introduction of Law Firm') || rows[rows.length - 1] !== 'WEIGHTED AVERAGE') fail(`the scorecard rows aren't there: ${rows.slice(0, 3)}`);
     const nCrit = await page.evaluate(() => FT_RUBRICS.list.reception.criteria.length);
     // Ana: 4 on every criterion → 4.00/5 → 80%
-    for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) td[data-va="ana-cruz--b103026"] input[type=number]`, '4');
-    await page.fill('.fms-tbl tbody tr:nth-child(1) td[data-va="ana-cruz--b103026"] .fms-fb', 'Clear intro');
-    await page.fill('td[data-va="ana-cruz--b103026"] textarea', 'Good, with improvements needed.');
-    await page.selectOption('.fms-sum td[data-va="ana-cruz--b103026"] select', 'Passed');
-    const avg = await text('.fms-avg td[data-va="ana-cruz--b103026"]'), sc = await page.inputValue('td[data-va="ana-cruz--b103026"] [data-score]');
+    for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '4');
+    await page.fill('.fms-tbl tbody tr:nth-child(1) textarea', 'Clear intro');
+    await page.fill('.fms-cmt textarea', 'Good, with improvements needed.');
+    await page.fill('.fms-fac', 'Coach Ana Reyes');
+    await page.selectOption('.fms-pick [data-ms-status]', 'Passed');
+    const avg = await text('.fms-tbl [data-avg]'), sc = await page.inputValue('.fms-sheet [data-score]');
     if (avg !== '4.00/5' || sc !== '80') fail(`the average and the score don't follow the scores: ${avg} ${sc}`);
-    if (!/Save 1 VA/.test(await text('[data-ms-save]'))) fail(`Save doesn't count the VA changed: ${await text('[data-ms-save]')}`);
-    // Next ›: Ben's scorecard; Ana's unsaved scores stay (● not saved in the dropdown) and Save still counts her
+    if (!/Save 1 trainee/.test(await text('[data-ms-save]'))) fail(`Save doesn't count the trainee changed: ${await text('[data-ms-save]')}`);
+    // › Next: Ben's scorecard; Ana's unsaved scores stay (● not saved in the dropdown) and Save still counts her
     await page.evaluate(() => FTMockScores.step(1)); await page.waitForTimeout(300);
-    const now = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl thead th b')].map(b => b.textContent).join());
-    if (now !== 'Ben Diaz') fail(`Next › didn't show the next VA: ${now}`);
+    if ((await who()) !== 'ben-diaz--b103026') fail(`› didn't show the next trainee: ${await who()}`);
     if (!/Ana Cruz · ● not saved/.test(await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|')))) fail('the dropdown doesn\'t mark Ana\'s unsaved scorecard');
-    if (!/Save 1 VA/.test(await text('[data-ms-save]'))) fail('switching VA lost the unsaved scorecard');
+    if (!/Save 1 trainee/.test(await text('[data-ms-save]'))) fail('switching trainee lost the unsaved scorecard');
     await page.evaluate(() => FTMockScores.va('ana-cruz--b103026')); await page.waitForTimeout(300);
-    if ((await page.inputValue('td[data-va="ana-cruz--b103026"] [data-score]')) !== '80') fail('Ana\'s typed scores are gone after switching back');
+    if ((await page.inputValue('.fms-sheet [data-score]')) !== '80') fail('Ana\'s typed scores are gone after switching back');
     await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
     const lr = await get('labreview:ana-cruz--b103026'), c = ((lr || {}).acts || {})['reception-live'] || {};
-    if (c.status !== 'Passed' || c.score !== 80 || !c.rubric || c.rubric.avg !== 4 || c.rubric.feedback[0] !== 'Clear intro' || !/improvements/.test(c.comment)) fail(`the scorecard wasn't saved as Trainer Inputs saves it: ${JSON.stringify(c)}`);
+    if (c.status !== 'Passed' || c.score !== 80 || !c.rubric || c.rubric.avg !== 4 || c.rubric.feedback[0] !== 'Clear intro' || !/improvements/.test(c.comment) || c.facilitator !== 'Coach Ana Reyes') fail(`the scorecard wasn't saved as Trainer Inputs saves it: ${JSON.stringify(c)}`);
     if (await get('labreview:ben-diaz--b103026')) fail('a VA who wasn\'t scored got a record');
     // 🚫 offboard Cara
     page.once('dialog', d => d.accept('Offboarded: resigned'));

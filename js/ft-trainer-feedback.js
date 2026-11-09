@@ -162,7 +162,7 @@ window.render = function(){
 };
 
 /* ---------- Admin → 📝 Send Feedback ---------- */
-const A = {people: null, loading: false, batch: "", act: "", status: "todo", rows: null, open: null, drafting: false, guideKeys: null};
+const A = {people: null, loading: false, batch: "", act: "", status: "todo", rows: null, open: null, drafting: false, guideKeys: null, who: ""};
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 async function loadAdmin(){
   A.loading = true; A.rows = null; render();
@@ -250,18 +250,21 @@ function manualRows(){
   return (A.ppl || []).map(p => { const k = "manual:" + a.id, ex = A.rows.find(r => r.p.id === p.id && r.act === "manual" && r.item === a.id);
     if(ex) return ex; const r = {p, act: "manual", item: a.id, title: a.title, group: a.group, manual: true, sent: (A.sentBy[p.id] || {})[k] || null}; A.rows.push(r); return r; });
 }
-function renderAdmin(){
+// (inline: in a trainee's own table on 📋 Batch Sheet — js/ft-batch-sheet.js —, their work alone, the Batch Sheet's batch)
+function renderAdmin(opts){
+  const inl = !!(opts && opts.inline);
   if(!A.rows){ if(!A.loading) loadAdmin(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting the trainees’ work…</div>`; }
   if(String(A.act).startsWith("m|")) manualRows();
   const bs = batchesOf();
   const mAct = String(A.act).startsWith("m|") ? A.act.slice(2) : null;
   const rows = A.rows.map((r, i) => Object.assign({i}, r)).filter(r => mAct ? r.act === "manual" && r.item === mAct && (A.status === "all" || A.status === "todo" ? true : !!r.sent)
-    : (!A.act || r.act === A.act) && !r.manual && (A.status === "all" || (A.status === "todo" ? !r.sent : !!r.sent)));
-  const todo = A.rows.filter(r => !r.sent && !r.manual).length;
+    : (!A.act || r.act === A.act) && !r.manual && (A.status === "all" || (A.status === "todo" ? !r.sent : !!r.sent))).filter(r => !inl || r.p.id === A.who);
+  const todo = A.rows.filter(r => !r.sent && !r.manual && (!inl || r.p.id === A.who)).length;
   const cat = catalogue(), groups = [...new Set(cat.map(x => x.group))];
   const cur = A.open != null ? A.rows[A.open] : null, s = cur && cur.sent || {};
-  return `<div class="card tfb-admin"><div class="ff-bar"><div><h3>📝 Send Feedback</h3><p class="fss-muted">The trainees’ work on the platform’s activities, by batch: open one, read it, and send your verdict, score and comment. The trainee sees it on that activity’s page, on 📬 My Feedback and in their scores. (Mock calls and demos: their scorecards in 🧑‍🏫 Trainer Inputs.)</p></div>
-      <span class="tfb-filters"><select onchange="FTFeedback.batch(this.value)">${bs.map(b => `<option ${b === A.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batches</option>"}</select>
+  const whoName = inl ? ((A.ppl || []).find(p => p.id === A.who) || {}).name || "" : "";
+  return `<div class="card tfb-admin${inl ? " tfb-inline" : ""}"><div class="ff-bar"><div><h3>📝 Send Feedback${inl && whoName ? " · " + e(whoName) : ""}</h3><p class="fss-muted">The trainees’ work on the platform’s activities, by batch: open one, read it, and send your verdict, score and comment. The trainee sees it on that activity’s page, on 📬 My Feedback and in their scores. (Mock calls and demos: their scorecards in 🧑‍🏫 Trainer Inputs.)</p></div>
+      <span class="tfb-filters">${inl ? "" : `<select onchange="FTFeedback.batch(this.value)">${bs.map(b => `<option ${b === A.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batches</option>"}</select>`}
         <select onchange="FTFeedback.act(this.value)" aria-label="Activity"><option value="">Every activity (the work to review)</option><optgroup label="📝 The work to review">${Object.keys(ACTS).filter(k => k !== "manual").map(k => `<option value="${k}" ${A.act === k ? "selected" : ""}>${ACTS[k].icon} ${e(ACTS[k].label)}</option>`).join("")}</optgroup>
           ${groups.map(g => `<optgroup label="✍️ ${e(g.replace(/^\S+\s/, ""))}">${cat.filter(x => x.group === g).map(x => `<option value="m|${e(x.id)}" ${A.act === "m|" + x.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</optgroup>`).join("")}</select>
         <select onchange="FTFeedback.status(this.value)"><option value="todo" ${A.status === "todo" ? "selected" : ""}>To review (${todo})</option><option value="sent" ${A.status === "sent" ? "selected" : ""}>Sent</option><option value="all" ${A.status === "all" ? "selected" : ""}>All</option></select>
@@ -283,6 +286,12 @@ function renderAdmin(){
 }
 window.addEventListener("ft-roster-changed", () => { A.rows = null; A.people = null; A.open = null; });
 window.FTFeedback = {
+  // 📋 Batch Sheet → a trainee's table → 📝 Send Feedback: the tool for that trainee alone, in the Batch Sheet's batch
+  inline(id, batch){
+    if(batch && batch !== A.batch){ A.batch = batch; A.rows = null; A.open = null; }
+    if(A.who !== id){ A.who = id; A.open = null; }
+    return renderAdmin({inline: true});
+  },
   batch(b){ A.batch = b; A.open = null; loadAdmin(); },
   act(a){ A.act = a; A.open = null; if(String(a).startsWith("m|")) A.status = "all"; render(); },
   status(s){ A.status = s; A.open = null; render(); },
