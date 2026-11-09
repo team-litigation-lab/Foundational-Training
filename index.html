@@ -7697,7 +7697,6 @@ function renderDashboard(){
   const avgC = averageCompetencyScore().score;
   return `
   <div class="dash-top">
-      ${renderSurpriseTaskCard()}
       <div class="dash-hero">
         <div class="dash-hero-text">
           <p class="eyebrow">LEGAL EA / PA ACCELERATOR</p>
@@ -7753,13 +7752,6 @@ function renderDashboard(){
   `;
 }
 
-/* ---------- Random Task Injection (trainee side) ---------- */
-// A broadcast task is only shown when ALL of these hold:
-//   • the admin hasn't ended it (active:true)
-//   • it hasn't passed its expiry window (expiresAt)
-//   • this trainee was already registered when it was broadcast
-//     (so trainees who log in / register later never inherit it)
-//   • this trainee hasn't already answered it
 /* ============================================================
    RANDOM TASK TRACKER (trainee) + assessment
    Every random task a trainee receives is logged in "task-log" and
@@ -7772,18 +7764,6 @@ function renderDashboard(){
    ============================================================ */
 function taskLog(){ return state.taskLog || (state.taskLog = []); }
 function saveTaskLog(){ return storeSet("task-log", taskLog()); }
-function syncTaskFromBroadcast(t){
-  if(!t || !t.generatedAt) return;
-  const log = taskLog();
-  let e = log.find(x=>x.id===t.generatedAt);
-  if(!e){
-    const over = t.expiresAt && Date.now() > new Date(t.expiresAt).getTime();
-    e = {id:t.generatedAt, dayId:t.dayId, task:t.task, receivedAt:new Date().toISOString(), expiresAt:t.expiresAt, status:"new", notes:"", response:""};
-    log.unshift(e); log.sort((a,b)=>new Date(b.id).getTime()-new Date(a.id).getTime()); saveTaskLog();
-    toast(over ? "🎲 A task was sent while you were away and its time ran out — it's logged under Missed in 🎲 Tasks." : "🎲 New task assigned — open 🎲 Tasks to handle it.");
-  }
-  e.expiresAt = t.expiresAt || e.expiresAt;
-}
 function refreshTaskStatuses(){
   let changed = false;
   taskLog().forEach(e=>{ if((e.status==="new"||e.status==="progress") && e.expiresAt && Date.now() > new Date(e.expiresAt).getTime()){
@@ -7796,177 +7776,6 @@ function refreshTaskStatuses(){
   if(changed){ saveTaskLog(); storeSet("day-progress", state.progress); syncToLedger(); }
 }
 function openTasksCount(){ refreshTaskStatuses(); return taskLog().filter(e=>e.status==="new"||e.status==="progress").length; }
-function fmtLeft(ms){ if(ms<=0) return "ended"; const m = Math.floor(ms/60000), s = Math.floor(ms/1000)%60; return m>=60 ? `${Math.floor(m/60)}h ${m%60}m left` : `${m}m ${String(s).padStart(2,"0")}s left`; }
-function taskStatusChip(e){ return {new:`<span class="tk-chip new">● New</span>`, progress:`<span class="tk-chip prog">◐ In progress</span>`, resolved:`<span class="tk-chip done">✓ Resolved</span>`, missed:`<span class="tk-chip missed">✕ Missed</span>`}[e.status] || ""; }
-function renderTasksPage(){
-  refreshTaskStatuses();
-  const log = taskLog();
-  const open = log.filter(e=>e.status==="new"||e.status==="progress"), doneAll = log.filter(e=>e.status==="resolved"), missedAll = log.filter(e=>e.status==="missed");
-  const done = doneAll.filter(e=>!e.archived), missed = missedAll.filter(e=>!e.archived), archived = log.filter(e=>e.archived && (e.status==="resolved"||e.status==="missed"));
-  const avg = doneAll.length ? Math.round(doneAll.reduce((a,e)=>a+(e.score||0),0)/doneAll.length) : null;
-  const card = (e)=>{
-    const live = e.status==="new"||e.status==="progress";
-    const left = e.expiresAt ? new Date(e.expiresAt).getTime()-Date.now() : 0;
-    return `<div class="card tk-card ${e.status}" id="tk_${cssId(e.id)}">
-      <div class="tk-head"><div><span class="tk-day">${ftName(e.dayId)}</span> ${taskStatusChip(e)}${!live ? ` <button class="tk-arch-btn" onclick="taskArchive('${esc(e.id)}', ${e.archived?"false":"true"})" title="${e.archived?"Move back to the list":"Hide from the list — it still counts in your scores"}">${e.archived?"↩ Unarchive":"🗄 Archive"}</button>` : ""}</div>
-        <div class="tk-times">Received ${fmtDate(e.receivedAt)}${live && e.expiresAt ? ` · <b class="tk-left" data-exp="${esc(e.expiresAt)}">${fmtLeft(left)}</b>` : ""}${e.submittedAt ? ` · Resolved in ${Math.max(1,Math.round((new Date(e.submittedAt)-new Date(e.receivedAt))/60000))} min` : ""}</div></div>
-      <p class="tk-task">${esc(e.task)}</p>
-      ${live ? `
-        <ol class="tk-steps"><li class="${e.status!=="new"?"ok":""}">Acknowledge</li><li class="${(e.notes||"").trim()?"ok":""}">Plan &amp; prioritise</li><li>Resolve &amp; submit</li></ol>
-        ${e.status==="new" ? `<button class="btn btn-navy btn-sm" onclick="taskAck('${esc(e.id)}')">✋ Acknowledge — I'm on it</button>` : `
-        <label class="tk-lbl">Working notes <span>(private, auto-saved — who to contact, what first, deadlines)</span><textarea rows="3" oninput="taskNotes('${esc(e.id)}', this.value)" placeholder="1) … 2) … 3) …">${esc(e.notes||"")}</textarea></label>
-        <label class="tk-lbl">Your resolution <span>(what you'd actually send or do — this is graded)</span><textarea id="tkResp_${cssId(e.id)}" rows="5" oninput="taskResp('${esc(e.id)}', this.value)" placeholder="Write the message / actions exactly as you'd handle it…">${esc(e.response||"")}</textarea></label>
-        <div class="tk-actions"><button class="btn btn-primary btn-sm" id="tkBtn_${cssId(e.id)}" onclick="submitTask('${esc(e.id)}')">Submit resolution for grading</button></div>
-        <div id="tkRes_${cssId(e.id)}"></div>`}` : ""}
-      ${e.status==="resolved" ? `<div class="tk-score"><b>${e.score}%</b> <span>${esc(displayTier(e.tier||""))}</span></div>
-        <details class="tk-more"><summary>Your resolution &amp; feedback</summary><p class="tk-resp">${esc(e.response||"")}</p>${e.reportHtml||""}</details>` : ""}
-      ${e.status==="missed" ? `<p class="tk-missed-note">The live window ended before this was resolved. On the job, even a quick “received — I'll have this to you by 3 PM” counts. Not yet — next time acknowledge right away.</p>` : ""}
-    </div>`;
-  };
-  return `
-    <p class="eyebrow">Random Tasks</p>
-    <h1>🎲 My Tasks</h1>
-    <p>Unannounced tasks your trainer drops in during training. Acknowledge fast, plan, then resolve before the timer runs out — each one is graded and counts toward your assessment.</p>
-    <div class="tk-stats">
-      <div><b>${open.length}</b><span>Open</span></div><div><b>${doneAll.length}</b><span>Resolved</span></div><div><b>${missedAll.length}</b><span>Missed</span></div><div><b>${avg===null?"—":avg+"%"}</b><span>Average score</span></div>
-    </div>
-    ${log.length ? `
-      ${open.length ? `<h3 class="tk-sec">Open now</h3>${open.map(card).join("")}` : ""}
-      ${done.length ? `<h3 class="tk-sec">Resolved</h3>${done.map(card).join("")}` : ""}
-      ${missed.length ? `<h3 class="tk-sec">Missed</h3>${missed.map(card).join("")}` : ""}
-      ${archived.length ? `<details class="tk-archived"><summary>🗄 Archived (${archived.length}) — still counted in your scores</summary>${archived.map(card).join("")}</details>` : ""}` :
-      `<div class="card" style="padding:26px;text-align:center;color:var(--ink-soft);">No random tasks yet. When your trainer sends one, it appears here and on your dashboard — you'll have a limited time to handle it.</div>`}
-    <div class="card tk-how"><b>How random tasks are assessed</b>
-      <ul><li><b>Timeliness</b> — acknowledged quickly and resolved inside the live window.</li><li><b>Prioritisation</b> — the right first move, deadlines and people.</li><li><b>Applying today's lesson</b> — not just common sense.</li><li><b>Communication</b> — clear, bottom-line-first, ready to send.</li><li><b>Risk &amp; confidentiality</b> — nothing unsafe, the right escalation.</li></ul>
-      <span>Scores feed your Competency Profile (<i>Real-Time Task Handling</i>) and your ranking. Missed tasks count as 0.</span></div>`;
-}
-async function taskArchive(id, on){ const e = taskLog().find(x=>x.id===id); if(!e) return; e.archived = !!on; await saveTaskLog(); render(); toast(on ? "Task archived — it still counts in your scores." : "Task moved back to the list."); }
-window.taskArchive = taskArchive;
-async function taskAck(id){ const e = taskLog().find(x=>x.id===id); if(!e) return; e.status = "progress"; e.ackAt = new Date().toISOString(); await saveTaskLog(); render(); setTimeout(()=>{ const t = document.querySelector(`#tk_${cssId(id)} textarea`); if(t) t.focus(); }, 60); }
-const __tkTimers = {};
-function taskNotes(id, v){ const e = taskLog().find(x=>x.id===id); if(!e) return; e.notes = v; clearTimeout(__tkTimers[id]); __tkTimers[id] = setTimeout(saveTaskLog, 700); }
-function taskResp(id, v){ const e = taskLog().find(x=>x.id===id); if(!e) return; e.response = v; clearTimeout(__tkTimers["r"+id]); __tkTimers["r"+id] = setTimeout(saveTaskLog, 700); }
-async function submitTask(id){
-  const e = taskLog().find(x=>x.id===id); if(!e) return;
-  refreshTaskStatuses(); if(e.status==="missed"){ toast("This task's live window has ended."); render(); return; }
-  const val = (e.response||"").trim();
-  if(val.length < 25){ toast("Write out how you'd actually resolve it first."); return; }
-  const btn = document.getElementById("tkBtn_"+cssId(id)); const out = document.getElementById("tkRes_"+cssId(id));
-  if(btn){ btn.disabled = true; btn.textContent = "Grading…"; }
-  if(out) out.innerHTML = `<div class="ai-loading">Reviewing your resolution…</div>`;
-  const now = Date.now();
-  const ackMins = e.ackAt ? Math.max(0, Math.round((new Date(e.ackAt)-new Date(e.receivedAt))/60000)) : null;
-  const totalMins = Math.max(1, Math.round((now-new Date(e.receivedAt))/60000));
-  const windowMins = e.expiresAt ? Math.round((new Date(e.expiresAt)-new Date(e.receivedAt))/60000) : null;
-  try{
-    const day = DAYS.find(d=>d.id===e.dayId);
-    const report = await runRubricEvaluation(
-      `Random Task — ${ftName(e.dayId)}`,
-      `Unannounced task dropped mid-session to test real-time handling of ${ftName(e.dayId)} (${day.title}).\nTASK: ${e.task}\nTIMING: acknowledged after ${ackMins===null?"n/a":ackMins+" min"}; resolved after ${totalMins} min${windowMins?` of a ${windowMins}-minute window`:""}.\nTRAINEE'S WORKING NOTES: ${(e.notes||"(none)").slice(0,800)}`,
-      val,
-      `Assess on five criteria: (1) Timeliness — fast acknowledgement and resolution inside the window; (2) Prioritisation — correct first move, deadlines, who to involve; (3) Application of ${ftName(e.dayId)}'s actual lesson content; (4) Communication — clear, bottom-line-first, ready to send; (5) Risk & confidentiality — safe handling and correct escalation. Be decisive about vague or hedging answers.`
-    );
-    Object.assign(e, {status:"resolved", submittedAt:new Date(now).toISOString(), score:report.totalScore, tier:report.gradeTier||report.tier||"", reportHtml:renderEvaluationReport(report)});
-    await saveTaskLog();
-    if(!state.progress[e.dayId]) state.progress[e.dayId] = {};
-    const p = state.progress[e.dayId];
-    p.surpriseTaskScores = (p.surpriseTaskScores||[]).concat([report.totalScore]);
-    p.surpriseTaskScore = Math.round(p.surpriseTaskScores.reduce((a,b)=>a+b,0)/p.surpriseTaskScores.length);
-    p.surpriseTaskAnsweredAt = e.id;
-    await storeSet("day-progress", state.progress);
-    try{ logWork({kind:"task", dayId:e.dayId, label:`Random Task · ${ftName(e.dayId)}`, score:report.totalScore, tier:report.gradeTier||report.tier, subs:{task:report.totalScore}}); }catch(x){}
-    syncToLedger();
-    state.activeSurpriseTask = null;
-    if(report.totalScore>=85) burstConfetti();
-    render();
-    setTimeout(()=>{ const c = document.querySelector(`#tk_${cssId(id)} details`); if(c){ c.open = true; c.scrollIntoView({behavior:"smooth", block:"center"}); } }, 80);
-  }catch(err){
-    if(btn){ btn.disabled = false; btn.textContent = "Submit resolution for grading"; }
-    if(out) out.innerHTML = renderAiErrorBlock(err, "Couldn't grade your resolution");
-  }
-}
-Object.assign(window, {taskAck, taskNotes, taskResp, submitTask});
-setInterval(()=>{ document.querySelectorAll(".tk-left[data-exp]").forEach(el=>{ const ms = new Date(el.dataset.exp).getTime()-Date.now(); el.textContent = fmtLeft(ms); if(ms<=0 && state.view==="tasks" && !isTyping()) render(); }); }, 1000);
-
-function surpriseTaskIsLive(t){
-  if(!t || !t.active) return false;
-  if(t.expiresAt && Date.now() > new Date(t.expiresAt).getTime()) return false;
-  if(t.generatedAt && state.traineeRegisteredAt && new Date(state.traineeRegisteredAt).getTime() > new Date(t.generatedAt).getTime()) return false;
-  return true;
-}
-function renderSurpriseTaskCard(){
-  // Graded result stays on screen until the trainee closes it — it is never
-  // wiped by a background refresh and never navigates anywhere on its own.
-  const r = state.surpriseResult;
-  if(r){
-    return `
-    <div class="card" style="padding:18px 20px;margin-bottom:20px;background:rgba(255,244,232,.62);border:1.5px solid var(--orange);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-        <div style="font-size:11px;color:var(--orange-deep);font-weight:700;text-transform:uppercase;letter-spacing:.03em;">🎲 Surprise Task — ${ftName(r.dayId)} · Graded</div>
-        <button class="btn btn-ghost btn-sm" onclick="closeSurpriseResult()">Close ✕</button>
-      </div>
-      <p style="font-size:13px;color:var(--ink-soft);margin:6px 0 10px;">${esc(r.task)}</p>
-      ${r.html}
-    </div>`;
-  }
-  const t = state.activeSurpriseTask;
-  if(!surpriseTaskIsLive(t)) return "";
-  const le = taskLog().find(x=>x.id===t.generatedAt);
-  if(le && (le.status==="resolved" || le.status==="missed")) return "";
-  return `
-    <div class="card tk-dash">
-      <div><div class="tk-dash-k">🎲 Random Task — ${ftName(t.dayId)} · <b class="tk-left" data-exp="${esc(t.expiresAt||"")}">${t.expiresAt?fmtLeft(new Date(t.expiresAt).getTime()-Date.now()):""}</b></div>
-      <p>${esc(t.task)}</p></div>
-      <button class="btn btn-primary" onclick="goto('tasks')">${le && le.status==="progress" ? "Continue in 🎲 Tasks →" : "Handle it in 🎲 Tasks →"}</button>
-    </div>`;
-}
-function closeSurpriseResult(){
-  state.surpriseResult = null;
-  render();
-}
-window.closeSurpriseResult = closeSurpriseResult;
-async function checkSurpriseTask(){
-  // A trainer sends a task to a day. Check every day this trainee has unlocked (not just the
-  // furthest one), so a trainee who is a day ahead or behind the batch still gets it.
-  const dayIds = DAYS.map(d=>d.id).filter(id=>dayUnlocked(id));
-  try{
-    // Registration time is fetched once per session and cached — it's what
-    // keeps newly-registered trainees from inheriting an older broadcast.
-    if(!state.traineeRegisteredAt && state.traineeId){
-      const me = await sharedGet("trainee:"+state.traineeId);
-      state.traineeRegisteredAt = (me && me.registeredAt) || new Date().toISOString();
-    }
-    const recs = await sharedGetMany(dayIds.map(id=>"surprise-task-day"+id));
-    const live = recs.filter(r=>surpriseTaskIsLive(r)).sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0));
-    state.activeSurpriseTask = live[0] || null;
-    live.forEach(t=>syncTaskFromBroadcast(t));
-    dayIds.forEach((dayId, k)=>logDayTaskHistory(dayId, recs[k]));
-  }catch(e){
-    state.activeSurpriseTask = null;
-  }
-}
-function logDayTaskHistory(dayId, rec){
-  // Every task sent to this day since the trainee reached it is logged — including
-  // ones replaced by a newer task or whose timer ran out while they were away
-  // (those land under Missed). Tasks the trainer ended early before the trainee
-  // ever saw them are not held against anyone.
-  state.taskDaySince = state.taskDaySince || {};
-  if(!state.taskDaySince[dayId]){ state.taskDaySince[dayId] = new Date().toISOString(); storeSet("task-day-since", state.taskDaySince); }
-  const since = new Date(state.taskDaySince[dayId]).getTime();
-  const reg = state.traineeRegisteredAt ? new Date(state.traineeRegisteredAt).getTime() : 0;
-  const seen = new Set(taskLog().map(x=>x.id));
-  ((rec && rec.history) || []).concat(rec && rec.generatedAt ? [rec] : []).forEach(t=>{
-    if(!t || !t.generatedAt || seen.has(t.generatedAt)) return;
-    const g = new Date(t.generatedAt).getTime();
-    if(g < since || g < reg || t.endedAt) return;
-    syncTaskFromBroadcast(t); seen.add(t.generatedAt);
-  });
-}
-function surpriseTaskSignature(){
-  const t = state.activeSurpriseTask;
-  return t ? (t.dayId+"|"+t.generatedAt) : "";
-}
-// Keep the draft in state so a refresh never erases what the trainee typed.
 
 /* ---------- Day 10: strict single-attempt (no time limit) ---------- */
 function checkDay10SingleAttempt(actionId){
@@ -8285,7 +8094,6 @@ function goto(view, id){
   state.mobileNavOpen = false;
   if(VoiceCall.active && view!=="openroleplay") VoiceCall.hangup(true);
   state.view=view;
-  if(view==="dashboard" || view==="tasks"){ state.surpriseTaskChecked = false; }
   if(view==="day"){ state.dayId=id; state.quizAnswers={}; state.quizQuestionIndex=0; state.quizSubmitted=false; state.slideDir="next"; state.slideInterstitial=null; state.dayViewMode="slides"; state.maxSlideReached=(state.slideProgress&&state.slideProgress[id])||0; state.lessonSlide=resumeSlideFor(id); }
   if(view==="process"){ state.pqLesson = id || null; }
   if(view==="tool"){
@@ -8338,7 +8146,6 @@ function render(){
   else if(state.view==="openroleplay") body=renderOpenRoleplay();
   else if(state.view==="admin") body=renderAdmin();
   else if(state.view==="facilitatorguide") body=renderFacilitatorGuide();
-  else if(state.view==="tasks") body=renderTasksPage();
   else if(state.view==="orientation") body = state.isAdmin ? renderOrientation() : renderDashboard();
   const presenterView = false;   // the presenter now lives inside the lesson stage
   app.innerHTML = renderTopbar() + `<main class="${state.view==="dashboard"?"main-dash":""}${presenterView?" has-presenter":""}"><div id="navBackSlot"></div>${body}</main>` + (presenterView ? `<img class="slide-presenter" src="${PRESENTER_IMG}" alt="" aria-hidden="true">` : "")
@@ -8604,11 +8411,6 @@ function afterRender(){
     setTimeout(()=>restoreLabFields(), 80);
   }
   if(state.view==="admin" && state.isAdmin && !state.adminData && !state.adminLoading) loadAdminLedger();
-  if((state.view==="dashboard" || state.view==="tasks") && state.traineeId && !state.isAdmin && !state.surpriseTaskChecked){
-    state.surpriseTaskChecked = true;
-    const beforeCount = taskLog().length;
-    checkSurpriseTask().then(()=>{ if((state.activeSurpriseTask && state.view==="dashboard") || (state.view==="tasks" && taskLog().length!==beforeCount)) render(); });
-  }
   if(state.view==="login"){
     const input = document.getElementById("loginLastInput") || document.getElementById("loginNameInput");
     if(input) input.focus();
@@ -8809,7 +8611,7 @@ async function resetTraineeSessionData(){
 async function clearTraineeDevice(){
   setTraineeToken("");
   if(state.approvalPollInterval){ clearInterval(state.approvalPollInterval); state.approvalPollInterval = null; }
-  Object.assign(state, {activeSurpriseTask: null, surpriseResult: null, surpriseDraft: "", surpriseTaskChecked: false, traineeRegisteredAt: null,
+  Object.assign(state, {activeSurpriseTask: null, traineeRegisteredAt: null,
     traineeName: "", traineeId: "", progress: {}, practiceProgress: {}, notes: [], isAdmin: false,
     slideProgress: {}, lastSlide: {}, lastCloudSave: null, dayOrderMigrated: {}});
   await storeSet("trainee-name", "");
@@ -8876,18 +8678,6 @@ async function approvalPollTick(traineeId){
       if(await applyLabAttemptReset(me)) await showLabAttemptReset();
       await applyAdminUnlocks(me);
     }catch(e){ /* best-effort */ }
-    // New tasks are picked up on every page (trainees are usually in a lesson or lab when one is
-    // sent); the dashboard and 🎲 Tasks redraw, elsewhere the "New task assigned" alert shows.
-    if(!state.surpriseGrading){
-      try{
-        const before = surpriseTaskSignature(), beforeCount = taskLog().length;
-        await checkSurpriseTask();
-        const ae = document.activeElement;
-        const typing = ae && (ae.tagName==="TEXTAREA" || ae.tagName==="INPUT");
-        const changed = before !== surpriseTaskSignature() || beforeCount !== taskLog().length;
-        if(changed && !typing && (state.view==="dashboard" || state.view==="tasks")) render();
-      }catch(e){ /* best-effort */ }
-    }
 }
 
 
@@ -15016,7 +14806,7 @@ function logWork(entry){
   const origLab = runRubricEvaluation;
   runRubricEvaluation = async function(label, ctx, text, notes){
     const rep = await origLab(label, ctx, text, notes);
-    if(/^Random Task/.test(label)) return rep;   // random tasks are logged by submitTask as their own kind
+    if(/^Random Task/.test(label)) return rep;   // random tasks were logged as their own kind (by the trainee Tasks page, now gone)
     try{ const wd = workDayFromContext(label); setTimeout(()=>autoReviewDay(wd), 4000); logWork({kind:"lab", dayId:wd, toolId:state.toolId||null, label, score:rep.totalScore, tier:rep.gradeTier,
       strengths:(rep.strengths||[]).slice(0,3), gaps:(rep.blindspots||[]).slice(0,3), growth:(rep.growthSuggestions||[]).slice(0,2), excerpt:String(text||"").slice(0,700),
       subs:{accuracy:Math.round(rep.accuracyScore/35*100), presence:Math.round(rep.presenceScore/30*100), risk:Math.round(rep.riskScore/20*100), efficiency:Math.round(rep.efficiencyScore/15*100)}}); }catch(e){}
