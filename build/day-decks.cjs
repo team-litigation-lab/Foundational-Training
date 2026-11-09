@@ -1552,6 +1552,17 @@ for(let n = 1; n <= 16; n++){
   }
   decks[n] = Object.assign({day: n, title: d.title, heading: d.heading}, pqDay ? {pq: true} : {}, {slides});
 }
+// a slide that moves to another day's deck, last before its end: { <from day>: { <slide id>: [<to day>, <its id there>] } }.
+// Day 9's Intake Mock Calls Metrics closes Part 2 of Intake Training (Day 8), after the demo's preparation; Part 3 (Day 9)
+// opens on the Sample Transcription Guide. (A new id on Day 8, mcm: nothing saved under Day 8's old s2, off the deck, follows it)
+// (its "AM:" was Day 9's morning: on Day 8 it follows the afternoon's demo preparation, so PM)
+const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]}};
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh]] of Object.entries(ids)){
+  const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
+  const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
+  const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}));
+}
 function noKB(html){
   return String(html || "")
     .replace(/<p>Knowledge Base:[^<]*<\/p>\n?<p><a [^>]*lsh-knowledge-base[^>]*>[^<]*<\/a><\/p>\n?/g, "")
