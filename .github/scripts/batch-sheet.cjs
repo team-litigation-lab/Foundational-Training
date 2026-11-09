@@ -113,11 +113,12 @@ const failures = []; const fail = m => failures.push(m);
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
-  // ▶ Next: the trainee after her, alone on the page
-  { const nx = await page.evaluate(() => { const b = [...document.querySelectorAll('.bs-pager button')].find(x => /Next/.test(x.textContent)); if (b) b.click(); return !!b; });
+  // no ◀ Previous / Next ▶ pager: the 🔎 trainee picker beside Batch turns to another trainee, alone on the page
+  { const sw = await page.evaluate(() => { const sel = document.querySelector('.bs-who-top select'); if (!sel) return null; const o = [...sel.options].find(x => !x.selected); if (!o) return null; sel.value = o.value; sel.dispatchEvent(new Event('change')); return o.textContent; });
     await page.waitForTimeout(400);
-    const after = await page.evaluate(() => ({ n: document.querySelectorAll('.bs-pt').length, head: (document.querySelector('.bs-pt-h') || {}).innerText || '' }));
-    if (!nx || after.n !== 1 || /Ada Active/.test(after.head)) fail(`▶ Next doesn't turn to the next trainee's page: ${JSON.stringify(after)}`); }
+    const after = await page.evaluate(() => ({ n: document.querySelectorAll('.bs-pt').length, head: (document.querySelector('.bs-pt-h') || {}).innerText || '', pager: !!document.querySelector('.bs-pager') || /Next ▶|◀ Previous/.test(document.body.innerText) }));
+    if (!sw || after.n !== 1 || /Ada Active/.test(after.head)) fail(`🔎 the trainee picker doesn't turn to another trainee's page: ${JSON.stringify(after)}`);
+    if (after.pager) fail('the ◀ Previous / Next ▶ pager is still on the Batch Sheet'); }
   await page.evaluate(() => FTBatchSheet.view('tables')); await page.waitForTimeout(500);
   // 🏅 the simplified scorecard first: the Score Card and the compliance on top, then 📊 Weekly Ranking and
   // 📤 Daily outputs; the other tables under ▸ More detail (shut until opened)
