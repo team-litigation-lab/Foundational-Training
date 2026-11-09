@@ -487,12 +487,19 @@ function dayDeliverables(p, d){
     const it = x.it, lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
+    // (Day 6's Calendar Management Mock Calls practice isn't on the scores: the scored call is the Calendar Management Mock
+    // Call with the trainer)
+    if(it.at === "session" && it.id === "calendaring") return;
     if(it.at === "session"){ const c = sessionCtx(R, it); if(c){ push(c); return; } }
     if(it.assess){ const c = assessCtx(R, it); if(c){ push(c); return; } }
     if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
       if(ls.length && !here_.length) return; }
+    // (only what can carry a grade is listed while it has none — a mock call or demo, a Practice Session, an answer sheet, an
+    // assessment, the Process Questions; a reading, a breakout's handouts, the fillable forms, the call listening and the idle
+    // time's material aren't graded, so they aren't on the scores)
+    if(!(it.at === "trainer" || it.at === "session" || it.at === "drive" || it.assess || (it.at === "tool" && it.id === "process"))) return;
     push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
   });
   // 📒 the day's Monitoring Sheet update, graded on Submit (js/ft-buffer.js ACTS[…].submit, trackerreview:<id>.items)
