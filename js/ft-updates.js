@@ -121,7 +121,8 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-open-days .ft-od-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;}
 .ft-open-days select{font:inherit;font-size:16.5px;font-weight:700;padding:8px 12px;border-radius:8px;border:2px solid #3B4A8C;}
 /* (auto-fit: the lessons stretch across the whole screen, no empty slots at the end) */
-.ft-od-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;}
+.ft-od-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;}
+.ft-od-day,.ft-od-day b{overflow-wrap:normal;word-break:normal;hyphens:none;}
 .ft-od-day{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:12px;padding:14px 14px;font-size:16px;background:#fff;cursor:pointer;min-height:64px;}
 .ft-od-day input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex:0 0 auto;}
 .ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
@@ -651,7 +652,9 @@ function renderFtOpenDays(){
   const o = state.ftOpenDays || {all:[], batches:{}};
   const open = new Set((sel==="__all" ? o.all : (o.batches||{})[sel] || []).map(Number));
   const everyone = new Set((o.all||[]).map(Number));
-  return `
+  // (the dark blue banner over the page, as on 📋 Batch Sheet, 🔗 Drive Links and 🧑‍🏫 Graders: js/ft-batch-sheet.js ftBanner)
+  const banner = typeof window.ftBanner === "function" ? ftBanner("Open Lessons", sel === "__all" ? "" : sel, "") : "";
+  return `${banner}
     <div class="card ft-open-days">
       <h3>📅 Open Lessons</h3>
       <p style="margin:0;color:var(--ink-soft);font-size:14px;">Trainees only see a lesson once it's open for them. Open each lesson when the batch starts it. A lesson opened for <b>All batches</b> is open for everyone.</p>

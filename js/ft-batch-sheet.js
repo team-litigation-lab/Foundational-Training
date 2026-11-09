@@ -1964,6 +1964,9 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-view{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 12px;font:13.5px Arial,sans-serif;} .bs-view > span{font-weight:700;color:#1E2340;margin-right:4px;}
 .bs-view button{border:1px solid #C9CEDA;background:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font:600 13px Arial,sans-serif;color:#1E2340;} .bs-view button.on{background:#1E2340;color:#fff;border-color:#1E2340;} .bs-view .bs-view-all{border-radius:8px;}
 .bs-pts{display:flex;flex-direction:column;gap:10px;}
+/* (visible gridlines in each trainee's table: the main table, the Score Card grid, a day's activities and the Drive links) */
+.bs-pt-t th,.bs-pt-t td{border:1px solid #9AA3B5 !important;} .bs-pt-mx th,.bs-pt-mx td{border:1px solid #9AA3B5 !important;}
+.bs-pt .bs-parts th,.bs-pt .bs-parts td{border:1px solid #AEB6C6 !important;} .bs-pt .bs-lkg{border:1px solid #9AA3B5 !important;} .bs-pt .bs-lkc{border-color:#AEB6C6 !important;}
 .bs-tools{padding:16px 18px;margin:0 0 16px;} .bs-tools h3{margin:0 0 10px;font:800 20px Arial,sans-serif;color:#1E2340;}
 .bs-tools-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;} .bs-tools-bar label{font:800 15px Arial,sans-serif;color:#1E2340;display:inline-flex;gap:6px;align-items:center;}
 .bs-tools-bar select{font:800 15px Arial,sans-serif;padding:5px 9px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
