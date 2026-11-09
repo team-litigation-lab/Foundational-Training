@@ -1377,14 +1377,14 @@ const LESSON_CARDS = {
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practice reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
-  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
+  5: {days: [5, 6, 7], focus: "Appointment Setting & Calendar Management",
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
-      // (Day 6: the mock calls first, then the Calendar Management Training Videos)
-      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
-      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
+      // (📅 Day 6: the Attorney Calendar Management Activity and the training videos; Day 7: the mock calls, as the trainers run them)
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 6, s: "s3"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"},
+      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 7, s: "s1"},
+      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 7, s: "s2"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     // (no screenshots or upload: the activity is handed in as its 📅 Calendar Activity Check, sent to the trainer from there)
