@@ -489,7 +489,7 @@ if(typeof __folders === "function") window.renderAdminBatchFolders = function(){
    📋 Batch Sheet (js/ft-trainees-tab.js openBatchFolder). (The Batch Sheet keeps its own 📦 Archive batch, beside the batch
    picker, for the batch on screen.) Registered here, before js/lsh-program.js groups the tabs. */
 function batchesTab(){
-  if(state.adminLoading || !state.adminData){ if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(loadAdminLedger, 0); return `<div class="card" style="padding:24px;">Loading the batches…</div>`; }
+  if(state.adminLoading || !state.adminData){ if(!state.adminLoading && typeof loadAdminLedger === "function") setTimeout(loadAdminLedger, 0); return (window.FTBatchSheet && typeof FTBatchSheet.toolsHtml === "function" ? FTBatchSheet.toolsHtml() : "") + `<div class="card" style="padding:24px;">Loading the batches…</div>`; }
   // (a batch the 📋 Batch Sheet doesn't list — no batch, all archived — opens its own folder page here: its 🗂 Registry, its
   // records and ⬇ Full backup (JSON); ← All batch folders comes back to the cards. js/ft-trainees-tab.js openBatchFolder)
   if(state.batchFolder && typeof window.renderBatchFolder === "function"){
@@ -506,7 +506,9 @@ function batchesTab(){
     const p = h1.nextElementSibling;
     if(p && p.tagName === "P") p.textContent = "Each batch: open its card to see its trainees on the 📋 Batch Sheet. Archive a batch when it finishes; its records stay on the Archive shelf.";
   }
-  return `<div class="fba-batches">${t.innerHTML}</div>`;
+  // (🛠 the batch's tools — ✏️ Fix the batch name, 🧹 Sweep inactive accounts, ✎ Fix a date — moved here from 📋 Batch Sheet)
+  const tools = window.FTBatchSheet && typeof FTBatchSheet.toolsHtml === "function" ? FTBatchSheet.toolsHtml() : "";
+  return `${tools}<div class="fba-batches">${t.innerHTML}</div>`;
 }
 ftAdminTab("batches", "📁 Batches", batchesTab);
 

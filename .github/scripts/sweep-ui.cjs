@@ -25,7 +25,7 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(() => { state.isAdmin = true; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); });
     await page.waitForTimeout(1500); await page.evaluate(() => FTBatchSheet.batch('B103026')); await page.waitForTimeout(2500);
     if (await page.$('.bs-dup')) fail('👥 Duplicate accounts offers Lei\'s archived old account to merge');
-    await page.evaluate(() => FTBatchSheet.sweepOpen()); await page.waitForTimeout(1500);
+    await page.evaluate(() => { state.adminTab = 'batches'; render(); FTBatchSheet.sweepOpen(); }); await page.waitForTimeout(1500);   // (🧹 is on 🛡 Admin Master Control → 📁 Batches)
     const list = await page.evaluate(() => [...document.querySelectorAll('.bs-sweep tbody tr code')].map(c => c.textContent).sort());
     if (JSON.stringify(list) !== JSON.stringify(['kay-keep--b090126', 'lei-abut--b250926', 'rey-jected--b103026'])) fail(`the sweep lists: ${list}`);
     // Kay unticked: kept
