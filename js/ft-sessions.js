@@ -683,6 +683,8 @@ function loadMyReview(){
 setInterval(() => { if(!document.hidden) loadMyReview(); }, 60000);
 // 📋 the scoresheet in the pop-up (FTMetrics.open): the batch and trainee to pick, each criterion's score and Remarks, the
 // Result and 💾 Save, all on one screen
+// (the trainer who facilitated: the name last typed on this device, offered on the next sheet; js/ft-batch-admin.js keeps the same)
+const facLast = () => { try{ return localStorage.getItem("ft-facilitator") || ""; }catch(err){ return ""; } };
 function metricsSheet(key){
   const rb = RUB().list[key], a = actOfRubric(key); if(!rb || !a) return "";
   const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
@@ -702,6 +704,7 @@ function metricsSheet(key){
       ${several.length > 1 ? `<select aria-label="Activity" onchange="FTMetrics.act('${e(key)}', this.value)">${several.map(x => `<option value="${e(x.id)}" ${x.id === a.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select>` : ""}
       <select aria-label="Trainee" onchange="FTMetrics.who('${e(key)}', this.value)"><option value="">Choose a trainee…</option>${people.map(r => `<option value="${e(r.id)}" ${r.id === id ? "selected" : ""}>${e(r.name)}</option>`).join("")}</select>
       ${row && c.status ? `<span class="fss-pill ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : ""}
+      <label>Facilitated by <input data-fac list="ftmsFacList" maxlength="120" value="${e((dr && dr.facilitator != null ? dr.facilitator : c.facilitator) || facLast())}" placeholder="Trainer’s name" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"><datalist id="ftmsFacList">${[...new Set([facLast(), ...AD.rows.flatMap(x => Object.values(((x.rv || {}).acts) || {}).map(v => v && v.facilitator))].map(x => String(x || "").trim()).filter(Boolean))].sort().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
       <label>Result <select data-status ${row ? "" : "disabled"} onchange="FTMetrics.calc(this)">${STATUSES.map(x => `<option ${x === status ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
@@ -742,19 +745,21 @@ window.FTMetrics = {
   calc(inp){ const box = inp.closest(".ftms"), r = rubricRead(box); if(!r) return;
     box.querySelector("[data-avg]").textContent = r.avg == null ? "0" : (Math.round(r.avg * 100) / 100).toFixed(2);
     // (what is typed, and the Result picked, kept for this sheet, activity and trainee until saved: a redraw doesn't lose them)
-    const key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), st = box.querySelector("[data-status]");
-    if(MS.who[key]) MS.draft[key + "|" + act + "|" + MS.who[key]] = {scores:r.scores, feedback:r.feedback, status:st ? st.value : ""}; },
+    const key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), st = box.querySelector("[data-status]"), fac = box.querySelector("[data-fac]");
+    if(MS.who[key]) MS.draft[key + "|" + act + "|" + MS.who[key]] = {scores:r.scores, feedback:r.feedback, status:st ? st.value : "", facilitator:fac ? fac.value : ""}; },
   async save(btn){
     const box = btn.closest(".ftms"), key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), id = MS.who[key];
     const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
     if(!rr.scores.some(v => v != null)){ toast("Score at least one criterion first."); return; }
     btn.disabled = true;
+    const facIn = box.querySelector("[data-fac]"), facilitator = String(facIn ? facIn.value : "").trim().slice(0, 120);
+    try{ if(facilitator) localStorage.setItem("ft-facilitator", facilitator); }catch(err){}
     // (the Day 8 Intake Demo: the case that came with the trainee's packet, read fresh; undefined keeps the saved one when it can't be known)
     const played = act === "intake-packet-demo" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
     try{
       await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
         cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
-          date:prev.date || new Date().toISOString().slice(0, 10), at:new Date().toISOString(),
+          date:prev.date || new Date().toISOString().slice(0, 10), facilitator, at:new Date().toISOString(),
           rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}},
           // (the CMS call the trainee was assigned, js/ft-intake.js; null when none, so an earlier case isn't carried over)
           played !== undefined ? {case:played} : {}); });
@@ -797,6 +802,7 @@ window.ftTrainerItems = ctx => {
 .ftms-modal .ftms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:14px;}
 .ftms-modal .ftms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;}
 .ftms-modal .ftms-pick .ftms-save{margin-left:auto;}
+.ftms-pick label{display:inline-flex;align-items:center;gap:6px;} .ftms-pick input[data-fac]{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;width:180px;max-width:100%;}
 .ftms-modal .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .ftms-mine{margin:6px 0 0;font-weight:700;color:#166534;} .ftms-none{margin:6px 0;font-weight:600;color:#1E2340;}
 .ftms-modal .ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;position:sticky;top:-10px;}

@@ -82,7 +82,7 @@ function draftOf(id){
   const k = dkey(id);
   if(!MS.draft[k]){
     const c = cellOf(id, MS.act), rb = RUB().forAct(curAct()), got = c.rubric && rb && c.rubric.key === rb.key ? c.rubric : {};
-    MS.draft[k] = {status:c.status || "Not yet", score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "",
+    MS.draft[k] = {status:c.status || "Not yet", score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
       scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:false, dirty:false};
   }
   return MS.draft[k];
@@ -128,6 +128,11 @@ const isMock = a => { const rb = RUB().forAct(a); return /mock call/i.test(rb ? 
 // (a Remarks or Comment box grows with what is typed, so the text wraps and stays in view)
 const grow = t => { if(t && t.tagName === "TEXTAREA"){ t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; } };
 const growAll = () => document.querySelectorAll(".fms textarea").forEach(grow);
+// 🧑‍🏫 who facilitated the mock call or demo: typed by the trainer, offered again next time (this device), saved with the scores
+const FAC_KEY = "ft-facilitator";
+const lastFac = () => { try{ return localStorage.getItem(FAC_KEY) || ""; }catch(err){ return ""; } };
+const keepFac = v => { try{ if(v) localStorage.setItem(FAC_KEY, v); }catch(err){} };
+const facNames = () => [...new Set([lastFac(), ...Object.values(MS.rv).flatMap(rv => Object.values((rv && rv.acts) || {}).map(c => c && c.facilitator))].map(x => String(x || "").trim()).filter(Boolean))].sort();
 window.addEventListener("resize", () => requestAnimationFrame(growAll));
 /* 🧑‍🏫 Graders: Mock Calls & Demos — every mock call and demo scored on this one sheet, the Training Guide's format: the
    batch, the activity and the trainee picked at the top, then criterion | Score | Remarks (green header, banded rows) and the
@@ -176,7 +181,7 @@ function renderMockScores(){
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    <p class="fms-who"><b>${e(r.name || r.id)}</b> · ${e(a.title)} · ${e(labelOf(MS.batch))} ${tag}</p>
+    <p class="fms-who"><b>${e(r.name || r.id)}</b> · ${e(a.title)} · ${e(labelOf(MS.batch))}${c.facilitator ? ` · facilitated by ${e(c.facilitator)}` : ""} ${tag}</p>
     ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
@@ -186,6 +191,7 @@ function renderMockScores(){
     </tbody></table>
     <div class="fms-foot">
       <label>Score (%) <input type="number" min="0" max="100" data-score value="${e(d.score)}" oninput="FTMockScores.score('${id}',this.value)"></label>
+      <label>Facilitated by <input class="fms-fac" list="fmsFacList" maxlength="120" value="${e(d.facilitator || "")}" placeholder="Trainer’s name" oninput="FTMockScores.field('${id}','facilitator',this.value)"><datalist id="fmsFacList">${facNames().map(n => `<option value="${e(n)}">`).join("")}</datalist></label>
       <label>Date <input type="date" data-date value="${e(d.date)}" onchange="FTMockScores.field('${id}','date',this.value)"></label>
       <label class="fms-cmt">Comment <span>the trainee sees it</span><textarea rows="2" oninput="FTMockScores.field('${id}','comment',this.value)" placeholder="What went well, what to improve">${e(d.comment)}</textarea></label>
     </div>
@@ -233,11 +239,12 @@ window.FTMockScores = {
   crit(id, i, val){ const d = draftOf(id), t = String(val).trim(); d.scores[i] = t === "" ? null : Math.max(0, Math.min(5, Number(t))); refreshCol(id); },
   fb(id, i, val){ draftOf(id).feedback[i] = String(val).slice(0, 600); refreshCol(id); },
   score(id, val){ const d = draftOf(id); d.score = String(val).trim(); d.scoreTyped = d.score !== ""; refreshCol(id); },
-  field(id, f, val){ draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : String(val); refreshCol(id); },
+  field(id, f, val){ draftOf(id)[f] = f === "comment" ? String(val).slice(0, 4000) : f === "facilitator" ? String(val).slice(0, 120) : String(val); refreshCol(id); },
   async save(btn){
     const ids = dirtyIds(), act = MS.act, rb = RUB().forAct(curAct());
     for(const id of ids){ const s = valOf(id).score; if(s !== "" && !(Number(s) >= 0 && Number(s) <= 100)){ toast("A score is a number from 0 to 100."); return; } }
     MS.saving = true; if(btn) btn.disabled = true;
+    ids.forEach(id => keepFac(String(valOf(id).facilitator || "").trim()));
     let ok = 0;
     for(const id of ids){
       const d = valOf(id);
@@ -246,7 +253,7 @@ window.FTMockScores = {
         cur.acts = cur.acts || {};
         const avg = rb ? RUB().average(rb, d.scores) : null;
         cur.acts[act] = Object.assign({status:d.status || "Not yet", score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
-          comment:String(d.comment || "").trim().slice(0, 4000), at:new Date().toISOString()},
+          comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
             feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
@@ -326,10 +333,10 @@ function buildFiles(batch, rows){
     .concat(rows.map(g => [name(g), B, g.r.archived ? "Archived" : "Active", g.sc ? `${g.sc.done}/${g.sc.total}` : "",
       ...(g.sc ? g.sc.rows.filter(x => !x.s.hidden).map(x => pct(x.avg)) : srcs.map(() => "")), g.sc ? pct(g.sc.overall) : "",
       ...acts.map(a => { const c = lab(g)[a.id]; return c ? (tScore(c) != null ? tScore(c) : c.status || "") : ""; })]));
-  const cards = [["Trainee", "Batch", "Activity", "Kind", "Result", "Score (%)", "Weighted average (/5)", "Date", "Criterion", "Criterion score (/5)", "Criterion feedback", "Trainer's comment"]];
+  const cards = [["Trainee", "Batch", "Activity", "Kind", "Result", "Score (%)", "Weighted average (/5)", "Date", "Facilitated by", "Criterion", "Criterion score (/5)", "Criterion feedback", "Trainer's comment"]];
   rows.forEach(g => acts.forEach(a => {
     const c = lab(g)[a.id]; if(!c) return;
-    const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || ""];
+    const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || "", c.facilitator || ""];
     if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
     else cards.push([...base, "", "", "", c.comment || ""]);
   }));
@@ -528,7 +535,7 @@ window.FTBatchAdmin = {archive:archiveDialog, gather, buildFiles, startOf, activ
 .fms-foot label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--navy);}
 .fms-foot label span{font-weight:500;color:var(--ink-soft);font-size:12px;}
 .fms-foot input{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;} .fms-foot input[type=number]{width:90px;}
-.fms-foot .fms-cmt{flex:1 1 320px;} .fms-foot textarea{font:inherit;font-size:14px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;min-height:56px;}
+.fms-foot .fms-fac{width:220px;max-width:100%;} .fms-foot .fms-cmt{flex:1 1 320px;} .fms-foot textarea{font:inherit;font-size:14px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;min-height:56px;}
 .fms-note{margin:10px 0 0;}
 .fms-why{margin:12px 0 4px;padding:12px 16px;border:1px solid #C9D9B8;border-radius:10px;background:#F7FAF2;font-size:15px;line-height:1.5;color:#1B1E2E;}
 .fms-why h4{margin:0 0 6px;font-size:16px;color:#2F4A14;} .fms-why p{margin:0 0 6px;} .fms-why ul{margin:0 0 8px;padding-left:20px;} .fms-why li{margin:2px 0;}
