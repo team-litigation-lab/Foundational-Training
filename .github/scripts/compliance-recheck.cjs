@@ -48,7 +48,7 @@ const failures = []; const fail = (m) => failures.push(m);
     if (JSON.stringify((get('trackerreview:' + dan).compliance || {})[D]) !== was) fail('a day already re-checked was worked out again');
 
     // 📅 a batch's Day 1 worked out when its Task Tracker and Monitoring Sheet weren't checked that day (tracker and monitor
-    // null, no day1v): checked again once, in full, kept under day1Parts and not counted; then left alone
+    // null, no day1v): checked again once, in full, and counted like any day; then left alone
     { const B = 'B' + D.slice(5, 7) + D.slice(8, 10) + D.slice(2, 4), eve = 'eve-day1--' + B.toLowerCase();
       put('trainee:' + eve, { id: eve, name: 'Eve Dayone', batch: B, approved: true, registeredAt: at(D, '16') });
       const old = { v: 2, pct: 50, parts: Object.assign({}, zero, { tests: 100, eod: 0 }), checkedAt: at(D, '23'), final: true };
@@ -57,7 +57,7 @@ const failures = []; const fail = (m) => failures.push(m);
       put('skills:' + eve, { typing: [{ date: D, slot: 'AM', wpm: 40 }], spelling: [] });
       await call('/api/compliance/backfill', { ids: [eve] }, admin);
       const e1 = (get('trackerreview:' + eve).compliance || {})[D] || {};
-      if (!e1.day1 || e1.day1v !== 2 || e1.pct !== null || !e1.day1Parts || typeof e1.day1Parts.tests !== 'number') fail(`an old Day 1 wasn't checked again in full: ${JSON.stringify(e1)}`);
+      if (e1.day1 || e1.day1v !== 2 || typeof e1.pct !== 'number' || !e1.parts || e1.parts.tests !== 33) fail(`an old Day 1 wasn't checked again in full and counted: ${JSON.stringify(e1)}`);
       const w1 = JSON.stringify(e1);
       await call('/api/compliance/backfill', { ids: [eve] }, admin);
       if (JSON.stringify((get('trackerreview:' + eve).compliance || {})[D]) !== w1) fail('a Day 1 already checked in full was checked again'); }
