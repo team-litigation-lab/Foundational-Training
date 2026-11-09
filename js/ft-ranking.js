@@ -536,6 +536,20 @@ function zipParts(files){
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, off, true);
   return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
 }
+// a plain one-sheet .xlsx from rows of cells (numbers stay numbers): ⬇ Excel of the 📑 summary (js/ft-ranking-summary.js)
+function xlsxOf(sheet, rows){
+  const X = s => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const name = X(String(sheet || "Sheet1").replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31));
+  const cell = (v, r, c) => { const at = letter(c) + (r + 1);
+    return typeof v === "number" && isFinite(v) ? `<c r="${at}"><v>${v}</v></c>` : `<c r="${at}" t="inlineStr"><is><t xml:space="preserve">${X(v)}</t></is></c>`; };
+  const data = rows.map((row, r) => `<row r="${r + 1}">${row.map((v, c) => cell(v, r, c)).join("")}</row>`).join("");
+  return zipParts([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${name}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`],
+    ["xl/worksheets/sheet1.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${data}</sheetData></worksheet>`]]);
+}
 function xlsxParts(){
   const sc = sheetCols(), list = ranked(), first = 3, last = Math.max(first, first + list.length - 1), L = letter;
   const X = s => String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -615,8 +629,8 @@ function renderRanking(){
         <button class="btn btn-ghost btn-sm" ${R.fill ? "disabled" : ""} onclick="FTRanking.fill()" title="Fill the empty score cells of the columns that have a source, from the trainees' grades on the platform">${R.fill ? "Filling…" : "⤓ Fill from the platform"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.foldAll()" title="Fold every column away but the marks out of 5, the average, the rank and the AI summary (a column's letter folds or shows it alone)">${sheetCols().some(folded) ? "▸◂ Expand all" : "◂▸ Collapse all"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="${R.sort === "rank" ? "Sorted by the final average, highest first. Click for A–Z by name." : "Sorted A–Z by name. Click for highest to lowest."}">↕ ${R.sort === "rank" ? "Highest to lowest" : "A–Z"}</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTRanking.copy()">📋 Copy</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.print()">🖨 Print</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="FTRanking.copy()">📋 Copy</button>
+        <button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
     ${R.data.sharedAt ? `<p class="rk-shared">📤 Shared with the trainees ${e(new Date(R.data.sharedAt).toLocaleString())}: each sees their own row on 📬 My Feedback and 🏅 My Performance. Changes since then reach them when you share again.</p>` : ""}
     ${autoBanner()}${R.explain ? explainHtml() : ""}${R.edit ? columnsEditor() : ""}${grid()}
@@ -718,8 +732,6 @@ function explainHtml(){
 }
 window.FTRanking = {
   explain(){ R.explain = R.explain ? null : {}; rerender(); },
-  // 🔎 beside Batch on 📊 Weekly Reports (js/ft-batch-sheet.js): ℹ How it's scored, open on that trainee's evidence
-  evidenceFor(id){ if(!id) return; R.explain = R.explain || {}; FTRanking.explainWho(id); rerender(); },
   async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
     let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
     if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: v[0] || {}, dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
@@ -782,6 +794,7 @@ window.FTRanking = {
     toast(bad ? `Couldn’t share with ${bad} trainee(s). Try again.` : `📤 Shared: each trainee sees their own row.`);
     btn.disabled = false; render();
   },
+  xlsxOf,
   excel(){
     const a = document.createElement("a"); a.href = URL.createObjectURL(zipParts(xlsxParts())); a.download = `${title()}.xlsx`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
