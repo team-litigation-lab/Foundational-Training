@@ -1037,14 +1037,18 @@ window.ftOpenVideo = function(id){
   const tabs = [d && d.video ? {label:"🎬 AI Discussion Video", url:d.video} : null, deck ? {label:"🎨 Facilitator Training Deck", url:deck} : null].filter(Boolean);
   if(d && tabs.length) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:tabs[0].url, tabs});
 };
+// what the viewer shows: the embed, or (a link that can't be embedded) a way to open it in a new tab
+function lvFrameHtml(src, clean){
+  return src ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+}
 // one of the viewer's tabs (the video, or the facilitator's deck)
 window.lvTab = function(i){
   const t = (LV.tabs || [])[i]; if(!t) return;
   const holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
   const clean = lvSrc(t.url).trim(), src = lvEmbedUrl(t.url);
   if(clean){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
-  holder.innerHTML = src ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  holder.innerHTML = lvFrameHtml(src, clean);
   document.querySelectorAll("#lecture-viewer-tabs button").forEach((b, k) => b.classList.toggle("on", k === i));
 };
 function lvOpen(item){
@@ -1056,16 +1060,16 @@ function lvOpen(item){
   // (item.noOpen: a reference to look at, not a file to take away: no link out to it, Day 8's sample intake forms)
   if(clean && !item.noOpen){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
   const src = lvEmbedUrl(item.url);
-  holder.innerHTML = src
-    ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  holder.innerHTML = lvFrameHtml(src, clean);
   LV.tabs = item.tabs && item.tabs.length > 1 ? item.tabs : null;
   document.getElementById("lecture-viewer-tabs").innerHTML = LV.tabs ? LV.tabs.map((t, i) => `<button type="button" class="${i ? "" : "on"}" onclick="lvTab(${i})">${esc(t.label)}</button>`).join("") : "";
   p.classList.remove("maximized");
   const fs = document.getElementById("lecture-viewer-fullscreen"); fs.textContent = "⛶"; fs.title = "Full Screen";
   lvReset(); p.classList.add("open"); lvFit();
 }
-function lvClose(){ const p = document.getElementById("lecture-viewer-pane"); if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex) try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } p.classList.remove("open", "maximized"); document.getElementById("lecture-viewer-frame-holder").innerHTML = ""; }
+// leave the browser's full screen if the viewer is what fills it
+function lvExitFs(p){ if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex) try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } }
+function lvClose(){ const p = document.getElementById("lecture-viewer-pane"); lvExitFs(p); p.classList.remove("open", "maximized"); document.getElementById("lecture-viewer-frame-holder").innerHTML = ""; }
 // ⛶ Full Screen: the viewer fills the whole screen with the browser's own full screen (no Chrome tabs or address bar,
 // so sharing the screen in Google Meet shows only the video or the deck). Esc or ⤢ brings it back.
 // If the browser refuses full screen, the viewer still fills the window.
@@ -1086,7 +1090,7 @@ function lvToggleMax(){
     const req = p.requestFullscreen || p.webkitRequestFullscreen;
     if(req && !lvFsEl()){ try{ const r = req.call(p); if(r && r.catch) r.catch(() => {}); }catch(_){} }
   } else {
-    if(lvFsEl() === p){ const ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex){ try{ const r = ex.call(document); if(r && r.catch) r.catch(() => {}); }catch(_){} } }
+    lvExitFs(p);
     lvSetMax(false);
   }
 }
