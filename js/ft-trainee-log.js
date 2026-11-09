@@ -183,8 +183,7 @@ window.render = function(){
 window.FTTraineeLog = {
   open(id, name){ if(adminOn()){ L.id = String(id); L.name = name || ""; L.data = null; L.files = null; L.filesErr = ""; } goto("tlog"); window.scrollTo(0, 0); },
   refresh(){ load(true); render(); },
-  tab(k){ L.tab = k; render(); },
-  nameCheck, conventions: () => conventions().map(c => ({name: c.name, what: c.what}))
+  tab(k){ L.tab = k; render(); }
 };
 
 const st = document.createElement("style"); st.id = "ft-trainee-log"; st.textContent = `

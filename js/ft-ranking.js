@@ -798,7 +798,7 @@ window.FTRanking = {
   print(){ const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print."); return; } w.document.write(wordDoc()); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); },
   // for the checks
   report: () => R.data && {title: title(), ranked: ranked().map(x => ({id: x.p.id, name: x.p.name, avg: x.avg == null ? null : fix2(x.avg), rank: x.rank}))},
-  html: () => wordDoc(), mark, reload(){ R.people = null;
+  reload(){ R.people = null;
     // (🤖 a draft still being written is the newest the report can be: kept on screen, not read back from what it has saved so far)
     if(!(R.draftRun && R.draftRun === R.key && R.data)){ R.key = ""; R.data = null; }
     render(); }

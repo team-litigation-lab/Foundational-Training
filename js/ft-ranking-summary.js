@@ -309,8 +309,7 @@ window.FTRankSummary = {
   doc(){ const c = ctx() || {}; return `<html><head><meta charset="utf-8"><title>Weekly Progress Report · ${e(c.batch)} · Week ${e(c.week)}</title><style>${CSS} body{margin:24px;} .rks-grid{grid-template-columns:1fr 1fr;}</style></head><body>${reportHtml(true)}</body></html>`; },
   word(){ const c = ctx() || {}, blob = new Blob(["﻿", FTRankSummary.doc()], {type: "application/msword"}), a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `Weekly Progress Report - ${c.batch} - Week ${c.week}.doc`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
-  print(){ const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print."); return; } w.document.write(FTRankSummary.doc()); w.document.close(); w.focus(); setTimeout(() => w.print(), 400); },
-  data: () => S.data, evidence, COMP
+  print(){ const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print."); return; } w.document.write(FTRankSummary.doc()); w.document.close(); w.focus(); setTimeout(() => w.print(), 400); }
 };
 (function(){ const s = document.createElement("style"); s.textContent = CSS; document.head.appendChild(s); })();
 })();
