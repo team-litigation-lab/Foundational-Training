@@ -108,9 +108,11 @@ const failures = []; const fail = m => failures.push(m);
     // 🏅 Grades, in one: the Score Card, the Practice Lab's use, every grading system and the lessons, under one heading; no
     // separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade, 📚 Lessons or day-by-day sections repeating the same grades
     if (pt && pt.secs.some(x => /^(🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
-    // (🏅 Grades: the Overall % and every grading system with its grades; no lesson-by-lesson Score Card, Practice Lab or Lessons
-    // in it, no Measure / Score / How header row, no 📅 / 🟢 / 🎧 Review buttons — those are in 🛡 Admin Master Control)
-    if (pt && !(/Overall %/.test(pt.text) && /Knowledge Checks/.test(pt.text))) fail(`🏅 Grades doesn't hold the Overall % and the grading systems: ${pt.text.slice(0, 300)}`);
+    // (🏅 Grades: every grading system with its grades; the Overall, Scorecard and Daily compliance totals are in the page's header
+    // only, not repeated as rows; no lesson-by-lesson Score Card, Practice Lab or Lessons in it, no Measure / Score / How header
+    // row, no 📅 / 🟢 / 🎧 Review buttons — those are in 🛡 Admin Master Control)
+    if (pt && !/Knowledge Checks/.test(pt.text)) fail(`🏅 Grades doesn't hold the grading systems: ${pt.text.slice(0, 300)}`);
+    if (pt && /Overall %|Weeks average/.test(pt.text)) fail(`🏅 Grades still repeats the header's totals: ${pt.text.slice(0, 300)}`);
     if (pt && /Score Card, lesson by lesson|Lessons: the deck and the Knowledge Check|Every grading system|How it was worked out|Review their calendaring/.test(pt.text)) fail(`Ada's table still has a part that was removed: ${pt.text.slice(0, 300)}`);
     // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
@@ -366,7 +368,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!rl.l3 || rl.l3.v !== '80%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l3.f) || /Call Listening/.test(rl.l3.f)) fail(`Lesson 3's 🛠 Practice on the Score Card isn't the Reception Listening Activity's 80% alone: ${JSON.stringify(rl.l3)}`);
   if (!rl.l4 || rl.l4.v !== '78%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l4.f) || !/ 76%/.test(rl.l4.f)) fail(`Lesson 4's 🛠 Practice isn't the activity (80%) and the mock call (76%): ${JSON.stringify(rl.l4)}`);
   if (!rl.d3 || rl.d3.v !== '80%' || !/the average of 1 scored activity: Reception Listening Activity[^;]* 80% \(32 of 40 points/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day isn't her graded Reception Listening Activity alone: ${JSON.stringify(rl.d3)}`);
-  if (!rl.practice || rl.practice.v !== '80%') fail(`📅 Day by Day's 🛠 Practice doesn't count the graded activity: ${JSON.stringify(rl.practice)}`);
+  // (🎯 Graded calls now reads the trainer's Mock Call scorecard, so her 76% mock call counts too, as on Lesson 4)
+  if (!rl.practice || rl.practice.v !== '78%' || !/Reception Listening Activity[^;]* 80%/.test(rl.practice.f) || !/ 76% \(Graded calls/.test(rl.practice.f)) fail(`📅 Day by Day's 🛠 Practice doesn't count the graded activity and the trainer's mock call: ${JSON.stringify(rl.practice)}`);
   if (!rl.ds3 || rl.ds3.v !== '80%') fail(`Ada's Day 3 on 📅 Day 1–16 isn't her graded Reception Listening Activity: ${JSON.stringify(rl.ds3)}`);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   const rx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception Listening Activity/.test(x.textContent)); return it ? it.innerText : ''; });

@@ -8,7 +8,7 @@
                                 (js/ft-process.js; 70% passes). ✍️ Knowledge Check (the process questions) is its
                                 own feature: its own button in the top bar, no page under 📚 Dashboard and no
                                 Admin tab.
-     🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
+     🎯 Graded calls            labreview:<id> (the trainer's Mock Call scorecard, js/ft-sessions.js ftMockCallItem), else callsim:<id>, the best graded call
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
      🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
@@ -104,10 +104,13 @@ window.LSH_PROGRAM = {
         return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`} : {name:`📖 ${rs.title}`, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
-      about:"Your best graded call on each mock-call line of the CMS Call Simulator.",
+      about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
       items: ctx => CALL_LESSONS.map(id => {
         const b = ((ctx.rec["callsim:"] || {}).best || {})["lesson" + id], name = title(id) + " · Mock Calls";
-        return b ? {name, pct:Number(b.score), note:"Best of " + plural(b.calls || 1, "graded call")} : {name, pct:null, note:"No graded call yet"};
+        const t = typeof window.ftMockCallItem === "function" ? window.ftMockCallItem(ctx, id) : null;
+        if(t && t.pct != null) return {name, pct:t.pct, at:t.at, note:t.note + (b ? ` · Call Simulator best ${Number(b.score)}%` : "")};
+        const redo = t && t.redo ? "The trainer asked for a redo · " : "";
+        return b ? {name, pct:Number(b.score), note:redo + "Best of " + plural(b.calls || 1, "graded call")} : {name, pct:null, note:redo ? redo + "not scored yet" : "No graded call yet"};
       })},
     {id:"calendar", icon:"📅", label:"Calendaring Simulators", key:"calsim:",
       about:"Each week you worked on: your trainer’s score once they release it, until then your best automated review.",

@@ -46,7 +46,8 @@ import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
 import { handleCalWeek } from "./calweek-api.js";
 import "./js/ft-minutes-rules.js";   // 🎧 the Transcription Activity's checks, shared with the page (js/ft-transcribe.js)
-import "./js/ft-rubrics.js";         // the scorecards' criteria and weights (the Transcription Activity's, for its automatic score)
+import "./js/ft-rubrics.js";
+import "./js/ft-day-activities.js";   // 📅 the 16 training days and what each one asks for (FTDays): which parts of a day count         // the scorecards' criteria and weights (the Transcription Activity's, for its automatic score)
 import { TRANSCRIBE_KEYS } from "./transcribe-keys.js";   // 🎧 the two interviews' transcripts: never sent to a page
 import { ASSESS_KEYS } from "./assess-keys.js";   // 🔑 the on-platform assessments' answer keys (js/ft-assess.js): never sent to a page   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
@@ -2394,9 +2395,18 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
   // (📅 a batch's first training day: the Task Tracker and the Monitoring Sheet are set up that day, not updated yet, so
   // they don't count — left out of the day's %, not a 0)
+  // (📅 and any part the day doesn't ask for is left out too, not a 0: the Day's outputs only on a day with something to hand
+  // in — an assessment, an answer sheet, an activity or exercise, homework for the Assessments/Activities folder — and the
+  // Platform only on a day with work on the platform; the Typing & Spelling Tests and the EOD are every day's)
   { const st1 = batchStartDate(rec.batch) || (drive && drive.startDate) || "";
-    if (st1 && D >= st1) { let k = 0; for (let t = Date.parse(st1 + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 2; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++;
-      if (k === 1) { parts.tracker = null; parts.monitor = null; } } }
+    if (st1 && D >= st1) { let k = 0; for (let t = Date.parse(st1 + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++;
+      if (k === 1) { parts.tracker = null; parts.monitor = null; }
+      const FD = globalThis.FTDays, dd = FD && FD.of ? FD.of(k) : null;
+      if (dd) { const its = (dd.items || []).filter((x) => !/^(Typing Test|Spelling Test|Free Communication)/.test(x.t || ""));
+        const handIn = its.some((x) => x.at === "drive" || x.assess || (x.at === "gc" && !/Metrics/i.test(x.t || "")) || (x.at === "offline" && /folder|upload|submit/i.test(x.t || "")));
+        const onPlatform = its.some((x) => x.at === "tool" || x.at === "session");
+        if (!handIn) parts.outputs = null;
+        if (!onPlatform) parts.platform = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
   const vals = Object.values(parts).filter((v) => typeof v === "number");

@@ -792,6 +792,16 @@ window.ftSessionItems = ctx => {
     if(t != null) return {name, at, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
     return {name, at, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
 };
+// 🎯 a lesson's Mock Call as the trainer scored it on 🧑‍🏫 Graders (labreview:<id>.acts, the scorecard): for the Scorecard's
+// Graded calls (js/ft-program.js), Passed or Failed; null when the trainer hasn't scored it (a Redo stays off until done again)
+window.ftMockCallItem = (ctx, lesson) => {
+  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
+  const a = list.find(x => Number(x.lesson) === Number(lesson) && /mock call/i.test(x.kind || "") && mine[x.id]);
+  if(!a) return null;
+  const r = mine[a.id], res = RES(r), t = tScore(r);
+  if(res === "Not yet" || res === "Redo") return {redo: res === "Redo"};
+  return {pct: t != null ? t : res === "Passed" ? 100 : null, at: r.at || "", note: `Trainer’s scorecard · ${res}${r.date ? " · " + r.date : ""}${r.facilitator ? " · " + r.facilitator : ""}`};
+};
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
   // 🎧 a Transcription Activity recording the trainer hasn't scored: its automatic score (trackerreview:<id>.transcribe[n],
