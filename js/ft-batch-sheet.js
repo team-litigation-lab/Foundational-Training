@@ -115,6 +115,11 @@ async function loadData(){
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     // (process:<id>: the Knowledge Checks' graded answers, each answer's feedback and the summary, for the scores' context)
     const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:", "assess:"];
+    // (🔁 first the scores given on the simulators — the Google Calendar Simulator's scorecard, Ring Channel's graded calls —
+    // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
+    // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
+    if(state.isAdmin && typeof authFetch === "function")
+      for(let i = 0; i < ppl.length; i += 40){ try{ await authFetch("/api/sim-scores/sync", {ids: ppl.slice(i, i + 40).map(p => p.id)}); }catch(err){} }
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
@@ -424,7 +429,9 @@ function trainerCtx(a, title){
   const why = [crit.length ? `The trainer scored ${crit.length} criteria on the ${rb.title} rubric: weighted average ${a.rubric.avg != null ? Number(a.rubric.avg).toFixed(2) : "–"}/5${pct_ != null ? ` = ${pct_}%` : ""}` : pct_ != null ? `The trainer's score: ${pct_}%` : "",
     res !== "Not yet" ? `Result: ${res}${redo ? " (off the scorecards until it is done again)" : ""}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
   return {name: title, pct: redo ? null : pct_, status: res === "Not yet" ? "" : res, why, best: best.length ? best : (!crit.length && res === "Passed" ? ["Passed with the trainer"] : []),
-    improve: low.length ? low : redo ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer"};
+    improve: low.length ? low : redo ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer",
+    // (each criterion of its scorecard, for the day's table: its own row under the mock call or demo)
+    crit: crit.map(c => ({n: c.n, s: Number(c.s), fb: c.fb}))};
 }
 // 🟢 a Practice Session: its latest submitted attempt's checks, the trainer's review, the AI's evaluation
 function sessionCtx(R, it){
@@ -477,14 +484,24 @@ function lastDayOf(){
     else if(it.at === "trainer" || it.at === "session") m[it.at + "|" + it.id] = d.day; }));
   return (B.lastDay = m);
 }
+// 🗂 the day's scored work by kind, each its own section on a trainee's day: mock calls, demos, Practice Sessions, the
+// assessments and graded activities, the Knowledge Checks
+function groupOf(it){
+  if(it.at === "trainer") return /demo/i.test(it.kind || "") || /demo/i.test(it.t || "") ? "🎓 Demos" : /mock/i.test(it.kind || "") || /mock/i.test(it.t || "") ? "☎ Mock calls" : "🧑‍🏫 With the trainer";
+  if(it.at === "session") return "🟢 Practice Sessions";
+  if(it.at === "tool" && it.id === "process") return "✍️ Knowledge Checks";
+  if(it.assess || it.at === "drive") return "📝 Assessments & activities";
+  return "📝 Assessments & activities";
+}
 function dayDeliverables(p, d){
   const R = B.data.rec[p.id] || {}; R.src = R.src || {};
   const out = [], acts = (((R.src["labreview:"] || {}).acts) || {}), list = dayStatus(p, d), L = lastDayOf();
   const later = k => L[k] != null && L[k] !== d.day ? L[k] : null;
   list.forEach(x => {
     // (W1-OVERRIDE: a Week 1 activity with no score reads Done, with the note)
-    const push = (...os) => out.push(...os.map(o => x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o));
-    const it = x.it, lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
+    const it = x.it, grp = groupOf(it);
+    const push = (...os) => out.push(...os.map(o => Object.assign({group: grp}, x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o)));
+    const lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
     // (Day 6's Calendar Management Mock Calls practice isn't on the scores: the scored call is the Calendar Management Mock
@@ -508,14 +525,14 @@ function dayDeliverables(p, d){
   Object.entries(ACTS).filter(([k, a]) => a.submit && Number(k.split(":")[0]) === Number(d.day)).forEach(([, a]) => {
     const key = (a.submit.items || []).join("-"); if(seen.has(key)) return; seen.add(key);
     const r = items[key]; if(!r) return; const g = r.result || {};
-    out.push({name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: num100(g.score), status: r.onTime ? "On time" : "Late",
+    out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: num100(g.score), status: r.onTime ? "On time" : "Late",
       why: [g.score != null ? `${num100(g.score)}% from the review of the entries` : "Submitted", r.onTime ? "on time (before 5:00 PM ET)" : "late (after 5:00 PM ET)", g.context ? clip(g.context, 260) : ""].filter(Boolean).join(", ").replace(/, ([^,]*)$/, ". $1"),
       best: (g.items || []).filter(x => x.found).slice(0, 3).map(x => `#${x.n} ${x.title || ""} is in`), improve: [...(g.redFlags || []), ...(g.improve || [])].slice(0, 4).map(x => clip(x, 200)), by: "📒 Reviewed"});
   });
   // 💬 the trainer's day-by-day feedback on the day's lesson (sent only: a draft is the trainer's own)
   const fb = (((R.feedback || {}).days) || {});
   (d.lessons || []).forEach(l => { const f = fb[l]; if(f && f.status === "sent" && (f.summary || f.rating))
-    out.push({name: `💬 Trainer's feedback: ${lessonName(l)}`, pct: null, status: f.rating || "", why: clip(f.summary || "", 420), best: [], improve: [], by: "💬 Trainer"}); });
+    out.push({group: "💬 Trainer feedback", name: `💬 Trainer's feedback: ${lessonName(l)}`, pct: null, status: f.rating || "", why: clip(f.summary || "", 420), best: [], improve: [], by: "💬 Trainer"}); });
   return out;
 }
 const dayAvg = xs => avgOf(xs.map(x => x.pct));
@@ -528,7 +545,7 @@ function dayScoresTable(){
         .concat(D.map((d, i) => { const xs = per[i], sc = xs.filter(x => x.pct != null), done = xs.filter(x => x.pct != null || /Done|Passed/.test(x.status)).length;
           return {v: avgs[i] != null ? pct(avgs[i]) : done ? `${done}/${xs.length} done` : "", f: `Day ${d.day} · ${d.role}: ` + (xs.length ? xs.map(x => `${x.name.replace(/^\S+\s(?=Knowledge|Monitoring|Trainer)/, "")} ${x.pct != null ? x.pct + "%" : x.status || "—"}`).join(" · ") : "no deliverables")
             + (sc.length ? ` = ${pct(avgs[i])}` : ""), cls: "gs-num " + (avgs[i] != null ? tone(avgs[i]) : done ? "gs-mid" : ""),
-            parts: xs.map(x => ({name: x.name, v: x.pct != null ? x.pct + "%" : x.status || "—", tone: x.pct != null ? tone(x.pct) : /Done|Passed|On time/.test(x.status) ? "gs-hi" : /Not yet|Late/.test(x.status) ? "gs-lo" : "", text: x.why || ""}))}; }));
+            parts: xs.map(x => ({name: x.name, group: x.group || "", crit: x.crit || null, v: x.pct != null ? x.pct + "%" : x.status || "—", tone: x.pct != null ? tone(x.pct) : /Done|Passed|On time/.test(x.status) ? "gs-hi" : /Not yet|Late/.test(x.status) ? "gs-lo" : "", text: x.why || ""}))}; }));
     })};
 }
 function dayScoresHtml(){
@@ -991,11 +1008,15 @@ function dayExtras(p, d, dt){
   let n = 0; for(let k = 1; k <= 40; k++) if(dayDate(k) === d){ n = k; break; }
   // (📅 that training day's scored deliverables, each with its score and why: 📅 Day 1–16: Detailed Scores, here on its day)
   if(n && dt){ const r = rowFor(dt, p, 0, 1), k = dt.head.indexOf("Day " + n), c = r && k >= 0 ? r[k] || {} : null;
-    if(c && (c.v || (c.parts || []).length)) out.push({name: `📅 Day ${n} score`, v: stripTags(c.v) || "—", tone: (String(c.cls || "").match(/gs-(hi|mid|lo)/) || [""])[0], text: stripTags(c.f || "")},
-      ...(c && Array.isArray(c.parts) ? c.parts.map(x => Object.assign({}, x, {name: "· " + stripTags(x.name)})) : [])); }
+    // (the day's scored work, each kind its own section — ☎ Mock calls, 🎓 Demos, 🟢 Practice Sessions, 📝 Assessments &
+    // activities, ✍️ Knowledge Checks — under one heading with the day's score; no "· " rows under a summary row repeating them)
+    if(c && (c.v || (c.parts || []).length)) out.push({header: true, group: `📅 Day ${n} scored work`, groupV: stripTags(c.v) || "not scored yet"},
+      ...(c && Array.isArray(c.parts) ? c.parts.map(x => Object.assign({}, x, {name: stripTags(x.name).replace(/^· /, "")})) : [])); }
   const fb = (((B.data.rec[p.id] || {}).feedback || {}).days) || {}, ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
-  Object.entries(fb).filter(([, v]) => v && v.status === "sent" && v.sentAt && ptd(v.sentAt) === d).forEach(([l, v]) =>
-    out.push({name: "💬 Trainer feedback", v: v.rating || "—", tone: ratingTone(v.rating), text: `${lessonName(Number(l))}${v.summary ? ": " + String(v.summary).replace(/\s+/g, " ").slice(0, 400) : ""}`}));
+  // (a lesson's feedback already listed with the day's scored work isn't listed twice)
+  const told = new Set(out.filter(x => x.group === "💬 Trainer feedback").map(x => stripTags(x.name)));
+  Object.entries(fb).filter(([l, v]) => v && v.status === "sent" && v.sentAt && ptd(v.sentAt) === d && !told.has(`💬 Trainer's feedback: ${lessonName(Number(l))}`)).forEach(([l, v]) =>
+    out.push({group: "💬 Trainer feedback", name: "💬 Trainer feedback", v: v.rating || "—", tone: ratingTone(v.rating), text: `${lessonName(Number(l))}${v.summary ? ": " + String(v.summary).replace(/\s+/g, " ").slice(0, 400) : ""}`}));
   return out;
 }
 // a table's groups that repeat the same columns (two or more): {sub: their headings, groups: [{label, cols}], cols: every index}
@@ -1009,7 +1030,15 @@ function matrixOf(x){
   return {sub: same[0].cols.map(k => x.head[k]), groups: same, cols: same.flatMap(g => g.cols)};
 }
 // a day's activities / assessments, a row each: what, its score or status, and how it went
-const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`).join("")}</tbody></table>`;
+// (a day's parts in sections — ✅ Daily compliance, then each kind of scored work — with a section's header once, and a mock
+// call's or demo's scorecard criteria, each its own row under it)
+const critTone = v => v >= 4 ? "gs-hi" : v >= 3 ? "gs-mid" : "gs-lo";
+const partsTable = ps => { let g0 = null;
+  return `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => {
+    const head = x.group && x.group !== g0 ? `<tr class="bs-parts-g${x.header || /compliance/i.test(x.group) ? " bs-parts-top" : ""}"><th colspan="3">${e(x.group)}${x.groupV ? ` <span class="bs-parts-gv">${e(x.groupV)}</span>` : ""}</th></tr>` : ""; if(x.group) g0 = x.group;
+    if(x.header) return head;
+    return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
+      + (Array.isArray(x.crit) ? x.crit.map(c => `<tr class="bs-parts-c"><td class="bs-parts-n">↳ ${e(c.n)}</td><td class="bs-parts-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td class="bs-parts-t">${e(c.fb || "")}</td></tr>`).join("") : ""); }).join("")}</tbody></table>`; };
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch)
@@ -1099,7 +1128,7 @@ function outputsTable(){
           return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({name: `${a.icon} ${a.label}`, v: a.pct == null ? "—" : Math.round(a.pct) + "%", tone: tone(a.pct), text: a.text})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.pct == null ? "—" : Math.round(a.pct) + "%", tone: tone(a.pct), text: a.text})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -2205,6 +2234,11 @@ body.bs-wide .ft-admin-screen{padding-left:10px;padding-right:10px;}
 body.bs-wide .bs-card{padding-left:10px !important;padding-right:10px !important;}
 body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
 body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !important;}   /* (📦 Intake Packets, wide the same way) */
+/* (a trainee's day in sections: each section's heading a band across the table, a scorecard's criteria indented under it) */
+.bs-parts tr.bs-parts-g th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 14px Arial,sans-serif;letter-spacing:.02em;padding:6px 10px;border-top:2px solid #AEB6C6;}
+.bs-parts tr.bs-parts-g.bs-parts-top th{background:#1E2340;color:#fff;font-size:14.5px;padding:7px 10px;}
+.bs-parts tr.bs-parts-g .bs-parts-gv{float:right;font-weight:700;color:#FDE68A;}
+.bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;}
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
