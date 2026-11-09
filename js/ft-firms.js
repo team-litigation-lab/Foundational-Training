@@ -1,11 +1,11 @@
 /* ============================================================
    🏛 Law Firm Profiles: each trainee works for one firm, on their own cases
    Loaded after js/ft-cases-data.js (the Training Library's case facts) and before js/ft-sessions.js.
-     • Firm profiles (settings:firms, admins write, everyone reads): the firm's name, location and time
+     • Firm profiles (settings:firms, read by everyone; there is no editor on the platform): the firm's name, location and time
        zone, hours, main line and greeting, attorneys, its rules by area (general, reception, calendar,
        intake, claims, medical records), its calendar color rule, statute of limitations, LOR deadline,
        records vendor and record types, and its caseload (Training Library cases in the CMS, MC-01 …).
-       Until an admin saves them, the three profiles in DEFAULT_FIRMS are used.
+       Unless profiles are saved there, the three in DEFAULT_FIRMS are used.
      • Every trainee works for the first firm profile, on that firm's caseload (no per-trainee assignment).
      • 🏛 My Firm (#/firm): 📁 Client Profile in the top bar — the firm's profile and rules, to read and
        acknowledge (✓ I've read my firm's rules, saved in sessions:<id>).
@@ -95,7 +95,7 @@ function loadFirms(force){
 const firms = () => F.firms || DEFAULT_FIRMS;
 const firmById = id => firms().find(f => f.id === id) || null;
 
-function rerender(){ if(["firm", "simulators", "session"].includes(state.view) || (state.view === "admin" && state.adminTab === "firms")) render(); }
+function rerender(){ if(["firm", "simulators", "session"].includes(state.view)) render(); }
 // Every trainee works for the same firm, and gets it the moment they arrive: the first profile.
 
 // Every trainee works for the first firm profile, on its caseload, in the order the profile lists it:
@@ -124,7 +124,7 @@ function firmFacts(f){
 function renderMyFirm(){
   if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Every trainee works for the first saved firm profile, on its caseload — its profile and its rules are what they see here.</p></div>`;
   const f = myFirm();
-  if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>No firm profile is set up yet. A trainer adds one in Admin → 🏛 Law Firms, and it reaches every trainee at once.</p></div>`;
+  if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>No firm profile is set up yet.</p></div>`;
   const ack = window.FTSessions && FTSessions.ack();
   const acked = ack && ack.firm === f.id;
   return `<div class="ff-hero"><p class="lp-eyebrow">📁 Client Profile · My Firm</p><h1>🏛 ${e(f.name)}</h1>
@@ -163,107 +163,8 @@ window.ftAdminTab = function(id, label, renderTab){
   };
 };
 
-/* ---------- Admin → 🏛 Law Firms: the profiles ---------- */
-const FA = {loaded:false, loading:false, edit:null};
-// Nothing per-trainee is read here any more — the screen is the firm profiles alone — so this loads
-// those and nothing else. Forced, so an admin always sees what is saved rather than a cached list.
-async function loadAdmin(){
-  FA.loading = true;
-  try{ await loadFirms(true); }catch(err){}
-  FA.loaded = true; FA.loading = false; rerender();
-}
-const lines = v => String(v || "").split("\n").map(x => x.trim()).filter(Boolean);
-function firmForm(f){
-  const r = f.rules || {};
-  return `<div class="card ff-edit"><h3>${f._new ? "➕ New firm" : "✏️ " + e(f.name)}</h3>
-    <div class="ff-grid">
-      <label>Firm name<input data-k="name" value="${e(f.name)}"></label>
-      <label>Location<input data-k="location" value="${e(f.location)}"></label>
-      <label>State (2 letters)<input data-k="state" value="${e(f.state)}" maxlength="2"></label>
-      <label>Time zone<input data-k="tz" value="${e(f.tz)}" placeholder="Eastern"></label>
-      <label>Hours<input data-k="hours" value="${e(f.hours)}"></label>
-      <label>Opens (HH:MM)<input data-k="start" value="${e(f.start)}" placeholder="09:00"></label>
-      <label>Closes (HH:MM)<input data-k="end" value="${e(f.end)}" placeholder="17:00"></label>
-      <label>Main line<input data-k="mainLine" value="${e(f.mainLine)}"></label>
-      <label class="ff-wide">Greeting<input data-k="greeting" value="${e(f.greeting)}"></label>
-      <label>Statute of limitations (years)<input data-k="solYears" type="number" min="1" max="10" value="${e(f.solYears)}"></label>
-      <label>LOR within (hours)<input data-k="lorHours" type="number" min="1" max="240" value="${e(f.lorHours)}"></label>
-      <label>Gap between events (min)<input data-k="gap" type="number" min="0" max="60" value="${e(f.gap)}"></label>
-      <label>Records vendor<input data-k="vendor" value="${e(f.vendor)}" placeholder="ChartSwap"></label>
-      <label>Records email<input data-k="recordsEmail" value="${e(f.recordsEmail)}"></label>
-      <label class="ff-wide">Record types to request (one per line)<textarea data-k="recordTypes" rows="2">${e((f.recordTypes || []).join("\n"))}</textarea></label>
-      <label class="ff-wide">Calendar colors by length (one per line: minutes | color; colors: ${GCAL.join(", ")})<textarea data-k="colors" rows="3">${e((f.colors || []).map(x => x[0] + " | " + x[1]).join("\n"))}</textarea></label>
-      <label class="ff-wide">Attorneys (one per line: name | role)<textarea data-k="attorneys" rows="3">${e((f.attorneys || []).map(x => x.name + " | " + x.role).join("\n"))}</textarea></label>
-      <label class="ff-wide">Team (one per line: name | role | ext)<textarea data-k="team" rows="3">${e((f.team || []).map(x => [x.name, x.role, x.ext || ""].join(" | ")).join("\n"))}</textarea></label>
-      <label class="ff-wide">Caseload: the firm’s cases in the CMS (Training Library ids, e.g. MC-01, MC-02 or MC-01–MC-20)<input data-k="cases" value="${e((f.cases || []).join(", "))}"></label>
-      ${RULE_AREAS.map(([k, label]) => `<label class="ff-wide">Rules · ${e(label)} (one per line)<textarea data-rule="${k}" rows="4">${e((r[k] || []).join("\n"))}</textarea></label>`).join("")}
-    </div>
-    <div class="ff-acts"><button class="btn btn-navy btn-sm" onclick="FTFirmsAdmin.save(this)">💾 Save firm</button><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.cancel()">Cancel</button></div></div>`;
-}
-function parseCases(v){
-  const out = [];
-  String(v || "").split(/[,\s]+/).filter(Boolean).forEach(t => {
-    const m = t.toUpperCase().match(/^MC-(\d+)(?:[–-]+(?:MC-)?(\d+))?$/);
-    if(!m) return;
-    const a = Number(m[1]), b = m[2] ? Number(m[2]) : a;
-    for(let i = Math.min(a, b); i <= Math.max(a, b); i++){ const id = "MC-" + String(i).padStart(2, "0"); if(caseById(id) && !out.includes(id)) out.push(id); }
-  });
-  return out;
-}
-function renderAdminFirms(){
-  if(!FA.loaded){ if(!FA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the firm profiles…</div>`; }
-  const fs = firms();
-  return `<div class="card ff-admin"><h3>🏛 Law Firm Profiles</h3>
-      <p class="ff-muted">Every trainee works for the first firm in this list, automatically. Its rules are what their Practice Sessions are checked against. ${F.firms ? "" : "These are the starting profiles: saving any firm saves them all."}</p>
-      <div class="ff-firms">${fs.map(f => `<div class="ff-firm"><b>${e(f.name)}</b><span>${e(f.location)} · ${e(f.tz)} · ${(f.cases || []).length} cases in its caseload${fs[0] && f.id === fs[0].id ? " · every trainee works here" : ""}</span>
-        <span class="ff-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.edit('${e(f.id)}')">✏️ Edit</button>${fs.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.remove('${e(f.id)}')">🗑</button>` : ""}</span></div>`).join("")}</div>
-      <div class="ff-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.edit('')">➕ New firm</button>${F.firms ? `<button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.restore()">↺ Restore the starting profiles</button>` : ""}</div></div>
-    ${FA.edit ? firmForm(FA.edit) : ""}
-    <div class="card ff-admin"><h3>👥 Who works here</h3>
-      <p class="ff-muted">Nobody assigns a firm any more: every trainee works for the first profile above from the moment they arrive, and its rules are what their Practice Sessions are checked against. Their sessions open on that firm's caseload, in the order listed in its profile.</p></div>`;
-}
-async function saveFirms(list){
-  const ok = await sharedSet("settings:firms", {v:1, firms:list, updatedAt:new Date().toISOString()});
-  if(ok === false){ toast("Couldn’t save the firms. Check your connection."); return false; }
-  F.firms = list; F.at = Date.now(); return true;
-}
-window.FTFirmsAdmin = {
-  refresh(){ FA.loaded = false; render(); },
-  edit(id){ const f = id ? firmById(id) : null; FA.edit = f ? JSON.parse(JSON.stringify(f)) : {_new:true, id:"", name:"", rules:{}, cases:[], colors:[[30, "Tangerine"], [60, "Tomato"]], solYears:2, lorHours:24, gap:15, vendor:"ChartSwap", recordTypes:["Medical records", "Itemized billing"], tz:"Eastern", start:"09:00", end:"17:00"}; render(); },
-  cancel(){ FA.edit = null; render(); },
-  async save(btn){
-    const box = btn.closest(".ff-edit"), f = Object.assign({}, FA.edit), val = k => (box.querySelector(`[data-k="${k}"]`) || {}).value || "";
-    ["name", "location", "state", "tz", "hours", "start", "end", "mainLine", "greeting", "vendor", "recordsEmail"].forEach(k => { f[k] = val(k).trim(); });
-    if(!f.name){ toast("Give the firm a name."); return; }
-    ["solYears", "lorHours", "gap"].forEach(k => { f[k] = Number(val(k)) || 0; });
-    f.state = f.state.toUpperCase();
-    f.recordTypes = lines(val("recordTypes"));
-    f.colors = lines(val("colors")).map(l => l.split("|").map(x => x.trim())).filter(x => Number(x[0]) > 0 && GCAL.includes(x[1])).map(x => [Number(x[0]), x[1]]);
-    f.attorneys = lines(val("attorneys")).map(l => { const [name, role] = l.split("|").map(x => x.trim()); return {name, role:role || ""}; });
-    f.team = lines(val("team")).map(l => { const [name, role, ext] = l.split("|").map(x => x.trim()); return {name, role:role || "", ext:ext || ""}; });
-    f.cases = parseCases(val("cases"));
-    f.rules = {}; RULE_AREAS.forEach(([k]) => { f.rules[k] = lines((box.querySelector(`[data-rule="${k}"]`) || {}).value); });
-    const list = firms().map(x => JSON.parse(JSON.stringify(x)));
-    if(f._new){ delete f._new; f.id = slugPart(f.name) || ("firm-" + Date.now().toString(36)); while(list.some(x => x.id === f.id)) f.id += "-2"; list.push(f); }
-    else list[list.findIndex(x => x.id === f.id)] = f;
-    btn.disabled = true;
-    if(await saveFirms(list)){ FA.edit = null; toast("✓ Firm saved."); }
-    btn.disabled = false; render();
-  },
-  async remove(id){
-    const f = firmById(id); if(!f) return;
-    const first = firms()[0] && firms()[0].id === id;
-    if(!confirm(`Delete ${f.name}?${first ? " Every trainee works for it, so the next profile in the list takes over." : ""}`)) return;
-    if(await saveFirms(firms().filter(x => x.id !== id))) toast("Firm deleted.");
-    render();
-  },
-  async restore(){
-    if(!confirm("Replace the saved firm profiles with the three starting ones? Your edits to them are lost.")) return;
-    if(await saveFirms(JSON.parse(JSON.stringify(DEFAULT_FIRMS)))) toast("The starting profiles are back.");
-    render();
-  },
-};
-// (no 🏛 Law Firms admin tab: taken off the Admin screen. The saved profiles in settings:firms are what My Firm shows.)
+// (no 🏛 Law Firms editor: the tab was taken off the Admin screen and its code removed. The saved profiles in settings:firms,
+//  else the starting ones, are what My Firm shows.)
 (function(){ const s = document.createElement("style"); s.id = "ft-firms"; s.textContent = `
 main.main-ff{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ff-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .ff-hero > p{margin:0 0 16px;color:var(--ink-soft);font-size:15px;}
@@ -277,15 +178,8 @@ main.main-ff{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ff-area{padding:8px 0;border-top:1px solid var(--line);} .ff-area > b{display:block;color:var(--navy);margin-bottom:4px;}
 .ff-case{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;margin:4px 0;} .ff-case a.btn{text-decoration:none;margin-left:auto;}
 .ff-mc{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;font-weight:800;background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;}
-.ff-admin, .ff-edit{padding:18px 20px;margin-bottom:16px;} .ff-admin h3, .ff-edit h3{margin:0 0 4px;color:var(--navy);}
-.ff-firms{display:grid;gap:8px;margin:10px 0;} .ff-firm{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff;}
-.ff-firm b{color:var(--navy);} .ff-firm > span{font-size:13px;color:var(--ink-soft);} .ff-firm .ff-acts{margin:0 0 0 auto;}
-.ff-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
-.ff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:10px 0;}
-.ff-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--navy);} .ff-grid .ff-wide{grid-column:1/-1;}
-.ff-grid input, .ff-grid textarea, .ff-tbl select, .ff-bar select, .ff-bulk select{font:inherit;font-weight:500;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+.ff-tbl select, .ff-bar select{font:inherit;font-weight:500;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;}
 .ff-bar{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;} .ff-bar > span{display:flex;gap:8px;align-items:center;}
-.ff-bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;font-size:13.5px;}
 .ff-scroll{overflow-x:auto;} .ff-tbl{width:100%;border-collapse:collapse;font-size:13.5px;}
 .ff-tbl th, .ff-tbl td{padding:6px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap;}
 .ff-tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#6B7088;background:#F7F8FB;} .ff-tbl select{max-width:220px;}
