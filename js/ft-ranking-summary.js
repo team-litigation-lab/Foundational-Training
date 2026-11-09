@@ -18,6 +18,9 @@
    Each score starts from the week's evidence (base), the AI writes the comments in the facilitator's DNA and may adjust a
    score the evidence clearly shows otherwise; without the AI, the base scores and comments built from the evidence stand.
    The trainer can ✎ edit any score or comment. Kept in rksum:<batch>:w<N> (a trainer's).
+   🔄 Updated daily: while a week's scores can still come in (the week and the two days after it), a summary drafted on an
+   earlier day is drafted again the first time a trainer opens the Weekly Report that day — the trainer's hand edits kept — and a
+   week already shared with the trainees is shared again, so each trainee's card follows the scores as they are given.
    ============================================================ */
 (function(){
 "use strict";
@@ -36,6 +39,11 @@ const begun = r => !!(r && r[0] && ptNow() > r[0]);
 // (a summary drafted before the scores were the week's own work only — it could carry an earlier week's over — isn't used:
 // the week is summarized again, SUMV 2)
 const SUMV = 2;
+// 🔄 a summary drafted on an earlier day (Pacific time) of a week whose scores can still come in: the week itself and the two
+// days after it (the last day's end-of-shift check, a mock call scored the next morning)
+const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
+const plusDays = (iso, n) => { const t = Date.parse(`${iso}T12:00:00Z`); return isFinite(t) ? new Date(t + n * 864e5).toISOString().slice(0, 10) : ""; };
+const stale = (d, r) => !!(d && d.at && r && r[1] && begun(r) && ptOf(d.at) < ptNow() && ptNow() <= plusDays(r[1], 2));
 const keyOf = (b, w) => `rksum:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
 const redraw = () => { const c = ctx(); if(c && c.rerender) c.rerender(); else if(typeof render === "function") render(); };
@@ -169,8 +177,9 @@ async function load(c){
   let d = null; try{ d = (await sharedGet(key)) || null; }catch(err){ d = null; }
   if(S.key !== key) return; S.data = S.data || (d && d.v >= SUMV ? d : null); S.loading = false; redraw();
 }
-async function draft(){
+async function draft(opts){
   // (asked while one runs — the automatic one, say —: it runs again as soon as that one is done, with what is asked now)
+  const daily = !!(opts && opts.daily);
   const c = ctx(); if(!c) return; if(S.busy){ S.again = true; return; } const key = keyOf(c.batch, c.week), ppl = c.people || [];
   if(!begun(c.range)){ toast(`Week ${c.week} has no scores yet: its first day isn't over.`); return; }
   if(!ppl.length){ toast("No approved trainee in this batch."); return; }
@@ -187,7 +196,10 @@ async function draft(){
   S.data = {v: SUMV, batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
   if(prev.sharedAt){ S.data.sharedAt = prev.sharedAt; S.data.editedAt = S.data.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
   if(await sharedSet(key, S.data) === false) toast("Couldn’t save the summary. Check your connection.");
-  S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; } toast(ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
+  S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; }
+  // (🔄 the daily update of a week already shared: each trainee's card follows the new scores too, without asking again)
+  if(daily && prev.sharedAt){ await FTRankSummary.share({quiet: true}); toast(`🔄 Week ${c.week}'s report updated with today's scores and shared again with the trainees.`); redraw(); return; }
+  toast(daily ? `🔄 Week ${c.week}'s report updated with the latest scores.` : ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
 const overall = r => r1(avg(COMP.map(([k]) => r.scores[k])));
 // (only the batch's trainees now: a trainee revoked, offboarded or archived after the week was summarized drops off the report and
@@ -279,6 +291,10 @@ window.FTRankSummary = {
     const k = keyOf(c.batch, c.week);
     if(!S.loading && S.key === k && !S.data && !S.busy && !(S.tried || {})[k] && (c.people || []).length && begun(c.range)){
       (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
+    // 🔄 and summarized again once a day while its scores are still coming in (stale), so the report follows the scores as they
+    // are given: what the trainer edited by hand stays, and a week already shared is shared again with the new scores
+    else if(!S.loading && S.key === k && S.data && !S.busy && !(S.daily || {})[k] && (c.people || []).length && stale(S.data, c.range)){
+      (S.daily = S.daily || {})[k] = 1; setTimeout(() => { if(S.key === k && S.data && stale(S.data, c.range)) draft({daily: true}); }, 0); }
     // (⏳ a week whose first day isn't over has no scores: not even a summary drafted early)
     const d = begun(c.range) ? S.data : null;
     // (the week and the report's buttons sit in its blue banner once there is a report; before it, on their own line)
@@ -297,15 +313,17 @@ window.FTRankSummary = {
     return {text: o == null ? "" : `${LBL[tone(o)]} (${o.toFixed(1)}/5).${best ? ` Strongest: ${best[2]} (${r.scores[best[0]].toFixed(1)}).` : ""}${low && low !== best ? ` To improve: ${low[2]} (${r.scores[low[0]].toFixed(1)}).` : ""}`, ai: false};
   },
   busy: () => !!S.busy,
+  stale,   // (🔄 whether a kept summary is due its daily update: for the checks)
   draft, toggleEdit(){ S.edit = !S.edit; redraw(); },
   // 📤 each trainee gets their own card of this week in rankshare:<id> (reports), which only they and the trainers read
   // (worker.js canRead; a trainee can't write it): their scores, comments and the trainer's feedback, their rank and how many
   // were ranked — no one else's name or scores
-  async share(){
+  async share(opts){
+    const quiet = !!(opts && opts.quiet);
     const d = S.data; if(!d || S.sharing) return;
     const rows = ranked(), of = rows.filter(r => r.rank).length;
-    if(!rows.length){ toast("No trainee in this summary."); return; }
-    if(!confirm(`Share Week ${d.week}'s Weekly Progress Report with the ${rows.length} trainee${rows.length === 1 ? "" : "s"} of ${d.batch}?\n\nEach sees only their own card: their scores, comments and your feedback, and their rank.`)) return;
+    if(!rows.length){ if(!quiet) toast("No trainee in this summary."); return; }
+    if(!quiet && !confirm(`Share Week ${d.week}'s Weekly Progress Report with the ${rows.length} trainee${rows.length === 1 ? "" : "s"} of ${d.batch}?\n\nEach sees only their own card: their scores, comments and your feedback, and their rank.`)) return;
     S.sharing = true; redraw(); let bad = 0; const at = new Date().toISOString();
     for(const r of rows){
       const mine = {batch: d.batch, week: d.week, range: d.range || null, ai: !!d.ai, sharedAt: at, name: r.name, rank: r.rank || null, of, overall: r.overall,
@@ -314,7 +332,7 @@ window.FTRankSummary = {
         if(await sharedSet("rankshare:" + r.id, cur) === false) bad++; }catch(err){ bad++; }
     }
     if(!bad){ d.sharedAt = at; await sharedSet(keyOf(d.batch, d.week), d); }
-    S.sharing = false; toast(bad ? `Couldn’t share with ${bad} trainee(s). Try again.` : "📤 Shared: each trainee sees their own card in 📋 My Progress."); redraw();
+    S.sharing = false; if(!quiet || bad) toast(bad ? `Couldn’t share with ${bad} trainee(s). Try again.` : "📤 Shared: each trainee sees their own card in 📋 My Progress."); redraw();
   },
   // 🔒 a trainee's own reports (📋 My Progress): read from their rankshare:<id> only
   mine(me){
