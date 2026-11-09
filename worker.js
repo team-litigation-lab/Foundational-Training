@@ -2451,6 +2451,13 @@ async function dailyCompliance(env, id, D, o = {}) {
   Object.entries(cur.transcribe || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt || x.at) && pctN(x.pct) != null) graded.push({ what: "Transcription · Recording " + n, pct: pctN(x.pct) }); });
   Object.entries(cur.items || {}).forEach(([k, x]) => { if (x && x.result && onD(x.at) && pctN(x.result.score) != null) graded.push({ what: "Monitoring Sheet items #" + k.split("-").join(", #"), pct: pctN(x.result.score) }); });
   Object.entries((ses || {}).runs || {}).forEach(([k, r]) => { if (r && onD(r.submittedAt) && r.auto && pctN(r.auto.pct) != null) graded.push({ what: "Practice Session: " + k.split("|")[0], pct: pctN(r.auto.pct) }); });
+  // (📅 the calendaring activities submitted that day, by their saved checks: the Attorney Calendar Management Activity's latest
+  // submit on the 📅 Calendar Activity Check — calcheck:<id>, js/ft-calcheck.js — and 📅 Standard Training - Calendaring
+  // Activity's submitted calendar — calweek:<id>, calweek-api.js; practice — calpractice: — is never counted)
+  const [cck, cwk] = await Promise.all([get(`calcheck:${id}`).catch(() => null), get(`calweek:${id}`).catch(() => null)]);
+  const ckS = (((cck || {}).submits) || []).filter((x) => x && onD(x.at) && pctN(x.pct) != null).pop();
+  if (ckS) { graded.push({ what: "Attorney Calendar Management Activity", pct: pctN(ckS.pct) }); subs.push("Attorney Calendar Management Activity"); }
+  if (cwk && onD(cwk.submittedAt) && pctN(cwk.pct) != null) { graded.push({ what: "Standard Training - Calendaring Activity", pct: pctN(cwk.pct) }); subs.push("Standard Training - Calendaring Activity"); }
   const tk = (cur.days || {})[D];
   // 🖥 what they did on the platform itself that day (progress:<id>, the trainee's own saved progress; sessions:<id>): a lesson
   // deck finished, a Knowledge Check attempt, a Practice Session submitted, practice in the tools, a test taken, an answer sheet
