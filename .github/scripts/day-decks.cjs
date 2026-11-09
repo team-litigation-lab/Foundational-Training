@@ -237,9 +237,10 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     if (r.over > 2) fail(`Day ${n}'s card runs past its slide by ${r.over}px`);
     // every slide has something on it (a launch, its button)
     for (let i = 1; i < r.ids.length - 1; i++) {
-      await page.evaluate(i => FTDayDecks.to(i), i); await page.waitForTimeout(150);
-      const has = await page.evaluate(() => { const sh = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-sheet'), go = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-dv-go, .ftdd-mid .ftdd-deck .ftdd-ho');
-        return !!go || !!(sh && (sh.innerText.trim() || sh.querySelector('img, iframe, .ftdd-tile'))); });
+      await page.evaluate(i => FTDayDecks.to(i), i);
+      // (up to 3 s for a slide whose content arrives after it opens — Day 8's intake documents, read from their Drive folder)
+      const has = await page.waitForFunction(() => { const sh = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-sheet'), go = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-dv-go, .ftdd-mid .ftdd-deck .ftdd-ho');
+        return !!go || !!(sh && (sh.innerText.trim() || sh.querySelector('img, iframe, .ftdd-tile'))); }, null, { timeout: 3000, polling: 100 }).then(() => true, () => false);
       if (!has) fail(`Day ${n}'s slide ${r.ids[i]} is empty`);
     }
     if (n === 2 && !/^Law Firm Communication$/.test(r.title.trim())) fail(`Day 2's deck is headed "${r.title}"`);
