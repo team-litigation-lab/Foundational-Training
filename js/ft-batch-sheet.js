@@ -357,18 +357,18 @@ function kdPick(){
 // (an assessment item with a short answer — a matching letter, a term, a date — sits five to a line, so a long Part I takes
 // a few lines instead of a screen; an essay or a long answer keeps the whole width)
 const kdShort = it => !it.pending && !/\n/.test(String(it.answer || "")) && String(it.answer || "").length <= 40 && String(it.note || "").length <= 60 && String(it.q || "").length <= 60;
-function kcDetailHtml(){
-  if(!people().length || !B.data || !kcSheets().length) return "";
-  const {ppl, id, who} = kdPick();
+// ✍️ one trainee's Knowledge Checks answer by answer (grade, feedback, the trainer's comments) and their 📄 Assessments item by item:
+// on 🏅 Scorecard's breakdown and on the trainee's own page (single: every graded one open)
+function kdOneHtml(p, single){
   const fbTone = v => typeof v !== "number" ? "" : v >= 8 ? "gs-hi" : v >= 7 ? "gs-mid" : "gs-lo";
   const one = p => { const rows = kcRows(p), R = B.data.rec[p.id] || {};
     let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}) : ""; }catch(err){}
     const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
-    return `<div class="bs-kd-p">${who.length > 1 || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${rows.length} graded</small></h5>` : ""}
+    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${rows.length} graded</small></h5>` : ""}
       ${rep ? `<pre class="bs-kd-rep">${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
-        return `<details class="bs-kd"${who.length === 1 && (g.pct != null || g.subm) ? " open" : ""}><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+        return `<details class="bs-kd"${single && (g.pct != null || g.subm) ? " open" : ""}><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
             ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}</summary>
           ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
           ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
@@ -379,12 +379,18 @@ function kcDetailHtml(){
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
         return `<h5 class="bs-kd-sub">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
-          return `<details class="bs-kd"${who.length === 1 && (g || x.answered) ? " open" : ""}><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
+          return `<details class="bs-kd"${single && (g || x.answered) ? " open" : ""}><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
               ${g ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
                 <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
                 ${it.ok != null || it.pending ? `<div class="bs-kd-fb ${it.pending ? "gs-mid" : it.ok ? "gs-hi" : "gs-lo"}"><b>${it.pending ? "⏳ to the trainer" : (it.ok ? "✓" : "✗") + (it.pts != null ? ` ${it.pts}${it.max != null ? "/" + it.max : ""} pt${it.pts === 1 ? "" : "s"}` : "")}</b> ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
           </details>`; }).join(""); })()}</div>`; };
+  return one(p);
+}
+function kcDetailHtml(){
+  if(!people().length || !B.data || !kcSheets().length) return "";
+  const {ppl, id, who} = kdPick();
+  const one = p => kdOneHtml(p, who.length === 1);
   return `<div class="bs-ck bs-kdw">${meOn() ? `<h4>✍️ My Knowledge Checks & Assessments in detail</h4>` : `<label class="bs-ck-who">✍️ Knowledge Checks & Assessments in detail for <select onchange="FTBatchSheet.kdWho(this.value)"><option value="${ALL}" ${id === ALL ? "selected" : ""}>👥 Every trainee</option>${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
     <button type="button" class="bs-dl" onclick="FTBatchSheet.kdCsv()" title="Every trainee's Knowledge Checks, answer by answer: the grade, the feedback and the trainer's comments (.csv)">⬇ Download the breakdown</button>
     <p class="bs-note">Each Knowledge Check answer by answer: the grade out of 10 with its feedback, the trainer’s comment on it, the trainer’s overall comment and final score — as on the ✍️ Knowledge Check page.</p>
@@ -909,6 +915,29 @@ function everyGradeHtml(p, bare){
   // (📅 / 🟢 / 🎧 Review: buttons in 🛡 Admin Master Control now, not in each trainee's grades)
   return `${bare ? "" : `<tr class="bs-pt-sec"><th colspan="3">🔎 Every grade</th></tr>`}${out}`;
 }
+// 📝 a trainee's graded activities (worksheets and answer sheets graded on the platform, trackerreview:<id>.assess — Day 3's
+// Reception Listening Activity and the like — beside the 📄 Assessments): the grade, when, and the comments
+function activitiesHtml(p){
+  const gr = ((((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}, forms = window.FTAssess && typeof FTAssess.docs === "function" ? FTAssess.docs() : [];
+  const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
+  if(!items.length) return "";
+  return `<h5 class="bs-kd-sub">📝 Activities</h5>` + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
+    return `<details class="bs-kd"${g ? " open" : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : "not submitted"}</span>
+        ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}</summary>
+      ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}</details>`; }).join("");
+}
+// 📤 a date's extra lines on a trainee's page, under its activities in 📤 Daily outputs: 📅 that training day's own activities
+// and their score (as 📅 Day by Day works it out), and 💬 the trainer's feedback sent that day
+function dayExtras(p, d, dt){
+  const out = [];
+  let n = 0; for(let k = 1; k <= 40; k++) if(dayDate(k) === d){ n = k; break; }
+  if(n && dt){ const r = rowFor(dt, p, 0, 1), k = dt.head.indexOf("Day " + n), c = r && k >= 0 ? r[k] || {} : null;
+    if(c && (c.v || c.f)) out.push({name: `📅 Day ${n} activities`, v: stripTags(c.v) || "—", tone: (String(c.cls || "").match(/gs-(hi|mid|lo)/) || [""])[0], text: stripTags(c.f || "")}); }
+  const fb = (((B.data.rec[p.id] || {}).feedback || {}).days) || {}, ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
+  Object.entries(fb).filter(([, v]) => v && v.status === "sent" && v.sentAt && ptd(v.sentAt) === d).forEach(([l, v]) =>
+    out.push({name: "💬 Trainer feedback", v: v.rating || "—", tone: ratingTone(v.rating), text: `${lessonName(Number(l))}${v.summary ? ": " + String(v.summary).replace(/\s+/g, " ").slice(0, 400) : ""}`}));
+  return out;
+}
 // 🧑‍🏫 the Graders' Mock Calls & Demos (labreview:<id>.acts): each graded one, its score and its result — ✓ Passed, ↻ Redo or
 // ⏳ Not yet — as 🧑‍🏫 Graders saved it, in the trainee's 🏅 Grades
 function gradersHtml(p){
@@ -955,7 +984,9 @@ function perTraineeHtml(T){
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
-          : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true) : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
+          : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
+          : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "days"))))
+          : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
@@ -968,7 +999,7 @@ function perTraineeHtml(T){
     const sub = t => `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">${t}</td></tr>`;
     const part = (t, rows) => rows ? sub(t) + rows : "";
     const grades = `<tr class="bs-pt-sec"><th colspan="3">🏅 Grades</th></tr>`
-      + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average|feedback \(day by day\)/i.test(h))   // (the grading systems: below, with their grades)
+      + rowsOf(byId("scores"), h => /Overall %|Scorecard overall|Daily compliance|Weeks average/i.test(h))   // (💬 the day-by-day feedback: on its day, in 📤 Daily outputs)   // (the grading systems: below, with their grades)
       // (every grading system with each of its grades, in the same 🏅 Grades list; no lesson-by-lesson Score Card, Practice Lab
       // or Lessons here: the lessons and decks are in Compliance and Platform Utilization Monitoring)
       + everyGradeHtml(p, true) + gradersHtml(p);
@@ -977,8 +1008,11 @@ function perTraineeHtml(T){
     const intake = !meOn() && window.FTIntake && typeof FTIntake.cardHtml === "function" ? FTIntake.cardHtml(p.id) : "";
     // (🏅 Grades in place of the 🏅 Score Card; Compliance and Platform Utilization Monitoring at the very bottom, after the
     // trainee's own record)
-    const inGrades = ["scores", "scorecard", "practice", "lessons"], last = ["compliance"];
-    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + grades + intake + use.filter(x => x.id === "trainees").map(sec).join("")
+    // (📅 Day by Day: each training day's activities are in that day of 📤 Daily outputs, dayExtras)
+    const inGrades = ["scores", "scorecard", "practice", "lessons", "days"], last = ["compliance"];
+    // (✍️ in place of 📅 Day by Day: the Knowledge Checks answer by answer with the comments, the Assessments and the Activities)
+    const kd = `<tr class="bs-pt-sec"><th colspan="3">✍️ Knowledge Checks, Assessments &amp; Activities</th></tr><tr><td colspan="3" class="bs-pt-kd">${kdOneHtml(p, true)}${activitiesHtml(p)}</td></tr>`;
+    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + kd + grades + intake + use.filter(x => x.id === "trainees").map(sec).join("")
       + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t]) => `<span class="bs-pt-k ${e(t)}">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
@@ -1006,7 +1040,7 @@ function outputsTable(){
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
-  return {id: "outputs", title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
     tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
@@ -1163,11 +1197,19 @@ const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || (it
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
+// 🎧 a Transcription Activity recording's automatic score (trackerreview:<id>.transcribe[n], worker.js gradeTranscription),
+// for the submission it was worked out from: it counts until the trainer records theirs, and never sets Passed or Redo
+function autoTr(R, it){
+  const m = /^transcription-([12])$/.exec(String(it.id || "")); if(!m) return null;
+  const g = ((((R.src || {})["trackerreview:"] || {}).transcribe) || {})[m[1]], run = (((R.transcribe || {}).r) || {})[m[1]];
+  return g && typeof g.pct === "number" && run && run.submittedAt && run.submittedAt === g.submittedAt ? g : null;
+}
 function autoDone(R, d, it, p){
   const src = R.src || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   if(it.at === "session"){ const runs = ((src["sessions:"] || {}).runs) || {}; const k = Object.keys(runs).find(x => x.split("|")[0] === it.id && runs[x] && runs[x].submittedAt);
     return k ? {done: true, how: "Practice Session submitted " + when(runs[k].submittedAt)} : {done: false, how: "Practice Session not submitted yet"}; }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id];
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], g = a ? null : autoTr(R, it);
+    if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
     if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
     const res = resOf(a);
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
@@ -1217,8 +1259,8 @@ function scoreOf(R, d, it, p){
       return t != null ? {pct: t, how: "trainer's score"} : runs[k].submittedAt && runs[k].auto && typeof runs[k].auto.pct === "number" ? {pct: Math.round(runs[k].auto.pct), how: "automated checks"} : null; }).filter(Boolean);
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: xs.map(x => `${x.pct}% (${x.how})`).join(", ")} : null;
   }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null;
-    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : null; }
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null, g = a ? null : autoTr(R, it);
+    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
   if(it.assess){ const g = assessOf(R, it), v = gradePct(g);
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;

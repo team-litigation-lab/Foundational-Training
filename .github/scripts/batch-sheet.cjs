@@ -284,9 +284,11 @@ const failures = []; const fail = m => failures.push(m);
   if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
   // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
   if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
-  // (a classroom-assigned exercise the trainer ticks — at: "gc", scored by being done; the classroom lessons are off the scorecard)
-  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'gc' && /Exercise/.test(i.t)) || {}).t);
-  if (!roomT) fail('Day 1 has no exercise the trainer ticks');
+  // (a classroom activity the trainer ticks — at: "gc", scored by being done: Day 1's breakout handout; the Exercises are off
+  // the platform, and the classroom lessons are off the scorecard)
+  if (await page.evaluate(() => FTDays.DAYS.some(d => (FTDays.of(d.day).items || []).some(i => /Exercise$/.test(i.t) || i.kind === 'Exercise')))) fail('an Exercise is still on a day');
+  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'gc' && /Breakout/.test(i.t)) || {}).t);
+  if (!roomT) fail('Day 1 has no activity the trainer ticks');
   await page.evaluate(([id, k]) => FTBatchSheet.tick(id, k, true), [ids.Ada, '1|' + roomT]); await page.waitForTimeout(1500);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
@@ -371,6 +373,28 @@ const failures = []; const fail = m => failures.push(m);
   if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
   if (await page.evaluate(() => !!document.getElementById('bs-process') || /Scoring rationale/.test(document.querySelector('.bs-card').innerText))) fail('the ✍️ Process Questions table or its scoring rationale is still on the page');
+
+  // 🎧 Ben's Recording 1, scored automatically (trackerreview:<id>.transcribe, worker.js gradeTranscription): it counts on Day 9
+  // as "automatic check, not reviewed" while it is the submission it was worked out from, never as a Passed or a Redo, and the
+  // trainer's own score replaces it (Ben's records are put back as they were after)
+  { const sub = iso(now - 900e3), tr = { key: 'transcription', act: 'transcription-1', at: iso(now - 800e3), submittedAt: sub, pct: 83, scored: 6, ai: false, scores: [null, null, null, 5, 5, null, 5, null, 2.5, 4, 5], feedback: [] };
+    const day9 = async () => { await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
+      await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(500);
+      return page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'days'), r = t.rows.find(r => /Ben/.test(r[0].v)); return r ? r[t.head.indexOf('Day 9')] : null; }); };
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
+    await put('trackerreview:' + ids.Ben, { days: {}, transcribe: { 1: tr } });
+    let c9 = await day9();
+    if (!c9 || c9.v !== '83%' || !/Recording 1[^;]* 83% \(automatic check, not reviewed/.test(c9.f) || /Passed|Redo/.test(c9.f)) fail(`Ben's Day 9 doesn't count his automatic score as not reviewed: ${JSON.stringify(c9)}`);
+    // (resubmitted since: the score was for the submission before, so it doesn't count)
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: iso(now - 60e3) } } });
+    c9 = await day9();
+    if (c9 && c9.v === '83%') fail(`an automatic score of an earlier submission still counts on Day 9: ${JSON.stringify(c9)}`);
+    await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
+    await put('labreview:' + ids.Ben, { acts: { 'transcription-1': { status: 'Passed', score: 90, at: iso(now - 60e3) } } });
+    c9 = await day9();
+    if (!c9 || c9.v !== '90%' || !/90% \(trainer's score/.test(c9.f) || /automatic check/.test(c9.f)) fail(`the trainer's score didn't replace Ben's automatic one on Day 9: ${JSON.stringify(c9)}`);
+    for (const k of ['transcribe:', 'trackerreview:', 'labreview:']) await put(k + ids.Ben, null);
+    await day9(); }
 
   // 🕒 Recent progress: newest first, every kind
   const rc = by('recent').rows, kinds = rc.map(r => r[2]);

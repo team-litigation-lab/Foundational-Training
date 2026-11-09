@@ -81,26 +81,40 @@ const everyone = () => state.adminDataAll || state.adminData || [];
 /* ---------- the batches: a Batch ID is B + MMDDYY, the day it started, so the current batch is the active one that started last ---------- */
 // (a batch's first day as a time, for ordering: index.html batchStartDate — a B + DDMMYY Batch ID reads as its day; 0 when not a date)
 const startOf = b => { const d = typeof batchStartDate === "function" ? batchStartDate(b) : ""; return d ? Date.parse(d + "T00:00:00Z") : 0; };
+// (👥 an active trainee, the rule every trainer's list uses — js/ft-roster.js ftActiveTrainee: approved, and not archived,
+// rejected, offboarded, cleared or on the platform's block list — so a trainee removed elsewhere is off Graders too)
+const active = r => !!r && r.approved === true && !r.archived && !r.rejected && (!window.ftActiveTrainee || ftActiveTrainee(r));
 function activeBatches(){
-  const ks = new Set((state.adminData || []).filter(r => r.approved === true && !r.archived && !r.rejected).map(keyOf));
+  const ks = new Set((state.adminData || []).filter(active).map(keyOf));
   if(typeof NO_BATCH !== "undefined") ks.delete(NO_BATCH);
   return [...ks].sort((a, b) => startOf(b) - startOf(a) || String(b).localeCompare(String(a)));
 }
-const registered = b => (state.adminData || []).filter(r => r.approved === true && !r.archived && !r.rejected && keyOf(r) === b)
+const registered = b => (state.adminData || []).filter(r => active(r) && keyOf(r) === b)
   .sort((x, y) => String(x.name || "").localeCompare(String(y.name || "")));
 
 /* ============================================================
    📋 Admin → Mock Call Scorecards
    ============================================================ */
-const MS = {batch:"", wk:"", act:"", va:"", rv:{}, loadedFor:"", loading:false, draft:{}, saving:false};
+const MS = {batch:"", wk:"", act:"", va:"", rv:{}, tr:{}, loadedFor:"", loading:false, draft:{}, saving:false};
 const cellOf = (id, act) => ((((MS.rv[id] || {}).acts) || {})[act]) || {};
 const dkey = id => MS.act + "|" + id;
+// 🎧 the Worker's automatic score of a Transcription Activity recording (trackerreview:<id>.transcribe[n], worker.js
+// gradeTranscription), for transcription-1 / transcription-2
+function autoOf(id, act){
+  const m = /^transcription-([12])$/.exec(String(act || "")), g = m ? ((((MS.tr[id] || {}).transcribe) || {})[m[1]]) : null;
+  return g && g.key === "transcription" && Array.isArray(g.scores) ? g : null;
+}
 function draftOf(id){
   const k = dkey(id);
   if(!MS.draft[k]){
     const c = cellOf(id, MS.act), rb = RUB().forAct(curAct()), got = c.rubric && rb && c.rubric.key === rb.key ? c.rubric : {};
     MS.draft[k] = {status:window.ftResult ? ftResult(c) : c.status || "Not yet", redo:c.redo === true, score:tScore(c) == null ? "" : String(tScore(c)), date:c.date || "", comment:c.comment || "", facilitator:c.facilitator || lastFac(),
       scores:(got.scores || []).slice(), feedback:(got.feedback || []).slice(), scoreTyped:false, dirty:false};
+    // (a cell the trainer hasn't scored — no result, no score, no scorecard — starts from the automatic score, not saved
+    // until the trainer reviews it: ✓ Accept, or any change, then 💾 Save)
+    const auto = autoOf(id, MS.act);
+    if(auto && rb && auto.key === rb.key && !c.status && tScore(c) == null && !c.rubric)
+      Object.assign(MS.draft[k], {scores:auto.scores.slice(), feedback:auto.scores.map((v, i) => v == null ? "" : String(auto.feedback[i] || "")), score:auto.pct == null ? "" : String(auto.pct), autoFrom:auto.at});
   }
   return MS.draft[k];
 }
@@ -113,8 +127,9 @@ async function msLoad(force){
   if(MS.loading || (!force && MS.loadedFor === sig)) return;
   MS.loading = true;
   try{
-    const vals = await sharedGetMany(ids.map(id => "labreview:" + id));
-    ids.forEach((id, i) => { MS.rv[id] = vals[i] || {}; });
+    // (and trackerreview:, for the Transcription Activity's automatic scores)
+    const vals = await sharedGetMany(ids.flatMap(id => ["labreview:" + id, "trackerreview:" + id]));
+    ids.forEach((id, i) => { MS.rv[id] = vals[i * 2] || {}; MS.tr[id] = vals[i * 2 + 1] || {}; });
     Object.keys(MS.draft).forEach(k => { if(!MS.draft[k].dirty) delete MS.draft[k]; });   // (what isn't being edited shows what is saved)
     MS.loadedFor = sig;
   }catch(err){ toast("Couldn’t load the scorecards. Check your connection."); }
@@ -176,7 +191,8 @@ function renderMockScores(){
   const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
   // (the Result follows the score: a scored sheet still on "Not yet" gets Passed or Redo, unless the trainer picked one)
-  if(d && d.status === "Not yet") autoStatus(d);
+  // (not an automatic score the trainer hasn't reviewed yet: that stays "Not yet" until they do)
+  if(d && d.status === "Not yet" && !(d.autoFrom && !d.dirty)) autoStatus(d);
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
   const hasDates = t0Of(MS.batch) != null;
   const ctl = `<div class="fms-pick">
@@ -185,7 +201,7 @@ function renderMockScores(){
       <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
-          const res = window.ftResult ? ftResult(c) : c.status, tag = dd && dd.dirty ? " · ● not saved" : res && res !== "Not yet" ? ` · ${res}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
+          const res = window.ftResult ? ftResult(c) : c.status, tag = dd && dd.dirty ? " · ● not saved" : res && res !== "Not yet" ? ` · ${res}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : a && autoOf(x.id, a.id) ? " · 🤖 auto-scored, to review" : "";
           return `<option value="${e(x.id)}" ${x.id === MS.va ? "selected" : ""}>${e(x.name || x.id)}${tag}</option>`; }).join("")}</select>
         <button class="btn btn-ghost btn-sm" ${at >= 0 && at < all.length - 1 ? "" : "disabled"} onclick="FTMockScores.step(1)" title="The next trainee" aria-label="Next trainee">›</button><em>${at + 1} / ${all.length}</em></div>` : ""}
       </div>`;
@@ -201,13 +217,18 @@ function renderMockScores(){
   if(!r) return wrap(`<p class="fss-muted">No trainees registered in ${e(labelOf(MS.batch))} yet.</p>`);
   if(!ready) return wrap(`<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p>`);
   setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
-  const c = cellOf(r.id, a.id), id = e(r.id);
+  const c = cellOf(r.id, a.id), id = e(r.id), auto = autoOf(r.id, a.id), isTr = /^transcription-[12]$/.test(a.id);
+  // 🎧 the automatic score: where it came from, ✓ Accept (it then saves as the trainer's), and 🔁 Grade now (the Worker again)
+  const autoBar = !isTr ? "" : `<div class="fms-auto">${auto ? `🤖 <b>Auto-scored ${e(new Date(auto.at).toLocaleDateString())}</b> · ${auto.pct == null ? "—" : e(auto.pct) + "%"} on ${e(auto.scored)} of ${e(auto.scores.length)} criteria${auto.ai ? "" : " (no AI: you score the rest)"}${d.autoFrom && !d.dirty ? ` · review and Save
+      <button class="btn btn-navy btn-sm" type="button" data-ms-accept onclick="FTMockScores.accept('${id}')">✓ Accept the automatic score</button>` : ""}` : `🤖 No automatic score yet (scored when the trainee submits the recording).`}
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTMockScores.regrade('${id}')" title="Score the trainee’s submitted minutes again">🔁 Grade now</button></div>`;
   // (no "name · activity · batch · Saved:" line over the scoresheet: the pickers above say whose it is, and ● not saved is in the trainee dropdown)
   const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
-      <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
+      <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}"${d.autoFrom && d.scores[i] == null ? ` placeholder="you" title="The automatic check doesn’t score this one: you do"` : ""} aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
+    ${autoBar}
+    ${rb && (rb.key === "calendar" || rb.key === "transcription") && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
     <table class="ftms-tbl fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}</th><th>Score</th><th>Remarks</th></tr></thead><tbody>
       ${crit}
@@ -262,9 +283,25 @@ window.FTMockScores = {
   // one VA at a time: unsaved scores stay in their draft while another VA is shown, and 💾 Save saves every VA changed
   va(id){ MS.va = id; render(); },
   // ⤓ from the booking rule check (js/ft-calrules.js FTCalRules.fill): {criterion index: score}, never over a typed score
-  fillCrit(vals){ const id = MS.va, d = draftOf(id); let n = 0; Object.entries(vals || {}).forEach(([i, v]) => { if(d.scores[i] == null || d.scores[i] === ""){ d.scores[i] = v; n++; } });
+  // (and from ✍️ the writing check, js/ft-writing.js: notes, {criterion index: its Remarks}, where the Remarks are empty)
+  fillCrit(vals, notes){ const id = MS.va, d = draftOf(id); let n = 0; Object.entries(vals || {}).forEach(([i, v]) => { if(d.scores[i] == null || d.scores[i] === ""){ d.scores[i] = v; n++;
+      if(notes && notes[i] && !String(d.feedback[i] || "").trim()) d.feedback[i] = String(notes[i]).slice(0, 600); } });
     if(n){ d.dirty = true; if(!d.date) d.date = today(); if(!d.scoreTyped){ const avg = RUB().average(RUB().forAct(curAct()), d.scores); d.score = avg == null ? "" : String(Math.round(avg / 5 * 100)); } autoStatus(d); }
     render(); return n; },
+  // 🎧 ✓ Accept the automatic score: the trainee's draft, as filled in from it, becomes the trainer's to save (the Result
+  // follows its score, as when the trainer scores it)
+  accept(id){ const d = draftOf(id); d.dirty = true; if(!d.date) d.date = today(); autoStatus(d); render(); },
+  // 🔁 Grade now: the Worker scores the trainee's submitted minutes again (an admin's force), and the sheet shows it
+  async regrade(id){
+    const m = /^transcription-([12])$/.exec(MS.act); if(!m) return;
+    try{ const j = await api("/api/transcribe/grade", {id, n:Number(m[1]), force:true});
+      const tr = MS.tr[id] = MS.tr[id] || {}; tr.transcribe = Object.assign({}, tr.transcribe, {[m[1]]: j.grade});
+      const k = dkey(id); if(MS.draft[k] && !MS.draft[k].dirty) delete MS.draft[k];
+      toast(`🤖 Scored automatically: ${j.grade.pct == null ? "—" : j.grade.pct + "%"}. Review it, then Save.`); }
+    catch(err){ toast("Couldn’t grade it: " + err.message); }
+    render();
+  },
+  autoOf,
   step(n){ const all = registered(MS.batch), i = all.findIndex(r => r.id === MS.va), j = i + n; if(j >= 0 && j < all.length){ MS.va = all[j].id; render(); } },
   act(a){ MS.act = a; render(); },
   refresh(){ MS.loadedFor = ""; if(typeof loadAdminLedger === "function") loadAdminLedger(); else render(); },
@@ -287,6 +324,7 @@ window.FTMockScores = {
         autoStatus(d);
         cur.acts[act] = Object.assign({status:d.status || "Not yet", redo:!!d.redo, score:d.score === "" ? null : Math.round(Number(d.score)), date:d.date || today(),
           comment:String(d.comment || "").trim().slice(0, 4000), facilitator:String(d.facilitator || "").trim().slice(0, 120), at:new Date().toISOString()},
+          d.autoFrom ? {source:"auto-reviewed", autoAt:d.autoFrom} : {},
           rb && d.scores.some(x => x != null) ? {rubric:{key:rb.key, scores:rb.criteria.map((k, i) => d.scores[i] == null ? null : d.scores[i]),
             feedback:rb.criteria.map((k, i) => String(d.feedback[i] || "").trim().slice(0, 600)), avg:avg == null ? null : Math.round(avg * 100) / 100}} : {});
         if(await sharedSet("labreview:" + id, cur) === false) throw new Error("save");
@@ -604,6 +642,7 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-why{margin:12px 0 4px;padding:12px 16px;border:1px solid #C9D9B8;border-radius:10px;background:#F7FAF2;font-size:15px;line-height:1.5;color:#1B1E2E;}
 .fms-why h4{margin:0 0 6px;font-size:16px;color:#2F4A14;} .fms-why p{margin:0 0 6px;} .fms-why ul{margin:0 0 8px;padding-left:20px;} .fms-why li{margin:2px 0;}
 .fms-why-ok{color:#1E6B3A;font-weight:700;} .fms-why-imp{color:#8A3B12;font-weight:700;} .fms-assist{margin-top:8px;}
+.fms-auto{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;padding:8px 12px;border:1px solid #C7D2FE;border-radius:10px;background:#EEF2FF;color:#1B1E2E;font-size:14px;}
 .fms-tag{display:inline-block;margin-left:4px;font-size:11.5px;font-weight:800;border-radius:999px;padding:1px 8px;background:#EEF0F6;color:#4A5070;}
 .fms-tag.ok{color:#1E7F4F;background:#E7F5EE;} .fms-tag.mid{color:#7a5d00;background:#FEF7C3;} .fms-tag.dirty{background:#FEF7C3;color:#7a5d00;}
 @media (max-width:640px){ .fms-tbl{font-size:12.5px;} .fms-tbl th, .fms-tbl td{padding:4px 5px;} .fms-tbl th:nth-child(1){width:34% !important;} .fms-tbl th:nth-child(2){width:52px !important;}
