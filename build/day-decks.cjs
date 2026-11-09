@@ -928,7 +928,9 @@ function D10_SHARE(x){
     card("✅", "What you CAN share", ul(["Client’s Name (First and Last only – no middle name)", "Vehicle Information (e.g., License Plate Number)"]) +
       "<p><b>To check under the 3P insurance, you may also provide:</b></p>" + ul(["Client’s Address (City and State only)", "Phone Number (Give the law firm’s number)"])) +
     "</div>\n" +
-    card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>") +
+    card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>" +
+      // (the limits are the 3P carrier's: the client's own 1P carrier can be given her details)
+      "<p><b>This is for the 3P only.</b> For the client’s own <b>1P</b> carrier (MedPay/PIP, UM/UIM), you can provide these details when they ask.</p>") +
     "</div>\n";
 }
 // Day 14's notes for the work guide, in cards on two pages, as Day 12's (ftdd-d12: one height to a row, large and bold):
@@ -1549,6 +1551,17 @@ for(let n = 1; n <= 16; n++){
     if(/classroom discussion|discussion on/i.test(s.h) && LESSON_DECK.test(s.html)) throw new Error(`the lesson deck is still embedded on Day ${n} ${s.id}`);
   }
   decks[n] = Object.assign({day: n, title: d.title, heading: d.heading}, pqDay ? {pq: true} : {}, {slides});
+}
+// a slide that moves to another day's deck, last before its end: { <from day>: { <slide id>: [<to day>, <its id there>] } }.
+// Day 9's Intake Mock Calls Metrics closes Part 2 of Intake Training (Day 8), after the demo's preparation; Part 3 (Day 9)
+// opens on the Sample Transcription Guide. (A new id on Day 8, mcm: nothing saved under Day 8's old s2, off the deck, follows it)
+// (its "AM:" was Day 9's morning: on Day 8 it follows the afternoon's demo preparation, so PM)
+const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]}};
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh]] of Object.entries(ids)){
+  const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
+  const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
+  const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}));
 }
 function noKB(html){
   return String(html || "")

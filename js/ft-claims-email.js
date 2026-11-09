@@ -37,7 +37,9 @@ const CASES = [
     ["What happened", "Side-swiped by a driver who fled the scene (hit-and-run): no 3P insurance known. Shoulder injury; ER visit, then physical therapy."],
     ["1P policy", "Progressive 9302-551-7 (the client’s own)"], ["Coverages to open", "Medical Payments (MedPay/PIP) and Uninsured Motorist (UM)"],
     ["Police report", "NHP 26-044187"], ["Claim number", "Not known yet"], ["Claims inbox", "claims@progressive.example"],
-    ["Signed by the client", "Insurance Authorization (lets the carrier release her policy documents to the firm)"]],
+    ["Signed by the client", "Insurance Authorization (lets the carrier release her policy documents to the firm)"],
+    // (1P: her own carrier may be given her details — the never-share rule is a 3P carrier's)
+    ["Client’s phone · email · DOB", "(702) 555-0148 · aisha.thompson@mail.example · 06/14/1990 (her own carrier may have them)"]],
     files: () => [lorFile("1P", "Progressive"), "Insurance Authorization – Aisha Thompson (signed).pdf", "Police Report – NHP 26-044187.pdf", "Driver’s License – Aisha Thompson.jpg"],
     adj: {from: "Lena Ortiz <lortiz@progressive.example>", subject: "Your client Aisha Thompson – policy 9302-551-7",
       body: "Hello,\n\nWe received your letter and have opened a claim for Ms. Thompson’s 10/03/2026 loss. Before I can release the declarations page I will need a signed authorization from our insured.\n\nWe would also like to schedule a recorded statement with Ms. Thompson this week. Could you send me her phone number so I can set that up with her directly?\n\nThank you,\nLena Ortiz\nFirst Party Claims, Progressive"}},
@@ -76,7 +78,7 @@ const asText = (d, c) => `To: ${d.to}\nCc: ${d.cc || "(none)"}\nSubject: ${d.sub
 function caseFile(c){
   return `<aside class="ce-file card"><p class="ce-eyebrow">📁 Case file · ${e(c.tag)}</p><h3>${e(c.title)}</h3>
     <dl>${c.file.map(([k, v]) => `<dt>${e(k)}</dt><dd>${e(v)}</dd>`).join("")}</dl>
-    <p class="ce-rule">🔒 <b>Never</b> share the client’s DOB, SSN, email or VIN with a 3P carrier, and never set up direct contact with a represented client: everything goes through the firm.</p></aside>`;
+    <p class="ce-rule">🔒 <b>Never</b> share the client’s DOB, SSN, email or VIN with a 3P carrier, and never set up direct contact with a represented client: everything goes through the firm. <b>1P is different:</b> the client’s own carrier can be given the details it asks for (her phone, email, date of birth).</p></aside>`;
 }
 function taskRow(c, t){
   const id = c.id + "_" + t.k, locked = t.k === "adj" && !ready(c), g = graded(), r = g && g.items ? g.items[id] : null;
