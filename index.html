@@ -13481,7 +13481,9 @@ async function loadAdminLedger(){
     const key = keys[i];
     const rec = all[i];
     if(!rec) continue;
-    const badName = rec.name && !cleanName(rec.name);
+    // (a name already repaired below fails cleanName too: skip it, or it is rewritten on every load)
+    const repaired = rec.flaggedInvalidInput && /^Invalid name \(/.test(String(rec.name||""));
+    const badName = rec.name && !repaired && !cleanName(rec.name);
     const badBatch = rec.batch && !cleanBatch(rec.batch);
     if(badName || badBatch){
       if(badName) rec.name = "Invalid name (" + String(rec.id||"").slice(0,30) + ")";
