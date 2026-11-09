@@ -145,15 +145,15 @@ const failures = []; const fail = m => failures.push(m);
   const sb2 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
   // 🔗 every trainee with a link issue is listed, each link that isn't right with why and the trainer's fixes (↗ Open, ✓ Mark as
   // opening, ✎ Re-link): Ada's Monitoring Sheet that can't be opened, and Ben's and Cy's links not linked yet
-  { const li = await page.evaluate(() => [...document.querySelectorAll('.bs-share-list > li')].map(l => ({ t: l.innerText, open: !!l.querySelector('a[href*="docs.google.com"]'), mark: /lkMark\(/.test(l.innerHTML), relink: /leWho\(/.test(l.innerHTML) })));
+  { const li = await page.evaluate(() => [...document.querySelectorAll('.bs-li > tbody')].map(l => ({ t: l.innerText, open: !!l.querySelector('a[href*="docs.google.com"]'), mark: /lkMark\(/.test(l.innerHTML), relink: /leWho\(/.test(l.innerHTML) })));
     const ada = li.find(x => /Ada Active/.test(x.t)), ben = li.find(x => /Ben/.test(x.t));
     if (!ada || !/📒 Monitoring Sheet/.test(ada.t) || !/can.t open/i.test(ada.t) || !ada.open || !ada.mark || !ada.relink) fail(`Ada's failing link isn't listed with why and the trainer's fixes: ${JSON.stringify(ada)}`);
-    if (!ben || !/not linked yet/.test(ben.t) || !/2 of 6 links right/.test(ben.t)) fail(`a trainee with links not saved yet isn't listed: ${JSON.stringify(li.map(x => x.t.slice(0, 120)))}`); }
+    if (!ben || !/Not linked/.test(ben.t) || !/2 of 6/.test(ben.t)) fail(`a trainee with links not saved yet isn't listed: ${JSON.stringify(li.map(x => x.t.slice(0, 120)))}`); }
   // 🗄 Archive one account from the link issues list (not a trainee, or one who left): its record archived, after a confirm
   { const zid = 'zed-notatrainee--' + BATCH.toLowerCase();
     await put('trainee:' + zid, { id: zid, name: 'Zed Notatrainee', batch: BATCH, approved: true, registeredAt: new Date().toISOString() });
     await page.evaluate(() => { window.__conf = window.confirm; window.confirm = () => true; });
-    const btn = await page.evaluate(() => !!document.querySelector('.bs-share-list .bs-arch1'));
+    const btn = await page.evaluate(() => !!document.querySelector('.bs-li .bs-arch1'));
     await page.evaluate(id => FTBatchSheet.archiveOne(id, 'Zed Notatrainee'), zid); await page.waitForTimeout(1200);
     await page.evaluate(() => { window.confirm = window.__conf; });
     const z = await get('trainee:' + zid);
@@ -165,14 +165,14 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
     const sb3 = await page.evaluate(() => (document.querySelector('.bs-share') || {}).innerText || '');
     const cell = await page.evaluate(() => { const t = FTBatchSheet.tables(); const r = t && t.find(x => x.id === 'compliance').rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => c.v).join(' | ') : ''; });
-    if (!/not in their Drive — the batch’s Drive was searched/.test(sb3) || !/make it from the template/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
+    if (!/Ada Active[\s\S]*Monitoring Sheet\s+Not in their Drive/.test(sb3) || !/Drive searched/.test(sb3)) fail(`a Monitoring Sheet that isn't in her Drive isn't said so: ${sb3.slice(0, 400)}`);
     if (!/✗ Not in Drive/.test(cell)) fail(`✅ Compliance doesn't show her Monitoring Sheet as ✗ Not in Drive: ${cell}`);
     delete rv.notFound; await put('trackerreview:' + ids.Ada, rv); }
   // ✓ fixed by the VA (her link now opens): she drops off the list by herself
   { const rv = (await get('trackerreview:' + ids.Ada)) || { days: {} }, dv = (await get('drive:' + ids.Ada)) || {};
     const was = JSON.stringify(rv.verify || {}); rv.verify = rv.verify || {}; Object.keys(rv.verify).forEach(k => { if (dv[k]) rv.verify[k] = { ok: true, mine: true, v: 2, url: String(dv[k]).slice(0, 500), at: new Date().toISOString() }; });
     await put('trackerreview:' + ids.Ada, rv); await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
-    const after = await page.evaluate(() => [...document.querySelectorAll('.bs-share-list > li')].map(l => l.innerText).join(' | '));
+    const after = await page.evaluate(() => [...document.querySelectorAll('.bs-li > tbody')].map(l => l.innerText).join(' | '));
     if (/Ada Active[^|]*Monitoring Sheet[^|]*can.t open/i.test(after)) fail(`a link the VA fixed stays on the issues list: ${after.slice(0, 300)}`);
     rv.verify = JSON.parse(was); await put('trackerreview:' + ids.Ada, rv); }
   await page.unroute('**/api/drive/status'); await page.unroute('**/api/drive/verify');

@@ -704,11 +704,26 @@ function linkIssues(p){
   let L = {}; try{ L = linkState(p).L; }catch(err){ return []; }
   return LINKS.filter(([k]) => L[k] && ISSUE_ST.test(L[k].st)).map(([k, l]) => ({k, l, x: L[k]}));
 }
+// what is wrong with one link, in a few words (the check's full message is on a hover)
+const FILE_IN = /\(("[^"]+")\)|its name is ("[^"]+")/;
 function issueWhy(p, it){
-  const x = it.x, c = x.c || {};
-  if(x.nf) return `<b class="bs-nf">not in their Drive</b> — the batch’s Drive was searched${x.nf !== true ? " " + e(when(x.nf)) : ""} and has no ${e(it.l)} with ${e(p.name)}’s name. They need to make it from the template and link it.${c.err ? ` <small>(The check said: ${e(c.err)})</small>` : ""}`;
-  if(x.st === "none") return "not linked yet";
-  return e(c.err || "the system can’t open it") + (c.why ? ` <small>(Google: ${e(c.why)})</small>` : "");
+  const x = it.x, err = String((x.c || {}).err || ""), file = (err.match(FILE_IN) || []).slice(1).find(Boolean) || "";
+  const f = file ? ` “${e(file.replace(/^"|"$/g, ""))}”` : "";
+  if(x.nf) return "Not in their Drive";
+  if(x.st === "none") return "Not linked";
+  if(x.st === "unchecked") return "Couldn’t check it";
+  if(x.st === "bad" && ACCESS(err)) return "Can’t open it: not shared";
+  let m;
+  if(/blank template/i.test(err)) return "Blank template, not their copy";
+  if((m = err.match(/This is batch (B\d{6})/i))) return `Batch ${e(m[1].toUpperCase())}’s file, not theirs`;
+  if((m = err.match(/^This is (.+?)'s /))) return `${e(m[1])}’s file, not theirs`;
+  if((m = err.match(/same link as your (.+?)\./i))) return `Same file as their ${e(m[1])}`;
+  if(/already linked this folder/i.test(err)) return "Another trainee linked it";
+  if(/isn't yours/i.test(err)) return `Not named for them:${f}`;
+  if(/needs your Batch ID/i.test(err)) return `No Batch ID in the name:${f}`;
+  if(/isn't your /i.test(err)) return `Wrong file:${f}`;
+  if(/busy|didn.t answer/i.test(err)) return "Drive didn’t answer: check again";
+  return e((err || "The system can’t open it").split(/(?<=\.)\s/)[0].replace(/\.$/, ""));
 }
 function autoRecheck(flagged){
   // (at most every 5 minutes, never while an update runs; the sheet is read again once it's done)
@@ -731,14 +746,24 @@ function shareBanner(){
   autoRecheck(withIssues.filter(r => r.its.some(it => it.x.st !== "none" || it.x.nf)).map(r => r.p));
   const access = withIssues.filter(r => r.its.some(it => it.x.st === "bad" && ACCESS((it.x.c || {}).err)));
   const opens = ppl.filter(p => (() => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /ok|trainer/.test(L[k].st)); }catch(err){ return false; } })()).length;
-  const fixes = (p, it) => `<span class="bs-share-acts">${safeHref(it.x.link) ? `<a class="btn btn-ghost btn-sm" href="${safeHref(it.x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark as opening</button>` : ""}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></span>`;
-  const list = `<ul class="bs-share-list">${withIssues.map(({p, its}) => `<li><b>${e(p.name)}</b> <small>(${LINKS.length - its.length} of ${LINKS.length} links right)</small> <button class="btn btn-ghost btn-sm bs-arch1" type="button" data-id="${e(p.id)}" data-name="${e(p.name)}" onclick="FTBatchSheet.archiveOne(this.dataset.id, this.dataset.name)" title="Archive this account (someone who isn't a trainee, or who left): off the sheet and this list; Admin → Batches brings it back">🗄 Archive</button><ul>${its.map(it => `<li><b>${e(it.l)}</b>: ${issueWhy(p, it)}${(it.x.c || {}).at ? ` <small>· checked ${e(when(it.x.c.at))}</small>` : ""} ${fixes(p, it)}</li>`).join("")}</ul></li>`).join("")}</ul>`;
-  const recheck = `<button class="btn btn-navy btn-sm" type="button" ${B.rechecking || B.sync ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()">${B.rechecking ? `Checking ${B.rechecking}…` : "🔁 Check them now"}</button>
-    <small class="bs-share-auto">${B.autoChk ? "🔁 Checking the flagged links again…" : B.autoChkAt ? `Checked again by itself ${e(when(new Date(B.autoChkAt).toISOString()))}; it checks again every few minutes while this page is open, so a link the VA fixes drops off.` : ""}</small>`;
+  const fixes = (p, it) => `<div class="bs-li-acts">${safeHref(it.x.link) ? `<a class="btn btn-ghost btn-sm" href="${safeHref(it.x.link)}" target="_blank" rel="noopener" title="Open the file they linked">↗ Open</a>` : "<span></span>"}${it.x.link ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.lkMark('${e(p.id)}', '${it.k}', true)" title="It opens for you and it is the right file: mark it ✓ (a trainer's override, for this link)">✓ Mark OK</button>` : "<span></span>"}<button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.leWho('${e(p.id)}'); setTimeout(() => { const d = document.querySelector('.bs-le'); if(d) d.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300)">✎ ${it.x.link ? "Re-link" : "Link"}</button></div>`;
+  // (the same problem on several links that aren't linked at all — nothing in their Drive yet — is one row, not one per link)
+  const rowsOf = (p, its) => {
+    const why = its.map(it => issueWhy(p, it)), same = its.length > 1 && its.every((it, i) => !it.x.link && why[i] === why[0]);
+    if(same) return [{its, l: its.length === LINKS.length ? `All ${LINKS.length} links` : its.map(it => e(it.l)).join("<br>"), why: why[0], tip: "", at: "", act: fixes(p, its[0])}];
+    return its.map((it, i) => ({its: [it], l: e(it.l), why: why[i], tip: (it.x.c || {}).err || "", at: (it.x.c || {}).at || "", act: fixes(p, it)}));
+  };
+  const searched = withIssues.map(r => r.its.map(it => it.x.nf).find(v => v && v !== true)).find(Boolean);
+  const list = `<table class="bs-li"><thead><tr><th>Trainee</th><th>Right</th><th>Link</th><th>Problem</th><th>Checked</th><th>Fix</th></tr></thead>${withIssues.map(({p, its}) => {
+    const rows = rowsOf(p, its);
+    return `<tbody class="bs-li-p">${rows.map((r, i) => `<tr>${i ? "" : `<td class="bs-li-who" rowspan="${rows.length}"><b>${e(p.name)}</b><button class="btn btn-ghost btn-sm bs-arch1" type="button" data-id="${e(p.id)}" data-name="${e(p.name)}" onclick="FTBatchSheet.archiveOne(this.dataset.id, this.dataset.name)" title="Archive this account (someone who isn't a trainee, or who left): off the sheet and this list; Admin → Batches brings it back">🗄 Archive</button></td><td class="bs-li-n" rowspan="${rows.length}">${LINKS.length - its.length} of ${LINKS.length}</td>`}<td class="bs-li-l">${r.l}</td><td class="bs-li-why"${r.tip ? ` title="${e(r.tip)}"` : ""}>${r.why}</td><td class="bs-li-at">${r.at ? e(when(r.at)) : "—"}</td><td>${r.act}</td></tr>`).join("")}</tbody>`;
+  }).join("")}</table>`;
+  const recheck = `<button class="btn btn-navy btn-sm" type="button" ${B.rechecking || B.sync || B.autoChk ? "disabled" : ""} onclick="FTBatchSheet.recheckLinks()" title="Look for their files and open each link again (it also does this by itself every few minutes while this page is open)">${B.rechecking ? `Checking ${B.rechecking}…` : B.autoChk ? "Checking…" : "🔁 Check them now"}</button>`;
+  const shareTo = `<div class="bs-li-share">Share ${access.length && opens <= access.length ? "the batch’s folder" : "a file the system can’t open"} with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>.${access.length && opens <= access.length ? " One share covers all its trainees." : ""}</div>`;
+  const head = h => `<div class="bs-li-top"><div class="bs-li-h">${h}</div>${recheck}</div>`;
   // (most of the batch can't be opened at all: the batch's folder isn't shared yet — one share covers everyone)
-  if(access.length && opens <= access.length) return `<div class="bs-warn bs-share"><div class="bs-share-h">📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> (${access.length} of ${ppl.length} trainees).</div>
-    <span class="bs-share-do">Share the batch’s folder with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b> (right-click the folder → Share → paste → Editor → untick Notify → Share). One share covers all its trainees.</span>${list}${recheck}</div>`;
-  return `<div class="bs-warn bs-share"><div class="bs-share-h">🔗 <b>${withIssues.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"} ${withIssues.length === 1 ? "has" : "have"} Drive link issues</b> in batch ${e(B.batch)}. Each link that isn’t right is below, with why; it drops off once the VA fixes it. Their 🔔 already tells them which link and how.${access.length ? ` For a file the system can’t open, they can also share it with <code id="bsShareTo">${e(who)}</code> <button class="btn btn-ghost btn-sm" type="button" onclick="FTBatchSheet.copyShare()">📋 Copy</button> as <b>Editor</b>.` : ""}</div>${list}${recheck}</div>`;
+  if(access.length && opens <= access.length) return `<div class="bs-warn bs-share">${head(`📁 <b>Batch ${e(B.batch)}’s files can’t be opened yet</b> · ${access.length} of ${ppl.length} trainees`)}${shareTo}${list}</div>`;
+  return `<div class="bs-warn bs-share">${head(`🔗 <b>${withIssues.length} of ${ppl.length} trainee${ppl.length === 1 ? "" : "s"} ${withIssues.length === 1 ? "has" : "have"} Drive link issues</b> · Batch ${e(B.batch)}${searched ? ` · Drive searched ${e(when(searched))}` : ""}`)}${access.length ? shareTo : ""}${list}</div>`;
 }
 // the page: the Score Card and the compliance first, then the Weekly Ranking and the Daily outputs;
 // every other table under ▸ More detail; the approvals and batches at the foot
@@ -1763,9 +1788,14 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-sweep .bs-sweep-sum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;} .bs-sweep-list{max-height:420px;overflow:auto;}
 .bs-dup{line-height:1.55;} .bs-dup-t{border-collapse:collapse;margin:8px 0;font-size:13px;background:#fff;} .bs-dup-t th,.bs-dup-t td{border:1px solid #E6D3B3;padding:5px 9px;text-align:left;}
 .bs-dup-keep td{background:#E8F6EE;font-weight:700;} .bs-dup code{font-size:12px;}
-.bs-share{line-height:1.6;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;} .bs-share-h{flex:1 1 100%;} .bs-dl{margin-left:8px;font:inherit;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #C9D3E6;background:#fff;color:var(--navy);cursor:pointer;vertical-align:middle;} .bs-dl:hover{background:#EEF2FA;}
+.bs-share{line-height:1.5;} .bs-dl{margin-left:8px;font:inherit;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #C9D3E6;background:#fff;color:var(--navy);cursor:pointer;vertical-align:middle;} .bs-dl:hover{background:#EEF2FA;}
 .bs-tt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 2px;} .bs-tt-row input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;}
-.bs-share-list{flex:1 1 100%;margin:2px 0 4px;padding-left:18px;} .bs-share-list li{margin:3px 0;} .bs-share-list ul{margin:2px 0 6px;padding-left:18px;} .bs-share-auto{flex:1 1 100%;color:var(--ink-soft);} .bs-nf{color:var(--danger,#c0392b);} .bs-share-acts{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle;} .bs-share-do{flex:1 1 520px;} .bs-share code{white-space:nowrap;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;}
+.bs-share{padding:12px 14px;} .bs-li-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;} .bs-li-h{font-size:15px;} .bs-li-share{margin:0 0 8px;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;white-space:nowrap;}
+.bs-li{width:100%;border-collapse:collapse;background:#fff;border:1px solid #EBD3B5;border-radius:6px;font-size:13.5px;color:var(--ink,#1f2937);} .bs-li th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#7A4100;background:#FDEBD3;padding:7px 10px;border-bottom:1px solid #EBD3B5;white-space:nowrap;}
+.bs-li td{padding:6px 10px;border-top:1px solid #F3E4D0;vertical-align:middle;} .bs-li tbody.bs-li-p{border-top:2px solid #EBD3B5;} .bs-li tbody.bs-li-p:nth-child(odd) td{background:#FFFBF5;}
+.bs-li-who{white-space:nowrap;min-width:150px;} .bs-li-who b{display:block;margin-bottom:5px;} .bs-li-n{white-space:nowrap;text-align:center;font-weight:700;} .bs-li-l{white-space:nowrap;font-weight:700;} .bs-li-why{color:var(--danger,#c0392b);font-weight:600;} .bs-li-at{white-space:nowrap;color:#6b7280;}
+.bs-li-acts{display:grid;grid-template-columns:auto auto auto;gap:4px;justify-content:end;} .bs-li-acts .btn,.bs-li-who .btn{margin:0;padding:4px 10px;white-space:nowrap;text-decoration:none;}
+@media (max-width:760px){.bs-li thead{display:none;} .bs-li,.bs-li tbody,.bs-li tr,.bs-li td{display:block;width:auto;} .bs-li td{border:0;padding:3px 10px;} .bs-li tr{border-top:1px solid #F3E4D0;padding:4px 0;} .bs-li-acts{display:flex;justify-content:flex-start;} .bs-li-acts>span:empty{display:none;} .bs-li-n{text-align:left;} .bs-li-n::after{content:" links right";font-weight:400;} .bs-li-who{display:flex!important;align-items:center;justify-content:space-between;} .bs-li-who b{margin:0;} .bs-share code{white-space:normal;word-break:break-all;}}
 .bs-dstat{line-height:1.55;} .bs-dstat-id{margin-top:6px;} .bs-dstat-id small{color:#7A4100;opacity:.85;} .bs-dstat code{background:#fff;padding:1px 5px;border-radius:4px;} .bs-dstat.ok{border-color:#9ED3B0;background:#EEF8F1;color:#15603A;} .bs-dstat .btn{margin-left:6px;}
 .bs-fix{margin:0 14px 12px;padding:12px 14px;border:1px solid #C4C7C5;border-radius:8px;background:#F8F9FA;font:14px Arial,sans-serif;}
 .bs-fix h4{margin:0 0 4px;font-size:16px;} .bs-fix p{margin:0 0 8px;}
