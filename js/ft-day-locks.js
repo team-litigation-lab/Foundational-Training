@@ -265,8 +265,7 @@ function mayGo(n, i, from){
   if(!decksIn()) return true;
   const want = stepAt(n, i);
   if(!dayStarted(n) || want > at(n)){ toast(lockMsg(n, want)); return false; }
-  const by = root.FTDayDecks && FTDayDecks.state && FTDayDecks.state().split ? 2 : 1;
-  if(from >= 0 && i > from + by){ toast("The training goes in order: one slide at a time, with Next →."); return false; }
+  if(from >= 0 && i > from + 1){ toast("The training goes in order: one slide at a time, with Next →."); return false; }
   return true;
 }
 if(root.FTDay1) FTDay1.mayGo = mayGo; else root.FTDay1 = {mayGo};
