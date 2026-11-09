@@ -457,7 +457,8 @@ function dayScoresTable(){
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(a), f: a == null ? "No scored deliverable yet" : `The average of the days' scores = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(D.map((d, i) => { const xs = per[i], sc = xs.filter(x => x.pct != null), done = xs.filter(x => x.pct != null || /Done|Passed/.test(x.status)).length;
           return {v: avgs[i] != null ? pct(avgs[i]) : done ? `${done}/${xs.length} done` : "", f: `Day ${d.day} · ${d.role}: ` + (xs.length ? xs.map(x => `${x.name.replace(/^\S+\s(?=Knowledge|Monitoring|Trainer)/, "")} ${x.pct != null ? x.pct + "%" : x.status || "—"}`).join(" · ") : "no deliverables")
-            + (sc.length ? ` = ${pct(avgs[i])}` : ""), cls: "gs-num " + (avgs[i] != null ? tone(avgs[i]) : done ? "gs-mid" : "")}; }));
+            + (sc.length ? ` = ${pct(avgs[i])}` : ""), cls: "gs-num " + (avgs[i] != null ? tone(avgs[i]) : done ? "gs-mid" : ""),
+            parts: xs.map(x => ({name: x.name, v: x.pct != null ? x.pct + "%" : x.status || "—", tone: x.pct != null ? tone(x.pct) : /Done|Passed|On time/.test(x.status) ? "gs-hi" : /Not yet|Late/.test(x.status) ? "gs-lo" : "", text: x.why || ""}))}; }));
     })};
 }
 function dayScoresHtml(){
@@ -555,6 +556,15 @@ function scoreCardTable(){
 }
 // Compliance and Platform Utilization Monitoring
 const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], unchecked: ["⚠ Can’t check", "gs-mid"], none: ["— Not linked", ""]};
+// a link's mark: ✓ right, ✗ something to fix (what: its pop-up), ⏳ not checked yet
+const markOf = x => x.nf ? "✗" : /^(ok|trainer)$/.test(x.st) ? "✓" : /^(pending|relinked)$/.test(x.st) ? "⏳" : "✗";
+const markBtn = (p, k, x) => { const m = markOf(x);
+  return m === "✗" ? `<button type="button" class="bs-mk bs-mk-x" onclick="event.stopPropagation();FTBatchSheet.lkPop('${e(p.id)}', '${k}')" title="What is wrong">✗</button>` : `<span class="bs-mk ${m === "✓" ? "bs-mk-ok" : "bs-mk-wait"}">${m}</span>`; };
+// a trainee's six links, a cell each: the link's name and its mark
+function linkMarks(p){
+  let L = {}; try{ L = linkState(p).L; }catch(err){ return ""; }
+  return `<div class="bs-lkg">${LINKS.map(([k, l]) => L[k] ? `<div class="bs-lkc"><span>${e(l).replace("/", "/<wbr>")}</span>${markBtn(p, k, L[k])}</div>` : "").join("")}</div>`;
+}
 function complianceTable(){
   const ppl = people();
   // the six links side by side, each its own column (no dropdown to go through): ✓ Correct, ✗ Wrong (why: on a hover or a
@@ -565,10 +575,10 @@ function complianceTable(){
     rows: ppl.map(p => { const {L} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
       const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
-      const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""];
+      const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""], m = markOf(x);
         // (🔎 not in their Drive: the batch's Drive was searched and has no such file with their name — worker.js autoLinkBatch)
         const f = `${x.label}: ${x.link ? x.link + " · " : ""}${x.nf ? `not in their Drive: the batch’s Drive was searched${x.nf !== true ? " " + when(x.nf) : ""} and has no ${x.label} with their name. They need to make it from the template and link it${x.c && x.c.err ? ` (the check said: ${x.c.err})` : ""}` : x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`;
-        return {v: st[0], f, tip: f, cls: "bs-lesson bs-lk " + st[1]}; };
+        return {v: m, f, tip: f, csv: st[0], html: markBtn(p, k, x), cls: "bs-lesson bs-lk " + st[1]}; };
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: `${okN} / ${LINKS.length}`, f: LINKS.map(([q]) => `${L[q].label}: ${(LSTAT[L[q].st] || ["— Not linked"])[0]}`).join(" · "), cls: "gs-num gs-bold " + (okN === LINKS.length ? "gs-hi" : okN ? "gs-mid" : "gs-lo")}]
         .concat(LINKS.map(([k]) => linkCol(k)), [
@@ -654,7 +664,7 @@ function groupedSheetHtml(T, ti){
   T.groups.forEach((g, gi) => { for(let k = 0; k < g.span; k++) gOf.push([gi, k]); });
   const gone = ci => { const [gi, k] = gOf[ci] || []; return gi != null && foldable(T.groups[gi]) && F.g.includes(gi) && k !== (T.keep != null && T.keep >= 0 ? T.keep : 0); };
   const fc = ci => gone(ci) ? " gs-fold" : "";
-  const cell = (c, ri, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}"${c.tip || c.f ? ` title="${e(c.tip || c.f)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${e(c.v)}</td>`;
+  const cell = (c, ri, ci) => `<td tabindex="0" class="${c.cls || ""}${ci === 0 ? " gs-frz" : ""}${fc(ci)}"${c.tip || c.f ? ` title="${e(c.tip || c.f)}"` : ""} data-t="${ti}" data-r="${ri}" data-c="${ci}" onclick="FTBatchSheet.pick(this)" onfocus="FTBatchSheet.pick(this)">${c.html != null ? c.html : e(c.v)}</td>`;
   const folds = T.groups.map((g, gi) => foldable(g) ? gi : -1).filter(gi => gi >= 0), allIn = folds.length && folds.every(gi => F.g.includes(gi));
   const tid = e(T.id);
   const head = `<h3 class="bs-h"><button type="button" class="bs-fold-sec" onclick="FTBatchSheet.hideSec('${tid}')" aria-expanded="${!F.hide}" title="${F.hide ? "Show" : "Hide"} this table">${F.hide ? "▸" : "▾"}</button> ${e(T.title)} <span>${T.rows.length} row${T.rows.length === 1 ? "" : "s"}</span>
@@ -807,7 +817,8 @@ const stripTags = h => String(h == null ? "" : h).replace(/<[^>]*>/g, "").replac
 function viewBar(){
   const v = B.view === "tables" ? "tables" : "trainee";
   return `<div class="bs-view"><span>View</span><button type="button" class="${v === "trainee" ? "on" : ""}" onclick="FTBatchSheet.view('trainee')">👤 One table per trainee</button><button type="button" class="${v === "tables" ? "on" : ""}" onclick="FTBatchSheet.view('tables')">📋 By table</button>
-    ${v === "trainee" ? `<button type="button" class="bs-view-all" onclick="FTBatchSheet.ptAll(true)">▾ Open every trainee</button><button type="button" class="bs-view-all" onclick="FTBatchSheet.ptAll(false)">▸ Fold every trainee</button>` : ""}</div>`;
+    ${v === "trainee" ? (() => { const ppl = people(), who = ppl.some(p => p.id === B.ptWho) ? B.ptWho : "";
+      return ppl.length > 1 ? `<label class="bs-look">🔎 <select aria-label="Look up a trainee" onchange="FTBatchSheet.ptWho(this.value)"><option value="">All trainees (${ppl.length})</option>${ppl.map(p => `<option value="${e(p.id)}" ${p.id === who ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>` : ""; })() : ""}</div>`;
 }
 // a trainee's row of one table (the same order as people(), else by name)
 function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && rs[i] && stripTags(rs[i][0] && rs[i][0].v) === p.name ? rs[i] : rs.find(r => stripTags(r[0] && r[0].v) === p.name) || null; }
@@ -821,26 +832,33 @@ function matrixOf(x){
   if(same.length < 2 || same.length !== gs.length) return null;
   return {sub: same[0].cols.map(k => x.head[k]), groups: same, cols: same.flatMap(g => g.cols)};
 }
+// a day's activities / assessments, a row each: what, its score or status, and how it went
+const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`).join("")}</tbody></table>`;
 function perTraineeHtml(T){
-  const ppl = people(); if(!ppl.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
+  const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
+  // (🔎 one trainee looked up: theirs alone, open)
+  const ppl = all.some(p => p.id === B.ptWho) ? all.filter(p => p.id === B.ptWho) : all;
   const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 1 + LINKS.length);
-  const use = T.filter(x => x.id !== "drive");
+  // (🏅 Score Card last: the day-by-day detail first)
+  const use = T.filter(x => x.id !== "drive" && x.id !== "scorecard").concat(T.filter(x => x.id === "scorecard"));
   const sc = T.find(x => x.id === "scores"), col = h => sc ? sc.head.indexOf(h) : -1;
   B.ptOpen = B.ptOpen || {};
-  return `<div class="bs-pts">${ppl.map((p, i) => {
-    const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
+  return `<div class="bs-pts">${ppl.map(p => {
+    const i = all.indexOf(p);
+    const sr = sc && rowFor(sc, p, i, all.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
     const head = [["Overall", val("Overall %")], ["Scorecard", val("Scorecard overall")], ["Daily compliance", val("Daily compliance")]].filter(([, v]) => v);
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
-    const body = use.map(x => { const r = rowFor(x, p, i, ppl.length); if(!r) return "";
+    const body = use.map(x => { const r = rowFor(x, p, i, all.length); if(!r) return "";
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
-        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${e(stripTags(c.f) === v ? "" : stripTags(c.f))}</td></tr>`; })()).join("");
+        const f = x.id === "compliance" && k === 1 ? linkMarks(p) : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
+        return `<tr><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; }).join("");
-    return `<details class="bs-pt" id="bs-pt-${e(p.id)}" ${B.ptOpen[p.id] ? "open" : ""} ontoggle="FTBatchSheet.ptOpen('${e(p.id)}', this.open)">
+    return `<details class="bs-pt" id="bs-pt-${e(p.id)}" ${B.ptOpen[p.id] || ppl.length === 1 ? "open" : ""} ontoggle="FTBatchSheet.ptOpen('${e(p.id)}', this.open)">
       <summary><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</summary>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
@@ -880,6 +898,7 @@ function outputsTable(){
           return {v: pct(vs[i]), csv: `${pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
+            parts: acts.map(a => ({name: `${a.icon} ${a.label}`, v: a.pct == null ? "—" : Math.round(a.pct) + "%", tone: tone(a.pct), text: a.text})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>the day</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -1331,6 +1350,29 @@ window.FTBatchSheet = {
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   ptOpen(id, open){ (B.ptOpen = B.ptOpen || {})[id] = !!open; },
+  ptWho(id){ B.ptWho = id || ""; if(id) (B.ptOpen = B.ptOpen || {})[id] = true; render(); },
+  // ✗ a link's pop-up: what is wrong with it, and the trainer's fixes
+  lkPop(id, k){
+    const p = people().find(q => q.id === id); if(!p) return;
+    let x; try{ x = linkState(p).L[k]; }catch(err){ return; } if(!x) return;
+    const l = (LINKS.find(([q]) => q === k) || [])[1] || "", c = x.c || {};
+    const more = x.nf ? "The batch’s Drive was searched and has no such file with their name. They need to make it from the template and link it." : [c.err, c.why ? "Google: " + c.why : ""].filter(Boolean).join(" ");
+    const close = () => { const o = document.getElementById("bsLkPop"); if(o) o.remove(); document.removeEventListener("keydown", esc); };
+    const esc = ev => { if(ev.key === "Escape") close(); };
+    close();
+    const o = document.createElement("div"); o.id = "bsLkPop"; o.className = "bs-pop";
+    o.innerHTML = `<div class="bs-pop-box" role="dialog" aria-modal="true" aria-label="${e(l)}"><button type="button" class="bs-pop-x" aria-label="Close">✕</button>
+      <h4>${e(l)} <span class="bs-mk bs-mk-x">✗</span></h4><p class="bs-pop-who">${e(p.name)}</p>
+      <p class="bs-pop-why">${issueWhy(p, {k, l, x})}</p>${more ? `<p class="bs-pop-more">${e(more)}</p>` : ""}
+      ${(x.nf && x.nf !== true) || c.at ? `<p class="bs-pop-at">Checked ${e(when(x.nf && x.nf !== true ? x.nf : c.at))}</p>` : ""}
+      ${adminOn() ? `<div class="bs-pop-acts">${safeHref(x.link) ? `<a class="btn btn-ghost btn-sm" href="${safeHref(x.link)}" target="_blank" rel="noopener">↗ Open</a>` : ""}${x.link ? `<button class="btn btn-ghost btn-sm" type="button" data-a="mark">✓ Mark OK</button>` : ""}<button class="btn btn-navy btn-sm" type="button" data-a="link">✎ ${x.link ? "Re-link" : "Link"}</button></div>` : ""}</div>`;
+    o.addEventListener("click", ev => { const a = ev.target.closest("[data-a]");
+      if(ev.target === o || ev.target.closest(".bs-pop-x")) return close();
+      if(!a) return; close();
+      if(a.dataset.a === "mark") FTBatchSheet.lkMark(id, k, true);
+      else { FTBatchSheet.leWho(id); setTimeout(() => { const d = document.querySelector(".bs-le"); if(d) d.scrollIntoView({behavior: "smooth", block: "center"}); }, 300); } });
+    document.addEventListener("keydown", esc); document.body.appendChild(o); const b = o.querySelector(".bs-pop-x"); if(b) b.focus();
+  },
   ptAll(open){ B.ptOpen = {}; if(open) people().forEach(p => { B.ptOpen[p.id] = true; }); render(); },
   // 📝 Send Feedback, in one trainee's table (js/ft-trainer-feedback.js FTFeedback.inline): '' closes it
   fbOpen(id){ B.fbWho = id || ""; if(id) (B.ptOpen = B.ptOpen || {})[id] = true; render(); },
@@ -1883,6 +1925,14 @@ body.bs-wide main{max-width:none !important;padding-left:18px;padding-right:18px
 .bs-share{line-height:1.5;} .bs-dl{margin-left:8px;font:inherit;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #C9D3E6;background:#fff;color:var(--navy);cursor:pointer;vertical-align:middle;} .bs-dl:hover{background:#EEF2FA;}
 .bs-tt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 2px;} .bs-tt-row input{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;}
 .bs-share{padding:12px 14px;} .bs-li-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;} .bs-li-h{font-size:15px;} .bs-li-share{margin:0 0 8px;} .bs-share code{background:#fff;padding:1px 5px;border-radius:4px;user-select:all;white-space:nowrap;}
+.bs-parts{width:100%;border-collapse:collapse;font-size:13px;line-height:1.4;} .bs-parts th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;background:#F6F7FA;padding:5px 8px;border-bottom:1px solid #E3E6EE;} .bs-parts td{padding:5px 8px;border-top:1px solid #EEF0F4;vertical-align:top;} .bs-parts-n{width:38%;font-weight:600;} .bs-parts-v{width:96px;white-space:nowrap;} .bs-parts-t{color:#4b5563;}
+@media (max-width:760px){.bs-parts thead{display:none;} .bs-parts tr{display:block;border-top:1px solid #EEF0F4;padding:4px 0;} .bs-parts td{display:block;width:auto!important;border:0;padding:2px 8px;}}
+.bs-look{margin-left:auto;font-weight:700;color:#1E2340;} .bs-look select{font:600 13px Arial,sans-serif;padding:5px 10px;border:1px solid #C9CEDA;border-radius:999px;background:#fff;color:#1E2340;max-width:260px;}
+.bs-mk{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;border-radius:6px;font:800 14px Arial,sans-serif;border:0;} .bs-mk-ok{color:#166534;background:#DCFCE7;} .bs-mk-wait{color:#92400E;background:#FEF3C7;} button.bs-mk-x,.bs-mk-x{color:#991B1B;background:#FEE2E2;cursor:pointer;} button.bs-mk-x:hover{background:#FCA5A5;}
+.bs-lkg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid #E3E6EE;border-radius:6px;overflow:hidden;} .bs-lkc{overflow-wrap:normal;word-break:normal;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;text-align:center;font-size:12.5px;line-height:1.25;} .bs-lkc + .bs-lkc{border-left:1px solid #E3E6EE;}
+@media (max-width:760px){.bs-lkg{grid-template-columns:repeat(3,minmax(0,1fr));} .bs-lkc:nth-child(4){border-left:0;} .bs-lkc:nth-child(n+4){border-top:1px solid #E3E6EE;} .bs-look{margin-left:0;}}
+.bs-pop{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;} .bs-pop-box{position:relative;background:#fff;border-radius:10px;max-width:460px;width:100%;padding:18px 20px;box-shadow:0 20px 50px rgba(0,0,0,.3);font:14px Arial,sans-serif;color:#1f2937;}
+.bs-pop-box h4{margin:0 30px 2px 0;font-size:16px;display:flex;gap:8px;align-items:center;} .bs-pop-who{margin:0 0 10px;color:#6b7280;} .bs-pop-why{margin:0 0 6px;font-weight:700;color:#991B1B;} .bs-pop-more{margin:0 0 6px;line-height:1.45;} .bs-pop-at{margin:0 0 10px;color:#6b7280;font-size:12.5px;} .bs-pop-acts .btn{text-decoration:none;} .bs-pop-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;} .bs-pop-x{position:absolute;top:10px;right:10px;border:0;background:none;font-size:16px;cursor:pointer;color:#6b7280;}
 .bs-li{width:100%;border-collapse:collapse;background:#fff;border:1px solid #EBD3B5;border-radius:6px;font-size:13.5px;color:var(--ink,#1f2937);} .bs-li th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#7A4100;background:#FDEBD3;padding:7px 10px;border-bottom:1px solid #EBD3B5;white-space:nowrap;}
 .bs-li td{padding:6px 10px;border-top:1px solid #F3E4D0;vertical-align:middle;} .bs-li tbody.bs-li-p{border-top:2px solid #EBD3B5;} .bs-li tbody.bs-li-p:nth-child(odd) td{background:#FFFBF5;}
 .bs-li-who{white-space:nowrap;min-width:150px;} .bs-li-who b{display:block;margin-bottom:5px;} .bs-li-n{white-space:nowrap;text-align:center;font-weight:700;} .bs-li-l{white-space:nowrap;font-weight:700;} .bs-li-why{color:var(--danger,#c0392b);font-weight:600;} .bs-li-at{white-space:nowrap;color:#6b7280;}

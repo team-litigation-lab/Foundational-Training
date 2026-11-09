@@ -46,6 +46,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.route('**/api/drive/verify', r => r.fulfill({ contentType: 'application/json', body: '{"ok":true,"verify":{}}' }));
   await page.route('**/api/drive/autolink', r => r.fulfill({ contentType: 'application/json', body: '{"ok":true}' }));
   await page.evaluate(b => FTBatchSheet.batch(b), LINKB); await page.waitForTimeout(3000);
+  // (the link issues list is on 🔗 Drive Links)
+  await page.evaluate(() => { state.adminTab = 'drivelinks'; render(); }); await page.waitForTimeout(1500);
   await page.evaluate(() => FTBatchSheet.dstat()); await page.waitForTimeout(2500);
   { const li = await page.evaluate(() => [...document.querySelectorAll('.bs-li > tbody')].map(l => l.innerText));
     if (!li.some(t => /Lia/.test(t))) fail(`Lia's links aren't in the link issues list: ${JSON.stringify(li).slice(0, 300)}`);
