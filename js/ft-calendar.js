@@ -581,6 +581,17 @@ function endDrag(){
 }
 // The event editor, as in Google Calendar: title, when, guests, Google Meet, an email reminder and a description.
 function closeModal(){ const m = document.getElementById("csModal"); if(m) m.remove(); }
+// an event editor's buttons and keys: Save (or Enter in the title), 🗑 Delete, and Escape, ✕ or a click outside to close
+function wireModal(m, title, save, done){
+  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
+  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+}
+// an event editor's colour swatches: the picked one is on, its value in `colorSel`, its name in `nameSel`
+function wireSwatches(m, colorSel, nameSel, defLabel){
+  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; m.querySelector(colorSel).value = id;
+    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
+    m.querySelector(nameSel).textContent = (C.colorOf(id) || {}).name || defLabel; }; });
+}
 function editor(x, isNew, done){
   closeModal();
   const opts = (from, to, sel, f) => { let o = ""; for(let m = from; m <= to; m += C.STEP) o += `<option value="${m}" ${m === sel ? "selected" : ""}>${f(m)}</option>`; return o; };
@@ -602,15 +613,12 @@ function editor(x, isNew, done){
   const q = sel => m.querySelector(sel), title = q("#csmTitle"), st = q("#csmStart"), en = q("#csmEnd");
   const setMeet = on => { q("#csmMeet").checked = on; const b = q("#csmMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#csmMeetOff").hidden = !on; };
   q("#csmMeetBtn").onclick = () => setMeet(true); q("#csmMeetOff").onclick = () => setMeet(false);
-  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; q("#csmColor").value = id;
-    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
-    q("#csmColorName").textContent = (C.colorOf(id) || {}).name || "Default color"; }; });
+  wireSwatches(m, "#csmColor", "#csmColorName", "Default color");
   st.onchange = () => { if(+en.value <= +st.value) en.value = String(Math.min(BOTTOM, +st.value + C.STEP)); };
   const save = () => { const t = title.value.trim(); if(!t){ toast("Add a title."); title.focus(); return; }
     if(+en.value <= +st.value){ toast("The event has to end after it starts."); return; }
     const v = {title:t.slice(0, 80), day:+q("#csmDay").value, start:+st.value, dur:+en.value - +st.value, guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, color:C.colorOf(q("#csmColor").value) ? q("#csmColor").value : "", desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
-  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
-  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+  wireModal(m, title, save, done);
   title.focus();
 }
 /* ---------- 🗓 the activity's event editor, like Google Calendar's: title, date and time, all day, the event's own time zone,
@@ -649,9 +657,7 @@ function actEditor(x, isNew, done){
   let meet = !!x.meet;
   const setMeet = on => { meet = on; const b = q("#camMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#camMeetOff").hidden = !on; };
   q("#camMeetBtn").onclick = () => setMeet(true); q("#camMeetOff").onclick = () => setMeet(false);
-  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; q("#camColor").value = id;
-    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
-    q("#camColorName").textContent = (C.colorOf(id) || {}).name || "No color"; }; });
+  wireSwatches(m, "#camColor", "#camColorName", "No color");
   // what the form holds now
   const val = () => all.checked ? {date:dt.value, allDay:true, span:+q("#camUntil").value || 1, start:0, dur:1440, tz:X.CAL_TZ}
     : {date:dt.value, allDay:false, span:1, start:+st.value, dur:+en.value - +st.value, tz:tz.value};
@@ -695,8 +701,7 @@ function actEditor(x, isNew, done){
     const v = Object.assign(w, {title:t.slice(0, 100), loc:q("#camLoc").value.trim().slice(0, 200), guests:G.slice(0, 10), meet, reminders:R.map(r => ({type:r.type, n:r.n, unit:r.unit})),
       color:C.colorOf(q("#camColor").value) ? q("#camColor").value : "", desc:q("#camDesc").value.trim().slice(0, 600)});
     closeModal(); done(v); };
-  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
-  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+  wireModal(m, title, save, done);
   title.focus();
 }
 const openEditor = (x, isNew, done) => isAct(scn()) ? actEditor(x, isNew, done) : editor(x, isNew, done);
