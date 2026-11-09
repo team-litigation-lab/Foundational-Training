@@ -635,6 +635,5 @@ main.main-tracker{max-width:none;}
 .ftt-archived summary{cursor:pointer;font-weight:800;color:var(--navy);} .ftt-n{display:inline-block;padding:1px 8px;border-radius:999px;background:#eef2f7;font-size:12px;}
 .ftt-abatch{margin-top:12px;} .ftt-abatch ul{list-style:none;margin:6px 0 0;padding:0;} .ftt-abatch li{padding:4px 0;border-top:1px solid var(--line);}
 .ftt-linkbtn{background:none;border:none;padding:4px 0;font:inherit;color:var(--navy);cursor:pointer;font-weight:600;}
-.ftt-dash .num.ok{color:#188038;} .ftt-dash .num.mid{color:#b06000;} .ftt-dash .num.bad{color:#d93025;}
 `; document.head.appendChild(s); })();
 })();

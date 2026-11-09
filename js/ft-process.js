@@ -1178,7 +1178,6 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
 .kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
 .kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
-.kc-save{margin-top:14px;} .kc-save h3{margin:0 0 10px;color:var(--navy);font-size:17px;} .kc-save .fp-actions{margin:8px 0 12px;} .kc-folder{display:block;margin:4px 0 6px;font-size:14.5px;color:var(--navy);}
 .kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
 .kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
 
@@ -1186,8 +1185,6 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-hero .btn{margin-bottom:10px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}
 .fp-muted{color:var(--ink-soft);font-size:13.5px;}
-.fp-folder{padding:12px 16px;margin-bottom:14px;font-size:15px;} .fp-folder label{display:block;margin-bottom:6px;color:var(--navy);}
-.fp-folder-row{display:flex;gap:8px;} .fp-folder-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fp-index{display:flex;flex-direction:column;gap:10px;}
 .fp-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;box-sizing:border-box;padding:14px 16px;cursor:pointer;font:inherit;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;}
 .fp-row:hover{border-color:var(--orange-soft);box-shadow:0 2px 8px rgba(0,0,0,.05);}
@@ -1209,18 +1206,12 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-pdf-rule{margin:0;flex:1 1 100%;font-size:14px;line-height:1.9;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
 .fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-drive{margin-left:auto;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
 .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;display:inline-block;max-width:100%;box-sizing:border-box;vertical-align:middle;line-height:1.5;word-break:normal;overflow-wrap:normal;}
-.fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
-.fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
-.fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
-.fp-file-rule{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:0 0 8px;} .fp-file-rule > span:first-child{font-weight:800;color:var(--orange-deep);}
-.fp-file-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;}
-.fp-file-res{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:8px 0 0;} .fp-file .fp-muted{margin:6px 0 0;}
 .fp-sheet-h{margin:18px 0 4px;padding:8px 14px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;border-radius:8px;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
 .fp-sheet-h:first-child{margin-top:0;}
 .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
-.fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
+.fp-qs textarea:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
 .fp-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;} .fp-actions a.btn{text-decoration:none;}
 .fp-admin{padding:18px 20px;} .fp-admin h3{margin:0 0 4px;color:var(--navy);}
 .fp-qedit{border:1px solid var(--line);border-radius:10px;margin:14px 0;padding:10px 14px;background:var(--bg);}
