@@ -230,7 +230,7 @@ body.audience-mode > *:not(#audienceRoot):not(.aud-hint){display:none !important
 #audienceRoot .slide-dot{pointer-events:none;}
 /* The shared window cuts straight to the next slide or page: no slide-in or fade (in a Meet share
    the empty first frames of an entrance animation read as a flicker). */
-#audienceRoot .lesson-slide, #audienceRoot #lessonSlideWrap > *, #audienceRoot .slide-interstitial{animation:none !important;}
+#audienceRoot .lesson-slide, #audienceRoot #lessonSlideWrap > *{animation:none !important;}
 .aud-wait{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font-size:18px;text-align:center;padding:20px;}
 .aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}
 .aud-deck-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;background:#161829;border-radius:8px;color:#fff;font-size:30px;line-height:1.4;text-align:center;}
