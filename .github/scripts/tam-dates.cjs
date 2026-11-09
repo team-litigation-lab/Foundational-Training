@@ -10,6 +10,8 @@ const W = 'one two three four five six seven eight nine ten eleven twelve thirte
 const cases = [
   // (a time or a length is not a date)
   ['11/05/2026\n' + W + '\n1.5 hours on intake forms', ['2026-11-05']],
+  ['11/05/2026\n' + W + '\nAccuracy rose to 10.5% after review', ['2026-11-05']],
+  ['11/05/2026\n' + W + '\nAccuracy rose to 10.5%.', ['2026-11-05']],
   ['11/05/2026\n' + W + '\n2.5-hour training', ['2026-11-05']],
   ['11/05/2026\n' + W + '\n- 2.5 hrs on filing', ['2026-11-05']],
   ['11/05/2026\nHuddle at 10.30 with the team', ['2026-11-05']],

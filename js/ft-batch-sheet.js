@@ -676,7 +676,7 @@ const isWeekdayIso = iso => { const d = new Date(iso + "T12:00:00Z").getUTCDay()
 function trainerToolsHtml(){
   if(!adminOn() || meOn() || !B.data) return "";
   const ppl = people(); if(!ppl.length) return "";
-  const id = B.tt && ppl.some(p => p.id === B.tt) ? B.tt : ppl[0].id, R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {};
+  const id = B.tt && ppl.some(p => p.id === B.tt) ? B.tt : (ptCur(ppl) || ppl[0]).id, R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {};
   const today = ptToday(), t = rv.tam, TD = B.ttD || {}, tg = rv.tamGrades || {};
   const tamOut = B.tamBusy ? "Reading the TAM…" : t && t.error ? "✗ " + t.error : Object.keys(tg).length
     ? "Graded: " + Object.entries(tg).sort().slice(-6).map(([d, x]) => `${d} ${x.pct}% (${x.words} words)`).join(" · ") : "No shadowing day graded yet.";
@@ -797,7 +797,7 @@ function issueWhy(p, it){
   if(/needs your Batch ID/i.test(err)) return `No Batch ID in the name:${f}`;
   if(/isn't your /i.test(err)) return `Wrong file:${f}`;
   if(/busy|didn.t answer/i.test(err)) return "Drive didn’t answer: check again";
-  return e((err || "The system can’t open it").split(/(?<=\.)\s/)[0].replace(/\.$/, ""));
+  return e((err || "The system can’t open it").split(/\.\s/)[0].replace(/\.$/, ""));
 }
 function autoRecheck(flagged){
   // (at most every 5 minutes, never while an update runs; the sheet is read again once it's done)
@@ -1481,7 +1481,7 @@ window.FTBatchSheet = {
   // 📝 Send Feedback, in one trainee's table (js/ft-trainer-feedback.js FTFeedback.inline): '' closes it
   fbOpen(id){ B.fbWho = id || ""; if(id) B.pt = id; render(); },
   // 📄 the trainee's page: by the 🔎 dropdown
-  ptPick(id){ B.pt = id; B.fbWho = ""; render(); try{ window.scrollTo({top: (document.querySelector(".bs-pt") || {}).offsetTop - 80 || 0}); }catch(err){} },
+  ptPick(id){ B.pt = id; B.tt = id; B.ttD = {}; B.fbWho = ""; render(); try{ window.scrollTo({top: (document.querySelector(".bs-pt") || {}).offsetTop - 80 || 0}); }catch(err){} },
   ptGo(i){ const p = people()[i]; if(p) FTBatchSheet.ptPick(p.id); },
   // 📅 / 🟢 / 🎧 a review screen with no button of its own on top (js/ft-program.js adminHidden), in this batch
   review(tab){ if(!adminOn()) return; if(typeof setAdminTab === "function") setAdminTab(tab); else { state.adminTab = tab; render(); } },
@@ -1592,7 +1592,8 @@ window.FTBatchSheet = {
   // a batch's archive marks each (js/eapa-updates.js confirmArchiveBatch), read strictly so a failed read never writes over it
   async archiveOne(id, name){
     if(!adminOn() || !id || !confirm(`Archive ${name || id}? They leave this batch's sheet and the link issues list. Admin → Batches can bring them back.`)) return;
-    try{ const got = typeof readStrict === "function" ? await readStrict("trainee:" + id) : {ok: true, value: await sharedGet("trainee:" + id)};
+    // (sharedGetStrict throws on a failed read — the catch below — and gives null only for no record)
+    try{ const got = {ok: true, value: await sharedGetStrict("trainee:" + id)};
       if(!got.ok || !got.value){ toast("Couldn’t read the account. Check your connection."); return; }
       const rec = Object.assign({}, got.value, {archived: true, archivedAt: new Date().toISOString(), archivedBy: "trainer"});
       if(await sharedSet("trainee:" + id, rec) === false){ toast("Couldn’t archive the account. Check your connection."); return; }
