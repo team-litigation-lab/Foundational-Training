@@ -105,7 +105,8 @@ const failures = []; const fail = m => failures.push(m);
       return { n: document.querySelectorAll('.bs-pt').length, head: (d.querySelector('.bs-pt-h') || {}).innerText || '', secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
     if (!pt || pt.n !== 1 || !/Ada Active/.test(pt.head) || !/Overall/.test(pt.head)) fail(`📄 Ada's page doesn't open from the trainee dropdown: ${JSON.stringify(pt && { n: pt.n, head: pt.head })}`);
     if (pt && (!pt.secs.some(x => /Score Card/.test(x)) || !pt.secs.some(x => /Daily outputs/.test(x)) || !pt.secs.some(x => /Scores/.test(x)))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
-    if (pt && !/Trainees/.test(pt.secs[pt.secs.length - 1] || '')) fail(`👥 the trainee's own record isn't at the bottom of their table: ${pt.secs}`);
+    // (their own record, then Compliance and Platform Utilization Monitoring and 📚 Lessons at the very bottom)
+    if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 3] || '') && /Compliance/.test(pt.secs[pt.secs.length - 2] || '') && /Lessons$/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance and 📚 Lessons, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && !pt.secs.some(x => /day by day/i.test(x) && /Knowledge Checks/.test(x))) fail(`📅 Ada's lessons and Knowledge Checks aren't monitored day by day on her page: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
