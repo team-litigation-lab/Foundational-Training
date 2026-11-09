@@ -2049,9 +2049,14 @@ async function backfillCompliance(env, id, o = {}) {
   if (!start) return 0;
   const today = TR.ptDate(), have = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance) || {};
   const want = [];
+  // (📅 and the batch's Day 1, checked again once if it was worked out when its Task Tracker and Monitoring Sheet weren't
+  // checked that day — day1v 2 is a Day 1 checked in full)
+  // (only a batch with a real start date has a Day 1: dailyCompliance's own rule)
+  let first = "", seen1 = !batchStartDate(rec.batch);
   for (let t = Date.parse(start + "T12:00:00Z"); want.length < (o.max || 10); t += 864e5) {
     const d = new Date(t).toISOString().slice(0, 10); if (d >= today) break;
-    if (TR.isWeekday(d) && (!have[d] || !(have[d].v >= 2) || unfinished(have[d], d))) want.push(d);
+    if (!TR.isWeekday(d)) continue; const d1 = !seen1; if (d1) { seen1 = true; first = d; }
+    if (!have[d] || !(have[d].v >= 2) || unfinished(have[d], d) || (d1 && !(have[d].day1v >= 2))) want.push(d);
   }
   if (!want.length) return 0;
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
@@ -2059,7 +2064,8 @@ async function backfillCompliance(env, id, o = {}) {
   let files = o.files || null; if (!files && drive && drive.folder) { try { files = await folderFiles(env, drive.folder); } catch (e) { files = { error: "drive" }; } }
   // (a day checked while it was still on — before the trainee's work was in, e.g. the sheet's update that morning, with the
   // end-of-shift check never reaching them — is worked out again now it is over: raise, never lower, what it had)
-  for (const d of want) await dailyCompliance(env, id, d, have[d] && have[d].v >= 2 ? { redo: true, raise: true, rec, files: files || undefined } : { backfill: true, rec, files: files || undefined });
+  for (const d of want) await dailyCompliance(env, id, d, d === first && have[d] && have[d].v >= 2 && !(have[d].day1v >= 2) ? { redo: true, fresh: true, rec, files: files || undefined }
+    : have[d] && have[d].v >= 2 ? { redo: true, raise: true, rec, files: files || undefined } : { backfill: true, rec, files: files || undefined });
   return want.length;
 }
 
@@ -2393,14 +2399,13 @@ async function dailyCompliance(env, id, D, o = {}) {
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
   if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
-  // (📅 a batch's first training day: the Task Tracker and the Monitoring Sheet are set up that day, not updated yet, so
-  // they don't count — left out of the day's %, not a 0)
+  // (📅 a batch's first training day: its Task Tracker, Monitoring Sheet and tests are checked like any day's, and kept under
+  // day1Parts — the day itself doesn't count, below)
   // (📅 and any part the day doesn't ask for is left out too, not a 0: the Day's outputs only on a day with something to hand
   // in — an assessment, an answer sheet, an activity or exercise, homework for the Assessments/Activities folder — and the
   // Platform only on a day with work on the platform; the Typing & Spelling Tests and the EOD are every day's)
   { const st1 = batchStartDate(rec.batch) || (drive && drive.startDate) || "";
     if (st1 && D >= st1) { let k = 0; for (let t = Date.parse(st1 + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++;
-      if (k === 1) { parts.tracker = null; parts.monitor = null; }
       const FD = globalThis.FTDays, dd = FD && FD.of ? FD.of(k) : null;
       if (dd) { const its = (dd.items || []).filter((x) => !/^(Typing Test|Spelling Test|Free Communication)/.test(x.t || ""));
         const handIn = its.some((x) => x.at === "drive" || x.assess || (x.at === "gc" && !/Metrics/i.test(x.t || "")) || (x.at === "offline" && /folder|upload|submit/i.test(x.t || "")));
@@ -2421,7 +2426,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), platform: done.slice(0, 12), opened: seen.length,
     unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
-    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, day1: !!day1Parts, day1Parts,
+    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, day1: !!day1Parts, day1Parts, day1v: day1Parts ? 2 : undefined,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
   // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)
