@@ -178,12 +178,11 @@ function renderMockScores(){
   if(!ready) return wrap(`<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p>`);
   setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
   const c = cellOf(r.id, a.id), id = e(r.id);
-  const tag = d.dirty ? `<span class="fms-tag dirty">● not saved</span>` : c.status ? `<span class="fms-tag ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : `<span class="fms-tag">not scored yet</span>`;
+  // (no "name · activity · batch · Saved:" line over the scoresheet: the pickers above say whose it is, and ● not saved is in the trainee dropdown)
   const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}" aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
-    <p class="fms-who"><b>${e(r.name || r.id)}</b> · ${e(a.title)} · ${e(labelOf(MS.batch))}${c.facilitator ? ` · facilitated by ${e(c.facilitator)}` : ""} ${tag}</p>
     ${rb && rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     ${rb && rb.key === "calendar" && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
