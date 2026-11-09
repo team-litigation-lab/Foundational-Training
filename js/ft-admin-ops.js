@@ -31,6 +31,7 @@ async function sopLoad(force){
   try{
     const rec = await sharedGet(SOP_KEY);
     SOP.items = (rec && Array.isArray(rec.items)) ? rec.items : [];
+    SOP.loadedAt = Date.now();
   }catch(err){ SOP.err = "Couldn’t load the SOPs — sign in again as Admin and retry."; SOP.items = SOP.items || []; }
   SOP.loading = false;
   if(state.view === "admin" && state.adminTab === "sops") render();
@@ -134,10 +135,11 @@ function renderAdminSOPs(){
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>📋 SOPs</h1>
       <p>How trainers run this program and support each trainee, all in one place, so every trainer teaches, grades and follows up the same way. The <b>🧭 Trainer Assistance Map</b> below covers the whole platform. Under it are the procedures your trainers wrote. The minute-by-minute run-book for each session is in <b>🔓 Open Lessons → 📘 Curriculum</b>. The rules trainees read are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
       ${SOP.err ? `<p class="ops-err">${e(SOP.err)}</p>` : ""}
-      <div class="ops-row">
-        <button class="btn btn-navy btn-sm" onclick="FTOps.sopNew()">＋ New SOP</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTOps.sopReload()">↻ Refresh</button>
-        ${items.length ? `<button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>` : ""}
+      <div class="ops-row ops-actions">
+        <button type="button" class="ops-btn ops-btn-primary" onclick="FTOps.sopNew()">＋ New SOP</button>
+        <button type="button" class="ops-btn ops-btn-secondary" onclick="FTOps.sopReload()" ${SOP.loading ? "disabled aria-busy=\"true\"" : ""}><span class="ops-ico${SOP.loading ? " ops-spin" : ""}" aria-hidden="true">↻</span>${SOP.loading ? "Refreshing…" : "Refresh"}</button>
+        ${items.length ? `<button type="button" class="ops-btn ops-btn-secondary" onclick="window.print()">🖨 Print</button>` : ""}
+        ${SOP.loadedAt ? `<span class="ops-stamp">Last refreshed ${e(new Date(SOP.loadedAt).toLocaleTimeString())}</span>` : ""}
       </div>
     </div>
     ${renderTrainerMap()}
@@ -328,7 +330,13 @@ window.FTOps = {
     try{ await sopSave((SOP.items || []).filter(x => x.id !== id)); toast("SOP deleted."); }catch(err){ SOP.err = "Couldn’t delete — try again."; }
     render();
   },
-  sopReload(){ sopLoad(true); },
+  async sopReload(){
+    if(SOP.loading) return;
+    const p = sopLoad(true);   // sets SOP.loading synchronously, so this render shows "Refreshing…"
+    render();
+    await p;
+    if(typeof toast === "function") toast(SOP.err ? SOP.err : `SOPs refreshed — ${(SOP.items || []).length} on file.`);
+  },
   dbScan, dbClear
 };
 
@@ -351,6 +359,20 @@ css.textContent = `
 .ops-hero h1{color:var(--navy);font-size:26px;margin:4px 0 8px;}
 .ops-hero > p{color:var(--ink-soft);font-size:13px;max-width:82ch;margin:0 0 14px;line-height:1.6;}
 .ops-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.ops-actions{gap:12px;margin-top:4px;}
+.ops-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 22px;border-radius:10px;font:inherit;font-size:15px;font-weight:800;letter-spacing:.01em;line-height:1;cursor:pointer;border:2px solid transparent;transition:background .15s,border-color .15s,box-shadow .15s,transform .05s;}
+.ops-btn:active:not(:disabled){transform:translateY(1px);}
+.ops-btn:focus-visible{outline:3px solid #F5A524;outline-offset:2px;}
+.ops-btn:disabled{cursor:progress;opacity:.75;}
+.ops-btn-primary{background:#1B2A5C;color:#fff;border-color:#1B2A5C;box-shadow:0 2px 6px rgba(27,42,92,.28);}
+.ops-btn-primary:hover{background:#13204A;border-color:#13204A;box-shadow:0 4px 10px rgba(27,42,92,.35);}
+.ops-btn-secondary{background:#fff;color:#1B2A5C;border-color:#1B2A5C;}
+.ops-btn-secondary:hover:not(:disabled){background:#EEF1FA;}
+.ops-ico{display:inline-block;font-size:17px;font-weight:900;}
+.ops-spin{animation:ops-spin .8s linear infinite;}
+@keyframes ops-spin{to{transform:rotate(360deg);}}
+.ops-stamp{font-size:12.5px;font-weight:600;color:#4A5070;}
+@media print{ .ops-actions{display:none;} }
 .ops-card{padding:18px 20px;margin-bottom:16px;}
 .ops-card h3{color:var(--navy);font-size:15px;margin:0 0 10px;}
 .ops-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;}
