@@ -67,6 +67,8 @@ jobs:
         run: node .github/scripts/cron-checks.cjs
       - name: Scores given on the simulators mirrored on the standard mock call scorecards, a score typed here winning (worker.js syncSimScores)
         run: node .github/scripts/sim-scores.cjs
+      - name: An EOD email matched to its trainee by name, address or sign-off; the unmatched ones given out in 📧 EOD Inbox (worker.js receiveEod)
+        run: node .github/scripts/eod-match.cjs
       - name: Calendar Management Mock Call scorecard, one with the Portal's Google Calendar Simulator
         run: node .github/scripts/calsim-card.cjs
       - name: A day's inputs read for that day (the tracker's and the Monitoring Sheet's dates, in any form)
