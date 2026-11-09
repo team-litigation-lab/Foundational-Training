@@ -2747,6 +2747,21 @@ export default {
       if (!kv && path.startsWith("/api/storage")) return json({ error: "LSH_KV namespace is not bound on this Worker." }, 500);
 
       /* ---------- auth ---------- */
+      // 📢 THE PORTAL'S ANNOUNCEMENT (the broadcast an admin sets in the LSH Training Portal's Master Control → Broadcast &
+      // Ping, shown on the Training Directory's ticker): read from the Portal's public /api/announcement, kept a minute, and
+      // shown on this platform's ticker too (js/ft-announcement.js). "" when the Portal can't be reached.
+      if (path === "/api/announcement") {
+        const now = Date.now(), c = globalThis.__ftAnn;
+        if (c && now - c.at < 60000) return json({ ok: true, text: c.text });
+        let text = "";
+        try {
+          const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { headers: { Accept: "application/json" } });
+          const j = r.ok ? await r.json().catch(() => null) : null;
+          text = j && typeof j.text === "string" ? j.text.replace(/\s+/g, " ").trim().slice(0, 500) : "";
+        } catch (e) { text = ""; }
+        if (text || !c) globalThis.__ftAnn = { at: now, text: text || (c && c.text) || "" };
+        return json({ ok: true, text: (globalThis.__ftAnn || {}).text || "" });
+      }
       if (path === "/api/auth/status") return json({ secure, portalOnly: portalOnly(env), portalSecret: !!portalSecret(env) });
       if (path === "/api/auth/admin") {
         if (!secure) return json({ error: "not-configured" }, 501);
