@@ -255,8 +255,10 @@ const failures = []; const fail = m => failures.push(m);
   const ct = 'c-ct', pi = 'c-pi';
   await put(`ranking:${BATCH}:w2`, { batch: BATCH, week: 2, cols: [{ id: ct, label: 'Ass: Common Terms', sub: '', max: 27, type: 'score', src: '' }, { id: pi, label: 'PI Reading Task', sub: '', max: 40, type: 'score', src: '' }],
     rows: { [ids.Sam]: { cells: { [ct]: { raw: '20' } } } }, createdAt: new Date().toISOString() });
+  // (graded in Week 2 — a column counts its own week's work, so a Week 1 grade wouldn't be Week 2's — index.html ftWeeks)
+  const w2at = (await page.evaluate(b => ftWeeks.range(b, 2), BATCH))[0] + 'T15:00:00Z';
   for (const [f, pct] of [['Rhea', 80], ['Sam', 50]]) { const rv = (await get('trackerreview:' + ids[f])) || { days: {} };
-    rv.assess = Object.assign({}, rv.assess, { '14sz5f3HTQKmryc7Upvlc6qua008rPnmw': { title: 'Common Terms Used – Assessment', score: pct * 27 / 100, max: 27, pct, at: new Date().toISOString(), items: {} } });
+    rv.assess = Object.assign({}, rv.assess, { '14sz5f3HTQKmryc7Upvlc6qua008rPnmw': { title: 'Common Terms Used – Assessment', score: pct * 27 / 100, max: 27, pct, at: w2at, items: {} } });
     await put('trackerreview:' + ids[f], rv); }
   await page.evaluate(b => FTRanking.open(b, 2), BATCH); await page.waitForTimeout(4000);
   const w2 = await get(`ranking:${BATCH}:w2`), cRhea = (((w2 || {}).rows || {})[ids.Rhea] || { cells: {} }).cells[ct], cSam = (((w2 || {}).rows || {})[ids.Sam] || { cells: {} }).cells[ct];
@@ -273,10 +275,12 @@ const failures = []; const fail = m => failures.push(m);
   // 🔄 a cell the platform filled follows the scorecards: Rhea's assessment graded again (90%) → her cell 24.3 on the next read,
   // and an auto NO SUBMISSION note (from before her files were linked) is worked out again; the trainer's typed 20 stays
   { const rv = await get('trackerreview:' + ids.Rhea); rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'] = Object.assign(rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'], { score: 24.3, pct: 90 }); await put('trackerreview:' + ids.Rhea, rv);
-    const w = await get(`ranking:${BATCH}:w2`); w.cols.push({ id: 'c-st', label: 'Spelling & Typing Tests', sub: '9/28 to 10/06', type: 'notes', src: 'skills' });
+    // (the column names Week 2's own dates: a report's week is the dates a column names, and Week 2's grades are in them)
+    const r2 = await page.evaluate(b => ftWeeks.range(b, 2), BATCH), md = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
+    const w = await get(`ranking:${BATCH}:w2`); w.cols.push({ id: 'c-st', label: 'Spelling & Typing Tests', sub: `${md(r2[0])} to ${md(r2[1])}`, type: 'notes', src: 'skills' });
     w.rows[ids.Rhea].cells['c-st'] = { note: 'NO SUBMISSION', auto: true }; w.rows[ids.Sam].cells['c-st'] = { note: 'Typed by the trainer', auto: true, noteBy: 'trainer' };
     await put(`ranking:${BATCH}:w2`, w);
-    await put('skills:' + ids.Rhea, { typing: [{ date: '2026-09-28', slot: 'AM', net: 40, acc: 95 }], spelling: [] }); }
+    await put('skills:' + ids.Rhea, { typing: [{ date: r2[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }); }
   await page.evaluate(b => { FTRanking.reload(); FTRanking.open(b, 2); }, BATCH); await page.waitForTimeout(4000);
   { const w = await get(`ranking:${BATCH}:w2`), r = ((w.rows[ids.Rhea] || {}).cells) || {}, sm = ((w.rows[ids.Sam] || {}).cells) || {};
     if (Number((r[ct] || {}).raw) !== 24.3) fail(`a platform-filled score didn't follow the scorecard (90% of 27 = 24.3): ${JSON.stringify(r[ct])}`);
