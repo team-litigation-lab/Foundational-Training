@@ -1300,7 +1300,12 @@ function autoDone(R, d, it, p){
   if(it.at !== "tool") return null;
   switch(it.id){
     case "process": { const ls = d.lessons || []; if(!ls.length) return null; const ok = ls.every(l => dp[l] && dp[l].done);
-      return {done: ok, how: ok ? "Knowledge Check passed" : "Knowledge Check not passed yet"}; }
+      if(ok) return {done: true, how: "Knowledge Check passed"};
+      // (why not: the answer sheet as the trainee left it — answered and never submitted, or submitted with no grade back)
+      const sets = typeof ftKcQuestions === "function" ? [...new Set(ls.flatMap(l => { try{ return ftKcQuestions(l) || []; }catch(err){ return []; } }).filter(q => q && q.set && !q.set.open).map(q => q.set))] : [], ps = (R.process || {}).sets || {};
+      const answered = sets.some(x => ((ps[x.id] || {}).answers || []).some(a => String(a || "").trim())), sent = sets.some(x => (ps[x.id] || {}).submittedAt);
+      return {done: false, how: sent ? "Submitted for grading, but no grade came back yet: press 🔄 Update all scores; if it stays, open the trainee's Knowledge Check"
+        : answered ? "Answered but not submitted yet: the trainee still has to press 📝 Submit for Grading" : "Knowledge Check not started yet"}; }
     case "skills": { const k = R.skills || {}, n = (k.typing || []).length + (k.spelling || []).length; return {done: n > 0, how: n ? `${n} test${n === 1 ? "" : "s"} taken` : "No test yet"}; }
     case "transcribe": { const r = ((R.transcribe || {}).r) || {}, ok = Object.values(r).some(x => x && x.submittedAt); return {done: ok, how: ok ? "Transcription submitted" : "Not submitted yet"}; }
     case "lor": return {done: nonEmpty(R.lor), how: nonEmpty(R.lor) ? "Letters drafted" : "Not started yet"};
@@ -1631,6 +1636,7 @@ async function readCheck(id, date){
 }
 window.FTBatchSheet = {
   readCheck,
+  autoDone,   // (how a day's activity was found done, or why not: for the tests)
   // 👤 One table per trainee / 📋 By table (kept on this browser), and a trainee's card opened or folded
   view(v){ B.view = v === "tables" ? "tables" : "trainee"; try{ localStorage.setItem("lsh_bs_view", B.view); }catch(err){} render(); },
   // (🔎 a trainee looked up: their page — the one picker beside Batch)
@@ -2351,7 +2357,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:200px;} .bs-pt-t col.bs-pt-c2{width:96px;} .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:260px;} .bs-pt-t col.bs-pt-c2{width:128px;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (wider, as the trainer asked: the labels on one or two lines, a score and its % on one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
