@@ -96,7 +96,7 @@ const DAYS = [
     {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"},
     {t:"Training Video Viewing", kind:"Activity", at:"room"}
   ]},
-  {day:7, role:"Calendar Management Mock Calls · Intake Training", lessons:[6], items:[
+  {day:7, role:"Intake Training", lessons:[6], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},
     {t:"Calendar Management Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"calendar-live"},
     {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
