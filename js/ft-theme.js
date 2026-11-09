@@ -48,7 +48,7 @@
         navy: [
             "#toolBody .btn.lab-cta!", ".ad-cell i", ".bf-tabs button.active", ".btn-navy",
             ".cr-msg.cr-client", ".cr-tabs button.active", ".cs-live-step.on", ".cs-tab.active",
-            ".cues-day-tabs button.active", ".day-num", ".eo-av", ".ff-mc", ".folder-item.active",
+            ".cues-day-tabs button.active", ".day-num", ".eo-av", ".ff-mc",
             ".ftc-body a.ft-lesson-link", ".ftr-aux code", ".ftr-stakes", ".gm-tiles div.all",
             ".iz-mv.on", ".lesson-compare .cbox:first-child .chead",
             ".lesson-compare .cbox:first-child .citem::before", ".lesson-process .pstep",
@@ -109,7 +109,7 @@
         /* The pale tints: the green "done / correct" boxes and the red "stop / wrong" ones. */
         "success-bg": [
             ".att-today", ".audit-btn.active-valid", ".callout-tip", ".drill-btn.correct",
-            ".estatus.replied", ".fact-row.fact-correct", ".fb-chip.sent", ".fp-pill.ok",
+            ".fact-row.fact-correct", ".fb-chip.sent", ".fp-pill.ok",
             ".fp-st.st-done", ".ftm-pill.ok", ".kc-fb.kc-ok",
             ".lesson-stage #lessonSlideWrap .quiz-opt.correct", ".module-finish-btn:hover",
             ".pill-done", ".pref-ok", ".qns-ok", ".quiz-opt.correct", ".rv.sent", ".st-done",
@@ -117,7 +117,7 @@
         ],
         "danger-bg": [
             ".ai-result.ai-error", ".audit-btn.active-unrelated", ".callout-warning",
-            ".drill-btn.incorrect", ".esim-fail-banner", ".fa-pri.high", ".fact-row.fact-wrong",
+            ".drill-btn.incorrect", ".fa-pri.high", ".fact-row.fact-wrong",
             ".fp-pill.bad", ".ftm-help", ".ftm-pill.bad", ".ftr-rule", ".kc-fb.kc-low",
             ".lab-attempt-banner.lab-attempt-locked", ".lab-disclaimer.locked",
             ".lesson-stage #lessonSlideWrap .quiz-opt.incorrect", ".pref-bad",
@@ -140,7 +140,7 @@
        there, so they read as a gradient without this file knowing their colour. */
     var SHEEN = [
         ".ai-result", ".callout-stat", ".cert-warn", ".di-strip > div", ".di-warm", ".empty-note",
-        ".example-block", ".fb-composer", ".ftr-goal", ".ftr-why", ".inbox-sidebar", ".mindset-note",
+        ".example-block", ".fb-composer", ".ftr-goal", ".ftr-why", ".mindset-note",
         ".or-note", ".pill-locked", ".pill-open", ".qcheck-card", ".qns-warn", ".script-block",
         ".tfb-inline", ".tk-dash", ".tk-steps li", ".trainer-checkpoint", ".week-day-header"
     ];
