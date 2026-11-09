@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Builds the Foundational Training platform from the EA/PA portal + the curriculum days.
 
+RETIRED: index.html is now maintained directly and no longer matches what this
+script emits, so do not run it (see README.md, Build). Kept as a record.
+
 Usage:  python3 build/build.py <path to EA-PA-TRAINING>
 
 Writes index.html and js/eapa-updates.js here. The platform runs on the EA/PA
@@ -12,10 +15,8 @@ if the EA/PA portal changed that part: update the anchor here and run it again.
 """
 import os, re, sys, datetime
 
-B_ = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, B_)   # build/ on the path, for the patch modules imported below
-
 B = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, B)   # build/ on the path, for the patch modules imported below
 ROOT = os.path.dirname(B)
 if len(sys.argv) != 2:
     sys.exit("usage: python3 build/build.py <path to EA-PA-TRAINING>")
@@ -290,7 +291,6 @@ u, n = re.subn(r'/\* ===== Lesson slide background: the LSH slide template =====
 if "lesson-bg" in u:
     sys.exit("MISSING: the lesson slide background block in eapa-updates.js")
 # The Canva deck in the slides window (see ft_engine_patches.py).
-sys.path.insert(0, B)
 from ft_engine_patches import apply as ft_engine_patches
 u = ft_engine_patches(u)
 open(os.path.join(ROOT, "js", "eapa-updates.js"), "w", encoding="utf8").write(u)
