@@ -2908,12 +2908,15 @@ export default {
         for (const c of [ids.newId, ids.rawId]) { const r = JSON.parse((await kvx.get(`trainee:${c}`)) || "null"); if (r && !r.archived) { id = c; rec = r; break; } }
         if (!rec) return json({ ok: false, error: "No trainee here by that name and batch." }, 404);
         const CRIT = ["Professional Introduction & Call Control", "Client Comprehension & Flow Control", "Information Verification & Accuracy",
-          "Slot Identification & Scheduling Rule Compliance", "Alternative Time Offering", "Calendar Creation & Attorney Reminder Setup", "Notes, Recap & Call Closing"];
-        const rowOf = (n, i) => card.rows.find((r) => r && r.metric === n) || card.rows[i] || {};
-        const scores = CRIT.map((n, i) => { const v = Number(rowOf(n, i).score); return isFinite(v) ? Math.max(0, Math.min(5, v)) : null; });
-        if (scores.some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
+          "Slot Identification & Scheduling Rule Compliance", "Alternative Time Offering", "Calendar Creation & Attorney Reminder Setup", "Notes, Recap & Call Closing",
+          "Tools Utilization"];
+        // (the seven call metrics are needed; 🛠 Tools Utilization, the eighth, comes with the Portal's newer scorecards: an older
+        // card without it leaves it unscored, and the average is of the metrics scored, as 🧑‍🏫 Graders works it out)
+        const rowOf = (n, i) => card.rows.find((r) => r && r.metric === n) || (i < 7 || card.rows.length > 7 ? card.rows[i] : null) || {};
+        const scores = CRIT.map((n, i) => { const r = rowOf(n, i), v = r.score == null || r.score === "" ? NaN : Number(r.score); return isFinite(v) ? Math.max(0, Math.min(5, v)) : null; });
+        if (scores.slice(0, 7).some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
         const feedback = CRIT.map((n, i) => String(rowOf(n, i).feedback || "").slice(0, 600));
-        const avg = scores.reduce((a, v) => a + v, 0) / scores.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
+        const on = scores.filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
         const rk = `labreview:${id}`, cur = JSON.parse((await kvx.get(rk)) || "null") || {};
         cur.acts = cur.acts || {}; const was = cur.acts["calendar-live"] || null;
         if (was && was.at && String(was.at) > at && was.source !== "portal") return json({ ok: true, skipped: "a newer scorecard here" });
@@ -3212,6 +3215,23 @@ export default {
         for (const id of ids) { try { out[id] = await syncSimScores(env, id); } catch (e) { out[id] = []; } }
         return json({ ok: true, filled: out });
       }
+      // 📢 the Main Portal's announcement (its Training Directory's ticker), changed from Admin → 📢 Announcements: sent to the
+      // Portal's /api/announcement server to server with the shared AI_GATEWAY_SECRET; op "set" (text) or "clear". Trainers only.
+      if (path === "/api/portal-announcement") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        if (!gatewayOn(env)) return json({ ok: false, off: true, error: "No AI_GATEWAY_SECRET on this Worker yet" });
+        const text = String(b.text || "").replace(/\s+/g, " ").trim().slice(0, 500), clear = b.op === "clear";
+        if (!clear && !text) return json({ ok: false, error: "Type the announcement" }, 400);
+        try {
+          const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { method: clear ? "DELETE" : "POST",
+            headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, body: clear ? undefined : JSON.stringify({ text, by: String(b.by || "Trainer").slice(0, 60) }) });
+          const j = await r.json().catch(() => ({}));
+          if (!(j && j.success)) return json({ ok: false, error: (j && j.error) || "The Portal answered " + r.status });
+          globalThis.__ftAnn = { at: Date.now(), text: String(j.text || "") };   // (the ticker here shows it at once)
+          return json({ ok: true, text: j.text || "" });
+        } catch (e) { return json({ ok: false, error: "The Portal couldn't be reached" }); }
+      }
       if (path === "/api/calsim-card") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
@@ -3223,7 +3243,7 @@ export default {
         const hdr = { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() }, batch = canonicalBatch(rec.batch) || String(rec.batch || "");
         try {
           if (b.op === "put") {
-            const rows = Array.isArray(b.rows) ? b.rows.slice(0, 7).map((x) => ({ score: x && x.score, feedback: String((x && x.feedback) || "").slice(0, 600) })) : [];
+            const rows = Array.isArray(b.rows) ? b.rows.slice(0, 8).map((x) => ({ score: x && x.score, feedback: String((x && x.feedback) || "").slice(0, 600) })) : [];
             const r = await fetch(base, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr), body: JSON.stringify({ name: rec.name, batch, rows, by: String(b.by || "Trainer").slice(0, 80) }) });
             const j = await r.json().catch(() => ({}));
             return json(j && j.success ? { ok: true, card: j.card } : { ok: false, error: (j && j.error) || "The Portal answered " + r.status });

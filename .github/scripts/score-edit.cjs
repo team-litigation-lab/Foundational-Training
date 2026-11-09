@@ -99,7 +99,9 @@ async function workerChecks() {
     { const pg = await box();
       if (!pg) fail('Eve\'s page isn\'t on the Batch Sheet');
       else {
-        for (const r of [`kc:${L}`, 'act:reception-live', 'act:transcription-1', 'run:reception|-', 'monitor', 'assess:recact', 'items:5-7']) if (!pg.opts.includes(r)) fail(`✎ Edit a score has no ${r} to pick: ${pg.opts.join(', ')}`);
+        for (const r of [`kc:${L}`, 'act:reception-live', 'act:transcription-1', 'monitor', 'assess:recact', 'items:5-7']) if (!pg.opts.includes(r)) fail(`✎ Edit a score has no ${r} to pick: ${pg.opts.join(', ')}`);
+        // (🟢 a Practice Session is practice, off the scorecards: not on this list — its trainer scores it in 🟢 Practice Sessions)
+        if (pg.opts.some(r => /^run:/.test(r))) fail(`✎ Edit a score offers a Practice Session, which is off the scorecards: ${pg.opts.join(', ')}`);
         if (pg.fields !== 1) fail(`✎ Edit a score shows ${pg.fields} score fields, not the one picked`);
         if (pg.grades) fail('the trainee\'s page still has a 🏅 Grades table');
         if (!pg.extra || pg.extraInSec || pg.extraTh || pg.extraLabel !== '+') fail(`the + points field isn't a plain row under ✎ Edit a score: ${JSON.stringify(pg)}`);
@@ -141,12 +143,6 @@ async function workerChecks() {
     // (the reviews kept beside it: the Graders save read the record fresh)
     if (!((await get('labreview:' + id)).sessions || {})['reception|-']) fail('the Graders save wiped the Practice Session reviews');
     await open();
-
-    // 🟢 a resubmitted Practice Session: the edit is for its new attempt, so it shows (not dropped as an older attempt's)
-    await page.evaluate(([id]) => FTBatchSheet.editScore(id, 'run:reception|-', '90'), [id]); await settled();
-    { const r = ((await get('labreview:' + id)).sessions || {})['reception|-'] || {}, s = await SC();
-      if (r.score !== 90 || r.attempt !== 2 || r.comment === 'OLD-ATTEMPT') fail(`the session edit isn't saved for the new attempt: ${JSON.stringify(r)}`);
-      if ((s.items['sessions|run:reception|-'] || {}).pct !== 90) fail(`the resubmitted session's edit is dropped by the Scorecard: ${JSON.stringify(s.items['sessions|run:reception|-'])}`); }
 
     // 📋 the Monitoring Sheet: its own trainerScore (the rest of trackerreview kept)
     await page.evaluate(([id]) => FTBatchSheet.editScore(id, 'monitor', '77'), [id]); await settled();

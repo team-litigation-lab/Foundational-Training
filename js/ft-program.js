@@ -11,7 +11,7 @@
      🎯 Graded calls            labreview:<id> (the trainer's Mock Call scorecard, js/ft-sessions.js ftMockCallItem), else callsim:<id>, the best graded call
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
-     🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
+     🟢 Practice Sessions       sessions:<id> + labreview:<id>: practice, so not on the Scorecard (hidden, not in the overall; js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
      📅 Calendaring Activity    calweek:<id>, the automated check of the submitted next-week calendar (js/ft-calweek.js)
@@ -51,12 +51,13 @@ window.LSH_PROGRAM = {
     // (📅 Calendaring, 🟢 Practice Sessions and 🎧 Call Listening: the screens where a trainer reviews them, here as tabs of their own)
     admin: ["attendance", "batches", "sops", "dbmaint", "orientation", "calendaring", "sessions", "listening"],   // (📁 Batches: archive, records, the Archive shelf, offboarded VAs, js/ft-batch-admin.js)   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
-    modules: ["opendays", "curriculum", "monitor", "fbstyle", "announcements"],   // (📢 Announcements: this platform's and each lesson's, js/ft-announcement.js)   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
+    modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],
     intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
     lorassign: ["lorassign"],   // 📄 Assign LORs: its own section beside 📦 Intake Packets (js/ft-lor.js)
+    announcements: ["announcements"],   // 📢 Announcements: its own section, beside 📄 Assign LORs (this platform's and each lesson's, js/ft-announcement.js)
     // 🔗 Drive Links and 🧑‍🏫 Graders: Mock Calls & Demos, section buttons of their own beside 📊 Weekly Reports (adminSections)
     drivelinks: ["drivelinks"],
     graders: ["graders"],
@@ -76,10 +77,10 @@ window.LSH_PROGRAM = {
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}],
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}, {id: "announcements", label: "📢 Announcements"}],
   adminLead: {scorecard: "batchsheet"},
   // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
-  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "admin", "modules", "lab"],
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "announcements", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [
@@ -130,7 +131,9 @@ window.LSH_PROGRAM = {
           if(pct != null && (!ext[k] || pct > ext[k].pct)) ext[k] = {name:k, pct, note:"Connected simulator · best result"}; });
         return out.concat(Object.values(ext));
       }},
-    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:",
+    // (🟢 Practice Sessions are practice: off the Scorecard — no card, not in the overall — which shows only graded work. Their
+    //  records are still read; each session's checks and the trainer's review stay on the session itself.)
+    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:", hidden:true, noOverall:true,
       about:"Your live Practice Sessions at your firm: your trainer’s score once they review one, until then its automated checks.",
       items: ctx => typeof window.ftSessionItems === "function" ? window.ftSessionItems(ctx) : []},
     {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",

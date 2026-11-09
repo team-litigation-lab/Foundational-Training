@@ -18,12 +18,14 @@ function shown(){
   let l = null; try{ l = DD_().placeLesson ? DD_().placeLesson() : null; }catch(e){}
   return [A.own.platform && A.own.platform.text, lessonText(l), A.text].filter(Boolean).join("     ✦     ");
 }
+// (a trainer — not in 👁 Trainee view — always sees the bar, with ✏️ Edit, so an announcement can be added from any page)
+const isTrainer = () => typeof state !== "undefined" && !!state.isAdmin && !state.adminPreview;
 const TZS = [["Asia/Manila", "Manila (PHT)"], ["UTC", "UTC"], ["America/New_York", "New York (ET)"], ["America/Los_Angeles", "Los Angeles (PT)"]];
 const esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const tz = () => { try{ const v = localStorage.getItem("ft_ann_tz"); if(TZS.some(([z]) => z === v)) return v; }catch(e){} return "Asia/Manila"; };
 const clock = () => { try{ return new Intl.DateTimeFormat("en-US", {year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: tz(), hour12: true}).format(new Date()); }catch(e){ return ""; } };
 function fill(){
-  const t = shown();
+  const t = shown() || (isTrainer() ? "No announcement yet. Press ✏️ Edit to add one." : "");
   document.querySelectorAll("[data-ft-ann-text]").forEach(el => { if(el.textContent !== t) el.textContent = t; });
   document.querySelectorAll("[data-ft-ann]").forEach(el => { el.hidden = !t; });
   document.querySelectorAll("[data-ft-ann-lesson]").forEach(el => { const x = lessonText(Number(el.dataset.ftAnnLesson)); el.hidden = !x; const b = el.querySelector("b + span"); if(b && b.textContent !== x) b.textContent = x; });
@@ -38,9 +40,10 @@ async function load(){
 // (on a Day deck: only the lesson's own announcement, when it has one — a deck is drawn as large as the screen allows)
 function bar(){
   load();
-  const t = shown();
+  const t = shown() || (isTrainer() ? "No announcement yet. Press ✏️ Edit to add one." : "");
   return `<div class="ft-ann no-print" data-ft-ann${t ? "" : " hidden"}><div class="ft-ann-in">
     <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(t)}</span></div></div></div>
+    ${typeof state !== "undefined" && state.isAdmin && !state.adminPreview ? `<button type="button" class="ft-ann-edit" title="Edit this platform's and each lesson's announcement" onclick="state.adminTab='announcements'; goto('admin')">✏️ Edit</button>` : ""}
     <div class="ft-ann-clock"><span data-ft-ann-clock>${esc_(clock())}</span><select aria-label="Time zone" onchange="FTAnnouncement.tz(this.value)">${TZS.map(([z, l]) => `<option value="${z}"${z === tz() ? " selected" : ""}>${l}</option>`).join("")}</select></div>
   </div></div>`;
 }
@@ -49,7 +52,8 @@ if(typeof __top === "function") window.renderTopbar = function(){ return __top.a
 setInterval(() => { const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); }, 1000);
 setInterval(() => { A.at = 0; load(); }, 5 * 60 * 1000);
 /* 📝 Admin → 📢 Announcements: this platform's own announcement and each lesson's (settings:announcements, read back through
-   worker.js /api/announcement). The Portal's broadcast is edited on the Portal (Master Control → Broadcast & Ping). */
+   worker.js /api/announcement), and the Main Portal's (its Training Directory's ticker; the Portal's Master Control → Broadcast & Ping
+   edits the same one), sent there through worker.js /api/portal-announcement. */
 const ED = {rec: null, loading: false, saving: false};
 function editorHtml(){
   if(!ED.rec && !ED.loading){ ED.loading = true; Promise.resolve(typeof sharedGet === "function" ? sharedGet("settings:announcements") : null).then(v => { ED.rec = v && typeof v === "object" ? v : {}; ED.loading = false; if(state.view === "admin") render(); }).catch(() => { ED.rec = {}; ED.loading = false; if(state.view === "admin") render(); }); }
@@ -57,7 +61,7 @@ function editorHtml(){
   const ls = DD_().lessons ? DD_().lessons() : [], nameOf = l => (typeof ftName === "function" ? ftName(l) : "Lesson " + l) + (DD_().lessonFocus && DD_().lessonFocus(l) ? " · " + DD_().lessonFocus(l) : "");
   const val = x => esc_((x && x.text) || ""), when = x => x && x.at ? ` <small class="ann-ed-when">saved ${esc_(new Date(x.at).toLocaleString())}${x.by ? " by " + esc_(x.by) : ""}</small>` : "";
   return `<div class="card ann-ed"><h3>📢 Announcements</h3>
-    <p class="ann-ed-note">What the ticker under the top bar says. <b>This platform</b> shows on every page; <b>a lesson's</b> shows while a trainee is on that lesson (its cards and Day decks). The <b>Portal's broadcast</b> (Master Control → Broadcast &amp; Ping) shows after them${A.text ? `: “${esc_(A.text)}”` : ""}. Leave a box empty for none. 500 characters at most.</p>
+    <label class="ann-ed-row"><span>🏠 Main Portal <small class="ann-ed-when">the Training Directory's ticker, shown here too</small></span><textarea data-ann-portal maxlength="500" rows="2" placeholder="Welcome to the Legal Skills Hub.">${esc_(A.text)}</textarea></label>
     <label class="ann-ed-row"><span>🌐 This platform${when(ED.rec.platform)}</span><textarea data-ann="platform" maxlength="500" rows="2" placeholder="No announcement">${val(ED.rec.platform)}</textarea></label>
     ${ls.map(l => `<label class="ann-ed-row"><span>📘 ${esc_(nameOf(l))}${when((ED.rec.lessons || {})[l])}</span><textarea data-ann="${l}" maxlength="500" rows="2" placeholder="No announcement">${val((ED.rec.lessons || {})[l])}</textarea></label>`).join("")}
     <div class="ann-ed-act"><button type="button" class="btn btn-primary" onclick="FTAnnouncement.save(this)"${ED.saving ? " disabled" : ""}>💾 Save the announcements</button></div></div>`;
@@ -69,11 +73,20 @@ async function save(btn){
   const next = {platform: null, lessons: {}};
   box.querySelectorAll("[data-ann]").forEach(t => { const text = String(t.value || "").replace(/\s+/g, " ").trim().slice(0, 500), k = t.dataset.ann;
     if(k === "platform") next.platform = keep(cur.platform, text); else { const v = keep((cur.lessons || {})[k], text); if(v) next.lessons[k] = v; } });
+  // 🏠 the Main Portal's, when it was changed: sent to the Portal (worker.js /api/portal-announcement; empty = back to its welcome line)
+  const pt = box.querySelector("[data-ann-portal]"), ptext = pt ? String(pt.value || "").replace(/\s+/g, " ").trim().slice(0, 500) : A.text;
   ED.saving = true; btn.disabled = true;
+  let portalErr = "";
+  if(pt && ptext !== A.text){
+    try{ const j = await (await authFetch("/api/portal-announcement", ptext ? {op: "set", text: ptext, by} : {op: "clear", by})).json();
+      if(j && j.ok) A.text = j.text || ptext; else portalErr = (j && j.error) || "no answer"; }
+    catch(e){ portalErr = "the Portal couldn't be reached"; }
+  }
   const ok = typeof sharedSet === "function" ? await sharedSet("settings:announcements", next) : false;
   ED.saving = false; btn.disabled = false;
+  if(portalErr && typeof toast === "function") toast("⚠ The Main Portal's announcement wasn't changed: " + portalErr);
   if(ok === false){ if(typeof toast === "function") toast("Couldn’t save. Check your connection."); return; }
-  ED.rec = next; if(typeof toast === "function") toast("✓ Announcements saved: the ticker shows them now.");
+  ED.rec = next; if(typeof toast === "function" && !portalErr) toast("✓ Announcements saved: the ticker shows them now.");
   A.at = 0; await load(); if(typeof render === "function") render();
 }
 if(typeof ftAdminTab === "function") ftAdminTab("announcements", "📢 Announcements", editorHtml);
@@ -99,6 +112,7 @@ window.FTAnnouncement = {
 .ft-ann-track{display:inline-block;white-space:nowrap;padding-left:100%;animation:ft-ann-scroll 22s linear infinite;font:700 14px/1.3 Arial,sans-serif;letter-spacing:.01em;color:#fde68a;text-shadow:0 0 10px rgba(253,230,138,.35);}
 .ft-ann-view:hover .ft-ann-track{animation-play-state:paused;}
 @keyframes ft-ann-scroll{from{transform:translateX(0);}to{transform:translateX(-100%);}}
+.ft-ann-edit{flex:none;margin:0 10px;padding:3px 10px;border:1px solid rgba(253,186,116,.6);border-radius:999px;background:rgba(253,186,116,.12);color:#fdba74;font:700 11.5px Arial,sans-serif;cursor:pointer;white-space:nowrap;}.ft-ann-edit:hover{background:rgba(253,186,116,.25);}
 .ft-ann-clock{display:flex;align-items:center;gap:6px;color:#cbd5e1;font:600 11.5px Arial,sans-serif;white-space:nowrap;}
 .ft-ann-clock select{border:none;background:none;font:inherit;font-weight:700;color:#fdba74;cursor:pointer;}
 .ft-ann-clock select option{color:#0b1733;}

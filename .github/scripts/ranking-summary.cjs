@@ -53,6 +53,22 @@ const failures = []; const fail = m => failures.push(m);
     d = await get(`rksum:${BATCH}:w1`); r = d && d.rows && d.rows[id];
     if (!r || r.comments.english !== 'EDITED-BY-TRAINER') fail('a trainer\'s edit was lost when the week was summarized again');
     if (!r || r.scores.call !== 4) fail(`without the AI, Call Handling isn't the mock call's 4.0: ${r && r.scores.call}`);
+    // 🔄 updated daily: a summary from an earlier day of a week still under way (or just over) is due again; one drafted today, or
+    // of a week long over, isn't; shared before, the daily update shares it again with the new scores, without asking
+    { const due = await page.evaluate(() => { const ymd = n => FTTrackerRules.ptDate(new Date(Date.now() + n * 864e5)), r = [ymd(-3), ymd(2)];
+        return { yesterday: FTRankSummary.stale({ at: new Date(Date.now() - 864e5).toISOString() }, r), today: FTRankSummary.stale({ at: new Date().toISOString() }, r),
+          justOver: FTRankSummary.stale({ at: new Date(Date.now() - 3 * 864e5).toISOString() }, [ymd(-8), ymd(-1)]), longOver: FTRankSummary.stale({ at: new Date(Date.now() - 20 * 864e5).toISOString() }, [ymd(-30), ymd(-10)]) }; });
+      if (!due.yesterday || due.today || !due.justOver || due.longOver) fail(`the daily update is due at the wrong times: ${JSON.stringify(due)}`);
+      await page.evaluate(() => { window.__asked = 0; window.confirm = () => { window.__asked++; return true; }; });
+      await page.evaluate(() => FTRankSummary.share({ quiet: true })); await page.waitForTimeout(800);
+      const s1 = await get('rankshare:' + id), c1 = s1 && s1.reports && s1.reports[`${BATCH}|1`];
+      const lab = await get('labreview:' + id); lab.acts['reception-live'].rubric.scores = lab.acts['reception-live'].rubric.scores.map(() => 2); lab.acts['reception-live'].rubric.avg = 2; lab.acts['reception-live'].score = 40; await put('labreview:' + id, lab);
+      await page.evaluate(() => FTRankSummary.draft({ daily: true })); await idle();
+      const s2 = await get('rankshare:' + id), c2 = s2 && s2.reports && s2.reports[`${BATCH}|1`], k = await get(`rksum:${BATCH}:w1`);
+      if (!c1 || !c2 || !(c2.scores.call < c1.scores.call) || c2.sharedAt === c1.sharedAt) fail(`the daily update of a shared week didn't reach the trainee's card: ${JSON.stringify({ before: c1 && c1.scores.call, after: c2 && c2.scores.call })}`);
+      if (await page.evaluate(() => window.__asked)) fail('the daily update asked before sharing again');
+      if (!k || !k.rows[id] || k.rows[id].comments.english !== 'EDITED-BY-TRAINER') fail('the daily update lost a trainer\'s edit');
+      await put('rankshare:' + id, null); }
     const doc = await page.evaluate(() => FTRankSummary.doc());
     if (!/Weekly Progress Report/.test(doc) || !/Rosa Report/.test(doc) || !/Call Handling/.test(doc)) fail('⬇ Word doesn\'t give the report');
     // ⬇ Excel (no ⬇ Word or 🖨 Print buttons on the bar): a real .xlsx of the report

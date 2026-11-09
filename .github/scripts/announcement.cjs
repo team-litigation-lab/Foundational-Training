@@ -55,14 +55,30 @@ const failures = []; const fail = m => failures.push(m);
     // 📝 the editor: a trainer's Admin → 📢 Announcements saves settings:announcements
     await page.unroute('**/api/announcement');
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.adminTab = 'announcements'; goto('admin'); }); await page.waitForTimeout(1500);
+    // (no explanation paragraph; 🏠 the Main Portal's announcement in a box of its own, sent to the Portal when changed)
+    if (await page.$('.ann-ed-note')) fail('the editor still has its explanation paragraph');
+    let portalSent = null;
+    await page.route('**/api/portal-announcement', r => { portalSent = JSON.parse(r.request().postData() || '{}'); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, text: portalSent.text }) }); });
+    if (!(await page.$('textarea[data-ann-portal]'))) fail('the editor has no box for the Main Portal\'s announcement');
     await page.fill('textarea[data-ann="platform"]', 'Typing test at 9 AM'); await page.fill('textarea[data-ann="1"]', 'Headsets on');
     await page.click('.ann-ed .btn-primary'); await page.waitForTimeout(1200);
+    if (portalSent) fail('the Main Portal\'s announcement was sent though it wasn\'t changed: ' + JSON.stringify(portalSent));
+    await page.fill('textarea[data-ann-portal]', 'Portal maintenance at 6 PM'); await page.click('.ann-ed .btn-primary'); await page.waitForTimeout(1200);
+    if (!portalSent || portalSent.op !== 'set' || portalSent.text !== 'Portal maintenance at 6 PM') fail('the Main Portal\'s announcement wasn\'t sent to the Portal: ' + JSON.stringify(portalSent));
+    await page.unroute('**/api/portal-announcement');
     { const r = await page.evaluate(async () => (await (await fetch('/api/announcement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()));
       if (!r.own || !r.own.platform || r.own.platform.text !== 'Typing test at 9 AM' || !r.own.lessons || !r.own.lessons['1'] || r.own.lessons['1'].text !== 'Headsets on') fail(`the editor's announcements weren't saved and served: ${JSON.stringify(r)}`); }
     await page.route('**/api/announcement', r => { method = r.request().method(); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, text, own: null }) }); });
     // (none: no ticker)
     text = ''; await page.evaluate(() => FTAnnouncement.reload()); await page.waitForTimeout(400);
+    // (a trainer keeps the bar, with ✏️ Edit, so an announcement can be added from any page; in 👁 Trainee view it's gone)
+    { const tr = await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return { shown: !!b && !b.hidden, edit: !!document.querySelector('.ft-ann-edit'), text: (document.querySelector('[data-ft-ann-text]') || {}).textContent || '' }; });
+      if (!tr.shown || !tr.edit || !/No announcement yet/.test(tr.text)) fail('a trainer with no announcement doesn\'t get the bar with ✏️ Edit: ' + JSON.stringify(tr)); }
+    await page.click('.ft-ann-edit'); await page.waitForTimeout(500);
+    if (!(await page.$('.ann-ed'))) fail('✏️ Edit on the bar doesn\'t open the announcement editor');
+    await page.evaluate(() => { state.adminPreview = true; render(); FTAnnouncement.reload(); }); await page.waitForTimeout(400);
     if (!(await page.evaluate(() => [...document.querySelectorAll('.ft-ann')].every(b => b.hidden)))) fail('an empty announcement still shows the ticker');
+    await page.evaluate(() => { state.adminPreview = false; render(); });
   } catch (e) { fail(e.stack || String(e)); }
   await browser.close();
   if (failures.length) { console.error('Announcement test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
