@@ -45,6 +45,9 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.evaluate(() => state.adminTab) !== 'weeklyreports') fail('the old 📊 Weekly Ranking tab doesn\'t land on 📊 Weekly Reports');
   const tabs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
   if (!/Weekly Reports/.test(tabs) || /Weekly Ranking/.test(tabs)) fail(`🏅 Scorecard's tabs have no 📊 Weekly Reports (the old 📊 Weekly Ranking tab hidden): ${tabs}`);
+  { const secs = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-sec')].map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+    const sc = secs.findIndex(x => /Scorecard/.test(x)), wr = secs.findIndex(x => /Weekly Reports/.test(x));
+    if (wr < 0 || sc < 0 || wr !== sc + 1) fail(`📊 Weekly Reports isn't its own section button beside 🏅 Scorecard: ${secs.join(' | ')}`); }
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
   if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
