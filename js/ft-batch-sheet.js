@@ -556,8 +556,8 @@ function scoreCardTable(){
 }
 // Compliance and Platform Utilization Monitoring
 const LSTAT = {ok: ["✓ Correct", "gs-hi"], trainer: ["✓ Correct", "gs-hi"], bad: ["✗ Wrong", "gs-lo"], fix: ["✗ Wrong", "gs-lo"], pending: ["⏳ Pending", "gs-mid"], relinked: ["⏳ Pending", "gs-mid"], unchecked: ["⚠ Can’t check", "gs-mid"], none: ["— Not linked", ""]};
-// a link's mark: ✓ right, ✗ something to fix (what: its pop-up), ⏳ not checked yet
-const markOf = x => x.nf ? "✗" : /^(ok|trainer)$/.test(x.st) ? "✓" : /^(pending|relinked)$/.test(x.st) ? "⏳" : "✗";
+// a link's mark: ✓ right, else ✗ (what: its pop-up — not checked yet included)
+const markOf = x => !x.nf && /^(ok|trainer)$/.test(x.st) ? "✓" : "✗";
 const markBtn = (p, k, x) => { const m = markOf(x);
   return m === "✗" ? `<button type="button" class="bs-mk bs-mk-x" onclick="event.stopPropagation();FTBatchSheet.lkPop('${e(p.id)}', '${k}')" title="What is wrong">✗</button>` : `<span class="bs-mk ${m === "✓" ? "bs-mk-ok" : "bs-mk-wait"}">${m}</span>`; };
 // a trainee's six links, a cell each: the link's name and its mark
@@ -728,6 +728,7 @@ function issueWhy(p, it){
   if(x.nf) return "Not in their Drive";
   if(x.st === "none") return "Not linked";
   if(x.st === "unchecked") return "Couldn’t check it";
+  if(x.st === "pending" || x.st === "relinked") return "Not checked yet: it is checked on 🔁 Check them now and at the end of the shift";
   if(x.st === "bad" && ACCESS(err)) return /not.?found|404/i.test(String((x.c || {}).why || "")) ? "Can’t open it: not shared, or the file is gone" : "Can’t open it: not shared";
   let m;
   if(/blank template/i.test(err)) return "Blank template, not their copy";
