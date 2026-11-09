@@ -3445,5 +3445,11 @@ main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:19px !important;font-wei
 main.main-ftdd .ftdd-sheet .ftdd-mcside-links{flex-direction:column;align-items:stretch;margin:0 0 12px;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:17px;padding:12px 16px;}
 @media(max-width:1100px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{grid-template-columns:minmax(0,1fr);} }
+/* ✨ the Dashboard's card titles, easier to read: bolder and a touch larger, with a crisp edge — navy with a white rim and a
+   soft shadow on a lesson card's light band, white with a dark shadow on the navy pinned cards */
+main.main-dash .module-card .mh-title{font-weight:800 !important;font-size:16.5px !important;letter-spacing:.01em !important;color:#141A38 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.95), 0 2px 6px rgba(30,35,64,.22);}
+main.main-dash .dash-pair-pin .module-card .mh-title{font-size:17px !important;color:#fff !important;text-shadow:0 1px 0 rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.5);}
+@media(max-width:900px){ main.main-dash .module-card .mh-title{font-size:15px !important;} }
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);
