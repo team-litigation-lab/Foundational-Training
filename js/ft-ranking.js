@@ -155,7 +155,9 @@ function weekRange(){
   // (a Batch ID that isn't a real date — an old or mistyped one, "B250926" — gives no start, instead of a crash)
   // (a B + DDMMYY one reads as its day: index.html batchStartDate)
   const startOf = b => (typeof batchStartDate === "function" ? batchStartDate(b) : "") || null;
-  const start = [R.batch].concat(people().map(p => p.batch)).map(startOf).find(Boolean); if(!start) return null;
+  const sb = [R.batch].concat(people().map(p => p.batch)).find(b => startOf(b)); if(!sb) return null; const start = startOf(sb);
+  // (the batch's weeks, index.html ftWeeks: Week 1 through its first Friday with 3 training days or more, then Monday to Sunday)
+  if(window.ftWeeks) return ftWeeks.range(sb, R.week);
   const t = Date.parse(start + "T00:00:00Z") + (R.week - 1) * 7 * 864e5, iso = ms => new Date(ms).toISOString().slice(0, 10);
   if(!isFinite(t)) return null;
   return [iso(t), iso(t + 6 * 864e5)];
@@ -164,6 +166,8 @@ const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
 // the batch's week now: from its start (the Batch ID's date), 1 to 6
 function weekNow(){
   const R0 = R.week; R.week = 1; const r = weekRange(); R.week = R0; if(!r) return 1;
+  const named = ((R.data || {}).cols || []).some(c => parseRange(c.sub)), sb = [R.batch].concat(people().map(p => p.batch)).find(b => typeof batchStartDate === "function" && batchStartDate(b));
+  if(!named && sb && window.ftWeeks) return ftWeeks.now(sb, ptToday());
   return Math.max(1, Math.min(6, Math.floor((Date.parse(ptToday() + "T00:00:00Z") - Date.parse(r[0] + "T00:00:00Z")) / (7 * 864e5)) + 1));
 }
 const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
@@ -171,7 +175,9 @@ const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date
 // (the moment itself, not the UTC clock against the Pacific date: that Friday's Pacific evening is already the next UTC day)
 function weekOver(){
   const r = weekRange(); if(!r) return false;
-  const fri = new Date(Date.parse(r[0] + "T00:00:00Z") + 4 * 864e5).toISOString().slice(0, 10);
+  // (the week's last Friday: its range can run longer than 7 days — a batch's Week 1, index.html ftWeeks)
+  let ft = Date.parse(r[1] + "T00:00:00Z"); for(let i = 0; i < 7 && new Date(ft).getUTCDay() !== 5; i++) ft -= 864e5;
+  const fri = new Date(ft).toISOString().slice(0, 10);
   return ptToday() > fri || Date.now() >= Date.parse(fri + "T22:30:00Z");
 }
 function srcOptions(){

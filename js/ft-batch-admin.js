@@ -49,10 +49,11 @@ const scoredActs = () => trainerActs().filter(a => RUB().forAct(a) || /mock|demo
 // 📅 the batch's weeks (the banner's: 7 days from the day it started, Weeks 1–6), for the Week dropdown
 const WEEKS = 6, DAY = 864e5;
 const t0Of = b => { const s = b && typeof batchStartDate === "function" ? batchStartDate(b) : ""; const t = s ? Date.parse(s + "T00:00:00Z") : NaN; return isFinite(t) ? t : null; };
-function nowWeek(b){ const t0 = t0Of(b); if(t0 == null) return 1;
+function nowWeek(b){ const t0 = t0Of(b); if(t0 == null) return 1; if(window.ftWeeks) return ftWeeks.now(b);
   const td = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
   return Math.max(1, Math.min(WEEKS, Math.floor((Date.parse(td + "T00:00:00Z") - t0) / (7 * DAY)) + 1)); }
-const wkRange = (b, n) => { const t0 = t0Of(b); if(t0 == null) return ""; const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", day: "numeric", timeZone: "UTC"}), a = t0 + (n - 1) * 7 * DAY; return f(a) + " – " + f(a + 6 * DAY); };
+const wkRange = (b, n) => { const t0 = t0Of(b); if(t0 == null) return "";
+  const r = window.ftWeeks ? ftWeeks.range(b, n) : null; if(r){ const g = s => new Date(s + "T00:00:00Z").toLocaleDateString(undefined, {month: "short", day: "numeric", timeZone: "UTC"}); return g(r[0]) + " – " + g(r[1]); } const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "short", day: "numeric", timeZone: "UTC"}), a = t0 + (n - 1) * 7 * DAY; return f(a) + " – " + f(a + 6 * DAY); };
 async function api(path, body){
   const res = await authFetch(path, body || {});
   const j = await res.json().catch(() => ({}));
