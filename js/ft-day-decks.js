@@ -532,7 +532,7 @@ function listenCards(cards, folder, recs){
       : folder ? `<a class="btn btn-ghost btn-sm" href="${e(folder)}" target="_blank" rel="noopener noreferrer">▶ Play it from the folder</a>` : ""}</div>`).join("")}</div>`;
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
-const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
+const slidesOf = d => {
   // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
   const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
   let listened = false;
@@ -540,14 +540,13 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
     // the "To be added" placeholder has no slide of its own on any day: no 📌 From your trainer: activities & instructions
     // slide at the end of a deck (no 🎲 Today's Task either: the unannounced task lands in 🎲 Tasks)
     if(s.placeholder) return;
-    const slide = s;
-    if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
+    if(/call listening/i.test(String(s.h || ""))){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
-      out.push(Object.assign({}, slide, {h: splitHeading(slide.h)}));
+      out.push(Object.assign({}, s, {h: splitHeading(s.h)}));
       const ls = listenSlide(d.day, t); if(ls){ out.push(ls); listened = true; }
       return;
     }
-    out.push(slide);
+    out.push(s);
   });
   // a day whose card has a 🎧 Call Listening row but no slide of the guide's that names it (Day 13: its classroom discussion's
   // slide is off the deck, build/day-decks.cjs SKIP) still gets the log slide; its row puts it in place (inCardOrder)
