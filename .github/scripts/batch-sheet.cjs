@@ -332,7 +332,12 @@ const failures = []; const fail = m => failures.push(m);
           items: { i1: { ok: true, pts: 1, note: 'Right: the policy limit.' }, i2: { ok: false, pts: 0, note: 'Nevada requires 25/50/20.' } } } }); await put('trackerreview:' + ids.Ada, rv); }
       await page.evaluate(() => FTBatchSheet.refresh()); await page.waitForTimeout(3000);
       await page.evaluate(id => FTBatchSheet.kdWho(id), ids.Ada); await page.waitForTimeout(400);
-      const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).innerText || '');
+      const kd = await page.evaluate(() => (document.querySelector('#bs-scorecard .bs-kdw') || {}).textContent || '');   // (each one closed until opened, one at a time: its text, read whole)
+      // (one open at a time: opening another closes the first)
+      { const one = await page.evaluate(async () => { const ds = [...document.querySelectorAll('#bs-scorecard details.bs-kd')]; if (ds.length < 2) return { n: ds.length };
+          ds[0].open = true; await new Promise(r => setTimeout(r, 50)); ds[1].open = true; await new Promise(r => setTimeout(r, 50));
+          return { n: ds.length, open: ds.filter(d => d.open).length, second: ds[1].open }; });
+        if (one.n >= 2 && (one.open !== 1 || !one.second)) fail(`the Knowledge Checks don't close when another opens: ${JSON.stringify(one)}`); }
       if (!/Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
         || !/Auto Liability Insurance – Assessment/.test(kd) || !/The policy limit/.test(kd) || !/✓ 1 pt\s*Right: the policy limit/.test(kd) || !/✗ 0 pts\s*Nevada requires 25\/50\/20/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
@@ -499,7 +504,7 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$('.bs-mine .bs-item, .bs-mine .bs-ck-who')) fail('the trainee\'s page still has the checklist or a trainer\'s picker');
   // (✍️ her Knowledge Checks in detail, shared to her page: each answer with its grade and feedback, the trainer's comments)
   { await kcSeed(); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(3000);
-    const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).innerText || '');
+    const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).textContent || '');
     if (!/My Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
       fail(`the trainee doesn't see her Knowledge Checks in detail on 📋 My Progress: ${kd.slice(0, 400)}`);
     if (/Ben Blank|Cy Waiting|Dee Glitch/.test(kd)) fail('a trainee sees another trainee\'s Knowledge Checks');
