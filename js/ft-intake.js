@@ -321,7 +321,7 @@ async function loadAdmin(){
     AD.ws = {}; people.forEach((r, i) => { const w = subs[i] && subs[i].items && subs[i].items[WS]; if(w && w.answer) AD.ws[r.id] = w; });
     AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     AD.assign = {}; AD.recs = {}; people.forEach((r, i) => { const v = vals[i] && typeof vals[i] === "object" ? vals[i] : null; if(v) AD.recs[r.id] = v; if(v && v.packet) AD.assign[r.id] = Number(v.packet); });
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
     AD.at = Date.now();
   }catch(err){ AD.rows = AD.rows || []; AD.at = Date.now(); }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render(); else paint();

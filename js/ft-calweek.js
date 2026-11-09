@@ -187,7 +187,7 @@ async function loadAdmin(){
     const got = {};
     for(let i = 0; i < people.length; i += 300){ const j = await call("list", {ids: people.slice(i, i + 300).map(r => r.id)}); AD.next = j.next; (j.rows || []).forEach(r => { got[r.id] = r; }); }
     AD.rows = people.map(r => Object.assign({name: r.name || r.id, batch: r.batch || ""}, got[r.id] || {id: r.id})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
   }catch(err){ AD.rows = AD.rows || []; toast("Couldn’t load the Calendaring Activity: " + (err.message || err)); }
   AD.loading = false; if(state.view === "admin" && ftTabOn("calweek")) render();
 }

@@ -437,7 +437,7 @@ async function loadAdmin(quiet){
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
     // the trainer-led activities as the trainer listed them (Admin → Trainer Inputs → ✏️ Edit the activities), so the deck's
     // metrics sheet saves to the same activity Trainer Inputs shows
     try{ const v = await sharedGet("settings:trainer-acts"); if(v && Array.isArray(v.acts) && v.acts.length) T.acts = v.acts; }catch(err){}

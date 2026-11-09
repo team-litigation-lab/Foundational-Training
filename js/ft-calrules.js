@@ -267,7 +267,7 @@ async function loadAdmin(){
     const st = vals.pop(); if(st && st.lunch !== undefined) X.lunch = st.lunch;
     AD.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "", rec: vals[i] && Array.isArray(vals[i].bookings) ? vals[i] : {bookings: []}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+    if(!AD.batch) AD.batch = ftLatestBatch(AD.rows);
   }catch(err){ AD.rows = AD.rows || []; }
   AD.loading = false; if(state.view === "admin" && ftTabOn("calrules")) render();
 }
