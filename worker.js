@@ -2753,8 +2753,14 @@ export default {
       // Ping, shown on the Training Directory's ticker): read from the Portal's public /api/announcement, kept a minute, and
       // shown on this platform's ticker too (js/ft-announcement.js). "" when the Portal can't be reached.
       if (path === "/api/announcement") {
+        // (📢 and this platform's own: the platform-wide one and each lesson's, set in Admin → 📢 Announcements —
+        // settings:announcements = {platform: {text, by, at}, lessons: {<lesson>: {text, by, at}}}; read fresh, so an edit shows at once)
+        const ownRaw = kv ? await kv.get("settings:announcements").catch(() => null) : null;
+        let own = null; try { own = ownRaw ? JSON.parse(ownRaw) : null; } catch (e) { own = null; }
+        const pick = (x) => x && typeof x.text === "string" && x.text.trim() ? { text: x.text.replace(/\s+/g, " ").trim().slice(0, 500) } : null;
+        const mine = { platform: pick(own && own.platform), lessons: Object.fromEntries(Object.entries((own && own.lessons) || {}).map(([k, v]) => [String(k).slice(0, 4), pick(v)]).filter(([, v]) => v)) };
         const now = Date.now(), c = globalThis.__ftAnn;
-        if (c && now - c.at < 60000) return json({ ok: true, text: c.text });
+        if (c && now - c.at < 60000) return json({ ok: true, text: c.text, own: mine });
         let text = "";
         try {
           const r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/announcement", { headers: { Accept: "application/json" } });
@@ -2762,7 +2768,7 @@ export default {
           text = j && typeof j.text === "string" ? j.text.replace(/\s+/g, " ").trim().slice(0, 500) : "";
         } catch (e) { text = ""; }
         if (text || !c) globalThis.__ftAnn = { at: now, text: text || (c && c.text) || "" };
-        return json({ ok: true, text: (globalThis.__ftAnn || {}).text || "" });
+        return json({ ok: true, text: (globalThis.__ftAnn || {}).text || "", own: mine });
       }
       if (path === "/api/auth/status") return json({ secure, portalOnly: portalOnly(env), portalSecret: !!portalSecret(env) });
       if (path === "/api/auth/admin") {

@@ -51,7 +51,7 @@ window.LSH_PROGRAM = {
     // (📅 Calendaring, 🟢 Practice Sessions and 🎧 Call Listening: the screens where a trainer reviews them, here as tabs of their own)
     admin: ["attendance", "batches", "sops", "dbmaint", "orientation", "calendaring", "sessions", "listening"],   // (📁 Batches: archive, records, the Archive shelf, offboarded VAs, js/ft-batch-admin.js)   // (👥 Trainees & Batches — Trainee Audit and 📁 Batch Folders, js/ft-trainees-tab.js — at the foot of 📋 Batch Sheet, no tab; 💬 Trainee Feedback: removed)   // (no 🏛 Law Firms tab)
       // 🕘 Attendance: every active trainee's Time In for the day (js/ft-attendance.js); the Portal's /attendance.html has the rest
-    modules: ["opendays", "curriculum", "monitor", "fbstyle"],   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
+    modules: ["opendays", "curriculum", "monitor", "fbstyle", "announcements"],   // (📢 Announcements: this platform's and each lesson's, js/ft-announcement.js)   // (no 🎮 Knowledge Games: removed; no 📋 Task Trackers or 📁 Drive Trackers button: set up already, their checks are on 📋 Batch Sheet → ✅ Compliance and 📤 Daily outputs)
     lab: ["trainerinputs", "calscores", "calcheck", "calrules", "calweek"],   // (📅 the two calendaring activities: js/ft-calcheck.js)
     // (🧑‍🏫 Graders — every mock call and demo scoresheet — beside 📋 Batch Sheet, 🧪 Typing & Spelling and 📝 Send Feedback)
     weekly: ["weeklyreports"],

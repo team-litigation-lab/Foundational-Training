@@ -1781,6 +1781,7 @@ function dayCard(n, ex){
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
         </section>
       <aside class="ftlc-focus">
+        ${root.FTAnnouncement && FTAnnouncement.lessonHtml ? FTAnnouncement.lessonHtml(c.lesson) : ""}
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
@@ -2170,7 +2171,10 @@ root.FTDayDecks = {open, go, next: nextKC,
   async moveX(n, i, d){ if(!isAdminView()) return; await loadExtras(true); const l = X.data.days[n] || [], j = i + d; if(j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; await saveExtras(); },
   extras: () => X.data};
 // for 🔓 the Activity Locks (js/ft-day-locks.js): the lesson whose card holds a day, what the day holds, the days read through
-Object.assign(root.FTDayDecks, {lessonOfDay, readFirst, dayTitle: n => DAY_TITLES[Number(n)] || ""});
+Object.assign(root.FTDayDecks, {lessonOfDay, readFirst, dayTitle: n => DAY_TITLES[Number(n)] || "",
+  // (📢 the lessons and where the trainee is, for each lesson's own announcement: js/ft-announcement.js)
+  lessons: () => Object.keys(LESSON_CARDS).map(Number), lessonFocus: l => (LESSON_CARDS[l] || {}).focus || "",
+  deckLesson: () => state.view === "daydeck" && DD.day ? lessonOfDay(DD.day) : null, placeLesson: () => lessonOfDay(currentDay())});
 root.FTDecksDone = () => doneDays().slice();
 
 if(!document.getElementById("ftdd-deck-font")){
