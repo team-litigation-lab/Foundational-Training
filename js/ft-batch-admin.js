@@ -518,7 +518,11 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
 .fms-pick .fms-savebtn{margin-left:auto;}
 .fms-step{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;} .fms-step em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
-.fms-pick select.fms-va{min-width:200px;font-weight:700;} .fms-pick select.fms-act{min-width:200px;font-weight:700;}
+.fms-pick select.fms-va{min-width:200px;font-weight:700;}
+/* (each dropdown its own colour, so Batch, Activity and Trainee are told apart at a glance) */
+.fms-pick select[aria-label="Batch"]{background:#E8EDFB;border:2px solid #3B4A8C;color:#1E2340;font-weight:800;}
+.fms-pick select.fms-act{background:#E6F4EA;border:2px solid #2E7D4F;color:#14532D;font-weight:800;}
+.fms-pick select.fms-va{background:#FFF1DC;border:2px solid #C27A12;color:#7A4300;font-weight:800;} .fms-pick select.fms-act{min-width:200px;font-weight:700;}
 .fms-who{margin:0 0 8px;font-size:14px;color:var(--navy);overflow-wrap:anywhere;}
 .fms-tbl{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13.5px;}
 .fms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:6px 10px;font-weight:800;white-space:normal !important;overflow-wrap:anywhere;}
