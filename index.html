@@ -13713,6 +13713,7 @@ function renderBatchFolderBody(){
 const NO_BATCH = "__none__";
 function batchKey(rec){ return cleanBatch(rec && rec.batch) || NO_BATCH; }
 function batchLabel(b){ return b===NO_BATCH ? "No batch" : b; }
+// (one batch folder's 🏆 Rankings: renderBatchFolderBody is its only caller, always with the batch)
 function renderAdminRankings(onlyBatch){
   if(state.adminLoading || !state.adminData){
     return `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
@@ -13741,45 +13742,11 @@ function renderAdminRankings(onlyBatch){
     return {batch, archived, ranked, last};
   }).sort((a,b)=>(a.batch===NO_BATCH)-(b.batch===NO_BATCH) || b.last-a.last || a.batch.localeCompare(b.batch));
 
-  const active = batches.filter(g=>!g.archived);
-  const archivedGroups = batches.filter(g=>g.archived);
-  // A saved filter for a batch that no longer exists falls back to all active batches.
-  const filter = onlyBatch || (batches.some(g=>g.batch===state.adminBatchFilter) ? state.adminBatchFilter : "");
-  const shown = filter ? batches.filter(g=>g.batch===filter) : active;
+  const shown = batches.filter(g=>g.batch===onlyBatch);
   const rankedAll = shown.flatMap(g=>g.ranked);
 
-  const header = onlyBatch ? "" : `
-    <p class="eyebrow">Admin Dashboard</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Rankings</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Approved trainees are ranked within their own batch by a blended score — 40% program completion, 30% average quiz score, 30% average Practice Lab competency. Once a trainee has graded random tasks, it becomes 35% completion, 25% quiz, 25% Practice Lab and 15% random tasks. Trainees see the same score and rank on their dashboard. Meant as a coaching signal, not a formal evaluation.</p>`;
-  const toolbar = onlyBatch ? "" : `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <select onchange="setAdminBatchFilter(this.value)" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px;">
-          <option value="">All active batches</option>
-          ${active.map(g=>`<option value="${esc(g.batch)}" ${filter===g.batch?"selected":""}>${esc(batchLabel(g.batch))}</option>`).join("")}
-          ${archivedGroups.length ? `<optgroup label="Archived">${archivedGroups.map(g=>`<option value="${esc(g.batch)}" ${filter===g.batch?"selected":""}>${esc(batchLabel(g.batch))} (archived)</option>`).join("")}</optgroup>` : ""}
-        </select>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
-    </div>`;
-  const archivedList = !filter && archivedGroups.length ? `
-    <details class="card" style="padding:14px 18px;margin-top:18px;">
-      <summary style="cursor:pointer;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:700;">📦 Archived batches (${archivedGroups.length})</summary>
-      <div style="margin-top:10px;">
-        ${archivedGroups.map(g=>`
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);">
-            <div><b style="color:var(--navy);font-family:'IBM Plex Mono';font-size:13px;">${esc(batchLabel(g.batch))}</b> <span style="font-size:12px;color:var(--ink-soft);">· ${g.ranked.length} trainee${g.ranked.length===1?"":"s"}${g.last?` · last active ${fmtDate(new Date(g.last).toISOString())}`:""}</span></div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="setAdminBatchFilter(this.dataset.b)" data-b="${esc(g.batch)}">View ranking</button>
-              <button class="btn btn-ghost btn-sm" onclick="confirmUnarchiveBatch(this.dataset.b)" data-b="${esc(g.batch)}">↩ Restore</button>
-            </div>
-          </div>`).join("")}
-      </div>
-    </details>` : "";
-
   if(!rankedAll.length){
-    return header + toolbar + `<div class="empty-note">${archivedGroups.length && !filter ? "All batches are archived. Open “Archived batches” below to view or restore one." : "No trainees to rank yet — once someone sets their name in the app, they'll show up here."}</div>` + archivedList;
+    return `<div class="empty-note">No trainees to rank yet — once someone sets their name in the app, they'll show up here.</div>`;
   }
 
   const totalTrainees = rankedAll.length;
@@ -13826,16 +13793,14 @@ function renderAdminRankings(onlyBatch){
     </div>`;
   };
 
-  return header + `
+  return `
     <div class="stat-row">
       <div class="card stat"><div class="num">${totalTrainees}</div><div class="lbl">Trainees ranked</div></div>
       <div class="card stat"><div class="num">${topScore}%</div><div class="lbl">Top overall score</div></div>
       <div class="card stat"><div class="num">${avgOverall}%</div><div class="lbl">${shown.length===1?"Batch":"Cohort"} avg. score</div></div>
       <div class="card stat"><div class="num">${fullyDone}</div><div class="lbl">Finished all ${DAYS.length} days</div></div>
     </div>
-    ${toolbar}
     ${shown.map(batchTable).join("")}
-    ${archivedList}
   `;
 }
 function renderAdminRows(){
