@@ -173,6 +173,10 @@ async function workerChecks() {
     if (!cara || !cara.offboarded || cara.approved !== false) fail(`Cara wasn't offboarded: ${JSON.stringify(cara)}`);
     await page.evaluate(() => { state.adminTab = 'graders'; render(); }); await page.waitForTimeout(1200);
     if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Cara Lim')) fail('an offboarded VA is still on the sheet');
+    // (a trainee on the platform's block list — access revoked, or their batch cleared — is off Graders too, as on every list)
+    await page.evaluate(() => { window.FT_BLOCKED['ben-diaz--b103026'] = true; render(); }); await page.waitForTimeout(400);
+    if ((await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent).join('|'))).includes('Ben Diaz')) fail('a blocked VA is still on Graders');
+    await page.evaluate(() => { delete window.FT_BLOCKED['ben-diaz--b103026']; render(); }); await page.waitForTimeout(400);
     // 📁 the batches have their own tab in 🛡 Admin Master Control (js/ft-batch-admin.js batchesTab): the batch's card, the
     // 🚫 Offboarded VAs shelf with Cara and its ↩ Restore access; not at the foot of the 📋 Batch Sheet
     await page.evaluate(() => { state.adminTab = 'batches'; state.batchFolder = null; render(); }); await page.waitForTimeout(2000);
