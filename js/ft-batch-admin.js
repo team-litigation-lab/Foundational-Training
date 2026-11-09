@@ -156,10 +156,11 @@ function renderMockScores(){
   }
   const batches = activeBatches(), allActs = scoredActs();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = batches[0] || "";
-  // 📅 the week picked (this week until another is): its mock calls and demos in the Activity list, or every one when the
-  // week has none on the schedule (or "All weeks")
+  // 📅 the week picked (this week until another is): every mock call is always in the Activity list, whatever the week;
+  // the demos are the week's, or every one when the week has none on the schedule (or "All weeks")
   const wk = MS.wk === "all" ? "all" : Number(MS.wk) >= 1 ? Number(MS.wk) : nowWeek(MS.batch);
-  const inWk = wk === "all" ? allActs : allActs.filter(x => actWeek(MS.batch, x) === wk), acts = inWk.length ? inWk : allActs;
+  const allDemos = allActs.filter(x => !isMock(x)), inWk = wk === "all" ? allDemos : allDemos.filter(x => actWeek(MS.batch, x) === wk);
+  const mocks = allActs.filter(isMock), demos = inWk.length ? inWk : allDemos, acts = mocks.concat(demos);
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
   const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
   if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
@@ -168,14 +169,13 @@ function renderMockScores(){
   if(MS.loadedFor !== sig) setTimeout(() => msLoad(), 0);
   const nDirty = dirtyIds().length, ready = !!(r && a && MS.loadedFor === sig);
   const opt = x => `<option value="${e(x.id)}" ${x.id === MS.act ? "selected" : ""}>${e(x.title)}</option>`;
-  const mocks = acts.filter(isMock), demos = acts.filter(x => !isMock(x));
   const d = ready ? (valOf(r.id) || draftOf(r.id)) : null;
   const saveBtn = `<button class="btn btn-navy btn-sm fms-savebtn" data-ms-save ${nDirty && !MS.saving ? "" : "disabled"} onclick="FTMockScores.save(this)" title="Only the trainees you changed are saved">💾 Save ${nDirty ? nDirty + " trainee" + (nDirty === 1 ? "’s" : "s’") + " scores" : "to the trainee’s scores"}</button>`;
   const hasDates = t0Of(MS.batch) != null;
   const ctl = `<div class="fms-pick">
       <label>Week <select aria-label="Week" class="fms-wk" onchange="FTMockScores.week(this.value)">${Array.from({length: WEEKS}, (x, i) => i + 1).map(n => `<option value="${n}" ${wk === n ? "selected" : ""}>Week ${n}${hasDates ? " · " + e(wkRange(MS.batch, n)) : ""}${n === nowWeek(MS.batch) && hasDates ? " (this week)" : ""}</option>`).join("")}<option value="all" ${wk === "all" ? "selected" : ""}>All weeks</option></select></label>
       <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
-      <select aria-label="Activity" class="fms-act" title="${wk !== "all" && !inWk.length ? `No mock call or demo is scheduled in Week ${wk}: every one is listed` : ""}" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
+      <select aria-label="Activity" class="fms-act" title="${wk !== "all" && !inWk.length ? `No demo is scheduled in Week ${wk}: every demo is listed` : ""}" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
           const tag = dd && dd.dirty ? " · ● not saved" : c.status ? ` · ${c.status}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : "";
