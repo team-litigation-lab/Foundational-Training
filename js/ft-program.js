@@ -57,7 +57,8 @@ window.LSH_PROGRAM = {
     weekly: ["weeklyreports"],
     intake: ["intake"],   // 📦 Intake Packets: its own section, not a tab of 🛡 Admin Master Control (js/ft-intake.js)
     lorassign: ["lorassign"],   // 📄 Assign LORs: its own section beside 📦 Intake Packets (js/ft-lor.js)
-    announcements: ["announcements"],   // 📢 Announcements: its own section, beside 📄 Assign LORs (this platform's and each lesson's, js/ft-announcement.js)
+    announcements: ["announcements"],
+    eodinbox: ["eodinbox"],   // 📧 EOD Inbox: the EODs received, the last one's time and the unmatched ones to give out (js/ft-eod-inbox.js)   // 📢 Announcements: its own section, beside 📄 Assign LORs (this platform's and each lesson's, js/ft-announcement.js)
     // 🔗 Drive Links and 🧑‍🏫 Graders: Mock Calls & Demos, section buttons of their own beside 📊 Weekly Reports (adminSections)
     drivelinks: ["drivelinks"],
     graders: ["graders"],
@@ -77,10 +78,10 @@ window.LSH_PROGRAM = {
   // 📋 Batch Sheet (js/ft-batch-sheet.js) leads the 🏅 Scorecard section: its button opens on it
   // 📊 Weekly Reports: a section button of its own, beside 🏅 Scorecard (js/ft-batch-sheet.js, the weekly ranking report)
   // 📦 Intake Packets: a section button of its own too, beside 📊 Weekly Reports
-  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}, {id: "announcements", label: "📢 Announcements"}],
+  adminSections: [{id: "weekly", label: "📊 Weekly Reports"}, {id: "drivelinks", label: "🔗 Drive Links"}, {id: "graders", label: "🧑‍🏫 Graders: Mock Calls & Demos"}, {id: "intake", label: "📦 Intake Packets"}, {id: "lorassign", label: "📄 Assign LORs"}, {id: "announcements", label: "📢 Announcements"}, {id: "eodinbox", label: "📧 EOD Inbox"}],
   adminLead: {scorecard: "batchsheet"},
   // the section buttons' order: 🏅 Scorecard, 📊 Weekly Reports, 🔗 Drive Links, 🧑‍🏫 Graders, 📦 Intake Packets, then 🛡 Admin Master Control, then 🔓 Open Lessons
-  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "announcements", "admin", "modules", "lab"],
+  adminOrder: ["scorecard", "weekly", "drivelinks", "graders", "intake", "lorassign", "announcements", "eodinbox", "admin", "modules", "lab"],
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [

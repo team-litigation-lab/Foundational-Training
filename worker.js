@@ -1712,24 +1712,54 @@ async function receiveEod(env, msg) {
   const fromH = String(msg.from || ""), addr = ((/<([^>]+)>/.exec(fromH) || [])[1] || fromH).trim().toLowerCase(), name = fromH.replace(/<[^>]*>/, "").replace(/"/g, "").trim();
   const at = msg.date && isFinite(Date.parse(msg.date)) ? new Date(msg.date).toISOString() : new Date().toISOString();
   const D = TR.ptDate(new Date(at)), text = String(msg.text || "").replace(/\r/g, "").slice(0, 12000), subject = String(msg.subject || "").slice(0, 300);
-  // the trainee: by the address they send from, else by the sender's name (an approved trainee, not offboarded)
+  // the trainee (an approved one, not offboarded): by the address they send from (drive:<id>.eodFrom), else by their name —
+  // the sender's name as registered, or with a middle name or "Last, First" (eodNameMatch); the sender's address spelling their
+  // first and last name (maria.santos@…); their full name in the email's last lines (the sign-off). A name rule counts only
+  // when it points to one trainee; the address it came from is then kept as theirs (eodFrom), so the next EOD matches at once.
   const ids = (await listAll(env, "trainee:")).map((k) => k.slice("trainee:".length));
-  let id = null, byName = null;
+  const local = addr.split("@")[0].replace(/[^a-z]/g, ""), tail = normName(text.slice(-600));
+  let id = null, how = "";
+  const hits = { name: [], addr: [], sign: [] };
   for (const tid of ids) {
     const rec = JSON.parse((await kv.get(`trainee:${tid}`)) || "null"); if (!rec || rec.approved !== true || rec.archived || rec.offboarded) continue;
     const dv = JSON.parse((await kv.get(`drive:${tid}`)) || "null") || {};
-    if (addr && String(dv.eodFrom || "").trim().toLowerCase() === addr) { id = tid; break; }
-    if (!byName && name && normName(rec.name) && normName(rec.name) === normName(name)) byName = tid;
+    if (addr && String(dv.eodFrom || "").trim().toLowerCase() === addr) { id = tid; how = "address"; break; }
+    const parts = normName(rec.name).split(" ").filter(Boolean); if (parts.length < 2) continue;
+    const first = parts[0], last = parts[parts.length - 1];
+    if (name && eodNameMatch(name, parts)) hits.name.push(tid);
+    if (local && local.includes(first) && local.includes(last)) hits.addr.push(tid);
+    if (tail && (" " + tail + " ").includes(" " + parts.join(" ") + " ")) hits.sign.push(tid);
   }
-  id = id || byName;
+  if (!id) for (const k of ["name", "addr", "sign"]) if (hits[k].length === 1) { id = hits[k][0]; how = k === "name" ? "sender's name" : k === "addr" ? "sender's address" : "name in the sign-off"; break; }
+  await eodLog(kv, { at, from: fromH.slice(0, 200), subject, id: id || null, how });
   if (!id) {
     const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] };
-    un.items = [{ from: fromH.slice(0, 200), subject, at, text: text.slice(0, 3000) }].concat(un.items || []).slice(0, 50);
+    un.items = [{ from: fromH.slice(0, 200), subject, at, text: text.slice(0, 3000) }].concat((un.items || []).filter((x) => !(x.at === at && x.from === fromH.slice(0, 200)))).slice(0, 50);
     await kv.put("admin:eod-unmatched", JSON.stringify(un));
     return { matched: false };
   }
+  return keepEod(env, id, { text, subject, at, addr, D, learn: how !== "address" });
+}
+// a sender's display name against a trainee's name parts: the same words, or their first and last name both in it (a middle
+// name, "Last, First", a second given name)
+function eodNameMatch(name, parts) {
+  const n = normName(name); if (!n) return false;
+  if (n === parts.join(" ")) return true;
+  const w = n.split(" ");
+  return w.length >= 2 && w.includes(parts[0]) && w.includes(parts[parts.length - 1]);
+}
+// the last 40 EODs received, matched or not (📧 EOD Inbox: shows the Gmail script is sending)
+async function eodLog(kv, x) {
+  try { const L = JSON.parse((await kv.get("admin:eod-log")) || "null") || { items: [] };
+    L.items = [x].concat((L.items || []).filter((y) => !(y.at === x.at && y.from === x.from))).slice(0, 40); L.last = new Date().toISOString();
+    await kv.put("admin:eod-log", JSON.stringify(L)); } catch (e) { /* the log is only a help */ }
+}
+// the EOD kept as the trainee's for its day, its address remembered as theirs, and the day's compliance worked out again
+async function keepEod(env, id, { text, subject, at, addr, D, learn }) {
+  const kv = kvOf(env);
   const dv = JSON.parse((await kv.get(`drive:${id}`)) || "null") || { days: {} }; dv.days = dv.days || {};
   dv.days[D] = Object.assign({}, dv.days[D] || {}, { eod: { text, subject, at, via: "email", from: addr } });
+  if (learn && addr && !String(dv.eodFrom || "").trim()) dv.eodFrom = addr;
   await kv.put(`drive:${id}`, JSON.stringify(dv));
   try { await dailyCompliance(env, id, D); } catch (e) { /* the end of the shift works it out */ }
   return { matched: true, id, date: D, check: TR.checkEod(text, subject, D, at) };
@@ -3112,7 +3142,21 @@ export default {
       /* ---------- 📧 the EOD address trainees CC (EOD_INBOX), and the EODs no trainee matched (a trainer's) ---------- */
       // (the trainers' Gmail, team-litigation@, unless the Worker names another: EOD_INBOX)
       if (path === "/api/eod/inbox") return json({ address: String(env.EOD_INBOX || EOD_ADDRESS).trim() });
-      if (path === "/api/eod/unmatched") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); return json(JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }); }
+      if (path === "/api/eod/unmatched") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] }, log = JSON.parse((await kv.get("admin:eod-log")) || "null") || { items: [] };
+        return json({ items: un.items || [], log: log.items || [], last: log.last || null, address: String(env.EOD_INBOX || EOD_ADDRESS).trim(), key: !!String(env.EOD_KEY || "").trim() }); }
+      // 📧 an unmatched EOD given to its trainee by a trainer (📧 EOD Inbox): kept as theirs for its day, its address remembered
+      if (path === "/api/eod/assign") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({})), tid = String(b.id || "").slice(0, 100);
+        const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] };
+        const i = (un.items || []).findIndex((x) => x.at === b.at && x.from === b.from), x = i >= 0 ? un.items[i] : null;
+        const rec = tid ? JSON.parse((await kv.get(`trainee:${tid}`)) || "null") : null;
+        if (!x || !rec) return json({ error: "That EOD or trainee wasn't found." }, 404);
+        const addr = (((/<([^>]+)>/.exec(x.from) || [])[1] || x.from) + "").trim().toLowerCase();
+        const r = await keepEod(env, tid, { text: x.text, subject: x.subject, at: x.at, addr: /@/.test(addr) ? addr : "", D: TR.ptDate(new Date(x.at)), learn: true });
+        un.items.splice(i, 1); await kv.put("admin:eod-unmatched", JSON.stringify(un));
+        await eodLog(kv, { at: x.at, from: x.from, subject: x.subject, id: tid, how: "given by a trainer" });
+        return json(Object.assign({ ok: true }, r)); }
       // (a trainer's test of the intake without an email: the same as an email arriving)
       if (path === "/api/eod/receive") { if (tok.role !== "a") return json({ error: "Not allowed" }, 403); const b = await request.json().catch(() => ({})); return json(await receiveEod(env, b)); }
 
