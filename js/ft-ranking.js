@@ -155,7 +155,9 @@ function weekRange(){
   // (a Batch ID that isn't a real date — an old or mistyped one, "B250926" — gives no start, instead of a crash)
   // (a B + DDMMYY one reads as its day: index.html batchStartDate)
   const startOf = b => (typeof batchStartDate === "function" ? batchStartDate(b) : "") || null;
-  const start = [R.batch].concat(people().map(p => p.batch)).map(startOf).find(Boolean); if(!start) return null;
+  const sb = [R.batch].concat(people().map(p => p.batch)).find(b => startOf(b)); if(!sb) return null; const start = startOf(sb);
+  // (the batch's weeks, index.html ftWeeks: Week 1 through its first Friday with 3 training days or more, then Monday to Sunday)
+  if(window.ftWeeks) return ftWeeks.range(sb, R.week);
   const t = Date.parse(start + "T00:00:00Z") + (R.week - 1) * 7 * 864e5, iso = ms => new Date(ms).toISOString().slice(0, 10);
   if(!isFinite(t)) return null;
   return [iso(t), iso(t + 6 * 864e5)];
@@ -164,6 +166,8 @@ const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
 // the batch's week now: from its start (the Batch ID's date), 1 to 6
 function weekNow(){
   const R0 = R.week; R.week = 1; const r = weekRange(); R.week = R0; if(!r) return 1;
+  const named = ((R.data || {}).cols || []).some(c => parseRange(c.sub)), sb = [R.batch].concat(people().map(p => p.batch)).find(b => typeof batchStartDate === "function" && batchStartDate(b));
+  if(!named && sb && window.ftWeeks) return ftWeeks.now(sb, ptToday());
   return Math.max(1, Math.min(6, Math.floor((Date.parse(ptToday() + "T00:00:00Z") - Date.parse(r[0] + "T00:00:00Z")) / (7 * 864e5)) + 1));
 }
 const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
@@ -171,7 +175,9 @@ const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date
 // (the moment itself, not the UTC clock against the Pacific date: that Friday's Pacific evening is already the next UTC day)
 function weekOver(){
   const r = weekRange(); if(!r) return false;
-  const fri = new Date(Date.parse(r[0] + "T00:00:00Z") + 4 * 864e5).toISOString().slice(0, 10);
+  // (the week's last Friday: its range can run longer than 7 days — a batch's Week 1, index.html ftWeeks)
+  let ft = Date.parse(r[1] + "T00:00:00Z"); for(let i = 0; i < 7 && new Date(ft).getUTCDay() !== 5; i++) ft -= 864e5;
+  const fri = new Date(ft).toISOString().slice(0, 10);
   return ptToday() > fri || Date.now() >= Date.parse(fri + "T22:30:00Z");
 }
 function srcOptions(){
@@ -250,7 +256,7 @@ async function fillFromPortal(quiet){
     // (trackerreview:<id>.compliance[<date>].parts: monitor, tracker, tam, tests, eod — a part the day had nothing to check for,
     // null, isn't counted); a column set to "Whole training": every day so far
     if(dayCols.length){
-      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE
+      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv).map((rv, i) => window.ftDay1 ? ftDay1.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE (and 📅 Day 1 isn't counted)
       if(gone()){ R.fill = false; return; }
       dayCols.forEach(c => { const k = c.src.slice(4); if(c.period === "week" && !wk) return; ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
@@ -262,7 +268,7 @@ async function fillFromPortal(quiet){
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
     if(compCols.length){
-      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE
+      const rvs = (await sharedGetMany(ppl.map(p => "trackerreview:" + p.id))).map((rv, i) => window.ftW1Override ? ftW1Override.comp(rv, ppl[i].batch) : rv).map((rv, i) => window.ftDay1 ? ftDay1.comp(rv, ppl[i].batch) : rv), wk = weekRange();   // W1-OVERRIDE (and 📅 Day 1 isn't counted)
       if(gone()){ R.fill = false; return; }
       compCols.forEach(c => ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (c.period === "week" && !wk)) return;
@@ -735,7 +741,7 @@ window.FTRanking = {
   explain(){ R.explain = R.explain ? null : {}; rerender(); },
   async explainWho(id){ if(!R.explain) return; R.explain.who = id; R.explain.loading = true;
     let v = []; try{ v = await sharedGetMany(["trackerreview:", "drive:", "skills:"].map(k => k + id)); }catch(err){}
-    if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: window.ftW1Override ? ftW1Override.comp(v[0] || {}, (people().find(p => p.id === id) || {}).batch || R.batch) : (v[0] || {}), dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
+    if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: (b => { const r = window.ftW1Override ? ftW1Override.comp(v[0] || {}, b) : (v[0] || {}); return window.ftDay1 ? ftDay1.comp(r, b) : r; })((people().find(p => p.id === id) || {}).batch || R.batch), dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
   // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
   ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
   fold(k){ const f = foldSet(); if(f.has(k)) f.delete(k); else f.add(k); saveFolds(); rerender(); },

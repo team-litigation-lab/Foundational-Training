@@ -204,8 +204,10 @@ const failures = []; const fail = m => failures.push(m);
   // (PAST is older than this test's other batch, so js/ft-admin-tidy.js would archive it on the next admin load: kept
   // active here as a batch a trainer restored is, settings:autoarchive's done list)
   { const a = (await get('settings:autoarchive')) || {}; a.done = Object.assign({}, a.done, { [PAST]: new Date().toISOString() }); await put('settings:autoarchive', a); }
-  { const m = /^B(\d\d)(\d\d)(\d\d)$/.exec(PAST), st = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00Z`), d = k => new Date(st + k * 864e5).toISOString().slice(0, 10);
-    await put('trackerreview:' + una, { days: {}, compliance: { [d(0)]: { pct: 80, parts: { tests: 100, eod: 60 } }, [d(1)]: { pct: 60, parts: { tests: 67, eod: 53 } } } }); }
+  // (the batch's 2nd and 3rd training days: its Day 1, the setup day, doesn't count — index.html ftDay1 — so none is kept here)
+  { const m = /^B(\d\d)(\d\d)(\d\d)$/.exec(PAST), st = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00Z`), wd = [];
+    for (let t = st; wd.length < 3; t += 864e5) { const w = new Date(t).getUTCDay(); if (w >= 1 && w <= 5) wd.push(new Date(t).toISOString().slice(0, 10)); }
+    await put('trackerreview:' + una, { days: {}, compliance: { [wd[1]]: { pct: 80, parts: { tests: 100, eod: 60 } }, [wd[2]]: { pct: 60, parts: { tests: 67, eod: 53 } } } }); }
   await put(`ranking:${PAST}:w1`, null);
   await page.evaluate(() => { state.traineeId = null; state.isAdmin = true; state.adminPreview = false; state.adminData = null; FTRanking.reload(); state.adminTab = 'ranking'; goto('admin'); }); await page.waitForTimeout(1200);
   await page.evaluate(b => { FTRanking.batch(b); FTRanking.week(1); }, PAST);
