@@ -11,7 +11,13 @@ const failures = []; const fail = m => failures.push(m);
   const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
   page.on('pageerror', e => fail(`page error: ${e.message}`));
   let text = 'Mock calls start at 9:00 AM PHT <img src=x onerror="window.__xss=1">';
-  await page.route('**/api/announcement', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, text }) }));
+  // (the Worker's route answers the page's own request — POST, as every /api/ route — even with the Portal out of reach)
+  { const p0 = await browser.newPage(); await p0.goto(BASE, { waitUntil: 'load' });
+    const r = await p0.evaluate(async () => { const x = await fetch('/api/announcement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); return { status: x.status, body: await x.json().catch(() => null) }; });
+    if (r.status !== 200 || !r.body || r.body.ok !== true || typeof r.body.text !== 'string') fail(`the Worker's /api/announcement didn't answer the page: ${JSON.stringify(r)}`);
+    await p0.close(); }
+  let method = '';
+  await page.route('**/api/announcement', r => { method = r.request().method(); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, text }) }); });
   try {
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
     await signIn(page, 'Ann', 'Ticker', 'B110226');
@@ -23,6 +29,7 @@ const failures = []; const fail = m => failures.push(m);
     if (!t.shown || !/Mock calls start at 9:00 AM PHT/.test(t.text)) fail(`the trainee doesn't see the announcement: ${JSON.stringify(t)}`);
     if (t.imgs || t.xss) fail('the announcement was drawn as HTML');
     if (!t.under) fail('the ticker isn\'t under the top bar');
+    if (method !== 'POST') fail(`the page asks for the announcement with ${method}, not POST (the Worker's /api/ routes are POST only)`);
     if (!/\d{1,2}:\d{2}:\d{2}/.test(t.clock)) fail(`no live clock: ${t.clock}`);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 1500, height: 220 } });
     // (the time zone picked is kept, and the clock follows it)

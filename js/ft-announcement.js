@@ -16,10 +16,11 @@ function fill(){
   document.querySelectorAll("[data-ft-ann-text]").forEach(el => { if(el.textContent !== A.text) el.textContent = A.text; });
   document.querySelectorAll("[data-ft-ann]").forEach(el => { el.hidden = !A.text; });
 }
+// (POST: the Worker's /api/ routes are POST only)
 async function load(){
   if(A.loading || (A.at && Date.now() - A.at < 5 * 60 * 1000)) return;
   A.loading = true;
-  try{ const r = await fetch("/api/announcement", {cache: "no-store"}); const j = r.ok ? await r.json() : null; A.text = j && typeof j.text === "string" ? j.text : A.text; }catch(e){}
+  try{ const r = await fetch("/api/announcement", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}", cache: "no-store"}); const j = r.ok ? await r.json() : null; A.text = j && typeof j.text === "string" ? j.text : A.text; }catch(e){}
   A.at = Date.now(); A.loading = false; fill();
 }
 function bar(){
