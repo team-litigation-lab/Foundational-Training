@@ -9191,8 +9191,7 @@ function pickWarmup(dayId, k, oi){
 }
 window.pickWarmup = pickWarmup;
 async function startDayFromIntro(dayId){ await markIntroSeen(dayId); state.dayViewMode = "slides"; render(); }
-function showDayIntro(){ state.dayViewMode = "intro"; render(); }
-Object.assign(window, {startDayFromIntro, showDayIntro});
+window.startDayFromIntro = startDayFromIntro;
 function renderDaySlideshow(d){
   const slides = buildDaySlides(d);
   const total = slides.length;
