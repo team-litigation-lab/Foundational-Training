@@ -704,10 +704,6 @@ const pqLessons = (n, info) => (PQ_LESSONS[Number(n)] || (info || dayInfo(n)).le
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 // (d.pq: the build's word for a day whose Process Questions were on a slide that is off the deck, build/day-decks.cjs)
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.pq || (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || "")))); }
-/* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
-   trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
-   and its ✍️ Knowledge Check. */
-const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calendar management calls"], 6: ["intake", "intake calls"]};
 // the scorecard a slide's "… Metrics" (or a mock-call / demo slide's title) names, else the one of the day's trainer-led activity
 function dayRubric(title){
   const R = root.FT_RUBRICS; if(!R) return null;
@@ -737,34 +733,9 @@ function scoreBox(s, info, body){
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
   return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
-const WAIT_OFF = true;
-function waitBox(s, info){
-  // (off every slide for now: the mock calls' and demos' slides carry their own instructions)
-  if(WAIT_OFF) return "";
-  const h = String(s.h || "");
-  if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
-  // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
-  if(/mock call/i.test(h)) return "";
-  // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
-  // the tools itself, and its instructions and metrics)
-  if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
-  // (nor on a slide the build marks data-nowait: Day 8's SA demonstration and Intake Mock Call Activity, whose next slide
-  // has the Call Simulator)
-  if(/data-nowait/.test(String(s.html || ""))) return "";
-  const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
-  const sim = SIM_OF[l], acts = [];
-  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practice ${sim[1]} on the Call Simulator</button>`);
-  if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
-  if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
-  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.toKC(${l})">✍️ Knowledge Check</button>`);
-  if(!acts.length) return "";
-  const what = /demo/i.test(h) ? "the demo" : "the mock calls";
-  return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
-    <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
-}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s))) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s)));
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -2789,10 +2760,6 @@ main.main-ftdd .ftdd-sheet p.ftdd-hbar{font:800 18px/1.3 'Poppins','Inter',sans-
 main.main-ftdd .ftdd-sheet p.ftdd-hbar:first-child{margin-top:0;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar b, main.main-ftdd .ftdd-sheet p.ftdd-hbar strong{color:inherit !important;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:800;}
-/* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
-.ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
-.ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
-.ftdd-wait-acts{display:flex;flex-wrap:wrap;gap:8px;}
 /* each criterion a box of the same height, its number centred beside the text, so the rows line up */
 .ftdd-score-l{align-items:stretch;grid-auto-rows:1fr;gap:8px 12px !important;}
 .ftdd-score-l li{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1.5px solid #E6D6C2;border-radius:10px;background:#FFFBF6;font-size:13.5px;line-height:1.35;counter-increment:sc;}

@@ -194,7 +194,6 @@ function paint(){
   const h = here(); if(!h) return;
   const sheet = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${h.i}"] .ftdd-sheet`) || document.querySelector("main.main-ftdd .ftdd-sheet");
   if(!sheet || sheet.querySelector(".ftbf")) return;
-  sheet.querySelectorAll(".ftdd-wait").forEach(x => x.remove());
   // (the trainer's slide has no panel; Day 8's demo preparation slide lists every intake case with its script in the slide itself:
   // build/day-decks.cjs TRIM[8].s3, js/ft-intake.js .ftis-mockcall)
   if(isAdminView()) return;
