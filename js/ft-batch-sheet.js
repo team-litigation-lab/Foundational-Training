@@ -1150,7 +1150,7 @@ function dayActs(R, d){
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
     out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Scored by a trainer: ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
       miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
-  // (📅 Day 1, the batch's setup day, index.html ftDay1: what was found is shown, but no part counts for or against them)
+  // (📅 a Day 1 still held back as a setup day — index.html ftDay1 counts it now, so none should reach here)
   // (⏳ today's, before the shift is over: as it stands, counted once the day is over)
   const held = c.day1 ? "Day 1 (setup day): not counted" : c.open ? "Today so far: counts once the shift is over" : "";
   return held ? out.map(a => Object.assign({}, a, {pct: null, text: `${held}. Found: ${a.pct == null ? "—" : Math.round(a.pct) + "%"}. ` + a.text})) : out;

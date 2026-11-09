@@ -128,12 +128,12 @@ const failures = []; const fail = (m) => failures.push(m);
     // ✅ the day's compliance reads the entries: the Task Tracker's day afresh (not the 0 from before), the Monitoring Sheet's
     // entry for that day's own discussion (Day 1's entry 25%: a date, no 5 takeaways…; Day 2's not written: 0 — the day's work only,
     // not every discussion due so far), the TAM's entry that day
-    { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).day1Parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
+    { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
       if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
       // (a part the day doesn't ask for is left out, not a 0: Day 5, 11/05, has nothing to hand in; Day 2, 11/02, has its assessments)
       { const c5 = (cur.compliance['2026-11-05'] || {}).parts || null;
         if (!c5 || c5.outputs !== null || typeof c2.outputs !== 'number') fail(`the Day's outputs aren't left out on a day with nothing to hand in (11/05 ${c5 && c5.outputs}, 11/02 ${c2.outputs})`); }
-      // (📅 Day 1's Task Tracker and Monitoring Sheet are checked like any day's and kept under day1Parts: the day doesn't count)
+      // (📅 Day 1's Task Tracker and Monitoring Sheet are checked like any day's, and the day counts)
       if (typeof c1.tracker !== 'number' || c1.monitor !== 25 || c2.monitor !== 0) fail(`Day 1's sheets aren't checked, or the Monitoring Sheet part isn't each day's own entry (10/30 25, 11/02 0): ${c1.tracker} ${c1.monitor} / ${c2.monitor}`);
       // (📅 each day by the entry dated that day: 11/03 has Day 2's entry, dated 11/03 — date and questions, 50%)
       if (c3.monitor !== 50) fail(`the Monitoring Sheet entry dated 11/03 isn't 11/03's: ${c3.monitor}`);
@@ -149,20 +149,20 @@ const failures = []; const fail = (m) => failures.push(m);
       if ((await call('/api/drive/tam', { id: ana }, trainee)).status !== 403) fail('a trainee graded the TAM');
       const tg2 = (await call('/api/drive/tam', { id: ana, date: '2026-11-02' }, admin)).body || {};
       const C = get('trackerreview:' + ana).compliance || {};
-      if (!tg.ok || !tg.grade || tg.grade.pct !== 100 || !tg.tam || !tg.tam.entries['2026-10-30'] || (C['2026-10-30'] || {}).day1Parts.tam !== 100 || !C['2026-10-30'].tamGraded) fail(`📘 Grade the TAM didn't grade 10/30's entry into its day: ${JSON.stringify(tg).slice(0, 300)} / ${JSON.stringify((C['2026-10-30'] || {}).day1Parts)}`);
+      if (!tg.ok || !tg.grade || tg.grade.pct !== 100 || !tg.tam || !tg.tam.entries['2026-10-30'] || (C['2026-10-30'] || {}).parts.tam !== 100 || !C['2026-10-30'].tamGraded) fail(`📘 Grade the TAM didn't grade 10/30's entry into its day: ${JSON.stringify(tg).slice(0, 300)} / ${JSON.stringify((C['2026-10-30'] || {}).parts)}`);
       if (!tg2.ok || tg2.grade.pct !== 50 || (C['2026-11-02'] || {}).parts.tam !== 50) fail(`a short TAM entry isn't half: ${JSON.stringify(tg2.grade)} / ${JSON.stringify((C['2026-11-02'] || {}).parts)}`);
       if (((C['2026-11-03'] || {}).parts || {}).tam != null) fail('a day the trainer didn\'t grade the TAM has a TAM part');
       if ((await call('/api/drive/tam', { id: ana, date: '2026-11-07' }, admin)).status !== 400) fail('the TAM was graded for a weekend day'); }
     // ✍ a trainer's EOD score for a day the EOD monitoring missed: the day's EOD part (its other parts as they were), kept where a
     // trainee can't write it, and taken off again; a future or weekend day is refused
-    { const before = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).day1Parts || {};
+    { const before = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).parts || {};
       const g = (await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80, note: 'Sent to the team lead' }, admin)).body || {}; if (process.env.SHOW) console.log('EODG', JSON.stringify(g));
       if ((await call('/api/eod/grade', { id: ana, date: '2026-10-30', score: 80 }, trainee)).status !== 403) fail('a trainee scored an EOD');
       const c = (get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {};
-      if (!g.ok || g.eod !== 80 || (c.day1Parts || {}).eod !== 80 || !c.eodTrainer || c.eodTrainer.note !== 'Sent to the team lead' || !(get('trackerreview:' + ana).eodTrainer || {})['2026-10-30']) fail(`a trainer's EOD score isn't the day's EOD part: ${JSON.stringify(g)} / ${JSON.stringify(c.day1Parts)}`);
-      if (c.day1Parts.tracker !== before.tracker || c.day1Parts.monitor !== before.monitor) fail(`saving an EOD score changed the day's other parts: ${JSON.stringify(before)} → ${JSON.stringify(c.day1Parts)}`);
-      // (📅 10/30 is the batch's Day 1, the setup day: what was found is kept under day1Parts, but nothing that day counts)
-      if (!c.day1 || c.pct !== null || Object.values(c.parts || {}).some(v => v !== null)) fail(`Day 1 counts after a trainer's EOD score: ${JSON.stringify({ day1: c.day1, pct: c.pct, parts: c.parts })}`);
+      if (!g.ok || g.eod !== 80 || (c.parts || {}).eod !== 80 || !c.eodTrainer || c.eodTrainer.note !== 'Sent to the team lead' || !(get('trackerreview:' + ana).eodTrainer || {})['2026-10-30']) fail(`a trainer's EOD score isn't the day's EOD part: ${JSON.stringify(g)} / ${JSON.stringify(c.parts)}`);
+      if (c.parts.tracker !== before.tracker || c.parts.monitor !== before.monitor) fail(`saving an EOD score changed the day's other parts: ${JSON.stringify(before)} → ${JSON.stringify(c.parts)}`);
+      // (📅 10/30 is the batch's Day 1: it counts like any day, by what was found that day)
+      if (c.day1 || typeof c.pct !== 'number') fail(`Day 1 isn't counted: ${JSON.stringify({ day1: c.day1, pct: c.pct, parts: c.parts })}`);
       // (a trainee writing a "trainer's score" into their own drive record changes nothing)
       const dv = get('drive:' + ana); dv.days = dv.days || {}; dv.days['2026-11-03'] = Object.assign({}, dv.days['2026-11-03'], { eodTrainer: { score: 1000 } });
       await call('/api/storage/set', { key: 'drive:' + ana, value: JSON.stringify(dv) }, trainee);
@@ -175,13 +175,13 @@ const failures = []; const fail = (m) => failures.push(m);
     // 📏 following instructions, strictly: the naming convention and saving route of the day's screenshots, the deliverables on time
     // (tests, EOD, Task Tracker) for a day that is over, and today's six Drive links; a day over keeps its mark after a fix or a backtrack
     { const C = get('trackerreview:' + ana).compliance || {}, d30 = C['2026-10-30'] || {}, iss = ((d30.instr || {}).issues || []).map(x => x.k + ': ' + x.why).join(' | ');
-      if (!d30.instr || d30.instr.v !== 2 || typeof (d30.day1Parts || {}).instructions !== 'number' || d30.day1Parts.instructions >= 100) fail(`10/30 isn't marked down for following instructions: ${JSON.stringify(d30.instr)}`);
+      if (!d30.instr || d30.instr.v !== 2 || typeof (d30.parts || {}).instructions !== 'number' || d30.parts.instructions >= 100) fail(`10/30 isn't marked down for following instructions: ${JSON.stringify(d30.instr)}`);
       if (!/route: Spelling Test screenshot saved in the Assessments\/Activities folder/.test(iss) || !/name: Spelling Test screenshot not named/.test(iss)) fail(`a screenshot saved in the wrong folder and misnamed isn't marked: ${iss}`);
       if (/route: Typing Test \(AM\)/.test(iss)) fail(`the AM typing screenshot, in the Typing Tests folder, was marked as the wrong route: ${iss}`);
       if (!/no EOD sent that day/.test(iss) || !/PM Typing Test not taken that day/.test(iss)) fail(`10/30's missing deliverables aren't marked: ${iss}`);
-      const before = d30.day1Parts.instructions;
+      const before = d30.parts.instructions;
       await call('/api/drive/backtrack', { id: ana }, admin);
-      const after = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).day1Parts || {};
+      const after = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).parts || {};
       if (after.instructions !== before) fail(`a backtrack changed a past day's following instructions mark: ${before} → ${after.instructions}`);
       if (TR.isWeekday(TR.ptDate())) {
         const rv = get('trackerreview:' + ana), A2 = get('drive:' + ana), at = new Date().toISOString();
