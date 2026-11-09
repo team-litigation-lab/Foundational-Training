@@ -437,10 +437,10 @@ window.renderAdmin = function(){
   return groupTabs(end > 0 ? out.slice(0, end) + tab + out.slice(end) : out);
 };
 
-// 🛡 Admin Master Control (SOPs, Database Maintenance, Orientation, Attendance, Batches) and 🔓 Open Lessons (Open Lessons,
-// Curriculum, Feedback and Monitoring Rubric, Feedback Style): bigger, bolder text, the way the Main Portal's admin pages
+// 🛡 Admin Master Control (SOPs, Database Maintenance, Orientation, Attendance, Batches), 🔓 Open Lessons (Open Lessons,
+// Curriculum, Feedback and Monitoring Rubric, Feedback Style) and 🏅 Scorecard (📋 Batch Sheet): bigger, bolder text, the way the Main Portal's admin pages
 // read. The page is marked while one of those sections is open (body.lp-sec-admin), and only then.
-const BIG_SECS = ["admin", "modules"];
+const BIG_SECS = ["admin", "modules", "scorecard"];
 const __lpRender = window.render;
 if(typeof __lpRender === "function") window.render = function(){
   try{ document.body.classList.toggle("lp-sec-admin", state.view === "admin" && !!state.isAdmin && !state.traineeId && BIG_SECS.includes(groupOf(state.adminTab || "audit"))); }catch(err){}
@@ -477,15 +477,15 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
   .lp-admin-row .admin-tab-btn{font-size:13px;padding:6px 11px;border:1px solid #DDE1EC !important;border-radius:999px;background:#fff;}
   .lp-admin-row .admin-tab-btn.active{background:#FFF3E6;border-color:var(--orange) !important;color:var(--navy);}
 }
-/* 🛡 Admin Master Control and 🔓 Open Lessons: bigger, bolder text */
+/* 🛡 Admin Master Control, 🔓 Open Lessons and 🏅 Scorecard: bigger, bolder text */
 body.lp-sec-admin main summary{font-size:16.5px;}
 body.lp-sec-admin main .lp-admin-sec{font-size:14px;font-weight:800;}
 body.lp-sec-admin main .lp-admin-row .admin-tab-btn{font-size:16.5px;font-weight:800;}
 /* (max(…, 1em): never smaller than the text around it, so nothing that was already bigger shrinks) */
 body.lp-sec-admin main p, body.lp-sec-admin main li, body.lp-sec-admin main label{font-size:max(16px, 1em);line-height:1.6;}
 body.lp-sec-admin main p, body.lp-sec-admin main li{font-weight:500;}
-body.lp-sec-admin main td{font-size:16px;font-weight:600;}
-body.lp-sec-admin main th{font-size:15px;font-weight:900;}
+body.lp-sec-admin main td{font-size:max(16px, 1em);font-weight:600;}
+body.lp-sec-admin main th{font-size:max(15px, 1em);font-weight:900;}
 body.lp-sec-admin main input, body.lp-sec-admin main select, body.lp-sec-admin main textarea{font-size:16px;}
 body.lp-sec-admin main button:not(.lp-admin-sec):not(.admin-tab-btn), body.lp-sec-admin main a.btn{font-size:15px;font-weight:800;}
 body.lp-sec-admin main h3{font-size:24px;} body.lp-sec-admin main h4{font-size:18px;}
@@ -493,6 +493,12 @@ body.lp-sec-admin main p[style*="font-size"]{font-size:max(16px, 1em) !important
 body.lp-sec-admin main .batch-folder .bf-name{font-size:18px;} body.lp-sec-admin main .batch-folder .bf-meta, body.lp-sec-admin main .bf-count{font-size:14.5px;font-weight:600;}
 body.lp-sec-admin main .batch-folder .bf-actions button{font-size:14px;} body.lp-sec-admin main .bf-search input{font-size:16px;}
 body.lp-sec-admin main .bf-shelf h2{font-size:19px;} body.lp-sec-admin main .empty-note, body.lp-sec-admin main .ops-empty{font-size:15.5px;}
+/* 🏅 Scorecard → 📋 Batch Sheet: its small print (its tables are already large and keep their size) */
+body.lp-sec-admin main .bs-at, body.lp-sec-admin main :is(.bs-card,.bs-ctl) .bs-batchmenu .bs-at, body.lp-sec-admin main .gs-menu .bs-pager span{font-size:14.5px !important;font-weight:700;}
+body.lp-sec-admin main .bs-sbox{font-size:14px;} body.lp-sec-admin main .bs-omini .bs-sbox{font-size:12.5px;}
+body.lp-sec-admin main .bs-note, body.lp-sec-admin main .bs-how, body.lp-sec-admin main .bs-view, body.lp-sec-admin main .bs-day, body.lp-sec-admin main .bs-ds-day{font-size:15.5px;}
+body.lp-sec-admin main .bs-h span, body.lp-sec-admin main .bs-day-h span, body.lp-sec-admin main .bs-ctx b, body.lp-sec-admin main .bs-ctx-none{font-size:14.5px;}
+body.lp-sec-admin main .gs td.bs-ocell{font-size:14px;} body.lp-sec-admin main .bs-oday span, body.lp-sec-admin main .bs-oacts li b, body.lp-sec-admin main .bs-otools small{font-size:13px;}
 /* the Dashboard and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
