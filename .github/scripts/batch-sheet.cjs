@@ -390,12 +390,14 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(1200);
   await page.evaluate(() => FTBatchSheet.batch('B03101')); await page.waitForTimeout(1500);
   if (!(await page.$('.bs-warn'))) fail('a batch name that isn\'t a Batch ID gets no warning');
-  await page.evaluate(() => FTBatchSheet.fixOpen()); await page.waitForTimeout(200);
+  // (✏️ is on 🛡 Admin Master Control → 📁 Batches now, for the same batch)
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); FTBatchSheet.fixOpen(); }); await page.waitForTimeout(400);
   if ((await page.$$('.bs-fix-list input:checked')).length !== 1) fail('✏️ Fix the batch name doesn\'t tick the batch\'s trainees');
   await page.fill('#bsFixTo', 'not a batch'); await page.evaluate(() => FTBatchSheet.fixSave()); await page.waitForTimeout(300);
   if (!(await page.$('.bs-fix-err'))) fail('a wrong Batch ID is not refused');
   if ((await get('trainee:' + dee)).batch !== 'B03101') fail('a refused move still moved the trainee');
-  await page.fill('#bsFixTo', BATCH.toLowerCase()); await page.evaluate(() => FTBatchSheet.fixSave());
+  await page.fill('#bsFixTo', BATCH.toLowerCase()); await page.evaluate(() => FTBatchSheet.fixSave()); await page.waitForTimeout(1500);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); });
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
   const moved = await get('trainee:' + dee);
   if (moved.batch !== BATCH || moved.batchFrom !== 'B03101' || moved.batchMovedBy !== 'trainer') fail(`the move: ${JSON.stringify({ batch: moved.batch, from: moved.batchFrom, by: moved.batchMovedBy })}`);
@@ -413,9 +415,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminTab = 'batchsheet'; render(); });
 
   // ✎ Fix a date: Ben's registration was recorded wrong; the trainer sets it, and the sheet marks it
-  await page.evaluate(() => FTBatchSheet.dateOpen()); await page.waitForTimeout(200);
+  await page.evaluate(() => { state.adminTab = 'batches'; render(); FTBatchSheet.dateOpen(); }); await page.waitForTimeout(400);
   await page.selectOption('#bsDateWho', ids.Ben); await page.waitForTimeout(200);
-  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave());
+  await page.fill('#bsDateAt', '2026-10-30T08:30'); await page.evaluate(() => FTBatchSheet.dateSave()); await page.waitForTimeout(1500);
+  await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); });
   await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(800);
   const benRec = await get('trainee:' + ids.Ben);
   if (!benRec.registeredAt || new Date(benRec.registeredAt).getDate() !== 30 || !benRec.registeredAtFixedAt || !benRec.registeredAtWas) fail(`✎ Fix a date: ${JSON.stringify({ at: benRec.registeredAt, fixed: benRec.registeredAtFixedAt, was: benRec.registeredAtWas })}`);

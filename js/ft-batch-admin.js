@@ -504,7 +504,9 @@ function batchesTab(){
     const p = h1.nextElementSibling;
     if(p && p.tagName === "P") p.textContent = "Each batch: open its card to see its trainees on the 📋 Batch Sheet. Archive a batch when it finishes; its records stay on the Archive shelf.";
   }
-  return `<div class="fba-batches">${t.innerHTML}</div>`;
+  // (🛠 the batch's tools — ✏️ Fix the batch name, 🧹 Sweep inactive accounts, ✎ Fix a date — moved here from 📋 Batch Sheet)
+  const tools = window.FTBatchSheet && typeof FTBatchSheet.toolsHtml === "function" ? FTBatchSheet.toolsHtml() : "";
+  return `${tools}<div class="fba-batches">${t.innerHTML}</div>`;
 }
 ftAdminTab("batches", "📁 Batches", batchesTab);
 
