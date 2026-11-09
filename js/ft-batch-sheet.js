@@ -2287,7 +2287,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:170px;} .bs-pt-t col.bs-pt-c2{width:78px;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (the Score column only as wide as a score) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:210px;} .bs-pt-t col.bs-pt-c2{width:220px;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (wide enough for a value on one line: Approved, a date and time, a score) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
