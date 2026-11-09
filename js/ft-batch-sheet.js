@@ -1112,17 +1112,23 @@ function dayActs(R, d){
   const monDay = !!(mon && mon.checkedAt && (() => { const x = new Date(mon.checkedAt); return !isNaN(x) && [x.toISOString().slice(0, 10), `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`].includes(d); })());
   const unread = k => (c.unreadable || []).includes(k), share = "The system can't open it, so it isn't counted. Share it with the program's account (📁 My Drive links).";
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  // 🤖 the day's own input graded by the AI (worker.js aiDayGrade): its score out of 100 from the six criteria, each out of 5
+  const CRIT = {compliance: "Compliance", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
+  const aiTxt = g => g ? `Graded on the day's own entries: ${g.score}%${g.aiLikely ? " · ⚠ reads as AI-generated, not their own words" : ""}.` : "";
+  const aiMore = g => g ? [Object.entries(g.crit || {}).map(([k, v]) => `${CRIT[k] || k} ${v}/5`).join(" · "), g.feedback || "", (g.flags || []).length ? "To fix: " + g.flags.join("; ") : ""].filter(Boolean).join(" · ") : "";
   if(P.tracker != null || unread("tracker")){
     const rules = tk ? tk.rules || [] : [], miss = rules.filter(r => !r.pass), voice = tk && (tk.comment ? "🧑‍🏫 " + first(tk.comment) : tk.review ? "🤖 " + first(tk.review) : "");
     out.push({k: "tracker", icon: "📋", label: "Task Tracker", pct: P.tracker, text: unread("tracker") ? sent2(share)
+      : c.trackerAi ? sent2(aiTxt(c.trackerAi), c.trackerAi.feedback || "")
       : sent2(rules.length ? `${rules.length - miss.length} of ${rules.length} checks met${miss.length ? `; to fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}` : ", nothing to fix"}.` : P.tracker ? "Updated for the day." : "Not updated for the day.", voice),
-      more: [tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
+      more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
+      : c.monitorAi ? sent2(aiTxt(c.monitorAi), c.monitorAi.feedback || "")
       : sent2(P.monitor ? `The entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}: ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `No entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)} on the Monitoring Sheet.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
-      more: monDay && mon.review ? "AI review: " + mon.review : ""});
+      more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
     out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
