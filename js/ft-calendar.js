@@ -220,16 +220,16 @@ function miniMonthHTML(){
     row.push(`<span class="${cls}">${d.getDate()}</span>`); } cells += `<div class="gc-mrow">${row.join("")}</div>`; if(r >= 3 && new Date(start.getTime() + (r + 1) * 7 * 864e5).getMonth() !== m0.getMonth()) break; }
   return `<div class="gc-mini"><div class="gc-mini-hd">${MONTHS[m0.getMonth()]} ${m0.getFullYear()}</div><div class="gc-mrow gc-mdow">${head}</div>${cells}</div>`;
 }
+const CREATE_SVG = `<svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>`;
 function tasksHTML(){
   const s = scn();
-  return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()"><svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
+  return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()">${CREATE_SVG}Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
     <p class="cs-hint">Put each of these on the week as an event, named after the task, with a description. Drag on an empty part of the calendar to add one.</p>
     <p class="cs-hint cs-rule">🎨 <b>Attorney’s color rule:</b> ${e(C.COLOR_RULE_TEXT)}</p>
     ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span>${(r.needs || {}).meet ? '<span class="cs-dur cs-chip">📹 Google Meet</span>' : ""}${(r.needs || {}).remind ? '<span class="cs-dur cs-chip">🔔 Reminder</span>' : ""}<p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
 
 /* ---------- 🗓 the Attorney Calendar Management Activity: the attorney's Google Calendar, two weeks in Pacific Time ---------- */
-const CREATE_SVG = `<svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>`;
 const gmt = abs => { const o = X.offAt(X.CAL_TZ, abs), a = Math.abs(o); return `GMT${o < 0 ? "-" : "+"}${String(Math.floor(a / 60)).padStart(2, "0")}${a % 60 ? ":" + String(a % 60).padStart(2, "0") : ""}`; };
 const dayParts = d => X.dLabel(d).split(" ");          // ["Mon", "Jul", "6"], at the page's anchor
 const weekOf = day => day >= 7 ? 1 : 0;
