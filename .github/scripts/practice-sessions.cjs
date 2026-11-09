@@ -233,7 +233,7 @@ const failures = []; const fail = (m) => failures.push(m);
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
     // the trainee's bar, as the platform spec names it (no Client Profile, no Scorecards, no Admin, no search, no full screen)
-    ['Dashboard', 'Main Portal'].forEach(n => {
+    ['Dashboard', 'Training Directory'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
     // (🎯 Focus is a signed-in trainee's own: not in an admin's Trainee view; 🛠 Practice Lab and ✍️ Knowledge Check
