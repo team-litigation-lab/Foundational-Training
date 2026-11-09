@@ -85,6 +85,14 @@
     return true;
   }
 
+  // A tracker whose Daily Notes headings are all far from the day (e.g. December 14, 2022 on a 2026 batch): the template's own
+  // sample dates, never changed to the trainee's days. Gives the sentence to tell them, or "".
+  function staleDates(cols, D){
+    const t = Date.parse(D + "T12:00:00Z"); if(!cols || !cols.length || isNaN(t)) return "";
+    if(cols.some((c) => Math.abs(Date.parse(c + "T12:00:00Z") - t) < 183 * 864e5)) return "";
+    const s = cols.slice().sort();
+    return `Its Daily Notes headings are dated ${fmtDate(s[0])}${s.length > 1 ? " to " + fmtDate(s[s.length - 1]) : ""}: the template's own dates, never changed. Change them to your training days (e.g. ${fmtDate(D)}).`;
+  }
   const RULES = [
     {id: "daily-notes", label: "Daily Notes filled in for every open task",
      run(t, D){
@@ -97,7 +105,7 @@
        const missing = rows.filter((r) => !has(r.notes && r.notes[D]));
        const flags = missing.map((r) => ({row: r.id, col: "note:" + D, msg: `No Daily Note for ${fmtDate(D)}`}));
        const pct = Math.round(100 * (rows.length - missing.length) / rows.length);
-       const detail = !hasCol ? `No ${fmtDate(D)} column in Daily Notes yet.`
+       const detail = !hasCol ? `No ${fmtDate(D)} column in Daily Notes yet.${staleDates(t.tracker.noteDates, D) ? " " + staleDates(t.tracker.noteDates, D) : ""}`
          : missing.length ? `${missing.length} of ${rows.length} open task${rows.length === 1 ? "" : "s"} ha${missing.length === 1 ? "s" : "ve"} no note for ${fmtDate(D)}.`
          : `All ${rows.length} open task${rows.length === 1 ? "" : "s"} have a note for ${fmtDate(D)}.`;
        return {pass: missing.length === 0, pct, detail, flags};
@@ -437,5 +445,5 @@
   }
 
   root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
-    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, dayExcerpt, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
+    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, staleDates, checkDay, dayExcerpt, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);

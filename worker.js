@@ -3140,7 +3140,7 @@ export default {
             const res = t ? TR.checkDay(Object.assign(t, { drive }), D) : null;
             out.tracker = { found: hi >= 0, headerRow: hi >= 0 ? hi + 1 : null, headers: head.filter(Boolean).slice(0, 40), dateColumns: noteDates.slice(0, 60),
               hasDay: noteDates.includes(D), rows: t ? t.tracker.rows.length : 0, excerpt: t ? TR.dayExcerpt(t, D) : "", check: res && !res.na ? (res.rules || []).map((r) => ({ label: r.label, pass: r.pass, detail: r.detail })) : [],
-              note: hi < 0 ? "No header row with \"Task Details\" was found: is the link to the Daily Task Tracker tab?" : !noteDates.length ? "No column between \"Accountable VA\" and \"VA Notes\" (or the row above or below) reads as a date." : "" };
+              note: hi < 0 ? "No header row with \"Task Details\" was found: is the link to the Daily Task Tracker tab?" : !noteDates.length ? "No column between \"Accountable VA\" and \"VA Notes\" (or the row above or below) reads as a date." : TR.staleDates(noteDates, D).replace("Change them", "They need to change them") };
           } catch (e) { out.tracker = { error: String(e && e.message || e).slice(0, 200) }; }
         }
         if (drive.monitor) {
