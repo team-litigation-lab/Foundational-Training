@@ -376,7 +376,8 @@ function kdOneHtml(p, single){
     // (graded "of" the sheets due by now — a lesson not reached yet isn't counted — and any already graded)
     const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
     const due = rows.filter(x => x.g.pct != null || x.g.subm || !window.ftSheetDue || ftSheetDue({lesson: x.k.l}, p.batch || B.batch));
-    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${e(p.name)} <em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
+    // (one trainee's page: no name over it, their name heads the page already)
+    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${single ? "" : e(p.name) + " "}<em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
@@ -2370,7 +2371,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:150px;} .bs-pt-t col.bs-pt-c2{width:96px;} .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value — Approved, a date and time — wraps in its cell) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-pt-t col.bs-pt-c1{width:200px;} .bs-pt-t col.bs-pt-c2{width:96px;} .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
