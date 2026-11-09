@@ -968,39 +968,31 @@ function renderKc(){
   loadReview();
   const read = isReadPage(qs, shownSets(qs)), rec = read ? readRec(id) : kcRec(id), shown = KC.shown[shownKey(id, read)] || (rec && rec.last), prog = state.progress[id] || {};
   const locked = kcLeft(id, read) <= 0;   // 🔒 taken: the answers stay as they were graded
-  if(read) return `${back}
-    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
-      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
-    ${readReview(id) ? reviewBlock(id, readReview(id)).replace("this Knowledge Check’s final score", "the Reading Task’s final score") : ""}
-    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
-    <div class="card kc-card">
+  // the answers card (each answer, its AI feedback and the trainer's note from the review `rv`) and the answer-sheet box
+  const kcCard = rv => `<div class="card kc-card">
       ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
           <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${num(g.score)}/10</b> ${e(g.feedback)}</div>` : ""}
-          ${(()=>{ const n = ((readReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
+          ${(()=>{ const n = ((rv || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
       <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
       <p class="fp-muted">Your answers save as you type.</p>
       ${pdfBox(id)}
     </div>
     ${kcSave(qs)}`;
+  if(read) return `${back}
+    <div class="kc-hero">${intro.replace(/<b>\d+% passes<\/b> and finishes the lesson/, "it is scored on its own, apart from the lesson’s Knowledge Check")}
+      ${rec && rec.attempts ? `<div class="kc-stats">📖 Reading Task · ${trainerScore(readReview(id)) != null ? `final score <b>${trainerScore(readReview(id))}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}</div>` : ""}</div>
+    ${readReview(id) ? reviewBlock(id, readReview(id)).replace("this Knowledge Check’s final score", "the Reading Task’s final score") : ""}
+    ${shown ? kcReport(id, shown).replace(/Passed · |Not yet · \d+% passes/, "") : ""}
+    ${kcCard(readReview(id))}`;
   return `${back}
     <div class="kc-hero">${intro}
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${num(rec.best)}%` : `Best score <b>${num(rec.best)}%</b>`} · ${num(rec.attempts)} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
     ${reviewBlock(id)}
     ${shown ? kcReport(id, shown) : ""}
     ${prog.done && root_FTNextStep() ? root_FTNextStep().compact(id) : ""}
-    <div class="card kc-card">
-      ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
-        return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
-          <textarea rows="5" placeholder="Your answer, in complete sentences." ${locked ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
-          ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${num(g.score)}/10</b> ${e(g.feedback)}</div>` : ""}
-          ${(()=>{ const n = ((kcReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
-      <div class="fp-actions">${kcButton(id, read)}</div>${kcNote(id, read)}
-      <p class="fp-muted">Your answers save as you type.</p>
-      ${pdfBox(id)}
-    </div>
-    ${kcSave(qs)}`;
+    ${kcCard(kcReview(id))}`;
 }
 // 📄 The lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, checked there by the platform
 function kcSave(qs){
