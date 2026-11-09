@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
-// (a batch that started yesterday, Pacific time: its Week 1 is the week now and not over, so nothing drafts itself; a Batch ID is
+// (a batch that started yesterday, Pacific time: its Week 1 is the week now, under way and not over, so its report drafts itself; a Batch ID is
 // its first day, B + MMDDYY)
 const ptParts = ms => Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: '2-digit', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
 const bid = ms => { const p = ptParts(ms); return `B${p.month}${p.day}${p.year}`; };
@@ -23,6 +23,8 @@ const failures = []; const fail = m => failures.push(m);
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+  // (the day's compliance seeded here stands: the 📋 Batch Sheet's re-scoring of today, worker.js /api/compliance/today, is answered empty)
+  await page.route('**/api/compliance/today', r => r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true,"done":{}}' }));
   page.on('pageerror', e => fail(`page error: ${e.message}`));
   page.on('dialog', d => d.accept());
   const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
@@ -50,7 +52,10 @@ const failures = []; const fail = m => failures.push(m);
     const sc = secs.findIndex(x => /Scorecard/.test(x)), wr = secs.findIndex(x => /Weekly Reports/.test(x));
     if (wr < 0 || sc < 0 || wr !== sc + 1) fail(`📊 Weekly Reports isn't its own section button beside 🏅 Scorecard: ${secs.join(' | ')}`); }
   await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
-  if (!/hasn.t been started/.test(await page.evaluate(() => document.querySelector('.rk').innerText))) fail('a new week doesn\'t offer to start the report');
+  // (🔄 a week under way drafts its own report from its first day, and fills as the days go by)
+  { const ok = await page.waitForFunction(() => FTRanking.begun() && /is under way|Final average|final average/i.test((document.querySelector('.rk') || {}).innerText || ''), null, { timeout: 15000 }).then(() => true, () => false);
+    if (!ok) fail(`a week under way doesn't draft its own report: ${(await page.evaluate(() => (document.querySelector('.rk') || {}).innerText || '')).replace(/\s+/g, ' ').slice(0, 300)}`);
+    await page.waitForTimeout(3000); }
   await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(800);
   // 🔗 connected to every scorecard: the Daily Compliance, the Drive links' compliance and 🏅 the Scorecard's overall, at the end
   const conn = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
