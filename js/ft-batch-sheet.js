@@ -1127,7 +1127,14 @@ function linkState(p){
   });
   // 🔎 not in their Drive (worker.js autoLinkBatch: the batch's Drive searched, no such file with their name): said so exactly
   const nf = (rv.notFound || {}).keys || [];
-  LINKS.forEach(([k]) => { const x = out[k]; if(x && nf.includes(k) && /^(bad|none)$/.test(x.st)) x.nf = rv.notFound.at || true; });
+  // (only while it still holds: no link, or one the system can't open that was neither saved nor checked since that search.
+  // A link the VA saved after it, or one that opens — the file IS there, the check says what is wrong with it — isn't
+  // "not in their Drive")
+  const nfAt = t((rv.notFound || {}).at);
+  LINKS.forEach(([k]) => { const x = out[k]; if(!x || !nf.includes(k)) return;
+    const since = nfAt && [x.c && x.c.at, ((rv.verify || {})[k] || {}).at].map(t).some(a => a && a > nfAt);
+    const stale = since || (nfAt && t(dv.updatedAt) > nfAt);
+    if(x.st === "none" || (x.st === "bad" && ACCESS((x.c || {}).err) && !stale)) x.nf = rv.notFound.at || true; });
   const checked = [lastDay && lastDay.checkedAt, rv.monitor && rv.monitor.checkedAt, rv.shots && rv.shots.checkedAt, rv.verifyAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
   return {L: out, dv, checked};
 }
