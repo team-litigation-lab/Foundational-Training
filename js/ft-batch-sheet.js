@@ -881,13 +881,8 @@ function whoTopHtml(ppl){
   const cur = ptCur(ppl);
   return `<label class="bs-who-top">🔎 <select aria-label="Trainee" onchange="FTBatchSheet.ptPick(this.value)">${ppl.map(p => `<option value="${e(p.id)}" ${cur && p.id === cur.id ? "selected" : ""}>${e(p.name)}</option>`).join("")}</select></label>`;
 }
-// 📄 one trainee per page: ◀ Previous · Next ▶ · n of N (the trainee picked with 🔎 beside Batch; kept while the batch stays the same)
+// 📄 one trainee per page: the trainee picked with 🔎 beside Batch (kept while the batch stays the same)
 function ptCur(ppl){ return ppl.find(p => p.id === B.pt) || ppl[0] || null; }
-function pagerHtml(ppl){
-  const cur = ptCur(ppl); if(!cur) return ""; const i = ppl.indexOf(cur);
-  return `<span class="bs-pager"><button type="button" ${i <= 0 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i - 1})">◀ Previous</button>
-    <button type="button" ${i >= ppl.length - 1 ? "disabled" : ""} onclick="FTBatchSheet.ptGo(${i + 1})">Next ▶</button><span>${i + 1} of ${ppl.length}</span></span>`;
-}
 // a trainee's row of one table (the same order as people(), else by name)
 function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && rs[i] && stripTags(rs[i][0] && rs[i][0].v) === p.name ? rs[i] : rs.find(r => stripTags(r[0] && r[0].v) === p.name) || null; }
 /* 🔎 EVERY GRADE, in the trainee's own table: each grading system of the 🏅 Scorecard (js/ft-program.js) with each of its items —
@@ -918,7 +913,7 @@ function matrixOf(x){
 const partsTable = ps => `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`).join("")}</tbody></table>`;
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
-  const ppl = all;   // (one trainee per page: 🔎 beside Batch, or ◀ Previous / Next ▶)
+  const ppl = all;   // (one trainee per page: 🔎 beside Batch)
   const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 2 + LINKS.length);
   // (👥 the trainee's own record — status, registered, last on the platform, lessons… — at the bottom of their table)
   // (🏅 Score Card after the day-by-day detail; then 🔎 every grade; 👥 the trainee's own record at the very bottom)
@@ -1419,7 +1414,7 @@ function renderSheet(){
   const waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
   // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
-  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
+  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
 ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div></div>`;
   const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", "", "", controls);
@@ -1466,8 +1461,8 @@ window.FTBatchSheet = {
   },
   // 📝 Send Feedback, in one trainee's table (js/ft-trainer-feedback.js FTFeedback.inline): '' closes it
   fbOpen(id){ B.fbWho = id || ""; if(id) B.pt = id; render(); },
-  // 📄 the trainee's page: by the dropdown, or ◀ Previous / Next ▶
-  ptPick(id){ B.pt = id; B.fbWho = ""; render(); try{ window.scrollTo({top: (document.querySelector(".bs-pager") || {}).offsetTop - 80 || 0}); }catch(err){} },
+  // 📄 the trainee's page: by the 🔎 dropdown
+  ptPick(id){ B.pt = id; B.fbWho = ""; render(); try{ window.scrollTo({top: (document.querySelector(".bs-pt") || {}).offsetTop - 80 || 0}); }catch(err){} },
   ptGo(i){ const p = people()[i]; if(p) FTBatchSheet.ptPick(p.id); },
   // 📅 / 🟢 / 🎧 a review screen with no button of its own on top (js/ft-program.js adminHidden), in this batch
   review(tab){ if(!adminOn()) return; if(typeof setAdminTab === "function") setAdminTab(tab); else { state.adminTab = tab; render(); } },
@@ -1968,7 +1963,7 @@ window.ftBanner = function(title, batch, right, controls, opts){
 .bs-wkswitch button{font:800 15px Arial,sans-serif;padding:8px 16px;border-radius:999px;border:2px solid #33406B;background:#fff;color:#1E2340;cursor:pointer;}
 .bs-wkswitch button.on{background:#1E2340;color:#fff;} .bs-ovtools{margin:0 0 8px;}
 .ft-banner-ctl{flex-basis:100%;margin-top:6px;} .bs-ctl .gs-top{background:transparent !important;padding:0 !important;margin:0 !important;}
-.bs-ctl .bs-batchmenu label{color:#fff !important;} .bs-ctl .bs-at,.bs-ctl .bs-pager span{color:#E8ECF7 !important;}
+.bs-ctl .bs-batchmenu label{color:#fff !important;} .bs-ctl .bs-at{color:#E8ECF7 !important;}
 .bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;}
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
@@ -1985,7 +1980,6 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 :is(.bs-card,.bs-ctl) .gs-top{flex-wrap:nowrap;gap:10px;align-items:center;overflow-x:auto;}
 :is(.bs-card,.bs-ctl) .gs-file{flex-direction:row;align-items:center;gap:10px;min-width:0;flex:0 1 auto;}
 :is(.bs-card,.bs-ctl) .gs-top .gs-menu{margin-top:0;}
-:is(.bs-card,.bs-ctl) .gs-menu .bs-pager{flex-wrap:nowrap !important;}
 :is(.bs-card,.bs-ctl) .bs-batchmenu{flex-wrap:nowrap !important;margin-left:auto;white-space:nowrap;}
 :is(.bs-card,.bs-ctl) .bs-batchmenu label{font-size:15px !important;} :is(.bs-card,.bs-ctl) .bs-batchmenu select{font-size:15px !important;padding:5px 9px !important;}
 :is(.bs-card,.bs-ctl) .bs-who-top select{min-width:190px !important;} :is(.bs-card,.bs-ctl) .bs-batchmenu .bs-at{font-size:12.5px !important;}
@@ -2052,10 +2046,6 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 :is(.bs-card,.bs-ctl) .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 12.5px Arial,sans-serif;padding:5px 8px;border-radius:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.06);}
 :is(.bs-card,.bs-ctl) .gs-menu button:hover{background:#EEF1F8;} :is(.bs-card,.bs-ctl) .gs-menu button.bs-upd-all{background:#1E2340;color:#fff;margin-left:0;vertical-align:baseline;} :is(.bs-card,.bs-ctl) .gs-menu button.bs-upd-all:hover{background:#2C3566;}
 :is(.bs-card,.bs-ctl) .gs-menu button:disabled{opacity:.6;cursor:default;}
-.bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
-.bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
-.bs-pager span{color:#3C4043;font:800 16px Arial,sans-serif;}
-:is(.bs-card,.bs-ctl) .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager{gap:5px;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager button{font-size:12.5px;padding:5px 8px;white-space:nowrap;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager span{font-size:12.5px;white-space:nowrap;}
 :is(.bs-card,.bs-ctl) .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
 /* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
 :is(.bs-card,.bs-ctl) .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} :is(.bs-card,.bs-ctl) .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
