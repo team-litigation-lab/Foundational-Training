@@ -163,7 +163,6 @@ function startAuto(){ stopAuto(); DD.auto = true; DD.timer = setInterval(() => {
   go(1);
 }, AUTOPLAY_SECS * 1000); }
 function stopAuto(){ clearInterval(DD.timer); DD.timer = null; if(DD.auto){ DD.auto = false; if(state.view === "daydeck") render(); } }
-function pickDay(n){ n = Number(n); if(!dayOpen(n)) return; DD.day = n; DD.i = 0; DD.page = 0; DD.pages = 1; if(instructionOnlyDays().includes(n)) loadExtras(); render(); }
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["daydeck", "knowtools"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {daydeck: "Day deck", knowtools: "Know Your Tools"});
@@ -199,7 +198,6 @@ function kindOf(s, html){
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   return {ic: "📝", label: "Read & Do"};
 }
-const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
 function linkKind(href, label, dk){
   const u = String(href || "");
@@ -2135,7 +2133,7 @@ root.FTDayDecks = {open, go, next: nextKC,
   // ⛶ a decision tree bigger: it fills the screen, and again (or Esc) brings it back
   treeFull(btn){ const t = btn && btn.closest(".ftdt"); if(!t) return; const d = document;
     if(d.fullscreenElement || d.webkitFullscreenElement){ (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
-    const req = t.requestFullscreen || t.webkitRequestFullscreen; if(req) req.call(t); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, stop: openStop,
+    const req = t.requestFullscreen || t.webkitRequestFullscreen; if(req) req.call(t); }, slide: openSlide, stop: openStop,
   refFull(btn){
     const em = btn && btn.closest(".ftdd-embed-terms"); if(!em) return;
     const doc = document, on = doc.fullscreenElement || doc.webkitFullscreenElement;
@@ -2163,15 +2161,12 @@ root.FTDayDecks = {open, go, next: nextKC,
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
-  tools: () => TOOLS.map(t => t.name),
-  // the index of a day's first slide of its own (after its day card and Training Agenda)
   // the index of a slide by its id (the guide's own slide ids, as js/ft-day-decks-data.js has them)
   // a day's slides, in the deck's order
   list: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d) : []; },
   // a day's card rows, in its card's order, and a row's title as the card shows it (js/ft-day-locks.js: a step per row)
   dayRows, rowLabel,
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
-  first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
@@ -2180,10 +2175,9 @@ root.FTDayDecks = {open, go, next: nextKC,
     const top = [...sheet.children].find(k => k === el || k.contains(el)); if(!top) return false;
     for(let p = 0; p < (DD.pages || 1); p++){ DD.page = p; fitSheets(); if(el.offsetParent) return true; }
     return false;
-  }, dayOpen, currentDay, load: loadDecks, day: () => DD.day, discussionDay, instructionOnlyDays,
+  }, dayOpen, currentDay, load: loadDecks, day: () => DD.day, instructionOnlyDays,
   // the no-discussion day's last slide, "From your trainer"
   // (its own slide: the deck now ends on its end slide, after it)
-  trainer(n){ loadDecks().then(() => { const d = decks() && decks()[Number(n)], i = d ? slidesOf(d).findIndex(s => s.trainer) : -1; open(n, i >= 0 ? i : 999); }); },
   async addX(n){
     if(!isAdminView()) return;
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
