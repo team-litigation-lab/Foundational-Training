@@ -10,8 +10,7 @@ Output: build/lessons/lessonNN.js (the lesson's sections)
 
 Each page's layout is written below as a small function that places the page's own text blocks
 (b[i] = the i-th text box, a list of its paragraphs). Nothing is retyped, so the wording is the deck's.
-The components are styled by js/ft-slides.js. Copy the lesson into index.html by hand afterwards
-(build/build.py, which used to build it in, is retired).
+The components are styled by js/ft-slides.js. Copy the lesson into index.html by hand afterwards.
 """
 import json, os, re, sys, html
 

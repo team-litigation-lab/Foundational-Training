@@ -31,7 +31,7 @@
       design (body.ft-orient) both set their own background with !important on
       a more specific selector, so they win over everything here.
 
-   Loaded last (build.py puts it after js/lsh-tool-links.js), so these rules
+   Loaded last (index.html puts it after js/lsh-tool-links.js), so these rules
    come after every stylesheet they override.
    ============================================================================ */
 (function () {
