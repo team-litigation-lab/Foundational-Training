@@ -116,21 +116,24 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .step-timeline .step-circle{width:38px;height:38px;font-size:14px;}
 .step-timeline .step-dash{flex:1 1 8px;min-width:6px;width:auto;}
 @media (max-width:900px){ .step-timeline{flex-wrap:wrap;row-gap:10px;} }
-.ft-open-days{padding:18px 20px;margin-bottom:18px;}
-.ft-open-days h3{margin:0 0 4px;color:var(--navy);}
+.ft-open-days{padding:22px 26px;margin-bottom:18px;font-size:16px;}
+.ft-open-days h3{margin:0 0 6px;color:var(--navy);font-size:24px;}
 .ft-open-days .ft-od-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;}
-.ft-open-days select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);}
-.ft-od-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
-.ft-od-day{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:#fff;cursor:pointer;}
+.ft-open-days select{font:inherit;font-size:16.5px;font-weight:700;padding:8px 12px;border-radius:8px;border:2px solid #3B4A8C;}
+/* (auto-fit: the lessons stretch across the whole screen, no empty slots at the end) */
+.ft-od-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;}
+.ft-od-day,.ft-od-day b{overflow-wrap:normal;word-break:normal;hyphens:none;}
+.ft-od-day{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:12px;padding:14px 14px;font-size:16px;background:#fff;cursor:pointer;min-height:64px;}
+.ft-od-day input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex:0 0 auto;}
 .ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
 .ft-od-day.nocontent{opacity:.55;}
 .ft-od-one{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;}
-.ft-od-one h4{margin:0 0 4px;font-size:15px;}
+.ft-od-one h4{margin:0 0 6px;font-size:18px;}
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 /* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
 .dash-layout > .dash-side{order:1;}
 .topics-modal-list .tm-pages{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-left:6px;white-space:nowrap;}
-.ft-od-day b{display:block;color:var(--navy);}
+.ft-od-day b{display:block;color:var(--navy);font-weight:800;}
 /* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
 #lecture-viewer-pane{position:fixed;right:24px;bottom:24px;width:380px;max-width:calc(100vw - 48px);height:250px;max-height:calc(100vh - 48px);background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:none;flex-direction:column;z-index:3000;overflow:hidden;}
 #lecture-viewer-pane.open{display:flex;}
@@ -649,7 +652,9 @@ function renderFtOpenDays(){
   const o = state.ftOpenDays || {all:[], batches:{}};
   const open = new Set((sel==="__all" ? o.all : (o.batches||{})[sel] || []).map(Number));
   const everyone = new Set((o.all||[]).map(Number));
-  return `
+  // (the dark blue banner over the page, as on 📋 Batch Sheet, 🔗 Drive Links and 🧑‍🏫 Graders: js/ft-batch-sheet.js ftBanner)
+  const banner = typeof window.ftBanner === "function" ? ftBanner("Open Lessons", sel === "__all" ? "" : sel, "") : "";
+  return `${banner}
     <div class="card ft-open-days">
       <h3>📅 Open Lessons</h3>
       <p style="margin:0;color:var(--ink-soft);font-size:14px;">Trainees only see a lesson once it's open for them. Open each lesson when the batch starts it. A lesson opened for <b>All batches</b> is open for everyone.</p>
