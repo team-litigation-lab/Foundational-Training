@@ -82,7 +82,8 @@ async function save(btn){
 // ✏️ Edit on the bar: out of 👁 Trainee view if need be, to Admin → 📢 Announcements, read fresh, the first box focused.
 // (a click listener of its own, caught first, so nothing else on the page can take the click)
 function edit(){
-  if(typeof state === "undefined") return;
+  // (trainees have no edit: only a trainer, or a trainer in 👁 Trainee view; the Worker refuses a trainee's write too)
+  if(typeof state === "undefined" || (!state.isAdmin && !state.adminPreview)) return;
   if(state.adminPreview && typeof setAdminViewMode === "function") setAdminViewMode("admin");
   if(!state.isAdmin){ if(typeof openAdmin === "function") openAdmin(); return; }
   ED.rec = null; state.adminTab = "announcements";
