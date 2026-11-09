@@ -40,9 +40,9 @@
     FTQ.loadingPeople = true;
     (async ()=>{
       try{
-        let people = state.adminData;
-        if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-        FTQ.people = people.filter(r=>r && r.id && r.approved === true && !r.archived && !r.rejected)
+        // (the active trainees only, js/ft-roster.js: a revoked, offboarded or blocked trainee isn't offered for a scorecard)
+        const people = await window.ftActiveRoster();
+        FTQ.people = people
           .map(r=>({id:r.id, name:r.name || r.id, batch:r.batch || ""}))
           .sort((a,b)=>a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
         const st = await sharedGet("settings:trainer-acts").catch(()=>null);

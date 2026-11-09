@@ -1221,7 +1221,7 @@ root.render = function(){
   const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
-// 🎧 a recording card (Day 3's Listening Activity, .ftdd-acard: build/day-decks.cjs REF_RECS audio) plays in a pop-up
+// 🎧 a recording card (the Call Listening recordings of Days 3, 7 and 13 kept on the platform, .ftdd-acard: listenCards) plays in a pop-up
 // player over the slide; Esc, ✕ or a click outside closes it (and stops it)
 (() => {
   let box = null;
