@@ -8110,7 +8110,6 @@ function bookmarkView(){
   const dd = state.view==="daydeck" && window.FTDayDecks ? FTDayDecks.state() : null;
   const bm = {view:state.view, dayId:state.dayId||null, toolId:state.toolId||null, deck: dd ? {day:dd.day, i:dd.i||0} : null,
               wizardIndex:(state.view==="tool" && typeof toolState!=="undefined" && toolState.wizardIndex) || 0, at:Date.now()};
-  if(state.view==="openroleplay") bm.view = "crisisroleplay"; // a live call can't be resumed mid-call
   const prev = state.lastView;
   if(prev && prev.view===bm.view && prev.dayId===bm.dayId && prev.toolId===bm.toolId && prev.wizardIndex===bm.wizardIndex && JSON.stringify(prev.deck||null)===JSON.stringify(bm.deck)) return;
   state.lastView = bm; storeSet("last-view", bm);
