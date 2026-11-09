@@ -1977,6 +1977,76 @@ async function checkIntakePacket(env, id, hint = {}) {
   return out;
 }
 
+/* 🔁 SCORES GIVEN ON THE SIMULATORS, MIRRORED ON THE STANDARD MOCK CALL SCORECARDS (labreview:<id>.acts — 🧑‍🏫 Graders,
+   🧑‍🏫 Trainer Inputs, and from there the trainee's 🏅 Score Card and the 📊 Weekly Ranking):
+     📅 Calendar Management   the trainer's scorecard on the Training Portal's Google Calendar Simulator (its /api/calsim-scorecard,
+                              the seven metrics this scorecard has); one saved in 🧑‍🏫 Graders is sent there already (/api/calsim-card
+                              "put"), so both show the same card wherever the trainer filled it in.
+     ☎ Reception · Intake     the latest graded call on its Ring Channel line (callsim:<id>, the Portal's) with its metrics, by
+                              criterion name; a graded call without metrics gives its score only.
+   A score typed here wins: an activity a trainer scored here (source not "simulator") is never written over. One filled from a
+   simulator follows the simulator's latest card. Returns the activities filled. */
+const SIM_ACTS = { reception: { act: "reception-live", lesson: 4, word: "reception" }, calendar: { act: "calendar-live", lesson: 5, word: "calendar" }, intake: { act: "intake-live", lesson: 6, word: "intake" } };
+const simNum = (v) => { const n = v == null || v === "" ? NaN : Number(v); return isFinite(n) ? n : null; };
+const simHalf = (v) => Math.max(0, Math.min(5, Math.round(v * 2) / 2));
+const simNorm = (v) => String(v == null ? "" : v).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function simRows(c) {
+  let r = c && (c.rows || c.metrics || c.breakdown || c.criteria || c.scores);
+  if (r && !Array.isArray(r) && typeof r === "object") r = Object.entries(r).map(([k, v]) => v && typeof v === "object" ? Object.assign({ metric: k }, v) : { metric: k, score: v });
+  return (Array.isArray(r) ? r : []).map((x) => x && typeof x === "object" ? { n: String(x.metric || x.name || x.label || x.criterion || x.n || ""), v: simNum(x.score != null ? x.score : x.value),
+    max: simNum(x.max || x.out_of || x.outOf), fb: String(x.feedback || x.note || x.comment || x.remarks || "") } : null).filter((x) => x && x.v != null);
+}
+// rows on the scorecard's criteria: by name, else (a card with as many rows as criteria, in order) by position
+function simMatch(rb, rows) {
+  const scores = rb.criteria.map(() => null), feedback = rb.criteria.map(() => "");
+  rb.criteria.forEach((k, i) => { const n = simNorm(k.n); let m = rows.find((x) => simNorm(x.n) === n) || rows.find((x) => { const y = simNorm(x.n); return y.length > 5 && (n.startsWith(y) || y.startsWith(n)); });
+    if (!m && rows.length === rb.criteria.length) m = rows[i];
+    if (!m) return; const v = m.max ? m.v / m.max * 5 : m.v > 5 ? m.v / 20 : m.v; scores[i] = simHalf(v); feedback[i] = m.fb.slice(0, 600); });
+  return { scores, feedback, n: scores.filter((v) => v != null).length };
+}
+async function syncSimScores(env, id, o = {}) {
+  const kv = kvOf(env), RB = globalThis.FT_RUBRICS; if (!RB) return [];
+  const rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null"); if (!rec) return [];
+  const lk = `labreview:${id}`, cur = JSON.parse((await kv.get(lk)) || "null") || {}; cur.acts = cur.acts || {};
+  const calls = ((JSON.parse((await kv.get(`callsim:${id}`)) || "null") || {}).calls) || [];
+  const filled = [];
+  for (const [key, S] of Object.entries(SIM_ACTS)) {
+    const prev = cur.acts[S.act];
+    if (prev && prev.source !== "simulator" && (prev.score != null || (prev.rubric && (prev.rubric.scores || []).some((v) => v != null)) || prev.redo)) continue;   // (typed here: it wins)
+    const rb = Object.assign({ key }, RB.list[key]);
+    let card = null;
+    if (key === "calendar") {
+      if (!gatewayOn(env)) continue;
+      try {
+        const base = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/calsim-scorecard";
+        const r = await fetch(base + "?" + new URLSearchParams({ name: rec.name || "", batch: canonicalBatch(rec.batch) || String(rec.batch || "") }), { headers: { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() } });
+        const j = await r.json().catch(() => ({}));
+        const k = j && j.success && Array.isArray(j.cards) ? j.cards[j.cards.length - 1] : null;
+        if (k && k.source !== "foundational") card = { rows: simRows(k), at: k.at || "", by: k.by || "", from: "Google Calendar Simulator scorecard" };
+      } catch (e) { continue; }
+    } else {
+      const mine = calls.filter((c) => c && typeof c === "object" && (String(c.lesson == null ? "" : c.lesson).replace(/\D/g, "") === String(S.lesson) || simNorm([c.line, c.track, c.simulator, c.program].join(" ")).includes(S.word)))
+        .map((c) => ({ rows: simRows(c), score: simNum(c.score != null ? c.score : c.pct != null ? c.pct : c.percent), at: String(c.at || c.date || c.ts || c.createdAt || c.endedAt || ""), by: c.gradedBy || c.grader || "" }))
+        .sort((a, b) => a.at.localeCompare(b.at));
+      const last = mine[mine.length - 1];
+      if (last) card = Object.assign(last, { from: "Ring Channel graded call" });
+    }
+    if (!card) continue;
+    const m = simMatch(rb, card.rows || []);
+    const avg = m.n ? RB.average(rb, m.scores) : null;
+    const pct = avg != null ? Math.round(avg / 5 * 100) : card.score != null ? Math.max(0, Math.min(100, Math.round(card.score))) : null;
+    if (pct == null) continue;
+    if (prev && prev.source === "simulator" && prev.simAt === card.at && prev.score === pct) continue;   // (nothing new)
+    const redo = false, status = typeof globalThis.ftResult === "function" ? globalThis.ftResult({ score: pct, redo }) : pct >= 60 ? "Passed" : "Failed";
+    cur.acts[S.act] = Object.assign({}, prev || {}, { source: "simulator", simFrom: card.from, simAt: card.at, simBy: String(card.by || "").slice(0, 80), score: pct, status, redo,
+      date: String(card.at || "").slice(0, 10) || TR.ptDate(), comment: (prev && prev.comment) || `Scored on the ${card.from}${card.by ? " by " + String(card.by).slice(0, 80) : ""}.`, at: new Date().toISOString() },
+      m.n ? { rubric: { key, scores: m.scores, feedback: m.feedback, avg: Math.round(avg * 100) / 100 } } : {});
+    filled.push({ act: S.act, pct, from: card.from });
+  }
+  if (filled.length) { cur.updatedAt = new Date().toISOString(); await kv.put(lk, JSON.stringify(cur)); }
+  return filled;
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -2030,6 +2100,8 @@ async function runTrackerChecks(env, opts) {
     if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
     try { files = await folderOf(id); } catch (e) { files = undefined; }
     try { const r = await dailyCompliance(env, id, D, { rec, files, final: !o.id }); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+    // (🔁 and the scores given on the simulators, onto the mock call scorecards nobody scored here)
+    try { const f = await syncSimScores(env, id, { rec }); if (f.length) done.push({ id, simScores: f.length }); } catch (e) { /* the next trainee */ }
     // (and the past training days not worked out yet, ten at a time: the scorecards cover every day since the batch began)
     if (!o.id) { try { const n = await backfillCompliance(env, id, { max: 10, rec, files }); if (n) done.push({ id, backfilled: n }); } catch (e) { /* the next trainee */ } }
   }
@@ -3082,6 +3154,15 @@ export default {
       // scorecards there (the Portal's /api/calsim-scorecard, found by their name and batch), read for 🧑‍🏫 Graders to fill from
       // (op "get"), and a scorecard saved in 🧑‍🏫 Graders sent there (op "put"), so both sides show the same card. Server to
       // server with the shared AI_GATEWAY_SECRET; without it: {ok: false, off: true}. Trainers only.
+      // 🔁 the simulators' scores onto the standard mock call scorecards (syncSimScores), for trainees ids (🧑‍🏫 Graders opening a
+      // batch). Trainers only; up to 40 trainees a call.
+      if (path === "/api/sim-scores/sync") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const ids = (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40), out = {};
+        for (const id of ids) { try { out[id] = await syncSimScores(env, id); } catch (e) { out[id] = []; } }
+        return json({ ok: true, filled: out });
+      }
       if (path === "/api/calsim-card") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
