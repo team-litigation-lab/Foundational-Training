@@ -1893,17 +1893,19 @@ const BANNER_TABS = {curriculum: "Curriculum", monitor: "Feedback and Monitoring
         if(bar){ bar.insertAdjacentHTML("afterend", window.ftBanner(t, "", "").replace('<div class="ft-banner">', `<div class="ft-banner" data-tab="${state.adminTab}">`)); } } }catch(err){}
     return out; };
 })();
-window.ftBanner = function(title, batch, right){
+// (opts.week: the week to show, 1–6, instead of this week — 🧑‍🏫 Graders' Week dropdown; opts.cls: a class on the banner)
+window.ftBanner = function(title, batch, right, opts){
   const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
+  opts = opts || {};
   let wk = "";
   const s0 = batch && typeof batchStartDate === "function" ? batchStartDate(batch) : "", t0 = s0 ? Date.parse(s0 + "T00:00:00Z") : NaN;
   if(isFinite(t0)){
     const today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
-    const n = Math.max(1, Math.min(6, Math.floor((Date.parse(today + "T00:00:00Z") - t0) / (7 * 864e5)) + 1)), a = t0 + (n - 1) * 7 * 864e5;
+    const n = Number(opts.week) >= 1 ? Math.min(6, Math.floor(Number(opts.week))) : Math.max(1, Math.min(6, Math.floor((Date.parse(today + "T00:00:00Z") - t0) / (7 * 864e5)) + 1)), a = t0 + (n - 1) * 7 * 864e5;
     const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "long", day: "numeric", year: "numeric", timeZone: "UTC"});
     wk = ` · Week <b>${n}</b> · ${esc(f(a))} – ${esc(f(a + 6 * 864e5))}`;
   }
-  return `<div class="ft-banner"><div><p class="ft-banner-k">Legal Support Help · Foundational Training</p><h2>${title}</h2>
+  return `<div class="ft-banner${opts.cls ? " " + esc(opts.cls) : ""}"><div><p class="ft-banner-k">Legal Support Help · Foundational Training</p><h2>${title}</h2>
     ${batch ? `<p class="ft-banner-sub">Batch <b>${esc(batch)}</b>${wk}</p>` : ""}</div>${right ? `<div class="ft-banner-right">${right}</div>` : ""}</div>`;
 };
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-sheet"; s.textContent = `
