@@ -1196,11 +1196,19 @@ const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || /^B
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);
+// 🎧 a Transcription Activity recording's automatic score (trackerreview:<id>.transcribe[n], worker.js gradeTranscription),
+// for the submission it was worked out from: it counts until the trainer records theirs, and never sets Passed or Redo
+function autoTr(R, it){
+  const m = /^transcription-([12])$/.exec(String(it.id || "")); if(!m) return null;
+  const g = ((((R.src || {})["trackerreview:"] || {}).transcribe) || {})[m[1]], run = (((R.transcribe || {}).r) || {})[m[1]];
+  return g && typeof g.pct === "number" && run && run.submittedAt && run.submittedAt === g.submittedAt ? g : null;
+}
 function autoDone(R, d, it, p){
   const src = R.src || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   if(it.at === "session"){ const runs = ((src["sessions:"] || {}).runs) || {}; const k = Object.keys(runs).find(x => x.split("|")[0] === it.id && runs[x] && runs[x].submittedAt);
     return k ? {done: true, how: "Practice Session submitted " + when(runs[k].submittedAt)} : {done: false, how: "Practice Session not submitted yet"}; }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id];
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], g = a ? null : autoTr(R, it);
+    if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
     if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
     const res = resOf(a);
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
@@ -1250,8 +1258,8 @@ function scoreOf(R, d, it, p){
       return t != null ? {pct: t, how: "trainer's score"} : runs[k].submittedAt && runs[k].auto && typeof runs[k].auto.pct === "number" ? {pct: Math.round(runs[k].auto.pct), how: "automated checks"} : null; }).filter(Boolean);
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: xs.map(x => `${x.pct}% (${x.how})`).join(", ")} : null;
   }
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null;
-    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : null; }
+  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null, g = a ? null : autoTr(R, it);
+    return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
   if(it.assess){ const g = assessOf(R, it), v = gradePct(g);
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;

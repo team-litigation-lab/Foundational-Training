@@ -274,7 +274,8 @@ window.renderModules = renderModules;
 function compute(ctx){
   const rows = CFG.sources.map(s => {
     let items = [];
-    try{ items = (s.items(ctx) || []).filter(Boolean); }catch(err){ items = []; }
+    // (ctx.reviewedOnly: without the automatic scores no trainer has reviewed yet, items marked auto — the Weekly Ranking's ⤓ Fill)
+    try{ items = (s.items(ctx) || []).filter(x => x && !(ctx.reviewedOnly && x.auto)); }catch(err){ items = []; }
     const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct));
     return {s, items, graded:g.length, avg:g.length ? Math.round(g.reduce((n, x) => n + x.pct, 0) / g.length) : null};
   });

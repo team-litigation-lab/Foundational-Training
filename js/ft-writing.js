@@ -7,7 +7,9 @@
    ✍️ Check the writing: the AI lists the grammar, spelling and format problems it finds, word for word, and suggests a
    score out of 5. ⤓ Use this score puts it in the Writing criterion (and the findings in its Remarks, where the
    scorecard has Remarks); the trainer can change it like any other score. Nothing is saved until the trainer saves.
-   The Transcription Activity's minutes are on the platform (transcribe:<id>), so they are filled in for the trainer.
+   The Transcription Activity's minutes are on the platform (transcribe:<id>), so they are filled in for the trainer, and
+   the Worker checks their writing when the trainee submits (trackerreview:<id>.transcribe[n].writing): that result is shown
+   here with no paste and no click, on Trainer Inputs and on 🧑‍🏫 Graders (where ⤓ fills its scoresheet).
    Chained after js/ft-calrules.js's ftRubricAssist (the booking rule check), which keeps working.
    ============================================================ */
 (function(){
@@ -34,10 +36,18 @@ function minutesOf(r, a){
   return W.minutes[k];
 }
 
+// 🎧 the Transcription Activity's writing check, done by the Worker when the trainee submitted (worker.js gradeTranscription:
+// trackerreview:<id>.transcribe[n].writing): Trainer Inputs' row has it (r.tr), 🧑‍🏫 Graders its own (FTMockScores.autoOf)
+function storedOf(r, a){
+  const m = /^transcription-([12])$/.exec(String(a.id || "")); if(!m) return null;
+  const g = (((r.tr || {}).transcribe) || {})[m[1]] || (window.FTMockScores && FTMockScores.autoOf ? FTMockScores.autoOf(r.id, a.id) : null);
+  return g && g.writing && g.writing.score != null ? Object.assign({stored: g.at}, g.writing) : null;
+}
 function assist(r, a){
   const rb = window.FT_RUBRICS && FT_RUBRICS.forAct(a); if(!rb) return "";
   const wi = FT_RUBRICS.writingIndex(rb); if(wi < 0) return "";
   const k = keyOf(r, a); minutesOf(r, a);
+  if(!W.out[k]){ const st = storedOf(r, a); if(st) W.out[k] = st; }
   const out = W.out[k];
   const list = (h, xs) => xs && xs.length ? `<div class="wr-list"><b>${h}</b><ul>${xs.map(x => `<li>${e(x)}</li>`).join("")}</ul></div>` : "";
   return `<div class="fss-wide wr-assist" data-wr-key="${e(k)}" data-wr-crit="${wi}">
@@ -46,6 +56,7 @@ function assist(r, a){
     <textarea rows="5" class="wr-text" placeholder="The trainee’s written work" oninput="FTWriting.keep(this)">${e(W.text[k] || "")}</textarea>
     <div class="wr-act"><button class="btn btn-ghost btn-sm" type="button" onclick="FTWriting.check(this)" ${W.busy ? "disabled" : ""}>${W.busy ? "Checking…" : "✍️ Check the writing"}</button></div>
     ${out ? `<div class="wr-out"><p><b>Suggested: ${e(out.score)}/5</b>${out.summary ? ` · ${e(out.summary)}` : ""}</p>
+      ${out.stored ? `<p class="fss-muted">🤖 Checked automatically when the trainee submitted (${e(new Date(out.stored).toLocaleString())}).</p>` : ""}
       ${list("Grammar", out.grammar)}${list("Spelling", out.spelling)}${list("Format", out.format)}
       ${!(out.grammar || []).length && !(out.spelling || []).length && !(out.format || []).length ? `<p class="fss-muted">No problems found.</p>` : ""}
       <button class="btn btn-navy btn-sm" type="button" onclick="FTWriting.use(this)">⤓ Use this score (${e(out.score)}/5)</button></div>` : ""}
@@ -91,12 +102,19 @@ Return ONLY JSON: {"score": number, "grammar": ["..."], "spelling": ["..."], "fo
   // the suggested score into the Writing criterion (and the findings into its Remarks): the trainer can still change both
   use(btn){
     const box = btn.closest(".wr-assist"), k = box.getAttribute("data-wr-key"), i = box.getAttribute("data-wr-crit"), out = W.out[k];
+    const n = out ? out.grammar.length + out.spelling.length + out.format.length : 0;
+    const note = out ? (n ? `${n} writing issue${n === 1 ? "" : "s"}: ` + [...out.spelling, ...out.grammar, ...out.format].slice(0, 3).join("; ") : "Clean, professional writing").slice(0, 600) : "";
+    // (🧑‍🏫 Graders: into its scoresheet, where the criterion is still empty)
+    if(out && btn.closest(".fms") && window.FTMockScores && FTMockScores.fillCrit){
+      const got = FTMockScores.fillCrit({[i]: out.score}, {[i]: note});
+      toast(got ? `⤓ Writing scored ${out.score}/5. Change it if you see it differently, then Save.` : "The writing criterion already has a score: change it in the scoresheet.");
+      return;
+    }
     const form = btn.closest(".fss-cellform"), inp = form && form.querySelector(`[data-rubric] [data-crit="${i}"]`);
     if(!out || !inp) return;
     inp.value = out.score;
     const fb = form.querySelector(`[data-rubric] [data-fb="${i}"]`);
-    if(fb){ const n = (out.grammar.length + out.spelling.length + out.format.length);
-      fb.value = (n ? `${n} writing issue${n === 1 ? "" : "s"}: ` + [...out.spelling, ...out.grammar, ...out.format].slice(0, 3).join("; ") : "Clean, professional writing").slice(0, 600); }
+    if(fb) fb.value = note;
     if(window.FTInputs) FTInputs.calc(inp);
     toast(`⤓ Writing scored ${out.score}/5. Change it if you see it differently, then Save.`);
   },

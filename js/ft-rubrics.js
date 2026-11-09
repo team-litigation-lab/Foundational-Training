@@ -86,4 +86,4 @@ function result(c){
 }
 root.ftResult = result;
 root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result, PASS_PCT, keys: () => Object.keys(R)};
-})(typeof window !== "undefined" ? window : this);
+})(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this));
