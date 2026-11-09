@@ -59,6 +59,8 @@ jobs:
         run: node .github/scripts/compliance-start.cjs
       - name: A day checked before its work came in is worked out again once over, raised and never lowered
         run: node .github/scripts/compliance-recheck.cjs
+      - name: Each day's Task Tracker rows and Monitoring Sheet entry graded by the AI on that day's input only (worker.js aiDayGrade)
+        run: node .github/scripts/day-ai-grade.cjs
       - name: The Day's outputs with the scores of what was graded that day (worker.js dailyCompliance graded)
         run: node .github/scripts/outputs-scores.cjs
       - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)

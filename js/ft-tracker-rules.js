@@ -90,6 +90,9 @@
      run(t, D){
        const rows = ((t && t.tracker && t.tracker.rows) || []).filter((r) => openOn(r, D));
        const hasCol = ((t && t.tracker && t.tracker.noteDates) || []).includes(D);
+       // (a tracker kept as a log — the day's tasks entered as rows dated that day, no Daily Notes column for it — is updated that day)
+       const dated = ((t && t.tracker && t.tracker.rows) || []).filter((r) => isTask(r) && (r.dateReceived === D || r.completedOn === D));
+       if(!hasCol && dated.length) return {pass: true, pct: 100, detail: `${dated.length} task${dated.length === 1 ? "" : "s"} entered for ${fmtDate(D)}.`, flags: []};
        if(!rows.length) return {pass: true, pct: 100, detail: "No open tasks on this day.", flags: []};
        const missing = rows.filter((r) => !has(r.notes && r.notes[D]));
        const flags = missing.map((r) => ({row: r.id, col: "note:" + D, msg: `No Daily Note for ${fmtDate(D)}`}));
@@ -118,6 +121,16 @@
     const rules = RULES.map((rule) => { const x = rule.run(t, D); return x && Object.assign({id: rule.id, label: rule.label}, x); }).filter(Boolean);
     const pct = rules.length ? Math.round(rules.reduce((a, r) => a + r.pct, 0) / rules.length) : 100;
     return {date: D, pass: rules.every((r) => r.pass), pct, rules, flags: [].concat(...rules.map((r) => r.flags))};
+  }
+
+  /* 📋 the day's own input on the tracker, as text (for the AI grade of the day, worker.js aiDayGrade): every task dated that
+     day, completed that day or with a Daily Note for it — its type, details, status, the note and the VA Notes. "" when the
+     tracker has nothing for the day. */
+  function dayExcerpt(t, D){
+    const rows = ((t && t.tracker && t.tracker.rows) || []).filter((r) => isTask(r) && (r.dateReceived === D || r.completedOn === D || has(r.notes && r.notes[D])));
+    return rows.slice(0, 40).map((r) => `- ${r.type || "(no type)"} | ${String(r.details || "(no details)").slice(0, 300)} | status: ${r.status || "(none)"}` +
+      (r.dateReceived ? ` | received ${fmtDate(r.dateReceived)}` : "") + (r.completedOn ? ` | completed ${fmtDate(r.completedOn)}` : "") +
+      (has(r.notes && r.notes[D]) ? `\n  Daily Note: ${String(r.notes[D]).slice(0, 600)}` : "") + (has(r.vaNotes) ? `\n  VA Notes: ${String(r.vaNotes).slice(0, 400)}` : "")).join("\n").slice(0, 6000);
   }
 
   /* the notes review: the day's notes and takeaways, judged against the trainer's criteria */
@@ -161,7 +174,12 @@
   const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   // "10/8/2026", "10/08", "2026-10-08", "Oct 8, 2026", "October 8" → "2026-10-08" (a date without a year takes `year`)
   function isoDate(v, year){
-    const t = String(v || "").trim(); let m;
+    // (a weekday in front, a weekday or note in brackets after, and "." or "-" between the numbers are forgiven:
+    // "Fri, 10/30/2026", "10/30/26 (Fri)", "10.30.26", "10-30-2026", "30-Oct", "Oct-30-26")
+    let t = String(v || "").trim().replace(/\s*[(\[][^)\]]*[)\]]\s*$/, "").replace(/^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+(?=\d)/i, "").trim(), m;
+    if((m = t.match(/^(\d{1,2})[.\-](\d{1,2})(?:[.\-](\d{2,4}))?$/))) t = `${m[1]}/${m[2]}${m[3] ? "/" + m[3] : ""}`;
+    if((m = t.match(/^(\d{1,2})[\s\-]([A-Za-z]{3,9})\.?(?:[\s\-,]+(\d{2,4}))?$/)) && MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) >= 0) t = `${m[2]} ${m[1]}${m[3] ? ", " + (m[3].length === 2 ? "20" + m[3] : m[3]) : ""}`;
+    if((m = t.match(/^([A-Za-z]{3,9})\.?-(\d{1,2})(?:-(\d{2,4}))?$/))) t = `${m[1]} ${m[2]}${m[3] ? ", " + (m[3].length === 2 ? "20" + m[3] : m[3]) : ""}`;
     const out = (y, mo, d) => (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) ? `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}` : "";
     if((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return out(m[1], +m[2], +m[3]);
     if((m = t.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/))) return out(m[3] ? (m[3].length === 2 ? "20" + m[3] : m[3]) : year, +m[1], +m[2]);
@@ -286,10 +304,11 @@
       const rated = segLow.some((l) => RATING_HINTS.some((h) => l.includes(h)) && /[x✓✔☑☒■●▣]|\bselected\b|\(x\)|\[x\]/i.test(l)) || segLow.some((l) => /^rating\s*[:\-]\s*[1-4]/.test(l));
       // (📅 the entry's own date — its "Date: 10/30/2026" line — so each day's score is read from the entry dated that day)
       const dl = seg.find((l) => /^date\b/i.test(l)) || seg.find((l) => /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(l)) || "";
-      const date = findDate(dl.replace(/^date\s*[:\-]?\s*/i, ""), ptDate().slice(0, 4));
+      // (#624 strips its longer "Date of the discussion:" prefix; main reads the date in any form, findDate)
+      const date = findDate(dl.replace(/^date\s*(of\s+(the\s+)?(discussion|session|entry))?\s*[:\-]?\s*/i, ""), ptDate().slice(0, 4));
       const checks = [["Date", seg.some((l) => isoDate(l.replace(/^date\s*[:\-]?\s*/i, ""), "2000") || /\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/.test(l))],
         ["5 takeaways", take.length >= 5], ["Questions", qs.length >= 1], ["Understanding rated", rated]];
-      return {topic: x.t.title || x.t, date, takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
+      return {topic: x.t.title || x.t, date, text: seg.join("\n").slice(0, 3000), takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
     });
     entries.forEach((x) => { if(optionalTopic(x.topic)) x.optional = true; });
     const pct = entries.length ? Math.round(entries.reduce((a, x) => a + x.pct, 0) / entries.length) : 0;
@@ -418,5 +437,5 @@
   }
 
   root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
-    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
+    ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, dayExcerpt, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);
