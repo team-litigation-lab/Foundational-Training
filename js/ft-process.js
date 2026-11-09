@@ -212,6 +212,8 @@ async function sheetPdf(set){
 }
 const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
   quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
+// (📝 the Assessments, js/ft-assess.js, which loads next, name their files and explain a failed save the same way)
+window.FTPdfKit = {firstName, codeName, DRIVE_WHY};
 // the lesson's files: one per naming convention among the sheets on its page
 // (on ✍️ Knowledge Check every question of the lesson can be answered, so every sheet has its 📄 Save PDF to my Folder there,
 // finished module or not; on the Process Questions page, before the module is finished, only its open sheets)
