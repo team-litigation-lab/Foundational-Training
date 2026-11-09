@@ -50,7 +50,8 @@ const failures = []; const fail = m => failures.push(m);
     // Eve: 6 AI practice + typing + calsim submission + Calendaring Activity + session = 10 (the missed task, the calendar
     // drafts and the trainer's review not counted)
     if (rows[0][col('Practice attempts')] !== '10') fail(`Eve's practice attempts: ${rows[0][col('Practice attempts')]}`);
-    if (rows[0][col('Tools used')] !== '5 / 13') fail(`Eve's tools used: ${rows[0][col('Tools used')]}`);
+    // (of the tools open by her 6th–7th training day: 11 — the Call Simulator and the drills open on Day 8 — not all 13)
+    if (rows[0][col('Tools used')] !== '5 / 11') fail(`Eve's tools used aren't of the tools open so far (5 / 11): ${rows[0][col('Tools used')]}`);
     if (rows[0][col('Practiced again')] !== '5') fail(`Eve's practiced again: ${rows[0][col('Practiced again')]}`);
     if (!/\+30/.test(rows[0][col('Getting better')])) fail(`Eve's improvement: ${rows[0][col('Getting better')]}`);
     if (rows[0][col('Decks')] !== '1 · 2') fail(`Eve's decks · KC tries: ${rows[0][col('Decks')]}`);

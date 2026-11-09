@@ -25,6 +25,15 @@ const TOOLS = [
   {id: "callsim:", label: "🎯 Call Simulator"}, {id: "calsim:", label: "📅 Calendaring Simulator"}, {id: "drills:", label: "🏷 Naming & Reporting Drills"},
   {id: "listening:", label: "🎧 Call Listening"}, {id: "calcheck:", label: "📅 Calendar activity check"}, {id: "calrules:", label: "📅 Booking rules"},
   {id: "calweek:", label: "📅 Calendaring Activity"}];
+// 📅 the training day each tool opens on (js/ft-day-activities.js: the first day an activity of it is on), so the Utilization
+// measures the tools open so far, not every tool of the whole training: it grows with the days. A tool on no day — the AI
+// practice tools, roleplays, random tasks and the Portal's simulators — is open from Day 1.
+const DAY_IDS = {skills: ["skills"], sessions: ["@session"], "listening:": ["listening"], "calcheck:": ["calcheck"], "calweek:": ["calweek"],
+  "calsim:": ["calsim", "calactivity"], "calrules:": ["calrules"], "callsim:": ["callsim"], "drills:": ["drills"]};
+const openDay = id => { const want = DAY_IDS[id]; if(!want) return 1; const days = window.FT_DAY_ACTIVITIES || [];
+  for(const d of days.slice().sort((a, b) => a.day - b.day)) if((d.items || []).some(it => want.includes(it.at === "session" ? "@session" : it.id))) return d.day;
+  return 1; };
+const toolsBy = day => TOOLS.filter(x => openDay(x.id) <= Math.max(1, day));
 const TOOL_KEYS = TOOLS.filter(x => /:$/.test(x.id)).map(x => x.id);
 const OWN = ["trainee:", "progress:", "skills:", "simresults:", "sessions:"].concat(TOOL_KEYS);
 // a trainer's part of a tool record: not the trainee's activity
@@ -120,7 +129,9 @@ function measureOne(r, rec, ev, regAt){
     const last = [ev[0] && ev[0].at, t(tr.lastActive)].filter(Boolean).sort((a, b) => b - a)[0] || null;
     const m = {r, ev, pr, days, byDay, active, extra, consistency, used, items, again, imp, kcTries, decks, last, reg};
     const top = Math.max(1, PER_DAY * days.length);
-    m.util = Math.round(100 * (0.5 * m.used / TOOLS.length + 0.5 * m.consistency));
+    // (the tools open by their training day so far; one used before its day still counts, the share never above 1)
+    m.open = toolsBy(days.length).length;
+    m.util = Math.round(100 * (0.5 * Math.min(1, m.used / m.open) + 0.5 * m.consistency));
     const vol = Math.min(1, m.pr.length / top), pers = m.items ? Math.min(1, m.again / m.items) : 0, better = m.imp == null ? (m.again ? 0.5 : 0) : Math.max(0, Math.min(1, (m.imp + 20) / 40));
     m.eager = m.ev.length ? Math.round(100 * (0.35 * m.consistency + 0.25 * vol + 0.2 * pers + 0.2 * better) + Math.min(5, m.extra * 2.5)) : 0;
     m.eager = Math.min(100, m.eager);
@@ -149,7 +160,7 @@ function scoreItems(ctx){
   if(!m.pr.length) return [{name: "📈 Practice Lab Utilization", pct: null, note: "No practice yet"}, {name: "🔥 Eagerness to Learn", pct: null, note: "No practice yet"}];
   const last = ev[0] ? ev[0].at.toISOString() : "";
   const out = [
-    {name: "📈 Practice Lab Utilization", pct: m.util, note: `${m.used} of ${TOOLS.length} tools used · active ${m.active} of ${m.days.length} training day${m.days.length === 1 ? "" : "s"}`, at: last},
+    {name: "📈 Practice Lab Utilization", pct: m.util, note: `${Math.min(m.used, m.open)} of the ${m.open} tools open so far used · active ${m.active} of ${m.days.length} training day${m.days.length === 1 ? "" : "s"}`, at: last},
     {name: "🔥 Eagerness to Learn", pct: m.eager, note: `${level(m.eager)[0]} · ${m.pr.length} practice attempt${m.pr.length === 1 ? "" : "s"}, ${m.again} again${m.imp == null ? "" : ` · scores ${m.imp >= 0 ? "+" : ""}${m.imp} from first try`}`, at: last}];
   const lab = {};   // the work log's scored practice: each item's latest score (ev is newest first)
   ev.filter(x => (x.tool === "lab" || x.tool === "roleplay" || x.tool === "task") && x.score != null).forEach(x => {
@@ -184,7 +195,7 @@ function card(rows, batches, batch){
     return `<tr class="ut-row${open ? " ut-on" : ""}" onclick="FTUtil.open('${e(m.r.id)}')" title="${e("Eagerness: " + m.why.join("; "))}"><td class="ut-name">${open ? "▾" : "▸"} <b>${e(m.r.name)}</b></td>
       <td><span class="ut-bar ${uLevel(m.util)}"><i style="width:${m.util}%"></i></span><b>${m.util}%</b></td>
       <td><span class="ut-pill ${cls}">${lv} · ${m.eager}</span></td>
-      <td class="ut-n">${m.active} / ${m.days.length}</td><td class="ut-n">${m.used} / ${TOOLS.length}</td><td class="ut-n"><b>${m.pr.length}</b></td><td class="ut-n">${m.again}</td>
+      <td class="ut-n">${m.active} / ${m.days.length}</td><td class="ut-n" title="The tools open by their training day so far">${Math.min(m.used, m.open)} / ${m.open}</td><td class="ut-n"><b>${m.pr.length}</b></td><td class="ut-n">${m.again}</td>
       <td class="ut-n ${m.imp == null ? "" : m.imp >= 0 ? "ut-up" : "ut-down"}">${m.imp == null ? "—" : (m.imp >= 0 ? "▲ +" : "▼ ") + m.imp}</td>
       <td class="ut-n">${m.decks} · ${m.kcTries}</td>
       <td class="${m.last && Date.now() - m.last < 2 * 86400000 ? "" : "ut-stale"}">${m.last ? `${e(when(m.last))}<br><small>${e(ago(m.last))}</small>` : "Not yet"}</td>
@@ -192,12 +203,12 @@ function card(rows, batches, batch){
         return `<td class="ut-day ${before ? "ut-pre" : n === 0 ? "ut-d0" : n < 3 ? "ut-d1" : n < 8 ? "ut-d2" : "ut-d3"}" title="${e(md(k))}: ${before ? "before they registered" : x ? `${x.p} practice, ${x.l} lesson / Knowledge Check` : "nothing"}">${n || ""}</td>`; }).join("")}</tr>
 `; };
   return `<div class="card fss-admin ut-card">${head}${sum}
-    <div class="ff-scroll"><table class="ut-tbl"><thead><tr><th>Trainee</th><th title="The Practice Lab tools used (of ${TOOLS.length}) and the training days they practiced on, half each">📈 Utilization</th><th title="Showing up every day, practicing more, going back to practice again and getting better">🔥 Eagerness</th>
+    <div class="ff-scroll"><table class="ut-tbl"><thead><tr><th>Trainee</th><th title="The Practice Lab tools used (of those open by their training day so far) and the training days they practiced on, half each">📈 Utilization</th><th title="Showing up every day, practicing more, going back to practice again and getting better">🔥 Eagerness</th>
       <th title="Training days with any activity, of the training days since they registered">Active days</th><th title="Practice Lab tools used">Tools used</th><th>Practice attempts</th><th title="Attempts on something they had already practiced">Practiced again</th><th title="Latest score less the first, on what they practiced more than once">Getting better</th><th title="Lesson decks finished · Knowledge Check attempts">Decks · KC tries</th><th>Last active</th>
       ${cols.map(k => `<th class="ut-dayh">${e(md(k))}</th>`).join("")}</tr></thead><tbody>${ms.map(row).join("")}</tbody></table></div>
     ${(() => { const m = ms.find(x => x.r.id === U.sel); return m ? `<div class="ut-hist"><div class="ut-hist-h"><b>🕘 ${e(m.r.name)}: everything since they registered${m.reg ? " (" + e(m.reg.toLocaleDateString()) + ")" : ""}</b><button class="btn btn-ghost btn-sm" onclick="FTUtil.open('${e(m.r.id)}')">Close</button></div>${hist(m)}</div>` : ""; })()}
     <details class="ut-how"><summary>How it's measured</summary><ul>
-      <li><b>📈 Utilization</b>: half the Practice Lab tools used (of ${TOOLS.length}: ${TOOLS.map(x => x.label).join(", ")}), half the training days since they registered with any activity.</li>
+      <li><b>📈 Utilization</b>: half the Practice Lab tools used of those open by the trainee's training day so far (each opens on its first day in the Training Guide; all ${TOOLS.length} by the end: ${TOOLS.map(x => x.label).join(", ")}), half the training days since they registered with any activity.</li>
       <li><b>🔥 Eagerness</b> (of 100): showing up every training day 35%, practice attempts against a steady 3 a training day 25%, going back to practice something again 20%, scores getting better from first try to latest 20%; a few points more for weekend practice. 75+ 🔥 Very eager · 50+ 👍 Engaged · 25+ ⚠ Needs a nudge · below 🛑 Inactive.</li>
       <li><b>The day strip</b>: one square per training day (weekdays, the last 20), the number of things done that day; grey before they registered.</li>
       <li>Nothing is entered here: it is all read from the trainee's own records, back to the day they registered. A trainer's reviews are not counted as the trainee's activity.</li></ul></details></div>`;
