@@ -101,7 +101,9 @@ async function loadPeople(){
     // (opened on the batch's week now)
     if(!R.weekSet && R.batch){ R.week = weekNow(); R.weekSet = true; }
   }catch(err){ R.people = []; }
-  R.loading = false; rerender();
+  // (redrawn after the render that asked for the batches: with the trainees already in hand — state.adminData — this runs within
+  // that render, and a redraw asked for from inside it would be drawn over by its "Loading the batches…")
+  R.loading = false; setTimeout(rerender, 0);
 }
 const batches = () => [...new Set((R.people || []).map(p => bLabel(p.batch)).filter(Boolean))].sort();
 async function loadWeek(){
@@ -182,6 +184,11 @@ function weekOver(){
   const fri = new Date(ft).toISOString().slice(0, 10);
   return ptToday() > fri || Date.now() >= Date.parse(fri + "T22:30:00Z");
 }
+// a week has begun on its first day (Pacific time): its report drafts itself then, and fills as the days go by
+function weekBegun(){ const r = weekRange(); return !!(r && r[0] && ptToday() >= r[0]); }
+// (🔄 the report left open: its platform cells filled again every 10 minutes — never a trainer's typed cell, nor while they type)
+setInterval(() => { try{ if(typeof state === "undefined" || state.view !== "admin" || !R.data || R.fill || R.edit || (typeof isTyping === "function" && isTyping())) return;
+  if(document.querySelector(".rk")) fillFromPortal(true); }catch(err){} }, 10 * 60 * 1000);
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
@@ -633,8 +640,9 @@ function renderRanking(){
   if(!R.batch) return `<div class="card rk">${top}<p class="sc-empty">No approved trainees yet.</p></div>`;
   if(R.dataLoading) return `<div class="card rk">${top}<p class="sc-empty">Opening ${e(title())}…</p></div>`;
   // (a week that is over drafts its own report: autoDraft)
-  if(!R.data && weekOver()){ setTimeout(autoDraft, 0); return `<div class="card rk">${top}<p class="sc-empty">🤖 Week ${R.week} is over: drafting ${e(title())} from the platform…</p></div>`; }
-  if(!R.data) return `<div class="card rk">${top}<div class="rk-start"><b>${e(title())}</b> hasn’t been started. It drafts itself once the week’s Friday shift is over, or start it now with:
+  // (and from its first day on: the report starts itself and fills as the days go by)
+  if(!R.data && (weekOver() || weekBegun())){ setTimeout(autoDraft, 0); return `<div class="card rk">${top}<p class="sc-empty">🤖 Week ${R.week} ${weekOver() ? "is over" : "is under way"}: drafting ${e(title())} from the platform…</p></div>`; }
+  if(!R.data) return `<div class="card rk">${top}<div class="rk-start"><b>${e(title())}</b> hasn’t been started. It drafts itself on the week’s first day, or start it now with:
       <div class="rk-acts">${Object.keys(TEMPLATES).map(k => `<button class="btn btn-ghost btn-sm" onclick="FTRanking.start('${k}')">${TEMPLATES[k].label}</button>`).join("")}
         ${R.week > 1 ? `<button class="btn btn-navy btn-sm" onclick="FTRanking.start('last')">↻ Week ${R.week - 1}’s columns</button>` : ""}</div>
       <p class="sc-about">The columns can be changed any time (✎ Columns). Nothing about a trainee is filled in until you type it or ⤓ fill it from the platform.</p></div></div>`;
@@ -816,6 +824,8 @@ window.FTRanking = {
   },
   notes(id, v){ rowOf(id).notes = String(v).trim(); save(); },
   fill: fillFromPortal, draft: draftNotes,
+  // (whether the open week is over / has begun: for the checks)
+  over: () => weekOver(), begun: () => weekBegun(),
   download(){
     const blob = new Blob(["﻿", wordDoc()], {type: "application/msword"}), a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `${title()}.doc`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);

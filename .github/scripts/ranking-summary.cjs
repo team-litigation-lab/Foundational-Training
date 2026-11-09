@@ -53,6 +53,8 @@ const failures = []; const fail = m => failures.push(m);
     d = await get(`rksum:${BATCH}:w1`); r = d && d.rows && d.rows[id];
     if (!r || r.comments.english !== 'EDITED-BY-TRAINER') fail('a trainer\'s edit was lost when the week was summarized again');
     if (!r || r.scores.call !== 4) fail(`without the AI, Call Handling isn't the mock call's 4.0: ${r && r.scores.call}`);
+    // 🔎 how the scores were worked out: each competency's makings with the week's numbers, and the week's days as checked
+    if (!r || !r.how || !r.how.comp || !/scoresheet|Reception/i.test((r.how.comp.call || {}).from || '') || !Array.isArray(r.how.days)) fail(`the row doesn't say how its scores were worked out: ${JSON.stringify(r && r.how).slice(0, 300)}`);
     // 🔄 updated daily: a summary from an earlier day of a week still under way (or just over) is due again; one drafted today, or
     // of a week long over, isn't; shared before, the daily update shares it again with the new scores, without asking
     { const due = await page.evaluate(() => { const ymd = n => FTTrackerRules.ptDate(new Date(Date.now() + n * 864e5)), r = [ymd(-3), ymd(2)];
@@ -65,6 +67,7 @@ const failures = []; const fail = m => failures.push(m);
       const lab = await get('labreview:' + id); lab.acts['reception-live'].rubric.scores = lab.acts['reception-live'].rubric.scores.map(() => 2); lab.acts['reception-live'].rubric.avg = 2; lab.acts['reception-live'].score = 40; await put('labreview:' + id, lab);
       await page.evaluate(() => FTRankSummary.draft({ daily: true })); await idle();
       const s2 = await get('rankshare:' + id), c2 = s2 && s2.reports && s2.reports[`${BATCH}|1`], k = await get(`rksum:${BATCH}:w1`);
+      if (!c1 || !c1.how || !c1.how.comp) fail('the trainee\'s shared card has no account of how the scores were worked out');
       if (!c1 || !c2 || !(c2.scores.call < c1.scores.call) || c2.sharedAt === c1.sharedAt) fail(`the daily update of a shared week didn't reach the trainee's card: ${JSON.stringify({ before: c1 && c1.scores.call, after: c2 && c2.scores.call })}`);
       if (await page.evaluate(() => window.__asked)) fail('the daily update asked before sharing again');
       if (!k || !k.rows[id] || k.rows[id].comments.english !== 'EDITED-BY-TRAINER') fail('the daily update lost a trainer\'s edit');
