@@ -284,9 +284,11 @@ const failures = []; const fail = m => failures.push(m);
   if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
   // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
   if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
-  // (a classroom-assigned exercise the trainer ticks — at: "gc", scored by being done; the classroom lessons are off the scorecard)
-  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'gc' && /Exercise/.test(i.t)) || {}).t);
-  if (!roomT) fail('Day 1 has no exercise the trainer ticks');
+  // (a classroom activity the trainer ticks — at: "gc", scored by being done: Day 1's breakout handout; the Exercises are off
+  // the platform, and the classroom lessons are off the scorecard)
+  if (await page.evaluate(() => FTDays.DAYS.some(d => (FTDays.of(d.day).items || []).some(i => /Exercise$/.test(i.t) || i.kind === 'Exercise')))) fail('an Exercise is still on a day');
+  const roomT = await page.evaluate(() => (FTDays.of(1).items.find(i => i.at === 'gc' && /Breakout/.test(i.t)) || {}).t);
+  if (!roomT) fail('Day 1 has no activity the trainer ticks');
   await page.evaluate(([id, k]) => FTBatchSheet.tick(id, k, true), [ids.Ada, '1|' + roomT]); await page.waitForTimeout(1500);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
