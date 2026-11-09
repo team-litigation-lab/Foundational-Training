@@ -1459,6 +1459,7 @@ const LESSON_CARDS = {
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
+      {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "watch", d: 14, s: "s1m"},
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
       // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       {t: "Before Your Demo: the Tutorial Video", time: "AM", sub: "Watch it again before you record", k: "watch", d: 15, s: "s1"},
