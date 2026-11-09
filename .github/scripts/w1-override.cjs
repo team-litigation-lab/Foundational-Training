@@ -39,6 +39,9 @@ const failures = []; const fail = m => failures.push(m);
     }
     // (no automatic 🔄 Update all scores on opening the batches: it would work the seeded days out again on the server)
     await page.evaluate(() => { ['B103026', 'B020225'].forEach(b => localStorage.setItem('ft_bs_sync:' + b, String(Date.now()))); });
+    // (nor the sheet's own catch-up of the batch's past days — /api/compliance/backfill, once a session — which would add
+    // every training day since the batch started to the seeded two; the test reads the override on those two)
+    await page.evaluate(() => { const f = window.authFetch; window.authFetch = (u, b) => /\/api\/compliance\/backfill/.test(String(u)) ? Promise.resolve(new Response(JSON.stringify({ ok: true, filled: {} }), { status: 200, headers: { 'Content-Type': 'application/json' } })) : f(u, b); });
     await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(1500);
     // (the records seeded once the sign-ins' own background checks are done, then the sheet read again)
     await page.waitForTimeout(3000);
@@ -46,11 +49,12 @@ const failures = []; const fail = m => failures.push(m);
     for (const id of Object.values(ids)) await put('trackerreview:' + id, SEED);
     const sheet = async (b, name) => {
       await page.evaluate(b => { FTBatchSheet.batch(b); FTBatchSheet.refresh(); }, b);
-      await page.waitForFunction(n => { try { return FTBatchSheet.tables().find(t => t.id === 'days').rows.some(r => r[0].v.includes(n)); } catch (e) { return false; } }, name, { timeout: 20000 });
-      return page.evaluate(n => { const T = FTBatchSheet.tables(), days = T.find(t => t.id === 'days'), row = days.rows.find(r => r[0].v.includes(n)), col = days.head.indexOf('Days complete');
-        const sc = T.find(t => t.id === 'scores'), srow = sc.rows.find(r => r[0].v.includes(n)), dc = sc.head.indexOf('Daily compliance');
+      // (read in the same poll as the wait: the sheet can read its batch again between two calls, its tables empty meanwhile)
+      const h = await page.waitForFunction(n => { try { const T = FTBatchSheet.tables(), days = T.find(t => t.id === 'days'), row = days.rows.find(r => r[0].v.includes(n)); if (!row) return null;
+        const col = days.head.indexOf('Days complete'), sc = T.find(t => t.id === 'scores'), srow = sc.rows.find(r => r[0].v.includes(n)), dc = sc.head.indexOf('Daily compliance');
         const out = T.find(t => t.id === 'outputs'), orow = out.rows.find(r => r[0].v.includes(n));
-        return { done: row[col].v, comp: srow[dc].v, outputs: orow.map(c => c.v).join('|') }; }, name);
+        return { done: row[col].v, comp: srow[dc].v, outputs: orow.map(c => c.v).join('|') }; } catch (e) { return null; } }, name, { timeout: 20000, polling: 200 });
+      return h.jsonValue();
     };
     const w = await sheet('B103026', 'Wanda'), c = await sheet('B020225', 'Carl');
     if (!/^5 \//.test(w.done)) fail(`the B103026 trainee's Week 1 isn't counted done (Days complete): ${w.done}`);
