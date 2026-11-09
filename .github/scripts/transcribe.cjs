@@ -99,10 +99,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => FTTranscribe.tab(2)); await page.waitForTimeout(500);
   if (!/Transcription - Recording 2 \(Tara\)/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('Recording 2 doesn\'t ask for its own file name');
 
-  // the trainer: the trainee's minutes on the page, and both recordings in Trainer Inputs
+  // the trainer: both recordings in Trainer Inputs
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; goto('transcribe'); }); await page.waitForTimeout(3000);
-  const adm = await page.evaluate(() => (document.querySelector('.tr-admin') || {}).innerText || '');
-  if (!/Tara Scribe/.test(adm) || !/words/.test(adm)) fail(`the trainer doesn't see the trainee's minutes: ${adm.slice(0, 200)}`);
+  // (no "Trainees' minutes" table on the activity page: the trainer reviews each submission on 🧑‍🏫 Graders)
+  if (await page.$('.tr-admin')) fail('the activity page still shows the trainer the "Trainees\' minutes" table');
   const acts = await page.evaluate(() => FTSessions.forLesson ? JSON.stringify(FTSessions.forLesson(6)) : '');
   if (!/transcription-1/.test(acts) || !/transcription-2/.test(acts)) fail('Trainer Inputs doesn\'t list the two transcriptions');
 
