@@ -373,11 +373,9 @@ function kdOneHtml(p, single){
     let rep = ""; try{ rep = window.FTProcessReport ? FTProcessReport(R.process || {sets: {}}, p.batch || B.batch) : ""; }catch(err){}
     // (no "COMPLETE" on the band: it heads the Knowledge Checks; what is missing or partial still follows it)
     rep = String(rep || "").replace(/^Process Questions Responses: COMPLETE(; however, )?/, (m, h) => "Process Questions Responses" + (h ? ": " : ""));
-    // (graded "of" the sheets due by now — a lesson not reached yet isn't counted — and any already graded)
-    const done = rows.filter(x => x.g.pct != null), avg = avgOf(done.map(x => x.g.pct));
-    const due = rows.filter(x => x.g.pct != null || x.g.subm || !window.ftSheetDue || ftSheetDue({lesson: x.k.l}, p.batch || B.batch));
     // (one trainee's page: no name over it, their name heads the page already)
-    return `<div class="bs-kd-p">${!single || !meOn() ? `<h5>${single ? "" : e(p.name) + " "}<em class="${tone(avg)}">${avg != null ? `Knowledge Checks average ${pct(avg)}` : "nothing graded yet"}</em> <small>${done.length} of ${due.length} graded</small></h5>` : ""}
+    // (no "Knowledge Checks average · N of M graded" line, as the trainer asked: each check's own score follows; every trainee's view keeps the name)
+    return `<div class="bs-kd-p">${!single ? `<h5>${e(p.name)}</h5>` : ""}
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
