@@ -838,6 +838,25 @@ function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && 
    Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
    them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
 const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
+/* 📅 LESSONS & KNOWLEDGE CHECKS, DAY BY DAY, in the trainee's own table: each day they did something, the lesson decks they
+   finished that day and every Knowledge Check attempt that day (the lesson, the score, passed or not: 70% passes), newest day
+   first — so the lessons are monitored day by day, not only as "5 / 8" (from progress:<id>'s day-progress, as 🕒 Recent progress) */
+function lessonDaysHtml(p){
+  const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, days = {};
+  const day_ = v => { const d = t(v); if(!d) return null; return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const at = (v, k) => { const d = day_(v); if(!d) return null; const x = days[d] = days[d] || {decks: [], kcs: []}; return x[k]; };
+  lessons().forEach(l => { const x = dp[l.id] || {};
+    const dk = at(x.studiedAt, "decks"); if(dk) dk.push(lessonName(l.id));
+    const hist = Array.isArray(x.history) ? x.history : [];
+    hist.forEach(h => { const k = at(h.date || h.at, "kcs"); if(k && typeof h.score === "number") k.push({l: lessonName(l.id), s: h.score, ok: !!h.passed || h.score >= 70}); });
+    if(!hist.length && typeof x.score === "number"){ const k = at(x.date, "kcs"); if(k) k.push({l: lessonName(l.id), s: x.score, ok: x.score >= 70}); } });
+  const keys = Object.keys(days).sort().reverse();
+  const nice = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"});
+  const rows = keys.map(d => { const x = days[d];
+    return `<tr><td class="bs-pt-m">${e(nice(d))}</td><td class="bs-pt-v">${x.decks.length ? `📚 ${x.decks.length} deck${x.decks.length === 1 ? "" : "s"}` : "—"}${x.kcs.length ? `<br>✍️ ${x.kcs.filter(k => k.ok).length} of ${x.kcs.length} passed` : ""}</td>
+      <td class="bs-pt-f">${x.decks.length ? `<b>Finished:</b> ${e(x.decks.join(", "))}` : "No lesson deck finished"}${x.kcs.length ? `<br><b>Knowledge Checks:</b> ${x.kcs.map(k => `${e(k.l)} <b class="bs-sbox ${tone(k.s)}">${Math.round(k.s)}%</b> ${k.ok ? "✓ passed" : "✗ not passed (70% passes)"}`).join(" · ")}` : ""}</td></tr>`; }).join("");
+  return `<tr class="bs-pt-sec"><th colspan="3">📅 Lessons & Knowledge Checks, day by day</th></tr>${rows || `<tr><td colspan="3" class="bs-pt-f">No lesson deck finished and no Knowledge Check taken yet.</td></tr>`}`;
+}
 function everyGradeHtml(p){
   const sc = (B.data.rec[p.id] || {}).score; if(!sc || !Array.isArray(sc.rows)) return "";
   const rows = sc.rows.filter(r => r && r.s && !r.s.hidden && (r.items || []).length);
@@ -883,7 +902,7 @@ function perTraineeHtml(T){
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines || grid ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.title)}</th></tr>${lines}${grid}` : ""; };
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
-    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + everyGradeHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
+    const body = use.filter(x => x.id !== "trainees").map(sec).join("") + everyGradeHtml(p) + lessonDaysHtml(p) + use.filter(x => x.id === "trainees").map(sec).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v]) => `<span class="bs-pt-k">${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap"><table class="bs-pt-t"><thead><tr><th>Measure</th><th>Score / value</th><th>How it was worked out</th></tr></thead><tbody>${body}</tbody></table>
