@@ -55,9 +55,7 @@ const HABITS = [
     "Your EOD is a summary of your day. List everything you accomplished and completed.",
     "Include at least 3 specific learnings from the tasks you completed, with at least 2 sentences for each, so your trainers can gauge your understanding."],
    to:["martin@legalsupporthelp.com", "michelle.velarde@legalsupporthelp.com"],
-   links:[],
-   // embedded beside the card, not linked
-   matrix:{url:"https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", note:"Your training flow, for your tasks on queue for tomorrow."}
+   links:[]
    },
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
@@ -93,9 +91,6 @@ const TRACKER_PARTS = {
         ["Deadline", "The date the task is due."],
         ["Status", "New, Pending for >3 days, Ongoing, Priority - Ongoing or Completed. Keep it up to date."],
         ["Actual Completion Date", "The date you finished the task."]],
-  tabs:[["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
-        ["Directory", "Your contacts, with the contact person, business name, business address, phone no. (ext), fax number and email."],
-        ["Time Zone", "The time zones you work with, for quick reference."]],
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
 };
 
@@ -112,14 +107,12 @@ const TIME_ADJ = {
 
 
 
-// Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
+// Day 1 → Setting of Expectations: the tests' links.
 const TESTS = [
-  {icon:"⌨️", name:"Typing Test", when:"Twice a day: in the morning, during the 8:00 – 8:10 AM Typing & Spelling Activity (AM), and once in the afternoon (PM).",
-   links:[["TypingClub", "https://www.typingclub.com/sportal/program-3.game"], ["Alternative: TypingTest.com", "https://www.typingtest.com/"]],
-   file:"Typing Test [date taken][AM/PM]", sample:"/ft/day1/img/typing-test-sample.png"},
-  {icon:"🔤", name:"Spelling Test", when:"Once a day, during the 8:00 – 8:10 AM Typing & Spelling Activity.",
-   links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]],
-   file:"Spelling Test [date taken][AM/PM]", sample:"/ft/day1/img/spelling-test-sample.png"}
+  {icon:"⌨️", name:"Typing Test",
+   links:[["TypingClub", "https://www.typingclub.com/sportal/program-3.game"], ["Alternative: TypingTest.com", "https://www.typingtest.com/"]]},
+  {icon:"🔤", name:"Spelling Test",
+   links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]]}
 ];
 
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
@@ -282,10 +275,6 @@ function monGet(){
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
 /* ---------- the slides ---------- */
-// A Drive file shown in full inside the slide (its /preview; a Google Doc, the Doc's own /preview), with a link to open it in its own tab.
-const drivePreview = u => { const g = String(u).match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]{20,})/); if(g) return `https://docs.google.com/document/d/${g[1]}/preview`; const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
-// an embedded document fills its frame; no "Open or Download" bar under it (the document is right there)
-const embed = (url, title)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
@@ -485,7 +474,6 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
   const __pg = window.paginateSlideUnits;
   window.paginateSlideUnits = function(){
     const w = document.getElementById("lessonSlideWrap"), on = !!(w && document.body.classList.contains("ft-orient"));
-    if(on) orientNextUp();
     if(on && fitOrient(w)) return;
     if(on){
       w.classList.add("ftr-measure", "ftr-paged");   // too long even at half size: the engine splits it into pages
@@ -502,7 +490,6 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 const NEXT_UP = {why: "Your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training."};
 // (js/ft-slides.js draws the "Next up" card on every slide; this slide's own wording replaces the next slide's title)
 window.FT_NEXT_UP = NEXT_UP;
-function orientNextUp(){}
 // 👉 The one "Next up" card, over the Next button of every slide, deck and page (js/ft-slides.js, js/ft-day-decks.js):
 // as wide as its title needs (up to about half the bar), centered over the button, with what comes next and, under it, where that is
 window.FTNextUp = function(nav, btn, title, sub){
@@ -608,9 +595,6 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-slide a.btn-ghost, .ft-body .ftr-slide a.btn-ghost{color:var(--navy);} .ftr-slide a.btn-ghost:hover{color:var(--navy);}
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
 .ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
-/* the Monitoring Sheet shown under its download (its PDF copy, the browser's own viewer) */
-.ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
-.ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide), #audienceRoot .stage-body:has(.ftr-slide){grid-template-columns:minmax(0,1fr) !important;}
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide) .stage-presenter, #audienceRoot .stage-body:has(.ftr-slide) .stage-presenter{display:none !important;}
@@ -618,7 +602,7 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .lesson-stage:fullscreen #lessonSlideWrap:has(.ftr-slide) > *, #audienceRoot #lessonSlideWrap:has(.ftr-slide) > *{max-width:none !important;width:100% !important;}
 .lesson-stage:fullscreen .lesson-card:has(.ftr-slide), #audienceRoot .lesson-card:has(.ftr-slide){max-width:none !important;width:100%;}
 .lesson-stage:fullscreen .ftr-sub, #audienceRoot .ftr-sub{max-width:none;} .lesson-stage:fullscreen .ftr-why, #audienceRoot .ftr-why{max-width:none;}
-@media (min-width:1500px){ .lesson-stage:fullscreen .ftr-slide, #audienceRoot .ftr-slide{zoom:1.15;} .lesson-stage:fullscreen .ftr-embed, #audienceRoot .ftr-embed{height:62vh;} }
+@media (min-width:1500px){ .lesson-stage:fullscreen .ftr-slide, #audienceRoot .ftr-slide{zoom:1.15;} }
 @media (min-width:1900px){ .lesson-stage:fullscreen .ftr-slide, #audienceRoot .ftr-slide{zoom:1.35;} }
 .ftr-card-sub{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600;}
 /* numbered lists on a slide: the numbers, without the slide's bullet dots */
@@ -678,8 +662,7 @@ body.ft-orient #lessonStage #lessonSlideWrap > .card.lesson-card, body.ft-orient
 body.ft-orient #lessonSlideWrap .ftr-slide{font:500 18.5px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-slide :is(b,strong){font-weight:700;}
 body.ft-orient #lessonSlideWrap .ftr-slide :is(.ftr-part-h,.ftr-chan-h,.ftr-goal > b,.ftr-stakes > b,.ftr-rule > b,.ftr-lesson > b){font-family:'Poppins','Inter',sans-serif;font-weight:800;}
-/* an embedded sheet (Monitoring Sheet, sample tracker) and the Hubstaff pictures fit the sheet */
-body.ft-orient #lessonSlideWrap .ftr-embed{height:max(220px, min(34vh, 24cqw)) !important;}
+/* the Hubstaff pictures fit the sheet */
 body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 /* Auxes: one table, big and aligned, the status in the first column and each channel's post in its own */
@@ -783,8 +766,6 @@ body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left
 .ftr-calm .ftr-rule:nth-of-type(3){--c:#3A78B8;} .ftr-calm .ftr-rule:nth-of-type(4){--c:#7A62B0;}
 .ftr-calm .ftr-rule b{color:#1E2340 !important;} .ftr-calm .ftr-rule span{color:#2B2F45 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
-/* Send Your EOD Email: the card beside the embedded Training Matrix */
-/* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
 body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card{--c:#E8590C;background:#fff;color:#1E2340;border:1px solid #E1E4EE;border-top:5px solid var(--c);border-radius:14px;padding:14px 18px 12px;box-shadow:0 2px 8px rgba(30,35,64,.06);}
 body.ft-orient #lessonSlideWrap .ftr-flow-s1{--c:#2F7DD1;} body.ft-orient #lessonSlideWrap .ftr-flow-s2{--c:#2E9C6A;} body.ft-orient #lessonSlideWrap .ftr-flow-s3{--c:#8A5CC2;}
@@ -811,10 +792,6 @@ body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux .btn{background:#fff !imp
 body.ft-orient #lessonSlideWrap .ftr-adj{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-adj .ftr-part{margin:0;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-adj{grid-template-columns:minmax(0,1fr);} }
-body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;}
-body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
-body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
 .ftr-nextup{flex:0 0 auto;width:auto;min-width:250px;max-width:min(600px,52vw);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;}
 .ftr-nextup b{display:block;font:800 10.5px/1.1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
 /* the card grows with the title so it reads in full; only a title longer than the widest card wraps, to two lines */
@@ -828,11 +805,6 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 #lessonStage > .slide-nav > .ftr-nextup{flex-basis:auto;width:auto;margin-left:0;}
 @media(max-width:760px){ .ftr-nextup{display:none !important;} }
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
-body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
-body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
-body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(360px, calc(100vh - 380px)) !important;margin-top:0;}   /* the document fills the slide (no Open or Download bar) */
-body.ft-orient #lessonSlideWrap .ftr-matrix-img{margin:0;} body.ft-orient #lessonSlideWrap .ftr-matrix-img img{display:block;width:100%;height:auto;border:2px solid #343C66;border-radius:12px;box-shadow:0 4px 14px rgba(30,35,64,.14);}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-matrix{grid-template-columns:minmax(0,1fr);} }
 /* The Sheet: two columns, so its three tables fill the width */
 body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
