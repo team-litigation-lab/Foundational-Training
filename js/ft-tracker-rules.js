@@ -186,6 +186,20 @@
     if((m = t.match(/^(?:[A-Za-z]+,?\s+)?([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?$/)) && MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) >= 0) return out(m[3] || year, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1, +m[2]);
     return "";
   }
+  // 📅 a date anywhere in a cell or a column's heading, whatever is around it — "Mon 11/2", "11/02/2026 (Monday)", "2-Nov-2026",
+  // "Monday – November 2nd", "Date: 10/30/26" — so a day's inputs are read for that day; "" when there is none
+  function findDate(v, year){
+    const t = String(v || "").replace(/\s+/g, " ").trim(); if(!t) return "";
+    const whole = isoDate(t, year); if(whole) return whole;
+    const out = (y, mo, d) => (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) ? `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}` : "";
+    const yr = (x) => !x ? year : x.length === 2 ? "20" + x : x, mon = (x) => MONTHS.indexOf(String(x || "").slice(0, 3).toLowerCase()) + 1;
+    let m;
+    if((m = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/))) return out(m[1], +m[2], +m[3]);
+    if((m = t.match(/(?:^|[^\d])(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?![\d\/])/))) return out(yr(m[3]), +m[1], +m[2]);
+    if((m = t.match(/\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s+(\d{4}))?/)) && mon(m[1]) > 0) return out(yr(m[3]), mon(m[1]), +m[2]);
+    if((m = t.match(/\b(\d{1,2})(?:st|nd|rd|th)?[-\s]([A-Za-z]{3,9})\.?(?:[-\s,]+(\d{2,4}))?\b/)) && mon(m[2]) > 0) return out(yr(m[3]), mon(m[2]), +m[1]);
+    return "";
+  }
   /* 🧪 A daily Typing or Spelling Test screenshot in the trainee's Drive folder, by its file name: the guide's
      "Typing Test [date taken][AM/PM]" (e.g. "Typing Test 10/30/2026 AM.png", "Spelling Test [Oct 30][AM]",
      "typing_test_2026-10-30_pm.jpg"). Returns {kind: "typing"|"spelling", date, slot: "AM"|"PM", up, named} or null:
@@ -236,16 +250,21 @@
       vaNotes: find(/va\s*notes/i), deadline: find(/deadline/i), status: find(/^status/i), completedOn: find(/completion/i)};
     const from = col.va >= 0 ? col.va + 1 : col.details + 1, to = col.vaNotes > from ? col.vaNotes : head.length;
     const dateCols = [];
-    for(let i = from; i < to; i++){ const d = isoDate(head[i], year) || isoDate((rows[hi - 1] || [])[i], year); if(d) dateCols.push([i, d]); }
+    // (the Daily Notes' dates: in the heading row itself, the row above it, or the row under it — a merged DAILY NOTES heading
+    // with the days beneath — in any form, findDate)
+    let under = false;
+    for(let i = from; i < to; i++){ let d = findDate(head[i], year) || findDate((rows[hi - 1] || [])[i], year);
+      if(!d){ d = findDate((rows[hi + 1] || [])[i], year); if(d) under = true; }
+      if(d && !dateCols.some(x => x[1] === d)) dateCols.push([i, d]); }
     let section = "completion"; const out = [];
-    rows.slice(hi + 1).forEach((r) => {
+    rows.slice(hi + (under ? 2 : 1)).forEach((r) => {
       const line = r.join(" ");
       if(/for\s*completion/i.test(line) && !has(r[col.details])){ section = "completion"; return; }
       if(/recurring/i.test(line) && !has(r[col.details])){ section = "recurring"; return; }
       if(/completed/i.test(line) && !has(r[col.details]) && !has(r[col.type])){ section = "completed"; return; }
       const get = (k) => col[k] >= 0 ? String(r[col[k]] || "").trim() : "";
-      const row = taskRow(section, {dateReceived: isoDate(get("dateReceived"), year), type: get("type"), details: get("details"), va: get("va"),
-        vaNotes: get("vaNotes"), deadline: get("deadline"), status: get("status"), completedOn: isoDate(get("completedOn"), year), notes: {}});
+      const row = taskRow(section, {dateReceived: findDate(get("dateReceived"), year), type: get("type"), details: get("details"), va: get("va"),
+        vaNotes: get("vaNotes"), deadline: get("deadline"), status: get("status"), completedOn: findDate(get("completedOn"), year), notes: {}});
       dateCols.forEach(([i, d]) => { if(has(r[i])) row.notes[d] = String(r[i]).trim(); });
       if(isTask(row)) out.push(row);
     });
@@ -285,7 +304,8 @@
       const rated = segLow.some((l) => RATING_HINTS.some((h) => l.includes(h)) && /[x✓✔☑☒■●▣]|\bselected\b|\(x\)|\[x\]/i.test(l)) || segLow.some((l) => /^rating\s*[:\-]\s*[1-4]/.test(l));
       // (📅 the entry's own date — its "Date: 10/30/2026" line — so each day's score is read from the entry dated that day)
       const dl = seg.find((l) => /^date\b/i.test(l)) || seg.find((l) => /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(l)) || "";
-      const dm = /(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\/\d{1,2}\/\d{2,4}|[A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4})/.exec(dl), date = isoDate(dl.replace(/^date\s*(of\s+(the\s+)?(discussion|session|entry))?\s*[:\-]?\s*/i, "").trim(), ptDate().slice(0, 4)) || (dm ? isoDate(dm[1].replace(/,/g, ""), "") : "");
+      // (#624 strips its longer "Date of the discussion:" prefix; main reads the date in any form, findDate)
+      const date = findDate(dl.replace(/^date\s*(of\s+(the\s+)?(discussion|session|entry))?\s*[:\-]?\s*/i, ""), ptDate().slice(0, 4));
       const checks = [["Date", seg.some((l) => isoDate(l.replace(/^date\s*[:\-]?\s*/i, ""), "2000") || /\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/.test(l))],
         ["5 takeaways", take.length >= 5], ["Questions", qs.length >= 1], ["Understanding rated", rated]];
       return {topic: x.t.title || x.t, date, text: seg.join("\n").slice(0, 3000), takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
@@ -416,6 +436,6 @@
     return {pct, pass: rules.every((r) => r.pass === true), pending: rules.some((r) => r.pass === null), rules, extracted: extracted.length, missing, wrong, misnamed, docsRead: !!docs};
   }
 
-  root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
+  root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, dayExcerpt, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);
