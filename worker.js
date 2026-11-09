@@ -2306,7 +2306,9 @@ async function dailyCompliance(env, id, D, o = {}) {
   // review and Practice Session handed in that day — for the Day's outputs (a practice-only activity, the Insurance Email
   // Simulator, isn't counted)
   const graded = [], pctN = (v) => typeof v === "number" && isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : null;
-  Object.entries((proc || {}).kc || {}).forEach(([l, x]) => { if (x && x.last && onD(x.last.at) && pctN(x.best) != null) graded.push({ what: "Knowledge Check: " + l, pct: pctN(x.best) }); });
+  // (a Knowledge Check's score: the trainer's final where given — kcreview:<id> — else the graded best)
+  const kcr = Object.keys((proc || {}).kc || {}).length ? ((await get(`kcreview:${id}`)) || {}).lessons || {} : {};
+  Object.entries((proc || {}).kc || {}).forEach(([l, x]) => { const t = kcr[l] && pctN(kcr[l].score); if (x && x.last && onD(x.last.at) && (t != null || pctN(x.best) != null)) graded.push({ what: "Knowledge Check: Lesson " + l, pct: t != null ? t : pctN(x.best) }); });
   Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at) && x.score != null && pctN(x.pct) != null && !PRACTICE_DOCS.includes(doc)) graded.push({ what: "Assessment: " + (x.title || doc), pct: pctN(x.pct) }); });
   Object.entries(cur.transcribe || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt || x.at) && pctN(x.pct) != null) graded.push({ what: "Transcription · Recording " + n, pct: pctN(x.pct) }); });
   Object.entries(cur.items || {}).forEach(([k, x]) => { if (x && x.result && onD(x.at) && pctN(x.result.score) != null) graded.push({ what: "Monitoring Sheet items #" + k.split("-").join(", #"), pct: pctN(x.result.score) }); });

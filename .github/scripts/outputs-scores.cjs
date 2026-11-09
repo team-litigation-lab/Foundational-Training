@@ -23,7 +23,7 @@ const failures = []; const fail = (m) => failures.push(m);
   await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
   const c = (JSON.parse(store.get('ft:trackerreview:' + id)).compliance || {})[D] || {};
   const g = (c.graded || []).map(x => x.what + ' ' + x.pct).sort();
-  const want = ['Assessment: Reception Listening Activity 60', 'Knowledge Check: reception 80', 'Practice Session: intake 70'];
+  const want = ['Assessment: Reception Listening Activity 60', 'Knowledge Check: Lesson reception 80', 'Practice Session: intake 70'];
   if (JSON.stringify(g) !== JSON.stringify(want)) fail(`the day's graded work isn't what was graded that day (practice and another day's left out): ${JSON.stringify(g)}`);
   // (the hand-in, 100, and the three scores: (100 + 80 + 60 + 70) / 4 = 78)
   if ((c.parts || {}).outputs !== 78) fail(`the Day's outputs isn't the hand-in averaged with the day's scores (78): ${(c.parts || {}).outputs}`);
