@@ -876,6 +876,8 @@ function sheetPages(sheet){
   // (a card pinned over the slide, js/ft-buffer.js ftbf-float, is on every page and never makes one of its own)
   const kids = [...sheet.children].filter(k => !k.classList.contains("ftbf-float"));
   kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
+  // (a block's height, its margins included)
+  const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // (a block dealt out by its own rows had them hidden page by page: they are shown again before the slide is dealt anew)
   sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
   sheet.style.zoom = "";
@@ -890,7 +892,6 @@ function sheetPages(sheet){
   // between breaks starts a page of its own, and a part longer than a page runs on over the next ones
   if(room && kids.some(k => k.classList.contains("ftdd-pgbreak"))){
     kids.forEach(k => { k.style.zoom = ""; });
-    const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
     const pages = []; let page = [], used = 0;
     kids.forEach(k => {
       if(k.classList.contains("ftdd-pgbreak")){ if(page.length) pages.push(page); page = [k]; used = 0; return; }
@@ -909,7 +910,6 @@ function sheetPages(sheet){
   if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
   if(!room || (!mid && (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN)))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
-  const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
   const units = [];
   kids.forEach(k => {
@@ -941,33 +941,23 @@ function sheetPages(sheet){
       if(sumH(p) + sumH(nx) <= capAll / 0.9){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
     }
     return out; };
-  const pages = []; let page = [], used = 0;
-  // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
-  // the next page, and fitSheets scales the page down to fit
+  // a page holds what fits on the screen at three quarters size (the limit): a block that would hang off the foot of that
+  // starts the next page, and fitSheets scales the page down to fit
   // (an empty trainer slot, nothing to see, never makes a page of its own: the block after it shares its page)
   const shown = pg => pg.some(x => hOf(x) > 0);
-  units.forEach(k => {
-    const h = hOf(k);
-    if(shown(page) && used + h > room / (read ? 1 : PAGE_ZOOM)){
-      // a heading never ends a page: it moves to the next one with the text it heads
-      const carry = [];
-      while(page.length > 1 && isHead(page[page.length - 1])) carry.unshift(page.pop());
-      pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
-    }
-    page.push(k); used += h;
-  });
-  if(page.length) pages.push(page);
+  const deal = limit => { const out = []; let pg = [], u = 0;
+    units.forEach(k => { const h = hOf(k);
+      // (a heading never ends a page: it moves to the next one with the text it heads)
+      if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
+        out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
+      pg.push(k); u += h; });
+    if(pg.length) out.push(pg); return out; };
+  const pages = deal(capAll);
   // the same number of pages, filled about evenly, so the last page isn't a line or two on its own: the smallest page
   // height that still deals the slide into that many pages (a heading still never ends a page)
   if(pages.length > 1){
-    const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
-    const deal = limit => { const out = []; let pg = [], u = 0;
-      units.forEach(k => { const h = hOf(k);
-        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
-          out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
-        pg.push(k); u += h; });
-      if(pg.length) out.push(pg); return out; };
-    for(let limit = Math.max(total / pages.length, tallest); limit < cap; limit += Math.max(8, cap / 60)){
+    const total = units.reduce((a, x) => a + hOf(x), 0), tallest = Math.max(...units.map(hOf));
+    for(let limit = Math.max(total / pages.length, tallest); limit < capAll; limit += Math.max(8, capAll / 60)){
       const even = deal(limit); if(even.length <= pages.length) return fold(even);
     }
   }
