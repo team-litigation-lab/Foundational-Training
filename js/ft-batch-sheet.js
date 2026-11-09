@@ -1146,7 +1146,10 @@ function dayActs(R, d){
   if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
     out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
       : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
-      sub.length ? "Submitted: " + sub.join(", ") + "." : "")}); }
+      sub.length ? "Submitted: " + sub.join(", ") + "." : ""),
+      // (🏅 the scores of what was graded that day, averaged with the hand-in: worker.js dailyCompliance graded)
+      more: (c.graded || []).length ? "Scores: " + c.graded.map(g => `${g.what} ${g.pct}%`).join(" · ") : ""});
+    if((c.graded || []).length) out[out.length - 1].text += " Scores: " + c.graded.slice(0, 4).map(g => `${g.what} ${g.pct}%`).join(", ") + (c.graded.length > 4 ? ` and ${c.graded.length - 4} more` : "") + "."; }
   // 📏 following instructions (strict): the naming convention, the saving route and folders, the deliverables on time and the
   // six Drive links, as found that day (worker.js dailyCompliance instr)
   if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 4), LB = Object.fromEntries(LINKS);
