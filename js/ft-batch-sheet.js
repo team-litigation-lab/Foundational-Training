@@ -1237,7 +1237,9 @@ const dayList = () => (window.FTDays && FTDays.DAYS ? FTDays.DAYS : []);
 // scored there — and the daily tests, which have their own compliance)
 // (nor the Confidentiality & Call Response Exercise: off the scorecards, it stays in Day 3's deck)
 // (nor the 📘 Process Guides the trainee builds before a demo: off the scorecards, they stay on the Practice Lab and the decks)
-const UNSCORED = it => it.at === "room" || /^Buffer/i.test(it.kind || "") || (it.at === "tool" && it.id === "guide") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response|^📘 Process Guide/i.test(it.t || "");
+// (nor the Attorney Calendar Management Activity a second time: "on the Calendaring Simulators" and "on the Calendar
+// Activity Check" are the same activity, graded once through the check — calcheck: — so only the check counts)
+const UNSCORED = it => (it.at === "tool" && it.id === "calactivity") || it.at === "room" || /^Buffer/i.test(it.kind || "") || (it.at === "tool" && it.id === "guide") || /^Buffer Time|^Mock Call Preparation|^Confidentiality & Call Response|^📘 Process Guide/i.test(it.t || "");
 const dayItems = d => (d.items || []).filter(it => !DAILY_T.test(it.t) && !UNSCORED(it));
 const ckKey = (d, it) => `${d.day}|${it.t}`.slice(0, 200);
 const nonEmpty = v => !!v && (typeof v !== "object" || Object.keys(v).length > 0);

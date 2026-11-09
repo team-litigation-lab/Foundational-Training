@@ -43,6 +43,7 @@ const WHERE = {
     drills:     {go: () => "goto('drills')",     note: "🏷 Naming & Reporting Drills"},
     calcheck:   {go: () => "goto('calcheck')",   note: "📅 Calendar Activity Check"},
     calrules:   {go: () => "goto('calrules')",   note: "📅 Booking Rule Check"},
+    calweek:    {go: () => "goto('calweek')",    note: "📅 Standard Training - Calendaring Activity"},
     calactivity: {go: () => "goto('calsim','attorney-activity')", note: "🗓 Attorney Calendar Management Activity"},
     listening:  {go: () => "goto('listening')",  note: "🎧 Call Listening Log"},
     shadowing:  {go: () => "goto('shadowing')",  note: "📋 Hubstaff To-Do"}
@@ -141,7 +142,10 @@ function nextStep(spot){
 }
 function goFor(item){
   if(item.at === "session") return sessionOpen(item.id) ? WHERE.session.go(item.id) : "";
+  // (a tool is linked only once it is time for it: its day reached and opened — the Practice Lab card's own gate,
+  // js/ft-simulators.js ftsToolOn — so no button walks a trainee into a tool before its day)
   const t = item.at === "tool" && WHERE.tool[item.id];
+  if(t && forTrainee() && typeof window.ftsToolOn === "function" && !window.ftsToolOn(item.id)) return "";
   return t ? t.go() : "";
 }
 function noteFor(item){
