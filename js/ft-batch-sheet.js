@@ -1368,14 +1368,12 @@ function renderSheet(){
     if(Date.now() - last > 6 * 3600e3) setTimeout(() => FTBatchSheet.sync("all", true), 1500); }
   const approved = ppl.filter(p => p.status === "Approved").length, waiting = ppl.filter(p => p.status === "Waiting for approval").length;
   if(weeklyOn()) return `<div class="card gs-card bs-card bs-weekly">${!ready && !(D && D.error && !B.dataLoading) ? `<p class="sc-empty">Reading the batch's progress…</p>` : !ready ? `<p class="sc-empty">Couldn't read the batch's progress. Press ↻ Refresh.</p>` : sectionsHtml(T)}</div>`;
-  // (main's banner over the sheet: the page's title and the batch's counts)
-  const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", B.batch,
-    `<span>${ppl.length} trainee${ppl.length === 1 ? "" : "s"}</span><span>${approved} approved</span>${waiting ? `<span class="warn">${waiting} waiting</span>` : ""}`);
-  return `${banner}<div class="card gs-card bs-card">
-    <div class="gs-top"><div class="gs-file"><b>${weeklyOn() ? "Weekly Reports" : linksOn() ? "Drive Links" : "Batch Sheet"} · ${e(B.batch)}</b>
-        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
+  // (the page's banner holds the sheet's controls on one line: ⬇ Download, ↻ Refresh, 🔄 Update all scores, ◀ / ▶, Batch, 🔎, Updated)
+  const controls = `<div class="bs-ctl"><div class="gs-top"><div class="gs-file">        <span class="gs-menu"><button onclick="FTBatchSheet.csv()">⬇ Download</button><button onclick="FTBatchSheet.refresh()">↻ Refresh</button>${adminOn() && !meOn() ? `<button class="bs-upd bs-upd-all" ${B.sync ? "disabled" : ""} onclick="FTBatchSheet.updateAll()" title="Find and link every trainee's Drive files, check every trainee's links, run today's check for every trainee (Monitoring Sheet, Task Tracker, Typing &amp; Spelling, EOD) and read the Weekly Ranking again">${B.sync ? `⏳ ${e(B.sync.what)}${B.sync.of ? ` ${B.sync.n}/${B.sync.of}` : ""}…` : "🔄 Update all scores"}</button>` : ""}${adminOn() && !meOn() && !weeklyOn() && !linksOn() && B.view !== "tables" ? pagerHtml(people()) : ""}</span></div>
       <span class="gs-batch bs-batchmenu"><label>Batch <select onchange="FTBatchSheet.batch(this.value)">${bs.map(b => `<option ${b === B.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></label>${whoTopHtml(ppl)}
-${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div>
+${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</span></div></div>`;
+  const banner = ftBanner(linksOn() ? "Drive Links" : "Batch Sheet", "", "", controls);
+  return `${banner}<div class="card gs-card bs-card">
     <div class="bs-sum">${waiting ? `<span class="bs-wait"><b>${waiting}</b> waiting for approval</span>` : ""}
 </div>
     ${B.batch && !canon(B.batch) ? `<div class="bs-warn">⚠ <b>${e(B.batch)}</b> isn't a proper Batch ID (B + the date the batch started, MMDDYY, e.g. B103026). If these trainees belong to another batch, use <b>✏️ Fix the batch name</b> in 🛡 Admin Master Control → 📁 Batches.</div>` : ""}
@@ -1892,7 +1890,7 @@ const BANNER_TABS = {curriculum: "Curriculum", monitor: "Feedback and Monitoring
         if(bar){ bar.insertAdjacentHTML("afterend", window.ftBanner(t, "", "").replace('<div class="ft-banner">', `<div class="ft-banner" data-tab="${state.adminTab}">`)); } } }catch(err){}
     return out; };
 })();
-window.ftBanner = function(title, batch, right){
+window.ftBanner = function(title, batch, right, controls){
   const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
   let wk = "";
   const s0 = batch && typeof batchStartDate === "function" ? batchStartDate(batch) : "", t0 = s0 ? Date.parse(s0 + "T00:00:00Z") : NaN;
@@ -1903,13 +1901,16 @@ window.ftBanner = function(title, batch, right){
     wk = ` · Week <b>${n}</b> · ${esc(f(a))} – ${esc(f(a + 6 * 864e5))}`;
   }
   return `<div class="ft-banner"><div><p class="ft-banner-k">Legal Support Help · Foundational Training</p><h2>${title}</h2>
-    ${batch ? `<p class="ft-banner-sub">Batch <b>${esc(batch)}</b>${wk}</p>` : ""}</div>${right ? `<div class="ft-banner-right">${right}</div>` : ""}</div>`;
+    ${batch ? `<p class="ft-banner-sub">Batch <b>${esc(batch)}</b>${wk}</p>` : ""}</div>${right ? `<div class="ft-banner-right">${right}</div>` : ""}${controls ? `<div class="ft-banner-ctl">${controls}</div>` : ""}</div>`;
 };
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-sheet"; s.textContent = `
 .ft-banner{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,#1E2340,#33406B);color:#fff;margin:0 0 12px;}
 .ft-banner h2{margin:2px 0 !important;font:800 26px 'Fraunces',Georgia,serif !important;color:#fff !important;}
 .ft-banner .ft-banner-k{margin:0 !important;font:800 12px Arial,sans-serif !important;letter-spacing:.08em;text-transform:uppercase;color:#F6C08F !important;}
 .ft-banner .ft-banner-sub{margin:2px 0 0 !important;color:#E8ECF7 !important;font:600 15px Arial,sans-serif !important;} .ft-banner .ft-banner-sub b{color:#fff !important;}
+.ft-banner-ctl{flex-basis:100%;margin-top:6px;} .bs-ctl .gs-top{background:transparent !important;padding:0 !important;margin:0 !important;}
+.bs-ctl .bs-batchmenu label{color:#fff !important;} .bs-ctl .bs-at,.bs-ctl .bs-pager span{color:#E8ECF7 !important;}
+.bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;}
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
@@ -1921,14 +1922,14 @@ body.bs-wide .bs-pt-wrap{padding-left:4px;padding-right:4px;}
 body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !important;}   /* (📦 Intake Packets, wide the same way) */
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
-.bs-card .gs-file b{font-size:17px;white-space:nowrap;}
-.bs-card .gs-top{flex-wrap:nowrap;gap:10px;align-items:center;overflow-x:auto;}
-.bs-card .gs-file{flex-direction:row;align-items:center;gap:10px;min-width:0;flex:0 1 auto;}
-.bs-card .gs-top .gs-menu{margin-top:0;}
-.bs-card .gs-menu .bs-pager{flex-wrap:nowrap !important;}
-.bs-card .bs-batchmenu{flex-wrap:nowrap !important;margin-left:auto;white-space:nowrap;}
-.bs-card .bs-batchmenu label{font-size:15px !important;} .bs-card .bs-batchmenu select{font-size:15px !important;padding:5px 9px !important;}
-.bs-card .bs-who-top select{min-width:190px !important;} .bs-card .bs-batchmenu .bs-at{font-size:12.5px !important;}
+:is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
+:is(.bs-card,.bs-ctl) .gs-top{flex-wrap:nowrap;gap:10px;align-items:center;overflow-x:auto;}
+:is(.bs-card,.bs-ctl) .gs-file{flex-direction:row;align-items:center;gap:10px;min-width:0;flex:0 1 auto;}
+:is(.bs-card,.bs-ctl) .gs-top .gs-menu{margin-top:0;}
+:is(.bs-card,.bs-ctl) .gs-menu .bs-pager{flex-wrap:nowrap !important;}
+:is(.bs-card,.bs-ctl) .bs-batchmenu{flex-wrap:nowrap !important;margin-left:auto;white-space:nowrap;}
+:is(.bs-card,.bs-ctl) .bs-batchmenu label{font-size:15px !important;} :is(.bs-card,.bs-ctl) .bs-batchmenu select{font-size:15px !important;padding:5px 9px !important;}
+:is(.bs-card,.bs-ctl) .bs-who-top select{min-width:190px !important;} :is(.bs-card,.bs-ctl) .bs-batchmenu .bs-at{font-size:12.5px !important;}
 .bs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 14px 10px;background:#F9FBFD;font:14px Arial,sans-serif;color:#1F1F1F;}
 .bs-sum b{font-size:16px;} .bs-wait{color:#B06000;} .bs-at{margin-left:auto;color:#5F6368;font-size:12.5px;}
 .bs-jump a{color:#1A73E8;text-decoration:none;font-weight:700;} .bs-jump a:hover{text-decoration:underline;}
@@ -1962,10 +1963,10 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-le[open]{padding-bottom:12px;} .bs-le-rows{display:flex;flex-direction:column;gap:8px;margin:8px 0;} .bs-le-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 12px;align-items:center;font:700 14px Arial,sans-serif;}
 .bs-le-row input{font:14px Arial,sans-serif;padding:7px 9px;border:1px solid #C4C7C5;border-radius:6px;min-width:0;} .bs-le-row small{grid-column:2;color:#5F6368;font-weight:600;}
 @media (max-width:700px){ .bs-le-row{grid-template-columns:1fr;} .bs-le-row small{grid-column:1;} }
-.bs-card .gs-head th{max-width:220px;min-width:110px;word-break:normal;overflow-wrap:normal;hyphens:none;}
+:is(.bs-card,.bs-ctl) .gs-head th{max-width:220px;min-width:110px;word-break:normal;overflow-wrap:normal;hyphens:none;}
 #bs-lessons .gs-head th{min-width:170px;}
 .bs-lesson{text-align:center;white-space:nowrap;}
-.bs-card .gs-txt{min-width:260px;max-width:520px;}
+:is(.bs-card,.bs-ctl) .gs-txt{min-width:260px;max-width:520px;}
 .bs-none{color:#5F6368;font-style:italic;text-align:left !important;}
 .bs-how{font-size:13.5px;}
 .bs-ck{margin:12px 0 6px;} .bs-ck h4{margin:0 0 4px;font:700 16px Arial,sans-serif;}
@@ -1988,19 +1989,19 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-tools-bar select{font:800 15px Arial,sans-serif;padding:5px 9px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
 .bs-tools-bar button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 14px Arial,sans-serif;padding:6px 12px;border-radius:8px;cursor:pointer;}
 /* (the sheet's actions: real buttons, bold and bigger) */
-.bs-card .gs-menu{display:flex;flex-wrap:nowrap;gap:5px;margin-top:6px;overflow-x:auto;align-items:center;}
-.bs-card .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 12.5px Arial,sans-serif;padding:5px 8px;border-radius:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.06);}
-.bs-card .gs-menu button:hover{background:#EEF1F8;} .bs-card .gs-menu button.bs-upd-all{background:#1E2340;color:#fff;margin-left:0;vertical-align:baseline;} .bs-card .gs-menu button.bs-upd-all:hover{background:#2C3566;}
-.bs-card .gs-menu button:disabled{opacity:.6;cursor:default;}
+:is(.bs-card,.bs-ctl) .gs-menu{display:flex;flex-wrap:nowrap;gap:5px;margin-top:6px;overflow-x:auto;align-items:center;}
+:is(.bs-card,.bs-ctl) .gs-menu button{border:2px solid #1E2340;background:#fff;color:#1E2340;font:800 12.5px Arial,sans-serif;padding:5px 8px;border-radius:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.06);}
+:is(.bs-card,.bs-ctl) .gs-menu button:hover{background:#EEF1F8;} :is(.bs-card,.bs-ctl) .gs-menu button.bs-upd-all{background:#1E2340;color:#fff;margin-left:0;vertical-align:baseline;} :is(.bs-card,.bs-ctl) .gs-menu button.bs-upd-all:hover{background:#2C3566;}
+:is(.bs-card,.bs-ctl) .gs-menu button:disabled{opacity:.6;cursor:default;}
 .bs-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px;font:700 15px Arial,sans-serif;color:#1E2340;}
 .bs-pager button{border:2px solid #1E2340;background:#fff;color:#1E2340;border-radius:8px;padding:6px 14px;font:800 15px Arial,sans-serif;cursor:pointer;} .bs-pager button:disabled{opacity:.35;cursor:default;}
 .bs-pager span{color:#3C4043;font:800 16px Arial,sans-serif;}
-.bs-card .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} .bs-card .gs-menu .bs-pager{gap:5px;} .bs-card .gs-menu .bs-pager button{font-size:12.5px;padding:5px 8px;white-space:nowrap;} .bs-card .gs-menu .bs-pager span{font-size:12.5px;white-space:nowrap;}
-.bs-card .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
+:is(.bs-card,.bs-ctl) .gs-menu .bs-pager{display:inline-flex;align-items:center;gap:8px;margin:0;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager{gap:5px;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager button{font-size:12.5px;padding:5px 8px;white-space:nowrap;} :is(.bs-card,.bs-ctl) .gs-menu .bs-pager span{font-size:12.5px;white-space:nowrap;}
+:is(.bs-card,.bs-ctl) .bs-batchmenu .bs-at{font:700 15px Arial,sans-serif;color:#3C4043;}
 /* (Batch and 🔎 the trainee, side by side at the top: bigger, bold, each its own colour) */
-.bs-card .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .bs-card .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
-.bs-card .bs-batchmenu select{font:800 17px Arial,sans-serif;padding:7px 12px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
-.bs-card .bs-who-top select{border-color:#C27A12;background:#FFF1DC;color:#7A4300;min-width:240px;max-width:100%;}
+:is(.bs-card,.bs-ctl) .bs-batchmenu{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} :is(.bs-card,.bs-ctl) .bs-batchmenu label{font:800 17px Arial,sans-serif;color:#1E2340;display:inline-flex;align-items:center;gap:6px;}
+:is(.bs-card,.bs-ctl) .bs-batchmenu select{font:800 17px Arial,sans-serif;padding:7px 12px;border:2px solid #3B4A8C;border-radius:8px;background:#E8EDFB;color:#1E2340;}
+:is(.bs-card,.bs-ctl) .bs-who-top select{border-color:#C27A12;background:#FFF1DC;color:#7A4300;min-width:240px;max-width:100%;}
 .bs-pt-h{padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;border-bottom:1px solid #E6E9F1;} .bs-pt-h b{font-size:19px;} .bs-pt{border:1px solid #DDE1EC;border-radius:12px;background:#fff;}
 .bs-pt > summary{cursor:pointer;padding:12px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font:17px Arial,sans-serif;color:#1E2340;} .bs-pt[open] > summary{border-bottom:1px solid #E6E9F1;}
 .bs-pt > summary i{font-size:12px;color:#8A5A00;} .bs-pt-k{font-size:16px;color:#3C4043;} .bs-pt-k b{color:#1E2340;}
@@ -2081,6 +2082,6 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-fix-row input[type=datetime-local]{width:auto;}
 .bs-fix-row input{font:15px Arial,sans-serif;padding:6px 9px;border:1px solid #C4C7C5;border-radius:4px;width:150px;margin-left:6px;}
 .bs-fix-err{color:#C5221F;margin:8px 0 0 !important;}
-@media print{ .bs-card .gs-menu,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
+@media print{ :is(.bs-card,.bs-ctl) .gs-menu,.bs-jump,.lp-admin-tabs{display:none !important;} body.bs-wide main{padding:0;} .bs-wrap{overflow:visible;} }
 `; document.head.appendChild(s); })();
 })();

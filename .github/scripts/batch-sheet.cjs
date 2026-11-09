@@ -131,7 +131,7 @@ const failures = []; const fail = m => failures.push(m);
   if ((await page.$$('.bs-sec:not(.bs-rank):not(.bs-people)')).length !== 9) fail('the nine tables (all but the Drive links) are not all on the Batch Sheet');
   // 🔗 Drive Links: a button of its own beside 📋 Batch Sheet (🏅 Scorecard), the same batch: ✅ Compliance and 📁 Drive links
   await page.evaluate(() => { state.adminTab = 'drivelinks'; render(); }); await page.waitForTimeout(1200);
-  { const dl = await page.evaluate(() => ({ secs: [...document.querySelectorAll('.bs-card > .bs-sec')].map(x => x.id), title: (document.querySelector('.gs-file b') || {}).textContent || '', tab: [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].some(b => /Drive Links/.test(b.innerText)) }));
+  { const dl = await page.evaluate(() => ({ secs: [...document.querySelectorAll('.bs-card > .bs-sec')].map(x => x.id), title: ((document.querySelector('.ft-banner h2') || {}).textContent || '') + ' · ' + ((document.querySelector('.bs-batchmenu select') || {}).value || ''), tab: [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].some(b => /Drive Links/.test(b.innerText)) }));
     if (JSON.stringify(dl.secs) !== JSON.stringify(['bs-compliance']) || !/^Drive Links · B\d{6}/.test(dl.title) || !dl.tab) fail(`🔗 Drive Links doesn't show the Drive links alone: ${JSON.stringify(dl)}`); }
   // 🏅 Score Card: per lesson ✍️ Knowledge Checks, 🛠 Practice, Classroom & outputs, Average, Remarks; Ada's Lesson 1 Knowledge
   // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
