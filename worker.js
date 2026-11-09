@@ -2303,13 +2303,17 @@ async function dailyCompliance(env, id, D, o = {}) {
   // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
   // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
   const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
-  let monDay = null;
+  let monDay = null, monDated = false;
   if (monRead) {
     const st = batchStartDate(rec.batch) || drive.startDate || "";
     let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
     // (the day's work only: the entry for that day's discussion — the sheet is updated day by day — not every one due so far)
     const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16))), todays = due[due.length - 1];
-    monDay = n ? Math.round(((mon.entries.find((x) => x.topic === todays) || {}).pct) || 0) : mon.pct;
+    // (📅 by its date: the entry dated that day — its "Date:" line — is the day's; a sheet read before entries kept their dates
+    // falls back on the day's topic)
+    const dated = monDated = mon.entries.some((x) => x && "date" in x);
+    monDay = dated ? Math.round(((mon.entries.find((x) => x.date === D) || {}).pct) || 0)
+      : n ? Math.round(((mon.entries.find((x) => x.topic === todays) || {}).pct) || 0) : mon.pct;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
@@ -2398,7 +2402,8 @@ async function dailyCompliance(env, id, D, o = {}) {
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
-  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined) parts.monitor = was.parts.monitor; }
+  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number") parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monDated) parts.monitor = was.parts.monitor; }
+  // (📒 the Monitoring Sheet keeps every day's entry under its own date, so a past day is read again from the entry dated that day)
   // (📅 a batch's first training day: its Task Tracker, Monitoring Sheet and tests are checked like any day's, and kept under
   // day1Parts — the day itself doesn't count, below)
   // (📅 and any part the day doesn't ask for is left out too, not a 0: the Day's outputs only on a day with something to hand

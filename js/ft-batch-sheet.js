@@ -303,7 +303,9 @@ function overallTable(){
 const kcSheets = () => { const q = window.ftKcQuestions; if(typeof q !== "function") return [];
   return lessons().filter(d => q(d.id).length).flatMap(d => { const qs = q(d.id), sets = [...new Set(qs.map(x => x.set))], rs = sets.length > 1 ? sets.find(st => st.open) : null;
     const own = {l: d.id, read: false, title: lessonName(d.id), qs: rs ? qs.filter(x => x.set !== rs) : qs};
-    return rs ? [own, {l: d.id, read: true, title: "📖 " + rs.title, qs: qs.filter(x => x.set === rs)}] : [own]; }); };
+    // (no 📖 Reading Task sheet: Day 1's reading isn't one of the Knowledge Checks' grades — the trainers score it in the
+    // 📊 Weekly Ranking's PI Reading Task column)
+    return [own]; }); };
 function sheetGrade(p, k){
   const R = B.data.rec[p.id] || {}, proc = R.process || {}, rvAll = (R.src || {})["kcreview:"] || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   const rec = ((k.read ? proc.kcRead : proc.kc) || {})[k.l] || null, rv = ((k.read ? rvAll.read : rvAll.lessons) || {})[k.l] || {};
@@ -1125,7 +1127,7 @@ function dayActs(R, d){
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
-      : sent2(P.monitor ? `Updated for the day (${P.monitor}%).` : monDay && mon.error ? `Not counted: ${mon.error}` : "No entry for the day on the Monitoring Sheet.", monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      : sent2(P.monitor ? `The entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}: ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `No entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)} on the Monitoring Sheet.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       more: monDay && mon.review ? "AI review: " + mon.review : ""});
   }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
@@ -1316,9 +1318,7 @@ function scoreOf(R, d, it, p){
   if(it.id === "process"){
     const rv = src["kcreview:"] || {}, xs = [];
     (d.lessons || []).forEach(l => { const x = dp[l] || {}, t = numOr(((rv.lessons || {})[l] || {}).score), g = t != null ? t : typeof x.score === "number" ? x.score : null;
-      if(g != null) xs.push({pct: g, how: `${lessonName(l)} ${g}%${t != null ? " (trainer's final)" : ""}`});
-      const tr = numOr(((rv.read || {})[l] || {}).score), rg = tr != null ? tr : typeof x.readScore === "number" ? x.readScore : null;
-      if(rg != null) xs.push({pct: rg, how: `📖 Reading Task ${rg}%${tr != null ? " (trainer's final)" : ""}`}); });
+      if(g != null) xs.push({pct: g, how: `${lessonName(l)} ${g}%${t != null ? " (trainer's final)" : ""}`}); });
     return xs.length ? {pct: Math.round(avgOf(xs.map(x => x.pct))), how: "Knowledge Check: " + xs.map(x => x.how).join(", ")} : null;
   }
   // (less the grading system's items a day scores on their own, assess: Day 3's Reception Listening Activity is in 🎧 Call

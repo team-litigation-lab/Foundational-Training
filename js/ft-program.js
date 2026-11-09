@@ -93,17 +93,9 @@ window.LSH_PROGRAM = {
         const sc = p.trainerScore != null && "gradedScore" in p ? p.gradedScore : p.score;
         if(typeof sc !== "number") return {name:d.title, ref:"kc:" + d.id, pct:null, note:"Not taken yet"};
         return {name:d.title, ref:"kc:" + d.id, pct:sc, note:`${sc >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""};
-      }).flatMap((it, k, arr) => {
-        // 📖 a lesson's Reading Task (Day 1's PI Overview), scored on its own (js/ft-process.js): its own line after the lesson's
-        const d = DAYS.filter(x => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(x.id).length)[k], p = ctx.progress[d.id] || {};
-        const rs = [...new Set(window.ftKcQuestions(d.id).map(x => x.set))].find(st => st.open);
-        if(!rs || new Set(window.ftKcQuestions(d.id).map(x => x.set)).size < 2) return [it];
-        // (the trainer's final score for it, kcreview:<id>.read[lesson], straight from their review, as the lesson's is)
-        const rv = (((ctx.rec["kcreview:"] || {}).read) || {})[d.id], t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
-        if(t != null) return [it, {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:t, note:"Reading Task · trainer’s final score", why:rv.comment || ""}];
-        const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
-        return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""} : {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:null, note:"Reading Task · not graded yet"}];
       })},
+    // (no 📖 Reading Task line: Day 1's PI Overview reading isn't one of the Knowledge Checks' grades — the trainers score it
+    // in the 📊 Weekly Ranking's PI Reading Task column)
     {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
       items: ctx => CALL_LESSONS.map(id => {

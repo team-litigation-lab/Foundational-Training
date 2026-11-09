@@ -77,7 +77,9 @@ const failures = []; const fail = (m) => failures.push(m);
         // 📒 her Monitoring Sheet: the docs.google.com export answers the service account with a sign-in page; the Drive API's
         // export has it (worker.js fetchGoogle → googleApiText)
         if (u.includes(id25('anaMonitor') + '/export?format=txt')) return new Response('<!DOCTYPE html><html><body>Sign in</body></html>');
-        if (u.includes('/drive/v3/files/' + id25('anaMonitor') + '/export?mimeType=text%2Fplain')) { apiReads++; return new Response('Virtual Assistant Essentials - Day 1\nDate: 10/30/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney.\n'); }
+        if (u.includes('/drive/v3/files/' + id25('anaMonitor') + '/export?mimeType=text%2Fplain')) { apiReads++; return new Response('Virtual Assistant Essentials - Day 1\nDate: 10/30/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney.\n' +
+          // (Day 2's discussion written up on 11/03: it counts for the day its Date says, not for Day 2, 11/02)
+          'Virtual Assistant Essentials - Day 2\nDate: 11/03/2026\n5 Major Takeaways From This Discussion\n1. Calls are logged in the tracker.\nQuestions\n1. Who reviews the logs?\n'); }
         // 📘 her TAM: an entry a day, under its date (10/30 a full one, 11/02 a short one, none on 11/03)
         if (u.includes(id25('anaTam') + '/export?format=txt')) return new Response('LSH Task Assessment Manual\n10/30/2026\nI answered the reception calls with the spiel, logged each call in the tracker and asked the attorney for the missing details.\n11/02/2026: reviewed the intake form\n');
         return new Response('not found', { status: 404 });
@@ -133,6 +135,8 @@ const failures = []; const fail = (m) => failures.push(m);
         if (!c5 || c5.outputs !== null || typeof c2.outputs !== 'number') fail(`the Day's outputs aren't left out on a day with nothing to hand in (11/05 ${c5 && c5.outputs}, 11/02 ${c2.outputs})`); }
       // (📅 Day 1's Task Tracker and Monitoring Sheet are checked like any day's and kept under day1Parts: the day doesn't count)
       if (typeof c1.tracker !== 'number' || c1.monitor !== 25 || c2.monitor !== 0) fail(`Day 1's sheets aren't checked, or the Monitoring Sheet part isn't each day's own entry (10/30 25, 11/02 0): ${c1.tracker} ${c1.monitor} / ${c2.monitor}`);
+      // (📅 each day by the entry dated that day: 11/03 has Day 2's entry, dated 11/03 — date and questions, 50%)
+      if (c3.monitor !== 50) fail(`the Monitoring Sheet entry dated 11/03 isn't 11/03's: ${c3.monitor}`);
       // (📘 the TAM isn't a daily part: only graded when a trainer asks, for a shadowing activity)
       if (c1.tam != null || c2.tam != null || c3.tam != null || cur.tam) fail(`the TAM is still read or scored daily: ${JSON.stringify({ c1, tam: cur.tam })}`);
       const old = cur.compliance['2026-10-28'] || {};
@@ -189,7 +193,7 @@ const failures = []; const fail = (m) => failures.push(m);
         if ((dT.instr.issues || []).some(x => /not taken that day|no EOD/.test(x.why))) fail(`today, not over yet, was marked for deliverables it can still send: ${JSON.stringify(dT.instr.issues)}`);
       } }
     // 🔁 the Monitoring Sheet read through the Drive API when the docs.google.com export gives a sign-in page
-    if (!apiReads || !cur.monitor || cur.monitor.error || cur.monitor.found !== 1) fail(`the Monitoring Sheet wasn't read through the Drive API: ${apiReads} reads, ${JSON.stringify(cur.monitor && { error: cur.monitor.error, found: cur.monitor.found })}`);
+    if (!apiReads || !cur.monitor || cur.monitor.error || cur.monitor.found !== 2) fail(`the Monitoring Sheet wasn't read through the Drive API: ${apiReads} reads, ${JSON.stringify(cur.monitor && { error: cur.monitor.error, found: cur.monitor.found })}`);
     // 🧪 the Typing Tests folder is read: "10-30 AM.png" in it is her 10/30 AM typing test, and counts on the day
     { const sh = (cur.shots || {}).files || [];
       if (!sh.some(f => f.kind === 'typing' && f.date === '2026-10-30' && f.slot === 'AM')) fail(`the Typing Tests folder's screenshot wasn't found: ${JSON.stringify(cur.shots)}`);
