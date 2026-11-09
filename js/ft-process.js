@@ -1011,6 +1011,15 @@ function kcSave(qs){
   if(isTraineeHere()){ sets.forEach(assignedOn); checkFolder(); }
   return "";
 }
+// the grader's reply as the stored grading record: each answer's score (0–10) and feedback, the percent, the summary;
+// null when the reply has no scores. `extra` adds the caller's own fields (sig, auto).
+function kcResult(raw, qs, extra){
+  const got = Array.isArray(raw && raw.items) ? raw.items : []; if(!got.length) return null;
+  const items = qs.map((x, k) => { const it = got.find(g => Number(g && g.n) === k + 1) || got[k] || {};
+    return {sid: x.set.id, i: x.i, score: Math.max(0, Math.min(10, Math.round(Number(it.score) || 0))), feedback: String(it.feedback || "").slice(0, 900)}; });
+  const pct = Math.round(items.reduce((a, b) => a + b.score, 0) / (10 * items.length) * 100);
+  return Object.assign({pct, items, summary: String((raw && raw.summary) || "").slice(0, 1200), at: new Date().toISOString(), voice: "facilitator-dna"}, extra);
+}
 // ✍️ the grading prompt (the facilitator's DNA, each answer 0–10 and its feedback, the summary): the trainee's 📝 Submit for
 // Grading, and a sheet left "Submitted" graded by itself on the trainer's side (ftKcGradeFor)
 function kcPrompt(d, qs, ans){
@@ -1045,11 +1054,8 @@ window.ftKcGradeFor = async function(tid, lessonId, read){
   const ans = x => String((((proc.sets[x.set.id] || {}).answers) || [])[x.i] || "").trim();
   if(!qs.some(x => ans(x))) return null;
   const raw = await callAIJson(kcPrompt(d, qs, ans), 1800, undefined, "grading");
-  const got = Array.isArray(raw && raw.items) ? raw.items : []; if(!got.length) return null;
-  const items = qs.map((x, k) => { const it = got.find(g => Number(g && g.n) === k + 1) || got[k] || {};
-    return {sid: x.set.id, i: x.i, score: Math.max(0, Math.min(10, Math.round(Number(it.score) || 0))), feedback: String(it.feedback || "").slice(0, 900)}; });
-  const pct = Math.round(items.reduce((a, b) => a + b.score, 0) / (10 * items.length) * 100);
-  const r = {pct, items, summary: String((raw && raw.summary) || "").slice(0, 1200), at: new Date().toISOString(), voice: "facilitator-dna", auto: "trainer-side"};
+  const r = kcResult(raw, qs, {auto: "trainer-side"}); if(!r) return null;
+  const pct = r.pct;
   // (read again just before writing: the trainee may have saved meanwhile; only their grading record is added to)
   const cur = (await sharedGet("process:" + tid)) || proc, slot = read ? "kcRead" : "kc";
   cur[slot] = cur[slot] || {}; const rec = cur[slot][lessonId] = cur[slot][lessonId] || {attempts: 0, best: 0, last: null};
@@ -1091,12 +1097,9 @@ window.FTKc = {
     const prompt = kcPrompt(d, qs, ans);
     try{
       const raw = await callAIJson(prompt, 1800, undefined, "grading");
-      const got = Array.isArray(raw && raw.items) ? raw.items : [];
-      const items = qs.map((x,k)=>{ const it = got.find(g=>Number(g && g.n)===k+1) || got[k] || {};
-        return {sid:x.set.id, i:x.i, score:Math.max(0, Math.min(10, Math.round(Number(it.score)||0))), feedback:String(it.feedback||"").slice(0, 900)}; });
-      if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
-      const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
-      const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 1200), at:new Date().toISOString(), voice:"facilitator-dna", sig};
+      const r = kcResult(raw, qs, {sig});
+      if(!r) throw new Error("The grader didn't return scores. Please submit again.");
+      const pct = r.pct;
       // 📖 the Reading Task: its own score, kept apart; the lesson's score and its pass stay its own sheet's
       if(read){
         FP.data.kcRead = FP.data.kcRead || {};
