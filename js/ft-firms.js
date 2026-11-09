@@ -14,7 +14,6 @@
    ============================================================ */
 (function(){
 const e = v => esc(String(v == null ? "" : v));
-const has = v => String(v == null ? "" : v).trim().length > 0;
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const CASES = window.FT_CASES || [];
 const caseById = id => CASES.find(c => c.id === id) || null;

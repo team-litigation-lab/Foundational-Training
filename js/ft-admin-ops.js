@@ -58,7 +58,7 @@ const MAP = [
    steps:[`Open the day's lesson before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
      `Is one trainee behind or absent? Open the lesson for that one trainee: ${go("opendays","📅 Open Lessons")} → 👤 Open for one trainee.`]},
   {stage:"4 · Live session", trainee:"Follows the slides, answers Quick Checks and handles random tasks.",
-   steps:[`Teach from the lesson's 🖥 Presenter view, which shows the speaker notes slide by slide. The day plan is in ${go("sop","SOP Reference")}.`,
+   steps:[`Teach from the lesson's 🖥 Presenter view, which shows the speaker notes slide by slide.`,
      `Keep to the order in ${go("curriculum","📘 Curriculum")}, so every trainer teaches the same way.`]},
   {stage:"5 · Knowledge Check", trainee:"Answers the segment's Knowledge Check; 70% passes the lesson.",
    steps:[`Grade the answer sheets: top bar → ✍️ Knowledge Check. Your final score replaces their best attempt.`,
@@ -199,7 +199,7 @@ async function dbScan(){
     const recs = rtKeys.length ? await sharedGetMany(rtKeys) : [];
     rtKeys.forEach((k, i) => {
       const r = recs[i];
-      // (a task still running is never swept: active and not past its end — the page's surpriseTaskIsLive, less its trainee-only check)
+      // (a task still running is never swept: active and not past its end)
       if(!r || (r.active && !(r.expiresAt && now > new Date(r.expiresAt).getTime()))) return;
       const last = Math.max(new Date(r.expiresAt || 0).getTime() || 0, new Date(r.generatedAt || 0).getTime() || 0,
         ...((r.history || []).map(h => new Date(h.expiresAt || h.generatedAt || 0).getTime() || 0)));

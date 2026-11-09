@@ -48,7 +48,7 @@
         navy: [
             "#toolBody .btn.lab-cta!", ".ad-cell i", ".bf-tabs button.active", ".btn-navy",
             ".cr-msg.cr-client", ".cr-tabs button.active", ".cs-live-step.on", ".cs-tab.active",
-            ".cues-day-tabs button.active", ".day-num", ".eo-av", ".ff-mc", ".folder-item.active",
+            ".cues-day-tabs button.active", ".eo-av", ".ff-mc",
             ".ftc-body a.ft-lesson-link", ".ftr-aux code", ".ftr-stakes", ".gm-tiles div.all",
             ".iz-mv.on", ".lesson-compare .cbox:first-child .chead",
             ".lesson-compare .cbox:first-child .citem::before", ".lesson-process .pstep",
@@ -57,8 +57,8 @@
             ".lesson-stage #lessonSlideWrap ol.fp-howto-list > li::before", ".lesson-stat",
             ".lesson-threebox .tbox:nth-child(3n+1)", ".lp-admin-sec.active",
             ".match-zone:nth-child(4n+1) .match-zone-label", ".mini-table th", ".ob-call-btn",
-            ".or-bp-side", ".or-step-n", ".pill-tabs button.active", ".practice-sidebar button.active",
-            ".quiz-grid-letter", ".section-title .tag", ".si-icon", ".sopf-step h4 .n::before",
+            ".or-bp-side", ".or-step-n",
+            ".quiz-grid-letter", ".section-title .tag", ".sopf-step h4 .n::before",
             ".sopx-mode button.on", ".sopx-n", ".sopx-s-table th", ".step-circle.st-done",
             ".tab-btn.active", ".tfb-fab", ".toast", ".tool-card .tool-open-btn", ".tool-day-banner",
             ".topbar", ".topic-separator", ".update-banner", ".vis-chip", ".vis-n",
@@ -94,22 +94,21 @@
         "orange-deep": [
             ".btn-primary:hover", ".ftc-body a.ft-lesson-link:hover", ".ftr-part-h span",
             ".lesson-compare .cbox:last-child .chead", ".lesson-quadrant .qbox:nth-child(4n+4)",
-            ".match-zone:nth-child(4n+4) .match-zone-label", ".quiz-grid-opt.selected .quiz-grid-letter",
-            ".svg-callout-badge"
+            ".match-zone:nth-child(4n+4) .match-zone-label", ".quiz-grid-opt.selected .quiz-grid-letter"
         ],
         "orange-soft": [
             ".cert-prog div", ".cr-msg.cr-ea", ".lesson-stage .slide-dot.active", ".or-dots button.on",
-            ".quiz-grid-opt.selected", ".slide-dot:hover", ".sopx-s-bar i", ".view-mode-strip", ".vpc-tag"
+            ".quiz-grid-opt.selected", ".slide-dot:hover", ".sopx-s-bar i", ".view-mode-strip"
         ],
         success: [
-            ".ad-cell.ok", ".cert-hero-btn", ".day-row.done .day-num", ".quiz-dot.done",
+            ".ad-cell.ok", ".cert-hero-btn", ".quiz-dot.done",
             ".sopf-step.brk h4 .n::before", ".wizard-dot.done", ".wizard-tab.done .wt-n"
         ],
         danger: [".vc-btn.vc-hang"],
         /* The pale tints: the green "done / correct" boxes and the red "stop / wrong" ones. */
         "success-bg": [
             ".att-today", ".audit-btn.active-valid", ".callout-tip", ".drill-btn.correct",
-            ".estatus.replied", ".fact-row.fact-correct", ".fb-chip.sent", ".fp-pill.ok",
+            ".fb-chip.sent", ".fp-pill.ok",
             ".fp-st.st-done", ".ftm-pill.ok", ".kc-fb.kc-ok",
             ".lesson-stage #lessonSlideWrap .quiz-opt.correct", ".module-finish-btn:hover",
             ".pill-done", ".pref-ok", ".qns-ok", ".quiz-opt.correct", ".rv.sent", ".st-done",
@@ -117,7 +116,7 @@
         ],
         "danger-bg": [
             ".ai-result.ai-error", ".audit-btn.active-unrelated", ".callout-warning",
-            ".drill-btn.incorrect", ".esim-fail-banner", ".fa-pri.high", ".fact-row.fact-wrong",
+            ".drill-btn.incorrect", ".fa-pri.high",
             ".fp-pill.bad", ".ftm-help", ".ftm-pill.bad", ".ftr-rule", ".kc-fb.kc-low",
             ".lab-attempt-banner.lab-attempt-locked", ".lab-disclaimer.locked",
             ".lesson-stage #lessonSlideWrap .quiz-opt.incorrect", ".pref-bad",
@@ -126,10 +125,10 @@
         /* The white cards and the page itself. */
         paper: [".card", ".eval-report", ".ftr-chan", ".ftr-part", ".quiz-grid-opt"],
         page: [
-            ".act-card", ".dropzone", ".fp-report", ".fp-st.st-none", ".ftm-afb pre", ".ftm-eg",
+            ".act-card", ".fp-report", ".fp-st.st-none", ".ftm-afb pre", ".ftm-eg",
             ".ftm-mtype", ".ftm-n", ".ftm-rubric code", ".ftr-code", ".ftr-eg", ".ftr-to",
             ".ftr-todo-n", ".iz-quad", ".iz-score-banner", ".kc-stats", ".lesson-compare .cbox",
-            ".link-preview-box", ".match-tray", ".pill-tabs", ".practice-sidebar button:hover",
+            ".link-preview-box", ".match-tray",
             ".pref-ref-grid div", ".st-none", "body"
         ]
     };
@@ -140,7 +139,7 @@
        there, so they read as a gradient without this file knowing their colour. */
     var SHEEN = [
         ".ai-result", ".callout-stat", ".cert-warn", ".di-strip > div", ".di-warm", ".empty-note",
-        ".example-block", ".fb-composer", ".ftr-goal", ".ftr-why", ".inbox-sidebar", ".mindset-note",
+        ".example-block", ".fb-composer", ".ftr-goal", ".ftr-why", ".mindset-note",
         ".or-note", ".pill-locked", ".pill-open", ".qcheck-card", ".qns-warn", ".script-block",
         ".tfb-inline", ".tk-dash", ".tk-steps li", ".trainer-checkpoint", ".week-day-header"
     ];
