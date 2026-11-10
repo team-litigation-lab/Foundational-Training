@@ -1398,12 +1398,14 @@ function daysTable(){
   const ppl = people(), D = dayList();
   return {id: "days", title: "📅 Day by Day", note: `${meOn() ? "Your" : "Each trainee's"} scores on each training day: the average of the day's scored activities (the Knowledge Check, the Mock Call / Demo the trainer scored, the tools' grades, a 📝 Answer Sheet graded on the platform). A day with work done but nothing scored yet shows how many are done. Click a cell for each activity's score.  ✓ = every activity of the day done.`,
     head: ["Trainee", "Average score", "Days complete"].concat(KINDS.map(k => k[1]), D.map(d => `Day ${d.day}`)),
-    rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), full = st.filter(x => x.length && x.every(y => y.done)).length;
+    // (a day with nothing to hand in — Day 5's classroom discussion and buffer time — isn't counted either way: of the days with
+    // something to do, else no trainee could ever have every day complete)
+    rows: ppl.map(p => { const st = D.map(d => dayStatus(p, d)), full = st.filter(x => x.length && x.every(y => y.done)).length, due = st.filter(x => x.length).length;
       const all = st.flat(), kind = k => all.filter(y => kindOf(y.it) === k), dayAvgs = st.map(x => scoreLine(x).avg), avg = avgOf(dayAvgs);
       const scored = dayAvgs.map((a, i) => a == null ? null : `Day ${D[i].day} ${a}%`).filter(Boolean);
       return [{v: p.name, f: p.name, cls: "gs-name"},
         {v: pct(avg), f: avg == null ? "No scored activity yet" : `Average score = the average of the ${scored.length} scored day${scored.length === 1 ? "" : "s"} (${scored.join(", ")}) = ${Math.round(avg)}%`, cls: "gs-num gs-calc gs-bold " + tone(avg)},
-        {v: `${full} / ${D.length}`, f: `${full} of the ${D.length} days with every activity done`, cls: "gs-num gs-bold"}]
+        {v: `${full} / ${due}`, f: `${full} of the ${due} days with something to hand in, with every activity done${due < D.length ? ` (${D.length - due} day${D.length - due === 1 ? "" : "s"} with nothing to hand in not counted)` : ""}`, cls: "gs-num gs-bold"}]
         .concat(KINDS.map(([k, label]) => { const xs = kind(k), n = xs.filter(y => y.done).length, left = xs.filter(y => !y.done), sl = scoreLine(xs);
           return {v: sl.avg != null ? pct(sl.avg) : n ? `${n} / ${xs.length} done` : "", f: `${label}, Days 1–${D.length}: ${sl.avg != null ? `average ${sl.avg}% of ${sl.n} scored (${sl.why}). ` : "nothing scored yet. "}${n} of ${xs.length} done${left.length ? ". Still to do: " + left.slice(0, 6).map(y => y.it.t).join("; ") + (left.length > 6 ? "…" : "") : ""}`,
             cls: "bs-lesson " + (sl.avg != null ? tone(sl.avg) : xs.length && n === xs.length ? "gs-hi" : n ? "gs-mid" : ""),
