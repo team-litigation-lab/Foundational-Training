@@ -32,6 +32,12 @@ const failures = []; const fail = (m) => failures.push(m);
   if (JSON.stringify(g) !== JSON.stringify(want)) fail(`the day's graded work isn't what was graded that day (practice and another day's left out): ${JSON.stringify(g)}`);
   // (the hand-in, 100, and the five scores: (100 + 80 + 60 + 70 + 90 + 50) / 6 = 75)
   if ((c.parts || {}).outputs !== 75) fail(`the Day's outputs isn't the hand-in averaged with the day's scores (75): ${(c.parts || {}).outputs}`);
+  // (a day nothing was handed in — no Process Questions or Knowledge Check, no link, no file, nothing graded — leaves the Day's
+  // outputs out, not a 0)
+  { const nid = 'nia-none--b110226'; store.set('ft:trainee:' + nid, JSON.stringify({ id: nid, name: 'Nia None', batch: 'B110226', approved: true }));
+    await call('/api/eod/grade', { id: nid, date: D, score: 80 }, admin);
+    const n = (JSON.parse(store.get('ft:trackerreview:' + nid)).compliance || {})[D] || {};
+    if (!n.parts || n.parts.outputs !== null) fail(`a day nothing was handed in counts the Day's outputs: ${JSON.stringify(n.parts)}`); }
   if (failures.length) { console.error('Outputs scores test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log("Outputs scores test passed (the Day's outputs averages the hand-in with each Knowledge Check, assessment, Practice Session and calendaring activity graded that day; a practice-only activity and another day's grades left out).");
 })().catch((e) => { console.error('Outputs scores test FAILED:', e && e.stack || e); process.exit(1); });
