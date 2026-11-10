@@ -593,7 +593,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!fold.rowFolded || !fold.rowOpen || !fold.dayFolded || !fold.dayOpen) fail(`📤 Daily outputs doesn't fold by trainee and by day: ${JSON.stringify(fold)}`);
   // (the AI's full review stays in the cell's formula bar text, and ⬇ Download carries the comments)
   const ocF = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'); const r = T.rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => (c.f || '') + '|' + (c.csv || '')).join(' ') : ''; });
-  if (!/AI-NOTES/.test(ocF) || !/Typing & Spelling 67%: Took/.test(ocF)) fail(`the day's full text (formula bar / download) is missing the AI's review or the comments: ${ocF.slice(0, 300)}`);
+  if (!/AI-NOTES/.test(ocF) || !/Typing & Spelling 67%: Good that you took/.test(ocF)) fail(`the day's full text (formula bar / download) is missing the AI's review or the comments: ${ocF.slice(0, 300)}`);
 
   // 👥 a trainee revoked (🚫 Offboard) leaves the scorecards at once, and comes back when restored (js/ft-roster.js)
   await page.evaluate(id => confirmRevokeTrainee(id, 'Ben Blank'), ids.Ben); await page.waitForTimeout(3000);
