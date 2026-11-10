@@ -1154,11 +1154,11 @@ function outputsTable(){
           return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
-              : `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span></div></li>`).join("")}</ul>`}; }));
+              : `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><ul class="bs-oacts">${acts.map(a => `<li data-act="${e(a.k)}">${box(a.pct)}<div><b>${a.icon} ${e(a.label)}</b><span>${e(a.text)}</span>${(a.crit || []).length ? `<table class="bs-ocrit"><tbody>${a.crit.map(c => `<tr><td>${e(c.n)}</td><td><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td>${e(c.fb || "")}</td></tr>`).join("")}</tbody></table>` : ""}</div></li>`).join("")}</ul>`}; }));
     })};
 }
 /* 📤 each activity of a checked day, in the Daily outputs table's cell: its score in a little box and the trainee's
@@ -1179,20 +1179,32 @@ function dayActs(R, d){
   // 🤖 the day's own input graded by the AI (worker.js aiDayGrade): its score out of 100 from the six criteria, each out of 5
   const CRIT = {compliance: "Compliance", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
   const aiTxt = g => g ? `Your entries for the day scored ${g.score}%${g.aiLikely ? "; write them in your own words, they read as AI-generated" : ""}.` : "";
+  // 📝 the score's whole rationale: how it was worked out (six criteria, each out of 5), each criterion's score and why (the
+  // AI's reason; for a day graded before reasons were kept, what the criterion asks), what to fix, and the feedback — in full
+  const ASK = {compliance: "everything the day asks filled in, in the sheet's format and on the right day", completeness: "each entry complete, specific and correct",
+    personal: "written in your own words, with the day's specifics", effort: "thoughtful, not the bare minimum", detail: "dates, names, spelling and consistency right", professionalism: "clear, workplace-appropriate writing"};
+  const clean = t => String(t || "").replace(/\*\*|__|`|^#+\s*/gm, "").replace(/🤖\s*/g, "").replace(/\s+/g, " ").trim();
+  const aiWhy = g => { if(!g) return ""; const ks = Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number"), pts = ks.reduce((a, k) => a + g.crit[k], 0);
+    return `${aiTxt(g)} How it was scored: ${ks.length} criteria, each out of 5 (${pts} of ${ks.length * 5} points = ${g.score}%), each one in the table below.${(g.flags || []).length ? ` To fix: ${g.flags.map(clean).join("; ")}.` : ""}${g.feedback ? " " + clean(g.feedback) : ""}`; };
+  // (the criteria as table rows: each one's score out of 5 and why — the AI's reason, else what the criterion asks)
+  const aiCrit = g => !g ? null : Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number").map(k => ({n: CRIT[k], s: g.crit[k],
+    fb: clean((g.why || {})[k]) || (g.crit[k] < 5 ? `Aim for: ${ASK[k]}.` : "Full marks.")}));
   const mdy = `${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}`;
   const aiMore = g => g ? [Object.entries(g.crit || {}).map(([k, v]) => `${CRIT[k] || k} ${v}/5`).join(" · "), g.feedback || "", (g.flags || []).length ? "To fix: " + g.flags.join("; ") : ""].filter(Boolean).join(" · ") : "";
   if(P.tracker != null || unread("tracker")){
     const rules = tk ? tk.rules || [] : [], miss = rules.filter(r => !r.pass), voice = tk && (tk.comment ? "🧑‍🏫 " + first(tk.comment) : tk.review ? "🤖 " + first(tk.review) : "");
     out.push({k: "tracker", icon: "📋", label: "Task Tracker", pct: P.tracker, text: unread("tracker") ? sent2(share)
-      : c.trackerAi ? sent2(aiTxt(c.trackerAi), c.trackerAi.feedback || "")
+      : c.trackerAi ? aiWhy(c.trackerAi)
       : sent2(rules.length ? (miss.length ? `${miss.length < rules.length ? `Good work on ${rules.length - miss.length} of ${rules.length} checks. ` : ""}Next time: ${miss[0].label.charAt(0).toLowerCase() + miss[0].label.slice(1)}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : `Well done: your tracker meets all ${rules.length} checks.`) : P.tracker ? "Well done: your Task Tracker is up to date for the day." : "Please update your Task Tracker with today's tasks and notes.", voice),
+      crit: unread("tracker") ? null : aiCrit(c.trackerAi),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
-      : c.monitorAi ? sent2(aiTxt(c.monitorAi), c.monitorAi.feedback || "")
+      : c.monitorAi ? aiWhy(c.monitorAi)
       : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      crit: unread("monitor") ? null : aiCrit(c.monitorAi),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
@@ -2411,7 +2423,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .gs-na{color:#80868B !important;background:#F1F3F4 !important;font-weight:600 !important;} .bs-pt-t col.bs-pt-c1{width:200px;} .bs-pt-t col.bs-pt-c2{width:88px;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (narrower, as the trainer asked: the date and score fit; a long label wraps between words, never inside one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-ocrit{border-collapse:collapse;margin:6px 0 2px;font-size:13px;width:100%;} .bs-ocrit td{border:1px solid #E6E9F1;padding:3px 6px;vertical-align:top;} .bs-ocrit td:first-child{font-weight:700;white-space:nowrap;} .gs-na{color:#80868B !important;background:#F1F3F4 !important;font-weight:600 !important;} .bs-pt-t col.bs-pt-c1{width:200px;} .bs-pt-t col.bs-pt-c2{width:88px;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (narrower, as the trainer asked: the date and score fit; a long label wraps between words, never inside one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:anywhere;} .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;word-break:normal !important;overflow-wrap:normal !important;hyphens:none;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
