@@ -127,6 +127,66 @@ export const ASSESS_KEYS = {
     }
   }
   ,
+  // 📝 Breakout Session Worksheet – Day 1 (js/ft-assess.js "breakout-d1"): 5 questions on the day's digital handouts, 5 points each
+  "breakout-d1": {
+    title: "Breakout Session Worksheet – Day 1",
+    context: "the Breakout Session worksheet of Day 1 (VA Essentials): the trainee read the digital handouts (US Legal System, LSH Services and VA Task List, LSH Clients and Clientele, Western Culture, US States and Time Zones) and answers in their own words; grade understanding and application, not wording",
+    items: {
+      q1: { pts: 5, essay: true, answer: "State courts hear most cases, including personal injury, contracts, family and criminal cases under state law; federal courts hear cases under federal law or the US Constitution, and cases between parties of different states over $75,000 (diversity). Example: a car-accident injury claim goes to state court; a federal civil-rights or interstate case to federal court." },
+      q2: { pts: 5, essay: true, answer: "Any three real VA tasks (intake calls, scheduling/calendaring, drafting LORs, requesting medical records and bills, case updates, data entry in the CMS, following up with insurers), each with why it helps the firm: saves the attorneys' time, keeps cases moving, keeps deadlines, keeps clients informed." },
+      q3: { pts: 5, essay: true, answer: "LSH's clients are US law firms (mostly personal injury); their clientele are injured people, often stressed. So: professional, courteous, clear and empathetic communication, confidentiality, following each firm's own procedures." },
+      q4: { pts: 5, essay: true, answer: "Any two, applied: punctuality and respect for time, directness and clarity, taking initiative and owning tasks, professional email/call etiquette, first names, privacy; each with a concrete way they'll practise it." },
+      q5: { pts: 5, essay: true, answer: "Pacific is 3 hours behind Eastern: 5:00 PM in New York. Manila (UTC+8) is 16 hours ahead of Pacific Standard Time (15 during daylight saving): 6:00 AM the next day in Manila (5:00 AM during daylight saving). Time zones matter for calls, appointments, deadlines and the calendar." },
+    }
+  },
+  // 📝 Breakout Session Worksheet – Day 2 (js/ft-assess.js "breakout-d2"): 5 questions on the day's digital handouts, 5 points each
+  "breakout-d2": {
+    title: "Breakout Session Worksheet – Day 2",
+    context: "the Breakout Session worksheet of Day 2 (Law Firm Communication): the trainee read the digital handouts (Softphones, Law Firm Call Guide, Call Handling, Attorney-Client Privilege) and answers in their own words; grade understanding and application, not wording",
+    items: {
+      q1: { pts: 5, essay: true, answer: "Software that makes and takes calls over the internet on a computer (e.g. RingCentral, Dialpad). Advantages: work from anywhere, the firm's number, call logs/recording/notes, transfers and voicemail, lower cost." },
+      q2: { pts: 5, essay: true, answer: "Greet with the firm's name and your name, ask how you can help, verify/authenticate the caller (name, date of birth, case details), then listen and take notes. Each builds trust, protects confidentiality and gets the call to the right outcome." },
+      q3: { pts: 5, essay: true, answer: "Stay calm and courteous, listen without interrupting, acknowledge and empathise, verify the caller, check the case notes, explain what can be shared, give a clear next step (message to the case manager/attorney, callback time), document the call and follow up." },
+      q4: { pts: 5, essay: true, answer: "The rule that keeps communications between the attorney and the client confidential; disclosing them can waive it. Example: case strategy, settlement amounts, medical details or the client's statements to someone who isn't the verified client." },
+      q5: { pts: 5, essay: true, answer: "Don't share case details: he isn't the verified client and there's no authorization. Politely explain confidentiality, take a message or ask the client to call or authorize him, and document the call. Disclosing could breach privilege and confidentiality." },
+    }
+  },
+  // 📝 Breakout Session Worksheet – Day 7 (js/ft-assess.js "breakout-d7"): 5 questions on the day's digital handouts, 5 points each
+  "breakout-d7": {
+    title: "Breakout Session Worksheet – Day 7",
+    context: "the Breakout Session worksheet of Day 7 (Intake): the trainee read the digital handouts (Intake Documents to Support the Claim, Intake Packet, Intake Specialist Best Practices) and answers in their own words; grade understanding and application, not wording",
+    items: {
+      q1: { pts: 5, essay: true, answer: "Any four: police/accident report (how it happened, fault), photos/videos (damage, injuries, scene), medical records and bills (injuries, treatment, cost), insurance information/dec pages (coverage), witness statements, proof of lost wages, the client's ID/driver's license." },
+      q2: { pts: 5, essay: true, answer: "The set of documents the new client signs and fills in to start the case: retainer/fee agreement, client information sheet, HIPAA authorizations, medical/records releases, accident details questionnaire, supporting documents and insurance information." },
+      q3: { pts: 5, essay: true, answer: "Every later step relies on it (claims, LORs, records requests, deadlines). A missed detail can mean a wrong insurer or claim number, a missed statute of limitations, delayed treatment records, or a weaker or lost claim." },
+      q4: { pts: 5, essay: true, answer: "Any three applied: empathy and rapport, verifying identity and spelling, asking open then specific questions, using the intake checklist, documenting everything in the CMS right away, setting expectations and next steps, protecting confidentiality, following up on missing documents." },
+      q5: { pts: 5, essay: true, answer: "Collect the date, time, location, police department/agency and officer name if known, the parties' names, and request the report from the agency using those details; note it as pending in the CMS and follow up with the client and agency." },
+    }
+  },
+  // 📝 Breakout Session Worksheet – Day 10 (js/ft-assess.js "breakout-d10"): 5 questions on the day's digital handouts, 5 points each
+  "breakout-d10": {
+    title: "Breakout Session Worksheet – Day 10",
+    context: "the Breakout Session worksheet of Day 10 (Insurance Communication): the trainee read the digital handouts (Ridesharing Companies, Dropped Cases, Claims Specialist Best Practices) and answers in their own words; grade understanding and application, not wording",
+    items: {
+      q1: { pts: 5, essay: true, answer: "The rideshare company's commercial policy applies depending on the app status: app off, the driver's personal policy; app on and waiting, limited contingent liability; on the way to or carrying a passenger, the company's full policy (often $1M liability, UM/UIM). The status decides which insurer and which limits." },
+      q2: { pts: 5, essay: true, answer: "The client's and driver's details, date and place of the accident, the rideshare company, trip details/app status, police report, vehicle and plate information, description of injuries and damage, the client's own insurance, and the LOR to the insurer." },
+      q3: { pts: 5, essay: true, answer: "A case the firm stops handling. Reasons: no liability or the client was at fault, no coverage or no damages, the client stops cooperating or treating, conflict, statute of limitations, the client's choice." },
+      q4: { pts: 5, essay: true, answer: "Notify the client in writing (disengagement/closing letter, with deadlines such as the statute of limitations), notify the insurers and medical providers/lienholders that the firm no longer represents the client (withdraw LORs), update and close the case in the CMS and file the documents." },
+      q5: { pts: 5, essay: true, answer: "Any three explained: open claims promptly (1P and 3P, UM/UIM), send LORs early, confirm claim numbers and adjusters, document every contact, follow up on schedule, track coverage limits and deadlines, keep the client updated, keep files organized." },
+    }
+  },
+  // 📝 Breakout Session Worksheet – Day 13 (js/ft-assess.js "breakout-d13"): 5 questions on the day's digital handouts, 5 points each
+  "breakout-d13": {
+    title: "Breakout Session Worksheet – Day 13",
+    context: "the Breakout Session worksheet of Day 13 (Provider Communication): the trainee read the digital handouts (Protected Health Information, E-Portals, Medical Liens, Medical Documents) and answers in their own words; grade understanding and application, not wording",
+    items: {
+      q1: { pts: 5, essay: true, answer: "Health information that identifies a person, protected by HIPAA. Examples: medical records, diagnoses, bills, insurance ID, date of birth with treatment details, SSN. Handle it only with authorization, share only what's needed, through secure channels, never by personal email or chat." },
+      q2: { pts: 5, essay: true, answer: "A provider's or records company's secure online system. The VA logs in or registers, submits the request with the HIPAA authorization and LOR, tracks it, and downloads the records and bills when they're ready." },
+      q3: { pts: 5, essay: true, answer: "A provider's (or health insurer's) legal claim to be paid from the settlement for treatment given. It must be verified and paid or reduced before the client's share is disbursed, so it lowers what the client takes home unless it's negotiated down." },
+      q4: { pts: 5, essay: true, answer: "Medical records (treatment, diagnoses, notes), itemized bills/HCFA (UB-04) (the charges), imaging reports, records of prescriptions, affidavits/certifications, lien balance statements." },
+      q5: { pts: 5, essay: true, answer: "Don't send PHI by unsecured email: use the provider's portal, secure/encrypted email or fax per the firm's SOP, with the HIPAA authorization, because sending PHI insecurely can breach HIPAA and the client's confidentiality." },
+    }
+  },
   // 📄 Day 11's Policy Disclosure, Claim & Liability Evaluation (js/ft-assess.js "policy-disclosure"): Part I on the Dec Pages,
   // its answers the facilitator's key (Policy Disclosure – Key Answer); Part II from the training. Every item is an essay,
   // graded by the AI in the facilitator's voice against its key (an identification out of 1, an explanation out of 5);
