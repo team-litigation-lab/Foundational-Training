@@ -60,14 +60,14 @@ const DAYS = [
   {day:1, role:"VA Essentials", lessons:[1], items:[
     {t:"Setting of Expectations (8:00–9:00 AM)", kind:"Discussion", at:"room"},
     {t:"Typing & Spelling Activity (8:00–8:10 AM): the tests set up and named", kind:"Skill test", at:"tool", id:"skills"},
-    {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
+    {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc", assess:"breakout-d1"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
   ]},
   {day:2, role:"Law Firm Communication", lessons:[1, 2], items:[
     {t:"Buffer Time: Day 1 carryover", kind:"Buffer", at:"room"},
     {t:"Common Terms Used — Assessment", kind:"Assessment", at:"drive"},
     {t:"Auto Liability Insurance — Assessment", kind:"Assessment", at:"drive"},
-    {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
+    {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc", assess:"breakout-d2"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
   ]},
   {day:3, role:"Reception Training", lessons:[3, 4], items:[
@@ -102,7 +102,7 @@ const DAYS = [
     {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
     {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"},
-    {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
+    {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc", assess:"breakout-d7"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
@@ -126,7 +126,7 @@ const DAYS = [
     {t:"Intake Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:10, role:"Insurance Communication Training", lessons:[7], items:[
-    {t:"Digital Handouts for Breakout Session (Individual Activity): Claims Specialist Best Practices", kind:"Breakout", at:"gc"},
+    {t:"Digital Handouts for Breakout Session (Individual Activity): Claims Specialist Best Practices", kind:"Breakout", at:"gc", assess:"breakout-d10"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
@@ -142,7 +142,7 @@ const DAYS = [
   ]},
   {day:13, role:"Provider Communication Training", lessons:[8], items:[
     {t:"Buffer Time for the LOR Drafting Demo", kind:"Buffer", at:"trainer", id:"lor-demo"},
-    {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc"},
+    {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc", assess:"breakout-d13"},
     {t:"🎧 Sample provider communication recordings and reference documents (Sample SOPs): for reference, not scored", kind:"Reference", at:"tool", id:"listening", sample:true},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
   ]},
