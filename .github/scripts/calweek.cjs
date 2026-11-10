@@ -167,9 +167,9 @@ async function workerChecks({ perfect, practice }) {
   if (!b.placed || b.placed.monday !== b.next || b.placed.day !== 'Tuesday') fail(`the booking isn't on next Tuesday: ${JSON.stringify(b)}`);
   if (b.mine !== 1 || !b.ok) fail(`the booking isn't on next week's grid, checked: ${JSON.stringify(b)}`);
 
-  // Day 5 links to it: the dashboard's day item and the Attorney Calendar Management Activity slide
-  const day5 = await page.evaluate(() => (FTDays.of(5) || {}).items.map(i => i.id || ''));
-  if (!day5.includes('calweek')) fail(`Day 5 doesn't list the Calendaring Activity: ${JSON.stringify(day5)}`);
+  // Day 6 links to it (the Attorney Calendar Management Activity's day since #649): the dashboard's day item and its slide
+  const day6 = await page.evaluate(() => (FTDays.of(6) || {}).items.map(i => i.id || ''));
+  if (!day6.includes('calweek')) fail(`Day 6 doesn't list the Calendaring Activity: ${JSON.stringify(day6)}`);
   await page.evaluate(() => FTCalWeek.attorneyActivity()); await page.waitForTimeout(1500);
   // (the slide opens; it carries no link pills on its bar: they were taken off every deck)
   const slide = await page.evaluate(() => ({ view: state.view, acts: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));

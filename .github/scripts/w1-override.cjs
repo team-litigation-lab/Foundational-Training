@@ -63,7 +63,8 @@ const failures = []; const fail = m => failures.push(m);
       return h.jsonValue();
     };
     const w = await sheet('B103026', 'Wanda'), c = await sheet('B020225', 'Carl');
-    if (!/^5 \//.test(w.done)) fail(`the B103026 trainee's Week 1 isn't counted done (Days complete): ${w.done}`);
+    // (Week 1's days with something to hand in: Days 1–4 — Day 5, the classroom discussion and buffer time since #649, isn't counted)
+    if (!/^4 \/ 15$/.test(w.done)) fail(`the B103026 trainee's Week 1 isn't counted done (Days complete): ${w.done}`);
     if (!/^0 \//.test(c.done)) fail(`another batch's days were counted done: ${c.done}`);
     // (Daily compliance averages both days: Week 1's 75 with Week 2's 50 → 63%; the control batch stays at 50%)
     if (w.comp !== '63%' || c.comp !== '50%') fail(`the Daily compliance doesn't follow Week 1's 100% EOD: ${w.comp} / ${c.comp}`);
