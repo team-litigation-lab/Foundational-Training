@@ -148,18 +148,20 @@ window.render = function(){
 /* ---------- Admin tabs: one helper for every tab this program adds ---------- */
 window.ftAdminTab = function(id, label, renderTab){
   const __admin = window.renderAdmin;
-  window.renderAdmin = function(){
+  // (the last wrapper groups the tabs into sections: js/lsh-program.js lshAdminOut)
+  const done = (me, out) => typeof window.lshAdminOut === "function" ? window.lshAdminOut(me, out) : out;
+  const me = window.renderAdmin = function(){
     const tab = `<button class="admin-tab-btn ${state.adminTab === id ? "active" : ""}" onclick="setAdminTab('${id}')">${label}</button>`;
     if(state.isAdmin && state.adminTab === id){
       state.adminTab = "opendays";                   // borrow the tab bar…
       const out = __admin.apply(this, arguments);
       state.adminTab = id;
       const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-      return out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderTab();
+      return done(me, out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderTab());
     }
     const out = __admin.apply(this, arguments);
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    return end > 0 ? out.slice(0, end) + tab + out.slice(end) : out;
+    return done(me, end > 0 ? out.slice(0, end) + tab + out.slice(end) : out);
   };
 };
 
