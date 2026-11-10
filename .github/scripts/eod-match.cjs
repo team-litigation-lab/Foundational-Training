@@ -40,6 +40,17 @@ const failures = []; const fail = (m) => failures.push(m);
   if (!((JSON.parse(store.get('ft:drive:ana') || '{}').days || {})['2026-11-09'] || {}).eod || eodFrom('ana') !== 'ana.work@gmail.com') fail('the given EOD wasn\'t kept as the trainee\'s day, with its address');
   if (((await call('/api/eod/unmatched', {}, admin)).body.items || []).some(i => /ana\.work/.test(i.from))) fail('the given EOD is still listed as unmatched');
   r = await inb('Ana <ana.work@gmail.com>', { date: '2026-11-10T23:00:00Z' }); if (r.id !== 'ana') fail('the next EOD from the given address didn\'t match');
+  // 2b. a married or second surname: the sender's first name, when only one active trainee has it ("first name only")
+  r = await inb('Jose Rene Canton <jose.canton@legalsupporthelp.com>', { date: '2026-11-11T23:00:00Z' });
+  if (r.id !== 'jose') fail(`a first name only one trainee has didn't match: ${JSON.stringify(r)}`);
+  // (and one waiting in the inbox from before a trainee was there is taken as the inbox is read)
+  r = await inb('Ashanty Linneth Gosden <ashanty.gosden@legalsupporthelp.com>');
+  if (r.matched !== false) fail('an EOD matched a trainee who isn\'t registered yet');
+  store.set('ft:trainee:ashanty', JSON.stringify({ id: 'ashanty', name: 'Ashanty Campbell', batch: 'B110226', approved: true }));
+  { const u2 = (await call('/api/eod/unmatched', {}, admin)).body || {};
+    if ((u2.items || []).some(i => /ashanty/.test(i.from))) fail('an unmatched EOD wasn\'t matched again once its trainee was there');
+    if (!(u2.log || []).some(l => l.id === 'ashanty' && l.how === 'first name only')) fail(`the re-match isn't logged as first name only: ${JSON.stringify(u2.log).slice(0, 300)}`);
+    if (!((JSON.parse(store.get('ft:drive:ashanty') || '{}').days || {})['2026-11-09'] || {}).eod) fail('the re-matched EOD isn\'t kept on its trainee\'s day'); }
   // 3. trainers only
   const trainee = (await call('/api/auth/trainee', { first: 'Jose', last: 'Reyes', batch: 'B110226' })).body;
   if (trainee && trainee.token && (await call('/api/eod/assign', { id: 'jose' }, trainee.token)).status !== 403) fail('a trainee could give out an EOD');
