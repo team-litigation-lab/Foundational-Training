@@ -37,8 +37,10 @@ const failures = []; const fail = (m) => failures.push(m);
   if (!calls) fail('the AI wasn\'t asked');
   if (g().score !== 20 || g().max !== 25 || g().pct !== 80 || !/Breakout Session Worksheet – Day 7/.test(g().title || '')) fail(`the worksheet's grade isn't 20 of 25 (80%): ${JSON.stringify(g()).slice(0, 300)}`);
   // 2. it counts in the day's outputs
-  await call('/api/eod/grade', { id, date: g().at ? String(g().at).slice(0, 10) : D, score: 80 }, admin);
-  { const day = String(g().at || '').slice(0, 10), c = ((JSON.parse(store.get('ft:trackerreview:' + id)).compliance) || {})[day] || {};
+  // (the day it was graded, in Pacific time as the platform's days are: not the UTC date, a day ahead in the evening)
+  const gd = g().at ? globalThis.FTTrackerRules.ptDate(new Date(g().at)) : D;
+  await call('/api/eod/grade', { id, date: gd, score: 80 }, admin);
+  { const day = gd, c = ((JSON.parse(store.get('ft:trackerreview:' + id)).compliance) || {})[day] || {};
     if (!(c.graded || []).some(x => /Breakout Session Worksheet – Day 7/.test(x.what) && x.pct === 80)) fail(`the worksheet's grade isn't among the day's graded work: ${JSON.stringify(c.graded)}`); }
   // 3. without the AI: the answers wait for the trainer, never 0
   delete env.ANTHROPIC_API_KEY;
