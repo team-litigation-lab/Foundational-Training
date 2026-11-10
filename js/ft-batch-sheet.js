@@ -138,7 +138,15 @@ async function loadData(){
       const snap = at(0), data = (snap && snap.data) || {};
       let score = null;
       try{ score = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since}) : null; }catch(err){ score = null; }
-      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score};
+      // (📅 and this week's: the trainee page's figures start again each week — the week's own grades and days, ftWeeks)
+      let wk = null;
+      try{ const b = p.batch || B.batch, n = window.ftWeeks ? ftWeeks.now(b) : 0, range = n && ftWeeks.range(b, n);
+        if(range){ const ws = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since, range}) : null;
+          const days = Object.entries(((sc["trackerreview:"] || {}).compliance) || {}).filter(([d, c]) => d >= range[0] && d <= range[1] && c && typeof c.pct === "number").map(([, c]) => c.pct);
+          const comp = days.length ? Math.round(days.reduce((a, v) => a + v, 0) / days.length) : null, sco = ws && ws.overall != null ? ws.overall : null;
+          const both = [sco, comp].filter(v => typeof v === "number");
+          wk = {n, range, score: sco, comp, days: days.length, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
+      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score, wk};
     });
     // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
     let reps = [];
@@ -1047,7 +1055,14 @@ function perTraineeHtml(T){
     const sr = sc && rowFor(sc, p, i, ppl.length), val = h => { const k = col(h); return sr && k >= 0 && sr[k] ? stripTags(sr[k].v) : ""; };
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
     const cellOf = h => { const k = col(h); return sr && k >= 0 ? sr[k] || {} : {}; };
-    const head = [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
+    // (📅 this week's figures, starting again each week; the whole training's stay in the tables below)
+    const W = ((B.data.rec[p.id] || {}).wk) || null, wtone = v => v == null ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
+    const md_ = d => `${+d.slice(5, 7)}/${+d.slice(8)}`;
+    const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
+        [`Scorecard · Week ${W.n}`, W.score, `This week's grades only (${md_(W.range[0])}–${md_(W.range[1])}): it starts again each week`],
+        [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked`]]
+        .map(([l, v, f]) => [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+      : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
