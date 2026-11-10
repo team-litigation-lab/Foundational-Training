@@ -130,9 +130,11 @@ const failures = []; const fail = (m) => failures.push(m);
     // not every discussion due so far), the TAM's entry that day
     { const c2 = (cur.compliance['2026-11-02'] || {}).parts || {}, c1 = (cur.compliance['2026-10-30'] || {}).parts || {}, c3 = (cur.compliance['2026-11-03'] || {}).parts || {};
       if (c2.tracker !== cur.days['2026-11-02'].pct || !(c2.tracker > 0)) fail(`11/02's Tracker part wasn't worked out afresh from the sheet (still the 0 from before): ${JSON.stringify(c2)} / day ${cur.days['2026-11-02'].pct}`);
-      // (a part the day doesn't ask for is left out, not a 0: Day 5, 11/05, has nothing to hand in; Day 2, 11/02, has its assessments)
-      { const c5 = (cur.compliance['2026-11-05'] || {}).parts || null;
-        if (!c5 || c5.outputs !== null || typeof c2.outputs !== 'number') fail(`the Day's outputs aren't left out on a day with nothing to hand in (11/05 ${c5 && c5.outputs}, 11/02 ${c2.outputs})`); }
+      // (a part the day doesn't ask for is left out, not a 0: Day 5, 11/05, has nothing to hand in; and a day nothing was handed
+      // in — Day 2, 11/02, its assessments not done here — leaves the Day's outputs out too, as the trainer asked: not a 0)
+      { const c5 = (cur.compliance['2026-11-05'] || {}).parts || null, d2 = cur.compliance['2026-11-02'] || {};
+        const handed = !!(d2.links || d2.saved || (d2.submissions || []).length || (d2.graded || []).length);
+        if (!c5 || c5.outputs !== null || (handed ? typeof c2.outputs !== 'number' : c2.outputs !== null)) fail(`the Day's outputs aren't left out on a day with nothing to hand in (11/05 ${c5 && c5.outputs}, 11/02 ${c2.outputs}, handed in ${handed})`); }
       // (📅 Day 1's Task Tracker and Monitoring Sheet are checked like any day's, and the day counts)
       if (typeof c1.tracker !== 'number' || c1.monitor !== 25 || c2.monitor !== 0) fail(`Day 1's sheets aren't checked, or the Monitoring Sheet part isn't each day's own entry (10/30 25, 11/02 0): ${c1.tracker} ${c1.monitor} / ${c2.monitor}`);
       // (📅 each day by the entry dated that day: 11/03 has Day 2's entry, dated 11/03 — date and questions, 50%)
