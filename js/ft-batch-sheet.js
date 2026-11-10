@@ -107,10 +107,29 @@ function latestBatch(){
 const people = () => meOn() ? (B.me ? [B.me] : []) : (B.people || []).filter(p => bLabel(p.batch) === B.batch);
 
 /* ---------- what the platform already keeps about each of them ---------- */
-async function loadData(){
+// (⚡ the simulators' scores and today's compliance worked out again — worker.js /api/sim-scores/sync and /api/compliance/today
+// — run AFTER the sheet is drawn from what is saved, in the background, at most once every 10 minutes for a batch, and the
+// sheet is read again once (quietly) when they are done: opening the sheet never waits for them)
+const SYNC_EVERY = 10 * 60 * 1000;
+async function bgSync(ppl, key){
+  B.syncAt = B.syncAt || {};
+  if(!state.isAdmin || typeof authFetch !== "function" || B.syncing || Date.now() - (B.syncAt[key] || 0) < SYNC_EVERY) return;
+  B.syncing = true; B.syncAt[key] = Date.now();
+  try{
+    const chunks = []; for(let i = 0; i < ppl.length; i += 40) chunks.push(ppl.slice(i, i + 40).map(p => p.id));
+    await Promise.all(chunks.map(ids => Promise.all([
+      authFetch("/api/sim-scores/sync", {ids}).catch(() => null),
+      authFetch("/api/compliance/today", {ids}).catch(() => null)])));
+  }catch(err){}
+  B.syncing = false;
+  // (read again quietly, the sheet kept on screen meanwhile)
+  if(B.dataKey === key && on()) loadData(true);
+}
+async function loadData(quiet){
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
-  if(B.dataKey === key && (B.data || B.dataLoading)) return;
-  B.dataKey = key; B.dataLoading = true; rerender();
+  if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return;
+  if(quiet && B.dataLoading) return;
+  B.dataKey = key; B.dataLoading = true; if(!quiet) rerender();
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     // (process:<id>: the Knowledge Checks' graded answers, each answer's feedback and the summary, for the scores' context)
@@ -118,11 +137,8 @@ async function loadData(){
     // (🔁 first the scores given on the simulators — the Google Calendar Simulator's scorecard, Ring Channel's graded calls —
     // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
-    if(state.isAdmin && typeof authFetch === "function")
-      for(let i = 0; i < ppl.length; i += 40){ const ids = ppl.slice(i, i + 40).map(p => p.id);
-        try{ await authFetch("/api/sim-scores/sync", {ids}); }catch(err){}
-        // (✅ and today's compliance worked out again now: today's EOD email, answer sheets and tests show at once, worker.js /api/compliance/today)
-        try{ await authFetch("/api/compliance/today", {ids}); }catch(err){} }
+    // (the sync and today's compliance: in the background once the sheet is drawn, bgSync below)
+    if(!quiet) setTimeout(() => bgSync(ppl, key), 0);
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
     const vals = [];
