@@ -570,9 +570,9 @@ const failures = []; const fail = m => failures.push(m);
     const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
     // (📏 following instructions too: the day's naming, saving route and deliverables on time)
     if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
-    if (by('tracker').box !== '50%' || !/0 of 1 checks met; to fix: Every open task has its Daily Note/.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
+    if (by('tracker').box !== '50%' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
     if (by('tests').box !== '67%' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
-    if (by('outputs').box !== '0%' || !/No output link submitted/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    if (by('outputs').box !== '0%' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
     const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
   }

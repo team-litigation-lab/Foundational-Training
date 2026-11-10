@@ -1152,7 +1152,8 @@ function outputsTable(){
    under the table; it is now in the table itself.) */
 const sent2 = (...xs) => { const out = [];
   // (sentences split without a lookbehind, which older Safari can't parse)
-  xs.filter(Boolean).forEach(x => (String(x).replace(/\s+/g, " ").trim().match(/(?:[^.!?…]|[.!?…]+(?=\S))+(?:[.!?…]+|$)/g) || []).forEach(y => { y = y.trim(); if(y && /\w/.test(y)) out.push(/[.!?…]$/.test(y) ? y : y + "."); }));
+  // (markdown the AI's review can carry — **bold**, `code`, # headings, - bullets — taken off: plain feedback)
+  xs.filter(Boolean).forEach(x => (String(x).replace(/\*\*|__|`|^#+\s*/gm, "").replace(/(^|\s)[-•]\s+/g, "$1").replace(/🤖\s*/g, "").replace(/\s+/g, " ").trim().match(/(?:[^.!?…]|[.!?…]+(?=\S))+(?:[.!?…]+|$)/g) || []).forEach(y => { y = y.trim(); if(y && /\w/.test(y)) out.push(/[.!?…]$/.test(y) ? y : y + "."); }));
   return out.slice(0, 2).map(y => y.length > 230 ? y.slice(0, 228).replace(/\s+\S*$/, "") + "…" : y).join(" "); };
 const first = v => { const t = String(v || "").replace(/\s+/g, " ").trim(); const m = /^.+?[.!?](?=\s|$)/.exec(t); return m ? m[0] : t; };
 function dayActs(R, d){
@@ -1162,43 +1163,47 @@ function dayActs(R, d){
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   // 🤖 the day's own input graded by the AI (worker.js aiDayGrade): its score out of 100 from the six criteria, each out of 5
   const CRIT = {compliance: "Compliance", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
-  const aiTxt = g => g ? `Graded on the day's own entries: ${g.score}%${g.aiLikely ? " · ⚠ reads as AI-generated, not their own words" : ""}.` : "";
+  const aiTxt = g => g ? `Your entries for the day scored ${g.score}%${g.aiLikely ? "; write them in your own words, they read as AI-generated" : ""}.` : "";
+  const mdy = `${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}`;
   const aiMore = g => g ? [Object.entries(g.crit || {}).map(([k, v]) => `${CRIT[k] || k} ${v}/5`).join(" · "), g.feedback || "", (g.flags || []).length ? "To fix: " + g.flags.join("; ") : ""].filter(Boolean).join(" · ") : "";
   if(P.tracker != null || unread("tracker")){
     const rules = tk ? tk.rules || [] : [], miss = rules.filter(r => !r.pass), voice = tk && (tk.comment ? "🧑‍🏫 " + first(tk.comment) : tk.review ? "🤖 " + first(tk.review) : "");
     out.push({k: "tracker", icon: "📋", label: "Task Tracker", pct: P.tracker, text: unread("tracker") ? sent2(share)
       : c.trackerAi ? sent2(aiTxt(c.trackerAi), c.trackerAi.feedback || "")
-      : sent2(rules.length ? `${rules.length - miss.length} of ${rules.length} checks met${miss.length ? `; to fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}` : ", nothing to fix"}.` : P.tracker ? "Updated for the day." : "Not updated for the day.", voice),
+      : sent2(rules.length ? (miss.length ? `${miss.length < rules.length ? `Good work on ${rules.length - miss.length} of ${rules.length} checks. ` : ""}Next time: ${miss[0].label.charAt(0).toLowerCase() + miss[0].label.slice(1)}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : `Well done: your tracker meets all ${rules.length} checks.`) : P.tracker ? "Well done: your Task Tracker is up to date for the day." : "Please update your Task Tracker with today's tasks and notes.", voice),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
       : c.monitorAi ? sent2(aiTxt(c.monitorAi), c.monitorAi.feedback || "")
-      : sent2(P.monitor ? `The entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}: ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `No entry dated ${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)} on the Monitoring Sheet.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
   if(P.platform != null){ const did = (c.platform || []).slice(0, 3);
-    out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "Nothing done on the platform that day." : P.platform < 100 ? "Lessons opened, but nothing finished or submitted that day." : "Finished or submitted work on the platform.", did.length ? "Did: " + did.join(", ") + "." : "")}); }
+    out.push({k: "platform", icon: "🖥", label: "Platform", pct: P.platform, text: sent2(!P.platform ? "No work on the platform today: please complete the day's lessons and activities." : P.platform < 100 ? "You opened the lessons; next time, finish and submit the day's work." : "Great job finishing and submitting your work on the platform.", did.length ? "You completed: " + did.join(", ") + "." : "")}); }
   if(c.tests || P.tests != null){ const t = c.tests || {}, took = [t.AM && "the morning typing test", t.PM && "the afternoon typing test", t.SP && "the spelling test"].filter(Boolean),
       miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
-    out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(took.length ? `Took ${took.join(" and ")}.` : "No test found for the day.", took.length && miss.length ? `Not found: ${miss.join(", ")}.` : took.length ? "All three tests done." : "")}); }
+    out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(!took.length ? "Please take today's tests: the morning and afternoon typing tests and the spelling test." : miss.length ? `Good that you took ${took.join(" and ")}. Don't forget ${miss.join(" and ")}.` : "Great consistency: all three tests done (morning and afternoon typing, and spelling).")}); }
   if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
-    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "The folder couldn't be read, so the day's outputs aren't counted." : "No output link submitted and no file saved in the folder that day.")
-      : (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in the folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
-      sub.length ? "Submitted: " + sub.join(", ") + "." : ""),
+    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "Your folder couldn't be opened, so the day's outputs aren't counted: share it with the program's account." : "Remember to submit your output links in the Task Tracker or save your files in your Assessments/Activities folder.")
+      : "Well done: " + (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in your folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
+      sub.length ? "You submitted: " + sub.join(", ") + "." : ""),
       // (🏅 the scores of what was graded that day, averaged with the hand-in: worker.js dailyCompliance graded)
       more: (c.graded || []).length ? "Scores: " + c.graded.map(g => `${g.what} ${g.pct}%`).join(" · ") : ""});
     if((c.graded || []).length) out[out.length - 1].text += " Scores: " + c.graded.slice(0, 4).map(g => `${g.what} ${g.pct}%`).join(", ") + (c.graded.length > 4 ? ` and ${c.graded.length - 4} more` : "") + "."; }
   // 📏 following instructions (strict): the naming convention, the saving route and folders, the deliverables on time and the
   // six Drive links, as found that day (worker.js dailyCompliance instr)
   if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 4), LB = Object.fromEntries(LINKS);
-    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `${I.ok} of ${I.of} instructions followed that day. Not followed: ${iss.map(x => LB[x.k] ? `${LB[x.k].replace(/^\S+\s/, "")} (${x.why})` : x.why).join("; ")}.` : `All ${I.of} instructions followed that day.`, iss.length ? "Fixing them later doesn’t undo the day." : "")}); }
+    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `You followed ${I.ok} of ${I.of} instructions. Watch out for: ${iss.map(x => LB[x.k] ? `${LB[x.k].replace(/^\S+\s/, "")} (${x.why})` : x.why).join("; ")}.` : `Excellent: you followed all ${I.of} instructions today.`, iss.length ? "Get these right on the day: fixing them later doesn’t change the day's score." : "")}); }
   // 📘 the TAM, on a day a trainer graded it for shadowing
   if(P.tam != null) out.push({k: "tam", icon: "📘", label: "TAM (shadowing)", pct: P.tam, text: sent2(P.tam >= 100 ? "A full entry for the day, graded for the shadowing activity." : P.tam > 0 ? "A short entry for the day: 15 words or more count in full." : "No TAM entry dated that day.")});
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
-    out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Scored by a trainer: ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "No EOD email for the day." : rules.length ? `Sent; ${rules.length - miss.length} of ${rules.length} checks met.` : "Sent.",
-      miss.length ? `To fix: ${miss[0].label}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : rules.length ? "Professional, complete and on time." : "")}); }
+    // (the check's "Sent 2026-11-09 at 17:00 ET" read as "sent at 5:00 PM ET")
+    const when = t => String(t || "").replace(/Sent \d{4}-\d{2}-\d{2} at (\d{1,2}):00 ET/, (m, h) => `it was sent at ${((+h + 11) % 12) + 1}:00 ${+h < 12 ? "AM" : "PM"} ET`);
+    const lc = t => t.charAt(0).toLowerCase() + t.slice(1);
+    out.push({k: "eod", icon: "✉️", label: "EOD email", pct: P.eod, text: c.eodTrainer ? sent2(`Your trainer scored your EOD ${c.eodTrainer.score}%.`, c.eodTrainer.note || "") : sent2(!P.eod && !c.eodCheck ? "Please send your EOD email at the end of each shift." : rules.length ? (miss.length ? `Good EOD: ${rules.length - miss.length} of ${rules.length} checks met.` : "Great EOD: professional, complete and on time.") : "Your EOD was received.",
+      miss.length ? `Next time: ${lc(miss[0].label.replace(/\s*\(.*$/, ""))}${miss[0].detail ? " (" + when(miss[0].detail) + ")" : ""}.` : "")}); }
   // (📅 a Day 1 still held back as a setup day — index.html ftDay1 counts it now, so none should reach here)
   // (⏳ today's, before the shift is over: as it stands, counted once the day is over)
   const held = c.day1 ? "Day 1 (setup day): not counted" : c.open ? "Today so far: counts once the shift is over" : "";
