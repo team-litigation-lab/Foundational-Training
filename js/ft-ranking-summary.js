@@ -45,6 +45,8 @@ const SUMV = 2;
 const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
 const plusDays = (iso, n) => { const t = Date.parse(`${iso}T12:00:00Z`); return isFinite(t) ? new Date(t + n * 864e5).toISOString().slice(0, 10) : ""; };
 const FRESH = 60 * 60 * 1000;
+// (🤖 a week with no summary yet is tried again after 10 minutes — not once a session — so one that failed or was cut short is never left unsummarized)
+const RETRY = 10 * 60 * 1000;
 const stale = (d, r) => !!(d && d.at && r && r[1] && begun(r) && Date.now() - Date.parse(d.at) >= FRESH && ptNow() <= plusDays(r[1], 2));
 const keyOf = (b, w) => `rksum:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const ctx = () => (window.FTRanking && FTRanking.ctx) ? FTRanking.ctx() : null;
@@ -255,17 +257,22 @@ async function draft(opts){
   S.busy = true; S.err = ""; redraw();
   const voice = typeof window.fbStyleBlock === "function" ? (window.fbStyleBlock() || "") : "";
   const rows = {}; let ai = 0;
-  for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){} if(S.key !== key) break; }
-  // (another week picked meanwhile: nothing is saved over this week's summary, nor shown as that week's)
-  if(S.key !== key){ S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); } redraw(); return; }
-  const prev = S.data || {};
+  for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){} }
+  // (another week picked meanwhile — or the page reloading its batch for a moment —: the summary is still finished and kept for the
+  //  week it was started for, so it is never lost half-way; it is only shown if that week is still the one open)
+  const here = S.key === key;
+  let prev = here ? S.data : null; if(!here){ try{ prev = (await sharedGet(key)) || null; }catch(err){ prev = null; } } prev = prev || {};
+  // (…but a week that already has a summary isn't saved over from a page that has moved on to another week)
+  if(!here && prev.rows && prev.v >= SUMV){ S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); } redraw(); return; }
   // (what a trainer edited by hand stays)
   Object.entries(prev.rows || {}).forEach(([id, r]) => { if(rows[id] && r.edited){ rows[id] = Object.assign(rows[id], {scores: Object.assign(rows[id].scores, r.scoresEdited || {}), comments: Object.assign(rows[id].comments, r.commentsEdited || {}), trainer: r.trainerEdited || rows[id].trainer},
     {edited: true, scoresEdited: r.scoresEdited, commentsEdited: r.commentsEdited, trainerEdited: r.trainerEdited}); } });
-  S.data = {v: SUMV, batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
-  if(prev.sharedAt){ S.data.sharedAt = prev.sharedAt; S.data.editedAt = S.data.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
-  if(await sharedSet(key, S.data) === false) toast("Couldn’t save the summary. Check your connection.");
+  const D = {v: SUMV, batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
+  if(prev.sharedAt){ D.sharedAt = prev.sharedAt; D.editedAt = D.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
+  if(S.key === key) S.data = D;
+  if(await sharedSet(key, D) === false) toast("Couldn’t save the summary. Check your connection.");
   S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); return; }
+  if(S.key !== key){ redraw(); return; }
   // (🔄 the daily update of a week already shared: each trainee's card follows the new scores too, without asking again)
   if(daily && prev.sharedAt){ await FTRankSummary.share({quiet: true}); toast(`🔄 Week ${c.week}'s report updated with today's scores and shared again with the trainees.`); redraw(); return; }
   toast(daily ? `🔄 Week ${c.week}'s report updated with the latest scores.` : ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
@@ -363,10 +370,10 @@ window.FTRankSummary = {
   html(){
     const c = ctx(); if(!c || !c.batch) return "";
     load(c);
-    // 🤖 a week already under way with no summary yet: summarized by itself, once a session (kept: rksum:<batch>:w<N>)
+    // 🤖 a week already under way with no summary yet: summarized by itself (tried again every 10 minutes until there is one) (kept: rksum:<batch>:w<N>)
     const k = keyOf(c.batch, c.week);
-    if(!S.loading && S.key === k && !S.data && !S.busy && !(S.tried || {})[k] && (c.people || []).length && begun(c.range)){
-      (S.tried = S.tried || {})[k] = 1; setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
+    if(!S.loading && S.key === k && !S.data && !S.busy && Date.now() - ((S.tried || {})[k] || 0) >= RETRY && (c.people || []).length && begun(c.range)){
+      (S.tried = S.tried || {})[k] = Date.now(); setTimeout(() => { if(S.key === k && !S.data) draft(); }, 0); }
     // 🔄 and summarized again once a day while its scores are still coming in (stale), so the report follows the scores as they
     // are given: what the trainer edited by hand stays, and a week already shared is shared again with the new scores
     else if(!S.loading && S.key === k && S.data && !S.busy && Date.now() - ((S.daily || {})[k] || 0) >= FRESH && (c.people || []).length && stale(S.data, c.range)){

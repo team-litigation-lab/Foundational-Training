@@ -89,6 +89,12 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => FTRanking.week(2)); await idle(); await page.waitForTimeout(3000); await idle();
     const after = (await get(`rksum:${BATCH}:w1`) || {}).at;
     if (after !== before) fail(`Week 1's summary was saved over after Week 2 was picked mid-way: ${before} → ${after}`);
+    // …but a week with no summary yet is still finished and kept for that week when another is picked mid-way (never left blank)
+    await page.evaluate(() => FTRanking.week(1)); await idle();
+    await put(`rksum:${BATCH}:w1`, null);
+    await page.evaluate(() => { FTRankSummary.draft(); }); await page.waitForTimeout(600);
+    await page.evaluate(() => FTRanking.week(2)); await idle(); await page.waitForTimeout(3000); await idle();
+    { const w1 = await get(`rksum:${BATCH}:w1`); if (!w1 || !w1.rows || !Object.keys(w1.rows).length) fail('a week with no summary was left unsummarized after another week was picked mid-way'); }
     const w2 = await get(`rksum:${BATCH}:w2`);
     if (w2 && Number(w2.week) !== 2) fail(`Week 2's summary is Week ${w2.week}'s`);
     const shown = await page.evaluate(() => (document.querySelector('#bs-ranking .rks-wrap') || {}).innerText || '');
