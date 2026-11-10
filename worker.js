@@ -2605,6 +2605,9 @@ async function dailyCompliance(env, id, D, o = {}) {
         const handIn = its.some((x) => x.at === "drive" || x.assess || (x.at === "gc" && !/Metrics/i.test(x.t || "")) || (x.at === "offline" && /folder|upload|submit/i.test(x.t || "")));
         const onPlatform = its.some((x) => x.at === "tool" || x.at === "session");
         if (!handIn && !graded.length) parts.outputs = null;
+        // (📤 and on any day nothing was handed in — no Process Questions or Knowledge Check, no assessment, no output link,
+        // no file saved, nothing graded — the Day's outputs is left out too, not a 0: it doesn't count against the day)
+        if (!links && !saved && !subs.length && !graded.length) parts.outputs = null;
         if (!onPlatform) parts.platform = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
