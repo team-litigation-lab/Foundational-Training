@@ -69,12 +69,13 @@ const __admin = window.renderAdmin;
 // (cues, rankings, sop, studio → audit) — opens the Batch Sheet instead. ('batches' is a tab of its own: 🛡 Admin Master
 // Control → 📁 Batches, js/ft-batch-admin.js.)
 const toPeople = () => setTimeout(() => { const el = document.getElementById("bs-people"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }, 400);
-window.renderAdmin = function(){
+const ttAdmin = window.renderAdmin = function(){
   if(!window.__ftPeopleEmbed && state.isAdmin && (!state.adminTab || state.adminTab === "audit")){
     const asked = !!state.adminTab; state.adminTab = "batchsheet"; if(asked) toPeople();
   }
   const html = __admin.apply(this, arguments);
-  if(state.adminTab !== "audit" || !state.isAdmin || state.traineeId || !state.adminData || state.adminLoading) return html;
+  const out_ = x => typeof window.lshAdminOut === "function" ? window.lshAdminOut(ttAdmin, x) : x;   // (the last wrapper groups the tabs)
+  if(state.adminTab !== "audit" || !state.isAdmin || state.traineeId || !state.adminData || state.adminLoading) return out_(html);
   const t = frag(html), c = t.content;
   // the tab's name and what it holds
   c.querySelectorAll(".admin-tab-btn").forEach(b => { if(/Trainee Audit/.test(b.textContent)) b.textContent = TITLE; if(/Batch Folders/.test(b.textContent)) b.remove(); });
@@ -112,7 +113,7 @@ window.renderAdmin = function(){
     const root = c.querySelector(".ft-admin-screen") || c;
     root.appendChild(box);
   }
-  return t.innerHTML;
+  return out_(t.innerHTML);
 };
 
 const st = document.createElement("style"); st.id = "ft-trainees-tab"; st.textContent = `
