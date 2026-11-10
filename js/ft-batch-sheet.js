@@ -125,6 +125,15 @@ async function bgSync(ppl, key){
   // (read again quietly, the sheet kept on screen meanwhile)
   if(B.dataKey === key && on()) loadData(true);
 }
+// (🔄 scores that update by themselves while the sheet is open: every 5 minutes the sheet is read again quietly — 📤 Daily
+// outputs, 📅 Day scores, 🏅 Scores and every scorecard follow what came in, the page kept where it is — with today's
+// compliance worked out again every 10 minutes (bgSync); not while a trainer types, nor in a tab that isn't shown)
+const AUTO_EVERY = 5 * 60 * 1000;
+setInterval(() => { try{
+  if(!on() || !B.data || B.dataLoading || document.hidden || (typeof isTyping === "function" && isTyping())) return;
+  const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
+  if(state.isAdmin && Date.now() - ((B.syncAt || {})[key] || 0) >= SYNC_EVERY) bgSync(ppl, key); else loadData(true);
+}catch(err){} }, AUTO_EVERY);
 async function loadData(quiet){
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
   if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return;
@@ -162,6 +171,8 @@ async function loadData(quiet){
       try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
     if(B.dataKey !== key){ return; }   // (another read started since: that one's result is kept)
     B.data = {rec, sources: S, reps, at: new Date(), batch: B.batch, key};
+    // (📊 a quiet read again: the Weekly Report's platform cells filled again from the new scores — never a typed one)
+    if(quiet && window.FTRanking && typeof FTRanking.fill === "function" && state.adminTab === WEEKLY) setTimeout(() => { try{ FTRanking.fill(true); }catch(err){} }, 0);
     // ✍️ an answer sheet submitted but never graded ("Submitted"): graded now, once a session, then the sheet is read again
     if(adminOn() && !meOn() && window.ftKcGradeFor && !(B.kcAuto || {})[B.batch]){ (B.kcAuto = B.kcAuto || {})[B.batch] = 1; const bb = B.batch, todo = [];
       ppl.forEach(p => kcSheets().forEach(k => { const g = sheetGrade(p, k); if(g.pct == null && g.subm) todo.push({p, k}); }));
