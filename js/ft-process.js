@@ -476,9 +476,15 @@ function moduleRow(lesson){
 // order they follow their videos on the day's slide; open whether or not the lesson's questions are yet
 const ASSESSMENTS = {2: [
   {t: "Common Terms Used – Assessment", id: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"},
-  {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}],
+  {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"},
+  {t: "Breakout Session Worksheet – Day 2", id: "breakout-d2"}],
   // (Day 11's, answered on the platform: js/ft-assess.js)
-  7: [{t: "Policy Disclosure, Claim & Liability Evaluation", id: "policy-disclosure"}]};
+  7: [{t: "Policy Disclosure, Claim & Liability Evaluation", id: "policy-disclosure"},
+  {t: "Breakout Session Worksheet – Day 10", id: "breakout-d10"}],
+  // 📝 each Breakout Session's worksheet (the Digital Handouts, done on one's own: 5 questions, js/ft-assess.js "breakout-d<day>")
+  1: [{t: "Breakout Session Worksheet – Day 1", id: "breakout-d1"}],
+  6: [{t: "Breakout Session Worksheet – Day 7", id: "breakout-d7"}],
+  8: [{t: "Breakout Session Worksheet – Day 13", id: "breakout-d13"}]};
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}

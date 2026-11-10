@@ -618,6 +618,10 @@ const HANDOUTS = {1: {items: [
   ["Ridesharing Companies", "https://drive.google.com/file/d/1T10rZY_PL8krUK7Djzm-oMaKxI4kE-Q9/view"],
   ["Dropped Cases", "https://drive.google.com/file/d/1N57yPn1zaPnGU0t-wY5cT01IB-ovZmOa/view"],
   ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
+// 📝 each Breakout Session's worksheet (js/ft-assess.js "breakout-d<day>"): 5 questions on the handouts, answered on one's own
+// and graded (worker.js /api/assess/grade), from the handouts' slide: {day: [lesson, worksheet]}
+const WORKSHEET = {"1": [1, "breakout-d1"], "2": [2, "breakout-d2"], "7": [6, "breakout-d7"], "10": [7, "breakout-d10"], "13": [8, "breakout-d13"]};
+const worksheetBtn = n => { const w = WORKSHEET[n]; return w ? `<button type="button" class="btn btn-navy ftdd-ws-go" onclick="FTDayDecks.toAssess(${w[0]}, '${w[1]}', '', 'the deck', true)">📝 Breakout Worksheet: 5 questions →</button>` : ""; };
 function handoutsSlide(h){
   // the handouts are open to everyone, always: no lock, no 🔓 / 🔒 badge (the trainer doesn't unlock them)
   const cards = h.items.map(([t, u], i) => `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
@@ -626,11 +630,11 @@ function handoutsSlide(h){
     <div class="ftdd-ho-head"><h2>Digital Handouts</h2></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
-        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Update your Training Progress Monitoring Sheet.</li>"
+        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Update your Training Progress Monitoring Sheet.</li><li>Answer the 📝 Breakout Worksheet (5 questions).</li>"
         : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
-        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li>`}</ol>
+        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li><li>Answer the 📝 Breakout Worksheet on your own (5 questions).</li>`}</ol>
         </div>
-      <div class="ftdd-ho-list">${cards}</div>
+      <div class="ftdd-ho-list">${cards}${worksheetBtn(DD.day)}</div>
     </div></div>`;
 }
 function launchSlide(s){
@@ -638,7 +642,7 @@ function launchSlide(s){
   if(/ftVideoOrAsk/.test(r.run || "") && HANDOUTS[DD.day]) return handoutsSlide(HANDOUTS[DD.day]);
   // (no AI discussion video on the decks; a handouts stop with no handouts here: where they are)
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
-    <p class="ftdd-dv-sub">The digital handouts are posted in the training GC.</p></div>`;
+    <p class="ftdd-dv-sub">The digital handouts are posted in the training GC.</p>${worksheetBtn(DD.day)}</div>`;
   const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
   return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
@@ -1640,8 +1644,9 @@ function assessDoc(day, l, doc, back, tool){
     if(root.FTProcess) FTProcess.openLesson(l);
   });
 }
-function toAssess(l, doc, at, h){
-  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
+// (only: the assessment's own page straight away — the 📝 Breakout Worksheet — with ← back to this slide)
+function toAssess(l, doc, at, h, only){
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify(Object.assign({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at}, only ? {only: true} : {}))); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
 function openSlide(n, id, alt, at){
