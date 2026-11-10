@@ -2378,7 +2378,9 @@ async function redoCompliance(env, id, ro = {}) {
    not generic AI-generated text), effort, attention to detail and professionalism — each 0–5 — and a score out of 100.
    Kept in cur.dayAi[kind][D] with the text's hash, so the same entry isn't graded twice. Returns {score, crit, aiLikely,
    feedback, flags} or null (no AI, or no usable answer). */
-const DAY_CRIT = [["compliance", "Compliance: everything the day asks is filled in, in the sheet's format and on the right day"],
+// (⏱ compliance here is timely submission and updates — entries made on the day and kept current; the output links and files
+// are scored in the Day's outputs, so their absence never counts against the tracker or the Monitoring Sheet a second time)
+const DAY_CRIT = [["compliance", "Compliance (timely submission and updates): the day's entries were made on the day, under the right date, and kept updated (each task's status and notes current, the entry filled in on time). Do NOT count output links, files or folders here: those are scored separately in the Day's outputs"],
   ["completeness", "Completeness & accuracy: each entry complete, specific and correct (tasks, results, next steps; for the Monitoring Sheet: the date, 5 real takeaways, questions, the understanding rated)"],
   ["personal", "Personal input: written in the trainee's own words, with the day's specifics; 0–2 when it reads as generic AI-generated text (polished filler, no specifics of their own day, the same phrasing everywhere)"],
   ["effort", "Effort: thoughtful, not the bare minimum"],
@@ -2386,8 +2388,9 @@ const DAY_CRIT = [["compliance", "Compliance: everything the day asks is filled 
   ["professionalism", "Professionalism: clear, workplace-appropriate writing"]];
 async function aiDayGrade(env, cur, kind, D, text, facts, name) {
   if (!aiOn(env)) return null;
-  // (v2: graded with a reason for each criterion — a day graded before is graded again once, for its reasons)
-  const h = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("v2|" + kind + "|" + D + "|" + text + "|" + facts))).slice(0, 22);
+  // (v2: graded with a reason for each criterion; v3: compliance as timely submission and updates — a day graded before is
+  // graded again once)
+  const h = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("v3|" + kind + "|" + D + "|" + text + "|" + facts))).slice(0, 22);
   cur.dayAi = cur.dayAi || {}; cur.dayAi[kind] = cur.dayAi[kind] || {};
   const was = cur.dayAi[kind][D];
   if (was && was.h === h && typeof was.score === "number") return was;
