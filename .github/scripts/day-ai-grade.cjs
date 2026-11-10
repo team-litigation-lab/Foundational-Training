@@ -37,7 +37,8 @@ const failures = []; const fail = (m) => failures.push(m);
       calls++; const body = JSON.parse(init.body), prompt = body.messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n'); prompts.push(prompt);
       const tracker = /Daily Task Tracker/.test(body.system || '');
       const scores = tracker ? { compliance: 4, completeness: 4, personal: 5, effort: 4, detail: 3, professionalism: 4 } : { compliance: 3, completeness: 3, personal: 1, effort: 2, detail: 3, professionalism: 4 };
-      const text = JSON.stringify({ scores, aiLikely: !tracker, flags: tracker ? [] : ['Generic takeaways'], feedback: tracker ? 'Specific notes.' : 'Write your own takeaways.' });
+      const why = Object.fromEntries(Object.keys(scores).map(k => [k, 'Reason for ' + k + '.']));
+      const text = JSON.stringify({ scores, why, aiLikely: !tracker, flags: tracker ? [] : ['Generic takeaways'], feedback: tracker ? 'Specific notes.' : 'Write your own takeaways.' });
       return new Response(JSON.stringify({ content: [{ type: 'text', text }], model: 'm', stop_reason: 'end_turn' }));
     }
     return new Response('not found', { status: 404 });
@@ -57,6 +58,8 @@ const failures = []; const fail = (m) => failures.push(m);
     if (P.monitor !== 53) fail(`the Monitoring Sheet's part isn't the AI grade of the day's entry (16/30 = 53): ${P.monitor} ${JSON.stringify(c.monitorAi)}`);
     if (!c.monitorAi || !c.monitorAi.aiLikely || !c.trackerAi || c.trackerAi.aiLikely) fail(`the AI-generated flag isn't kept: ${JSON.stringify([c.trackerAi, c.monitorAi])}`);
     if (calls !== 2) fail(`${calls} AI requests for one day's two sheets`);
+    // (📝 each criterion's reason kept, for the score's rationale on the trainee's page)
+    if (!c.trackerAi || !c.trackerAi.why || c.trackerAi.why.detail !== 'Reason for detail.') fail(`each criterion's reason isn't kept with the grade: ${JSON.stringify(c.trackerAi && c.trackerAi.why)}`);
     if (prompts.some(p => /SHOULD NOT BE SENT/.test(p))) fail('another day\'s entry went to the AI');
     if (!prompts.some(p => /missed the callback number once/.test(p))) fail('the day\'s tracker rows didn\'t go to the AI'); }
   // 2. the same entries aren't graded again

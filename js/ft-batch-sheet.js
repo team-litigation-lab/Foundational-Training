@@ -1164,19 +1164,27 @@ function dayActs(R, d){
   // 🤖 the day's own input graded by the AI (worker.js aiDayGrade): its score out of 100 from the six criteria, each out of 5
   const CRIT = {compliance: "Compliance", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
   const aiTxt = g => g ? `Your entries for the day scored ${g.score}%${g.aiLikely ? "; write them in your own words, they read as AI-generated" : ""}.` : "";
+  // 📝 the score's whole rationale: how it was worked out (six criteria, each out of 5), each criterion's score and why (the
+  // AI's reason; for a day graded before reasons were kept, what the criterion asks), what to fix, and the feedback — in full
+  const ASK = {compliance: "everything the day asks filled in, in the sheet's format and on the right day", completeness: "each entry complete, specific and correct",
+    personal: "written in your own words, with the day's specifics", effort: "thoughtful, not the bare minimum", detail: "dates, names, spelling and consistency right", professionalism: "clear, workplace-appropriate writing"};
+  const clean = t => String(t || "").replace(/\*\*|__|`|^#+\s*/gm, "").replace(/🤖\s*/g, "").replace(/\s+/g, " ").trim();
+  const aiWhy = g => { if(!g) return ""; const ks = Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number"), pts = ks.reduce((a, k) => a + g.crit[k], 0);
+    const lines = ks.map(k => { const v = g.crit[k], r = clean((g.why || {})[k]) || (v < 5 ? `Aim for: ${ASK[k]}.` : "Full marks."); return `${CRIT[k]} ${v}/5: ${r.replace(/[.\s]+$/, "")}.`; });
+    return `${aiTxt(g)} How it was scored: ${ks.length} criteria, each out of 5 (${pts} of ${ks.length * 5} points = ${g.score}%). ${lines.join(" ")}${(g.flags || []).length ? ` To fix: ${g.flags.map(clean).join("; ")}.` : ""}${g.feedback ? " " + clean(g.feedback) : ""}`; };
   const mdy = `${d.slice(5, 7)}/${d.slice(8)}/${d.slice(2, 4)}`;
   const aiMore = g => g ? [Object.entries(g.crit || {}).map(([k, v]) => `${CRIT[k] || k} ${v}/5`).join(" · "), g.feedback || "", (g.flags || []).length ? "To fix: " + g.flags.join("; ") : ""].filter(Boolean).join(" · ") : "";
   if(P.tracker != null || unread("tracker")){
     const rules = tk ? tk.rules || [] : [], miss = rules.filter(r => !r.pass), voice = tk && (tk.comment ? "🧑‍🏫 " + first(tk.comment) : tk.review ? "🤖 " + first(tk.review) : "");
     out.push({k: "tracker", icon: "📋", label: "Task Tracker", pct: P.tracker, text: unread("tracker") ? sent2(share)
-      : c.trackerAi ? sent2(aiTxt(c.trackerAi), c.trackerAi.feedback || "")
+      : c.trackerAi ? aiWhy(c.trackerAi)
       : sent2(rules.length ? (miss.length ? `${miss.length < rules.length ? `Good work on ${rules.length - miss.length} of ${rules.length} checks. ` : ""}Next time: ${miss[0].label.charAt(0).toLowerCase() + miss[0].label.slice(1)}${miss[0].detail ? " (" + miss[0].detail + ")" : ""}.` : `Well done: your tracker meets all ${rules.length} checks.`) : P.tracker ? "Well done: your Task Tracker is up to date for the day." : "Please update your Task Tracker with today's tasks and notes.", voice),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
   if(P.monitor != null || unread("monitor")){
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
-      : c.monitorAi ? sent2(aiTxt(c.monitorAi), c.monitorAi.feedback || "")
+      : c.monitorAi ? aiWhy(c.monitorAi)
       : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
