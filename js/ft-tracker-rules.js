@@ -332,31 +332,37 @@
      (YYYY-MM-DD); at: when it was sent (or pasted). Returns {pct, pass, rules: [{id, label, pass, detail}]}. */
   function checkEod(text, subject, D, at){
     const t = String(text || "").replace(/\r/g, ""), subj = String(subject || "").trim();
-    const lines = t.split("\n").map((l) => l.trim());
+    // (the plain text of an email written with bold or italic headings carries them as *…* or _…_: taken off, so
+    // "*On queue for tomorrow:*" reads as its heading)
+    const lines = t.split("\n").map((l) => l.replace(/[*_]{1,3}/g, "").trim());
     // the subject: the email's own, else the first line ("Subject: …", or the subject typed as the first line)
     const sub = subj || ((lines.find((l) => has(l)) || "").replace(/^subject\s*:\s*/i, ""));
     const sm = /\b(daily|eod)\s+report\b[^0-9]*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i.exec(sub);
     const sDate = sm ? `${sm[4].length === 2 ? "20" + sm[4] : sm[4]}-${String(sm[2]).padStart(2, "0")}-${String(sm[3]).padStart(2, "0")}` : "";
     // a part: the lines after its heading, up to the next heading
     const H = [["acc", /accomplishments?|completed tasks/i], ["learn", /things i.?ve learned|learned that i can|learnings?/i], ["queue", /on queue|queue for tomorrow|tomorrow/i]];
-    const at_ = {}; lines.forEach((l, i) => { H.forEach(([k, re]) => { if(at_[k] == null && re.test(l) && /:\s*(\(|$)|:\s*$|:\s/.test(l + " ")) at_[k] = i; }); });
+    // (a heading: the line with its colon, or a short line of its own with no bullet — "Accomplishments/Completed Tasks")
+    const heading = (l) => /:\s*(\(|$)|:\s*$|:\s/.test(l + " ") || (l.length <= 80 && !/^[-•*\d]/.test(l) && !/[.!?]$/.test(l));
+    const at_ = {}; lines.forEach((l, i) => { H.forEach(([k, re]) => { if(at_[k] == null && re.test(l) && heading(l)) at_[k] = i; }); });
     const part = (k) => { if(at_[k] == null) return null; const next = Object.values(at_).filter((v) => v > at_[k]).sort((a, b) => a - b)[0];
       return lines.slice(at_[k] + 1, next == null ? lines.length : next).map((l) => l.replace(/^[-•*•\d.)\s]+/, "").trim()).filter((l) => l.length > 2 && !/^(regards|thank you|thanks|best)[,!.]?$/i.test(l)); };
     const acc = part("acc"), learn = part("learn"), queue = part("queue");
     const sentences = (l) => (String(l).match(/[^.!?]+[.!?]+/g) || []).filter((x) => x.trim().split(/\s+/).length >= 3).length || (String(l).trim().split(/\s+/).length >= 8 ? 1 : 0);
-    const goodLearn = (learn || []).filter((l) => sentences(l) >= 2);
+    // (a learning: 2 sentences or more, or one full sentence of 12 words or more — the standard EOD's one-line learnings)
+    const goodLearn = (learn || []).filter((l) => sentences(l) >= 2 || String(l).trim().split(/\s+/).length >= 12);
     const etHour = (() => { if(!at) return null; try{ return +new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", hour: "numeric", hour12: false}).format(new Date(at)); }catch(e){ return null; } })();
     const etDate = (() => { if(!at) return ""; try{ const p = new Intl.DateTimeFormat("en-CA", {timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date(at)); return p; }catch(e){ return ""; } })();
     const rules = [
       {id: "subject", label: "The subject: Daily Report mm/dd/yy (or EOD Report mm/dd/yy)", pass: !!sm && (!D || sDate === D),
         detail: !sm ? `It reads "${sub.slice(0, 80) || "(none)"}": write Daily Report ${D ? D.slice(5, 7) + "/" + D.slice(8) + "/" + D.slice(2, 4) : "mm/dd/yy"}` : D && sDate !== D ? `Its date (${sDate}) isn't the day's (${D})` : ""},
       {id: "acc", label: "Accomplishments/Completed Tasks: what was done", pass: !!(acc && acc.length), detail: acc ? (acc.length ? `${acc.length} listed` : "The part is there, but empty") : "The part is missing"},
-      {id: "learn", label: "At least 3 learnings, 2 sentences or more each", pass: goodLearn.length >= 3,
-        detail: learn ? `${goodLearn.length} of ${learn.length} learning${learn.length === 1 ? "" : "s"} with 2 sentences or more (3 needed)` : "The part (These are the things I've learned…) is missing"},
+      {id: "learn", label: "At least 3 learnings, each 2 sentences or a full sentence (12 words or more)", pass: goodLearn.length >= 3, part: Math.min(goodLearn.length, 3) / 3,
+        detail: learn ? `${goodLearn.length} of ${learn.length} learning${learn.length === 1 ? "" : "s"} written out in full (3 needed)` : "The part (These are the things I've learned…) is missing"},
       {id: "queue", label: "On queue for tomorrow: the next tasks", pass: !!(queue && queue.length), detail: queue ? (queue.length ? `${queue.length} listed` : "The part is there, but empty") : "The part is missing"},
       {id: "time", label: "Sent before the end of the shift (5:00 PM ET)", pass: etHour == null ? true : (!D || etDate <= D) && (etDate < D || etHour < 17),
         detail: etHour == null ? "" : `Sent ${etDate} at ${etHour}:00 ET`}];
-    const pct = Math.round(100 * rules.filter((r) => r.pass).length / rules.length);
+    // (each check counts the same; the learnings in part: each of the 3 a third of its share)
+    const pct = Math.round(100 * rules.reduce((a, r) => a + (r.pass ? 1 : typeof r.part === "number" ? r.part : 0), 0) / rules.length);
     return {pct, pass: rules.every((r) => r.pass), rules, subject: sub.slice(0, 200), learnings: goodLearn.length};
   }
 
