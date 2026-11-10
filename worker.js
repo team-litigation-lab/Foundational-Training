@@ -3294,7 +3294,10 @@ export default {
         const b = await request.json().catch(() => ({}));
         const ids = (Array.isArray(b.ids) ? b.ids : []).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40), D = TR.ptDate(), out = {};
         if (!TR.isWeekday(D)) return json({ ok: true, date: D, skipped: "weekend" });
-        for (const id of ids) { try { const c = await dailyCompliance(env, id, D); out[id] = c ? c.pct : null; } catch (e) { out[id] = null; } }
+        // (⚡ a day checked in the last 10 minutes isn't worked out again; the rest 5 at a time, not one after another)
+        const fresh = async (id) => { try { const c = ((JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") || {}).compliance || {})[D]; return c && c.checkedAt && Date.now() - Date.parse(c.checkedAt) < 10 * 60 * 1000 ? c : null; } catch (e) { return null; } };
+        const one = async (id) => { const f = await fresh(id); if (f) { out[id] = f.pct; return; } try { const c = await dailyCompliance(env, id, D); out[id] = c ? c.pct : null; } catch (e) { out[id] = null; } };
+        for (let i = 0; i < ids.length; i += 5) await Promise.all(ids.slice(i, i + 5).map(one));
         return json({ ok: true, date: D, done: out });
       }
       if (path === "/api/sim-scores/sync") {
