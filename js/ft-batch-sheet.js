@@ -1204,11 +1204,11 @@ function dayActs(R, d){
   const unread = k => (c.unreadable || []).includes(k), share = "The system can't open it, so it isn't counted. Share it with the program's account (📁 My Drive links).";
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   // 🤖 the day's own input graded by the AI (worker.js aiDayGrade): its score out of 100 from the six criteria, each out of 5
-  const CRIT = {compliance: "Compliance", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
+  const CRIT = {compliance: "Compliance (timely submission & updates)", completeness: "Completeness & accuracy", personal: "Personal input", effort: "Effort", detail: "Attention to detail", professionalism: "Professionalism"};
   const aiTxt = g => g ? `Your entries for the day scored ${g.score}%${g.aiLikely ? "; write them in your own words, they read as AI-generated" : ""}.` : "";
   // 📝 the score's whole rationale: how it was worked out (six criteria, each out of 5), each criterion's score and why (the
   // AI's reason; for a day graded before reasons were kept, what the criterion asks), what to fix, and the feedback — in full
-  const ASK = {compliance: "everything the day asks filled in, in the sheet's format and on the right day", completeness: "each entry complete, specific and correct",
+  const ASK = {compliance: "the day's entries made on the day, under the right date, and kept updated", completeness: "each entry complete, specific and correct",
     personal: "written in your own words, with the day's specifics", effort: "thoughtful, not the bare minimum", detail: "dates, names, spelling and consistency right", professionalism: "clear, workplace-appropriate writing"};
   const clean = t => String(t || "").replace(/\*\*|__|`|^#+\s*/gm, "").replace(/🤖\s*/g, "").replace(/\s+/g, " ").trim();
   const aiWhy = g => { if(!g) return ""; const ks = Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number"), pts = ks.reduce((a, k) => a + g.crit[k], 0);
