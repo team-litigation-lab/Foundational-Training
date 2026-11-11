@@ -104,6 +104,9 @@
   // (the template's own sample row: dated far before the training — its 11/16/2022 — never one of the trainee's tasks)
   const isSample = (r, D) => isTask(r) && has(r.dateReceived) && r.dateReceived < D && apart(r.dateReceived, D) > 183;
   // (the tracker as it stood on day D: a row received later isn't held against an earlier day)
+  // (finished by day D: a task completed later was still open that day — a past day checked again with today's sheet isn't
+  // marked down for a task the trainee only finished afterwards)
+  const doneOn = (r, D) => isDone(r) && (!has(r.completedOn) || !D || r.completedOn <= D);
   const rowsOn = (t, D) => ((t && t.tracker && t.tracker.rows) || []).filter((r) => isTask(r) && (!has(r.dateReceived) || r.dateReceived <= D));
   const rowName = (r) => `"${String(r.details || r.type || "(no details)").replace(/\s+/g, " ").trim().slice(0, 60)}"${r.dateReceived ? " (" + fmtDate(r.dateReceived) + ")" : ""}`;
   const listRows = (rs, n) => { n = n || 4; return rs.slice(0, n).map(rowName).join(", ") + (rs.length > n ? ` and ${rs.length - n} more` : ""); };
@@ -138,7 +141,7 @@
     {id: "section-placement", label: "Each task under its right section (⬇ FOR COMPLETION ⬇ pending or ongoing, ⬇ RECURRING ⬇ the daily tests, ⬇ COMPLETED ⬇ finished)",
      run(t, D){
        const rs = rowsOn(t, D).filter((r) => !isSample(r, D)); if(!rs.length) return null;
-       const done = rs.filter((r) => r.section === "completion" && isDone(r)), open = rs.filter((r) => r.section === "completed" && has(r.status) && !isDone(r));
+       const done = rs.filter((r) => r.section === "completion" && doneOn(r, D)), open = rs.filter((r) => r.section === "completed" && has(r.status) && !isDone(r));
        // (the Typing and Spelling Tests are continuing requirements: ⬇ RECURRING ⬇, not a row a day elsewhere)
        const tests = rs.filter((r) => r.section !== "recurring" && TEST_RE.test(r.details) && !done.includes(r) && !open.includes(r));
        const bad = done.length + open.length + tests.length;
@@ -152,7 +155,7 @@
      }},
     {id: "completion-date", label: "Every completed task has its Actual Completion Date",
      run(t, D){
-       const rs = rowsOn(t, D).filter((r) => !isSample(r, D) && (r.section === "completed" || isDone(r))); if(!rs.length) return null;
+       const rs = rowsOn(t, D).filter((r) => !isSample(r, D) && (r.section === "completed" || doneOn(r, D))); if(!rs.length) return null;
        const miss = rs.filter((r) => !has(r.completedOn));
        return {pass: !miss.length, pct: pctOf(rs.length - miss.length, rs.length),
          detail: miss.length ? `${miss.length} of ${plural(rs.length, "completed task")} ha${miss.length === 1 ? "s" : "ve"} no Actual Completion Date: ${listRows(miss)}. Enter the day each was actually finished (e.g. ${fmtDate(miss[0].dateReceived || D)}).`
@@ -261,7 +264,9 @@
   /* 🗂 the week's tracker as text, for the weekly evaluation (worker.js trackerWeekEval): every task row with its section, dates,
      type, status, the Daily Notes written for the week's days and the VA Notes */
   function weekExcerpt(t, days){
-    const ds = (days || []).slice().sort(), rows = ((t && t.tracker && t.tracker.rows) || []).filter(isTask);
+    // (the week's rows only: none received after its last day — the next week's rows, added before a just-ended week is evaluated
+    // again, aren't credited or criticised in its report)
+    const ds = (days || []).slice().sort(), end = ds[ds.length - 1] || "", rows = ((t && t.tracker && t.tracker.rows) || []).filter((r) => isTask(r) && (!end || !has(r.dateReceived) || r.dateReceived <= end));
     return SECTIONS.map(([k, lab]) => { const rs = rows.filter((r) => r.section === k); if(!rs.length) return "";
       return lab + "\n" + rs.slice(0, 60).map((r) => `- Date Received: ${r.dateReceived ? fmtDate(r.dateReceived) : "(blank)"} | Type: ${r.type || "(blank)"} | ${String(r.details || "(no details)").slice(0, 300)} | Status: ${r.status || "(blank)"} | Actual Completion Date: ${r.completedOn ? fmtDate(r.completedOn) : "(blank)"}` +
         ds.filter((D) => has(r.notes && r.notes[D])).map((D) => `\n  Daily Note ${fmtDate(D)}: ${String(r.notes[D]).slice(0, 900)}`).join("") + (has(r.vaNotes) ? `\n  VA Notes: ${String(r.vaNotes).slice(0, 1500)}` : "")).join("\n"); })
@@ -556,7 +561,15 @@
     8: {topic: MONITOR_TOPICS[7], on: 8, items: [15, 16], what: "items #15–16 (the Intake Process videos and Intake Documents)",
       where: "build/days/day08.js s1 (“Update item #15”) and s1b (“Update #16 (Intake Documents)”) · js/ft-day-decks.js LESSON_CARDS[6] (“Intake Video … update your Monitoring Sheet”)"},
     10: {topic: MONITOR_TOPICS[9], on: 10, items: [], what: "the Breakout Session's handouts",
-      where: "js/ft-day-decks.js HANDOUTS[10] (“Update your Training Progress Monitoring Sheet”)"}
+      where: "js/ft-day-decks.js HANDOUTS[10] (“Update your Training Progress Monitoring Sheet”)"},
+    // 📚 and after each topic has been covered (the trainer: "and also every after the topic have been covered"): the topic's
+    // last training day (one discussion a day, MONITOR_TOPICS), its entry due that day
+    5: {topic: MONITOR_TOPICS[4], on: 5, items: [], after: true, what: "Reception Training, now covered (Days 3–5)", where: "the trainer's rule: an update after each topic is covered"},
+    6: {topic: MONITOR_TOPICS[5], on: 6, items: [], after: true, what: "Calendar Management Training, now covered", where: "the trainer's rule: an update after each topic is covered"},
+    9: {topic: MONITOR_TOPICS[8], on: 9, items: [], after: true, what: "Intake Training, now covered (Days 7–9)", where: "the trainer's rule: an update after each topic is covered"},
+    12: {topic: MONITOR_TOPICS[11], on: 12, items: [], after: true, what: "Insurance Communication Training, now covered (Days 10–12)", where: "the trainer's rule: an update after each topic is covered"},
+    16: {topic: MONITOR_TOPICS[15], on: 16, items: [], after: true, what: "Provider Communication Training, now covered (Days 13–16)", where: "the trainer's rule: an update after each topic is covered"},
+    18: {topic: MONITOR_TOPICS[17], on: 18, items: [], after: true, optional: true, what: "Lien Negotiator Training, now covered (when the training hours permit it)", where: "the trainer's rule: an update after each topic is covered"}
   };
   // training day n's update, or null when the slides ask for none that day (or its topic isn't covered yet)
   const monitorDue = (n) => { const x = MONITOR_SCHEDULE[Number(n)]; return x && x.on <= Number(n) ? x : null; };

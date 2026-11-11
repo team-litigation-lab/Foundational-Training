@@ -275,7 +275,7 @@ function expectedFor(st, D) {
   const FD = globalThis.FTDays, k = trainingDay(st, D), items = FD && FD.items && k ? FD.items(k) : [];
   // (📒 the Monitoring Sheet only on a day the slides ask for an update — TR.monitorDue —, never as an every-day expectation)
   const mon = TR.monitorDue ? TR.monitorDue(k) : null;
-  return (items || []).map((x) => String(x.t || "")).filter((x) => x && !/^Free Communication/.test(x)).concat(k ? ["Typing Test (AM and PM) and Spelling Test (recurring)"] : [], mon ? [`Monitoring Sheet update: ${mon.what || "as the slides ask"}`] : []);
+  return (items || []).map((x) => String(x.t || "")).filter((x) => x && !/^(Free Communication|Buffer Time|Typing Test|Spelling Test|Typing & Spelling)/i.test(x)).concat(k ? ["Typing Test (AM and PM) and Spelling Test (recurring)"] : [], mon ? [`Monitoring Sheet update: ${mon.what || "as the slides ask"}`] : []);
 }
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
@@ -2616,7 +2616,8 @@ async function dailyCompliance(env, id, D, o = {}) {
     // (📅 by its date: the entry dated that day — its "Date:" line — is the day's; else the instructed topic's entry when it
     // has no date of its own — a date the sheet writes in a way that can't be read isn't a missing entry)
     monEntry = mon.entries.find((x) => x && x.date === D) || mon.entries.find((x) => x && x.topic === monDue.topic && !x.date) || null;
-    monDay = monEntry ? Math.round(monEntry.pct || 0) : 0;
+    // (an optional topic's update — the Lien Negotiator days, when the training hours permit — counts only once it is written)
+    monDay = monEntry ? Math.round(monEntry.pct || 0) : monDue.optional ? null : 0;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
@@ -2687,7 +2688,7 @@ async function dailyCompliance(env, id, D, o = {}) {
     const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
-    monitor: monDay != null ? monDay : (monDue && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    monitor: monDay != null ? monDay : (monDue && !monDue.optional && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
     // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
     // (counted only when the day has a TAM entry: no entry dated that day is left out, not a 0)
     tam: tamG && pctOf(tamG.pct) ? pctOf(tamG.pct) : null,
@@ -2755,7 +2756,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
   cur.compliance = cur.compliance || {};
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), graded: graded.slice(0, 20), platform: done.slice(0, 12), opened: seen.length,
-    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
+    unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", monDue && cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
     final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, trackerAi, monitorAi, monDue: monDue ? { what: monDue.what, items: monDue.items, topic: monDue.topic } : null, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});

@@ -61,6 +61,15 @@ const fails = []; const ck = (ok, t) => { if (!ok) fails.push(t); };
   ck(ev.corrections.some(x => x.example === 'Date Received: 11/02/2026\nType of Task: LSH-TRAINING\nStatus: Completed\nActual Completion Date: 11/02/2026'), 'the completion-date correction has no field example');
   ck(ev.strengths.some(x => /Recurring/.test(x.title)) === false && ev.corrections.some(x => /Recurring/.test(x.title)), 'Nov 5\'s missing PM test isn\'t a correction');
   ck(ev.metrics.organization.rating < 3 && /FOR COMPLETION/.test(ev.metrics.organization.comment), `organization isn't marked down for the placement: ${JSON.stringify(ev.metrics.organization)}`);
+  // (review fixes) a task finished later was still open on an earlier day: checked again with today's sheet, that day isn't marked
+  // down for it; and the week's report leaves out rows received after the week
+  { const later = TR.fromSheetCsv(['Date Received,Type of Task,Task Details,Accountable VA,11/02/2026,11/03/2026,VA Notes,Deadline,Status,Actual Completion Date',
+      '⬇ FOR COMPLETION ⬇,,,,,,,,,', '11/02/2026,LSH-TRAINING,Reading Task,Dee,"Read the PI overview",,,ASAP,Completed,11/05/2026',
+      '11/10/2026,LSH-TRAINING,NEXT-WEEK-ROW,Dee,,,,ASAP,Ongoing,'].join('\n'), { today: '2026-11-10', startDate: '2026-11-02' });
+    const sp = rule(TR.checkDay(later, '2026-11-03'), 'section-placement'), cd = rule(TR.checkDay(later, '2026-11-03'), 'completion-date');
+    ck(!/Reading Task/.test(sp.detail || '') && !/Reading Task/.test(cd.detail || ''), `a task finished on 11/05 was marked down on 11/03: ${sp.detail} | ${cd.detail}`);
+    ck(/Reading Task/.test(rule(TR.checkDay(later, '2026-11-05'), 'section-placement').detail || ''), 'a task finished on 11/05 and left under For Completion isn\'t flagged from 11/05');
+    ck(!/NEXT-WEEK-ROW/.test(TR.weekExcerpt(later, days)), 'the week\'s report reads a row received after the week'); }
   const html = TR.evalHtml(ev, { name: 'Dee' }), text = TR.evalText(ev, { name: 'Dee' });
   ['Daily Task Tracker Evaluation', 'Coverage:', 'Evaluation Metric', '1. Tracker Organization &amp; Correct Section Placement', 'Feedback Summary', 'Strengths', 'Areas Requiring Correction', 'Recommendations:', 'Final Assessment:', 'Overall Performance Rating: ' + ev.overall.toFixed(1) + ' / 5 – ', 'no AI review']
     .forEach(x => ck(html.includes(x), `the report has no "${x}"`));

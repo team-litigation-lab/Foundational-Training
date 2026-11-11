@@ -142,8 +142,9 @@ function howOf(rv, range, x){
     // 📒 the Monitoring Sheet's entry dated that day: its checks that missed, the AI's read
     const me = (((rv.monitor || {}).entries) || []).find(en => en && en.date === D);
     if(P.monitor != null && !me) add("monitor", "No Monitoring Sheet entry dated this day was found.");
-    if(me) (me.checks || []).filter(k => !k.ok).forEach(k => add("monitor", `${me.topic}: ${k.label} missing`));
-    if(c.monitorAi){ (c.monitorAi.flags || []).forEach(f => add("monitor", f)); if(c.monitorAi.aiLikely) add("monitor", "The takeaways read as AI-generated rather than your own words."); if(has(c.monitorAi.feedback)) add("monitor", "Feedback: " + c.monitorAi.feedback); }
+    // (📒 the Monitoring Sheet's issues only on a day it counted: a day the slides asked for no update isn't held against them)
+    if(me && P.monitor != null) (me.checks || []).filter(k => !k.ok).forEach(k => add("monitor", `${me.topic}: ${k.label} missing`));
+    if(c.monitorAi && P.monitor != null){ (c.monitorAi.flags || []).forEach(f => add("monitor", f)); if(c.monitorAi.aiLikely) add("monitor", "The takeaways read as AI-generated rather than your own words."); if(has(c.monitorAi.feedback)) add("monitor", "Feedback: " + c.monitorAi.feedback); }
     // ✉️ the EOD email against its template
     if(c.eodCheck) (c.eodCheck.rules || []).filter(r => r && !r.pass).forEach(r => add("eod", `${r.label}${r.detail ? ": " + r.detail : ""}`));
     else if(P.eod != null) add("eod", "No EOD email was received for this day.");
