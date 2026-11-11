@@ -83,7 +83,7 @@ async function workerChecks() {
   if (!rec.logs.reception['1'].better || !rec.logs.reception['1'].at) fail(`the full log wasn't saved: ${JSON.stringify(rec.logs.reception['1'])}`);
   if (!(await page.evaluate(() => FTListen.done(FTListen.state().rec.logs.reception['1'])))) fail('the page doesn\'t count the full log as done');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!/Call Listening[\s\S]*Reception calls[\s\S]*10%/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the listening log');
+  if (!/Call Listening[\s\S]*Reception calls[\s\S]*(10%|0\.5\/5)/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the listening log');
 
   // 📝 Day 3's Reception Listening Activity counts in 🎧 Call Listening by its grade: logged and not submitted, it is not graded
   // (no score, never a 0); graded, its score is there, and not under 📋 Task Tracker & Monitoring Sheet as well (counted once)
@@ -94,12 +94,13 @@ async function workerChecks() {
   await put('listening:' + id, Object.assign({}, logged, { logs: Object.assign({}, logged.logs, { recact: { 1: { caller: 'Gloria Benton, existing client', at: new Date().toISOString() } } }) }));
   let cardsNow = await perf(), act = actOf(cardsNow);
   if (!/Not graded yet/.test(act.row) || /\d+%/.test(act.row)) fail(`a Reception Listening Activity not submitted yet isn't "not graded" on My Performance: ${act.row || act.h}`);
-  if (!/10%/.test(act.h)) fail(`an activity not graded yet counted in 🎧 Call Listening's score: ${act.h}`);
+  if (!/10%|0\.5\/5/.test(act.h)) fail(`an activity not graded yet counted in 🎧 Call Listening's score: ${act.h}`);
   await put('trackerreview:' + id, { days: {}, assess: { recact: { at: new Date().toISOString(), when: 'Nov 5, 9:30 AM ET', title: 'Reception Listening Activity: Harbor & Pine Calls', score: 32, max: 40, pct: 80, pending: false, ai: true, items: { c1_caller: { ok: true, pts: 1 } } } } });
   cardsNow = await perf(); act = actOf(cardsNow);
-  if (!/80%/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance with its score: ${act.row || act.h}`);
+  if (!/80%|4\.0\/5/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance with its score: ${act.row || act.h}`);
   // (🎧 Call Listening's score: the average of the Reception calls' 10% and the activity's 80%)
-  if (!/45%/.test(act.h)) fail(`🎧 Call Listening's score isn't the average of its sets and the graded activity: ${act.h}`);
+  if (!/45%|2\.3\/5/.test(act.h))   // (⭐ in points: 45% = 2.3/5, js/ft-points.js)
+  fail(`🎧 Call Listening's score isn't the average of its sets and the graded activity: ${act.h}`);
   const twice = cardsNow.filter(c => !/Call Listening/.test(c.h) && c.rows.some(r => /Reception Listening/.test(r))).map(c => c.h);
   if (twice.length) fail(`the Reception Listening Activity also counts under ${twice.join(', ')}`);
   await put('trackerreview:' + id, null); await put('listening:' + id, logged);

@@ -258,7 +258,7 @@ async function workerChecks() {
   if (!s || s.met !== 13 || s.total !== pure.total || s.pct !== want || !s.at || !s.snap || !s.snap.entries['1']) fail(`the submission wasn't stamped and scored: ${JSON.stringify(s && { met: s.met, total: s.total, pct: s.pct, at: s.at })}, the key's total ${pure.total}`);
   if (!/Last sent/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the page doesn\'t show when it was sent');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!new RegExp(`Calendar checks[\\s\\S]*Attorney Calendar Management Activity[\\s\\S]*${want}%`).test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the calendar activity');
+  if (!new RegExp(`Calendar checks[\\s\\S]*Attorney Calendar Management Activity[\\s\\S]*(${want}%|${(Math.round(want / 2) / 10).toFixed(1).replace('.', '\\.')}\\/5)`).test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the calendar activity');
 
   // two more trainees for the trainer's tab: one storing HTML and a forged score, one with a broken record
   const forged = { id: 'xss-test--' + BATCH.toLowerCase(), name: 'Xss <i>Test</i>', batch: BATCH, approved: true }, broken = { id: 'broken-rec--' + BATCH.toLowerCase(), name: 'Broken Record', batch: BATCH, approved: true };
