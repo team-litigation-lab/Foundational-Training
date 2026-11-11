@@ -520,6 +520,18 @@ function groupOf(it){
   if(it.assess || it.at === "drive") return "📝 Assessments & activities";
   return "📝 Assessments & activities";
 }
+// 📅 this week's figures on a trainee's page: the Scorecard is every score accumulated on the week's days so far (each day's
+// scored work: mock calls, demos, Knowledge Checks, answer sheets, assessments), not one grading system; Daily compliance the
+// days checked; Overall the two averaged
+function weekNow(p){
+  const W0 = ((B.data.rec[p.id] || {}).wk) || null; if(!W0 || !W0.range) return W0;
+  let today = ""; try{ today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10); }catch(err){}
+  const days = dayList().filter(d => { const t = dayDate(d.day); return t && t >= W0.range[0] && t <= W0.range[1] && (!today || t <= today); });
+  const pcts = days.flatMap(d => { try{ return dayDeliverables(p, d).map(x => x.pct).filter(v => typeof v === "number" && isFinite(v)); }catch(err){ return []; } });
+  const score = pcts.length ? Math.round(pcts.reduce((a, v) => a + v, 0) / pcts.length) : null;
+  const both = [score, W0.comp].filter(v => typeof v === "number");
+  return Object.assign({}, W0, {score, scored: pcts.length, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null});
+}
 function dayDeliverables(p, d){
   const R = B.data.rec[p.id] || {}; R.src = R.src || {};
   const out = [], acts = (((R.src["labreview:"] || {}).acts) || {}), list = dayStatus(p, d), L = lastDayOf();
@@ -1085,10 +1097,10 @@ function perTraineeHtml(T){
     const toneOf = c => String(c.cls || "").split(/\s+/).filter(z => /^gs-(hi|mid|lo)$/.test(z)).join(" ");
     const cellOf = h => { const k = col(h); return sr && k >= 0 ? sr[k] || {} : {}; };
     // (📅 this week's figures, starting again each week; the whole training's stay in the tables below)
-    const W = ((B.data.rec[p.id] || {}).wk) || null, wtone = v => v == null ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
+    const W = weekNow(p), wtone = v => v == null ? "" : v >= 85 ? "gs-hi" : v >= 70 ? "gs-mid" : "gs-lo";
     const md_ = d => `${+d.slice(5, 7)}/${+d.slice(8)}`;
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
-        [`Scorecard · Week ${W.n}`, W.score, `This week's grades only (${md_(W.range[0])}–${md_(W.range[1])}): it starts again each week`],
+        [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked`]]
         .map(([l, v, f]) => [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
