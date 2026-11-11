@@ -115,7 +115,7 @@ const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
   if (!adminFb.includes(want)) fail(`the trainer can't see the answer either: ${adminFb}`);
   await page.evaluate(() => { state.isAdmin = false; });
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!/Naming & Reporting Drills[\s\S]*MedLOR[\s\S]*90%/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the best MedLOR round');
+  if (!/Naming & Reporting Drills[\s\S]*MedLOR[\s\S]*(90%|4\.5\/5)/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the best MedLOR round');
 
   await put('drills:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);

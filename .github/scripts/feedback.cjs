@@ -120,7 +120,7 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   // 🏅 My Performance
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   const sc = await page.evaluate(() => document.querySelector('main').innerText);
-  if (!/Trainer feedback/.test(sc) || !/Interview Recording 1/.test(sc) || !/88%/.test(sc)) fail('🏅 My Performance has no 📝 Trainer feedback score');
+  if (!/Trainer feedback/.test(sc) || !/Interview Recording 1/.test(sc) || !/88%|4\.4\/5/.test(sc)) fail('🏅 My Performance has no 📝 Trainer feedback score');
   // (📘 a Process Guide's review is feedback only: off the 🏅 Scorecard, while a transcription's score counts)
   { const it = await page.evaluate(() => window.ftTrainerFeedbackItems({ rec: { 'trainerfb:': { items: { a: { act: 'guide', title: 'Saving the LORs', score: 90 }, b: { act: 'transcribe', title: 'Recording 1', score: 80 } } } } }).map(x => x.name).join('|'));
     if (/Saving the LORs/.test(it) || !/Recording 1/.test(it)) fail(`a Process Guide's review counts on the Scorecard (or a transcription's doesn't): ${it}`); }
