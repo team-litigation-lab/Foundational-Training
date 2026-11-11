@@ -19,6 +19,8 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!TR.monitorDueOn(st, '2026-11-05') || TR.monitorDueOn(st, '2026-11-05').items.join() !== '10,11') fail('Day 4 doesn\'t ask for items #10–11');
     // (and after each topic is covered: Reception on Day 5, Calendar Management on Day 6, Intake on Day 9)
     if (!TR.monitorDueOn(st, '2026-11-06') || TR.monitorDueOn(st, '2026-11-06').topic !== TR.MONITOR_TOPICS[4] || !TR.monitorDueOn(st, '2026-11-09') || !TR.monitorDueOn(st, '2026-11-12')) fail('a day a topic is covered (Days 5, 6, 9) asks for no update');
+    // (Days 7 and 10, mid-topic: the Breakout handouts no longer ask for an update)
+    if (TR.monitorDueOn(st, '2026-11-10') || TR.monitorDueOn(st, '2026-11-13') || /Breakout/.test(JSON.stringify(TR.MONITOR_SCHEDULE))) fail('a Breakout day (Day 7 or 10) still asks for a Monitoring Sheet update before its topic is done');
     if (!TR.MONITOR_SCHEDULE[18] || !TR.MONITOR_SCHEDULE[18].optional) fail('the optional Lien Negotiator topic isn\'t optional');
     if (TR.monitorDueOn(st, '2026-11-16') || TR.monitorDueOn(st, '2026-11-18') || TR.monitorDueOn('', '2026-11-04') || TR.monitorDueOn(st, '2026-10-30')) fail('a day the slides ask for no update (or before the batch, or with no start) is due');
     if (Object.values(TR.MONITOR_SCHEDULE).some((x) => !x.topic || !x.what || !x.where || x.on > Number(Object.keys(TR.MONITOR_SCHEDULE).find((k) => TR.MONITOR_SCHEDULE[k] === x)))) fail('a schedule entry lacks its topic, instruction or source, or is due before its topic is covered'); }

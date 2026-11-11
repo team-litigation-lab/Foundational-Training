@@ -630,9 +630,9 @@ function handoutsSlide(h){
     <div class="ftdd-ho-head"><h2>Digital Handouts</h2></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
-        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Update your Training Progress Monitoring Sheet.</li><li>Answer the 📝 Breakout Worksheet (5 questions).</li>"
+        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Answer the 📝 Breakout Worksheet (5 questions).</li>"
         : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
-        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li><li>Answer the 📝 Breakout Worksheet on your own (5 questions).</li>`}</ol>
+        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Answer the 📝 Breakout Worksheet on your own (5 questions).</li>`}</ol>
         </div>
       <div class="ftdd-ho-list">${cards}${worksheetBtn(DD.day)}</div>
     </div></div>`;
