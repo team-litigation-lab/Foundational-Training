@@ -256,7 +256,7 @@ function renderModules(){
     </div>
     <div class="dash-main">
       ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""), `<div class="dash-side"><div class="dash-side-inner">
-        <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
+        <div class="card stat"><div class="num" data-ft-pts="progress">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${done} / ${all.length}</div><div class="lbl">Lessons finished</div></div>
         ${typeof renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : ""}
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
