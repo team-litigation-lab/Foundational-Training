@@ -19,13 +19,13 @@ const failures = []; const fail = (m) => failures.push(m);
     const put = (k, v) => store.set('ft:' + k, JSON.stringify(v));
     const get = (k) => JSON.parse(store.get('ft:' + k) || 'null') || {};
     const doc = (s) => 'https://docs.google.com/document/d/' + (s + 'x'.repeat(30)).slice(0, 28) + '/edit';
-    // B100526: the batch began Monday 5 October 2026; Friday 16 October is its 10th training day
+    // B100526: the batch began Monday 5 October 2026; Thursday 15 October is its 9th training day (Intake Training done: the Monitoring Sheet is due)
     const ana = 'ana-cruz--b100526', ben = 'ben-diaz--b100526', cara = 'cara-gomez--b300926';
     put('trainee:' + ana, { id: ana, name: 'Ana Cruz', batch: 'B100526', approved: true });
     put('trainee:' + ben, { id: ben, name: 'Ben Diaz', batch: 'B100526', approved: true });
     put('trainee:' + cara, { id: cara, name: 'Cara Gomez', batch: 'B300926', approved: true });
-    // (Ana saved her links on Day 10: her start date is that day, not the batch's)
-    put('drive:' + ana, { monitor: doc('anaMonitor'), startDate: '2026-10-16' });
+    // (Ana saved her links on Day 9: her start date is that day, not the batch's)
+    put('drive:' + ana, { monitor: doc('anaMonitor'), startDate: '2026-10-15' });
     put('drive:' + ben, { monitor: doc('benMonitor'), startDate: '2026-10-05' });
     globalThis.fetch = async (url) => {
         const u = String(url);
@@ -38,7 +38,7 @@ const failures = []; const fail = (m) => failures.push(m);
         return { status: res.status, body: await res.json().catch(() => null) };
     };
     const admin = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
-    const D = '2026-10-16';
+    const D = '2026-10-15';
 
     // 1. Ben's Monitoring Sheet couldn't be read just now: not checked, not 0
     await call('/api/drive/check', { id: ben, date: D, ai: false }, admin);
@@ -47,14 +47,14 @@ const failures = []; const fail = (m) => failures.push(m);
       if (!c.parts || c.parts.monitor !== null) fail(`a Monitoring Sheet that couldn't be read just now scored the day: ${JSON.stringify(c.parts)}`);
       if (!(c.unreadable || []).includes('monitor')) fail(`the day doesn't say the Monitoring Sheet wasn't read: ${JSON.stringify(c.unreadable)}`); }
 
-    // 2. Ana's Day 10: ten topics due (from the batch's start), not one (from the day she saved her links)
+    // 2. Ana's Day 9: the ninth topic due (from the batch's start), not the first (from the day she saved her links)
     await call('/api/drive/check', { id: ana, date: D, ai: false }, admin);
     { const cur = get('trackerreview:' + ana), c = (cur.compliance || {})[D] || {}, mon = cur.monitor || {};
-      // (the day's work only: the entry for Day 10's discussion, the tenth topic from the batch's start)
-      const want = Math.round(((mon.entries || []).find((x) => x.topic === TR.MONITOR_TOPICS[9]) || {}).pct || 0);
+      // (the day's work only: the entry for Day 9's discussion, the ninth topic from the batch's start — Intake Training, now covered)
+      const want = Math.round(((mon.entries || []).find((x) => x.topic === TR.MONITOR_TOPICS[8]) || {}).pct || 0);
       const one = ((mon.entries || []).find((x) => x.topic === TR.MONITOR_TOPICS[0]) || {}).pct || 0;
       if (!one) fail(`Ana's Day 1 entry wasn't read: ${JSON.stringify(mon)}`);
-      if (!c.parts || c.parts.monitor !== want) fail(`Ana's Day 10 Monitoring Sheet part is ${c.parts && c.parts.monitor} (want ${want}, Day 10's entry; ${one} is Day 1's)`); }
+      if (!c.parts || c.parts.monitor !== want) fail(`Ana's Day 9 Monitoring Sheet part is ${c.parts && c.parts.monitor} (want ${want}, Day 9's entry; ${one} is Day 1's)`); }
 
     // 3. Cara's batch, B300926: the backfill and the backtrack start on 30 September 2026
     const bf = (await call('/api/compliance/backfill', { ids: [cara] }, admin)).body || {};

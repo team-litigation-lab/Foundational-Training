@@ -547,21 +547,19 @@
        • Day 5's opening card (js/ft-buffer.js ACTS["5:s1"]) is Day 4's items #10–11 again, under Day 4's key (a make-up of
          Day 4's update, done once), so it isn't a new due day;
        • Day 8's item #14 (build/days/day08.js s2, the Demo Tutorial) is off the deck (build/day-decks.cjs SKIP[8]). */
+  // (the Breakout Sessions' handouts no longer ask for an update — the trainer: "score only every after the particular training
+  // is done unless explicitly instructed on the deck" — so Days 7 and 10, mid-topic, ask for none)
   const MONITOR_SCHEDULE = {
-    1: {topic: MONITOR_TOPICS[0], on: 1, items: [1, 2, 3, 4], what: "items #1–4 (and the Breakout Session's handouts)",
+    1: {topic: MONITOR_TOPICS[0], on: 1, items: [1, 2, 3, 4], what: "items #1–4",
       where: "build/days/day01.js “monitoring” (upload the sheet, then update items #1-4; taught on the orientation's 📒 Monitoring Sheet slide, js/ft-rules.js) · js/ft-day-decks.js HANDOUTS[1] (“Update your Training Progress Monitoring Sheet”)"},
-    2: {topic: MONITOR_TOPICS[1], on: 2, items: [5, 6, 7, 8, 9], what: "items #5–7 and #8–9 (and the Breakout Session's handouts)",
+    2: {topic: MONITOR_TOPICS[1], on: 2, items: [5, 6, 7, 8, 9], what: "items #5–7 and #8–9",
       where: "js/ft-buffer.js ACTS[\"2:s2l\"] (#5–7, 📤 Submit) and ACTS[\"2:s4\"] (#8–9) · js/ft-day-decks.js LESSON_CARDS[2] (“Update items #5–7 on your Monitoring Sheet”) · build/days/day02.js (Task 3 lines) · HANDOUTS[2]"},
     3: {topic: MONITOR_TOPICS[2], on: 3, items: [12], what: "item #12 (the CRM/CMS training videos)",
       where: "js/ft-day-activities.js OFFLINE[3] (“The CRM/CMS training videos, then update item #12 on your Monitoring Sheet”) · build/days/day03.js homework"},
     4: {topic: MONITOR_TOPICS[3], on: 4, items: [10, 11], what: "items #10–11 (Reception Training with Julio)",
       where: "js/ft-buffer.js ACTS[\"4:s2b\"] (📤 Submit) · js/ft-day-activities.js OFFLINE[4] · js/ft-day-decks.js LESSON_CARDS[3] (Reception mock calls) · build/days/day04.js (Task 2)"},
-    7: {topic: MONITOR_TOPICS[6], on: 7, items: [], what: "the Breakout Session's handouts",
-      where: "js/ft-day-decks.js HANDOUTS[7] (“Update your Training Progress Monitoring Sheet”)"},
     8: {topic: MONITOR_TOPICS[7], on: 8, items: [15, 16], what: "items #15–16 (the Intake Process videos and Intake Documents)",
       where: "build/days/day08.js s1 (“Update item #15”) and s1b (“Update #16 (Intake Documents)”) · js/ft-day-decks.js LESSON_CARDS[6] (“Intake Video … update your Monitoring Sheet”)"},
-    10: {topic: MONITOR_TOPICS[9], on: 10, items: [], what: "the Breakout Session's handouts",
-      where: "js/ft-day-decks.js HANDOUTS[10] (“Update your Training Progress Monitoring Sheet”)"},
     // 📚 and after each topic has been covered (the trainer: "and also every after the topic have been covered"): the topic's
     // last training day (one discussion a day, MONITOR_TOPICS), its entry due that day
     5: {topic: MONITOR_TOPICS[4], on: 5, items: [], after: true, what: "Reception Training, now covered (Days 3–5)", where: "the trainer's rule: an update after each topic is covered"},
