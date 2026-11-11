@@ -925,7 +925,7 @@ function autoRecheck(flagged){
   (async () => {
     try{ await authFetch("/api/drive/autolink", {batch}); }catch(err){}
     for(const p of flagged){ if(B.batch !== batch) break; try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} }
-    B.autoChk = false; if(B.batch === batch && !B.sync){ B.data = null; B.dataKey = ""; render(); }
+    B.autoChk = false; if(B.batch === batch && !B.sync) loadData(true);   // (quietly: the sheet stays on screen)
   })();
 }
 function shareBanner(){
@@ -1857,7 +1857,10 @@ window.FTBatchSheet = {
     const doLinks = /^(all|links)$/.test(scope), doBack = /^(all|scores|outputs)$/.test(scope), doRank = /^(all|ranking|scores|outputs|links)$/.test(scope);
     B.sync = {scope, n: 0, of: 0, what: "Starting"}; render();
     const msgs = []; let bad = 0;
-    const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; rerender(); };
+    // (a progress tick rewrites only the running buttons' labels — the same text render() gives them — not the whole sheet:
+    // a full render for every trainee was 65 renders, 7 s of the main thread for 30, and threw the trainer's clicks away)
+    const tick = () => { try{ const S = B.sync; if(S) document.querySelectorAll(".bs-upd[disabled]").forEach(b => { if(/^⏳/.test(b.textContent)) b.textContent = `⏳ ${S.what}${S.of ? ` ${S.n}/${S.of}` : ""}…`; }); }catch(err){} };
+    const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; tick(); };
     if(doLinks){
       step("Finding the batch’s files in Drive");
       try{ const r = await authFetch("/api/drive/autolink", {batch}), j = await r.json().catch(() => null);
@@ -1867,7 +1870,7 @@ window.FTBatchSheet = {
         else msgs.push("🔗 Couldn’t search Drive" + (j && (j.detail || j.error) ? ": " + String(j.detail || j.error).slice(0, 120) : ""));
       }catch(err){ msgs.push("🔗 Couldn’t search Drive"); }
       step("Checking every trainee’s links", all.length);
-      for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; rerender(); }
+      for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; tick(); }
       msgs.push(`✓ Checked ${all.length} trainee${all.length === 1 ? "" : "s"}’ links`);
     }
     if(doBack && !isWeekdayIso(ptToday())) msgs.push("No daily check on a weekend: training days are weekdays");
@@ -1877,15 +1880,16 @@ window.FTBatchSheet = {
         try{ await authFetch("/api/drive/shots", {id: p.id}); }catch(err){}
         try{ const r = await authFetch("/api/drive/check", {id: p.id, ai: false}), j = await r.json().catch(() => null);
           if(!r.ok && !(j && j.code === "no-links")) bad++; }catch(err){ bad++; }
-        B.sync.n++; rerender(); }
+        B.sync.n++; tick(); }
       msgs.push(`✅ Today’s check run for ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"}`);
     }
     try{ localStorage.setItem("ft_bs_sync:" + batch, String(Date.now())); }catch(err){}
-    B.sync = null; if(B.batch === batch){ B.data = null; B.dataKey = ""; } render();
-    // 📊 then the Weekly Ranking, once the sheet has read the new scores and links back: its platform-filled cells follow them
-    // (js/ft-ranking.js fillFromPortal — a NO SUBMISSION from before the files were linked becomes the trainee's compliance)
+    // (the sheet kept on screen and read again quietly — not blanked to "Reading the batch's progress…" until the read is done)
+    // (no B.dataKey="": a read already running would then end as superseded and the queued one never run; a quiet read re-reads anyway)
+    B.sync = null; render(); if(B.batch === batch) await loadData(true);
+    // 📊 then the Weekly Ranking, once the sheet has read the new scores and links back (awaited above): its platform-filled
+    // cells follow them (js/ft-ranking.js fillFromPortal — a NO SUBMISSION from before the files were linked becomes the trainee's compliance)
     if(doRank && window.FTRanking && typeof FTRanking.reload === "function"){
-      for(let i = 0; i < 40 && B.batch === batch && !(B.data && B.data.rec); i++) await new Promise(ok => setTimeout(ok, 250));
       try{ FTRanking.reload(); }catch(err){} if(scope === "ranking") msgs.push("📊 Weekly Ranking read again");
       // 📑 and the week's summary for management (its ✅ Compliance, ⏱ Timely Submission… from each day's checks): drafted again
       // from the new scores — a trainer's ✎ edits stay (js/ft-ranking-summary.js draft)
