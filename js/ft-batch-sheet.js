@@ -520,6 +520,23 @@ function groupOf(it){
   if(it.assess || it.at === "drive") return "📝 Assessments & activities";
   return "📝 Assessments & activities";
 }
+// 🎯 a trainee's insights, in a few lines over their page: their lowest scores so far (under 3 of 5 — 60% — the pass mark)
+// with what to improve on each, from the grading's own notes; or, when every score is in good standing, a word of
+// congratulations. Read from the days' scored work up to today.
+function insightsHtml(p){
+  let today = ""; try{ today = window.FTTrackerRules ? FTTrackerRules.ptDate() : ""; }catch(err){}
+  const items = [];
+  dayList().forEach(d => { const t = dayDate(d.day); if(!t || (today && t > today)) return;
+    try{ dayDeliverables(p, d).forEach(x => { if(typeof x.pct === "number" && isFinite(x.pct)) items.push(Object.assign({day: d.day}, x)); }); }catch(err){} });
+  if(!items.length) return "";
+  const pt = v => (Math.round(v / 2) / 10).toFixed(1), name = x => stripTags(String(x.name || "")).replace(/^[^\w(]+/, "").trim();
+  const note = x => { const l = (x.improve || [])[0] || ""; return clip(stripTags(String(l || x.why || "")), 180); };
+  const low = items.filter(x => x.pct < 60).sort((a, b) => a.pct - b.pct), mid = items.filter(x => x.pct >= 60 && x.pct < 80).sort((a, b) => a.pct - b.pct);
+  const li = x => `<li><b>${e(name(x))}</b> <span class="bs-in-s">Day ${e(x.day)} · ${pt(x.pct)}/5</span>${note(x) ? ` — ${e(note(x))}` : ""}</li>`;
+  if(low.length) return `<div class="bs-in bs-in-lo"><b>🎯 Focus on</b> (below the pass mark of 3/5):<ul>${low.slice(0, 4).map(li).join("")}</ul>${low.length > 4 ? `<small>and ${low.length - 4} more below 3/5 in the tables.</small>` : ""}</div>`;
+  if(mid.length) return `<div class="bs-in bs-in-ok"><b>✓ Passing every score.</b> To move up to 4/5 or more:<ul>${mid.slice(0, 3).map(li).join("")}</ul></div>`;
+  return `<div class="bs-in bs-in-hi"><b>🎉 Great standing:</b> every score so far is 4/5 or more (${items.length} scored). Keep it up!</div>`;
+}
 // 📅 this week's figures on a trainee's page: the Scorecard is every score accumulated on the week's days so far (each day's
 // scored work: mock calls, demos, Knowledge Checks, answer sheets, assessments), not one grading system; Daily compliance the
 // days checked; Overall the two averaged
@@ -1157,6 +1174,7 @@ function perTraineeHtml(T){
       + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
+      ${insightsHtml(p)}
       <div class="bs-pt-wrap"><table class="bs-pt-t"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${body}</tbody></table>
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
           : `<button type="button" class="btn btn-navy btn-sm bs-pt-fbb" onclick="FTBatchSheet.fbOpen('${e(p.id)}')">📝 Send Feedback to ${e(p.name)}</button>`) : ""}</div></div>`;
@@ -2463,6 +2481,8 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt > summary i{font-size:12px;color:#8A5A00;} .bs-pt-k{font-size:16px;color:#3C4043;} .bs-pt-k b{color:#1E2340;}
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
+.bs-in{margin:6px 0 10px;padding:10px 14px;border-radius:10px;font-size:15px;line-height:1.45;color:#1E2340;} .bs-in ul{margin:6px 0 0;padding-left:20px;} .bs-in li{margin:2px 0;} .bs-in-s{color:#475569;font-weight:700;font-size:13px;}
+.bs-in-lo{background:#FDECEC;border:1px solid #F5B5B5;} .bs-in-ok{background:#FFF7E6;border:1px solid #F5D49A;} .bs-in-hi{background:#E8F6EC;border:1px solid #A7DDB6;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
 .bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-ocrit{border-collapse:collapse;margin:6px 0 2px;font-size:13px;width:100%;} .bs-ocrit td{border:1px solid #E6E9F1;padding:3px 6px;vertical-align:top;} .bs-ocrit td:first-child{font-weight:700;white-space:nowrap;} .gs-na{color:#80868B !important;background:#F1F3F4 !important;font-weight:600 !important;} .bs-pt-t col.bs-pt-c1{width:240px;} .bs-pt-t col.bs-pt-c2{width:132px;} .bs-pt-t .bs-pt-edp .bs-ed-pick{width:100%;max-width:100%;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (narrower, as the trainer asked: the date and score fit; a long label wraps between words, never inside one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none;}   /* (nothing truncates: a value wraps between words only — "Approved", "Nov 2, 2026" stay whole) */ .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;word-break:normal !important;overflow-wrap:normal !important;hyphens:none;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
