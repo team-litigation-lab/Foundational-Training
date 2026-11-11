@@ -30,7 +30,7 @@ const clip = (v, n) => { const t = String(v == null ? "" : v).replace(/\s+/g, " 
 const avg = xs => { const v = xs.filter(x => typeof x === "number" && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 const r1 = v => v == null ? null : Math.round(v * 10) / 10;
 const COMP = [
-  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["instructions", "📏", "Following Instructions"], ["timely", "⏱", "Timely Submission (Time Management)"],
+  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["pdp", "🌱", "Professional Development & Progress"], ["timely", "⏱", "Timely Submission (Time Management)"],
   ["communication", "💬", "Communication Proficiency"], ["english", "🔤", "English Proficiency"], ["call", "📞", "Call Handling"], ["tools", "🛠", "Tools Utilization"]];
 const S = {key: "", data: null, loading: false, busy: false, edit: false, err: ""};
 // (a week is scored from its first day on — Pacific time — with the work done so far: an initial score that grows as the days
@@ -38,8 +38,9 @@ const S = {key: "", data: null, loading: false, busy: false, edit: false, err: "
 const ptNow = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
 const begun = r => !!(r && r[0] && ptNow() >= r[0]);
 // (a summary drafted before the scores were the week's own work only — it could carry an earlier week's over — isn't used:
-// the week is summarized again, SUMV 2)
-const SUMV = 2;
+// the week is summarized again, SUMV 2; 3: 📏 Following Instructions folded into the Day's outputs and 🌱 Professional
+// Development & Progress, the trainer's weekly score, in its place)
+const SUMV = 3;
 // 🔄 a summary drafted an hour or more ago, of a week whose scores can still come in: the week itself and the two days after it
 // (the last day's end-of-shift check, a mock call scored the next morning) — so it follows the daily scorecards by itself
 const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
@@ -69,7 +70,7 @@ async function progOf(p, range){
     return {calls: mean(calls), written: mean(written), callsN: calls.length, writtenN: written.length};
   }catch(err){ return out; }
 }
-async function evidence(p, range){
+async function evidence(p, range, week){
   const [lab, proc, kcr, rv, fb, tfb, ses, sk] = await sharedGetMany(["labreview:", "process:", "kcreview:", "trackerreview:", "feedback:", "trainerfb:", "sessions:", "skills:"].map(k => k + p.id));
   const inW = at => !range || (String(at || "").slice(0, 10) >= range[0] && String(at || "").slice(0, 10) <= range[1]);
   const rub = (window.FT_RUBRICS && FT_RUBRICS.list) || {};
@@ -85,6 +86,8 @@ async function evidence(p, range){
   const rvW0 = window.ftW1Override ? ftW1Override.comp(rv, p.batch) : rv;   // W1-OVERRIDE
   const rvW = window.ftDay1 ? ftDay1.comp(rvW0, p.batch) : rvW0;   // 📅 Day 1 isn't counted
   const comp = Object.entries((rvW && rvW.compliance) || {}).filter(([d]) => inW(d)).map(([d, c]) => ({d, pct: c.pct, parts: c.parts || {}, instr: c.instr || null, eod: c.eodCheck || null, tests: c.tests || {}}));
+  // 🌱 the week's Professional Development & Progress, scored by the trainer (index.html ftPdp; null: not scored, not counted)
+  const wkN = Number(week) || (window.ftWeeks && range ? ftWeeks.now(p.batch, range[0]) : 0), pdp = window.ftPdp && wkN ? ftPdp.of(rv, wkN) : null;
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
   const assess = Object.entries((rv && rv.assess) || {}).filter(([doc, x]) => x && x.score != null && inW(x.at) && !(window.ftPracticeDocs || ["claims-email"]).includes(doc)).map(([, x]) => x);   // (practice only: off the scorecards)
   const days = Object.entries((fb && fb.days) || {}).filter(([l, x]) => x && x.status === "sent" && inW(x.sentAt)).map(([l, x]) => ({l, rating: x.rating || "", summary: clip(x.summary, 400), at: x.sentAt}));
@@ -100,9 +103,10 @@ async function evidence(p, range){
   const eodOn = comp.map(c => c.eod).filter(Boolean), timeRules = eodOn.map(x => (x.rules || []).find(r => r.id === "time")).filter(Boolean);
   const base = {
     attention: r1(avg([critAvg(/attention|detail|authenticat|comprehension|accura/i), pct5(avg(kcs.map(k => k.pct))), pct5(avg(assess.map(a => a.pct))), pct5(avg(comp.map(c => c.parts.tracker).filter(v => v != null)))])),
-    compliance: r1(pct5(avg(comp.map(c => c.pct)))),
-    // 📏 strictly: each day's naming convention, saving route and folders, deliverables on time and Drive links (worker.js dailyCompliance instr)
-    instructions: r1(pct5(avg(comp.map(c => c.parts.instructions).filter(v => v != null)))),
+    // (✅ the days' compliance and the week's 🌱 PD&P as one more entry beside them, as the 📋 Batch Sheet's week: ftPdp.withWeek)
+    compliance: r1(pct5(avg(comp.map(c => c.pct).concat(pdp ? [pdp.pct] : [])))),
+    // 🌱 the trainer's weekly score: Competency in taking on a role, Communication, Quality of output (each 1–5), averaged
+    pdp: pdp ? r1(pdp.avg5) : null,
     timely: r1(avg([timeRules.length ? 5 * timeRules.filter(r => r.pass).length / timeRules.length : null, items.length ? 5 * items.filter(x => x.onTime).length / items.length : null, pct5(avg(comp.map(c => c.parts.outputs).filter(v => v != null)))])),
     // 💬 communication: the mock calls' and demos' communication criteria and their overall scores, the practice calls in the
     // simulators (🎯 graded calls, 🧰 the Portal's call simulators), the written output graded on the platform (the assessments and
@@ -114,16 +118,16 @@ async function evidence(p, range){
     // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
     // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
     tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
-  return {p, base, sheets: use, kcs, comp, items: items.length, assess, days, sent, runs, spell, prog, how: howOf(rvW, range, {use, kcs, assess, runs, spell, prog})};
+  return {p, base, sheets: use, kcs, comp, pdp, week: wkN, items: items.length, assess, days, sent, runs, spell, prog, how: howOf(rvW, range, {use, kcs, assess, runs, spell, prog, pdp})};
 }
 /* 🔎 HOW THE SCORES WERE WORKED OUT, for the trainee's own card (📤 Share): what each competency is made of, with the week's
    numbers, and every day of the week as the end-of-shift check saw it — the Daily compliance and its parts, and each issue found
-   in the day's outputs, the Task Tracker, the Monitoring Sheet, the EOD email, the tests and the instructions. Built from the
+   in the day's outputs (with the instructions followed), the Task Tracker, the Monitoring Sheet, the EOD email and the tests. Built from the
    records the scores come from (trackerreview:<id>), so it says exactly what was counted. */
-const PART = {tracker: "📋 Task Tracker", monitor: "📒 Monitoring Sheet", tests: "🧪 Typing & Spelling Tests", outputs: "📤 Day's outputs", instructions: "📏 Following instructions", eod: "✉️ EOD email", platform: "🛠 Work on the platform"};
+const PART = {tracker: "📋 Task Tracker", monitor: "📒 Monitoring Sheet", tests: "🧪 Typing & Spelling Tests", outputs: "📤 Day's outputs", eod: "✉️ EOD email", platform: "🛠 Work on the platform"};
 const MADE = {attention: "the accuracy criteria of your mock calls and demos (Attention to Detail, Authentication, Comprehension…), your Knowledge Checks and assessments, and your Task Tracker's daily score",
-  compliance: "the average of each day's Daily compliance (the end-of-shift check: Task Tracker, Monitoring Sheet, tests, outputs, instructions, EOD)",
-  instructions: "each day's naming convention, saving route and folders, deliverables on time and Drive links",
+  compliance: "the average of each day's Daily compliance (the end-of-shift check: Task Tracker, Monitoring Sheet, tests, the day's outputs with the instructions followed — naming, saving route and folders, deliverables on time, Drive links — and the EOD) and the week's Professional Development & Progress once your trainer scores it",
+  pdp: "your trainer's weekly score: Competency in taking on a role, Communication and Quality of output, each out of 5, averaged",
   timely: "your EOD sent before the end of the shift, your Monitoring Sheet entries on time and each day's outputs handed in",
   communication: "the communication criteria of your mock calls and demos, their overall scores, your practice calls in the simulators, your graded written output and your EOD emails",
   english: "the grammar, spelling, writing and speech criteria of your mock calls, your spelling tests and your Knowledge Checks",
@@ -154,16 +158,16 @@ function howOf(rv, range, x){
     if(P.outputs === 0) add("outputs", "Nothing was handed in or saved to your folder this day.");
     if(c.folderError) add("outputs", "Your Assessments/Activities folder couldn't be read: " + c.folderError);
     (c.graded || []).forEach(g => add("outputs", `${g.what}: ${pc(g.pct)}`));
-    // 📏 the instructions
-    (((c.instr || {}).issues) || []).forEach(i => add("instructions", i.why));
+    // 📏 the instructions, half of the Day's outputs (on a day something was handed in)
+    if(P.outputs != null) (((c.instr || {}).issues) || []).forEach(i => add("outputs", "Instructions: " + i.why));
     (c.unreadable || []).forEach(k => add(k, "The sheet couldn't be opened: share it with the platform so it can be checked."));
     return {d: D, pct: c.pct == null ? null : Math.round(c.pct), final: !!c.final, parts: Object.fromEntries(Object.keys(PART).filter(k => P[k] != null).map(k => [k, Math.round(P[k])])), issues: iss};
   });
   const avgP = xs => { const v = xs.filter(n => typeof n === "number"); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
   const nums = {
     attention: [x.kcs.length ? `Knowledge Checks ${pc(avgP(x.kcs.map(k => k.pct)))}` : "", x.assess.length ? `assessments ${pc(avgP(x.assess.map(a => a.pct)))}` : "", days.some(d => d.parts.tracker != null) ? `Task Tracker ${pc(avgP(days.map(d => d.parts.tracker)))}` : "", x.use.length ? `${x.use.length} scoresheet(s)` : ""],
-    compliance: [days.length ? `${days.length} day(s) checked, average ${pc(avgP(days.map(d => d.pct)))}` : ""],
-    instructions: [days.some(d => d.parts.instructions != null) ? `average ${pc(avgP(days.map(d => d.parts.instructions)))}` : ""],
+    compliance: [days.length ? `${days.length} day(s) checked, average ${pc(avgP(days.map(d => d.pct)))}` : "", x.pdp ? `Professional Development & Progress ${x.pdp.pct}%` : ""],
+    pdp: [x.pdp ? `role ${x.pdp.role}/5, communication ${x.pdp.comm}/5, quality of output ${x.pdp.quality}/5 → ${x.pdp.avg5.toFixed(1)}/5` : "not scored yet by your trainer (not counted)"],
     timely: [days.some(d => d.parts.outputs != null) ? `day's outputs ${pc(avgP(days.map(d => d.parts.outputs)))}` : "", days.some(d => d.parts.eod != null) ? `EOD ${pc(avgP(days.map(d => d.parts.eod)))}` : ""],
     communication: [x.use.length ? `${x.use.length} scoresheet(s)` : "", x.prog && x.prog.callsN ? `${x.prog.callsN} practice call(s) ${pc(x.prog.calls)}` : "", x.prog && x.prog.writtenN ? `${x.prog.writtenN} written output(s) ${pc(x.prog.written)}` : ""],
     english: [x.spell.length ? `spelling tests ${pc(avgP(x.spell))}` : "", x.kcs.length ? `Knowledge Checks ${pc(avgP(x.kcs.map(k => k.pct)))}` : ""],
@@ -190,7 +194,8 @@ function brief(ev){
   ev.sheets.forEach(x => L.push(`[${x.mock ? "Mock call" : "Demo"}] ${x.title}: ${x.avg5 != null ? x.avg5.toFixed(2) + "/5" : ""} ${x.status}${x.crit.length ? " · " + x.crit.map(c => `${c.n} ${c.s}/5${c.f ? " (" + clip(c.f, 120) + ")" : ""}`).join("; ") : ""}${x.comment ? " · Trainer: " + x.comment : ""}`));
   ev.kcs.forEach(k => L.push(`[Knowledge Check] lesson ${k.l}: ${k.pct}% · ${k.summary}${k.weak.length ? " · weaker answers: " + k.weak.join(" | ") : ""}`));
   ev.assess.forEach(a => L.push(`[Assessment] ${a.title}: ${a.score}/${a.max} (${a.pct}%)`));
-  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, following instructions ${c.parts.instructions ?? "–"}${c.instr && (c.instr.issues || []).length ? " [not followed: " + c.instr.issues.map(x => x.k + ": " + clip(x.why, 60)).join("; ") + "]" : ""}, TAM (shadowing) ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs ${c.parts.outputs ?? "–"}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
+  if(ev.comp.length) L.push(`[Daily compliance] ${ev.comp.map(c => `${c.d} ${c.pct}% (tracker ${c.parts.tracker ?? "–"}, monitor ${c.parts.monitor ?? "–"}, TAM (shadowing) ${c.parts.tam ?? "–"}, platform ${c.parts.platform ?? "–"}, tests ${c.parts.tests ?? "–"}, outputs (with the instructions followed) ${c.parts.outputs ?? "–"}${c.instr && (c.instr.issues || []).length ? " [instructions not followed: " + c.instr.issues.map(x => x.k + ": " + clip(x.why, 60)).join("; ") + "]" : ""}, EOD ${c.parts.eod ?? "–"}${c.eod ? "; EOD misses: " + (c.eod.rules || []).filter(r => !r.pass).map(r => r.label).join(", ") : ""})`).join(" | ")}`);
+  if(ev.pdp) L.push(`[Professional Development & Progress, scored by the trainer] Competency in taking on a role ${ev.pdp.role}/5, Communication ${ev.pdp.comm}/5, Quality of output ${ev.pdp.quality}/5 → ${ev.pdp.avg5.toFixed(1)}/5${ev.pdp.note ? " · Trainer: " + clip(ev.pdp.note, 300) : ""}`);
   if(ev.runs.length) L.push(`[Practice Sessions] ${ev.runs.map(v => v + "%").join(", ")}`);
   if(ev.prog && ev.prog.callsN) L.push(`[Practice calls in the simulators] ${ev.prog.callsN} graded, average ${Math.round(ev.prog.calls)}%`);
   if(ev.prog && ev.prog.writtenN) L.push(`[Written output graded on the platform] ${ev.prog.writtenN} graded, average ${Math.round(ev.prog.written)}%`);
@@ -211,8 +216,7 @@ function plainComment(k, ev, s){
     if(P.writtenN) bits.push(`${P.writtenN} graded written output${P.writtenN === 1 ? "" : "s"} (${Math.round(P.written)}%)`);
     return `${sc} ${bits.length ? "From " + bits.join(", ") + "." : ""}`.trim(); }
   if(k === "tools"){ const pl = ev.comp.filter(c => c.parts.platform != null); return `${sc} ${pl.length ? `Worked on the platform's tools on ${pl.filter(c => c.parts.platform >= 100).length} of ${pl.length} days checked.` : ""} ${demos.length ? `Demos: ${demos.map(x => `${x.title} ${x.avg5 != null ? x.avg5.toFixed(2) : "–"}/5`).join(", ")}.` : ""}`.trim(); }
-  if(k === "instructions"){ const bad = ev.comp.filter(c => c.instr && (c.instr.issues || []).length);
-    return `${sc} ${bad.length ? `Not followed on ${bad.map(c => c.d.slice(5).replace("-", "/")).join(", ")}: ${[...new Set(bad.flatMap(c => c.instr.issues.map(x => x.why)))].slice(0, 3).join("; ")}.` : ev.comp.some(c => c.instr) ? "Naming, saving route and deliverables all as instructed." : ""}`.trim(); }
+  if(k === "pdp"){ const x = ev.pdp; return x ? `${x.avg5.toFixed(1)}/5, scored by the trainer: Competency in taking on a role ${x.role}/5, Communication ${x.comm}/5, Quality of output ${x.quality}/5.${x.note ? " " + clip(x.note, 400) : ""}` : "Not scored yet — the trainer scores this weekly."; }
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
   return sc;
 }
@@ -221,7 +225,7 @@ async function summarize(ev, voice, noAi){
   COMP.forEach(([k]) => { out.comments[k] = plainComment(k, ev, base[k]); });
   out.trainer = ev.days.concat(ev.sent).map(x => x.summary || x.comment).filter(has).slice(0, 2).join(" ") || "No feedback from the trainer this week.";
   if(noAi || typeof callAIJson !== "function") return out;
-  const prompt = `You write the weekly progress report on a trainee Legal Virtual Assistant (${String(ev.p.name).split(/\s+/)[0]}) for Legal Support Help's management, in the facilitator's voice. From the week's evidence below, write a short summarized comment (2–3 sentences: what they did well, then what needs to improve, specific to the evidence) for each competency, and summarize the trainer's feedback. Call Handling must draw on the mock calls AND the trainer's comments on the demos; Tools Utilization must draw on the demos and their comments. Each competency has a base score out of 5 worked out from the evidence: keep it unless the evidence clearly shows otherwise (then adjust by at most 0.5); a competency with no base and no evidence gets null.
+  const prompt = `You write the weekly progress report on a trainee Legal Virtual Assistant (${String(ev.p.name).split(/\s+/)[0]}) for Legal Support Help's management, in the facilitator's voice. From the week's evidence below, write a short summarized comment (2–3 sentences: what they did well, then what needs to improve, specific to the evidence) for each competency, and summarize the trainer's feedback. Call Handling must draw on the mock calls AND the trainer's comments on the demos; Professional Development & Progress is the trainer's own weekly score (keep it exactly, null when not scored) — comment on it from the trainer's criteria and note; Tools Utilization must draw on the demos and their comments. Each competency has a base score out of 5 worked out from the evidence: keep it unless the evidence clearly shows otherwise (then adjust by at most 0.5); a competency with no base and no evidence gets null.
 
 Competencies (key: name — base score):
 ${COMP.map(([k, , n]) => `${k}: ${n} — ${base[k] == null ? "none" : base[k]}`).join("\n")}
@@ -235,7 +239,8 @@ Return ONLY JSON: {"scores":{${COMP.map(([k]) => `"${k}":<0-5 one decimal or nul
     const j = await callAIJson(prompt, 1800, undefined, "grading");
     if(j && j.comments){
       COMP.forEach(([k]) => { const c = j.comments[k]; if(has(c)) out.comments[k] = clip(c, 600);
-        const v = j.scores && j.scores[k]; if(v != null && isFinite(Number(v))){ const n = Math.max(0, Math.min(5, Number(v))); out.scores[k] = base[k] == null ? r1(n) : r1(Math.max(base[k] - 0.5, Math.min(base[k] + 0.5, n))); } });
+        // (🌱 the trainer's own score stands as given: the AI never moves it, nor gives an unscored week one)
+        const v = k === "pdp" ? null : j.scores && j.scores[k]; if(v != null && isFinite(Number(v))){ const n = Math.max(0, Math.min(5, Number(v))); out.scores[k] = base[k] == null ? r1(n) : r1(Math.max(base[k] - 0.5, Math.min(base[k] + 0.5, n))); } });
       if(has(j.trainer)) out.trainer = clip(j.trainer, 700); if(has(j.overall)) out.overallComment = clip(j.overall, 900); out.ai = true;
     }
   }catch(err){}
@@ -260,7 +265,7 @@ async function draft(opts){
   const rows = {}; let ai = 0;
   // (⚡ four trainees at a time, its progress shown — "3 of 12 trainees" — so a batch's summary takes a minute, not one by one)
   S.prog = {n: 0, of: ppl.length, wk: c.week}; redraw();
-  const one = async p => { try{ const ev = await Promise.race([evidence(p, c.range), new Promise((ok, no) => setTimeout(() => no(new Error("slow")), 60000))]); // (⏱ an AI answer that never comes doesn't hold the week's report: after 45 seconds the trainee's row is the platform's own
+  const one = async p => { try{ const ev = await Promise.race([evidence(p, c.range, c.week), new Promise((ok, no) => setTimeout(() => no(new Error("slow")), 60000))]); // (⏱ an AI answer that never comes doesn't hold the week's report: after 45 seconds the trainee's row is the platform's own
     //  scores and plain comments)
     const sm = await Promise.race([summarize(ev, voice), new Promise(ok => setTimeout(() => ok(summarize(ev, voice, true)), 45000))]); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){}
     if(S.prog){ S.prog.n++; if(S.key === key) redraw(); } };

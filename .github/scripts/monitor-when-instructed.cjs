@@ -52,8 +52,9 @@ const failures = []; const fail = (m) => failures.push(m);
   { const P = day('2026-11-05').parts || {}; if (P.monitor !== 0) fail(`an instructed day without its entry isn't 0: ${JSON.stringify(P)}`);
     if (!day('2026-11-05').monDue || !/#10–11/.test(day('2026-11-05').monDue.what)) fail(`the day doesn't say what the slides asked for: ${JSON.stringify(day('2026-11-05').monDue)}`); }
   { const P = day('2026-11-04').parts || {}; if (P.monitor !== 75) fail(`an instructed day's entry isn't scored by its check (75): ${JSON.stringify(P)}`); }
-  // (the day kept from before: its 0 taken out, its % the average of the rest — (100 + 50 + 100) / 3 = 83)
-  { const c = day('2026-11-18'); if (!c.parts || c.parts.monitor !== null || c.pct !== 83) fail(`a stored non-instructed day still counts its Monitoring Sheet: ${JSON.stringify(c)}`); }
+  // (the day kept from before: its 0 taken out, its % the average of the rest — (100 + 50) / 2 = 75: its old 📏 instructions
+  // part folded away too, the day having no Day's outputs to fold it into — worker.js foldInstr)
+  { const c = day('2026-11-18'); if (!c.parts || c.parts.monitor !== null || 'instructions' in c.parts || c.pct !== 75) fail(`a stored non-instructed day still counts its Monitoring Sheet: ${JSON.stringify(c)}`); }
 
   // 🖥 index.html ftDay1.comp, where the browser reads trackerreview: the same, without writing anything back
   { const html = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8'), a = html.indexOf('const batchRealDay = '), b = html.indexOf('// ===== W1-OVERRIDE B103026 one-off');

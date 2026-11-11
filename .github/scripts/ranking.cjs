@@ -61,7 +61,7 @@ const failures = []; const fail = m => failures.push(m);
   const conn = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].map(x => x.innerText.replace(/\s+/g, ' ').trim()));
   // (📅 and each day's deliverable its own column: the TAM, the Typing & Spelling Tests, the EOD — the Monitoring Sheet and the
   // Tracker are Week 1's own, on the day's checks)
-  for (const c of ['Typing & Spelling Tests (5/5)', 'EOD (5/5)', 'Following Instructions (5/5)', 'Daily Compliance (5/5)', 'Drive Links Compliance (5/5)', '🏅 Scorecard overall (5/5) every grading system']) if (!conn.includes(c)) fail(`the report isn't connected to "${c}": ${JSON.stringify(conn)}`);
+  for (const c of ['Typing & Spelling Tests (5/5)', 'EOD (5/5)', 'Professional Development & Progress (5/5) Role · Communication · Quality of output', 'Daily Compliance (5/5)', 'Drive Links Compliance (5/5)', '🏅 Scorecard overall (5/5) every grading system']) if (!conn.includes(c)) fail(`the report isn't connected to "${c}": ${JSON.stringify(conn)}`);
   // (📘 the TAM isn't a daily deliverable: no column for it)
   if (conn.some(c => /^TAM/.test(c))) fail(`the report has a TAM column: ${JSON.stringify(conn)}`);
   // (the sheet's own arithmetic below is on the Week 1 columns alone: the six connected ones taken off again)
@@ -264,6 +264,8 @@ const failures = []; const fail = m => failures.push(m);
   const w2at = (await page.evaluate(b => ftWeeks.range(b, 2), BATCH))[0] + 'T15:00:00Z';
   for (const [f, pct] of [['Rhea', 80], ['Sam', 50]]) { const rv = (await get('trackerreview:' + ids[f])) || { days: {} };
     rv.assess = Object.assign({}, rv.assess, { '14sz5f3HTQKmryc7Upvlc6qua008rPnmw': { title: 'Common Terms Used – Assessment', score: pct * 27 / 100, max: 27, pct, at: w2at, items: {} } });
+    // (🌱 Rhea's Week 2 Professional Development & Progress, scored by the trainer — worker.js /api/pdp/set keeps it so; Sam's not scored)
+    if (f === 'Rhea') rv.pdp = { 2: { role: 4, comm: 3.5, quality: 4.5, note: 'PDP-NOTE', avg: 4, pct: 80 } };
     await put('trackerreview:' + ids[f], rv); }
   await page.evaluate(b => FTRanking.open(b, 2), BATCH); await page.waitForTimeout(4000);
   const w2 = await get(`ranking:${BATCH}:w2`), cRhea = (((w2 || {}).rows || {})[ids.Rhea] || { cells: {} }).cells[ct], cSam = (((w2 || {}).rows || {})[ids.Sam] || { cells: {} }).cells[ct];
@@ -271,11 +273,19 @@ const failures = []; const fail = m => failures.push(m);
   if (!cRhea || Number(cRhea.raw) !== 21.6) fail(`opening the report didn't fill Rhea's Common Terms from her graded assessment (80% of 27 = 21.6): ${JSON.stringify(cRhea)}`);
   if (!cSam || cSam.raw !== '20') fail(`the fill wrote over a score the trainer typed: ${JSON.stringify(cSam)}`);
   // 📅 every day's deliverable is its own column (the Monitoring Sheet, the Tracker, the TAM, the Typing & Spelling Tests, the EOD)
-  if (!['day:monitor', 'day:tracker', 'day:tests', 'day:eod', 'day:instructions'].every(k => (w2.cols || []).some(c => c.src === k)) || (w2.cols || []).some(c => c.src === 'day:tam')) fail(`the day's deliverables aren't all columns: ${JSON.stringify((w2.cols || []).map(c => c.src))}`);
+  // (📏 no Following Instructions column — it is half of each day's outputs — and 🌱 Professional Development & Progress in its place)
+  if (!['day:monitor', 'day:tracker', 'day:tests', 'day:eod', 'pdp'].every(k => (w2.cols || []).some(c => c.src === k)) || (w2.cols || []).some(c => c.src === 'day:tam' || c.src === 'day:instructions')) fail(`the day's deliverables aren't all columns: ${JSON.stringify((w2.cols || []).map(c => c.src))}`);
+  // 🌱 the trainer's weekly score fills its column (the three averaged: 4/5) and counts in the week's Daily Compliance; Sam's,
+  // not scored, stays empty — never a 0
+  { const pc = (w2.cols || []).find(c => c.src === 'pdp') || {}, cc = (w2.cols || []).find(c => c.src === 'compliance') || {}, R = ((w2.rows || {})[ids.Rhea] || { cells: {} }).cells, S = ((w2.rows || {})[ids.Sam] || { cells: {} }).cells;
+    if (!/Professional Development & Progress/.test(pc.label || '') || !R[pc.id] || Number(R[pc.id].raw) !== 4 || !/role 4, communication 3\.5, quality of output 4\.5/.test(R[pc.id].why || '')) fail(`Rhea's 🌱 Professional Development & Progress isn't filled from the trainer's score: ${JSON.stringify({ col: pc, cell: R[pc.id] })}`);
+    if (S[pc.id] && S[pc.id].raw != null && S[pc.id].raw !== '') fail(`Sam's unscored week has a 🌱 score: ${JSON.stringify(S[pc.id])}`);
+    if (!R[cc.id] || !/Professional Development & Progress W2 80%/.test(R[cc.id].why || '')) fail(`the week's Daily Compliance doesn't count Rhea's 🌱 score: ${JSON.stringify(R[cc.id])}`);
+    if (S[cc.id] && /Professional Development/.test(S[cc.id].why || '')) fail(`Sam's Daily Compliance counts an unscored week: ${JSON.stringify(S[cc.id])}`); }
   // ℹ How it's scored: each column's source, and one trainee's evidence
   await page.evaluate(() => FTRanking.explain()); await page.waitForTimeout(1500);
   { const x = await page.evaluate(() => (document.querySelector('.rk-explain') || {}).innerText || '');
-    if (!/How the scores are tracked/.test(x) || !/EOD email, day by day/.test(x) || !/Drive links/.test(x) || !/Each day’s check/.test(x)) fail(`ℹ How it's scored doesn't explain the columns and a trainee's evidence: ${x.slice(0, 300)}`); }
+    if (!/How the scores are tracked/.test(x) || !/EOD email, day by day/.test(x) || !/Drive links/.test(x) || !/Each day’s check/.test(x) || !/Professional Development & Progress, Week 2/.test(x)) fail(`ℹ How it's scored doesn't explain the columns and a trainee's evidence: ${x.slice(0, 300)}`); }
   await page.evaluate(() => FTRanking.explain());
   // 🔄 a cell the platform filled follows the scorecards: Rhea's assessment graded again (90%) → her cell 24.3 on the next read,
   // and an auto NO SUBMISSION note (from before her files were linked) is worked out again; the trainer's typed 20 stays

@@ -63,6 +63,8 @@ jobs:
         run: node .github/scripts/day-ai-grade.cjs
       - name: The Monitoring Sheet counted only on a day the slides ask for an update (FTTrackerRules.MONITOR_SCHEDULE, worker.js dailyCompliance, index.html ftDay1.comp)
         run: node .github/scripts/monitor-when-instructed.cjs
+      - name: 🌱 Professional Development & Progress scored weekly by a trainer only, and Following instructions folded into the Day's outputs (worker.js /api/pdp/set, outputsOf, foldInstr; index.html ftPdp, ftDay1.comp)
+        run: node .github/scripts/pdp.cjs
       - name: The Day's outputs with the scores of what was graded that day (worker.js dailyCompliance graded)
         run: node .github/scripts/outputs-scores.cjs
       - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)

@@ -31,7 +31,9 @@ const failures = []; const fail = (m) => failures.push(m);
   const want = ['Assessment: Reception Listening Activity 60', 'Attorney Calendar Management Activity 90', 'Knowledge Check: Lesson reception 80', 'Practice Session: intake 70', 'Standard Training - Calendaring Activity 50'];
   if (JSON.stringify(g) !== JSON.stringify(want)) fail(`the day's graded work isn't what was graded that day (practice and another day's left out): ${JSON.stringify(g)}`);
   // (the hand-in, 100, and the five scores: (100 + 80 + 60 + 70 + 90 + 50) / 6 = 75)
-  if ((c.parts || {}).outputs !== 75) fail(`the Day's outputs isn't the hand-in averaged with the day's scores (75): ${(c.parts || {}).outputs}`);
+  // (📏 and the day's instructions followed are the other half of it, worker.js outputsOf: (75 + the instructions' %) / 2)
+  if (c.outputsWork !== 75) fail(`the Day's outputs' hand-in half isn't the hand-in averaged with the day's scores (75): ${c.outputsWork}`);
+  if ((c.parts || {}).outputs !== (c.instr ? Math.round((75 + c.instr.pct) / 2) : 75) || 'instructions' in (c.parts || {})) fail(`the Day's outputs doesn't take in the instructions followed: ${JSON.stringify({ parts: c.parts, instr: c.instr && c.instr.pct })}`);
   // (a day nothing was handed in — no Process Questions or Knowledge Check, no link, no file, nothing graded — leaves the Day's
   // outputs out, not a 0)
   { const nid = 'nia-none--b110226'; store.set('ft:trainee:' + nid, JSON.stringify({ id: nid, name: 'Nia None', batch: 'B110226', approved: true }));

@@ -170,9 +170,12 @@ async function loadData(quiet){
       try{ const b = p.batch || B.batch, n = window.ftWeeks ? ftWeeks.now(b) : 0, range = n && ftWeeks.range(b, n);
         if(range){ const ws = window.lshProgram ? lshProgram.compute({id: p.id, progress: data["day-progress"] || p.progress, rec: sc, shared: sh, since: p.since, range}) : null;
           const days = Object.entries(((sc["trackerreview:"] || {}).compliance) || {}).filter(([d, c]) => d >= range[0] && d <= range[1] && c && typeof c.pct === "number").map(([, c]) => c.pct);
-          const comp = days.length ? Math.round(days.reduce((a, v) => a + v, 0) / days.length) : null, sco = ws && ws.overall != null ? ws.overall : null;
+          // (🌱 the week's Professional Development & Progress, a trainer's weekly score: one more entry beside the days, ftPdp;
+          // a week not scored isn't counted)
+          const rvT = sc["trackerreview:"] || {}, pdp = window.ftPdp ? ftPdp.of(rvT, n) : null;
+          const comp = window.ftPdp ? ftPdp.withWeek(days, rvT, n) : days.length ? Math.round(days.reduce((a, v) => a + v, 0) / days.length) : null, sco = ws && ws.overall != null ? ws.overall : null;
           const both = [sco, comp].filter(v => typeof v === "number");
-          wk = {n, range, score: sco, comp, days: days.length, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
+          wk = {n, range, score: sco, comp, days: days.length, pdp, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
       rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score, wk};
     });
     // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
@@ -273,8 +276,10 @@ function weekMark(rep, id){
   // (a platform TAM column from before the TAM became shadowing-only doesn't count: js/ft-ranking.js drops it on opening)
   return avgOf(rep.cols.map(c => { const cell = (r.cells || {})[c.id] || {}, raw = num(cell.raw); return raw == null || c.type !== "score" || (c.src === "day:tam" && cell.auto) ? null : Math.max(0, Math.min(5, raw / (num(c.max) || 5) * 5)); }));
 }
-function compOf(p){ const c = (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
-  const days = Object.values(c).filter(x => x && typeof x.pct === "number"); return {pct: avgOf(days.map(x => x.pct)), n: days.length}; }
+function compOf(p){ const rv = ((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}, c = rv.compliance || {};
+  // (🌱 and each week's Professional Development & Progress the trainer scored: one entry beside the days, as the week's own figure)
+  const days = Object.values(c).filter(x => x && typeof x.pct === "number"), pw = window.ftPdp ? ftPdp.pcts(rv) : [];
+  return {pct: avgOf(days.map(x => x.pct).concat(pw)), n: days.length, pw: pw.length}; }
 /* 💬 the day-by-day feedback a trainer sends (👥 Trainees & Batches → ✍ Feedback; feedback:<id>.days[lesson]): how many
    lessons have it, the latest one's rating, and in the bar every sent one's rating and summary. Drafts are the trainer's
    own (a trainee never sees one), so only sent feedback counts here, for the trainer and the trainee alike. */
@@ -303,7 +308,7 @@ function scoresTable(){
     rows: rows.map(r => [{v: r.p.name, f: r.p.name, cls: "gs-name"}].concat(S.map((s, i) => { const x = r.sc && r.sc.rows ? r.sc.rows.find(y => y.s === s) || r.sc.rows[i] : null, a = x ? x.avg : null;
         return {v: pct(a), f: a == null ? `${s.label}: nothing graded yet` : `${s.label}: average of ${x.graded} grade${x.graded === 1 ? "" : "s"} = ${a}%`, cls: "gs-num " + tone(a)}; }),
       [fbCell(r.p), {v: pct(r.sc && r.sc.overall), f: r.sc && r.sc.overall != null ? `Scorecard overall: ${ovWhy(r.sc)}` : "Nothing graded yet", cls: "gs-num " + tone(r.sc && r.sc.overall)},
-       {v: pct(r.comp.pct), f: r.comp.pct == null ? "No day checked yet (the check runs at the end of every shift)" : `The average of ${r.comp.n} day${r.comp.n === 1 ? "" : "s"}' compliance = ${Math.round(r.comp.pct)}% (each day in 📤 Daily outputs)`, cls: "gs-num " + tone(r.comp.pct)}]
+       {v: pct(r.comp.pct), f: r.comp.pct == null ? "No day checked yet (the check runs at the end of every shift)" : `The average of ${r.comp.n} day${r.comp.n === 1 ? "" : "s"}' compliance${r.comp.pw ? ` and ${r.comp.pw} week${r.comp.pw === 1 ? "" : "s"}' 🌱 Professional Development & Progress` : ""} = ${Math.round(r.comp.pct)}% (each day in 📤 Daily outputs)`, cls: "gs-num " + tone(r.comp.pct)}]
       .concat(me ? [] : [{v: r.wavg == null ? "" : r.wavg.toFixed(2), f: r.wavg == null ? "No week reported yet (📊 Weekly Ranking)" : `The weeks' final averages (${weeks.map((w, i) => `W${w} ${r.ws[i] == null ? "–" : r.ws[i].toFixed(2)}`).join(", ")}) = ${r.wavg.toFixed(2)}/5`, cls: "gs-num " + tone(r.wavg == null ? null : r.wavg / 5 * 100)}],
         [{v: pct(r.overall), f: r.overall == null ? "Nothing to average yet" : `Overall % = the average of the Scorecard ${pct(r.sc && r.sc.overall) || "–"}, the Daily compliance ${pct(r.comp.pct) || "–"}${me ? "" : ` and the weeks ${r.wavg == null ? "–" : Math.round(r.wavg / 5 * 100) + "%"}`} = ${Math.round(r.overall)}%`, cls: "gs-num gs-calc gs-bold " + tone(r.overall)}],
         [])))};
@@ -966,7 +971,7 @@ function sectionsHtml(T){
   // (🔗 Drive Links: the sheet first, Google Drive's connection and the trainees with link issues at the bottom)
   if(linksOn()) return one(T[at("compliance")], at("compliance")).replace(trainerToolsHtml(), "") + driveBanner() + shareBanner();
   // (the trainee's 📋 My Progress: everything as before, their own Drive links and report included)
-  if(meOn()) return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs")
+  if(meOn()) return main("scorecard") + driveBanner() + shareBanner() + main("compliance") + rankingHtml() + main("outputs") + pdpMineHtml()
     + `<details class="bs-more" ${B.more ? "open" : ""} ontoggle="FTBatchSheet.more(this.open)"><summary>▸ More detail: ${rest.map(([x]) => e(x.title)).join(" · ")}</summary>${rest.map(([x, i]) => one(x, i)).join("")}</details>`;
   // (the trainer's 📋 Batch Sheet: no Drive links — they are on 🔗 Drive Links —; the trainer's tools under 📤 Daily outputs)
   // 👤 opening on one table per trainee (everything about them in one place); 📋 By table is the sheets side by side
@@ -1100,6 +1105,36 @@ const partsTable = ps => { let g0 = null;
     if(x.header) return head;
     return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
       + (Array.isArray(x.crit) ? x.crit.map(c => `<tr class="bs-parts-c"><td class="bs-parts-n">↳ ${e(c.n)}</td><td class="bs-parts-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td class="bs-parts-t">${e(c.fb || "")}</td></tr>`).join("") : ""); }).join("")}</tbody></table>`; };
+/* 🌱 PROFESSIONAL DEVELOPMENT & PROGRESS · Week N on a trainee's page, under the week's heading in 📤 Daily outputs (where
+   📏 Following instructions was, now part of the Day's outputs): a trainer's weekly score — Competency in taking on a role,
+   Communication, Quality of output, each 1–5 (half points), and a note (worker.js /api/pdp/set → trackerreview:<id>.pdp).
+   A trainer gets the inputs and 💾 Save; the trainee sees it read-only. Its score, the three's average out of 5, counts in the
+   week's Daily compliance (index.html ftPdp.withWeek); a week not scored isn't counted. */
+const PDP_STEPS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+function pdpRow(p, w, folded){
+  const rv = ((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}, P = window.ftPdp, x = P ? P.of(rv, w) : null, raw = (rv.pdp || {})[w] || {};
+  if(!P) return "";
+  const adm = adminOn() && !meOn(), k = p.id + "|" + w, D = (B.pdpD || {})[k] || {}, val = c => c in D ? D[c] : raw[c] != null ? raw[c] : "";
+  const when = t => { const d = new Date(t); return isNaN(d) ? "" : d.toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric"}); };
+  const crit = P.CRIT.map(([c, n]) => `<tr><td>${e(n)}</td><td>${adm ? `<select class="bs-pdp-s" data-c="${c}" aria-label="${e(n)}, 1 to 5" onchange="FTBatchSheet.pdpKeep('${e(k)}', '${c}', this.value)"><option value="">—</option>${PDP_STEPS.map(v => `<option value="${v}" ${String(val(c)) === String(v) ? "selected" : ""}>${v}</option>`).join("")}</select> /5`
+    : x ? `<b class="bs-sbox ${critTone(x[c])}">${e(x[c])}/5</b>` : "—"}</td></tr>`).join("");
+  const note = adm ? `<input type="text" class="bs-pdp-n" placeholder="Note (optional)" value="${e(val("note"))}" oninput="FTBatchSheet.pdpKeep('${e(k)}', 'note', this.value)" style="flex:1;min-width:160px">`
+    : x && x.note ? `<p class="bs-pdp-note">🧑‍🏫 ${e(x.note)}</p>` : "";
+  const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: counted in Week ${w}'s Daily compliance.`
+    : `Not scored yet — your trainer scores this weekly. It isn't counted until it is.`;
+  return `<tr class="bs-pdp${folded ? " bs-wk-hide" : ""}" data-week="${w}"><td class="bs-pt-m">🌱 Professional Development &amp; Progress · Week ${w}</td>
+    <td class="bs-pt-v ${x ? tone(x.pct) : ""}" title="${e(status)}">${x ? e(x.avg5.toFixed(1)) + "/5" : "—"}</td>
+    <td class="bs-pt-f"><table class="bs-ocrit bs-pdp-t"><tbody>${crit}</tbody></table>${adm ? `<div class="bs-pdp-tools">${note}<button type="button" class="btn btn-navy btn-sm" onclick="FTBatchSheet.pdpSave('${e(p.id)}', ${w})">💾 Save Week ${w}</button></div>` : note}<p class="bs-note bs-pdp-st">${status}</p></td></tr>`;
+}
+// (🔒 the trainee's 📋 My Progress: their weeks' 🌱 Professional Development & Progress, read-only, under 📤 Daily outputs —
+// Week 1 to the week under way)
+function pdpMineHtml(){
+  const p = people()[0]; if(!p || !window.ftPdp) return "";
+  let n = 1; try{ n = window.ftWeeks ? ftWeeks.now(p.batch || B.batch) : 1; }catch(err){}
+  const rows = Array.from({length: n}, (x, i) => n - i).map(w => pdpRow(p, w, false)).join("");
+  return `<section class="bs-sec bs-pdp-mine" id="bs-pdp"><h3 class="bs-h">🌱 Professional Development &amp; Progress</h3><p class="bs-note">Your trainer scores it each week: Competency in taking on a role, Communication and Quality of output, each out of 5. Its score, their average, counts in that week's Daily compliance; a week not scored yet isn't counted.</p>
+    <table class="bs-pt-t"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${rows}</tbody></table></section>`;
+}
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch)
@@ -1118,7 +1153,7 @@ function perTraineeHtml(T){
     const md_ = d => `${+d.slice(5, 7)}/${+d.slice(8)}`;
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
-        [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked`]]
+        [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
         .map(([l, v, f]) => [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
@@ -1137,9 +1172,11 @@ function perTraineeHtml(T){
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
         const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
         let wkHead = "";
-        if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, avg = W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null, f = folded(w);
+        if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, f = folded(w), rvP = ((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {};
+          // (🌱 the week's Professional Development & Progress counted in its average beside the days: ftPdp.withWeek)
+          const avg = window.ftPdp ? ftPdp.withWeek(W.vals, rvP, w) : W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null;
           const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
-          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span><span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span></th></tr>`; }
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span><span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span></th></tr>` + pdpRow(p, w, f); }
         const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
@@ -1227,7 +1264,7 @@ function outputsTable(){
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
-  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs (what was handed in, with the instructions followed: naming, folders and saving route, deliverables on time), the EOD email and their progress on the platform, each a %, averaged. Each week also has 🌱 Professional Development & Progress, scored by the trainer (on the trainee's page). Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
     tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
@@ -1309,17 +1346,21 @@ function dayActs(R, d){
       miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
     out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(!took.length ? "Please take today's tests: the morning and afternoon typing tests and the spelling test." : miss.length ? `Good that you took ${took.join(" and ")}. Don't forget ${miss.join(" and ")}.` : "Great consistency: all three tests done (morning and afternoon typing, and spelling).")}); }
   // (📤 a day nothing was handed in: no Day's outputs row at all — not counted, and not shown, as the trainer asked)
-  if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
-    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "Your folder couldn't be opened, so the day's outputs aren't counted: share it with the program's account." : "Remember to submit your output links in the Task Tracker or save your files in your Assessments/Activities folder.")
+  if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3), work = typeof c.outputsWork === "number" ? c.outputsWork : P.outputs;
+    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!work ? (c.folderError ? "Your folder couldn't be opened, so the day's outputs aren't counted: share it with the program's account." : "Remember to submit your output links in the Task Tracker or save your files in your Assessments/Activities folder.")
       : "Well done: " + (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in your folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
       sub.length ? "You submitted: " + sub.join(", ") + "." : ""),
       // (🏅 the scores of what was graded that day, averaged with the hand-in: worker.js dailyCompliance graded)
       more: (c.graded || []).length ? "Scores: " + c.graded.map(g => `${g.what} ${g.pct}%`).join(" · ") : ""});
-    if((c.graded || []).length) out[out.length - 1].text += " Scores: " + c.graded.slice(0, 4).map(g => `${g.what} ${g.pct}%`).join(", ") + (c.graded.length > 4 ? ` and ${c.graded.length - 4} more` : "") + "."; }
-  // 📏 following instructions (strict): the naming convention, the saving route and folders, the deliverables on time and the
-  // six Drive links, as found that day (worker.js dailyCompliance instr)
-  if(P.instructions != null){ const I = c.instr || {}, iss = (I.issues || []).slice(0, 4), LB = Object.fromEntries(LINKS);
-    out.push({k: "instructions", icon: "📏", label: "Following instructions", pct: P.instructions, text: sent2(iss.length ? `You followed ${I.ok} of ${I.of} instructions. Watch out for: ${iss.map(x => LB[x.k] ? `${LB[x.k].replace(/^\S+\s/, "")} (${x.why})` : x.why).join("; ")}.` : `Excellent: you followed all ${I.of} instructions today.`, iss.length ? "Get these right on the day: fixing them later doesn’t change the day's score." : "")}); }
+    if((c.graded || []).length) out[out.length - 1].text += " Scores: " + c.graded.slice(0, 4).map(g => `${g.what} ${g.pct}%`).join(", ") + (c.graded.length > 4 ? ` and ${c.graded.length - 4} more` : "") + ".";
+    // 📏 the instructions, half of the Day's outputs (worker.js outputsOf): the naming convention, the saving route and folders,
+    // the deliverables on time and the six Drive links, as found that day (dailyCompliance instr) — each one missed listed
+    const I = c.instr || {}, iss = (I.issues || []).slice(0, 4), LB = Object.fromEntries(LINKS);
+    // (as two rows under the Day's outputs, each out of 5 — its two halves — so the day's two-sentence comment stays short)
+    if(I.of){ const o = out[out.length - 1], r5 = v => Math.round(v / 2) / 10;
+      o.crit = [{n: "📥 Handed in & graded work (half of this score)", s: r5(work), fb: (c.graded || []).length ? `The hand-in and each score of what was graded that day, averaged: ${work}%.` : work ? `Handed in that day: ${work}%.` : "Nothing handed in or saved that day."},
+        {n: "📏 Following instructions (half of this score)", s: r5(I.pct), fb: iss.length ? `You followed ${I.ok} of ${I.of} instructions (${I.pct}%). Watch out for: ${iss.map(x => LB[x.k] ? `${LB[x.k].replace(/^\S+\s/, "")} (${x.why})` : x.why).join("; ")}${(I.issues || []).length > 4 ? ` and ${I.issues.length - 4} more` : ""}. Get these right on the day: fixing them later doesn’t change the day's score.` : `Excellent: you followed all ${I.of} instructions today (naming, folders and saving route, deliverables on time).`}];
+      o.more = [o.more, `Hand-in & graded work ${work}% · instructions followed ${I.ok}/${I.of} (${I.pct}%) → ${P.outputs}%`].filter(Boolean).join(" · "); } }
   // 📘 the TAM, on a day a trainer graded it for shadowing
   if(P.tam != null) out.push({k: "tam", icon: "📘", label: "TAM (shadowing)", pct: P.tam, text: sent2(P.tam >= 100 ? "A full entry for the day, graded for the shadowing activity." : P.tam > 0 ? "A short entry for the day: 15 words or more count in full." : "No TAM entry dated that day.")});
   if(P.eod != null){ const rules = c.eodCheck ? c.eodCheck.rules || [] : [], miss = rules.filter(r => !r.pass);
@@ -1993,6 +2034,20 @@ window.FTBatchSheet = {
   ttWho(id){ if(!adminOn()) return; B.tt = id; B.ttOpen = true; B.ttD = {}; render(); },
   // (what the trainer types in the tools stays put while the sheet redraws — the update on opening runs meanwhile)
   ttKeep(k, v){ (B.ttD = B.ttD || {})[k] = v; },
+  // 🌱 Professional Development & Progress: what the trainer picks stays put while the sheet redraws, then 💾 Save (worker.js /api/pdp/set)
+  pdpKeep(k, c, v){ ((B.pdpD = B.pdpD || {})[k] = B.pdpD[k] || {})[c] = v; },
+  async pdpSave(id, w){
+    if(!adminOn()) return;
+    const k = id + "|" + w, raw = (((((B.data || {}).rec || {})[id] || {}).src || {})["trackerreview:"] || {}).pdp || {}, was = raw[w] || {}, D = (B.pdpD || {})[k] || {};
+    const v = c => c in D ? D[c] : was[c] != null ? was[c] : "", C = {role: v("role"), comm: v("comm"), quality: v("quality")}, none = Object.values(C).every(x => x === "" || x == null);
+    if(!none && !Object.values(C).every(x => x !== "" && x != null && Number(x) >= 1 && Number(x) <= 5)){ toast("Score each of the three, 1 to 5 (or clear all three to take the week's score off)."); return; }
+    try{ const r = await authFetch("/api/pdp/set", Object.assign({id, week: w, note: v("note")}, none ? {role: null, comm: null, quality: null} : {role: Number(C.role), comm: Number(C.comm), quality: Number(C.quality)})), j = await r.json().catch(() => null);
+      if(!r.ok || !j || !j.ok){ toast((j && j.error) || "Couldn’t save the score. Try again."); return; }
+      if(B.pdpD) delete B.pdpD[k];
+      toast(j.pdp ? `🌱 Week ${w} scored ${Number(j.pdp.avg).toFixed(1)}/5: counted in the week's Daily compliance.` : `🌱 Week ${w}'s score taken off: not counted.`);
+    }catch(err){ toast("Couldn’t save the score. Try again."); return; }
+    B.data = null; B.dataKey = ""; render();
+  },
   async eodGrade(id){
     if(!adminOn()) return;
     const d = (document.getElementById("bsEodD") || {}).value, sc = (document.getElementById("bsEodS") || {}).value, note = (document.getElementById("bsEodN") || {}).value;
@@ -2454,6 +2509,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-we-doc .ft-ev-t{width:100%;border-collapse:collapse;margin:8px 0;} .bs-we-doc .ft-ev-t th,.bs-we-doc .ft-ev-t td{border:1px solid #9AA3B5;padding:6px 8px;vertical-align:top;text-align:left;}
 .bs-we-doc .ft-ev-t td:nth-child(2){white-space:nowrap;font-weight:800;} .bs-we-doc .ft-ev-ex{background:#F6F7FB;border-left:3px solid #C2410C;padding:6px 10px;} .bs-we-doc .ft-ev-overall{font-size:16px;margin-top:10px;} .bs-we-doc .ft-ev-note{color:#6B5B00;}
 .bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
+.bs-pt-t tr.bs-pdp td{background:#F3FAF4;} .bs-pdp-t select{font:inherit;padding:2px 4px;} .bs-pdp-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 2px;} .bs-pdp-note{margin:4px 0;} .bs-pdp-st{margin:4px 0 0;}
 .bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
 .bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}
 /* (🏅 Grades' parts: a light band across the table) */
