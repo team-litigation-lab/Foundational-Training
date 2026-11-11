@@ -40,10 +40,10 @@ const failures = []; const fail = m => failures.push(m);
     // (a trainer sees it too)
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(800);
     if (!(await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return !!b && !b.hidden && /Mock calls/.test(b.textContent); }))) fail('a trainer doesn\'t see the announcement');
-    // (not on a Day deck, a presentation drawn as large as the screen allows)
+    // (the same on every page, a Day deck included, as the trainer asked)
     await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(1); }).catch(() => {});
-    if (await page.evaluate(() => state.view === 'daydeck' && !!document.querySelector('.ft-ann:not([hidden])'))) fail('the ticker shows on a Day deck with no lesson announcement');
-    // 📢 this platform's own and each lesson's: the platform's, then the trainee's lesson's; on a Day deck only that lesson's;
+    if (await page.evaluate(() => state.view === 'daydeck' && !/Mock calls/.test((document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || ''))) fail('the ticker on a Day deck isn\'t the same announcement as on the other pages');
+    // 📢 this platform's own and each lesson's: the platform's, then the trainee's lesson's, the same on every page;
     // on the lesson's card too
     own = { platform: { text: 'Mock calls moved to 2 PM' }, lessons: { 1: { text: 'Bring your headset for VA Essentials' } } };
     await page.evaluate(async () => { await FTAnnouncement.reload(); goto('dashboard'); }); await page.waitForTimeout(600);
@@ -51,7 +51,10 @@ const failures = []; const fail = m => failures.push(m);
       if (!/Mock calls moved to 2 PM/.test(t) || /PORTAL BROADCAST/.test(t)) fail(`the ticker isn't the platform's own announcement: ${t}`); }
     await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(600);
     { const t = await page.evaluate(() => (document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || '');
-      if (t !== 'Bring your headset for VA Essentials') fail(`on Day 1's deck the ticker isn't the lesson's own announcement: ${t}`); }
+      if (!/Mock calls moved to 2 PM/.test(t) || !/Bring your headset for VA Essentials/.test(t)) fail(`on Day 1's deck the ticker isn't the same as elsewhere (the platform's, then the lesson's): ${t}`); }
+    { await page.evaluate(() => goto('dashboard')); await page.waitForTimeout(500);
+      const t = await page.evaluate(() => (document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || '');
+      if (!/Mock calls moved to 2 PM/.test(t) || !/Bring your headset for VA Essentials/.test(t)) fail(`the Dashboard's ticker isn't the same as the deck's: ${t}`); }
     { const c = await page.evaluate(() => typeof FTAnnouncement.lessonHtml === 'function' ? FTAnnouncement.lessonHtml(1) : '');
       if (!/Bring your headset/.test(c) || /hidden/.test(c)) fail(`the lesson's card doesn't carry its announcement: ${c}`); }
     // 📝 the editor: a trainer's Admin → 📢 Announcements saves settings:announcements

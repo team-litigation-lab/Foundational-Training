@@ -34,7 +34,8 @@ const failures = []; const fail = (m) => failures.push(m);
     const dash = await page.evaluate(() => ({ view: state.view, stat: (document.querySelector('.fts-calls-stat') || {}).innerText || '',
         l4: (document.querySelector('#dayl-3') || {}).innerText || '', l5: (document.querySelector('#dayl-5') || {}).innerText || '', l6: (document.querySelector('#dayl-6') || {}).innerText || '' }));
     if (dash.view !== 'modules') fail(`signing in should land on the Modules page: "${dash.view}"`);
-    if (!/86%/.test(dash.stat) || !/2 \/ 3 lessons/i.test(dash.stat)) fail(`the Modules stat row's graded calls: "${dash.stat}" (expected 86%, 2 / 3 lessons)`);
+    if (!/86%|4\.3\/5/.test(dash.stat) || !/2 \/ 3 lessons/i.test(dash.stat))   // (⭐ in points: 86% = 4.3/5)
+    fail(`the Modules stat row's graded calls: "${dash.stat}" (expected 86%, 2 / 3 lessons)`);
     if (!/📞 90%/.test(dash.l4) || !/📞 82%/.test(dash.l5) || /📞/.test(dash.l6)) fail(`the lesson cards' graded calls: ${JSON.stringify(dash)}`);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
     // the Practice Sessions' cards for the three mock-call lessons (js/ft-sessions.js): each shows its lesson's best graded call

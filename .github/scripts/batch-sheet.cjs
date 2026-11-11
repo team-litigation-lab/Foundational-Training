@@ -396,7 +396,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!/32 of 40 points \(80%\)/.test(rx) || !/did best[\s\S]*Call 1: The Missing Email: every answer right/i.test(rx) || !/to be improved[\s\S]*Call 2: Third Time Calling · Reason for the call: Names the letter/i.test(rx)) fail(`the activity's context on 📅 Day 1–16 (why, best, to improve): ${rx}`);
   await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
   const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
-  if (!gd.some(b => /Call Listening/.test(b.h) && /80%/.test(b.h) && /Reception Listening Activity[\s\S]*80%/.test(b.t))) fail(`🔎 Grades in detail: the activity isn't 🎧 Call Listening's 80%: ${gd.map(b => b.h).join(' | ')}`);
+  if (!gd.some(b => /Call Listening/.test(b.h) && /4\.0\/5/.test(b.h) && /Reception Listening Activity[\s\S]*(80%|4\.0\/5)/.test(b.t)))   // (⭐ shown in points: 80% = 4.0/5, js/ft-points.js)
+   fail(`🔎 Grades in detail: the activity isn't 🎧 Call Listening's 80%: ${gd.map(b => b.h).join(' | ')}`);
   const elsewhere = gd.filter(b => !/Call Listening/.test(b.h) && /Reception Listening/.test(b.t)).map(b => b.h);
   if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
@@ -582,9 +583,9 @@ const failures = []; const fail = m => failures.push(m);
     const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
     // (📏 following instructions too: the day's naming, saving route and deliverables on time)
     if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
-    if (by('tracker').box !== '50%' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
-    if (by('tests').box !== '67%' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
-    if (by('outputs').box !== '0%' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    if (by('tracker').box !== '2.5/5' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
+    if (by('tests').box !== '3.4/5' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
+    if (by('outputs').box !== '0.0/5' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
     const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
   }
