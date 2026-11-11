@@ -9,13 +9,11 @@
 (function(){
 "use strict";
 const A = {text: "", own: {platform: null, lessons: {}}, at: 0, loading: false};
-// 📢 what the ticker says: this platform's announcement, then the lesson's (the one being shown, else the trainee's current
-// one) — or, on a Day deck, only that lesson's (a deck stays as large as the screen allows)
+// 📢 what the ticker says, the same on every page: this platform's announcement, then the lesson the trainee is on
 const lessonText = l => l != null && A.own.lessons && A.own.lessons[l] ? A.own.lessons[l].text : "";
 const DD_ = () => window.FTDayDecks || {};
 function shown(){
-  const onDeck = typeof state !== "undefined" && state.view === "daydeck";
-  if(onDeck) return lessonText(DD_().deckLesson ? DD_().deckLesson() : null);
+  // (the same on every page, a Day deck included, as the trainer asked: this platform's, then the lesson the trainee is on)
   let l = null; try{ l = DD_().placeLesson ? DD_().placeLesson() : null; }catch(e){}
   return [A.own.platform && A.own.platform.text, lessonText(l)].filter(Boolean).join("     ✦     ");
 }
