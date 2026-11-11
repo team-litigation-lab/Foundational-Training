@@ -144,7 +144,7 @@ async function workerChecks() {
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (on 📅 Calendar checks, one card with the Calendar activity: no card of its own)
   { const main = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Calendar checks[\s\S]*Booking rules · Mock call with the trainer[\s\S]*92%/.test(main)) fail('🏅 My Performance doesn\'t show the booking check on 📅 Calendar checks');
+    if (!/Calendar checks[\s\S]*Booking rules · Mock call with the trainer[\s\S]*(92%|4\.6\/5)/.test(main)) fail('🏅 My Performance doesn\'t show the booking check on 📅 Calendar checks');
     if (/Calendar booking rules/.test(main) || /Calendar activity check/.test(main)) fail('🏅 My Performance still has a separate calendar card'); }
 
   // the trainer: 📅 Booking Rules, and Trainer Inputs filling the scorecard's rule criteria

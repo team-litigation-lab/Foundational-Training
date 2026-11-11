@@ -216,11 +216,11 @@ function plainComment(k, ev, s){
   if(k === "compliance") return `${sc} ${ev.comp.length ? `${ev.comp.length} day${ev.comp.length === 1 ? "" : "s"} checked at the end of the shift.` : ""}`.trim();
   return sc;
 }
-async function summarize(ev, voice){
+async function summarize(ev, voice, noAi){
   const base = ev.base, out = {scores: Object.assign({}, base), comments: {}, trainer: "", overallComment: "", ai: false};
   COMP.forEach(([k]) => { out.comments[k] = plainComment(k, ev, base[k]); });
   out.trainer = ev.days.concat(ev.sent).map(x => x.summary || x.comment).filter(has).slice(0, 2).join(" ") || "No feedback from the trainer this week.";
-  if(typeof callAIJson !== "function") return out;
+  if(noAi || typeof callAIJson !== "function") return out;
   const prompt = `You write the weekly progress report on a trainee Legal Virtual Assistant (${String(ev.p.name).split(/\s+/)[0]}) for Legal Support Help's management, in the facilitator's voice. From the week's evidence below, write a short summarized comment (2–3 sentences: what they did well, then what needs to improve, specific to the evidence) for each competency, and summarize the trainer's feedback. Call Handling must draw on the mock calls AND the trainer's comments on the demos; Tools Utilization must draw on the demos and their comments. Each competency has a base score out of 5 worked out from the evidence: keep it unless the evidence clearly shows otherwise (then adjust by at most 0.5); a competency with no base and no evidence gets null.
 
 Competencies (key: name — base score):
@@ -258,7 +258,14 @@ async function draft(opts){
   S.busy = true; S.err = ""; redraw();
   const voice = typeof window.fbStyleBlock === "function" ? (window.fbStyleBlock() || "") : "";
   const rows = {}; let ai = 0;
-  for(const p of ppl){ try{ const ev = await evidence(p, c.range); const sm = await summarize(ev, voice); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){} }
+  // (⚡ four trainees at a time, its progress shown — "3 of 12 trainees" — so a batch's summary takes a minute, not one by one)
+  S.prog = {n: 0, of: ppl.length, wk: c.week}; redraw();
+  const one = async p => { try{ const ev = await Promise.race([evidence(p, c.range), new Promise((ok, no) => setTimeout(() => no(new Error("slow")), 60000))]); // (⏱ an AI answer that never comes doesn't hold the week's report: after 45 seconds the trainee's row is the platform's own
+    //  scores and plain comments)
+    const sm = await Promise.race([summarize(ev, voice), new Promise(ok => setTimeout(() => ok(summarize(ev, voice, true)), 45000))]); if(sm.ai) ai++; rows[p.id] = Object.assign({name: p.name, how: ev.how}, sm); }catch(err){}
+    if(S.prog){ S.prog.n++; if(S.key === key) redraw(); } };
+  for(let i = 0; i < ppl.length; i += 4) await Promise.all(ppl.slice(i, i + 4).map(one));
+  S.prog = null;
   // (another week picked meanwhile — or the page reloading its batch for a moment —: the summary is still finished and kept for the
   //  week it was started for, so it is never lost half-way; it is only shown if that week is still the one open)
   const here = S.key === key;
@@ -386,7 +393,7 @@ window.FTRankSummary = {
         ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}`;
     S.acts = d && !S.loading ? acts : "";
     return `<div class="rks-wrap">${S.acts ? "" : `<div class="rks-bar-acts">${acts}</div>`}
-      ${!begun(c.range) ? zeroHtml(c) : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
+      ${!begun(c.range) ? zeroHtml(c) : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : !d && S.busy && S.prog && Number(S.prog.wk) === Number(c.week) ? `<p class="sc-empty">📑 Summarizing Week ${e(c.week)}… ${S.prog.n} of ${S.prog.of} trainee${S.prog.of === 1 ? "" : "s"} done. The report appears here by itself when it is ready.</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line
   weekSummary(id){
