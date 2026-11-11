@@ -78,7 +78,7 @@ function stepsHtml(auto = true){
       <li>Open the Google Drive link you got during onboarding.</li>
       <li>Open each file there and copy its link from the address bar.</li>
       <li>Paste each link below, then save.</li></ol>
-    ${auto ? `<div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.</div>` : ""}`;
+    ${auto ? `<div class="fdr-auto">🤖 Your tracker is checked at the end of every shift, and your Monitoring Sheet on the days the slides ask you to update it. You and your trainer see the results.</div>` : ""}`;
 }
 // 🔗 a link's state from the last 🔁 check (trackerreview:<id>.verify, worker.js verifyLinks), for the link saved now
 const vOf = k => { const v = ((D.review || {}).verify || {})[k], u = String((D.drive || {})[k] || "").trim(); return v && u && String(v.url || "").trim() === u ? v : null; };
@@ -177,7 +177,7 @@ function renderMonitorPage(){
   if(!ready()) return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`;
   const m = D.review.monitor;
   return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Progress Monitoring Sheet</h1>
-      <p>Fill in your Training Progress Monitoring Sheet in your main Google Drive every time a discussion or an activity is done, following its specific instructions (it is for your training only): the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it automatically at the end of every shift; your trainer adds their score and comments.</p></div>
+      <p>Fill in your Training Progress Monitoring Sheet in your main Google Drive when a slide tells you to update it, once its discussion or activity is done, following its specific instructions (it is for your training only): the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. It isn’t checked daily: only on the days the slides ask for an update, at the end of the shift; your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>📊 The check</h2></div>
       ${!m ? `<p class="fdr-muted">Not checked yet.</p>` : m.error ? `<p class="fdr-err">⚠ ${e(m.error)}</p>` : `
