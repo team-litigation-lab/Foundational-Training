@@ -40,8 +40,10 @@ const TEMPLATES = {
    averaged — the same Overall as 🏅 My Performance). A column already there for one is kept as it is; only the missing ones are
    added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
 // (📘 the TAM isn't a daily deliverable: it is graded only for a shadowing activity, when a trainer asks)
-// (📏 Following Instructions too: each day's six Drive links as the course asks, held to the day they were checked)
-const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"], ["instructions", "Following Instructions"]];
+// (📏 Following Instructions is no longer a column of its own: it is half of each day's outputs, in the Daily Compliance —
+// its place taken by 🌱 Professional Development & Progress, the trainer's weekly score: PDP_COL)
+const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"]];
+const PDP_COL = ["Professional Development & Progress", "Role · Communication · Quality of output"];
 // (a column made before: its Monitoring Sheet and Tracker now follow the day's checks too)
 const DAY_OF = {"drive:Monitoring Sheet": "day:monitor", "drive:Tracker": "day:tracker"};
 // (a TAM column a trainer typed scores in stays, as a column of their own — only the platform's TAM column goes)
@@ -50,11 +52,14 @@ function connectAll(cols){ cols = cols.slice();
   cols.forEach(c => { if(c.type === "score" && DAY_OF[c.src]){ c.src = DAY_OF[c.src]; c.period = "week"; } });
   // (a TAM column added before the TAM stopped being a daily part goes again)
   cols = cols.filter(c => c.src !== "day:tam" || typedIn(c)).map(c => c.src === "day:tam" ? Object.assign(c, {src: ""}) : c);
+  // (a Following Instructions column from before becomes 🌱 Professional Development & Progress, where it was)
+  cols.forEach(c => { if(c.src === "day:instructions") Object.assign(c, {src: "pdp", label: PDP_COL[0], sub: PDP_COL[1], period: "week"}); });
   const out = cols.slice(), has = src => out.some(c => c.src === src);
   let n = 0;
   // 📅 each of the day's deliverables, its own column: the week's average of that part of the end-of-shift check
   // (worker.js dailyCompliance parts: the Monitoring Sheet, the Task Tracker, the TAM, the Typing & Spelling Tests, the EOD)
   DAY_PARTS.forEach(([k, label]) => { if(!has("day:" + k)){ out.push(COL(label, "", 5, "day:" + k, "week")); n++; } });
+  if(!has("pdp")){ out.push(COL(PDP_COL[0], PDP_COL[1], 5, "pdp", "week")); n++; }
   if(!has("compliance")){ out.push(COL("Daily Compliance", "", 5, "compliance", "week")); n++; }
   if(!has("links")){ out.push(COL("Drive Links Compliance", "", 5, "links")); n++; }
   if(!has("overall")){ out.push(COL("🏅 Scorecard overall", "every grading system", 5, "overall")); n++; }
@@ -130,7 +135,7 @@ async function loadWeek(){
 // a column's name → the platform's grade it is filled from (for reports whose columns were made before they had a source)
 const KNOWN_SRC = {"pi reading task": "kc:Reading Task", "common terms": "drive:Common Terms", "auto liability": "drive:Auto Liability",
   "monitoring sheet": "day:monitor", "tracker": "day:tracker", "eod": "day:eod", "reception mock call": "trainer:Reception Mock Call",
-  "spelling & typing": "skills", "daily compliance": "compliance", "drive links compliance": "links", "scorecard overall": "overall"};
+  "spelling & typing": "skills", "daily compliance": "compliance", "professional development & progress": "pdp", "professional development": "pdp", "drive links compliance": "links", "scorecard overall": "overall"};
 function save(){
   if(!R.data) return; R.saved = false; R.data.updatedAt = new Date().toISOString();
   clearTimeout(R.saveT); const key = R.key, data = R.data;
@@ -193,7 +198,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall && !s.hidden).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["links", "🔗 Drive links compliance (🔗 Drive Links → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["day:instructions", "📅 Following Instructions (the day's six Drive links)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs with the instructions, EOD; and the week's 🌱 PD&P)"], ["pdp", "🌱 Professional Development & Progress (the trainer's weekly score)"], ["links", "🔗 Drive links compliance (🔗 Drive Links → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -208,8 +213,8 @@ async function fillFromPortal(quiet){
       if(n) save(); if(!quiet) toast(`Week ${R.week} has no scores yet: its first day isn't over.`); return; } }
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
   const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance"), linkCols = R.data.cols.filter(c => c.type === "score" && c.src === "links");
-  const dayCols = R.data.cols.filter(c => c.type === "score" && /^day:/.test(c.src || ""));
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links" && !/^day:/.test(c.src)); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length && !dayCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const dayCols = R.data.cols.filter(c => c.type === "score" && /^day:/.test(c.src || "")), pdpCols = R.data.cols.filter(c => c.type === "score" && c.src === "pdp");
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance" && c.src !== "links" && c.src !== "pdp" && !/^day:/.test(c.src)); if(!cols.length && !notesCols.length && !compCols.length && !linkCols.length && !dayCols.length && !pdpCols.length){ if(!quiet) toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   // (the report read again while its grades are read — FTRanking.reload —: the fill stops, it isn't the report on screen any more)
@@ -277,7 +282,7 @@ async function fillFromPortal(quiet){
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && x.parts && typeof x.parts[k] === "number" && (!weekly(c) || (wk && d >= wk[0] && d <= wk[1])));
         if(!days.length){ clear(row, c, cur); return; }
         const pct = days.reduce((a, [, x]) => a + x.parts[k], 0) / days.length;
-        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", instructions: "Following Instructions (naming, saving route, deliverables on time, Drive links)"}[k] || k;
+        const nm = {monitor: "Monitoring Sheet", tracker: "Task Tracker", tests: "Typing & Spelling Tests", eod: "EOD email", outputs: "Day's outputs (with the instructions followed)"}[k] || k;
         put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: weekly(c) ? "week" : "all", days: days.length,
           why: `${nm}, each day's end-of-shift check: ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.parts[k]}%${k === "eod" && x.eodTrainer ? " (trainer)" : ""}`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`}); }); });
     }
@@ -287,11 +292,27 @@ async function fillFromPortal(quiet){
       compCols.forEach(c => ppl.forEach((p, i) => {
         const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur) || (weekly(c) && !wk)) return;
         const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (!weekly(c) || (wk && d >= wk[0] && d <= wk[1])));
-        if(!days.length){ clear(row, c, cur); return; }
-        const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
+        // (🌱 the week's Professional Development & Progress, the trainer's weekly score: one more entry beside the days, as the
+        // 📋 Batch Sheet's week — index.html ftPdp; every scored week for "Whole training"; a week not scored isn't counted)
+        const P = window.ftPdp, pw = !P ? [] : weekly(c) ? [P.of(rvs[i], R.week)].filter(Boolean).map(x => ({w: R.week, pct: x.pct})) : Object.keys((rvs[i] || {}).pdp || {}).map(w => ({w, x: P.of(rvs[i], w)})).filter(y => y.x).map(y => ({w: y.w, pct: y.x.pct}));
+        if(!days.length && !pw.length){ clear(row, c, cur); return; }
+        const vals = days.map(([, x]) => x.pct).concat(pw.map(y => y.pct)), pct = vals.reduce((a, v) => a + v, 0) / vals.length, max = num(c.max) || 5;
         put(row, c, cur, {raw: fmt(pct / 100 * max), period: weekly(c) ? "week" : "all", days: days.length,
-          why: `Daily Compliance, each day's whole end-of-shift check (Monitoring Sheet, Tracker, tests, EOD, following instructions, outputs, platform; the TAM on a shadowing day): ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.pct}%`).join(", ")} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`});
+          why: `Daily Compliance, each day's whole end-of-shift check (Monitoring Sheet, Tracker, tests, EOD, outputs with the instructions followed, platform; the TAM on a shadowing day): ${days.sort().map(([d, x]) => `${d.slice(5).replace("-", "/")} ${x.pct}%`).join(", ") || "no day checked"}${pw.length ? `, and 🌱 Professional Development & Progress ${pw.map(y => `W${y.w} ${y.pct}%`).join(", ")}` : ""} → average ${Math.round(pct)}% → ${fmt(pct / 20)} out of 5.`});
       }));
+    }
+    // 🌱 the Professional Development & Progress column: the trainer's weekly score (trackerreview:<id>.pdp[<week>], worker.js
+    // /api/pdp/set) — the three criteria's average out of 5; "Whole training": every scored week's average. Not scored: empty
+    if(pdpCols.length && window.ftPdp){
+      const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
+      if(gone()){ R.fill = false; return; }
+      pdpCols.forEach(c => ppl.forEach((p, i) => {
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(typed(cur)) return;
+        const ws = weekly(c) ? [R.week] : Object.keys((rvs[i] || {}).pdp || {}).map(Number).sort((a, b) => a - b), xs = ws.map(w => ({w, x: ftPdp.of(rvs[i], w)})).filter(y => y.x);
+        if(!xs.length){ clear(row, c, cur); return; }
+        const a5 = xs.reduce((a, y) => a + y.x.avg5, 0) / xs.length, max = num(c.max) || 5;
+        put(row, c, cur, {raw: fmt(a5 / 5 * max), period: weekly(c) ? "week" : "all",
+          why: `🌱 Professional Development & Progress, scored by the trainer: ${xs.map(({w, x}) => `Week ${w}: role ${x.role}, communication ${x.comm}, quality of output ${x.quality} → ${fmt(x.avg5)}/5${x.note ? " (" + x.note + ")" : ""}`).join("; ")}${xs.length > 1 ? ` → average ${fmt(a5)}` : ""} out of 5.`}); }));
     }
     // 🔗 the Drive Links Compliance column: how many of the six monitored Drive links are ✓ Correct (📋 Batch Sheet → ✅ Compliance)
     if(linkCols.length && window.FTBatchSheet && FTBatchSheet.linksPct){
@@ -719,9 +740,9 @@ const HOW = {
   "day:monitor": "The Monitoring Sheet, on the days the slides ask for an update (not every day): that day’s entry, checked for a date, 5 takeaways, questions and the understanding rated. The week’s average of those days, out of 5. Empty: no update asked that week, not linked, or the system can’t read the file.",
   "day:tracker": "The Daily Task Tracker, day by day: each training day’s Daily Notes and outputs on the sheet (a trainer’s score for the day where given). The week’s average, out of 5. Empty: not linked, or the system can’t read the sheet.",
   "day:tests": "The Typing & Spelling Tests, day by day: of the three a day (AM typing, PM typing, spelling), how many were taken on the platform or saved as screenshots in Drive. The week’s average, out of 5.",
-  "day:instructions": "Following Instructions, day by day (strict): the naming convention (answer sheets, test screenshots), the folder structure and saving route (screenshots in the Typing / Spelling Tests folders, the six Drive links), and the deliverables on time (the three tests that day, the EOD before the end of the shift, the Task Tracker updated, answer sheets by their due time). The share followed each day; a day already over keeps what was found then, so fixing something later doesn't undo it. The week's average, out of 5.",
+  pdp: "🌱 Professional Development & Progress: the trainer's weekly score of the trainee (📋 Batch Sheet → the trainee's page → 📤 Daily outputs, under the week): Competency in taking on a role, Communication and Quality of output, each 1–5 (half points), averaged, out of 5. Empty: the week isn't scored yet (not counted).",
   "day:eod": "The EOD email, day by day: checked against its template (the subject with the date, Accomplishments, 3 learnings of 2 sentences, On queue for tomorrow, sent before the end of the shift). The week’s average, out of 5.",
-  compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, Following Instructions, the day’s outputs and work on the platform; the TAM on a day a trainer graded it for shadowing). The week’s average, out of 5.",
+  compliance: "Daily Compliance: each training day’s end-of-shift check, all of its parts together (Monitoring Sheet, Task Tracker, Typing & Spelling Tests, EOD, the day’s outputs — what was handed in, with the instructions followed: naming, folders and saving route, deliverables on time — and work on the platform; the TAM on a day a trainer graded it for shadowing), and the week’s 🌱 Professional Development & Progress as one more entry when the trainer has scored it. The week’s average, out of 5.",
   links: "Drive Links Compliance: how many of the six monitored Drive links are ✓ Correct (🔗 Drive Links → ✅ Compliance), out of 5.",
   overall: "🏅 Scorecard overall: every grading system on the platform averaged (the same Overall as 🏅 My Performance), out of 5."
 };
@@ -743,9 +764,9 @@ function explainHtml(){
     const sh = rv.shots || {}, shots = (sh.files || []), inW = x => !wk || (x.date >= wk[0] && x.date <= wk[1]);
     const tests = `On the platform: ${(sk.typing || []).filter(inW).length} typing, ${(sk.spelling || []).filter(inW).length} spelling. Screenshots in Drive: ${shots.filter(inW).length}${sh.error ? ` (✗ the folders can’t be read: ${e(sh.error)})` : (sh.unread || []).length ? ` (✗ can’t read: ${e(sh.unread.join(", "))})` : ""}${sh.checkedAt ? `, checked ${e(String(sh.checkedAt).slice(0, 10))}` : ", not checked yet"}.`;
     const comp = Object.entries(rv.compliance || {}).filter(([d]) => !wk || (d >= wk[0] && d <= wk[1])).sort();
-    const P = ["monitor", "tracker", "tests", "eod", "instructions", "outputs", "platform", "tam"];
-    const ctab = comp.length ? `<table class="rk-xt"><tr><th>Day</th><th>All</th>${P.map(k => `<th>${k === "tests" ? "Typing & Spelling" : k === "instructions" ? "Following Instructions" : k === "tam" ? "TAM (shadowing)" : k === "eod" ? "EOD" : k[0].toUpperCase() + k.slice(1)}</th>`).join("")}</tr>${comp.map(([d, x]) => `<tr><td>${e(d)}</td><td><b>${pc(x.pct)}</b></td>${P.map(k => `<td>${pc((x.parts || {})[k])}</td>`).join("")}</tr>`).join("")}</table>${comp.some(([, x]) => (x.unreadable || []).length) ? `<p class="rk-xn">“—” for a part: nothing to check that day, or the file can’t be read (${e([...new Set(comp.flatMap(([, x]) => x.unreadable || []))].join(", "))}).</p>` : ""}` : "<p>No day checked this week yet: each training day is checked at the end of the shift (🔄 Update all scores on the 📋 Batch Sheet runs today’s check now).</p>";
-    mine = `<div class="rk-xw"><h4>🔗 Drive links</h4><ul>${links}</ul><h4>📋 Task Tracker, this week</h4><ul>${trk}</ul><h4>📒 Monitoring Sheet</h4><p>${mon}</p><h4>📘 TAM</h4><p>${tam}</p><h4>🧪 Typing & Spelling, this week</h4><p>${tests}</p><h4>✅ Each day’s check</h4>${ctab}</div>`;
+    const P = ["monitor", "tracker", "tests", "eod", "outputs", "platform", "tam"];
+    const ctab = comp.length ? `<table class="rk-xt"><tr><th>Day</th><th>All</th>${P.map(k => `<th>${k === "tests" ? "Typing & Spelling" : k === "outputs" ? "Outputs (with instructions)" : k === "tam" ? "TAM (shadowing)" : k === "eod" ? "EOD" : k[0].toUpperCase() + k.slice(1)}</th>`).join("")}</tr>${comp.map(([d, x]) => `<tr><td>${e(d)}</td><td><b>${pc(x.pct)}</b></td>${P.map(k => `<td>${pc((x.parts || {})[k])}</td>`).join("")}</tr>`).join("")}</table>${comp.some(([, x]) => (x.unreadable || []).length) ? `<p class="rk-xn">“—” for a part: nothing to check that day, or the file can’t be read (${e([...new Set(comp.flatMap(([, x]) => x.unreadable || []))].join(", "))}).</p>` : ""}` : "<p>No day checked this week yet: each training day is checked at the end of the shift (🔄 Update all scores on the 📋 Batch Sheet runs today’s check now).</p>";
+    mine = `<div class="rk-xw"><h4>🔗 Drive links</h4><ul>${links}</ul><h4>📋 Task Tracker, this week</h4><ul>${trk}</ul><h4>📒 Monitoring Sheet</h4><p>${mon}</p><h4>📘 TAM</h4><p>${tam}</p><h4>🧪 Typing & Spelling, this week</h4><p>${tests}</p><h4>✅ Each day’s check</h4>${ctab}<h4>🌱 Professional Development &amp; Progress, Week ${R.week}</h4><p>${(x => !x ? "Not scored yet — the trainer scores it weekly (📋 Batch Sheet → the trainee's page). Not counted until it is." : `Competency in taking on a role ${e(x.role)}/5 · Communication ${e(x.comm)}/5 · Quality of output ${e(x.quality)}/5 → ${e(x.avg5.toFixed(1))}/5 (${x.pct}%), counted in the week’s Daily Compliance${x.note ? ". Note: " + e(x.note) : ""}.`)(window.ftPdp ? ftPdp.of(rv, R.week) : null)}</p></div>`;
   }
   return `<div class="rk-explain card"><div class="rk-xh"><b>ℹ How the scores are tracked</b><button class="btn btn-ghost btn-sm" onclick="FTRanking.explain()">✕ Close</button></div>
     <p class="rk-xn">A cell with ⤓ was filled by the platform: it is filled again from the scorecards each time the report opens and after every 🔄 Update on the 📋 Batch Sheet (approved reports too). A cell you type is kept as you typed it. Each training day is checked at the end of the shift (the Monitoring Sheet, the Task Tracker, the Typing & Spelling Tests and the EOD); 🔄 Update all scores runs today’s check now.</p>

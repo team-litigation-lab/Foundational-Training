@@ -577,17 +577,20 @@ const failures = []; const fail = m => failures.push(m);
   // at most (no 💬 Comments list under the table any more)
   const oc = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'), ci = T.head.findIndex(h => /\b11\/2\b/.test(h));
     const tr = [...document.querySelectorAll('#bs-outputs tbody tr')].find(r => /Ada/.test(r.innerText)); const c = ci > 0 && tr && tr.querySelector(`td.bs-ocell[data-c="${ci}"]`);
-    return c ? { text: c.innerText, acts: [...c.querySelectorAll('.bs-oacts li')].map(li => ({ k: li.dataset.act, box: li.querySelector('.bs-sbox').innerText, say: li.querySelector('span').innerText })) } : null; });
+    return c ? { text: c.innerText, acts: [...c.querySelectorAll('.bs-oacts li')].map(li => ({ k: li.dataset.act, box: li.querySelector('.bs-sbox').innerText, say: li.querySelector('span').innerText, crit: [...li.querySelectorAll('.bs-ocrit tr')].map(tr => tr.innerText.replace(/\s+/g, ' ')) })) } : null; });
   if (!oc) fail('📤 Daily outputs has no day cell with the activities for Ada');
   else {
     const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
-    // (📏 following instructions too: the day's naming, saving route and deliverables on time)
+    // (📏 following instructions: no row of its own, half of the Day's outputs)
     // (📒 the Monitoring Sheet is listed every day: on a day the slides don't ask for an update it reads "Not expected today", greyed)
-    if (oc.acts.map(a => a.k).join() !== 'tracker,monitor,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
+    if (oc.acts.map(a => a.k).join() !== 'tracker,monitor,tests,outputs,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
     if (by('monitor').box !== '—' || !/Not expected today/.test(by('monitor').say)) fail(`the Monitoring Sheet's box (not expected on a day the slides don't ask): ${JSON.stringify(by('monitor'))}`);
     if (by('tracker').box !== '2.5/5' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
     if (by('tests').box !== '3.4/5' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
-    if (by('outputs').box !== '0.0/5' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    // (📤 nothing handed in, so only the instructions' half counts: a low box, never a row of its own — its two halves under it,
+    // each out of 5, the instructions missed listed)
+    if (!/^0\.\d\/5$/.test(by('outputs').box) || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    if (!(by('outputs').crit || []).some(t => /Handed in & graded work \(half of this score\) 0\/5/.test(t)) || !(by('outputs').crit || []).some(t => /Following instructions \(half of this score\) [\d.]+\/5 .*(You followed \d+ of \d+|Excellent)/.test(t))) fail(`the Day's outputs doesn't show its instructions half: ${JSON.stringify(by('outputs').crit)}`);
     const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
   }

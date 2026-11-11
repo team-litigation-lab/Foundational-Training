@@ -2540,10 +2540,28 @@ const PRACTICE_DOCS = ["claims-email"];
      • eod      — the day's EOD email, pasted on 📋 Task Tracker or received by email (drive:<id>.days[<date>].eod), checked
                   against its template (TR.checkEod);
      • platform — their work on the platform that day (progress:<id>, sessions:<id>, what they submitted): 100, 50 or 0.
+   (📏 Following instructions is no longer a part of its own: its checks — naming, folders/saving route, deliverables on time,
+   instr — are half of the Day's outputs, outputsOf; outputsWork keeps the hand-in/graded half. A stored day with
+   parts.instructions is folded the same way when read, foldInstr — index.html ftDay1.comp the same.)
    pct is the average of the parts that have one; submissions counts what the trainee submitted on the platform that day (answer
    sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
 // 📅 a batch's Day 1 held back as a setup day (not counted): off — Day 1 counts like any other day
 const DAY1_HELD = false;
+// 📤 the Day's outputs with the instructions in it: the hand-in & graded work (work) and the share of instructions followed
+// (ip, instrOf's %) averaged — half each; no instruction checked: the work alone. A day with nothing handed in (work null) stays
+// out (not counted): its instruction misses alone don't make an outputs score — the tests, EOD and tracker parts already count
+// their own lateness, and the issues stay in instr to show
+const outputsOf = (work, ip) => typeof work !== "number" ? null : typeof ip === "number" ? Math.round((work + ip) / 2) : work;
+const avgParts = (p) => { const v = Object.values(p || {}).filter((y) => typeof y === "number"); return v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; };
+// (a day stored while 📏 Following instructions was its own part: folded into its Day's outputs and its % worked out again, so
+// it is never counted twice — index.html ftDay1.comp does the same where the browser reads it)
+function foldInstr(x) {
+  if (!x || typeof x !== "object") return false; let ch = false;
+  for (const f of ["parts", "day1Parts"]) { const P = x[f]; if (!P || !("instructions" in P)) continue; const ip = P.instructions; delete P.instructions; ch = true;
+    if (typeof P.outputs === "number") { if (f === "parts") x.outputsWork = P.outputs; P.outputs = outputsOf(P.outputs, ip); } }
+  if (ch && x.parts && !x.day1) x.pct = avgParts(x.parts);
+  return ch;
+}
 async function dailyCompliance(env, id, D, o = {}) {
   const kv = kvOf(env);
   const get = (k) => getJSON(kv, k);
@@ -2554,6 +2572,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const [drive, skills, proc, tr, prog, ses] = pre ? [pre.drive, pre.skills, pre.proc, pre.tr, pre.prog, pre.ses]
     : await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`), get(`progress:${id}`), get(`sessions:${id}`)]);
   const rk = `trackerreview:${id}`, cur = pre ? pre.cur : ((await get(rk)) || { days: {} });
+  Object.values(cur.compliance || {}).forEach(foldInstr);   // (📏 stored days with their own instructions part: folded first)
   const onD = (t) => !!t && TR.ptDate(new Date(t)) === D;
   // the tests: the AM and PM typing and the spelling, a make-up counting for the slot it was taken for
   const slots = {};
@@ -2623,7 +2642,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
   const tamG = (cur.tamGrades || {})[D] || null, eodRaw = (cur.eodTrainer || {})[D] || null;
   const eodT = eodRaw && pctOf(eodRaw.score) != null ? Object.assign({}, eodRaw, { score: pctOf(eodRaw.score) }) : null;
-  // 📏 FOLLOWING INSTRUCTIONS, strictly — each training day, everything the course asks that the platform can see:
+  // 📏 FOLLOWING INSTRUCTIONS, strictly (now half of the Day's outputs, outputsOf) — each training day, everything the course asks that the platform can see:
   //   • the naming convention: the day's answer sheets (process:<id>, ft-process.js nameOk) and test screenshots (named with
   //     their date and AM/PM);
   //   • the folder structure and saving route: the screenshots saved in the Typing Tests / Spelling Tests folder, not elsewhere;
@@ -2684,15 +2703,16 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (!over || !wasI || wasI.v !== 2 || o.raise) instr = instrOf(D, wasI && wasI.links) || wasI || null;
   // (the past days this trainee has no mark for yet — checked before it was kept — get theirs from what is on record for them)
   Object.entries(cur.compliance || {}).forEach(([Dx, x]) => { if (!x || x.day1 || Dx === D || Dx >= todayPT || !TR.isWeekday(Dx) || (x.instr && x.instr.v === 2)) return;
-    const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {}; x.parts.instructions = I.pct;
-    const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
+    const I = instrOf(Dx, x.instr && x.instr.links); if (!I) return; x.instr = I; x.parts = x.parts || {};
+    // (📤 into its Day's outputs: the hand-in half kept as it was, outputsWork)
+    if (typeof x.parts.outputs === "number") { x.outputsWork = typeof x.outputsWork === "number" ? x.outputsWork : x.parts.outputs; x.parts.outputs = outputsOf(x.outputsWork, I.pct); }
+    x.pct = avgParts(x.parts); });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
     monitor: monDay != null ? monDay : (monDue && !monDue.optional && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
     // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
     // (counted only when the day has a TAM entry: no entry dated that day is left out, not a 0)
     tam: tamG && pctOf(tamG.pct) ? pctOf(tamG.pct) : null,
-    instructions: instr ? instr.pct : null,
     platform: platformDid ? 100 : seen.length ? 50 : 0,
     tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
     // (handing in counts once, and each score of what was graded that day counts beside it: the average)
@@ -2707,7 +2727,8 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (🔄 Update all scores, o.redo: the Task Tracker's and the Monitoring Sheet's checks were made on the day, so a day already
   // checked keeps them; everything else is worked out again from what the platform keeps now)
   const was = (cur.compliance || {})[D];
-  if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
+  // (📏 the instructions' % for the Day's outputs: a day already over keeps the one found then)
+  const instrPct = was && was.instr && was.instr.v === 2 && D < TR.ptDate() ? was.instr.pct : instr ? instr.pct : null;
   // (only what couldn't be read again is kept: a day with a fresh tracker check for it, or a Monitoring Sheet read now, is
   // worked out from that, never from an older score — an old cumulative Monitoring Sheet % kept a day at 5–13%)
   if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number" && !tk) parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monRead && monDue) parts.monitor = was.parts.monitor; }
@@ -2740,6 +2761,8 @@ async function dailyCompliance(env, id, D, o = {}) {
         // no file saved, nothing graded — the Day's outputs is left out too, not a 0: it doesn't count against the day)
         if (!links && !saved && !subs.length && !graded.length) parts.outputs = null;
         if (!onPlatform) parts.platform = null; } } }
+  // (📤 the instructions followed, half of the Day's outputs — on a day something was handed in only: outputsOf)
+  const outputsWork = parts.outputs; parts.outputs = outputsOf(outputsWork, instrPct);
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
   // (📒 never on a day the slides didn't ask for a Monitoring Sheet update: not even a higher score kept from before)
@@ -2758,7 +2781,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), graded: graded.slice(0, 20), platform: done.slice(0, 12), opened: seen.length,
     unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", monDue && cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
-    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, trackerAi, monitorAi, monDue: monDue ? { what: monDue.what, items: monDue.items, topic: monDue.topic } : null, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
+    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, outputsWork: typeof outputsWork === "number" ? outputsWork : null, trackerAi, monitorAi, monDue: monDue ? { what: monDue.what, items: monDue.items, topic: monDue.topic } : null, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
   // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)
@@ -3481,6 +3504,27 @@ export default {
         const was = (cur.compliance || {})[D];
         const c = await dailyCompliance(env, id, D, { redo: true, backfill: !!(was && was.backfilled) });
         return json({ ok: true, day: D, eod: (c && (c.day1Parts || c.parts) || {}).eod, pct: c && c.pct });   // (📅 Day 1: what was saved, though the day isn't counted)
+      }
+      // 🌱 PROFESSIONAL DEVELOPMENT & PROGRESS, a trainer's weekly score of a trainee (js/ft-batch-sheet.js pdpHtml): Competency in
+      // taking on a role, Communication and Quality of output, each 1–5 (half points), and a note — kept in
+      // trackerreview:<id>.pdp[<week>] = {role, comm, quality, note, avg, pct, by, at}: a record the trainee reads but only the
+      // Worker and trainers write (traineeWrite refuses trackerreview), so it can't be forged. Its score is the three's average
+      // (avg out of 5, pct for the averaging in %); all three empty takes the week's score off (not scored: never a 0).
+      if (path === "/api/pdp/set") {
+        if (tok.role !== "a") return json({ error: "Not allowed: only a trainer scores Professional Development & Progress." }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 100), wk = Number(b.week);
+        if (!id || !(Number.isInteger(wk) && wk >= 1 && wk <= 6)) return json({ error: "Missing trainee or week (1 to 6)" }, 400);
+        const rd = (v) => v == null || v === "" ? null : Number(v), C = { role: rd(b.role), comm: rd(b.comm), quality: rd(b.quality) };
+        const none = Object.values(C).every((v) => v == null);
+        if (!none && !Object.values(C).every((v) => isFinite(v) && v >= 1 && v <= 5 && Math.round(v * 2) === v * 2)) return json({ error: "Score each of the three 1 to 5 (half points allowed)." }, 400);
+        const kv = kvOf(env), rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+        cur.pdp = cur.pdp && typeof cur.pdp === "object" ? cur.pdp : {};
+        if (none) delete cur.pdp[wk];
+        else { const avg = Math.round((C.role + C.comm + C.quality) / 3 * 100) / 100;
+          cur.pdp[wk] = Object.assign(C, { note: String(b.note || "").slice(0, 1000), avg, pct: Math.round(avg * 20), by: String(tok.name || tok.id || "trainer").slice(0, 80), at: new Date().toISOString() }); }
+        await kv.put(rk, JSON.stringify(cur));
+        return json({ ok: true, week: wk, pdp: cur.pdp[wk] || null });
       }
       if (path === "/api/drive/status") {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
