@@ -305,7 +305,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!pa || !/^[1-9]\d* \//.test(pa[1]) || !(Number(pa[2]) >= 2) || /Not yet/.test(pa[3]) || pa[aiCol] !== '1 · 82%') fail(`🛠 Practice Lab for Ada: ${pa}`);
   if (!pb || !/^0 \//.test(pb[1]) || pb[3] !== 'Not yet') fail(`🛠 Practice Lab for Ben, who hasn't practiced: ${pb}`);
   // a time, not "just now"
-  if (/ago|just now/.test(tr.map(r => r[3]).join(' ')) || !/\d{1,2}:\d{2}/.test(ada[3])) fail(`"Last on the platform" isn't a date and time: ${tr.map(r => r[3])}`);
+  if (/ago|just now/.test(tr.map(r => r[3]).join(' ')) || !/[A-Z][a-z]{2} \d{1,2}, \d{4}/.test(ada[3])) fail(`"Last on the platform" isn't a date (the time is in the cell beside it): ${tr.map(r => r[3])}`);
 
   // 🏅 the Scorecard's grading systems and the Overall, with no Rank (the batch is ranked on 📊 Weekly Reports only)
   const sh = by('scores').head;
