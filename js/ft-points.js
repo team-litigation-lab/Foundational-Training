@@ -38,7 +38,9 @@ function convert(root){
       const p = pts(pct), how = el.getAttribute("title") || (el.parentElement && el.parentElement.children.length === 1 && el.parentElement.getAttribute("title")) || "";
       el.dataset.ftPts = String(pct);
       el.textContent = (m[1] || "") + fmt(p) + "/5";
-      el.title = [how ? "How it was worked out: " + how.replace(/\n+/g, " ") : "How it was worked out: the average of the scores counted here.",
+      // (💬 a real pop-up, not the browser's own tooltip — which shows only a "?" cursor, slowly or not at all, and never on a phone)
+      el.tabIndex = 0;
+      el.title = el.dataset.ftTip = [how ? "How it was worked out: " + how.replace(/\n+/g, " ") : "How it was worked out: the average of the scores counted here.",
         `${Math.round(pct)}% = ${fmt(p)} out of 5 (the percentage ÷ 20; 3 is passing, 5 the highest).`, insight(p, rowWhy(el))].join("\n");
       el.classList.add("ft-pts", p >= 4 ? "ft-pts-hi" : p >= PASS ? "ft-pts-ok" : "ft-pts-lo");
     });
@@ -51,6 +53,27 @@ window.afterRender = function(){ const out = typeof was === "function" ? was.app
 // (parts drawn after the page — a trainee picked, a table loaded — are converted too)
 try{ new MutationObserver(run).observe(document.body || document.documentElement, {childList: true, subtree: true}); }catch(err){}
 window.FTPoints = {convert, pts, fmt, insight};
-const st = document.createElement("style"); st.id = "ft-points"; st.textContent = `.ft-pts{cursor:help;white-space:nowrap;} .ft-pts:hover{text-decoration:underline dotted;}`;
+/* 💬 THE POP-UP: shown on hover, on keyboard focus, and on a tap (a phone), beside the score; a tap elsewhere or Esc closes it */
+let tip = null, tipFor = null;
+// (the score's title is lifted off while its pop-up is open — so the browser's own tooltip never shows over it — and put back after)
+function hideTip(){ if(tipFor && tipFor.dataset.ftTip) tipFor.title = tipFor.dataset.ftTip; if(tip){ tip.remove(); tip = null; } tipFor = null; }
+function showTip(el){
+  if(!el || !el.dataset.ftTip) return; if(tipFor === el) return; hideTip();
+  tip = document.createElement("div"); tip.className = "ft-pts-tip"; tip.setAttribute("role", "tooltip"); tipFor = el; el.removeAttribute("title");
+  el.dataset.ftTip.split("\n").forEach((line, i) => { const p = document.createElement("p"); p.textContent = line; if(i === 0) p.className = "ft-pts-tip-h"; tip.appendChild(p); });
+  document.body.appendChild(tip);
+  const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, vw = document.documentElement.clientWidth;
+  const left = Math.max(8, Math.min(vw - w - 8, r.left + r.width / 2 - w / 2)), below = r.bottom + 8 + h < window.innerHeight;
+  tip.style.left = left + "px"; tip.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - h - 8)) + "px";
+}
+const ptsOf = t => t && t.closest ? t.closest(".ft-pts[data-ft-tip]") : null;
+document.addEventListener("mouseover", ev => { const el = ptsOf(ev.target); if(el) showTip(el); else if(tip && !ev.target.closest(".ft-pts-tip")) hideTip(); }, true);
+document.addEventListener("focusin", ev => { const el = ptsOf(ev.target); if(el) showTip(el); }, true);
+document.addEventListener("click", ev => { const el = ptsOf(ev.target); if(el){ if(tipFor === el && ev.pointerType === "touch") hideTip(); else showTip(el); } else if(!(ev.target.closest && ev.target.closest(".ft-pts-tip"))) hideTip(); }, true);
+document.addEventListener("keydown", ev => { if(ev.key === "Escape") hideTip(); });
+window.addEventListener("scroll", hideTip, true);
+const st = document.createElement("style"); st.id = "ft-points"; st.textContent = `.ft-pts{cursor:pointer;white-space:nowrap;} .ft-pts:hover,.ft-pts:focus{text-decoration:underline dotted;outline:none;}
+.ft-pts-tip{position:fixed;z-index:100000;max-width:340px;background:#1E2340;color:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:13.5px/1.45 Arial,sans-serif;pointer-events:none;}
+.ft-pts-tip p{margin:0 0 6px;} .ft-pts-tip p:last-child{margin:0;} .ft-pts-tip .ft-pts-tip-h{font-weight:700;}`;
 document.head.appendChild(st);
 })();
