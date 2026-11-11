@@ -191,7 +191,7 @@ function renderMonitorPage(){
 
 /* 📁 Link my Drive, from anywhere (the orientation's Task Tracker and Monitoring Sheet slides): the same My Drive links
    form in a window over the page, so a trainee pastes the links where they read about them. Saved in drive:<id> like the
-   page's; from then on the Worker checks the tracker and the Monitoring Sheet automatically at the end of every shift. */
+   page's; from then on the Worker checks the tracker automatically at the end of every shift, and the Monitoring Sheet on the days it is due (FTTrackerRules.MONITOR_SCHEDULE). */
 function closeLinkModal(){ const o = document.getElementById("fdrLinkModal"); if(o) o.remove(); document.removeEventListener("keydown", linkModalKey, true); D.look = false; }
 function linkModalKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); closeLinkModal(); } }
 function paintLinkModal(){
