@@ -1157,7 +1157,7 @@ function perTraineeHtml(T){
   }).join("")}</div>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
-   Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
+   Tracker, the Monitoring Sheet (on a day the slides ask for an update), the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
 /* ▸/▾ retractable by trainee and by day: a trainee's row folds to each day's score and a little box per activity (icon and %),
    a day's column folds to its score alone. Everything starts open; what a viewer folds is kept on this browser (OFOLD_KEY). */
@@ -1175,7 +1175,7 @@ function outputsTable(){
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
-  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
     tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
@@ -1189,7 +1189,7 @@ function outputsTable(){
           return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -1234,11 +1234,17 @@ function dayActs(R, d){
       crit: unread("tracker") ? null : aiCrit(c.trackerAi),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
-  if(P.monitor != null || unread("monitor")){
+  // 📒 the Monitoring Sheet: due only on a day the slides asked for an update (FTTrackerRules.MONITOR_SCHEDULE, worker.js
+  // dailyCompliance); any other day it is greyed out, "Not expected today", as the Day's outputs' "Not counted"
+  const TRr = window.FTTrackerRules, monDue = c.monDue || (TRr && TRr.monitorDueOn && typeof batchStartDate === "function" ? TRr.monitorDueOn(batchStartDate(B.batch), d) : null);
+  if(!monDue && c.parts && P.monitor == null)
+    out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: null, na: true, naV: "Not expected today", text: "Not expected today: the day's slides didn't ask for a Monitoring Sheet update, so it doesn't affect the score."});
+  else if(P.monitor != null || unread("monitor")){
+    const asked = monDue ? `${monDue.what}, as the day's slides asked` : "the day's entry";
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
       : c.monitorAi ? aiWhy(c.monitorAi)
-      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} (${asked}) scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please update your Monitoring Sheet with ${asked}, in an entry dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       crit: unread("monitor") ? null : aiCrit(c.monitorAi),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }

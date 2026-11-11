@@ -294,6 +294,43 @@
   // grayed out, and count toward the total only once the trainee has written them (so a full sheet reads 16 of 16)
   const OPTIONAL_MONITOR_TOPICS = ["Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
   const optionalTopic = (t) => !!(t && t.optional) || OPTIONAL_MONITOR_TOPICS.includes(String((t && t.title) || t));
+  /* 📒 WHEN the Monitoring Sheet is due: only on a training day whose slides explicitly say to update it, and only once that
+     day's topic has been covered (the trainers: "not expected to be checked daily; updated when explicitly instructed on the
+     slides and after the topic has been covered"). Training day number → {topic: the discussion whose entry is due (by the
+     Training Guide's order, MONITOR_TOPICS), on: the day that topic is covered, items: the sheet's numbered items the slides
+     name ([] for a plain "Update your Training Progress Monitoring Sheet"), what: the instruction, as the trainee is told it,
+     where: the slides that say it}. A day not listed asks for no update: its Monitoring Sheet isn't expected, not counted
+     (worker.js dailyCompliance parts.monitor = null; js/ft-batch-sheet.js dayActs "Not expected today"). Read from
+     grep -i "monitoring" js/ build/days/ (the decks, js/ft-day-decks-data.js, are built from build/days by build/day-decks.cjs):
+       • the end of every day's deck (js/ft-day-decks.js dividerSlide) only repeats a listed day's instruction;
+       • Day 5's opening card (js/ft-buffer.js ACTS["5:s1"]) is Day 4's items #10–11 again, under Day 4's key (a make-up of
+         Day 4's update, done once), so it isn't a new due day;
+       • Day 8's item #14 (build/days/day08.js s2, the Demo Tutorial) is off the deck (build/day-decks.cjs SKIP[8]). */
+  const MONITOR_SCHEDULE = {
+    1: {topic: MONITOR_TOPICS[0], on: 1, items: [1, 2, 3, 4], what: "items #1–4 (and the Breakout Session's handouts)",
+      where: "build/days/day01.js “monitoring” (upload the sheet, then update items #1-4; taught on the orientation's 📒 Monitoring Sheet slide, js/ft-rules.js) · js/ft-day-decks.js HANDOUTS[1] (“Update your Training Progress Monitoring Sheet”)"},
+    2: {topic: MONITOR_TOPICS[1], on: 2, items: [5, 6, 7, 8, 9], what: "items #5–7 and #8–9 (and the Breakout Session's handouts)",
+      where: "js/ft-buffer.js ACTS[\"2:s2l\"] (#5–7, 📤 Submit) and ACTS[\"2:s4\"] (#8–9) · js/ft-day-decks.js LESSON_CARDS[2] (“Update items #5–7 on your Monitoring Sheet”) · build/days/day02.js (Task 3 lines) · HANDOUTS[2]"},
+    3: {topic: MONITOR_TOPICS[2], on: 3, items: [12], what: "item #12 (the CRM/CMS training videos)",
+      where: "js/ft-day-activities.js OFFLINE[3] (“The CRM/CMS training videos, then update item #12 on your Monitoring Sheet”) · build/days/day03.js homework"},
+    4: {topic: MONITOR_TOPICS[3], on: 4, items: [10, 11], what: "items #10–11 (Reception Training with Julio)",
+      where: "js/ft-buffer.js ACTS[\"4:s2b\"] (📤 Submit) · js/ft-day-activities.js OFFLINE[4] · js/ft-day-decks.js LESSON_CARDS[3] (Reception mock calls) · build/days/day04.js (Task 2)"},
+    7: {topic: MONITOR_TOPICS[6], on: 7, items: [], what: "the Breakout Session's handouts",
+      where: "js/ft-day-decks.js HANDOUTS[7] (“Update your Training Progress Monitoring Sheet”)"},
+    8: {topic: MONITOR_TOPICS[7], on: 8, items: [15, 16], what: "items #15–16 (the Intake Process videos and Intake Documents)",
+      where: "build/days/day08.js s1 (“Update item #15”) and s1b (“Update #16 (Intake Documents)”) · js/ft-day-decks.js LESSON_CARDS[6] (“Intake Video … update your Monitoring Sheet”)"},
+    10: {topic: MONITOR_TOPICS[9], on: 10, items: [], what: "the Breakout Session's handouts",
+      where: "js/ft-day-decks.js HANDOUTS[10] (“Update your Training Progress Monitoring Sheet”)"}
+  };
+  // training day n's update, or null when the slides ask for none that day (or its topic isn't covered yet)
+  const monitorDue = (n) => { const x = MONITOR_SCHEDULE[Number(n)]; return x && x.on <= Number(n) ? x : null; };
+  // a date's training day number from the batch's first day (YYYY-MM-DD): its count of weekdays, 0 before it or with no start
+  function trainingDay(start, D){
+    if(!start || !D || D < start) return 0;
+    let n = 0; for(let t = Date.parse(start + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if(isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
+    return n;
+  }
+  const monitorDueOn = (start, D) => monitorDue(trainingDay(start, D));
   const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
   // a discussion's other title, also found on sheets (Day 2's To-Do is "Virtual Assistant Essentials - Day 2"; its lesson is Law Firm Communication)
   const TOPIC_ALIASES = {"Virtual Assistant Essentials - Day 2": ["Law Firm Communication"]};
@@ -450,6 +487,6 @@
     return {pct, pass: rules.every((r) => r.pass === true), pending: rules.some((r) => r.pass === null), rules, extracted: extracted.length, missing, wrong, misnamed, docsRead: !!docs};
   }
 
-  root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
+  root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, MONITOR_SCHEDULE, monitorDue, monitorDueOn, trainingDay, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, staleDates, checkDay, dayExcerpt, reviewPrompt, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);
