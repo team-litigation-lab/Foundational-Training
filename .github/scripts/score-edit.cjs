@@ -215,15 +215,16 @@ async function workerChecks() {
         text: document.querySelector('main').innerText, ran: !!window.__xss, canEdit: null }), L);
     })();
     if (mine.inputs) fail(`the trainee's page has ${mine.inputs} editing field(s)`);
-    if (mine.ring !== '100%' || !/base \d+% \+ 100 points/.test(mine.ringTip)) fail(`the trainee's overall doesn't include the points (with the base on its hover): ${mine.ring} | ${mine.ringTip}`);
+    if (!/^(100%|5\.0\/5)$/.test(mine.ring) ||   // (⭐ in points: 100% = 5.0/5, js/ft-points.js)
+        !/base \d+% \+ 100 points/.test(mine.ringTip)) fail(`the trainee's overall doesn't include the points (with the base on its hover): ${mine.ring} | ${mine.ringTip}`);
     if (mine.overallCell.v !== '100%') fail(`the trainee's 🏅 Scores overall: ${JSON.stringify(mine.overallCell)}`);
     if (/extra points|bonus/i.test(mine.text)) fail('the trainee\'s page labels the points as a bonus');
     const cellOf = re => mine.cells.find(c => re.test(c.name)) || {};
-    if (!/^85%/.test(cellOf(/Knowledge Check|Lesson|PI/i).v || '') && !mine.cells.some(c => /^85%/.test(c.v))) fail(`the trainee doesn't see the edited Knowledge Check: ${JSON.stringify(mine.cells.slice(0, 4))}`);
+    if (!/^(85%|4\.3\/5)/.test(cellOf(/Knowledge Check|Lesson|PI/i).v || '') && !mine.cells.some(c => /^(85%|4\.3\/5)/.test(c.v))) fail(`the trainee doesn't see the edited Knowledge Check: ${JSON.stringify(mine.cells.slice(0, 4))}`);
     { const rl = mine.cells.find(c => /Reception Listening Activity/.test(c.name)) || {};
       if (!/^90%/.test(rl.v) || !/was 60%/.test(rl.t)) fail(`the trainee doesn't see the override with its rationale: ${JSON.stringify(rl)}`); }
     { const mc = mine.cells.find(c => /Reception Mock Call with the trainer/.test(c.name)) || {};
-      if (!/^50%/.test(mc.v) || !/GRADERS-COMMENT/.test(mc.t)) fail(`the trainee doesn't see the mock call's score with its rationale: ${JSON.stringify(mc)}`); }
+      if (!/^(50%|2\.5\/5)/.test(mc.v) || !/GRADERS-COMMENT/.test(mc.t)) fail(`the trainee doesn't see the mock call's score with its rationale: ${JSON.stringify(mc)}`); }
     if (mine.cells.filter(c => /%/.test(c.v)).some(c => !c.t.trim())) fail(`a graded item on the trainee's page has no hover: ${JSON.stringify(mine.cells.filter(c => /%/.test(c.v) && !c.t.trim()))}`);
     if (mine.ran) fail('the override\'s note ran on the trainee\'s page');
     if (await page.evaluate(([id]) => FTBatchSheet.editScore(id, 'monitor', '10'), [id])) fail('a trainee\'s page could edit a score');
