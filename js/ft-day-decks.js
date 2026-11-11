@@ -943,8 +943,10 @@ function sheetPages(sheet){
   const deal = limit => { const out = []; let pg = [], u = 0;
     units.forEach(k => { const h = hOf(k);
       // (a heading never ends a page: it moves to the next one with the text it heads)
-      if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
-        out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
+      // (and a page that would be only headings — Day 8's 🏷 Intake Process label over its videos — isn't one: they go on
+      // with what they head)
+      if(shown(pg) && u + h > limit){ const carry = []; while(pg.length && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
+        if(pg.length) out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
       pg.push(k); u += h; });
     if(pg.length) out.push(pg); return out; };
   const pages = deal(capAll);
@@ -3276,16 +3278,18 @@ html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:
    for each kind of document, its name white on navy over the documents to ask for, each with an empty box to tick */
 main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}
 main.main-ftdd .ftdd-sheet > .ftdd-keep:has(.ftdd-evl){align-self:stretch;width:100%;}
-.ftdd-sheet .ftdd-evl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin:10px 0 6px;text-align:left;}
+.ftdd-sheet .ftdd-evl{display:block;columns:4;column-gap:12px;width:100%;margin:10px 0 6px;text-align:left;}   /* (the cards flow in three columns, newspaper style: no row of empty space under a short card, so the checklist is drawn larger) */
+.ftdd-sheet .ftdd-evl > .ftdd-evl-card{break-inside:avoid;display:inline-block;width:100%;margin:0 0 12px;}
 /* (the checklist's own title over the cards: Accident or Injury Claim Documents & Evidence, CHECKLIST in orange) */
 main.main-ftdd .ftdd-sheet .ftdd-evl-title{width:100%;text-align:center;margin:2px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-evl-title b{display:block;font:800 26px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet .ftdd-evl-title span{display:block;font:800 22px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;color:#E8590C;}
-@media(max-width:900px){ .ftdd-sheet .ftdd-evl{grid-template-columns:minmax(0,1fr);} }
+@media(max-width:1300px){ .ftdd-sheet .ftdd-evl{columns:3;} }
+@media(max-width:900px){ .ftdd-sheet .ftdd-evl{columns:1;} }
 .ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
-main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 17px/1.3 'Poppins','Inter',sans-serif;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 19px/1.3 'Poppins','Inter',sans-serif;}
 .ftdd-sheet .ftdd-evl-ic{font-size:18px;}
-main.main-ftdd .ftdd-sheet .ftdd-evl-i{position:relative;padding:5px 12px 5px 38px;font:700 16px/1.4 'Inter',system-ui,sans-serif;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-i{position:relative;padding:3px 10px 3px 36px;font:700 18px/1.3 'Inter',system-ui,sans-serif;color:#0B0D1A;}
 .ftdd-sheet .ftdd-evl-i:first-of-type{margin-top:6px;}
 .ftdd-sheet .ftdd-evl-i:last-child{margin-bottom:8px;}
 .ftdd-sheet .ftdd-evl-i::before{content:"";position:absolute;left:12px;top:8px;width:15px;height:15px;border:2px solid #343C66;border-radius:3px;background:#fff;}
@@ -3457,9 +3461,10 @@ main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(
 /* (Day 9's metrics with the practice links beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
-main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:19px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:26px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-links{flex-direction:column;align-items:stretch;margin:0 0 12px;}
-main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:17px;padding:12px 16px;}
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:24px;padding:18px 22px;border-radius:12px;}   /* (big: the slide is drawn smaller to fit the metrics beside them) */
+main.main-ftdd .ftdd-sheet .ftdd-mcside-links{gap:12px;}
 @media(max-width:1100px){ main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{grid-template-columns:minmax(0,1fr);} }
 /* ✨ the Dashboard's card titles, easier to read: bolder and a touch larger, with a crisp edge — navy with a white rim and a
    soft shadow on a lesson card's light band, white with a dark shadow on the navy pinned cards */
