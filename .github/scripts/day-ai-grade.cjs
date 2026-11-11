@@ -15,7 +15,8 @@ const failures = []; const fail = (m) => failures.push(m);
     if (TR.isoDate(v, '2026') !== want) fail(`the date "${v}" reads as "${TR.isoDate(v, '2026')}", not ${want}`);
   // (a tracker kept as a log: the day's tasks entered as rows dated that day, no Daily Notes column for it, is updated)
   { const t = { tracker: { noteDates: [], rows: [TR.taskRow('completion', { dateReceived: '2026-11-03', type: 'LSH-TRAINING', details: 'Reception mock call prep' })] } };
-    const r = TR.checkDay(t, '2026-11-03'); if (r.pct !== 100) fail(`a task entered for the day doesn't count as updating the tracker: ${JSON.stringify(r.rules)}`);
+    // (the Daily Notes rule: the tracker's other rules — the recurring tests and the rest, tracker-eval.cjs — check other things)
+    const r = TR.checkDay(t, '2026-11-03'), dn = r.rules.find(x => x.id === 'daily-notes'); if (!dn || dn.pct !== 100) fail(`a task entered for the day doesn't count as updating the tracker: ${JSON.stringify(r.rules)}`);
     if (!/Reception mock call prep/.test(TR.dayExcerpt(t, '2026-11-03')) || TR.dayExcerpt(t, '2026-11-04')) fail('the day\'s excerpt isn\'t only that day\'s rows'); }
 
   const store = new Map(), id = 'dee-grade--b110226', D = '2026-11-04';
@@ -36,7 +37,8 @@ const failures = []; const fail = (m) => failures.push(m);
     if (u.startsWith('https://api.anthropic.com/')) {
       calls++; const body = JSON.parse(init.body), prompt = body.messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n'); prompts.push(prompt);
       const tracker = /Daily Task Tracker/.test(body.system || '');
-      const scores = tracker ? { compliance: 4, completeness: 4, personal: 5, effort: 4, detail: 3, professionalism: 4 } : { compliance: 3, completeness: 3, personal: 1, effort: 2, detail: 3, professionalism: 4 };
+      // (🗂 the tracker on the trainer's sample evaluation's seven metrics, 28/35 = 80; the Monitoring Sheet on the six criteria)
+      const scores = tracker ? { organization: 4, status: 4, accuracy: 3, takeaways: 5, application: 4, memory: 4, instructions: 4 } : { compliance: 3, completeness: 3, personal: 1, effort: 2, detail: 3, professionalism: 4 };
       const why = Object.fromEntries(Object.keys(scores).map(k => [k, 'Reason for ' + k + '.']));
       const text = JSON.stringify({ scores, why, aiLikely: !tracker, flags: tracker ? [] : ['Generic takeaways'], feedback: tracker ? 'Specific notes.' : 'Write your own takeaways.' });
       return new Response(JSON.stringify({ content: [{ type: 'text', text }], model: 'm', stop_reason: 'end_turn' }));
@@ -54,12 +56,12 @@ const failures = []; const fail = (m) => failures.push(m);
   env.ANTHROPIC_API_KEY = 'ci-key';
   await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
   { const c = day(), P = c.parts || {};
-    if (P.tracker !== 80) fail(`the tracker's part isn't the AI grade of the day's rows (24/30 = 80): ${P.tracker} ${JSON.stringify(c.trackerAi)}`);
+    if (P.tracker !== 80) fail(`the tracker's part isn't the AI grade of the day's rows (28/35 = 80): ${P.tracker} ${JSON.stringify(c.trackerAi)}`);
     if (P.monitor !== 53) fail(`the Monitoring Sheet's part isn't the AI grade of the day's entry (16/30 = 53): ${P.monitor} ${JSON.stringify(c.monitorAi)}`);
     if (!c.monitorAi || !c.monitorAi.aiLikely || !c.trackerAi || c.trackerAi.aiLikely) fail(`the AI-generated flag isn't kept: ${JSON.stringify([c.trackerAi, c.monitorAi])}`);
     if (calls !== 2) fail(`${calls} AI requests for one day's two sheets`);
     // (📝 each criterion's reason kept, for the score's rationale on the trainee's page)
-    if (!c.trackerAi || !c.trackerAi.why || c.trackerAi.why.detail !== 'Reason for detail.') fail(`each criterion's reason isn't kept with the grade: ${JSON.stringify(c.trackerAi && c.trackerAi.why)}`);
+    if (!c.trackerAi || !c.trackerAi.why || c.trackerAi.why.accuracy !== 'Reason for accuracy.') fail(`each criterion's reason isn't kept with the grade: ${JSON.stringify(c.trackerAi && c.trackerAi.why)}`);
     if (prompts.some(p => /SHOULD NOT BE SENT/.test(p))) fail('another day\'s entry went to the AI');
     if (!prompts.some(p => /missed the callback number once/.test(p))) fail('the day\'s tracker rows didn\'t go to the AI'); }
   // 2. the same entries aren't graded again
@@ -84,5 +86,5 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!r.ok) fail(`today's compliance wasn't worked out again: ${JSON.stringify(r)}`);
     if ((await call('/api/compliance/today', { ids: [id] })).status < 400) fail('a request without a trainer\'s sign-in worked out today\'s compliance'); }
   if (failures.length) { console.error('Day AI grade test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Day AI grade test passed (each day\'s Task Tracker rows and Monitoring Sheet entry graded on compliance, completeness & accuracy, personal input, effort, attention to detail and professionalism; only that day\'s input sent; graded once until it changes; the checks\' score without the AI; dates written other ways read).');
+  console.log('Day AI grade test passed (each day\'s Task Tracker rows graded on the trainer\'s seven tracker metrics and its Monitoring Sheet entry on compliance, completeness & accuracy, personal input, effort, attention to detail and professionalism; only that day\'s input sent; graded once until it changes; the checks\' score without the AI; dates written other ways read).');
 })().catch((e) => { console.error('Day AI grade test FAILED:', e && e.stack || e); process.exit(1); });
