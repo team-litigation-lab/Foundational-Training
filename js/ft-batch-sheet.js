@@ -48,9 +48,12 @@ const kcLessons = () => lessons().filter(d => typeof window.ftKcQuestions !== "f
 const lessonName = id => typeof ftName === "function" ? ftName(id) : "Lesson " + id;
 const t = v => { const d = v ? new Date(v) : null; return d && isFinite(d) ? d : null; };
 // (📅 the date alone in a narrow score cell — the time is in the cell beside it — so it never wraps)
-const whenD = v => { const d = t(v); return d ? d.toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric"}) : ""; };
-const when = v => { const d = t(v); return d ? d.toLocaleString(undefined, {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"}) : ""; };
-const day = v => { const d = t(v); return d ? d.toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric"}) : ""; };
+// (⚡ each formatter made once: toLocale*String with options builds a new Intl formatter on every call — hundreds a render)
+const DF = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric"}), DTF = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"});
+const MDF = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"});
+const whenD = v => { const d = t(v); return d ? DF.format(d) : ""; };
+const when = v => { const d = t(v); return d ? DTF.format(d) : ""; };
+const day = v => { const d = t(v); return d ? DF.format(d) : ""; };
 const ago = v => { const d = t(v); if(!d) return ""; const m = Math.round((Date.now() - d) / 60000);
   return m < 2 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} day${Math.round(m / 1440) === 1 ? "" : "s"} ago`; };
 const pct = n => typeof n === "number" && isFinite(n) ? Math.round(n) + "%" : "";
@@ -1233,7 +1236,7 @@ const weOf = (id, n) => { const ev = ((((((B.data || {}).rec || {})[id] || {}).s
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
-  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
+  const md = d => MDF.format(new Date(d + "T12:00:00Z"));
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
   return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
