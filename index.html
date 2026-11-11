@@ -1241,11 +1241,6 @@ main.main-dash{max-width:1600px;}
 .dash-side .stat .num{color:#fff;}
 .dash-side .stat .lbl{color:#C9CCDD;}
 .dash-side .stat .lbl span{color:#9EA3BD;}
-/* (the dashboard's stat tiles: bigger numbers, in the brand's orange, and bigger labels — as the trainer asked; a test tile's
-   green/amber/red status colour still wins, js/ft-skilltests.js) */
-main .dash-side .dash-side-inner .stat .num{font-size:28px !important;line-height:1.1 !important;color:#F5A35C;font-weight:700;}
-main .dash-side .dash-side-inner .stat .lbl{font-size:12.5px !important;}
-@media (max-width:700px){ main .dash-side .dash-side-inner .stat .num{font-size:22px !important;} }
 .dash-hero{display:grid;grid-template-columns:140px minmax(0,1fr);gap:24px;align-items:center;margin-bottom:6px;}
 .dash-hero h1{font-size:34px;margin:0 0 8px;color:var(--navy);}
 .dash-hero p{color:var(--ink-soft);font-size:var(--font-body);max-width:62ch;margin:0;}
@@ -7197,7 +7192,7 @@ function renderDashboard(){
       </div>
       <!-- progress stats: a small band right under the day cards -->
       <aside class="dash-side"><div class="dash-side-inner">
-        <div class="card stat"><div class="num" data-ft-pts="progress">${pct}%</div><div class="lbl">Program complete</div></div>
+        <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${ocs.score}%</div><div class="lbl">${ocs.tier ? `Best Competency — ${esc(displayTier(ocs.tier))}` : "Best Competency Score"}<span style="display:block;font-weight:400;margin-top:2px;">Avg across all attempts: ${avgC}%</span></div></div>
         <div class="card stat"><div class="num">${avgScore()}%</div><div class="lbl">Average quiz score</div></div>
         <div class="card stat"><div class="num">${done} / ${DAYS.length}</div><div class="lbl">Days completed</div></div>
@@ -14134,7 +14129,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.11-96d2062d";
+var APP_BUILD = "ft-2026.11.11-6eebb4aa";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14177,7 +14172,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-roster.js?v=908501ce65"></script>
 <script src="/js/ft-updates.js?v=ca8b4b0cc2"></script>
 <script src="/js/ft-slides.js?v=63f91916f2"></script>
-<script src="/js/ft-tracker-rules.js?v=0202e9aab1"></script>
+<script src="/js/ft-tracker-rules.js?v=16b6541924"></script>
 <script src="/js/ft-tracker.js?v=49e68a23e1"></script>
 <script src="/js/ft-monitoring.js?v=c93e3c2768"></script>
 <script src="/js/ft-process.js?v=37bae05b9a"></script>
@@ -14207,7 +14202,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=b1327dfc06"></script>
 <script src="/js/ft-todo.js?v=317351bc17"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
-<script src="/js/ft-day-decks.js?v=68fd806647"></script>
+<script src="/js/ft-day-decks.js?v=f7396a4d14"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
