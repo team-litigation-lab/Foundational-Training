@@ -1141,12 +1141,14 @@ function perTraineeHtml(T){
     const inGrades = ["scores", "scorecard", "practice", "lessons", "days", "dayscores"], last = ["compliance"];
     // (✍️ in place of 📅 Day by Day: the Knowledge Checks answer by answer with the comments, the Assessments and the Activities)
     const kd = `<tr class="bs-pt-sec"><th colspan="3">✍️ Knowledge Checks, Assessments &amp; Activities</th></tr><tr><td colspan="3" class="bs-pt-kd">${kdOneHtml(p, true)}${activitiesHtml(p)}</td></tr>`;
-    // (👥 the trainee's own record in a table of its own, its value column wide — dates and "Activity deck: Day 8" on one line —
+    // (👥 the trainee's own record: its value column wide — dates and "Activity deck: Day 8" on one line —
     // so its sizing never crowds, or is crowded by, the score tables around it)
     const tbl = (rows, cls) => rows ? `<table class="bs-pt-t${cls ? " " + cls : ""}"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${rows}</tbody></table>` : "";
-    const body = tbl(use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + kd + grades + intake)
-      + tbl(use.filter(x => x.id === "trainees").map(sec).join(""), "bs-pt-own")
-      + tbl(last.map(id => use.filter(x => x.id === id).map(sec).join("")).join(""));
+    // (📐 every section its own table — each sized for its own contents, nothing truncated or crowded by another's columns)
+    const own = x => tbl(sec(x), `bs-pt-s-${String(x.id).replace(/[^\w-]/g, "")}${x.id === "trainees" ? " bs-pt-own" : ""}`);
+    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(own).join("") + tbl(kd, "bs-pt-s-kd") + tbl(grades, "bs-pt-s-edit") + tbl(intake, "bs-pt-s-intake")
+      + use.filter(x => x.id === "trainees").map(own).join("")
+      + last.map(id => use.filter(x => x.id === id).map(own).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       <div class="bs-pt-wrap">${body}
