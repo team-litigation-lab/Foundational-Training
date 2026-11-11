@@ -1308,9 +1308,7 @@ function dayActs(R, d){
   if(c.tests || P.tests != null){ const t = c.tests || {}, took = [t.AM && "the morning typing test", t.PM && "the afternoon typing test", t.SP && "the spelling test"].filter(Boolean),
       miss = [!t.AM && "the morning typing test", !t.PM && "the afternoon typing test", !t.SP && "the spelling test"].filter(Boolean);
     out.push({k: "tests", icon: "🧪", label: "Typing & Spelling", pct: P.tests, text: sent2(!took.length ? "Please take today's tests: the morning and afternoon typing tests and the spelling test." : miss.length ? `Good that you took ${took.join(" and ")}. Don't forget ${miss.join(" and ")}.` : "Great consistency: all three tests done (morning and afternoon typing, and spelling).")}); }
-  // (📤 a day nothing was handed in: greyed out, not counted for or against the day)
-  if(P.outputs == null && (c.noOutputs || (c.parts && "outputs" in c.parts && !(c.links || c.saved || (c.submissions || []).length || (c.graded || []).length))))
-    out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: null, na: true, text: "Not counted: nothing was handed in that day (no Process Questions, Knowledge Check, assessment, output link or file), so it doesn't affect the score."});
+  // (📤 a day nothing was handed in: no Day's outputs row at all — not counted, and not shown, as the trainer asked)
   if(P.outputs != null){ const sub = (c.submissions || []).slice(0, 3);
     out.push({k: "outputs", icon: "📤", label: "Day's outputs", pct: P.outputs, text: sent2(!P.outputs ? (c.folderError ? "Your folder couldn't be opened, so the day's outputs aren't counted: share it with the program's account." : "Remember to submit your output links in the Task Tracker or save your files in your Assessments/Activities folder.")
       : "Well done: " + (c.links || c.saved ? [c.links ? plural(c.links, "output link") + " submitted" : "", c.saved ? plural(c.saved, "file") + " saved in your folder" : ""].filter(Boolean).join(" and ") + "." : `${plural((c.submissions || []).length, "submission")} on the platform.`),
