@@ -1241,6 +1241,11 @@ main.main-dash{max-width:1600px;}
 .dash-side .stat .num{color:#fff;}
 .dash-side .stat .lbl{color:#C9CCDD;}
 .dash-side .stat .lbl span{color:#9EA3BD;}
+/* (the dashboard's stat tiles: bigger numbers, in the brand's orange, and bigger labels — as the trainer asked; a test tile's
+   green/amber/red status colour still wins, js/ft-skilltests.js) */
+main .dash-side .dash-side-inner .stat .num{font-size:28px !important;line-height:1.1 !important;color:#F5A35C;font-weight:700;}
+main .dash-side .dash-side-inner .stat .lbl{font-size:12.5px !important;}
+@media (max-width:700px){ main .dash-side .dash-side-inner .stat .num{font-size:22px !important;} }
 .dash-hero{display:grid;grid-template-columns:140px minmax(0,1fr);gap:24px;align-items:center;margin-bottom:6px;}
 .dash-hero h1{font-size:34px;margin:0 0 8px;color:var(--navy);}
 .dash-hero p{color:var(--ink-soft);font-size:var(--font-body);max-width:62ch;margin:0;}
@@ -5546,14 +5551,8 @@ window.ftDay1 = {
     // Worker kept from before — scored, often 0, on every training day — has it taken out and its % worked out again, as the
     // Day's outputs' "Not counted"; worker.js dailyCompliance writes new days the same way and cleans the stored ones)
     const mon = {};
-    // (📏 a day stored while Following instructions was its own part: folded into its Day's outputs — the hand-in half and the
-    // instructions' share averaged, outputsWork the hand-in half — and its % worked out again, as worker.js foldInstr writes it)
-    Object.entries(rv.compliance).forEach(([Dx, z]) => { if(!z || !["parts", "day1Parts"].some(f => z[f] && "instructions" in z[f])) return;
-      const nz = Object.assign({}, z); ["parts", "day1Parts"].forEach(f => { if(!z[f] || !("instructions" in z[f])) return; const P = Object.assign({}, z[f]), ip = P.instructions; delete P.instructions;
-        if(typeof P.outputs === "number"){ if(f === "parts") nz.outputsWork = P.outputs; P.outputs = typeof ip === "number" ? Math.round((P.outputs + ip) / 2) : P.outputs; } nz[f] = P; });
-      if(nz.parts && !nz.day1) nz.pct = avg(nz.parts); mon[Dx] = nz; });
     if(TR && TR.monitorDueOn && st) Object.entries(rv.compliance).forEach(([Dx, z]) => { if(!z || TR.monitorDueOn(st, Dx)) return;
-      z = mon[Dx] || z; const fx = ["parts", "day1Parts"].filter(f => z[f] && typeof z[f].monitor === "number"); if(!fx.length) return;
+      const fx = ["parts", "day1Parts"].filter(f => z[f] && typeof z[f].monitor === "number"); if(!fx.length) return;
       const nz = Object.assign({}, z, {monitorAi: null}); fx.forEach(f => { nz[f] = Object.assign({}, z[f], {monitor: null}); }); if(nz.parts) nz.pct = avg(nz.parts); mon[Dx] = nz; });
     if(Object.keys(mon).length) rv = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance, mon)});
     const x = D ? rv.compliance[D] : null, y = T ? rv.compliance[T] : null;
@@ -5564,20 +5563,6 @@ window.ftDay1 = {
     if(y && y.parts && !y.final && !y.day1 && !y.w1 && T !== D) add[T] = hold(y, "open");
     return Object.keys(add).length ? Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance, add)}) : rv;
   }
-};
-// 🌱 PROFESSIONAL DEVELOPMENT & PROGRESS: a trainer's weekly score (worker.js /api/pdp/set → trackerreview:<id>.pdp[<week>]):
-// Competency in taking on a role, Communication and Quality of output, each 1–5 (half points); its score their average, out of
-// 5 (pct: ×20 for the averaging in %). A week not scored is null — never a 0 — so nothing counts it.
-window.ftPdp = {
-  CRIT: [["role", "Competency in taking on a role"], ["comm", "Communication"], ["quality", "Quality of output"]],
-  of(rv, n){ const x = rv && rv.pdp && rv.pdp[n]; if(!x) return null; const v = this.CRIT.map(([k]) => Number(x[k]));
-    if(!v.every(y => isFinite(y) && y >= 1 && y <= 5)) return null; const avg5 = Math.round(v.reduce((a, y) => a + y, 0) / 3 * 100) / 100;
-    return Object.assign({}, x, {avg5, pct: Math.round(avg5 * 20)}); },
-  // (a week's compliance with it: the week's days' % and its PD&P % averaged, the PD&P counted as one more entry beside the days)
-  withWeek(dayPcts, rv, n){ const p = this.of(rv, n), v = (dayPcts || []).filter(y => typeof y === "number").concat(p ? [p.pct] : []);
-    return v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; },
-  // (every scored week's %, for an average over the whole training)
-  pcts(rv){ return Object.keys((rv && rv.pdp) || {}).map(n => this.of(rv, n)).filter(Boolean).map(x => x.pct); }
 };
 // ===== W1-OVERRIDE B103026 one-off: Week 1 (training days 1–5) counted done, its EOD 100%. Applied only where the
 // browser READS the records (nothing is written back: never hook it into sharedGet). Delete this block and every line
@@ -7192,7 +7177,7 @@ function renderDashboard(){
       </div>
       <!-- progress stats: a small band right under the day cards -->
       <aside class="dash-side"><div class="dash-side-inner">
-        <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
+        <div class="card stat"><div class="num" data-ft-pts="progress">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${ocs.score}%</div><div class="lbl">${ocs.tier ? `Best Competency — ${esc(displayTier(ocs.tier))}` : "Best Competency Score"}<span style="display:block;font-weight:400;margin-top:2px;">Avg across all attempts: ${avgC}%</span></div></div>
         <div class="card stat"><div class="num">${avgScore()}%</div><div class="lbl">Average quiz score</div></div>
         <div class="card stat"><div class="num">${done} / ${DAYS.length}</div><div class="lbl">Days completed</div></div>
@@ -14129,7 +14114,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.11-e2fff1fa";
+var APP_BUILD = "ft-2026.11.11-96d2062d";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14191,7 +14176,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=72ae318acb"></script>
 <script src="/js/ft-ranking-summary.js?v=7792929a48"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=5b34e8801c"></script>
+<script src="/js/ft-batch-sheet.js?v=589ab06c32"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=e8da54fc4f"></script>
 <script src="/js/ft-calrules.js?v=bdbffab39a"></script>
@@ -14202,7 +14187,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=b1327dfc06"></script>
 <script src="/js/ft-todo.js?v=317351bc17"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
-<script src="/js/ft-day-decks.js?v=4e67fe0b50"></script>
+<script src="/js/ft-day-decks.js?v=68fd806647"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
@@ -14231,7 +14216,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
 <script src="/js/ft-program.js?v=0cfdaa8035"></script>
-<script src="/js/lsh-program.js?v=0ed4b7bfe7"></script>
+<script src="/js/lsh-program.js?v=e2a316dc91"></script>
 <script src="/js/ft-my-pages.js?v=24eceb04cd"></script>
 <script src="/js/ft-day1-flow.js?v=b0a895932f"></script>
 <script src="/js/ft-day-locks.js?v=5a9b64bd73"></script>
