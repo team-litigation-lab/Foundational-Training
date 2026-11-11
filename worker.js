@@ -273,7 +273,9 @@ function weekOf(st, d) { for (let n = 1; n <= 6; n++) { const r = weekRange(st, 
 function trainingDay(st, D) { let k = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 60; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++; return k; }
 function expectedFor(st, D) {
   const FD = globalThis.FTDays, k = trainingDay(st, D), items = FD && FD.items && k ? FD.items(k) : [];
-  return (items || []).map((x) => String(x.t || "")).filter((x) => x && !/^Free Communication/.test(x)).concat(k ? ["Typing Test (AM and PM) and Spelling Test (recurring)"] : []);
+  // (📒 the Monitoring Sheet only on a day the slides ask for an update — TR.monitorDue —, never as an every-day expectation)
+  const mon = TR.monitorDue ? TR.monitorDue(k) : null;
+  return (items || []).map((x) => String(x.t || "")).filter((x) => x && !/^Free Communication/.test(x)).concat(k ? ["Typing Test (AM and PM) and Spelling Test (recurring)"] : [], mon ? [`Monitoring Sheet update: ${mon.what || "as the slides ask"}`] : []);
 }
 // The same Batch ID whatever its form. An older code that isn't a date (B1, a guest account's) compares as
 // typed, so a trainee registered under one still matches their own records.
@@ -2485,7 +2487,7 @@ async function redoCompliance(env, id, ro = {}) {
 // (⏱ compliance here is timely submission and updates — entries made on the day and kept current; the output links and files
 // are scored in the Day's outputs, so their absence never counts against the tracker or the Monitoring Sheet a second time)
 const DAY_CRIT = [["compliance", "Compliance (timely submission and updates): the day's entries were made on the day, under the right date, and kept updated (each task's status and notes current, the entry filled in on time). Do NOT count output links, files or folders here: those are scored separately in the Day's outputs"],
-  ["completeness", "Completeness & accuracy: each entry complete, specific and correct (tasks, results, next steps; for the Monitoring Sheet: the date, 5 real takeaways, questions, the understanding rated)"],
+  ["completeness", "Completeness & accuracy: each entry complete, specific and correct (tasks, results, next steps; for the Monitoring Sheet, graded only on a day the slides asked for an update: the instructed entry's date, 5 real takeaways, questions, the understanding rated — never expect a Monitoring Sheet update on any other day)"],
   ["personal", "Personal input: written in the trainee's own words, with the day's specifics; 0–2 when it reads as generic AI-generated text (polished filler, no specifics of their own day, the same phrasing everywhere)"],
   ["effort", "Effort: thoughtful, not the bare minimum"],
   ["detail", "Attention to detail: dates, names, spelling, consistency"],
@@ -2531,7 +2533,8 @@ const PRACTICE_DOCS = ["claims-email"];
    day asked of them and what was found, kept in trackerreview:<id>.compliance[<date>] = {pct, parts: {tracker, monitor, tests,
    outputs, eod}, submissions, checkedAt}. Each part is a % (null where the day had nothing to check, e.g. no Drive links yet):
      • tracker  — the Daily Task Tracker's check for the day (the Daily Notes and the day's output links), its %;
-     • monitor  — the Training Progress Monitoring Sheet's latest check, its %;
+     • monitor  — the Training Progress Monitoring Sheet's entry for the day, its % — only on a day the slides ask for an
+                  update (TR.MONITOR_SCHEDULE); null on any other day (not expected, not counted);
      • tests    — the AM and PM Typing Tests and the Spelling Test, taken on the platform (skills:<id>) or a screenshot in Drive;
      • outputs  — the day's outputs: links submitted on 📋 Task Tracker, or files saved in their Assessment and Activities Folder that day;
      • eod      — the day's EOD email, pasted on 📋 Task Tracker or received by email (drive:<id>.days[<date>].eod), checked
@@ -2602,22 +2605,18 @@ async function dailyCompliance(env, id, D, o = {}) {
   // (a tracker or Monitoring Sheet the system can't open, or couldn't read just now, is "not checked" that day, not 0: the comments say why)
   const unreadable = (x) => !!x && /can't open|can.t be read|couldn.t be read|not shared|sign.?in/i.test(String(x));
   const trRule = tk && (tk.rules || []).find((r) => r.id === "sheet" && !r.pass);
-  // 📒 the Monitoring Sheet for the day: the classroom discussions due by then (one a training day, in the Training Guide's order:
-  // TR.MONITOR_TOPICS), each entry's own check (date, 5 takeaways, questions, understanding rated) — one not written yet counts 0
+  // 📒 the Monitoring Sheet for the day: due only on a day the slides explicitly ask for an update, once its topic is covered
+  // (TR.MONITOR_SCHEDULE: the trainers check it when instructed, not daily); that day's entry is the instructed topic's, with its
+  // own check (date, 5 takeaways, questions, understanding rated) — one not written that day counts 0. Any other day: null, not
+  // counted (an entry written then doesn't count for or against it, nor for an earlier day it was due)
   const mon = cur.monitor, monRead = drive && drive.monitor && mon && !unreadable(mon.error) && Array.isArray(mon.entries);
-  let monDay = null, monDated = false, monEntry = null;
-  if (monRead) {
-    const st = batchStartDate(rec.batch) || drive.startDate || "";
-    let n = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
-    // (the day's work only: the entry for that day's discussion — the sheet is updated day by day — not every one due so far)
-    const due = TR.MONITOR_TOPICS.slice(0, Math.max(1, Math.min(n, 16))), todays = due[due.length - 1];
-    // (📅 by its date: the entry dated that day — its "Date:" line — is the day's; a sheet read before entries kept their dates
-    // falls back on the day's topic)
-    const dated = monDated = mon.entries.some((x) => x && "date" in x);
-    // (the entry dated that day; else the day's own discussion's entry when it has no date of its own — a date the sheet
-    // writes in a way that can't be read isn't a missing entry)
-    monEntry = (dated && mon.entries.find((x) => x.date === D)) || (n ? mon.entries.find((x) => x.topic === todays && !x.date) : null) || null;
-    monDay = monEntry ? Math.round(monEntry.pct || 0) : dated || n ? 0 : mon.pct;
+  const monSt = batchStartDate(rec.batch) || (drive && drive.startDate) || "", monDue = TR.monitorDueOn(monSt, D);
+  let monDay = null, monEntry = null;
+  if (monRead && monDue) {
+    // (📅 by its date: the entry dated that day — its "Date:" line — is the day's; else the instructed topic's entry when it
+    // has no date of its own — a date the sheet writes in a way that can't be read isn't a missing entry)
+    monEntry = mon.entries.find((x) => x && x.date === D) || mon.entries.find((x) => x && x.topic === monDue.topic && !x.date) || null;
+    monDay = monEntry ? Math.round(monEntry.pct || 0) : 0;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
@@ -2688,7 +2687,7 @@ async function dailyCompliance(env, id, D, o = {}) {
     const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
-    monitor: monDay != null ? monDay : (drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    monitor: monDay != null ? monDay : (monDue && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
     // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
     // (counted only when the day has a TAM entry: no entry dated that day is left out, not a 0)
     tam: tamG && pctOf(tamG.pct) ? pctOf(tamG.pct) : null,
@@ -2710,7 +2709,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   if (was && was.instr && was.instr.v === 2 && D < TR.ptDate()) parts.instructions = was.instr.pct;
   // (only what couldn't be read again is kept: a day with a fresh tracker check for it, or a Monitoring Sheet read now, is
   // worked out from that, never from an older score — an old cumulative Monitoring Sheet % kept a day at 5–13%)
-  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number" && !tk) parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monRead) parts.monitor = was.parts.monitor; }
+  if (o.redo && !o.fresh && !o.raise && was && was.parts) { if (typeof was.parts.tracker === "number" && !tk) parts.tracker = was.parts.tracker; if (was.parts.monitor !== undefined && !monRead && monDue) parts.monitor = was.parts.monitor; }
   // 🤖 the day's own input graded: the Task Tracker's rows for the day and the Monitoring Sheet's entry for it, each read by
   // the AI on compliance, completeness & accuracy, personal input (not AI-generated), effort, attention to detail and
   // professionalism (aiDayGrade); the part is that grade. A day with no input for it keeps the checks' score (0: nothing
@@ -2721,7 +2720,7 @@ async function dailyCompliance(env, id, D, o = {}) {
     // (🗂 graded on the sample evaluation's seven metrics, with the day's expected activities and the rules' findings)
     if (trEx && typeof parts.tracker === "number") { trackerAi = await aiDayGrade(env, cur, "tracker", D, trEx, `The tracker's checks for the day: ${((tk.rules || []).map((r) => `${r.pass ? "PASS" : "MISS"} ${r.label}${r.detail ? " (" + r.detail + ")" : ""}`).join("; ")) || "none"}`, nm,
       expectedFor(batchStartDate(rec.batch) || (drive && drive.startDate) || "", D)); if (trackerAi) parts.tracker = trackerAi.score; }
-    if (monEntry && monEntry.text && typeof parts.monitor === "number") { monitorAi = await aiDayGrade(env, cur, "monitor", D, `Discussion: ${monEntry.topic}\n${monEntry.text}`, `The entry's checks: ${(monEntry.checks || []).map((c) => `${c.ok ? "PASS" : "MISS"} ${c.label}`).join("; ")} (${monEntry.takeaways} takeaways, ${monEntry.questions} questions)`, nm); if (monitorAi) parts.monitor = monitorAi.score; }
+    if (monEntry && monEntry.text && typeof parts.monitor === "number") { monitorAi = await aiDayGrade(env, cur, "monitor", D, `Discussion: ${monEntry.topic}\n${monEntry.text}`, `The slides asked for: ${monDue.what}. The entry's checks: ${(monEntry.checks || []).map((c) => `${c.ok ? "PASS" : "MISS"} ${c.label}`).join("; ")} (${monEntry.takeaways} takeaways, ${monEntry.questions} questions)`, nm); if (monitorAi) parts.monitor = monitorAi.score; }
   }
   // (📒 the Monitoring Sheet keeps every day's entry under its own date, so a past day is read again from the entry dated that day)
   // (📅 a batch's first training day: its Task Tracker, Monitoring Sheet and tests are checked like any day's, and kept under
@@ -2742,6 +2741,8 @@ async function dailyCompliance(env, id, D, o = {}) {
         if (!onPlatform) parts.platform = null; } } }
   // (o.raise: a day checked before it was over, worked out again afterwards — each part keeps the higher of the two)
   if (o.raise && was && was.parts) for (const [k, v] of Object.entries(was.parts)) if (typeof v === "number" && !(parts[k] >= v)) parts[k] = v;
+  // (📒 never on a day the slides didn't ask for a Monitoring Sheet update: not even a higher score kept from before)
+  if (!monDue) parts.monitor = null;
   // (📅 a batch's Day 1 is the setup day: nothing that day counts for or against the trainee. What was found is kept under
   // day1Parts to show; the parts are left out and the day's % is null, so no average counts it — index.html ftDay1 the same)
   let day1Parts = null, isDay1 = false;
@@ -2756,12 +2757,17 @@ async function dailyCompliance(env, id, D, o = {}) {
   cur.compliance[D] = Object.assign({ v: 2, pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), graded: graded.slice(0, 20), platform: done.slice(0, 12), opened: seen.length,
     unreadable: [trRule && unreadable(trRule.detail) ? "tracker" : "", cur.monitor && unreadable(cur.monitor.error) ? "monitor" : ""].filter(Boolean), tamGraded: !!tamG,
     // (final: worked out once the day was over, or by the end-of-shift check: a day checked earlier is checked again, backfillCompliance)
-    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, trackerAi, monitorAi, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
+    final: !!(o.final || o.raise || D < TR.ptDate() || (was && was.final)), eodTrainer: eodT, instr, trackerAi, monitorAi, monDue: monDue ? { what: monDue.what, items: monDue.items, topic: monDue.topic } : null, day1: !!day1Parts, day1Parts, day1v: isDay1 ? 2 : undefined,
     eodCheck: day.eod && String(day.eod.text || "").trim() ? Object.assign(TR.checkEod(day.eod.text, day.eod.subject || "", D, day.eod.at), { via: day.eod.via || "pasted" }) : null, checkedAt: new Date().toISOString() }, o.backfill || (o.redo && was && was.backfilled) ? { backfilled: true } : {});
   // (a day worked out while the TAM was briefly a daily part, before it became a shadowing-only grade: its TAM taken out and
   // its % worked out again — every check cleans the trainee's past days, so one 🔄 Update or the next end-of-shift check fixes them)
   Object.values(cur.compliance).forEach((x) => { if (!x || !x.parts || typeof x.parts.tam !== "number" || x.tamGraded) return;
     delete x.parts.tam; const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
+  // (📒 a day kept from before the Monitoring Sheet was due only when the slides ask for it — scored then, often 0, on every
+  // training day — has its Monitoring Sheet taken out and its % worked out again, as index.html ftDay1.comp does on read)
+  if (monSt) Object.entries(cur.compliance).forEach(([Dx, x]) => { if (!x || TR.monitorDueOn(monSt, Dx)) return; let ch = false;
+    for (const f of ["parts", "day1Parts"]) if (x[f] && typeof x[f].monitor === "number") { x[f].monitor = null; ch = true; }
+    if (!ch) return; x.monitorAi = null; const v = Object.values(x.parts || {}).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
   if (pre) pre.cur = cur; else await kv.put(rk, JSON.stringify(cur));

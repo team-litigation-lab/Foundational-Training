@@ -1142,17 +1142,23 @@ function perTraineeHtml(T){
     const inGrades = ["scores", "scorecard", "practice", "lessons", "days", "dayscores"], last = ["compliance"];
     // (✍️ in place of 📅 Day by Day: the Knowledge Checks answer by answer with the comments, the Assessments and the Activities)
     const kd = `<tr class="bs-pt-sec"><th colspan="3">✍️ Knowledge Checks, Assessments &amp; Activities</th></tr><tr><td colspan="3" class="bs-pt-kd">${kdOneHtml(p, true)}${activitiesHtml(p)}</td></tr>`;
-    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(sec).join("") + kd + grades + intake + use.filter(x => x.id === "trainees").map(sec).join("")
-      + last.map(id => use.filter(x => x.id === id).map(sec).join("")).join("");
+    // (👥 the trainee's own record: its value column wide — dates and "Activity deck: Day 8" on one line —
+    // so its sizing never crowds, or is crowded by, the score tables around it)
+    const tbl = (rows, cls) => rows ? `<table class="bs-pt-t${cls ? " " + cls : ""}"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${rows}</tbody></table>` : "";
+    // (📐 every section its own table — each sized for its own contents, nothing truncated or crowded by another's columns)
+    const own = x => tbl(sec(x), `bs-pt-s-${String(x.id).replace(/[^\w-]/g, "")}${x.id === "trainees" ? " bs-pt-own" : ""}`);
+    const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(own).join("") + tbl(kd, "bs-pt-s-kd") + tbl(grades, "bs-pt-s-edit") + tbl(intake, "bs-pt-s-intake")
+      + use.filter(x => x.id === "trainees").map(own).join("")
+      + last.map(id => use.filter(x => x.id === id).map(own).join("")).join("");
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
-      <div class="bs-pt-wrap"><table class="bs-pt-t"><colgroup><col class="bs-pt-c1"><col class="bs-pt-c2"><col></colgroup><tbody>${body}</tbody></table>
+      <div class="bs-pt-wrap">${body}
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
           : `<button type="button" class="btn btn-navy btn-sm bs-pt-fbb" onclick="FTBatchSheet.fbOpen('${e(p.id)}')">📝 Send Feedback to ${e(p.name)}</button>`) : ""}</div></div>`;
   }).join("")}</div>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
-   Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
+   Tracker, the Monitoring Sheet (on a day the slides ask for an update), the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
 /* ▸/▾ retractable by trainee and by day: a trainee's row folds to each day's score and a little box per activity (icon and %),
    a day's column folds to its score alone. Everything starts open; what a viewer folds is kept on this browser (OFOLD_KEY). */
@@ -1191,7 +1197,7 @@ function outputsTable(){
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
-  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
     tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
@@ -1205,7 +1211,7 @@ function outputsTable(){
           return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -1253,11 +1259,17 @@ function dayActs(R, d){
       crit: unread("tracker") ? null : aiCrit(c.trackerAi),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
-  if(P.monitor != null || unread("monitor")){
+  // 📒 the Monitoring Sheet: due only on a day the slides asked for an update (FTTrackerRules.MONITOR_SCHEDULE, worker.js
+  // dailyCompliance); any other day it is greyed out, "Not expected today", as the Day's outputs' "Not counted"
+  const TRr = window.FTTrackerRules, monDue = c.monDue || (TRr && TRr.monitorDueOn && typeof batchStartDate === "function" ? TRr.monitorDueOn(batchStartDate(B.batch), d) : null);
+  if(!monDue && c.parts && P.monitor == null)
+    out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: null, na: true, naV: "Not expected today", text: "Not expected today: the day's slides didn't ask for a Monitoring Sheet update, so it doesn't affect the score."});
+  else if(P.monitor != null || unread("monitor")){
+    const asked = monDue ? `${monDue.what}, as the day's slides asked` : "the day's entry";
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
       : c.monitorAi ? aiWhy(c.monitorAi)
-      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} (${asked}) scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please update your Monitoring Sheet with ${asked}, in an entry dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       crit: unread("monitor") ? null : aiCrit(c.monitorAi),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
@@ -2507,7 +2519,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-wrap{overflow-x:auto;padding:4px 10px 12px;} .bs-pt-t{border-collapse:collapse;width:100%;font:16px Arial,sans-serif;line-height:1.45;}
 .bs-pt-t th,.bs-pt-t td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;vertical-align:top;} .bs-pt-t thead th{background:#F1F3F8;color:#1E2340;text-align:center;}
 .bs-pt-sec th{background:#1E2340;color:#fff;font-weight:800;font-size:17px;} .bs-pt-m{white-space:nowrap;font-weight:700;color:#1E2340;width:1%;} .bs-pt-v{white-space:nowrap;font-weight:800;font-size:17px;width:1%;} .bs-pt-f{color:#3C4043;font-weight:500;}
-.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-ocrit{border-collapse:collapse;margin:6px 0 2px;font-size:13px;width:100%;} .bs-ocrit td{border:1px solid #E6E9F1;padding:3px 6px;vertical-align:top;} .bs-ocrit td:first-child{font-weight:700;white-space:nowrap;} .gs-na{color:#80868B !important;background:#F1F3F4 !important;font-weight:600 !important;} .bs-pt-t col.bs-pt-c1{width:240px;} .bs-pt-t col.bs-pt-c2{width:132px;} .bs-pt-t .bs-pt-edp .bs-ed-pick{width:100%;max-width:100%;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (narrower, as the trainer asked: the date and score fit; a long label wraps between words, never inside one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none;}   /* (nothing truncates: a value wraps between words only — "Approved", "Nov 2, 2026" stay whole) */ .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
+.bs-pt-t{table-layout:fixed;font-size:17.5px !important;} .bs-ocrit{border-collapse:collapse;margin:6px 0 2px;font-size:13px;width:100%;} .bs-ocrit td{border:1px solid #E6E9F1;padding:3px 6px;vertical-align:top;} .bs-ocrit td:first-child{font-weight:700;white-space:nowrap;} .gs-na{color:#80868B !important;background:#F1F3F4 !important;font-weight:600 !important;} .bs-pt-t col.bs-pt-c1{width:240px;} .bs-pt-t col.bs-pt-c2{width:132px;} .bs-pt-t + .bs-pt-t{margin-top:14px;} .bs-pt-own col.bs-pt-c2{width:300px;} .bs-pt-own col.bs-pt-c1{width:270px;} .bs-pt-s-edit col.bs-pt-c1{width:440px;}   /* (✎ Edit a score: the grade's name on one line; 👥 Trainees: "Knowledge Checks passed" too) */ .bs-pt-t .bs-pt-edp .bs-ed-pick{width:100%;max-width:100%;} .bs-pt-t .bs-pt-ed .bs-pt-v{white-space:nowrap !important;}   /* (narrower, as the trainer asked: the date and score fit; a long label wraps between words, never inside one) */ .bs-pt-t .bs-pt-v{white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none;}   /* (nothing truncates: a value wraps between words only — "Approved", "Nov 2, 2026" stay whole) */ .bs-pt-t .bs-pt-m{overflow-wrap:normal;word-break:normal;hyphens:none;} .bs-pt-t .bs-pt-m{white-space:normal;}   /* (narrow, as the trainer asked: a longer value wraps in its cell; the labels column wide enough that a word — "completeness" — never breaks) */
 .bs-pt-t .bs-pt-m{white-space:normal !important;font-weight:800 !important;word-break:normal !important;overflow-wrap:normal !important;hyphens:none;} .bs-pt-t .bs-pt-v{white-space:normal !important;font-size:18.5px !important;font-weight:800 !important;}
 .bs-pt-t .bs-pt-f{font-weight:600 !important;color:#1F2433 !important;font-size:16.5px !important;} .bs-pt-h{font-size:18px !important;} .bs-pt-h b{font-size:21px !important;}
 /* (the trainee's line: their name and three figures, centred on a navy band, each figure a chip in its grade's colours) */
