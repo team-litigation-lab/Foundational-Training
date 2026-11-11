@@ -150,15 +150,18 @@ async function loadData(quiet){
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
     // (the sync and today's compliance: in the background once the sheet is drawn, bgSync below)
     if(!quiet) setTimeout(() => bgSync(ppl, key), 0);
+    // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
+    const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`, rks = adminOn() && !meOn() ? [1, 2, 3, 4, 5, 6].map(rk) : [];
+    // (⚡ everything in ONE sharedGetMany — the trainees' keys, the shared ones and the reports — each key once: own and
+    // LSH_PROGRAM.sources both have progress:/skills:/simresults:; read back by key, not by place)
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
-    const vals = [];
-    vals.push(...await sharedGetMany(want));
-    const sh = {}, shv = shared.length ? await sharedGetMany(shared) : [];
-    shared.forEach((k, i) => { sh[k] = shv[i] || null; });
-    const per = own.length + S.length, rec = {};
-    ppl.forEach((p, i) => {
-      const at = j => vals[i * per + j] || null, sc = {};
+    const uniq = [...new Set(want.concat(shared, rks))], got = await sharedGetMany(uniq), V = new Map();
+    uniq.forEach((k, i) => V.set(k, got[i]));
+    const sh = {}; shared.forEach(k => { sh[k] = V.get(k) || null; });
+    const rec = {}, keys = own.concat(S.map(s => s.key));
+    ppl.forEach(p => {
+      const at = j => V.get(keys[j] + p.id) || null, sc = {};
       S.forEach((s, j) => { sc[s.key] = at(own.length + j); });
       if(window.ftW1Override) sc["trackerreview:"] = ftW1Override.comp(sc["trackerreview:"], p.batch);   // W1-OVERRIDE
       if(window.ftDay1) sc["trackerreview:"] = ftDay1.comp(sc["trackerreview:"], p.batch);   // 📅 Day 1 isn't counted
@@ -175,10 +178,7 @@ async function loadData(quiet){
           wk = {n, range, score: sco, comp, days: days.length, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
       rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score, wk};
     });
-    // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
-    let reps = [];
-    if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
-      try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
+    const reps = rks.map(k => { const r = V.get(k); return r && Array.isArray(r.cols) ? r : null; });
     if(B.dataKey !== key){ return; }   // (another read started since: that one's result is kept)
     B.data = {rec, sources: S, reps, at: new Date(), batch: B.batch, key};
     // (📊 a quiet read again: the Weekly Report's platform cells filled again from the new scores — never a typed one)
