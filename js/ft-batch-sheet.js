@@ -136,10 +136,18 @@ setInterval(() => { try{
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
   if(state.isAdmin && Date.now() - ((B.syncAt || {})[key] || 0) >= SYNC_EVERY) bgSync(ppl, key); else loadData(true);
 }catch(err){} }, AUTO_EVERY);
-async function loadData(quiet){
+// (a quiet read asked for while one runs is queued, never dropped — bgSync's fresh compliance came back before the first
+// read did, and was lost until the 5-minute timer; awaiting it waits for the queued read too: B.loadP)
+function loadData(quiet){
+  if(quiet && B.dataLoading){ B.reloadAfter = true; return B.loadP || Promise.resolve(); }
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
-  if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return;
-  if(quiet && B.dataLoading) return;
+  if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return B.loadP || Promise.resolve();
+  return (B.loadP = readData(quiet, ppl, key));
+}
+// (the background jobs' re-reads gathered into one quiet read, the sheet kept on screen; off the sheet, read on coming back)
+// (not B.dataKey="" during a read: that read would return as superseded with nothing started after it, B.dataLoading stuck)
+const reloadSoon = () => { clearTimeout(B.rl); B.rl = setTimeout(() => { if(on() || B.dataLoading) loadData(true); else B.dataKey = ""; }, 500); };
+async function readData(quiet, ppl, key){
   B.dataKey = key; B.dataLoading = true; if(!quiet) rerender();
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
@@ -187,27 +195,28 @@ async function loadData(quiet){
     if(adminOn() && !meOn() && window.ftKcGradeFor && !(B.kcAuto || {})[B.batch]){ (B.kcAuto = B.kcAuto || {})[B.batch] = 1; const bb = B.batch, todo = [];
       ppl.forEach(p => kcSheets().forEach(k => { const g = sheetGrade(p, k); if(g.pct == null && g.subm) todo.push({p, k}); }));
       if(todo.length) (async () => { let n = 0; for(const t of todo){ try{ if(await ftKcGradeFor(t.p.id, t.k.l, t.k.read)) n++; }catch(err){} }
-        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb){ B.dataKey = ""; rerender(); } } })(); }
+        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb) reloadSoon(); } })(); }
     // 🔁 the batch's grades saved by the broken grading (window.ftStaleGrade, js/ft-listening.js): graded again, once a
     // session, then the sheet is read again
     if(adminOn() && !meOn() && window.ftStaleGrade && !(B.regraded || {})[B.batch]){ (B.regraded = B.regraded || {})[B.batch] = 1; const bb = B.batch, jobs = [];
       ppl.forEach(p => Object.entries(((((rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}).forEach(([doc, g]) => { if(ftStaleGrade(g)) jobs.push({id: p.id, doc}); }));
       if(jobs.length) (async () => { let n = 0; for(const j of jobs){ try{ const r = await authFetch("/api/assess/grade", j); if(r.ok) n++; }catch(err){} }
-        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb){ B.dataKey = ""; rerender(); } } })(); }
+        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb) reloadSoon(); } })(); }
     // 🔄 the batch's past training days not worked out yet (worker.js backfillCompliance), once a session: the sheet is read
     // again when any were, so 📤 Daily outputs and the scores count the whole training
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
-        if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
+        if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb) reloadSoon(); }).catch(() => {}); }
     // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table) or whose last check couldn't sign in to Google
     // (⚠ Can't check: a key or setting fixed since), checked now (worker.js verifyLinks, /api/drive/verify:
     // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
     if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
       const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked|unchecked/.test(L[k].st)); }catch(err){ return false; } });
       if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
-        if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
+        if(n && B.batch === bb) reloadSoon(); })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
   B.dataLoading = false; rerender();
+  if(B.reloadAfter){ B.reloadAfter = false; return loadData(true); }   // (the queued quiet read: set only when one was asked for, so no loop)
 }
 
 /* ---------- the lesson deck: how far into it ---------- */
@@ -2323,7 +2332,8 @@ async function loadMe(){
 function renderMine(){
   if(!B.me || B.meFor !== state.traineeId){ if(!B.meLoading){ B.me = null; B.data = null; B.dataKey = ""; loadMe(); } return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading your progress…</div>`; }
   loadData();
-  const D = B.data, ready = D && !B.dataLoading && !D.error, T = ready ? tables() : null;
+  // (the trainee's scores stay on screen while they're read again, as on the trainer's sheet: "Updating…", not a blank page)
+  const D = B.data, ready = !!D && !D.error && (!B.dataLoading || !!D.at), T = ready ? tables() : null;
   // (🏅 My Performance and 📋 My Progress are one page: the grades from every grading system first, then the sheet)
   const perf = window.lshProgram && typeof lshProgram.performanceHtml === "function" ? `<div class="bs-perf">${lshProgram.performanceHtml()}</div>` : "";
   return `${perf}<div class="card gs-card bs-card bs-mine">
@@ -2332,7 +2342,7 @@ function renderMine(){
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
     <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 My Weekly Report</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
-    ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
+    ${!D || (!ready && B.dataLoading) ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }
