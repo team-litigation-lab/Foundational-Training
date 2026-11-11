@@ -483,7 +483,6 @@ const ASSESSMENTS = {2: [
   {t: "Breakout Session Worksheet – Day 10", id: "breakout-d10"}],
   // 📝 each Breakout Session's worksheet (the Digital Handouts, done on one's own: 5 questions, js/ft-assess.js "breakout-d<day>")
   1: [{t: "Breakout Session Worksheet – Day 1", id: "breakout-d1"}],
-  6: [{t: "Breakout Session Worksheet – Day 7", id: "breakout-d7"}],
   8: [{t: "Breakout Session Worksheet – Day 13", id: "breakout-d13"}]};
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)

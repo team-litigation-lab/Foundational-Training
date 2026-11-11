@@ -620,7 +620,7 @@ const HANDOUTS = {1: {items: [
   ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
 // 📝 each Breakout Session's worksheet (js/ft-assess.js "breakout-d<day>"): 5 questions on the handouts, answered on one's own
 // and graded (worker.js /api/assess/grade), from the handouts' slide: {day: [lesson, worksheet]}
-const WORKSHEET = {"1": [1, "breakout-d1"], "2": [2, "breakout-d2"], "7": [6, "breakout-d7"], "10": [7, "breakout-d10"], "13": [8, "breakout-d13"]};
+const WORKSHEET = {"1": [1, "breakout-d1"], "2": [2, "breakout-d2"], "10": [7, "breakout-d10"], "13": [8, "breakout-d13"]};   // (none on Day 7)
 const worksheetBtn = n => { const w = WORKSHEET[n]; return w ? `<button type="button" class="btn btn-navy ftdd-ws-go" onclick="FTDayDecks.toAssess(${w[0]}, '${w[1]}', '', 'the deck', true)">📝 Breakout Worksheet: 5 questions →</button>` : ""; };
 function handoutsSlide(h){
   // the handouts are open to everyone, always: no lock, no 🔓 / 🔒 badge (the trainer doesn't unlock them)

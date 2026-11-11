@@ -102,7 +102,7 @@ const DAYS = [
     {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
     {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"},
-    {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc", assess:"breakout-d7"},
+    // (no breakout handouts worksheet on Day 7: the trainers don't run one there)
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
