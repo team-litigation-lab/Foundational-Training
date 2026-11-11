@@ -582,7 +582,9 @@ const failures = []; const fail = m => failures.push(m);
   else {
     const by = k => oc.acts.find(a => a.k === k) || { box: '', say: '' };
     // (📏 following instructions too: the day's naming, saving route and deliverables on time)
-    if (oc.acts.map(a => a.k).join() !== 'tracker,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
+    // (📒 the Monitoring Sheet is listed every day: on a day the slides don't ask for an update it reads "Not expected today", greyed)
+    if (oc.acts.map(a => a.k).join() !== 'tracker,monitor,tests,outputs,instructions,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
+    if (by('monitor').box !== '—' || !/Not expected today/.test(by('monitor').say)) fail(`the Monitoring Sheet's box (not expected on a day the slides don't ask): ${JSON.stringify(by('monitor'))}`);
     if (by('tracker').box !== '2.5/5' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
     if (by('tests').box !== '3.4/5' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
     if (by('outputs').box !== '0.0/5' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
@@ -592,17 +594,18 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$('#bs-outputs .bs-oc, #bs-outputs .bs-ck-who')) fail('the 💬 Comments list is still under 📤 Daily outputs');
   // ▸/▾ retractable by trainee and by day: Ada's row folds to each day's score and a little box per activity, the 11/2 column
   // folds to its score alone, and both open again (kept on this browser)
-  const fold = await page.evaluate(async id => {
+  const nActs = oc ? oc.acts.length : 6;
+  const fold = await page.evaluate(async ([id, n]) => {
     const cell = () => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'), ci = T.head.findIndex(h => /\b11\/2\b/.test(h));
       const tr = [...document.querySelectorAll('#bs-outputs tbody tr')].find(r => /Ada/.test(r.innerText)); return { tr, c: ci > 0 && tr && tr.querySelector(`td.bs-ocell[data-c="${ci}"]`), ci }; };
     const wait = () => new Promise(r => setTimeout(r, 300)), out = {};
     FTBatchSheet.ofRow(id); await wait(); let x = cell();
-    out.rowFolded = !!(x.c && !x.c.querySelector('.bs-oacts') && x.c.querySelectorAll('.bs-omini .bs-sbox').length === 5 && x.tr.classList.contains('bs-orow-f'));
-    FTBatchSheet.ofRow(id); await wait(); x = cell(); out.rowOpen = !!(x.c && x.c.querySelectorAll('.bs-oacts li').length === 5);
+    out.rowFolded = !!(x.c && !x.c.querySelector('.bs-oacts') && x.c.querySelectorAll('.bs-omini .bs-sbox').length === n && x.tr.classList.contains('bs-orow-f'));
+    FTBatchSheet.ofRow(id); await wait(); x = cell(); out.rowOpen = !!(x.c && x.c.querySelectorAll('.bs-oacts li').length === n);
     const btn = document.querySelectorAll('#bs-outputs thead .gs-head th')[x.ci + 1].querySelector('.bs-ofold-btn'); if (btn) btn.click(); await wait(); x = cell();
     out.dayFolded = !!(x.c && x.c.classList.contains('bs-ocol-f') && !x.c.querySelector('.bs-oacts') && !x.c.querySelector('.bs-omini'));
     FTBatchSheet.ofDays(false); await wait(); x = cell(); out.dayOpen = !!(x.c && x.c.querySelector('.bs-oacts'));
-    return out; }, ids.Ada);
+    return out; }, [ids.Ada, nActs]);
   if (!fold.rowFolded || !fold.rowOpen || !fold.dayFolded || !fold.dayOpen) fail(`📤 Daily outputs doesn't fold by trainee and by day: ${JSON.stringify(fold)}`);
   // (the AI's full review stays in the cell's formula bar text, and ⬇ Download carries the comments)
   const ocF = await page.evaluate(() => { const T = FTBatchSheet.tables().find(t => t.id === 'outputs'); const r = T.rows.find(r => /Ada/.test(r[0].v)); return r ? r.map(c => (c.f || '') + '|' + (c.csv || '')).join(' ') : ''; });
