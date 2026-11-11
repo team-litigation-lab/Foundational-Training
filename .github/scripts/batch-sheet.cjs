@@ -52,6 +52,10 @@ const failures = []; const fail = m => failures.push(m);
     compliance: { '2026-11-02': { pct: 54, parts: { tracker: 50, tests: 67, outputs: 0, eod: 100 }, tests: { AM: true, PM: false, SP: true }, links: 0, saved: 0, submissions: ['Assessment: Common Terms Used'] } } });
   { const rv = await get('trackerreview:' + ids.Ada);
     rv.days = { '2026-11-02': { pct: 50, rules: [{ id: 'notes', label: 'Every open task has its Daily Note', pass: false, detail: '2 tasks without a note' }], review: 'AI-NOTES: clear notes; add the next step on each task.', comment: 'TRAINER-NOTE: good start.' } };
+    // (🗂 her Week 1 Task Tracker Evaluation, from the rules alone: worker.js trackerWeekEval keeps it in weekEval[<week>])
+    rv.weekEval = { 1: await page.evaluate(() => { const T = FTTrackerRules, t = T.fromSheetCsv(['Date Received,Type of Task,Task Details,Accountable VA,11/02/2026,VA Notes,Status,Actual Completion Date', '⬇ FOR COMPLETION ⬇,,,,,,,',
+      '11/16/2022,CALLER,Caller followed up regarding medical records,Ada,,,Completed,', '11/02/2026,LSH-TRAINING,VA Essentials,Ada,Learned the court system,,Completed,'].join('\n'), { today: '2026-11-02' });
+      return Object.assign(T.weekEval(t, ['2026-11-02']), { n: 1, at: new Date().toISOString() }); }) };
     await put('trackerreview:' + ids.Ada, rv); }
   // 🧑‍🏫 her Reception Mock Call, scored on the rubric with remarks (📅 Day 1–16: Detailed Scores, with its context)
   await put('labreview:' + ids.Ada, { acts: { 'reception-live': { status: 'Passed', score: 76, comment: 'Good call control overall.', at: iso(now - 3600e3),
@@ -117,6 +121,14 @@ const failures = []; const fail = m => failures.push(m);
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
+  // 🗂 her weekly Task Tracker Evaluation: a fold "Week 1 — x.x/5" in the sample's layout (the seven metrics' table, the
+  // corrections, the overall rating), labelled as from the automatic checks, with ⬇ Download as a .doc
+  { const we = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id), s = d && d.querySelector('.bs-we summary'); if (!s) return null; s.click();
+      return { sum: s.innerText, rows: d.querySelectorAll('.bs-we .ft-ev-t tbody tr').length, text: d.querySelector('.bs-we').innerText, tools: d.querySelector('.bs-we-tools').innerText }; }, ids.Ada);
+    if (!we || !/Task Tracker Evaluation · Week 1 — \d\.\d\/5/.test(we.sum) || !/automatic checks/.test(we.sum) || we.rows !== 7 || !/Remove the Original Sample Entry/.test(we.text) || !/Overall Performance Rating: \d\.\d \/ 5 – /.test(we.text) || !/Download/.test(we.tools) || !/Copy/.test(we.tools))
+      fail(`🗂 Ada's Week 1 Task Tracker Evaluation isn't shown in the sample's layout: ${JSON.stringify(we && { sum: we.sum, rows: we.rows, tools: we.tools, text: we.text.slice(0, 300) })}`);
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 5000 }).catch(() => null), page.evaluate(id => FTBatchSheet.weDl(id, 1), ids.Ada)]);
+    if (!dl || !/^Task Tracker Evaluation - Ada Active - Week 1\.doc$/.test(dl.suggestedFilename())) fail(`🗂 ⬇ Download doesn't give the evaluation as a .doc: ${dl && dl.suggestedFilename()}`); }
   // no ◀ Previous / Next ▶ pager: the 🔎 trainee picker beside Batch turns to another trainee, alone on the page
   { const sw = await page.evaluate(() => { const sel = document.querySelector('.bs-who-top select'); if (!sel) return null; const o = [...sel.options].find(x => !x.selected); if (!o) return null; sel.value = o.value; sel.dispatchEvent(new Event('change')); return o.textContent; });
     await page.waitForTimeout(400);

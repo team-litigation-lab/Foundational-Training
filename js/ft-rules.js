@@ -60,7 +60,7 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Monitoring Sheet after each discussion or activity. Add the date and 5 takeaways in full sentences. It is for your training only."],
+    "Update your Monitoring Sheet when a slide tells you to, once its topic has been covered (not every day). Add the date and 5 takeaways in full sentences. It is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."]],
    }
@@ -258,7 +258,7 @@ const MON_PARTS = [
     "Upload it to your Google Drive, keeping that name.",
     "You link it in Part 5."]},
   {h:"Update It", steps:[
-    "Update your Monitoring Sheet and Task Tracker after each discussion or activity.",
+    "Update your Task Tracker every day, and your Monitoring Sheet when a slide tells you to, once its topic has been covered.",
     "Finish before your shift ends.",
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
@@ -298,7 +298,7 @@ const SLIDES = [
     <div class="ftr-stakes"><b>👋 Welcome to Legal Support Help!</b>
       <p>You’re starting the Standard Foundational Training Program: the training that prepares you to work as a legal VA for U.S. Law Firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
     <div class="ftr-lessons">${[["⏱", "Hubstaff", "How-Tos, your To-Dos, notes and lost hours"], ["☕", "Breaks and Auxes", "Your schedule, your hour of breaks, and reporting your status"],
-      ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Daily Deliverables", "Typing and spelling tests, Daily Task Tracker, Monitoring Sheet, EOD email"],
+      ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Deliverables", "Typing and spelling tests, Daily Task Tracker and EOD email every day; the Monitoring Sheet when a slide asks"],
       ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
     <p class="ftr-sub ftr-after">Your training shift: <b>${esc(SHIFT)}</b>.</p>`],
   // Hubstaff: why it matters, and the reminder that integrity is a must in a virtual setting (the To-Dos, notes and lost
@@ -408,12 +408,12 @@ const SLIDES = [
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   // (the shift wrap-up, deliverables to the filled-in entry: one heading on every slide of it)
   ["deliverables", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
-    <p class="ftr-sub">Submit all 4 daily deliverables—EOD email, tracker, monitoring sheet, and test files—to your Assessment and Activities Folder daily using the standard naming convention.</p>
+    <p class="ftr-sub">Submit your 4 deliverables—the EOD email, tracker and test files every day, the monitoring sheet when a slide asks you to update it—to your Assessment and Activities Folder using the standard naming convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
-      ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
+      ["📒", "3. Your Training Progress Monitoring Sheet", "Only when a slide asks you to update it, once its discussion or activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. Not checked daily. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
@@ -438,7 +438,7 @@ const SLIDES = [
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   // (the tracker's Other Tabs slide is off the orientation; its Daily Check is read with the Monitoring Sheet slide next)
   ["habits-monitoring", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
-    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
+    <p class="ftr-sub">Update it on the days a slide tells you to, before your shift ends, once its topic has been covered: it isn't checked daily. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   // the Monitoring Sheet: a drawn preview of a filled-in entry (where to get it, and how it is kept, are on the last slide:

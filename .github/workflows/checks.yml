@@ -61,6 +61,8 @@ jobs:
         run: node .github/scripts/compliance-recheck.cjs
       - name: Each day's Task Tracker rows and Monitoring Sheet entry graded by the AI on that day's input only (worker.js aiDayGrade)
         run: node .github/scripts/day-ai-grade.cjs
+      - name: The Monitoring Sheet counted only on a day the slides ask for an update (FTTrackerRules.MONITOR_SCHEDULE, worker.js dailyCompliance, index.html ftDay1.comp)
+        run: node .github/scripts/monitor-when-instructed.cjs
       - name: The Day's outputs with the scores of what was graded that day (worker.js dailyCompliance graded)
         run: node .github/scripts/outputs-scores.cjs
       - name: The nightly check lists each trainee's folder once a run, and one unreadable trainee doesn't stop the rest (worker.js runTrackerChecks)
@@ -75,6 +77,8 @@ jobs:
         run: node .github/scripts/calsim-card.cjs
       - name: A day's inputs read for that day (the tracker's and the Monitoring Sheet's dates, in any form)
         run: node .github/scripts/tracker-dates.cjs
+      - name: The Task Tracker checked as the trainer's sample evaluation does it, and the weekly Task Tracker Evaluation on its seven metrics (js/ft-tracker-rules.js RULES, weekEval; worker.js trackerWeekEval)
+        run: node .github/scripts/tracker-eval.cjs
       - name: A Monitoring Sheet kept as a Word file (.docx) in Drive read and checked
         run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)

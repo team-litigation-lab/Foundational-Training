@@ -1151,7 +1151,8 @@ function perTraineeHtml(T){
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
-    const sec = x => { const rows = rowsOf(x); return rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.id === "outputs" ? "📤 Daily outputs & 📅 Day scores" : x.title)}</th></tr>${rows}` : ""; };
+    // (🗂 the weekly Task Tracker Evaluations right after the days' tracker rows: weekEvalHtml)
+    const sec = x => { const rows = rowsOf(x); return (rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.id === "outputs" ? "📤 Daily outputs & 📅 Day scores" : x.title)}</th></tr>${rows}` : "") + (x.id === "outputs" ? weekEvalHtml(p) : ""); };
     /* 🏅 GRADES, in one: the Overall % and its parts, the 🏅 Score Card (lesson by lesson), the Practice Lab's use, every grading
        system with each of its items, and the lessons with their dates — what 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
        📅 Lessons & Knowledge Checks day by day and 📚 Lessons each showed a part of, the same grades over and over */
@@ -1187,7 +1188,7 @@ function perTraineeHtml(T){
   }).join("")}</div>`;
 }
 /* 📤 Daily outputs: each training day's compliance (worker.js dailyCompliance, at the end of every shift): the Daily Task
-   Tracker, the Monitoring Sheet, the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
+   Tracker, the Monitoring Sheet (on a day the slides ask for an update), the Typing and Spelling tests, the day's outputs (links submitted or files saved in the
    folder) and the EOD email, each a %, and their average — what 📈 Overall Performance's Daily Compliance sheet showed. */
 /* ▸/▾ retractable by trainee and by day: a trainee's row folds to each day's score and a little box per activity (icon and %),
    a day's column folds to its score alone. Everything starts open; what a viewer folds is kept on this browser (OFOLD_KEY). */
@@ -1199,13 +1200,34 @@ function ofold(){
 }
 function ofoldSave(){ try{ localStorage.setItem(OFOLD_KEY, JSON.stringify(B.ofold || {})); }catch(err){} }
 const rowOpen = id => { const v = ofold().rows[id]; return v == null ? true : !!v; };
+/* 🗂 THE WEEKLY TASK TRACKER EVALUATION on a trainee's page (worker.js trackerWeekEval → trackerreview:<id>.weekEval[<week>]):
+   a fold per week, "🗂 Task Tracker Evaluation · Week N — x.x/5", opening on the trainer's sample's layout (FTTrackerRules.evalHtml:
+   the metric table, Feedback Summary, Strengths, Areas Requiring Correction, Recommendations, Final Assessment, the overall
+   rating), with ⬇ Download (.doc) and 📋 Copy; a trainer's 🔄 writes it again now. One from the automatic checks alone (no AI)
+   says so. Written every night for the week under way. */
+function weekEvalHtml(p){
+  // (a trainer's 🗂 Evaluate now only for a trainee whose Task Tracker is linked)
+  const R = ((B.data || {}).rec || {})[p.id] || {}, W = ((R.src || {})["trackerreview:"] || {}).weekEval || {}, TRr = window.FTTrackerRules, adm = adminOn() && !meOn() && !!(R.drive || {}).tracker;
+  if(!TRr || typeof TRr.evalHtml !== "function") return "";
+  const ns = Object.keys(W).map(Number).filter(n => W[n] && W[n].metrics).sort((a, b) => b - a);
+  let cur = 1; try{ cur = window.ftWeeks && ftWeeks.now ? ftWeeks.now(p.batch || B.batch) : 1; }catch(err){}
+  if(!ns.length && !adm) return "";
+  const busy = B.weBusy === p.id, opened = k => !!(B.weOpen || {})[k], when = t => { const d = new Date(t); return isNaN(d) ? "" : d.toLocaleString(undefined, {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}); };
+  const btn = (fn, n, label) => `<button type="button" class="btn btn-ghost btn-sm" ${fn === "weRun" && busy ? "disabled" : ""} onclick="FTBatchSheet.${fn}('${e(p.id)}', ${n})">${label}</button>`;
+  const folds = ns.map(n => { const ev = W[n], k = p.id + "|" + n;
+    return `<details class="bs-we" ${opened(k) ? "open" : ""} ontoggle="FTBatchSheet.weFold('${e(k)}', this.open)"><summary>🗂 Task Tracker Evaluation · Week ${n} — ${e(Number(ev.overall || 0).toFixed(1))}/5 <small>${e(ev.label || "")}${ev.ai ? "" : " · from the automatic checks (no AI)"}</small></summary>
+      <div class="bs-we-tools">${btn("weDl", n, "⬇ Download")}${btn("weCopy", n, "📋 Copy")}${adm ? btn("weRun", n, busy ? "Evaluating…" : "🔄 Evaluate again") : ""}<span class="bs-note">${ev.at ? "Written " + e(when(ev.at)) : ""}</span></div>
+      <div class="bs-we-doc">${TRr.evalHtml(ev, {name: p.name})}</div></details>`; }).join("");
+  return `<tr class="bs-pt-sec"><th colspan="3">🗂 Task Tracker Evaluation</th></tr><tr><td colspan="3" class="bs-pt-we">${folds || `<p class="bs-note">No week evaluated yet: it is written every night for the week under way.</p>`}${adm && !W[cur] ? btn("weRun", cur, busy ? "Evaluating…" : `🗂 Evaluate Week ${cur} now`) : ""}</td></tr>`;
+}
+const weOf = (id, n) => { const ev = ((((((B.data || {}).rec || {})[id] || {}).src || {})["trackerreview:"] || {}).weekEval || {})[n], p = people().find(x => x.id === id) || {}; return ev ? {ev, name: p.name || ev.name || ""} : null; };
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
   const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
-  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet, the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
+  return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs, the EOD email and their progress on the platform, each a %, averaged. Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
     head: ["Trainee", "Average"].concat(dates.map(md)),
     headHtml: [null, null].concat(dates.map(d => `<button type="button" class="bs-ofold-btn" onclick="event.stopPropagation();FTBatchSheet.ofDay('${e(d)}')" title="${dayShut(d) ? "Open" : "Fold"} ${e(md(d))}">${caret(!dayShut(d), md(d))} ${e(md(d))}</button>`)),
     tools: ppl.length || dates.length ? `<span class="bs-otools">${ppl.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(true)">▾ Open every trainee</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofAll(false)">▸ Fold every trainee</button>` : ""}${dates.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(false)">▾ Open every day</button><button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.ofDays(true)">▸ Fold every day</button>` : ""}<small>Click a name to open or fold that trainee's days, a day's heading to fold that day.</small></span>` : "",
@@ -1219,7 +1241,7 @@ function outputsTable(){
           return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -1248,9 +1270,12 @@ function dayActs(R, d){
   // AI's reason; for a day graded before reasons were kept, what the criterion asks), what to fix, and the feedback — in full
   const ASK = {compliance: "the day's entries made on the day, under the right date, and kept updated", completeness: "each entry complete, specific and correct",
     personal: "written in your own words, with the day's specifics", effort: "thoughtful, not the bare minimum", detail: "dates, names, spelling and consistency right", professionalism: "clear, workplace-appropriate writing"};
+  // (🗂 the Task Tracker's grade is on the trainer's sample evaluation's seven metrics — Tracker Organization & Correct Section
+  // Placement … Overall Compliance with Tracker Instructions — each with its rating and comment; the Monitoring Sheet keeps the six)
+  (((window.FTTrackerRules || {}).TRACKER_METRICS) || []).forEach(([k, l, a], i) => { CRIT[k] = `${i + 1}. ${l}`; ASK[k] = a; });
   const clean = t => String(t || "").replace(/\*\*|__|`|^#+\s*/gm, "").replace(/🤖\s*/g, "").replace(/\s+/g, " ").trim();
   const aiWhy = g => { if(!g) return ""; const ks = Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number"), pts = ks.reduce((a, k) => a + g.crit[k], 0);
-    return `${aiTxt(g)} How it was scored: ${ks.length} criteria, each out of 5 (${pts} of ${ks.length * 5} points = ${g.score}%), each one in the table below.${(g.flags || []).length ? ` To fix: ${g.flags.map(clean).join("; ")}.` : ""}${g.feedback ? " " + clean(g.feedback) : ""}`; };
+    return `${aiTxt(g)} How it was scored: ${ks.length} ${ks.includes("organization") ? "metrics of the trainer's tracker evaluation" : "criteria"}, each out of 5 (${pts} of ${ks.length * 5} points = ${g.score}%), each one in the table below.${(g.flags || []).length ? ` To fix: ${g.flags.map(clean).join("; ")}.` : ""}${g.feedback ? " " + clean(g.feedback) : ""}`; };
   // (the criteria as table rows: each one's score out of 5 and why — the AI's reason, else what the criterion asks)
   const aiCrit = g => !g ? null : Object.keys(CRIT).filter(k => typeof (g.crit || {})[k] === "number").map(k => ({n: CRIT[k], s: g.crit[k],
     fb: clean((g.why || {})[k]) || (g.crit[k] < 5 ? `Aim for: ${ASK[k]}.` : "Full marks.")}));
@@ -1264,11 +1289,17 @@ function dayActs(R, d){
       crit: unread("tracker") ? null : aiCrit(c.trackerAi),
       more: [aiMore(c.trackerAi), tk && tk.review ? "AI review: " + tk.review : "", tk && tk.comment ? "Trainer: " + tk.comment : ""].filter(Boolean).join(" · ")});
   }
-  if(P.monitor != null || unread("monitor")){
+  // 📒 the Monitoring Sheet: due only on a day the slides asked for an update (FTTrackerRules.MONITOR_SCHEDULE, worker.js
+  // dailyCompliance); any other day it is greyed out, "Not expected today", as the Day's outputs' "Not counted"
+  const TRr = window.FTTrackerRules, monDue = c.monDue || (TRr && TRr.monitorDueOn && typeof batchStartDate === "function" ? TRr.monitorDueOn(batchStartDate(B.batch), d) : null);
+  if(!monDue && c.parts && P.monitor == null)
+    out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: null, na: true, naV: "Not expected today", text: "Not expected today: the day's slides didn't ask for a Monitoring Sheet update, so it doesn't affect the score."});
+  else if(P.monitor != null || unread("monitor")){
+    const asked = monDue ? `${monDue.what}, as the day's slides asked` : "the day's entry";
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
       // (the Monitoring Sheet's review is its latest check's: shown on the day it was checked only)
       : c.monitorAi ? aiWhy(c.monitorAi)
-      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please add today's entry to your Monitoring Sheet, dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
+      : sent2(P.monitor ? `Your Monitoring Sheet entry for ${mdy} (${asked}) scored ${P.monitor}%.` : monDay && mon.error ? `Not counted: ${mon.error}` : `Please update your Monitoring Sheet with ${asked}, in an entry dated ${mdy}: the discussion, 5 takeaways, your questions and how well you understood it.`, monDay ? (mon.comment ? "🧑‍🏫 " + first(mon.comment) : mon.review ? "🤖 " + first(mon.review) : "") : ""),
       crit: unread("monitor") ? null : aiCrit(c.monitorAi),
       more: [aiMore(c.monitorAi), monDay && mon.review ? "AI review: " + mon.review : ""].filter(Boolean).join(" · ")});
   }
@@ -1991,6 +2022,32 @@ window.FTBatchSheet = {
     try{ if(window.FTRanking && FTRanking.reload) FTRanking.reload(); }catch(err){}
     render();
   },
+  // 🗂 the weekly Task Tracker Evaluation (weekEvalHtml): a week's fold kept open for the visit; ⬇ as a Word document (an HTML
+  // blob Word opens), 📋 as text in the sample's layout, 🔄 written again now (a trainer: worker.js /api/tracker/week-eval)
+  weFold(k, open){ B.weOpen = B.weOpen || {}; B.weOpen[k] = !!open; },
+  weDl(id, n){
+    const x = weOf(id, n); if(!x || !window.FTTrackerRules) return;
+    const html = `<html><head><meta charset="utf-8"><title>Daily Task Tracker Evaluation</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #777;padding:6px;vertical-align:top;text-align:left;}</style></head><body>${FTTrackerRules.evalHtml(x.ev, {name: x.name})}</body></html>`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿", html], {type: "application/msword"}));
+    a.download = `Task Tracker Evaluation - ${String(x.name || "Trainee").replace(/[\\/:*?"<>|]+/g, " ").trim()} - Week ${n}.doc`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  },
+  async weCopy(id, n){
+    const x = weOf(id, n); if(!x || !window.FTTrackerRules) return;
+    try{ await navigator.clipboard.writeText(FTTrackerRules.evalText(x.ev, {name: x.name})); toast(`📋 Week ${n}'s Task Tracker Evaluation copied.`); }
+    catch(err){ toast("📋 Couldn't copy: the browser didn't allow it. Use ⬇ Download instead."); }
+  },
+  async weRun(id, n){
+    if(!adminOn() || B.weBusy) return; B.weBusy = id; render();
+    try{ const r = await authFetch("/api/tracker/week-eval", {id, week: n}), j = await r.json().catch(() => null);
+      if(!r.ok || !j || !j.ok || !j.eval) throw new Error((j && (j.error || j.detail)) || "no answer");
+      const R = B.data && B.data.rec[id];
+      if(R){ R.src = R.src || {}; const rv = R.src["trackerreview:"] = R.src["trackerreview:"] || {}; rv.weekEval = Object.assign({}, rv.weekEval, {[j.week]: j.eval}); }
+      B.weOpen = Object.assign(B.weOpen || {}, {[id + "|" + j.week]: true});
+      toast(`🗂 Week ${j.week}'s Task Tracker Evaluation: ${Number(j.eval.overall).toFixed(1)}/5 – ${j.eval.label}${j.eval.ai ? "" : " (from the automatic checks: no AI is set up)"}.`, 7000);
+    }catch(err){ toast(`🗂 Couldn't evaluate Week ${n}: ${String(err && err.message || err).slice(0, 160)}`, 7000); }
+    B.weBusy = ""; render();
+  },
   // ↺ one more attempt at a Knowledge Check, for a system issue (js/ft-process.js FTKCRetry.grant)
   async kcRetry(id){
     if(!adminOn() || B.kcBusy || !window.FTKCRetry) return;
@@ -2394,6 +2451,10 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-parts tr.bs-parts-g.bs-parts-top th{background:#1E2340;color:#fff;font-size:14.5px;padding:7px 10px;}
 .bs-parts tr.bs-parts-g .bs-parts-gv{float:right;font-weight:700;color:#FDE68A;}
 .bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;}
+.bs-pt-we{padding:8px 10px !important;} .bs-we{border:1px solid #AEB6C6;border-radius:8px;margin:6px 0;background:#fff;} .bs-we>summary{cursor:pointer;padding:8px 12px;font:800 15px Arial,sans-serif;color:#1E2340;background:#F1F4FA;border-radius:8px;}
+.bs-we>summary small{font-weight:600;color:#475569;margin-left:6px;} .bs-we-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px 0;} .bs-we-doc{padding:4px 14px 12px;overflow-x:auto;}
+.bs-we-doc .ft-ev-t{width:100%;border-collapse:collapse;margin:8px 0;} .bs-we-doc .ft-ev-t th,.bs-we-doc .ft-ev-t td{border:1px solid #9AA3B5;padding:6px 8px;vertical-align:top;text-align:left;}
+.bs-we-doc .ft-ev-t td:nth-child(2){white-space:nowrap;font-weight:800;} .bs-we-doc .ft-ev-ex{background:#F6F7FB;border-left:3px solid #C2410C;padding:6px 10px;} .bs-we-doc .ft-ev-overall{font-size:16px;margin-top:10px;} .bs-we-doc .ft-ev-note{color:#6B5B00;}
 .bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
 .bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
 .bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}

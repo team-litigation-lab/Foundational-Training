@@ -650,12 +650,13 @@ function launchSlide(s){
 }
 // 🔀 the end of a day's deck: today's training is done, ✅ End of Module back to 📚 Dashboard (never on into the next day)
 // (Day 10 closes Part 1 of the Opening Claims card: LESSON_CARDS[7])
+// (📒 the Monitoring Sheet reminder only on a day the slides ask for an update, FTTrackerRules.MONITOR_SCHEDULE: it isn't daily)
 const PART_END = {10: 1};
 function dividerSlide(n){
   const part = PART_END[Number(n)];
   return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ ${part ? `End of Part ${part}` : "End of today’s training"}</p>
     <h2 class="ftdd-dv-h">${part ? `Part ${part} is complete` : "Today’s training is complete"}</h2>
-    <p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet before the end of your shift.</p>
+    ${(m => m ? `<p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet (${e(m.what)}) before the end of your shift.</p>` : "")(window.FTTrackerRules && FTTrackerRules.monitorDue ? FTTrackerRules.monitorDue(n) : null)}
     <button type="button" class="btn ftdd-next ftdd-dv-go ft-endmod" onclick="goto('modules')" title="Back to the 📚 Dashboard">✅ End of Module</button></div>`;
 }
 function agendaHtml(d, info){
