@@ -141,7 +141,7 @@ async function browserPart(){
     if (!row(1) || !row(3) || !/🌱 Professional Development & Progress · Week 3/.test(row(3).text) || row(3).selects !== 3 || !row(3).save) fail(`the trainer has no Week 3 🌱 Professional Development & Progress row with its three criteria: ${JSON.stringify(v && v.rows)}`);
     if (!/Competency in taking on a role/.test(row(3) && row(3).text) || !/Communication/.test(row(3) && row(3).text) || !/Quality of output/.test(row(3) && row(3).text)) fail(`the row doesn't name the three criteria: ${row(3) && row(3).text}`);
     if (!/Not scored yet — your trainer scores this weekly/.test(row(3) && row(3).text)) fail(`an unscored week doesn't say so: ${row(3) && row(3).text}`);
-    if (E.w3 !== E.w3days || !chip().includes('Week 3 ' + p5(E.w3days)) || !/not scored yet this week: not counted/.test(chip())) fail(`an unscored week's Daily compliance isn't the days' alone (${p5(E.w3days)}): ${chip()}`);
+    if (E.w3 !== E.w3days || !(chip().includes('Week 3 ' + p5(E.w3days)) || chip().includes('Week 3 ' + E.w3days + '%')) || !/not scored yet this week: not counted/.test(chip())) fail(`an unscored week's Daily compliance isn't the days' alone (${p5(E.w3days)}): ${chip()}`);
     // (the trainer picks 4.5, 4 and 3.5 and a note, then 💾 Save Week 3)
     const sel = (c, val) => page.selectOption(`#bs-pt-${pid} tr.bs-pdp[data-week="3"] select[data-c="${c}"]`, val);
     await sel('role', '4.5'); await sel('comm', '4'); await sel('quality', '3.5');
