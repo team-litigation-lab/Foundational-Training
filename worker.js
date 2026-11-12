@@ -270,6 +270,12 @@ function weekRange(st, n) {
 function weekOf(st, d) { for (let n = 1; n <= 6; n++) { const r = weekRange(st, n); if (!r) return 1; if (d <= r[1]) return n; } return 6; }
 // 📅 a date's training day (1 = the batch's first weekday) and what the Training Guide expects of it (FTDays, js/ft-day-activities.js),
 // with the recurring tests every day asks for
+// 🌱 trackerreview:<id> written back after a long read (Drive, the AI): the trainer's Professional Development &
+// Progress scores (pdp, /api/pdp/set) are read again just before, so one saved meanwhile is never written over with the old copy
+async function putKeepPdp(kv, rk, cur) {
+  try { const f = JSON.parse((await kv.get(rk)) || "null"); if (f && f.pdp && typeof f.pdp === "object") cur.pdp = f.pdp; else if (f && !f.pdp) delete cur.pdp; } catch (e) {}
+  await kv.put(rk, JSON.stringify(cur));
+}
 function trainingDay(st, D) { let k = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 60; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++; return k; }
 function expectedFor(st, D) {
   const FD = globalThis.FTDays, k = trainingDay(st, D), items = FD && FD.items && k ? FD.items(k) : [];
@@ -1408,7 +1414,7 @@ async function checkDrive(env, id, D, o = {}) {
     out.tam = Object.keys(entries).length;
   }
   cur.updatedAt = at;
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return out;
 }
 /* 📘 THE TAM'S ENTRIES BY DAY: the Task Assessment Manual is written day by day, each entry under its date ("11/05/2026",
@@ -1502,7 +1508,7 @@ async function checkShots(env, id, o = {}) {
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: url0, checkedAt: new Date().toISOString() }) : { files, url: url0, checkedAt: new Date().toISOString(), error: "", unread: errs };
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
 }
 
@@ -1684,7 +1690,7 @@ async function verifyLinks(env, id) {
   const newBad = Object.keys(out).filter((k) => out[k].ok === false && !out[k].retry && !(prev[k] && prev[k].ok === false && prev[k].url === out[k].url && prev[k].error === out[k].error));
   if (newBad.length) cur.verifyAlert = { at, keys: newBad };
   cur.verify = out; cur.verifyAt = at; delete cur.verifyError;
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { ok: true, verify: out, share: sa };
 }
 
@@ -2005,7 +2011,7 @@ async function gradeTranscription(env, id, n, o = {}) {
   // (read again just before it is written: the nightly check may have written trackerreview meanwhile)
   const cur = (await getJSON(kv, rk)) || { days: {} };
   cur.transcribe = Object.assign({}, cur.transcribe, { [n]: grade });
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { status: 200, body: { ok: true, grade } };
 }
 async function checkIntakePacket(env, id, hint = {}) {
@@ -2242,7 +2248,7 @@ async function runTrackerChecks(env, opts) {
     const prev = cur.days[D] || {};
     cur.days[D] = Object.assign({}, res, { review: review || prev.review || "", checkedAt: new Date().toISOString(), comment: prev.comment || "", commentAt: prev.commentAt || "" });
     cur.updatedAt = new Date().toISOString();
-    await kv.put(rk, JSON.stringify(cur));
+    await putKeepPdp(kv, rk, cur);
     done.push({ id, pct: res.pct, flags: res.flags.length });
   } catch (e) { /* the next trainee */ } }
   // the trainees whose tracker and Monitoring Sheet are in Google Drive
@@ -2456,7 +2462,7 @@ async function backtrack(env, id) {
     try {
       const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
       out.days = await trackerDays(env, drive, start, days, cur);
-      await kv.put(rk, JSON.stringify(cur));
+      await putKeepPdp(kv, rk, cur);
       out.tracker = "ok";
     } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
   }
