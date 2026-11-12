@@ -251,8 +251,12 @@ Return ONLY JSON: {"scores":{${COMP.map(([k]) => `"${k}":<0-5 one decimal or nul
 async function load(c){
   const key = keyOf(c.batch, c.week); if(S.key === key) return;   // (once a week: a week not summarized yet isn't read again)
   S.key = key; S.data = null; S.loading = true;
-  let d = null; try{ d = (await sharedGet(key)) || null; }catch(err){ d = null; }
-  if(S.key !== key) return; S.data = S.data || (d && d.v >= SUMV ? d : null); S.loading = false; redraw();
+  // (a read that fails is not "not summarized yet": it is tried again, so a saved week's report never looks missing)
+  let d = null, failed = false;
+  try{ d = (await (typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet)(key)) || null; }catch(err){ failed = true; }
+  if(S.key !== key) return;
+  if(failed){ S.loading = false; S.loadErr = true; redraw(); setTimeout(() => { if(S.key === key && S.loadErr){ S.key = null; S.loadErr = false; redraw(); } }, 8000); return; }
+  S.loadErr = false; S.data = S.data || (d && d.v >= SUMV ? d : null); S.loading = false; redraw();
 }
 async function draft(opts){
   // (asked while one runs — the automatic one, say —: it runs again as soon as that one is done, with what is asked now)
@@ -274,7 +278,12 @@ async function draft(opts){
   // (another week picked meanwhile — or the page reloading its batch for a moment —: the summary is still finished and kept for the
   //  week it was started for, so it is never lost half-way; it is only shown if that week is still the one open)
   const here = S.key === key;
-  let prev = here ? S.data : null; if(!here){ try{ prev = (await sharedGet(key)) || null; }catch(err){ prev = null; } } prev = prev || {};
+  // (the saved copy read again unless this page holds it: a summary saved before — shared, hand-edited — is never written over
+  //  because the page's first read of it failed)
+  let prev = here ? S.data : null;
+  if(!prev){ try{ prev = (await (typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet)(key)) || null; }
+    catch(err){ S.busy = false; toast("Couldn’t read the saved summary to update it. Check your connection and try again."); redraw(); return; } }
+  prev = prev || {};
   // (…but a week that already has a summary isn't saved over from a page that has moved on to another week)
   if(!here && prev.rows && prev.v >= SUMV){ S.busy = false; if(S.again){ S.again = false; setTimeout(draft, 0); } redraw(); return; }
   // (what a trainer edited by hand stays)
@@ -401,7 +410,7 @@ window.FTRankSummary = {
         ${d ? `<button class="btn btn-ghost btn-sm" onclick="FTRankSummary.toggleEdit()">${S.edit ? "✓ Done editing" : "✎ Edit"}</button><button class="btn btn-ghost btn-sm" ${S.sharing ? "disabled" : ""} onclick="FTRankSummary.share()" title="Each trainee sees only their own card: their scores, comments and the trainer's feedback, and their rank">${S.sharing ? "📤 Sharing…" : d.sharedAt ? "📤 Share again" : "📤 Share with the trainees"}</button><button class="btn btn-navy btn-sm" onclick="FTRankSummary.excel()">⬇ Excel</button>` : ""}${window.FTBatchSheet && typeof FTBatchSheet.weeklyActs === "function" ? FTBatchSheet.weeklyActs() : ""}`;
     S.acts = d && !S.loading ? acts : "";
     return `<div class="rks-wrap">${S.acts ? "" : `<div class="rks-bar-acts">${acts}</div>`}
-      ${!begun(c.range) ? zeroHtml(c) : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : !d && S.busy && S.prog && Number(S.prog.wk) === Number(c.week) ? `<p class="sc-empty">📑 Summarizing Week ${e(c.week)}… ${S.prog.n} of ${S.prog.of} trainee${S.prog.of === 1 ? "" : "s"} done. The report appears here by itself when it is ready.</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
+      ${!begun(c.range) ? zeroHtml(c) : S.loading ? `<p class="sc-empty">Opening the summary…</p>` : !d && S.loadErr ? `<p class="sc-empty">Couldn’t open Week ${e(c.week)}'s saved summary. Trying again…</p>` : !d && S.busy && S.prog && Number(S.prog.wk) !== Number(c.week) ? `<p class="sc-empty">📑 Summarizing Week ${e(S.prog.wk)} first (${S.prog.n} of ${S.prog.of} trainees). Week ${e(c.week)} can be summarized as soon as it is done.</p>` : !d && S.busy && !S.prog ? `<p class="sc-empty">📑 Saving the week's summary…</p>` : !d && S.busy && S.prog && Number(S.prog.wk) === Number(c.week) ? `<p class="sc-empty">📑 Summarizing Week ${e(c.week)}… ${S.prog.n} of ${S.prog.of} trainee${S.prog.of === 1 ? "" : "s"} done. The report appears here by itself when it is ready.</p>` : d ? reportHtml(false) : `<p class="sc-empty">Not summarized yet for Week ${e(c.week)}. 📑 Summarize the week: every trainee's scorecard from the platform's records of the week.</p>`}</div>`;
   },
   // the AI summary of a trainee's whole week (📊 the marks sheet's column): the summary's own, else its scores in a line
   weekSummary(id){
