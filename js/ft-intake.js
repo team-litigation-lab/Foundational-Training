@@ -101,8 +101,8 @@ function loadK(force){
   if(K.loading) return K.loading;
   const id = isTrainee() ? state.traineeId : null;
   if(!force && K.set && K.id === id && Date.now() - K.at < 120000) return Promise.resolve();
-  K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null, id ? sharedGet("intakecheck:" + id) : null])
-    .then(([v, a, d, w, ck]) => { K.check = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
+  K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null, id ? sharedGet("intakecheck:" + id) : null, id ? sharedGet("labreview:" + id) : null])
+    .then(([v, a, d, w, ck, lr]) => { K.demoDone = !!(lr && lr.acts && lr.acts["intake-packet-demo"] && (lr.acts["intake-packet-demo"].rubric || lr.acts["intake-packet-demo"].score != null)); K.check = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
       K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now();
       // (the trainee's own links to the additional intake documents: drive:<id>.intakeDocs, theirs to write)
       K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : [];
@@ -218,7 +218,7 @@ function packetHtml(){
       <li><b>Rename</b> it <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</li>
       <li><b>Extract</b> every document in it, each named under the naming convention: <code>INTAKE - Police Report (${e(who)})</code>.</li>
       <li><b>Upload</b> the renamed packet with its documents into a subfolder of your Assessments/Activities folder named after ${client ? `<b>${e(client)}</b>` : "your client"} (the Intake Worksheet stays outside it).</li>
-      <li><b>Link</b> both below, then <b>🔎 Check my packet</b>: it’s checked for accuracy and completeness, and your trainer sees the result.</li></ol>
+      <li><b>Link</b> both below, then <b>🔎 Check my packet</b>: it’s checked for accuracy and completeness, and your trainer sees the result (yours shows here once the demos are done).</li></ol>
     <div class="ftis-pk-link"><b>🔗 Your corrected packet</b> <small>Open it in your Drive, copy its link (…/file/d/…).</small>
       <div class="ftis-ws-row"><input type="url" id="ftisPkLink" placeholder="https://drive.google.com/file/d/…" value="${e(K.packetLink || "")}" aria-label="The Drive link of your corrected packet"></div>
       <b>📁 Your client subfolder</b> <small>The folder with the packet and its extracted documents (…/drive/folders/…).</small>
@@ -226,7 +226,7 @@ function packetHtml(){
       <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.savePacketLink(this)">💾 ${K.packetLink ? "Save again" : "Save"}</button>
       ${K.packetLink ? `<button type="button" class="btn btn-ghost btn-sm" ${K.checking ? "disabled" : ""} onclick="FTIntake.checkPacket(this)">${K.checking ? "Checking… (about a minute)" : "🔎 Check my packet"}</button>` : ""}</div>
       ${K.packetLink ? `<p class="ftis-ws-ok">✓ Linked: <a href="${e(K.packetLink)}" target="_blank" rel="noopener noreferrer">your packet ↗</a>${K.packetFolder ? ` · <a href="${e(K.packetFolder)}" target="_blank" rel="noopener noreferrer">your subfolder ↗</a>` : ""}</p>` : ""}</div>
-    ${checkHtml(K.check)}`;
+    ${K.demoDone || !isTrainee() ? checkHtml(K.check) : K.check ? `<p class="ftis-ws-ok">✓ Checked. Your trainer reviews the result with you once the demos are done.</p>` : ""}`;
 }
 // 📦 the assigned client: the packet's (saved by the trainer), else the caller of the demo case paired with it
 function clientOf(n){
