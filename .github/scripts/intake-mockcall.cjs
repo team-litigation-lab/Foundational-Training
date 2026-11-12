@@ -82,7 +82,8 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     {
       await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1500);
       const sheet = await page.evaluate(() => (document.querySelector('.ftms-trainer .ftis-mcase') || {}).innerHTML || '');
-      if (!/New Intake With a Deadline Close/.test(sheet) || !/SCRIPT-ft_in_nicole/.test(sheet)) fail(`the scoring sheet doesn't show the trainee's case: ${sheet.slice(0, 200)}`);
+      // (no case line over the scoresheet: the demo is the trainee's assigned packet, shown on their slide)
+      if (/New Intake With a Deadline Close|SCRIPT-ft_in_nicole/.test(sheet)) fail(`the scoring sheet still shows a case line over the scores: ${sheet.slice(0, 200)}`);
       // (the sheet can sit on a later page of the slide: typed into and saved through the page)
       await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '4'; i.dispatchEvent(new Event('input', { bubbles: true }));
         FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });

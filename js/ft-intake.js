@@ -189,6 +189,8 @@ function mockcallHtml(el){
 }
 // the trainer's scoring sheet: the picked trainee's case
 function mcaseHtml(el){
+  // (no case line over the trainer's demo scoresheet: the demo is the trainee's assigned packet, shown on their slide)
+  if(el) return "";
   const id = el.getAttribute("data-trainee") || "", calls = mockCalls();
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
   if(!freshAdmin()) return "";

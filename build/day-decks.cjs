@@ -596,7 +596,8 @@ s3: html => {
   if(brk < 0) throw new Error("Day 8's demo instructions no longer end on a page break");
   // (no "🎬 Your Intake Demo case" box on the trainee's deck: the trainer runs the demo's case, so it only confused them — the
   // case is still on the trainer's scoring sheet, js/ft-intake.js .ftis-mcase)
-  return DEMO_SLIDE + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
+  // (📦 the trainee's assigned Intake Packet, the one they save in the demo, on page 1 under the instructions: js/ft-intake.js .ftis-packet)
+  return DEMO_SLIDE.slice(0, brk) + `<div class="ftis-packet"></div>\n` + DEMO_SLIDE.slice(brk) + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
@@ -744,6 +745,9 @@ function DAY8_INS(x){
   const out = [DAY8_VIDEO.trim(), /<div class="ftis-forms"[^\n]*<\/div>\n?/, /<p>Prototype CMS: Intake \(a blank intake to fill in as you ask\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/,
     /<p>Intake Call Simulator \(the Intake Line on LSH Ring Channel\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/];
   for(const m of out){ const y = typeof m === "string" ? x.replace(m, "") : x.replace(m, ""); if(y === x) throw new Error(`Day 8's instructions no longer hold ${String(m).slice(0, 60)}`); x = y; }
+  // (📦 the trainee's assigned Intake Packet, the one they save in the SA demonstration, under its instructions: js/ft-intake.js .ftis-packet)
+  if(!x.includes("<p><b>2. Intake Mock Call")) throw new Error("Day 8's instructions no longer have the Intake Mock Call part");
+  x = x.replace("<p><b>2. Intake Mock Call", '<div class="ftis-packet"></div>\n<p><b>2. Intake Mock Call');
   return x.replace("please use your idle time to practice handling intake calls through the Call Simulator.", "please use your idle time to practice handling intake calls: see <b>Practice Intake Calls</b>, after the video.");
 }
 const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
