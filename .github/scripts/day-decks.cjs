@@ -481,7 +481,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
   // the packet's case is the Day 8 demo's: its preparation slide (s3p) carries the case box
   await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(1500);
-  if (!(await page.$('.ftdd-sheet .ftis-mockcall'))) fail("Day 8's demo preparation slide has no case box");
+  if (await page.$('.ftdd-sheet .ftis-mockcall')) fail("Day 8's demo preparation slide still has the Intake Demo case box");
 
   // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are removed:
   // no 🎮 button anywhere, and #/kcgames is no page of the platform
