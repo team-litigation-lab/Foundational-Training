@@ -17,7 +17,9 @@ const fmt = p => (Math.round(p * 10) / 10).toFixed(1);
 const clip = (t, n) => { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 // 🗒 what the score is about: the row's own words (its details cell), for "what to improve"
 function rowWhy(el){
-  const tr = el.closest("tr"); if(!tr) return "";
+  // (only a details row — a score with its name and explanation, three cells at most: in a wide table, 📤 Daily outputs, the
+  // row's last cell is another day's, not this score's)
+  const tr = el.closest("tr"); if(!tr || tr.children.length > 3) return "";
   const cells = [...tr.children].filter(c => c !== el && !c.contains(el));
   const last = cells[cells.length - 1];
   const t = last && last !== cells[0] ? clip(last.textContent, 260) : "";
