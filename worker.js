@@ -2475,7 +2475,7 @@ async function redoCompliance(env, id, ro = {}) {
     const had = (pre.cur.compliance || {})[d];
     await dailyCompliance(env, id, d, { pre, redo: true, fresh: byDay, rec, files: files || undefined, backfill: !had && d < today });
   }
-  await kv.put(`trackerreview:${id}`, JSON.stringify(pre.cur));
+  await putReview(kv, `trackerreview:${id}`, pre.cur, ["compliance", "dayAi", "days"]);   // (🔒 what was saved meanwhile is kept)
   return want.length;
 }
 
@@ -2794,8 +2794,17 @@ async function dailyCompliance(env, id, D, o = {}) {
     if (!ch) return; x.monitorAi = null; const v = Object.values(x.parts || {}).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
-  if (pre) pre.cur = cur; else await kv.put(rk, JSON.stringify(cur));
+  if (pre) pre.cur = cur; else await putReview(kv, rk, cur, ["compliance", "dayAi"]);
   return cur.compliance[D];
+}
+// 🔒 a trainee's trackerreview:<id> written back after a long run (dailyCompliance's AI grading, redoCompliance's days):
+// read again just before the write and only the fields the run computed are copied in, so what another request saved in
+// the meantime — a trainer's 🌱 PDP or week evaluation, an assessment or transcription grade, a Drive check — is kept
+async function putReview(kv, rk, cur, fields) {
+  let fresh = null; try { fresh = JSON.parse((await kv.get(rk)) || "null"); } catch (e) { fresh = null; }
+  fresh = fresh && typeof fresh === "object" ? fresh : { days: {} };
+  fields.forEach((f) => { if (cur[f] !== undefined) fresh[f] = cur[f]; });
+  await kv.put(rk, JSON.stringify(fresh));
 }
 
 /* ---------- 🕘 automatic Time In (read by the Training Portal /attendance.html) ----------
