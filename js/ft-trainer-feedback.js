@@ -189,7 +189,9 @@ async function loadAdmin(){
     A.ppl = ppl;
     A.rows = rows.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   }catch(err){ A.rows = []; }
-  A.loading = false; if(state.view === "admin" && state.adminTab === "sendfeedback") render();
+  // (drawn again on its own tab, or on 📋 Batch Sheet where it opens inline under a trainee's table — it stayed on
+  // "Collecting…" there until something else redrew the page)
+  A.loading = false; if(state.view === "admin" && (state.adminTab === "sendfeedback" || A.who)) render();
 }
 const batchesOf = () => [...new Set((A.people || []).map(p => bLabel(p.batch)).filter(Boolean))].sort();
 /* 📊 a manual activity (a Knowledge Check, a day's activity, a side activity) has no work of its own in this list: what the

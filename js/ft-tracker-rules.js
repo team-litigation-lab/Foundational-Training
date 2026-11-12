@@ -184,8 +184,8 @@
        const all = rowsOn(t, D), typ = all.filter((r) => /typing/i.test(r.details)), sp = all.filter((r) => /spell/i.test(r.details));
        // (what was written for the day: the test row's Daily Note for it, or a row for the test dated that day)
        const said = (rs) => rs.map((r) => [has(r.notes && r.notes[D]) ? r.notes[D] : "", r.dateReceived === D || r.completedOn === D ? (r.details + " " + (r.vaNotes || "")) : ""].join(" ")).join(" ").trim();
-       const ty = said(typ), st = said(sp), am = /\bam\b|morning/i.test(ty), pm = /\bpm\b|afternoon|end of (the )?shift/i.test(ty);
-       // (a note that names neither slot counts for both; one that names a single slot is missing the other)
+       const ty = said(typ), st = said(sp), am = /\bam\b|morning/i.test(ty.replace(/\b(i|we)\s+am\b/gi, " ")), pm = /\bpm\b|afternoon|end of (the )?shift/i.test(ty);
+       // (a note that names neither slot counts for both; one that names a single slot is missing the other — "I am" isn't the AM slot)
        const tScore = !ty ? 0 : am === pm ? 1 : 0.5, sScore = st ? 1 : 0;
        const miss = [!typ.length ? "no Typing Test row" : !ty ? `no Typing Test recorded for ${fmtDate(D)}` : tScore < 1 ? `the ${am ? "PM" : "AM"} Typing Test isn't recorded for ${fmtDate(D)}` : "",
          !sp.length ? "no Spelling Test row" : !st ? `no Spelling Test recorded for ${fmtDate(D)}` : ""].filter(Boolean);
@@ -444,7 +444,8 @@
     const yr = (x) => !x ? year : x.length === 2 ? "20" + x : x, mon = (x) => MONTHS.indexOf(String(x || "").slice(0, 3).toLowerCase()) + 1;
     let m;
     if((m = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/))) return out(m[1], +m[2], +m[3]);
-    if((m = t.match(/(?:^|[^\d])(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?![\d\/])/))) return out(yr(m[3]), +m[1], +m[2]);
+    // (m/d or m/d/y; with dots only all three parts, 11.02.26 — "2.5 hrs" or "v2.1" isn't a date)
+    if((m = t.match(/(?:^|[^\d.])(\d{1,2})(?:\/(\d{1,2})(?:\/(\d{2,4}))?|\.(\d{1,2})\.(\d{2,4}))(?![\d\/])/))) return m[2] ? out(yr(m[3]), +m[1], +m[2]) : out(yr(m[5]), +m[1], +m[4]);
     if((m = t.match(/\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b(?:,?\s+(\d{4}))?/)) && mon(m[1]) > 0) return out(yr(m[3]), mon(m[1]), +m[2]);
     if((m = t.match(/\b(\d{1,2})(?:st|nd|rd|th)?[-\s]([A-Za-z]{3,9})\.?(?:[-\s,]+(\d{2,4}))?\b/)) && mon(m[2]) > 0) return out(yr(m[3]), mon(m[2]), +m[1]);
     return "";
@@ -501,9 +502,13 @@
     const dateCols = [];
     // (the Daily Notes' dates: in the heading row itself, the row above it, or the row under it — a merged DAILY NOTES heading
     // with the days beneath — in any form, findDate)
+    // (the row under it is a row of dates only when it holds no task — no Task Details, no Type — so a first task whose note
+    // mentions a date isn't taken for one; and the sheet's own columns, Status or the completion date, are never a day)
     let under = false;
-    for(let i = from; i < to; i++){ let d = findDate(head[i], year) || findDate((rows[hi - 1] || [])[i], year);
-      if(!d){ d = findDate((rows[hi + 1] || [])[i], year); if(d) under = true; }
+    const below = rows[hi + 1] || [], belowDates = !has(below[col.details]) && !(col.type >= 0 && has(below[col.type]));
+    const own = new Set(Object.values(col).filter((x) => x >= 0));
+    for(let i = from; i < to; i++){ if(own.has(i)) continue; let d = findDate(head[i], year) || findDate((rows[hi - 1] || [])[i], year);
+      if(!d && belowDates){ d = findDate(below[i], year); if(d) under = true; }
       if(d && !dateCols.some(x => x[1] === d)) dateCols.push([i, d]); }
     let section = "completion"; const out = [];
     rows.slice(hi + (under ? 2 : 1)).forEach((r) => {
@@ -620,7 +625,7 @@
     const t = String(text || "").replace(/\r/g, ""), subj = String(subject || "").trim();
     // (the plain text of an email written with bold or italic headings carries them as *…* or _…_: taken off, so
     // "*On queue for tomorrow:*" reads as its heading)
-    const lines = t.split("\n").map((l) => l.replace(/[*_]{1,3}/g, "").trim());
+    const raw = t.split("\n").map((l) => l.trim()), lines = raw.map((l) => l.replace(/[*_]{1,3}/g, "").trim());
     // the subject: the email's own, else the first line ("Subject: …", or the subject typed as the first line)
     const sub = subj || ((lines.find((l) => has(l)) || "").replace(/^subject\s*:\s*/i, ""));
     const sm = /\b(daily|eod)\s+report\b[^0-9]*(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/i.exec(sub);
@@ -628,8 +633,14 @@
     // a part: the lines after its heading, up to the next heading
     const H = [["acc", /accomplishments?|completed tasks/i], ["learn", /things i.?ve learned|learned that i can|learnings?/i], ["queue", /on queue|queue for tomorrow|tomorrow/i]];
     // (a heading: the line with its colon, or a short line of its own with no bullet — "Accomplishments/Completed Tasks")
-    const heading = (l) => /:\s*(\(|$)|:\s*$|:\s/.test(l + " ") || (l.length <= 80 && !/^[-•*\d]/.test(l) && !/[.!?]$/.test(l));
-    const at_ = {}; lines.forEach((l, i) => { H.forEach(([k, re]) => { if(at_[k] == null && re.test(l) && heading(l)) at_[k] = i; }); });
+    // (ranked, so an accomplishment written without a bullet — "Prepared notes for tomorrow" — doesn't take the place of the
+    // real heading after it: a line with its colon first, then a bare line that opens with the heading's words, then any
+    // other short bare line; the bullet is looked for before * and _ are taken off)
+    const rank = (l, i, re) => { if(/:\s*(\(|$)|:\s*$|:\s/.test(l + " ")) return 3;
+      if(l.length > 80 || /^([-•\d]|\*\s)/.test(raw[i]) || /[.!?]$/.test(l)) return 0;   // (a "* " bullet, not a *bold* heading)
+      const m = re.exec(l); return m && m.index <= 12 ? 2 : 1; };
+    const at_ = {}, best = {}; lines.forEach((l, i) => { H.forEach(([k, re]) => { if(!re.test(l)) return; const r = rank(l, i, re);
+      if(r && (best[k] == null || r > best[k])){ best[k] = r; at_[k] = i; } }); });
     const part = (k) => { if(at_[k] == null) return null; const next = Object.values(at_).filter((v) => v > at_[k]).sort((a, b) => a - b)[0];
       return lines.slice(at_[k] + 1, next == null ? lines.length : next).map((l) => l.replace(/^[-•*•\d.)\s]+/, "").trim()).filter((l) => l.length > 2 && !/^(regards|thank you|thanks|best)[,!.]?$/i.test(l)); };
     const acc = part("acc"), learn = part("learn"), queue = part("queue");

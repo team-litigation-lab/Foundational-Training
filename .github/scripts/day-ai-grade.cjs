@@ -31,10 +31,11 @@ const failures = []; const fail = (m) => failures.push(m);
     monitor: { entries: [entry, { topic: 'Reception Training Day 3', date: '2026-11-05', pct: 100, text: 'SHOULD NOT BE SENT', checks: [] }], checkedAt: D + 'T20:00:00Z' } });
   store.set('ft:trackerreview:' + id, JSON.stringify(rv()));
 
-  let calls = 0; const prompts = [];
+  let calls = 0; const prompts = []; let midWrite = null;
   globalThis.fetch = async (url, init = {}) => {
     const u = String(url);
     if (u.startsWith('https://api.anthropic.com/')) {
+      if (midWrite) { midWrite(); midWrite = null; }   // (another request saving to the same record while the AI grades)
       calls++; const body = JSON.parse(init.body), prompt = body.messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n'); prompts.push(prompt);
       const tracker = /Daily Task Tracker/.test(body.system || '');
       // (🗂 the tracker on the trainer's sample evaluation's seven metrics, 28/35 = 80; the Monitoring Sheet on the six criteria)
@@ -85,6 +86,14 @@ const failures = []; const fail = (m) => failures.push(m);
   { const r = (await call('/api/compliance/today', { ids: [id] }, admin)).body || {};
     if (!r.ok) fail(`today's compliance wasn't worked out again: ${JSON.stringify(r)}`);
     if ((await call('/api/compliance/today', { ids: [id] })).status < 400) fail('a request without a trainer\'s sign-in worked out today\'s compliance'); }
+  // 7. 🔒 what another request saved to the record while the day was being graded (a trainer's 🌱 PDP) isn't overwritten
+  env.ANTHROPIC_API_KEY = 'ci-key';
+  store.set('ft:trackerreview:' + id, JSON.stringify(rv()));
+  midWrite = () => { const r = JSON.parse(store.get('ft:trackerreview:' + id)); r.pdp = { w1: { score: 4, by: 'Trainer' } }; store.set('ft:trackerreview:' + id, JSON.stringify(r)); };
+  await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
+  { const r = JSON.parse(store.get('ft:trackerreview:' + id));
+    if (!r.pdp || !r.pdp.w1 || r.pdp.w1.score !== 4) fail(`a write made while the day was being graded was lost: ${JSON.stringify(r.pdp)}`);
+    if (!((r.compliance || {})[D] || {}).parts) fail('the day\'s compliance wasn\'t saved with the other request\'s write kept'); }
   if (failures.length) { console.error('Day AI grade test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Day AI grade test passed (each day\'s Task Tracker rows graded on the trainer\'s seven tracker metrics and its Monitoring Sheet entry on compliance, completeness & accuracy, personal input, effort, attention to detail and professionalism; only that day\'s input sent; graded once until it changes; the checks\' score without the AI; dates written other ways read).');
 })().catch((e) => { console.error('Day AI grade test FAILED:', e && e.stack || e); process.exit(1); });
