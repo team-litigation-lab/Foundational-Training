@@ -86,6 +86,16 @@ const BASE = process.argv[2] || '';
       if (P.withWeek([60, 70], rv, 2) !== 70 || P.withWeek([60, 70], rv, 1) !== 65 || P.withWeek([], rv, 1) !== null || P.withWeek([], rv, 2) !== 80) fail('ftPdp.withWeek doesn\'t count the week\'s score beside its days (and nothing for an unscored week)');
     } }
 
+  // 🌱 a score saved while the day's check is still reading the sheets (Drive, the AI) isn't written over when the check saves
+  { put('drive:' + id, { monitor: 'https://docs.google.com/document/d/' + 'p'.repeat(30) + '/edit', days: {} });
+    let open; const gate = new Promise((ok) => { open = ok; }), was = globalThis.fetch;
+    globalThis.fetch = async () => { await gate; return new Response('not found', { status: 404 }); };
+    const check = call('/api/drive/check', { id, date: D3, ai: false }, admin);
+    await new Promise((ok) => setTimeout(ok, 50));
+    await call('/api/pdp/set', { id, week: 5, role: 3, comm: 3, quality: 3 }, admin);
+    open(); await check; globalThis.fetch = was;
+    if (!((get('trackerreview:' + id).pdp || {})[5])) fail('a PD&P score saved during the day\'s check was written over when the check saved'); }
+
   // 📋 the Batch Sheet trainee page (with a URL)
   if (BASE) await browserPart().catch((e) => fail(`the browser part failed: ${e && e.stack || e}`));
   if (failures.length) { console.error(`${failures.length} failure(s):`); failures.forEach((f, i) => console.error(`${i + 1}. ${f}`)); process.exit(1); }

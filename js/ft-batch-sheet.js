@@ -48,9 +48,12 @@ const kcLessons = () => lessons().filter(d => typeof window.ftKcQuestions !== "f
 const lessonName = id => typeof ftName === "function" ? ftName(id) : "Lesson " + id;
 const t = v => { const d = v ? new Date(v) : null; return d && isFinite(d) ? d : null; };
 // (📅 the date alone in a narrow score cell — the time is in the cell beside it — so it never wraps)
-const whenD = v => { const d = t(v); return d ? d.toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric"}) : ""; };
-const when = v => { const d = t(v); return d ? d.toLocaleString(undefined, {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"}) : ""; };
-const day = v => { const d = t(v); return d ? d.toLocaleDateString(undefined, {month: "short", day: "numeric", year: "numeric"}) : ""; };
+// (⚡ each formatter made once: toLocale*String with options builds a new Intl formatter on every call — hundreds a render)
+const DF = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric"}), DTF = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"});
+const MDF = new Intl.DateTimeFormat(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"});
+const whenD = v => { const d = t(v); return d ? DF.format(d) : ""; };
+const when = v => { const d = t(v); return d ? DTF.format(d) : ""; };
+const day = v => { const d = t(v); return d ? DF.format(d) : ""; };
 const ago = v => { const d = t(v); if(!d) return ""; const m = Math.round((Date.now() - d) / 60000);
   return m < 2 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} day${Math.round(m / 1440) === 1 ? "" : "s"} ago`; };
 const pct = n => typeof n === "number" && isFinite(n) ? Math.round(n) + "%" : "";
@@ -136,10 +139,18 @@ setInterval(() => { try{
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
   if(state.isAdmin && Date.now() - ((B.syncAt || {})[key] || 0) >= SYNC_EVERY) bgSync(ppl, key); else loadData(true);
 }catch(err){} }, AUTO_EVERY);
-async function loadData(quiet){
+// (a quiet read asked for while one runs is queued, never dropped — bgSync's fresh compliance came back before the first
+// read did, and was lost until the 5-minute timer; awaiting it waits for the queued read too: B.loadP)
+function loadData(quiet){
+  if(quiet && B.dataLoading){ B.reloadAfter = true; return B.loadP || Promise.resolve(); }
   const ppl = people(), key = B.batch + "|" + ppl.map(p => p.id).join(",");
-  if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return;
-  if(quiet && B.dataLoading) return;
+  if(!quiet && B.dataKey === key && (B.data || B.dataLoading)) return B.loadP || Promise.resolve();
+  return (B.loadP = readData(quiet, ppl, key));
+}
+// (the background jobs' re-reads gathered into one quiet read, the sheet kept on screen; off the sheet, read on coming back)
+// (not B.dataKey="" during a read: that read would return as superseded with nothing started after it, B.dataLoading stuck)
+const reloadSoon = () => { clearTimeout(B.rl); B.rl = setTimeout(() => { if(on() || B.dataLoading) loadData(true); else B.dataKey = ""; }, 500); };
+async function readData(quiet, ppl, key){
   B.dataKey = key; B.dataLoading = true; if(!quiet) rerender();
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
@@ -150,15 +161,18 @@ async function loadData(quiet){
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
     // (the sync and today's compliance: in the background once the sheet is drawn, bgSync below)
     if(!quiet) setTimeout(() => bgSync(ppl, key), 0);
+    // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
+    const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`, rks = adminOn() && !meOn() ? [1, 2, 3, 4, 5, 6].map(rk) : [];
+    // (⚡ everything in ONE sharedGetMany — the trainees' keys, the shared ones and the reports — each key once: own and
+    // LSH_PROGRAM.sources both have progress:/skills:/simresults:; read back by key, not by place)
     const want = [];
     ppl.forEach(p => { own.forEach(k => want.push(k + p.id)); S.forEach(s => want.push(s.key + p.id)); });
-    const vals = [];
-    vals.push(...await sharedGetMany(want));
-    const sh = {}, shv = shared.length ? await sharedGetMany(shared) : [];
-    shared.forEach((k, i) => { sh[k] = shv[i] || null; });
-    const per = own.length + S.length, rec = {};
-    ppl.forEach((p, i) => {
-      const at = j => vals[i * per + j] || null, sc = {};
+    const uniq = [...new Set(want.concat(shared, rks))], got = await sharedGetMany(uniq), V = new Map();
+    uniq.forEach((k, i) => V.set(k, got[i]));
+    const sh = {}; shared.forEach(k => { sh[k] = V.get(k) || null; });
+    const rec = {}, keys = own.concat(S.map(s => s.key));
+    ppl.forEach(p => {
+      const at = j => V.get(keys[j] + p.id) || null, sc = {};
       S.forEach((s, j) => { sc[s.key] = at(own.length + j); });
       if(window.ftW1Override) sc["trackerreview:"] = ftW1Override.comp(sc["trackerreview:"], p.batch);   // W1-OVERRIDE
       if(window.ftDay1) sc["trackerreview:"] = ftDay1.comp(sc["trackerreview:"], p.batch);   // 📅 Day 1 isn't counted
@@ -178,10 +192,7 @@ async function loadData(quiet){
           wk = {n, range, score: sco, comp, days: days.length, pdp, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
       rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score, wk};
     });
-    // the batch's 📊 Weekly Ranking reports (a trainer's: ranking:<batch>:w1–6), for the weeks' average in 🏅 Scores
-    let reps = [];
-    if(adminOn() && !meOn()){ const rk = w => `ranking:${String(B.batch || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
-      try{ reps = (await sharedGetMany([1, 2, 3, 4, 5, 6].map(rk))).map(r => r && Array.isArray(r.cols) ? r : null); }catch(err){ reps = []; } }
+    const reps = rks.map(k => { const r = V.get(k); return r && Array.isArray(r.cols) ? r : null; });
     if(B.dataKey !== key){ return; }   // (another read started since: that one's result is kept)
     B.data = {rec, sources: S, reps, at: new Date(), batch: B.batch, key};
     // (📊 a quiet read again: the Weekly Report's platform cells filled again from the new scores — never a typed one)
@@ -190,27 +201,28 @@ async function loadData(quiet){
     if(adminOn() && !meOn() && window.ftKcGradeFor && !(B.kcAuto || {})[B.batch]){ (B.kcAuto = B.kcAuto || {})[B.batch] = 1; const bb = B.batch, todo = [];
       ppl.forEach(p => kcSheets().forEach(k => { const g = sheetGrade(p, k); if(g.pct == null && g.subm) todo.push({p, k}); }));
       if(todo.length) (async () => { let n = 0; for(const t of todo){ try{ if(await ftKcGradeFor(t.p.id, t.k.l, t.k.read)) n++; }catch(err){} }
-        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb){ B.dataKey = ""; rerender(); } } })(); }
+        if(n){ toast(`✍️ ${n} submitted answer sheet${n === 1 ? "" : "s"} graded.`); if(B.batch === bb) reloadSoon(); } })(); }
     // 🔁 the batch's grades saved by the broken grading (window.ftStaleGrade, js/ft-listening.js): graded again, once a
     // session, then the sheet is read again
     if(adminOn() && !meOn() && window.ftStaleGrade && !(B.regraded || {})[B.batch]){ (B.regraded = B.regraded || {})[B.batch] = 1; const bb = B.batch, jobs = [];
       ppl.forEach(p => Object.entries(((((rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}).forEach(([doc, g]) => { if(ftStaleGrade(g)) jobs.push({id: p.id, doc}); }));
       if(jobs.length) (async () => { let n = 0; for(const j of jobs){ try{ const r = await authFetch("/api/assess/grade", j); if(r.ok) n++; }catch(err){} }
-        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb){ B.dataKey = ""; rerender(); } } })(); }
+        if(n){ toast(`🔁 ${n} answer sheet${n === 1 ? "" : "s"} graded again (the earlier grading had marked right answers ✗).`); if(B.batch === bb) reloadSoon(); } })(); }
     // 🔄 the batch's past training days not worked out yet (worker.js backfillCompliance), once a session: the sheet is read
     // again when any were, so 📤 Daily outputs and the scores count the whole training
     if(adminOn() && !meOn() && !(B.backfilled || {})[B.batch]){ (B.backfilled = B.backfilled || {})[B.batch] = 1; const bb = B.batch;
       authFetch("/api/compliance/backfill", {ids: ppl.map(p => p.id)}).then(r => r.json()).then(j => {
-        if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb){ B.dataKey = ""; rerender(); } }).catch(() => {}); }
+        if(j && j.filled && Object.values(j.filled).some(n => n > 0) && B.batch === bb) reloadSoon(); }).catch(() => {}); }
     // 🔁 the Drive links not checked yet (⏳ Pending in the compliance table) or whose last check couldn't sign in to Google
     // (⚠ Can't check: a key or setting fixed since), checked now (worker.js verifyLinks, /api/drive/verify:
     // the system opens each one, as at the end of every shift), one trainee at a time, once a session; then the sheet is read again
     if(adminOn() && !meOn() && !(B.verified || {})[B.batch]){ (B.verified = B.verified || {})[B.batch] = 1; const bb = B.batch;
       const due = ppl.filter(p => { try{ const {L} = linkState(p); return LINKS.some(([k]) => /pending|relinked|unchecked/.test(L[k].st)); }catch(err){ return false; } });
       if(due.length) (async () => { let n = 0; for(const p of due){ try{ const r = await authFetch("/api/drive/verify", {id: p.id}); const j = await r.json().catch(() => null); if(r.ok && j && !j.error) n++; }catch(err){} }
-        if(n && B.batch === bb){ B.dataKey = ""; rerender(); } })(); }
+        if(n && B.batch === bb) reloadSoon(); })(); }
   }catch(err){ B.data = {rec: {}, sources: [], error: true}; }
   B.dataLoading = false; rerender();
+  if(B.reloadAfter){ B.reloadAfter = false; return loadData(true); }   // (the queued quiet read: set only when one was asked for, so no loop)
 }
 
 /* ---------- the lesson deck: how far into it ---------- */
@@ -921,7 +933,7 @@ function autoRecheck(flagged){
   (async () => {
     try{ await authFetch("/api/drive/autolink", {batch}); }catch(err){}
     for(const p of flagged){ if(B.batch !== batch) break; try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} }
-    B.autoChk = false; if(B.batch === batch && !B.sync){ B.data = null; B.dataKey = ""; render(); }
+    B.autoChk = false; if(B.batch === batch && !B.sync) loadData(true);   // (quietly: the sheet stays on screen)
   })();
 }
 function shareBanner(){
@@ -1263,7 +1275,7 @@ const weOf = (id, n) => { const ev = ((((((B.data || {}).rec || {})[id] || {}).s
 function outputsTable(){
   const ppl = people(), comp = p => (((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).compliance || {};
   const dates = [...new Set(ppl.flatMap(p => Object.keys(comp(p))))].sort().slice(-30);
-  const md = d => { const x = new Date(d + "T12:00:00Z"); return x.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC"}); };
+  const md = d => MDF.format(new Date(d + "T12:00:00Z"));
   const F = ofold(), dayShut = d => !!F.days[d];
   const caret = (open, label) => `<span class="bs-ocaret" aria-hidden="true">${open ? "▾" : "▸"}</span><span class="bs-sr">${open ? "Fold" : "Open"} ${e(label)}</span>`;
   return {id: "outputs", dates, title: "📤 Daily outputs", note: `${meOn() ? "Your" : "Each trainee's"} day as the end-of-shift check found it: the Task Tracker, the Monitoring Sheet (only on a day the slides ask for an update: “Not expected today” otherwise), the Typing & Spelling tests, the day's outputs (what was handed in, with the instructions followed: naming, folders and saving route, deliverables on time), the EOD email and their progress on the platform, each a %, averaged. Each week also has 🌱 Professional Development & Progress, scored by the trainer (on the trainee's page). Each day's cell has every activity's score in a little box and how the trainee did on it, in two sentences. ${dates.length ? "" : "No day checked yet: the check runs at the end of every shift."}`,
@@ -1895,7 +1907,10 @@ window.FTBatchSheet = {
     const doLinks = /^(all|links)$/.test(scope), doBack = /^(all|scores|outputs)$/.test(scope), doRank = /^(all|ranking|scores|outputs|links)$/.test(scope);
     B.sync = {scope, n: 0, of: 0, what: "Starting"}; render();
     const msgs = []; let bad = 0;
-    const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; rerender(); };
+    // (a progress tick rewrites only the running buttons' labels — the same text render() gives them — not the whole sheet:
+    // a full render for every trainee was 65 renders, 7 s of the main thread for 30, and threw the trainer's clicks away)
+    const tick = () => { try{ const S = B.sync; if(S) document.querySelectorAll(".bs-upd[disabled]").forEach(b => { if(/^⏳/.test(b.textContent)) b.textContent = `⏳ ${S.what}${S.of ? ` ${S.n}/${S.of}` : ""}…`; }); }catch(err){} };
+    const step = (what, of) => { B.sync.what = what; B.sync.n = 0; B.sync.of = of || 0; tick(); };
     if(doLinks){
       step("Finding the batch’s files in Drive");
       try{ const r = await authFetch("/api/drive/autolink", {batch}), j = await r.json().catch(() => null);
@@ -1905,7 +1920,7 @@ window.FTBatchSheet = {
         else msgs.push("🔗 Couldn’t search Drive" + (j && (j.detail || j.error) ? ": " + String(j.detail || j.error).slice(0, 120) : ""));
       }catch(err){ msgs.push("🔗 Couldn’t search Drive"); }
       step("Checking every trainee’s links", all.length);
-      for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; rerender(); }
+      for(const p of all){ try{ await authFetch("/api/drive/verify", {id: p.id}); }catch(err){} B.sync.n++; tick(); }
       msgs.push(`✓ Checked ${all.length} trainee${all.length === 1 ? "" : "s"}’ links`);
     }
     if(doBack && !isWeekdayIso(ptToday())) msgs.push("No daily check on a weekend: training days are weekdays");
@@ -1915,15 +1930,16 @@ window.FTBatchSheet = {
         try{ await authFetch("/api/drive/shots", {id: p.id}); }catch(err){}
         try{ const r = await authFetch("/api/drive/check", {id: p.id, ai: false}), j = await r.json().catch(() => null);
           if(!r.ok && !(j && j.code === "no-links")) bad++; }catch(err){ bad++; }
-        B.sync.n++; rerender(); }
+        B.sync.n++; tick(); }
       msgs.push(`✅ Today’s check run for ${appr.length - bad} of ${appr.length} trainee${appr.length === 1 ? "" : "s"}`);
     }
     try{ localStorage.setItem("ft_bs_sync:" + batch, String(Date.now())); }catch(err){}
-    B.sync = null; if(B.batch === batch){ B.data = null; B.dataKey = ""; } render();
-    // 📊 then the Weekly Ranking, once the sheet has read the new scores and links back: its platform-filled cells follow them
-    // (js/ft-ranking.js fillFromPortal — a NO SUBMISSION from before the files were linked becomes the trainee's compliance)
+    // (the sheet kept on screen and read again quietly — not blanked to "Reading the batch's progress…" until the read is done)
+    // (no B.dataKey="": a read already running would then end as superseded and the queued one never run; a quiet read re-reads anyway)
+    B.sync = null; render(); if(B.batch === batch) await loadData(true);
+    // 📊 then the Weekly Ranking, once the sheet has read the new scores and links back (awaited above): its platform-filled
+    // cells follow them (js/ft-ranking.js fillFromPortal — a NO SUBMISSION from before the files were linked becomes the trainee's compliance)
     if(doRank && window.FTRanking && typeof FTRanking.reload === "function"){
-      for(let i = 0; i < 40 && B.batch === batch && !(B.data && B.data.rec); i++) await new Promise(ok => setTimeout(ok, 250));
       try{ FTRanking.reload(); }catch(err){} if(scope === "ranking") msgs.push("📊 Weekly Ranking read again");
       // 📑 and the week's summary for management (its ✅ Compliance, ⏱ Timely Submission… from each day's checks): drafted again
       // from the new scores — a trainer's ✎ edits stay (js/ft-ranking-summary.js draft)
@@ -2384,7 +2400,8 @@ async function loadMe(){
 function renderMine(){
   if(!B.me || B.meFor !== state.traineeId){ if(!B.meLoading){ B.me = null; B.data = null; B.dataKey = ""; loadMe(); } return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Loading your progress…</div>`; }
   loadData();
-  const D = B.data, ready = D && !B.dataLoading && !D.error, T = ready ? tables() : null;
+  // (the trainee's scores stay on screen while they're read again, as on the trainer's sheet: "Updating…", not a blank page)
+  const D = B.data, ready = !!D && !D.error && (!B.dataLoading || !!D.at), T = ready ? tables() : null;
   // (🏅 My Performance and 📋 My Progress are one page: the grades from every grading system first, then the sheet)
   const perf = window.lshProgram && typeof lshProgram.performanceHtml === "function" ? `<div class="bs-perf">${lshProgram.performanceHtml()}</div>` : "";
   return `${perf}<div class="card gs-card bs-card bs-mine">
@@ -2393,7 +2410,7 @@ function renderMine(){
       ${B.me.batch ? `<span class="gs-batch">Batch <b>${e(bLabel(B.me.batch))}</b></span>` : ""}</div>
     <div class="bs-sum"><span class="bs-jump">Go to: <a href="#bs-scorecard" onclick="return FTBatchSheet.go('scorecard')">🏅 Score Card</a> · <a href="#bs-compliance" onclick="return FTBatchSheet.go('compliance')">✅ Compliance</a> · <a href="#bs-outputs" onclick="return FTBatchSheet.go('outputs')">📤 Daily outputs</a> · <a href="#bs-ranking" onclick="return FTBatchSheet.go('ranking')">📊 My Weekly Report</a></span>
       ${D && D.at ? `<span class="bs-at">${ready && B.dataLoading ? "Updating…" : `Updated ${e(D.at.toLocaleTimeString())}`}</span>` : ""}</div>
-    ${!D || B.dataLoading ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
+    ${!D || (!ready && B.dataLoading) ? `<p class="sc-empty">Reading your progress…</p>` : D.error ? `<p class="sc-empty">Couldn't read your progress. Press ↻ Refresh.</p>`
       : sectionsHtml(T)}
     <p class="sc-how bs-how">Only you (and your trainer) see this page. It shows what the platform records as you work: your lesson decks, Knowledge Checks, practice and scores.</p></div>`;
 }

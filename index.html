@@ -5431,18 +5431,19 @@ async function sharedGetMany(keys){
   keys = (keys||[]).map(k=>typeof k==="string" ? k : (k && k.key)).filter(Boolean);
   if(!keys.length) return [];
   if(window.storage) return Promise.all(keys.map(k=>sharedGet(k).catch(()=>null)));
-  const out = [];
-  for(let i = 0; i < keys.length; i += 100){
-    const part = keys.slice(i, i+100);
+  // (the 100-key chunks sent together, not one after another: a 30-trainee Batch Sheet is 8 of them, so 1 round trip, not 8)
+  const parts = [];
+  for(let i = 0; i < keys.length; i += 100) parts.push(keys.slice(i, i+100));
+  const got = await Promise.all(parts.map(async part=>{
     let values = null;
     try{
       const response = await authFetch("/api/storage/get-many", { keys: part });
-      if(response.status===404){ out.push(...await Promise.all(part.map(k=>sharedGet(k).catch(()=>null)))); continue; }
+      if(response.status===404) return Promise.all(part.map(k=>sharedGet(k).catch(()=>null)));
       if(response.ok) values = (await response.json()).values || {};
     }catch(e){ values = null; }
-    part.forEach(k=>{ let v = null; try{ v = values && values[k] ? JSON.parse(values[k]) : null; }catch(e){ v = null; } out.push(v); });
-  }
-  return out;
+    return part.map(k=>{ try{ return values && values[k] ? JSON.parse(values[k]) : null; }catch(e){ return null; } });
+  }));
+  return [].concat(...got);   // (in the order asked)
 }
 async function sharedDelete(key){
   let deletedAnywhere = false;
@@ -14130,7 +14131,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.12-fe00b8ae";
+var APP_BUILD = "ft-2026.11.12-292891bb";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14192,7 +14193,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=72ae318acb"></script>
 <script src="/js/ft-ranking-summary.js?v=1437a2fe2b"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=77e422da97"></script>
+<script src="/js/ft-batch-sheet.js?v=1ac2625673"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=e8da54fc4f"></script>
 <script src="/js/ft-calrules.js?v=bdbffab39a"></script>
@@ -14203,13 +14204,13 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=b1327dfc06"></script>
 <script src="/js/ft-todo.js?v=317351bc17"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
-<script src="/js/ft-day-decks.js?v=f7396a4d14"></script>
+<script src="/js/ft-day-decks.js?v=80ede0a90c"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
 <script src="/js/ft-minutes-rules.js?v=1637b476a6"></script>
 <script src="/js/ft-transcribe.js?v=fabe3a6c53"></script>
-<script src="/js/ft-intake.js?v=4a490acf2e"></script>
+<script src="/js/ft-intake.js?v=d90d057a59"></script>
 <script src="/js/ft-mockcall-links.js?v=5f87caf448"></script>
 <script src="/js/ft-process-guide.js?v=9a68e5c077"></script>
 <script src="/js/ft-lor.js?v=35d4dd0864"></script>
