@@ -49,9 +49,11 @@ const failures = []; const fail = (m) => failures.push(m);
   await call('/api/eod/grade', { id, date: '2026-11-16', score: 80 }, admin);
   { const c = day('2026-11-16'), P = c.parts || {};
     if (!('monitor' in P) || P.monitor !== null || c.monitorAi || c.monDue || ai) fail(`a day the slides asked for no update counts the Monitoring Sheet: ${JSON.stringify({ P, ai: c.monitorAi, due: c.monDue, calls: ai })}`); }
-  for (const D of ['2026-11-04', '2026-11-05']) await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
+  for (const D of ['2026-11-04', '2026-11-05', '2026-11-06']) await call('/api/eod/grade', { id, date: D, score: 80 }, admin);
   if (!ai) fail('the instructed day\'s entry wasn\'t sent to the AI for its grade');
-  { const P = day('2026-11-05').parts || {}; if (P.monitor !== 0) fail(`an instructed day without its entry isn't 0: ${JSON.stringify(P)}`);
+  { const P = day('2026-11-05').parts || {}; if (P.monitor !== null) fail(`a mid-training item day (Day 4) without its entry counts against the day: ${JSON.stringify(P)}`);
+    // (the day a training is done — Day 5, Reception — without its entry: 0)
+    if ((day('2026-11-06').parts || {}).monitor !== 0) fail(`a training-done day (Day 5) without its entry isn't 0: ${JSON.stringify(day('2026-11-06').parts)}`);
     if (!day('2026-11-05').monDue || !/#10–11/.test(day('2026-11-05').monDue.what)) fail(`the day doesn't say what the slides asked for: ${JSON.stringify(day('2026-11-05').monDue)}`); }
   { const P = day('2026-11-04').parts || {}; if (P.monitor !== 75) fail(`an instructed day's entry isn't scored by its check (75): ${JSON.stringify(P)}`); }
   // (the day kept from before: its 0 taken out, its % the average of the rest — (100 + 50) / 2 = 75: its old 📏 instructions
@@ -64,10 +66,11 @@ const failures = []; const fail = (m) => failures.push(m);
     else {
       const ctx = { FTTrackerRules: TR, console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(html.slice(a, b), ctx);
       const rv = { compliance: { '2026-11-18': { v: 2, pct: 50, parts: { monitor: 0, tests: 100, eod: 50 }, final: true, monitorAi: { score: 0 } },
-        '2026-11-05': { v: 2, pct: 50, parts: { monitor: 0, tests: 100 }, final: true }, '2026-11-02': { v: 2, pct: 100, day1: true, day1Parts: { monitor: 100, tests: 100 }, parts: { monitor: null, tests: null } } } };
+        '2026-11-05': { v: 2, pct: 50, parts: { monitor: 0, tests: 100 }, final: true }, '2026-11-06': { v: 2, pct: 50, parts: { monitor: 0, tests: 100 }, final: true }, '2026-11-02': { v: 2, pct: 100, day1: true, day1Parts: { monitor: 100, tests: 100 }, parts: { monitor: null, tests: null } } } };
       const before = JSON.stringify(rv), out = ctx.ftDay1.comp(rv, 'B110226'), c = out.compliance;
       if (c['2026-11-18'].parts.monitor !== null || c['2026-11-18'].pct !== 75 || c['2026-11-18'].monitorAi) fail(`ftDay1.comp keeps a non-instructed day's Monitoring Sheet: ${JSON.stringify(c['2026-11-18'])}`);
-      if (c['2026-11-05'].parts.monitor !== 0 || c['2026-11-05'].pct !== 50) fail(`ftDay1.comp changed an instructed day: ${JSON.stringify(c['2026-11-05'])}`);
+      if (c['2026-11-05'].parts.monitor !== null || c['2026-11-05'].pct !== 100) fail(`ftDay1.comp keeps a mid-training item day's missing-entry 0: ${JSON.stringify(c['2026-11-05'])}`);
+      if (c['2026-11-06'].parts.monitor !== 0 || c['2026-11-06'].pct !== 50) fail(`ftDay1.comp changed a training-done day: ${JSON.stringify(c['2026-11-06'])}`);
       if (c['2026-11-02'].parts.monitor !== 100 || c['2026-11-02'].pct !== 100) fail(`ftDay1.comp lost Day 1's (instructed) Monitoring Sheet: ${JSON.stringify(c['2026-11-02'])}`);
       if (JSON.stringify(rv) !== before) fail('ftDay1.comp wrote into the record it read');
     } }
