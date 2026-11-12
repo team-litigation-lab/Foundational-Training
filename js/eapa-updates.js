@@ -12,7 +12,6 @@
         middle-click).
     12. Batch Folders: an Archive shelf, restore, search, and records downloads for later use.
    ============================================================ */
-window.EAPA_UPDATE_PACK = "z";
 (function(){ const s = document.createElement("style"); s.id = "eapa-update-p"; s.textContent = `
 .nav .nav-viewswitch{background:rgba(240,192,138,.16) !important;color:#F0C08A !important;border:1px solid rgba(240,192,138,.45) !important;font-weight:700;}
 .nav .nav-viewswitch:hover{background:rgba(240,192,138,.28) !important;}

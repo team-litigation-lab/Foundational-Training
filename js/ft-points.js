@@ -54,7 +54,6 @@ const was = window.afterRender;
 window.afterRender = function(){ const out = typeof was === "function" ? was.apply(this, arguments) : undefined; run(); return out; };
 // (parts drawn after the page — a trainee picked, a table loaded — are converted too)
 try{ new MutationObserver(run).observe(document.body || document.documentElement, {childList: true, subtree: true}); }catch(err){}
-window.FTPoints = {convert, pts, fmt, insight};
 /* 💬 THE POP-UP: shown on hover, on keyboard focus, and on a tap (a phone), beside the score; a tap elsewhere or Esc closes it */
 let tip = null, tipFor = null;
 // (the score's title is lifted off while its pop-up is open — so the browser's own tooltip never shows over it — and put back after)

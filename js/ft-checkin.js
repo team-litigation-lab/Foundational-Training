@@ -44,5 +44,4 @@ document.addEventListener("visibilitychange", () => { if(document.visibilityStat
   if(Date.now() - CI.tapped < 60000) return;
   CI.tapped = Date.now(); checkIn();
 }, {capture:true, passive:true}));
-window.FTCheckIn = {now: checkIn};
 })();

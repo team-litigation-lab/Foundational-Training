@@ -469,7 +469,6 @@ function groupTabs(out){
 }
 // (the tabs are grouped by whichever wrapper of renderAdmin runs last — window.lshAdminOut — so a tab a later script adds
 // (ftAdminTab: 📢 Announcements, 📧 EOD Inbox) is in its section like the rest, not left loose in the bar)
-window.lshGroupTabs = groupTabs;
 window.lshAdminOut = (me, out) => window.renderAdmin === me ? groupTabs(out) : out;
 const __admin = window.renderAdmin;
 const lshAdmin = window.renderAdmin = function(){

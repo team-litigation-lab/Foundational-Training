@@ -640,7 +640,6 @@ function sheetDue(s, batch){
   const today = window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
   return !d || d < today;
 }
-window.ftSheetDue = sheetDue;
 // The ranking report's line, in the facilitator's words (only the sheets due by now, and any already submitted).
 function reportLine(x, batch){
   const sub = s=>!!((x.p.sets||{})[s.id]||{}).submittedAt;

@@ -15,7 +15,6 @@
      5. Dashboard, top bar and admin tabs trimmed to what this program uses.
      6. Drive files open in the draggable pop-out viewer.
    ============================================================ */
-window.FT_LAYER = true;
 // Attendance lives on the Training Portal (/attendance.html) for every program and batch; this program's
 // first days off the platform are listed there, in functions/_attendance.js PROGRAMS ('ft'.before).
 const FT_TOTAL_DAYS = DAYS.length;
