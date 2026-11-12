@@ -5552,8 +5552,9 @@ window.ftDay1 = {
       const nz = Object.assign({}, z); ["parts", "day1Parts"].forEach(f => { if(!z[f] || !("instructions" in z[f])) return; const P = Object.assign({}, z[f]), ip = P.instructions; delete P.instructions;
         if(typeof P.outputs === "number"){ if(f === "parts") nz.outputsWork = P.outputs; P.outputs = typeof ip === "number" ? Math.round((P.outputs + ip) / 2) : P.outputs; } nz[f] = P; });
       if(nz.parts && !nz.day1) nz.pct = avg(nz.parts); mon[Dx] = nz; });
-    if(TR && TR.monitorDueOn && st) Object.entries(rv.compliance).forEach(([Dx, z]) => { if(!z || TR.monitorDueOn(st, Dx)) return;
-      z = mon[Dx] || z; const fx = ["parts", "day1Parts"].filter(f => z[f] && typeof z[f].monitor === "number"); if(!fx.length) return;
+    // (and a 0 kept for a missing entry on a mid-training item day — counted only once the training is done: worker.js)
+    if(TR && TR.monitorDueOn && st) Object.entries(rv.compliance).forEach(([Dx, z]) => { const due = TR.monitorDueOn(st, Dx); if(!z || (due && due.after)) return;
+      z = mon[Dx] || z; const fx = ["parts", "day1Parts"].filter(f => z[f] && typeof z[f].monitor === "number" && (!due || z[f].monitor === 0)); if(!fx.length) return;
       const nz = Object.assign({}, z, {monitorAi: null}); fx.forEach(f => { nz[f] = Object.assign({}, z[f], {monitor: null}); }); if(nz.parts) nz.pct = avg(nz.parts); mon[Dx] = nz; });
     if(Object.keys(mon).length) rv = Object.assign({}, rv, {compliance: Object.assign({}, rv.compliance, mon)});
     const x = D ? rv.compliance[D] : null, y = T ? rv.compliance[T] : null;
@@ -14129,7 +14130,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.11-6eebb4aa";
+var APP_BUILD = "ft-2026.11.12-348878eb";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14172,7 +14173,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-roster.js?v=908501ce65"></script>
 <script src="/js/ft-updates.js?v=ca8b4b0cc2"></script>
 <script src="/js/ft-slides.js?v=63f91916f2"></script>
-<script src="/js/ft-tracker-rules.js?v=16b6541924"></script>
+<script src="/js/ft-tracker-rules.js?v=2a94bfff80"></script>
 <script src="/js/ft-tracker.js?v=49e68a23e1"></script>
 <script src="/js/ft-monitoring.js?v=c93e3c2768"></script>
 <script src="/js/ft-process.js?v=37bae05b9a"></script>
@@ -14191,7 +14192,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-ranking.js?v=72ae318acb"></script>
 <script src="/js/ft-ranking-summary.js?v=7792929a48"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=b55974e946"></script>
+<script src="/js/ft-batch-sheet.js?v=e4e1a2307b"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=e8da54fc4f"></script>
 <script src="/js/ft-calrules.js?v=bdbffab39a"></script>

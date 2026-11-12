@@ -1331,6 +1331,10 @@ function dayActs(R, d){
   const TRr = window.FTTrackerRules, monDue = c.monDue || (TRr && TRr.monitorDueOn && typeof batchStartDate === "function" ? TRr.monitorDueOn(batchStartDate(B.batch), d) : null);
   if(!monDue && c.parts && P.monitor == null)
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: null, na: true, naV: "Not expected today", text: "Not expected today: the day's slides didn't ask for a Monitoring Sheet update, so it doesn't affect the score."});
+  // (📒 a mid-training day whose deck asks for numbered items, no entry found yet: a reminder, greyed, not counted — the sheet
+  // counts against the day only once the training is done, worker.js dailyCompliance)
+  else if(monDue && !monDue.after && P.monitor == null && !unread("monitor") && c.parts)
+    out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: null, na: true, naV: "Reminder", text: `Reminder: the day's slides ask you to update ${monDue.what} on your Monitoring Sheet. It isn't counted against today; it is scored once the training is done.`});
   else if(P.monitor != null || unread("monitor")){
     const asked = monDue ? `${monDue.what}, as the day's slides asked` : "the day's entry";
     out.push({k: "monitor", icon: "📒", label: "Monitoring Sheet", pct: P.monitor, text: unread("monitor") ? sent2(share)
