@@ -554,10 +554,12 @@
        • Day 8's item #14 (build/days/day08.js s2, the Demo Tutorial) is off the deck (build/day-decks.cjs SKIP[8]). */
   // (the Breakout Sessions' handouts no longer ask for an update — the trainer: "score only every after the particular training
   // is done unless explicitly instructed on the deck" — so Days 7 and 10, mid-topic, ask for none)
+  // (after: the day a training is done — Virtual Assistant Essentials on Day 2, Reception on 5, Calendar on 6, Intake on 9 … —
+  // the only days a missing entry counts 0; a mid-training item day — 1, 3, 4, 8 — is a reminder until then, worker.js)
   const MONITOR_SCHEDULE = {
     1: {topic: MONITOR_TOPICS[0], on: 1, items: [1, 2, 3, 4], what: "items #1–4",
       where: "build/days/day01.js “monitoring” (upload the sheet, then update items #1-4; taught on the orientation's 📒 Monitoring Sheet slide, js/ft-rules.js) · js/ft-day-decks.js HANDOUTS[1] (“Update your Training Progress Monitoring Sheet”)"},
-    2: {topic: MONITOR_TOPICS[1], on: 2, items: [5, 6, 7, 8, 9], what: "items #5–7 and #8–9",
+    2: {topic: MONITOR_TOPICS[1], on: 2, items: [5, 6, 7, 8, 9], after: true, what: "items #5–7 and #8–9",
       where: "js/ft-buffer.js ACTS[\"2:s2l\"] (#5–7, 📤 Submit) and ACTS[\"2:s4\"] (#8–9) · js/ft-day-decks.js LESSON_CARDS[2] (“Update items #5–7 on your Monitoring Sheet”) · build/days/day02.js (Task 3 lines) · HANDOUTS[2]"},
     3: {topic: MONITOR_TOPICS[2], on: 3, items: [12], what: "item #12 (the CRM/CMS training videos)",
       where: "js/ft-day-activities.js OFFLINE[3] (“The CRM/CMS training videos, then update item #12 on your Monitoring Sheet”) · build/days/day03.js homework"},

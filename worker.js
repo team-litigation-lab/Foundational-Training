@@ -2646,7 +2646,9 @@ async function dailyCompliance(env, id, D, o = {}) {
     // has no date of its own — a date the sheet writes in a way that can't be read isn't a missing entry)
     monEntry = mon.entries.find((x) => x && x.date === D) || mon.entries.find((x) => x && x.topic === monDue.topic && !x.date) || null;
     // (an optional topic's update — the Lien Negotiator days, when the training hours permit — counts only once it is written)
-    monDay = monEntry ? Math.round(monEntry.pct || 0) : monDue.optional ? null : 0;
+    // (📒 a missing entry counts 0 only on the day a training is done — monDue.after —; on a day the deck asks for numbered items
+    // mid-training it is a reminder, not counted, so the trainee's scorecard isn't marked down before the training is over)
+    monDay = monEntry ? Math.round(monEntry.pct || 0) : monDue.optional || !monDue.after ? null : 0;
   }
   // 📘 the TAM counts only on a day a trainer graded it — a shadowing activity (/api/drive/tam: trackerreview:<id>.tamGrades)
   const pctOf = (v) => { const n = Number(v); return isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : null; };
@@ -2719,7 +2721,7 @@ async function dailyCompliance(env, id, D, o = {}) {
     x.pct = avgParts(x.parts); });
   const parts = {
     tracker: tk && typeof tk.pct === "number" && !(trRule && unreadable(trRule.detail)) ? tk.pct : (drive && drive.tracker && !o.backfill && !(trRule && unreadable(trRule.detail)) ? 0 : null),
-    monitor: monDay != null ? monDay : (monDue && !monDue.optional && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
+    monitor: monDay != null ? monDay : (monDue && monDue.after && !monDue.optional && drive && drive.monitor && !(cur.monitor && unreadable(cur.monitor.error)) ? 0 : null),
     // (📘 the TAM isn't a daily part: a day a trainer graded it for a shadowing activity has it, /api/drive/tam)
     // (counted only when the day has a TAM entry: no entry dated that day is left out, not a 0)
     tam: tamG && pctOf(tamG.pct) ? pctOf(tamG.pct) : null,
@@ -2799,8 +2801,9 @@ async function dailyCompliance(env, id, D, o = {}) {
     delete x.parts.tam; const v = Object.values(x.parts).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (📒 a day kept from before the Monitoring Sheet was due only when the slides ask for it — scored then, often 0, on every
   // training day — has its Monitoring Sheet taken out and its % worked out again, as index.html ftDay1.comp does on read)
-  if (monSt) Object.entries(cur.compliance).forEach(([Dx, x]) => { if (!x || TR.monitorDueOn(monSt, Dx)) return; let ch = false;
-    for (const f of ["parts", "day1Parts"]) if (x[f] && typeof x[f].monitor === "number") { x[f].monitor = null; ch = true; }
+  // (and a 0 kept for a missing entry on a mid-training item day, as above: taken out too)
+  if (monSt) Object.entries(cur.compliance).forEach(([Dx, x]) => { const due = TR.monitorDueOn(monSt, Dx); if (!x || (due && due.after)) return; let ch = false;
+    for (const f of ["parts", "day1Parts"]) if (x[f] && typeof x[f].monitor === "number" && (!due || x[f].monitor === 0)) { x[f].monitor = null; ch = true; }
     if (!ch) return; x.monitorAi = null; const v = Object.values(x.parts || {}).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
