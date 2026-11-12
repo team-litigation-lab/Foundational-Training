@@ -5213,6 +5213,14 @@ async function cloudSaveNow(){
   const id = state.traineeId; if(!id) return false;
   const data = {};
   for(const k of PERSONAL_KEYS){ const v = await storeGet(k); if(v!==null && v!==undefined) data[k] = v; }
+  // 🔒 the cloud copy couldn't be read at sign-in: it is read now and what it holds that this device doesn't is kept; still
+  // unreadable, nothing is written (a partial copy would replace the trainee's whole progress)
+  if(state.cloudRestoreFailed === id){
+    const got = await progressFetch(id);
+    if(!got.ok){ setSaveStatus("offline"); cloudSaveTimer = setTimeout(()=>{ cloudSaveNow(); }, 30000); return false; }
+    const sd = (got.snap && got.snap.data) || {}; Object.keys(sd).forEach(k => { if(!(k in data) && PERSONAL_KEYS.includes(k)) data[k] = sd[k]; });
+    state.cloudRestoreFailed = "";
+  }
   // Skip the write entirely if nothing changed since the last save (saves KV write quota).
   const sig = certHash(JSON.stringify(data)) + ":" + JSON.stringify(data).length;
   if(sig === state.lastCloudSig && state.lastCloudSaveOk){ setSaveStatus("saved"); return true; }
@@ -5223,9 +5231,20 @@ async function cloudSaveNow(){
   else setSaveStatus("offline");
   return ok;
 }
+// 🔒 the trainee's cloud copy, read so a failure is told from "nothing saved yet": {ok:false} when the server didn't answer,
+// {ok:true, snap} (snap null when there's none). sharedGet answers null for both, and a failed read taken for "nothing saved"
+// let the next save overwrite the cloud copy with this device's partial data (notes, Knowledge Check answers, slides lost).
+async function progressFetch(traineeId){
+  try{ const r = await authFetch("/api/storage/get", {key: "progress:"+traineeId}); if(!r.ok) return {ok: false};
+    const d = await r.json(); return {ok: true, snap: d && d.value ? JSON.parse(d.value) : null}; }
+  catch(e){ return {ok: false}; }
+}
 async function cloudRestore(traineeId){
   let snap = null;
-  try{ snap = await sharedGet("progress:"+traineeId); }catch(e){ return false; }
+  const got = await progressFetch(traineeId);
+  if(!got.ok){ state.cloudRestoreFailed = traineeId; return false; }   // (a save first merges with the cloud copy: cloudSaveNow)
+  state.cloudRestoreFailed = "";
+  snap = got.snap;
   if(!snap || !snap.data) return false;
   let localAt = ""; try{ localAt = localStorage.getItem("lsh_progress-saved-at") || ""; }catch(e){}
   const localOwner = await storeGet("trainee-id");
