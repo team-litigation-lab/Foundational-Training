@@ -577,6 +577,11 @@ function dayDeliverables(p, d){
     const lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
+    // (🎧 a transcription not scored by the trainer: its automatic score, the Worker's /api/transcribe/grade, with its criteria)
+    if(it.at === "trainer" && !acts[it.id]){ const g = autoTr(R, it); if(g){
+      const res = typeof window.ftResult === "function" ? window.ftResult({score: g.pct, redo: false}) : g.pct >= 60 ? "Passed" : "Failed";
+      const c = trainerCtx({score: g.pct, status: res, rubric: {key: g.key || "transcription", scores: g.scores || [], feedback: g.feedback || [], avg: g.avg}, comment: g.summary || ""}, it.t);
+      push(Object.assign(c, {by: "🤖 Scored automatically", why: String(c.why || "").replace(/The trainer scored/, "Scored automatically on")})); return; } }
     // (Day 6's Calendar Management Mock Calls practice isn't on the scores: the scored call is the Calendar Management Mock
     // Call with the trainer)
     // (🟢 no Practice Session is on the scores: they are practice; only graded work is — Day 6's Calendar Management Mock
@@ -1129,7 +1134,7 @@ function pdpRow(p, w, folded){
     : x && x.note ? `<p class="bs-pdp-note">🧑‍🏫 ${e(x.note)}</p>` : "";
   const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: counted in Week ${w}'s Daily compliance.`
     : `Not scored yet — your trainer scores this weekly. It isn't counted until it is.`;
-  return `<tr class="bs-pdp${folded ? " bs-wk-hide" : ""}" data-week="${w}"><td class="bs-pt-m">🌱 Professional Development &amp; Progress · Week ${w}</td>
+  return `<tr class="bs-pdp${folded ? " bs-wk-hide" : ""}" data-week="${w}"><td class="bs-pt-m bs-pdp-m"><span class="bs-pdp-ic" aria-hidden="true">🌱</span><span class="bs-pdp-tx">Professional Development &amp; Progress<small>Week ${w}</small></span></td>
     <td class="bs-pt-v ${x ? tone(x.pct) : ""}" title="${e(status)}">${x ? e(x.avg5.toFixed(1)) + "/5" : "—"}</td>
     <td class="bs-pt-f"><table class="bs-ocrit bs-pdp-t"><tbody>${crit}</tbody></table>${adm ? `<div class="bs-pdp-tools">${note}<button type="button" class="btn btn-navy btn-sm" onclick="FTBatchSheet.pdpSave('${e(p.id)}', ${w})">💾 Save Week ${w}</button></div>` : note}<p class="bs-note bs-pdp-st">${status}</p></td></tr>`;
 }
@@ -1490,7 +1495,10 @@ function autoDone(R, d, it, p){
     return k ? {done: true, how: "Practice Session submitted " + when(runs[k].submittedAt)} : {done: false, how: "Practice Session not submitted yet"}; }
   if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], g = a ? null : autoTr(R, it);
     if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
-    if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
+    if(!a){ const tr = /^transcription-([12])$/.exec(String(it.id || ""));
+      if(tr){ const run = (((R.transcribe || {}).r) || {})[tr[1]]; return {done: false, how: run && run.submittedAt ? "Submitted · the automatic score is being worked out" : `Not submitted yet (🎧 Transcription Activity, Recording ${tr[1]}): scored automatically once submitted`}; }
+      if(/-live$/.test(String(it.id || ""))) return {done: false, how: "No graded call yet on the Ring Channel: scored automatically from the graded call"};
+      return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"}; }
     const res = resOf(a);
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
     return {done: res !== "Not yet", how: `Trainer: ${res === "Not yet" ? "recorded" : res}${a.score != null ? ` · ${a.score}%` : ""}`}; }
@@ -2527,7 +2535,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-we-doc .ft-ev-t{width:100%;border-collapse:collapse;margin:8px 0;} .bs-we-doc .ft-ev-t th,.bs-we-doc .ft-ev-t td{border:1px solid #9AA3B5;padding:6px 8px;vertical-align:top;text-align:left;}
 .bs-we-doc .ft-ev-t td:nth-child(2){white-space:nowrap;font-weight:800;} .bs-we-doc .ft-ev-ex{background:#F6F7FB;border-left:3px solid #C2410C;padding:6px 10px;} .bs-we-doc .ft-ev-overall{font-size:16px;margin-top:10px;} .bs-we-doc .ft-ev-note{color:#6B5B00;}
 .bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
-.bs-pt-t tr.bs-pdp td{background:#F3FAF4;} .bs-pdp-t select{font:inherit;padding:2px 4px;} .bs-pdp-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 2px;} .bs-pdp-note{margin:4px 0;} .bs-pdp-st{margin:4px 0 0;}
+.bs-pt-t tr.bs-pdp td{background:#F3FAF4;} .bs-pt-t td.bs-pdp-m{vertical-align:top;font-size:15px !important;line-height:1.3;} .bs-pdp-m .bs-pdp-ic{margin-right:4px;} .bs-pdp-m small{display:block;margin-top:3px;font-size:13px;font-weight:700;color:#4B5563;letter-spacing:.02em;} .bs-pdp-t select{font:inherit;padding:2px 4px;} .bs-pdp-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 2px;} .bs-pdp-note{margin:4px 0;} .bs-pdp-st{margin:4px 0 0;}
 .bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
 .bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}
 /* (🏅 Grades' parts: a light band across the table) */

@@ -138,7 +138,7 @@ async function browserPart(){
     const p5 = v => (v / 20).toFixed(1) + '/5';
     let v = await read(), E = await want();
     const row = w => ((v && v.rows) || []).find(r => r.w === String(w)), chip = () => ((v && v.chips) || []).find(c => /^Daily compliance · Week 3/.test(c)) || '';
-    if (!row(1) || !row(3) || !/🌱 Professional Development & Progress · Week 3/.test(row(3).text) || row(3).selects !== 3 || !row(3).save) fail(`the trainer has no Week 3 🌱 Professional Development & Progress row with its three criteria: ${JSON.stringify(v && v.rows)}`);
+    if (!row(1) || !row(3) || !/🌱\s*Professional Development & Progress\s*Week 3/.test(row(3).text) || row(3).selects !== 3 || !row(3).save) fail(`the trainer has no Week 3 🌱 Professional Development & Progress row with its three criteria: ${JSON.stringify(v && v.rows)}`);
     if (!/Competency in taking on a role/.test(row(3) && row(3).text) || !/Communication/.test(row(3) && row(3).text) || !/Quality of output/.test(row(3) && row(3).text)) fail(`the row doesn't name the three criteria: ${row(3) && row(3).text}`);
     if (!/Not scored yet — your trainer scores this weekly/.test(row(3) && row(3).text)) fail(`an unscored week doesn't say so: ${row(3) && row(3).text}`);
     if (E.w3 !== E.w3days || !(chip().includes('Week 3 ' + p5(E.w3days)) || chip().includes('Week 3 ' + E.w3days + '%')) || !/not scored yet this week: not counted/.test(chip())) fail(`an unscored week's Daily compliance isn't the days' alone (${p5(E.w3days)}): ${chip()}`);
