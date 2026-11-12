@@ -280,6 +280,9 @@ async function draft(opts){
   // (what a trainer edited by hand stays)
   Object.entries(prev.rows || {}).forEach(([id, r]) => { if(rows[id] && r.edited){ rows[id] = Object.assign(rows[id], {scores: Object.assign(rows[id].scores, r.scoresEdited || {}), comments: Object.assign(rows[id].comments, r.commentsEdited || {}), trainer: r.trainerEdited || rows[id].trainer},
     {edited: true, scoresEdited: r.scoresEdited, commentsEdited: r.commentsEdited, trainerEdited: r.trainerEdited}); } });
+  // (a trainee whose evidence or summary failed this time — a slow answer, a read that threw — keeps the row they had, with
+  //  the trainer's hand edits, rather than being dropped from the report, the ranking and the shared cards)
+  ppl.forEach(p => { if(!rows[p.id] && prev.rows && prev.rows[p.id]) rows[p.id] = prev.rows[p.id]; });
   const D = {v: SUMV, batch: c.batch, week: c.week, range: c.range, rows, at: new Date().toISOString(), ai: ai > 0};
   if(prev.sharedAt){ D.sharedAt = prev.sharedAt; D.editedAt = D.at; }   // (📤 shared before: the trainees still see that copy until it is shared again)
   if(S.key === key) S.data = D;
