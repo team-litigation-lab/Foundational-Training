@@ -579,60 +579,10 @@ main{flex:1;max-width:1400px;margin:0 auto;padding:36px 20px 80px;width:100%;ani
 .client-header-text p{margin:0 0 10px;font-size:16px;color:#C9CCE6;}
 .client-tagline{font-size:var(--font-body);font-style:italic;color:var(--orange-soft);font-weight:600;}
 
-.client-intro-banner{
-  background:linear-gradient(135deg, #FFF3E4 0%, #FDEBD8 100%);border:1px solid var(--orange-soft);
-  border-radius:14px;padding:24px 28px;margin-bottom:24px;
-}
-.cib-tag{font-family:'IBM Plex Mono';font-size:var(--font-sub);font-weight:700;color:var(--orange-deep);letter-spacing:.05em;margin-bottom:10px;}
-.client-intro-banner h2{font-family:'Fraunces';font-size:20px;color:var(--navy);margin:0 0 12px;}
-.client-intro-banner p{font-size:var(--font-body);color:#3A2F22;line-height:1.65;margin:0 0 10px;}
-.client-intro-banner p:last-child{margin-bottom:0;}
-.client-intro-banner b{color:var(--orange-deep);}
 .profile-section h3{margin:0 0 10px;font-size:var(--font-body);color:var(--navy);font-family:'Fraunces';}
 .profile-section ul{margin:0;padding-left:18px;}
 .profile-section li{font-size:var(--font-sub);color:#37394A;margin-bottom:7px;line-height:1.45;}
 .profile-section li:last-child{margin-bottom:0;}
-/* drag-and-drop matching cards (Insurance & Risk) */
-.match-board{display:flex;flex-direction:column;gap:18px;}
-.match-tray{
-  background:var(--bg);border:1.5px dashed var(--line);border-radius:12px;padding:12px;
-  min-height:80px;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;align-content:flex-start;
-}
-.match-tray-label{font-size:var(--font-sub);font-weight:700;color:var(--ink-soft);letter-spacing:.05em;margin-bottom:2px;width:100%;}
-.match-zones{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;}
-.match-zone{
-  background:#fff;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;min-height:120px;
-  transition:border-color .15s ease, background .15s ease;
-  display:flex;flex-direction:column;
-}
-.match-zone.zone-hover{border-color:var(--orange);}
-.match-zone-label{
-  font-family:'Fraunces';font-size:var(--font-sub);font-weight:600;color:#fff;padding:9px 12px;margin:0;
-}
-.match-zone-body{display:flex;flex-direction:column;gap:6px;min-height:20px;padding:10px;flex:1;}
-
-.match-zone:nth-child(4n+1){background:#EAF0FA;}
-.match-zone:nth-child(4n+1) .match-zone-label{background:var(--navy);}
-.match-zone:nth-child(4n+2){background:#FDEEE0;}
-.match-zone:nth-child(4n+2) .match-zone-label{background:var(--orange);color:#3A2308;}
-.match-zone:nth-child(4n+3){background:#EEEFF7;}
-.match-zone:nth-child(4n+3) .match-zone-label{background:var(--navy-soft);}
-.match-zone:nth-child(4n+4){background:#FBE4D4;}
-.match-zone:nth-child(4n+4) .match-zone-label{background:var(--orange-deep);}
-.match-zone.zone-hover{box-shadow:0 0 0 2px var(--orange) inset;}
-.match-card{
-  background:#fff;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:9px 11px;font-size:var(--font-sub);color:var(--ink);
-  cursor:grab;box-shadow:0 1px 2px rgba(22,24,41,.06);transition:box-shadow .12s ease, transform .12s ease;
-}
-.match-tray .match-card{flex:1 1 200px;max-width:280px;}
-.match-zone:nth-child(4n+1) .match-card{border-left-color:var(--navy);}
-.match-zone:nth-child(4n+2) .match-card{border-left-color:var(--orange);}
-.match-zone:nth-child(4n+3) .match-card{border-left-color:var(--navy-soft);}
-.match-zone:nth-child(4n+4) .match-card{border-left-color:var(--orange-deep);}
-.match-card:hover{box-shadow:0 4px 10px -2px rgba(22,24,41,.18);}
-.match-card:active{cursor:grabbing;}
-.match-card.card-snap{animation:cardSnap .35s cubic-bezier(.34,1.56,.64,1);}
-@keyframes cardSnap{0%{transform:scale(.9);}60%{transform:scale(1.04);}100%{transform:scale(1);}}
 
 /* advanced travel itinerary tool */
 .pref-ref-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;}
@@ -1699,8 +1649,6 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
   .client-header-text{min-width:0;width:100%;}
   .client-header-text h2{font-size:24px;line-height:1.2;overflow-wrap:normal;word-break:normal;}
   .client-header-text p{font-size:14px;}
-  .client-intro-banner{padding:18px 16px;}
-  .client-intro-banner h2{font-size:18px;}
   .profile-section{padding:16px;}
   .tfb-fab{width:46px;height:46px;padding:0;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;}
   .tfb-fab .fab-label{display:none;}
@@ -5213,6 +5161,14 @@ async function cloudSaveNow(){
   const id = state.traineeId; if(!id) return false;
   const data = {};
   for(const k of PERSONAL_KEYS){ const v = await storeGet(k); if(v!==null && v!==undefined) data[k] = v; }
+  // 🔒 the cloud copy couldn't be read at sign-in: it is read now and what it holds that this device doesn't is kept; still
+  // unreadable, nothing is written (a partial copy would replace the trainee's whole progress)
+  if(state.cloudRestoreFailed === id){
+    const got = await progressFetch(id);
+    if(!got.ok){ setSaveStatus("offline"); cloudSaveTimer = setTimeout(()=>{ cloudSaveNow(); }, 30000); return false; }
+    const sd = (got.snap && got.snap.data) || {}; Object.keys(sd).forEach(k => { if(!(k in data) && PERSONAL_KEYS.includes(k)) data[k] = sd[k]; });
+    state.cloudRestoreFailed = "";
+  }
   // Skip the write entirely if nothing changed since the last save (saves KV write quota).
   const sig = certHash(JSON.stringify(data)) + ":" + JSON.stringify(data).length;
   if(sig === state.lastCloudSig && state.lastCloudSaveOk){ setSaveStatus("saved"); return true; }
@@ -5223,9 +5179,20 @@ async function cloudSaveNow(){
   else setSaveStatus("offline");
   return ok;
 }
+// 🔒 the trainee's cloud copy, read so a failure is told from "nothing saved yet": {ok:false} when the server didn't answer,
+// {ok:true, snap} (snap null when there's none). sharedGet answers null for both, and a failed read taken for "nothing saved"
+// let the next save overwrite the cloud copy with this device's partial data (notes, Knowledge Check answers, slides lost).
+async function progressFetch(traineeId){
+  try{ const r = await authFetch("/api/storage/get", {key: "progress:"+traineeId}); if(!r.ok) return {ok: false};
+    const d = await r.json(); return {ok: true, snap: d && d.value ? JSON.parse(d.value) : null}; }
+  catch(e){ return {ok: false}; }
+}
 async function cloudRestore(traineeId){
   let snap = null;
-  try{ snap = await sharedGet("progress:"+traineeId); }catch(e){ return false; }
+  const got = await progressFetch(traineeId);
+  if(!got.ok){ state.cloudRestoreFailed = traineeId; return false; }   // (a save first merges with the cloud copy: cloudSaveNow)
+  state.cloudRestoreFailed = "";
+  snap = got.snap;
   if(!snap || !snap.data) return false;
   let localAt = ""; try{ localAt = localStorage.getItem("lsh_progress-saved-at") || ""; }catch(e){}
   const localOwner = await storeGet("trainee-id");
@@ -14180,7 +14147,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-process.js?v=37bae05b9a"></script>
 <script src="/js/ft-assess.js?v=dd5532c41d"></script>
 <script src="/js/ft-claims-email.js?v=b5027dfe47"></script>
-<script src="/js/ft-rules.js?v=e8f14bcc13"></script>
+<script src="/js/ft-rules.js?v=f62a7811d8"></script>
 <script src="/js/ft-calsim-core.js?v=e5a3258e64"></script>
 <script src="/js/ft-calendar.js?v=fc598b7761"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
@@ -14195,14 +14162,14 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
 <script src="/js/ft-batch-sheet.js?v=a775b31139"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
-<script src="/js/ft-drills.js?v=e8da54fc4f"></script>
-<script src="/js/ft-calrules.js?v=bdbffab39a"></script>
+<script src="/js/ft-drills.js?v=5109af30e5"></script>
+<script src="/js/ft-calrules.js?v=da26797f9d"></script>
 <script src="/js/ft-writing.js?v=f939b19609"></script>
 <script src="/js/ft-calweek-core.js?v=d64da960e4"></script>
 <script src="/js/ft-calweek.js?v=c0d840e5dd"></script>
-<script src="/js/ft-calcheck.js?v=7cd2f8fba4"></script>
-<script src="/js/ft-listening.js?v=b1327dfc06"></script>
-<script src="/js/ft-todo.js?v=317351bc17"></script>
+<script src="/js/ft-calcheck.js?v=ea9fba1d76"></script>
+<script src="/js/ft-listening.js?v=b25d0989b3"></script>
+<script src="/js/ft-todo.js?v=dc1a7e6767"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
 <script src="/js/ft-day-decks.js?v=22d22adf22"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
@@ -14212,7 +14179,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-transcribe.js?v=fabe3a6c53"></script>
 <script src="/js/ft-intake.js?v=dae835d241"></script>
 <script src="/js/ft-mockcall-links.js?v=5f87caf448"></script>
-<script src="/js/ft-process-guide.js?v=9a68e5c077"></script>
+<script src="/js/ft-process-guide.js?v=ad5b75c02b"></script>
 <script src="/js/ft-lor.js?v=35d4dd0864"></script>
 <script src="/js/ft-trainer-feedback.js?v=e1c0cb98f2"></script>
 <script src="/js/ft-drive.js?v=d5975deeb6"></script>
@@ -14228,19 +14195,19 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/blueprint-content.js?v=d290b74ef8"></script>
 <script src="/js/lsh-blueprint-course.js?v=57917aeff1"></script>
 <script src="/js/lsh-blueprint.js?v=29a13302ce"></script>
-<script src="/js/lsh-dashboard.js?v=7283130891"></script>
+<script src="/js/lsh-dashboard.js?v=07284c4590"></script>
 <script src="/js/ft-card-grid.js?v=9e93c91cb0"></script>
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
 <script src="/js/ft-program.js?v=0cfdaa8035"></script>
-<script src="/js/lsh-program.js?v=e2a316dc91"></script>
-<script src="/js/ft-my-pages.js?v=24eceb04cd"></script>
+<script src="/js/lsh-program.js?v=307facd057"></script>
+<script src="/js/ft-my-pages.js?v=62814196ae"></script>
 <script src="/js/ft-day1-flow.js?v=b0a895932f"></script>
 <script src="/js/ft-day-locks.js?v=5a9b64bd73"></script>
 <script src="/js/ft-kb-articles.js?v=5bfc079d4f"></script>
 <script src="/js/ft-kb-card.js?v=f74ad4c2ed"></script>
 <script src="/js/lsh-tool-links.js?v=9f51b4c733"></script>
-<script src="/js/ft-theme.js?v=27e5c75278"></script>
+<script src="/js/ft-theme.js?v=37cb0e0710"></script>
 <script src="/js/ft-presenter-cues.js?v=902360375b"></script>
 <script src="/js/lsh-one-screen.js?v=a23c8cc0f9"></script>
 <script src="/js/ft-screen-fit.js?v=d16628fdb1"></script>

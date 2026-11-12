@@ -56,7 +56,7 @@
             ".lesson-stage #lessonSlideWrap .fp-section ol > li::before",
             ".lesson-stage #lessonSlideWrap ol.fp-howto-list > li::before", ".lesson-stat",
             ".lesson-threebox .tbox:nth-child(3n+1)", ".lp-admin-sec.active",
-            ".match-zone:nth-child(4n+1) .match-zone-label", ".mini-table th", ".ob-call-btn",
+            ".mini-table th", ".ob-call-btn",
             ".or-bp-side", ".or-step-n",
             ".quiz-grid-letter", ".section-title .tag", ".sopf-step h4 .n::before",
             ".sopx-mode button.on", ".sopx-n", ".sopx-s-table th", ".step-circle.st-done",
@@ -71,7 +71,7 @@
         "navy-soft": [
             ".lesson-process .pstep:nth-child(4n+2)", ".lesson-process .pstep:nth-child(4n+4)",
             ".lesson-quadrant .qbox:nth-child(4n+3)", ".lesson-threebox .tbox:nth-child(3n+3)",
-            ".match-zone:nth-child(4n+3) .match-zone-label", ".slide-dot.visited"
+            ".slide-dot.visited"
         ],
         /* .tool-card:hover .tool-open-btn is here while .tool-card .tool-open-btn is in
            the navy list: the EA/PA engine paints that button navy at rest and orange on
@@ -84,7 +84,7 @@
             ".comp-fill.build", ".fp-num", ".lesson-card li::before", ".lesson-compare .citem::before",
             ".lesson-process .pnum", ".lesson-quadrant .qbox:nth-child(4n+2)",
             ".lesson-threebox .tbox:nth-child(3n+2)", ".lg-step span",
-            ".match-zone:nth-child(4n+2) .match-zone-label", ".module-topic-list li::before",
+            ".module-topic-list li::before",
             ".nav button.active", ".nav-badge", ".or-num", ".qcheck-card .qc-tag .dot",
             ".quiz-dot.active", ".slide-dot.active", ".sopx-list li::before", ".sopx-s-chips b",
             ".tfb-fab:hover", ".tool-card:hover .tool-open-btn",
@@ -94,7 +94,7 @@
         "orange-deep": [
             ".btn-primary:hover", ".ftc-body a.ft-lesson-link:hover", ".ftr-part-h span",
             ".lesson-compare .cbox:last-child .chead", ".lesson-quadrant .qbox:nth-child(4n+4)",
-            ".match-zone:nth-child(4n+4) .match-zone-label", ".quiz-grid-opt.selected .quiz-grid-letter"
+            ".quiz-grid-opt.selected .quiz-grid-letter"
         ],
         "orange-soft": [
             ".cert-prog div", ".cr-msg.cr-ea", ".lesson-stage .slide-dot.active", ".or-dots button.on",
@@ -128,7 +128,7 @@
             ".act-card", ".fp-report", ".fp-st.st-none", ".ftm-afb pre", ".ftm-eg",
             ".ftm-mtype", ".ftm-n", ".ftm-rubric code", ".ftr-code", ".ftr-eg", ".ftr-to",
             ".ftr-todo-n", ".iz-quad", ".iz-score-banner", ".kc-stats", ".lesson-compare .cbox",
-            ".link-preview-box", ".match-tray",
+            ".link-preview-box",
             ".pref-ref-grid div", ".st-none", "body"
         ]
     };

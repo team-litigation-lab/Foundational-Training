@@ -288,16 +288,6 @@ window.FTGuide = {
   checks, clean, wordFile, GUIDES
 };
 
-// 🧰 Drafting Tools in the Practice Lab
-window.ftGuideCard = function(){
-  const any = GUIDES.some(guideOpen);
-  return `<div class="card fts-card ${any ? "" : "fts-locked"}"><div class="fts-kicker">Days 8–18 · before each recorded demo</div>
-    <h3>📘 Process Guide</h3>
-    <p class="fts-note">Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word: headings, numbered steps, pasted screenshots, links and tables. Download it as Word or copy it to Google Docs.</p>
-    <div class="fts-label">Guides in this tool</div><ul class="fts-tpl">${GUIDES.map(g => `<li>Day ${g.day} · ${e(g.title)}</li>`).join("")}</ul>
-    <div class="fts-tool-act">${any ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('guide')">Open the tool</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
-};
-
 // the editor's events, on the document (the page is redrawn)
 document.addEventListener("input", ev => { if(ev.target && ev.target.id === "pgPage") saveNow(); });
 document.addEventListener("paste", ev => {

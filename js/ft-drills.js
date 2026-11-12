@@ -256,10 +256,6 @@ window.render = function(){
 window.ftDrillItems = ctx => { const rec = ctx.rec["drills:"]; if(!rec || !Array.isArray(rec.runs)) return [];
   return SETS.concat([{id: "all", icon: "🎯", title: "Everything, mixed"}]).map(s => ({s, b: best(rec, s.id)})).filter(x => x.b >= 0)
     .map(x => ({name: `${x.s.icon} ${x.s.title}`, pct: x.b, note: `best of ${rec.runs.filter(r => r.set === x.s.id).length} round${rec.runs.filter(r => r.set === x.s.id).length === 1 ? "" : "s"}`})); };
-// 🧰 the Practice Lab's Drafting Tools card
-window.ftDrillsCard = () => `<div class="card fts-card"><div class="fts-kicker">Days 8–18 · before each demo</div><h3>🏷 Naming &amp; Reporting Drills</h3>
-    <p class="fts-note">File names, Notes and Tasks entries, email subjects and fax addresses for every demo, checked against the guide’s conventions on made-up cases.</p>
-    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('drills')">Open the drills</button></div></div>`;
 
 (function(){ const st = document.createElement("style"); st.id = "ft-drills"; st.textContent = `
 main.main-dr{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:14px;}

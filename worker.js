@@ -561,6 +561,7 @@ async function traineeWrite(env, tok, key, value) {
   const existingRaw = await kv.get(key);
   const existing = existingRaw ? JSON.parse(existingRaw) : null;
   if (key === `trainee:${id}`) {
+    if (String(value).length > 200000) return "The record is too large to save";   // (🔒 read with every batch-mate's ranking)
     // Trainees keep their own record current, but can never change approval, attempts resets, etc.
     const merged = Object.assign({}, incoming);
     PROTECTED_TRAINEE_FIELDS.forEach((f) => { if (existing && f in existing) merged[f] = existing[f]; else delete merged[f]; });
@@ -570,7 +571,7 @@ async function traineeWrite(env, tok, key, value) {
     merged.id = id;
     await kv.put(key, JSON.stringify(merged)); return null;
   }
-  if (key === `progress:${id}`) { await kv.put(key, value); return null; }
+  if (key === `progress:${id}`) { if (String(value).length > 4000000) return "The progress is too large to save"; await kv.put(key, value); return null; }
   if (key === `tracker:${id}`) {
     if (value.length > 900000) return "The tracker is too large to save";
     await kv.put(key, value); return null;
@@ -779,6 +780,13 @@ async function traineeWrite(env, tok, key, value) {
   }
   if (/^tfeedback:[a-z0-9]+$/.test(key) || /^cert:LSH-FT-\d{4}-[A-Z0-9]{6}$/.test(key)) {
     if (existing && /^tfeedback:/.test(key)) return "Already submitted";
+    // (🔒 a certificate is the trainee's own and new: one already issued — an admin's too — can't be written over, and no
+    // one else's can be made; feedback and certificates are small)
+    if (/^cert:/.test(key)) {
+      if (existing) return "Already issued";
+      if (!incoming || typeof incoming !== "object" || incoming.traineeId !== id) return "Not allowed";
+    }
+    if (String(value).length > 20000) return "Too large";
     await kv.put(key, value); return null;
   }
   return "Not allowed";
@@ -3644,7 +3652,7 @@ export default {
             improve: (Array.isArray(j.improve) ? j.improve : []).map(x => String(x).slice(0, 300)).slice(0, 5), score: Math.max(0, Math.min(100, Math.round(Number(j.score) || 0))) }; }
         } catch (e) { g = null; }
         cur.items[key] = { at: now.toISOString(), activity, onTime, when, ai: !!g, result: g };
-        await kv.put(rk, JSON.stringify(cur));
+        { const fresh = JSON.parse((await kv.get(rk)) || "null") || { days: {} }; fresh.items = Object.assign({}, fresh.items, { [key]: cur.items[key] }); await kv.put(rk, JSON.stringify(fresh)); }   // (🔒 only this item: what was saved meanwhile stays)
         return json({ ok: true, item: cur.items[key] });
       }
 
@@ -3711,7 +3719,7 @@ export default {
         const max = Object.values(K.items).reduce((t, it) => t + it.pts, 0), score = Object.values(items).reduce((t, r) => t + (r.pts || 0), 0);
         const now = new Date(), when = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(now) + " ET";
         cur.assess[doc] = { at: now.toISOString(), when, title: K.title, score, max, pct: Math.round(100 * score / max), pending: Object.values(items).some((r) => r.pending), ai, items };
-        await kv.put(rk, JSON.stringify(cur));
+        { const fresh = JSON.parse((await kv.get(rk)) || "null") || { days: {} }; fresh.assess = Object.assign({}, fresh.assess, { [doc]: cur.assess[doc] }); await kv.put(rk, JSON.stringify(fresh)); }   // (🔒 only this grade: what was saved meanwhile stays)
         return json({ ok: true, score, max, pending: cur.assess[doc].pending });
       }
 

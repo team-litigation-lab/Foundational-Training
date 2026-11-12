@@ -331,9 +331,6 @@ window.ftListenCards = rec => SETS.filter(s => setOpen(s) && !s.activity).map(s 
       return `<div class="card fts-card" data-days="${s.day}" data-type="listening" data-status="${rec && c >= l.n ? "done" : c ? "live" : "todo"}"><div class="fts-kicker">Day ${s.day} · 🎧 Call Listening · ${l.n} recordings</div><h3>${s.icon} ${e(s.title)}</h3>
         <p class="fts-note">${e(s.about)}${c ? ` <b>${c} of ${l.n} logged.</b>` : ""}</p>
         <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="FTListen.open('${e(s.id)}')">Open the log</button></div></div>`; }).join("");
-window.ftListenSection = () => `<section class="fts-group"><h2>🎧 Call Listening</h2>
-    <p class="fts-sub">The sample recordings from the Call Listening sessions. Log each call as you listen — who called, what they wanted, how the VA handled it, a phrase worth reusing — and your trainer can see what you heard without a write-up anywhere else.</p>
-    <div class="fts-grid">${window.ftListenCards()}</div></section>`;
 
 // 🏅 My Performance: the share of each set logged, and the Reception Listening Activity's grade
 // (the sets as the trainer set them come with the Scorecard's read, ctx.shared, so the share is the same on every page,

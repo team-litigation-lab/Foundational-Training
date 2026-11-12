@@ -197,12 +197,6 @@ function fallback(text, ok){
     document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); ok();
   }catch(err){ toast("Couldn’t copy on this browser — select the line and copy it."); }
 }
-// 🏅 My Performance: the shadowing sessions logged
-window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.logs || !Object.keys(SHADOW).length) return [];
-  const days = Object.keys(SHADOW).map(Number).filter(d => Object.keys(((rec.logs || {})[d]) || {}).length);
-  if(!days.length) return [];
-  const k = countDone(rec), n = Object.keys(SHADOW).length;
-  return [{name: "👥 Shadowing sessions logged", pct: Math.round(k / n * 100), note: `${k} of ${n} sessions written up (Days ${days.join(", ")} started)`}]; };
 
 (function(){ const st = document.createElement("style"); st.id = "ft-todo"; st.textContent = `
 main.main-td{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
