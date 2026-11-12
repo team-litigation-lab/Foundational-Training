@@ -174,6 +174,9 @@ function trainerCase(c, who){
     <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 The trainee’s CMS view ↗")}</div></details>`;
 }
 function mockcallHtml(el){
+  // (🎬 never drawn: the Day 8 demo is trainer-facilitated, so a trainee's own demo case box only confused them — it is off the
+  // deck too, build/day-decks.cjs; kept for a deck saved before, which then shows nothing)
+  if(el) return "";
   const calls = mockCalls();
   const trainer = isTrainerView();
   // (no list of every case for the trainer on the slide: cases are assigned with the packets in Admin → 📦 Intake; the box hides)
