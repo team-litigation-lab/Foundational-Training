@@ -104,35 +104,12 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (lr2.case !== null) fail(`a score saved with no case assigned kept the earlier case: ${JSON.stringify(lr2.case)}`);
     if (((await get('intakeassign:' + id)) || {}).packet !== 2) fail('unassigning the case lost the packet');
 
-    // the trainee: their own case only, never the script; the CMS opened blank for a first call
-    // (their mock call not scored yet: a scored one shows ✅ done on its panel instead of the case)
-    await put('labreview:' + id, null);
+    // the trainee: no Intake Demo case box on the Day 8 demo slide (the trainer runs the demo's case: the box only confused them)
     await put('intakeassign:' + id, { packet: 4, call: 'ft_in_nicole' });
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; }, id);
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    // (on the Day 8 demo slide: the trainee's own case, never the trainer's list of every case)
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
-    if (await page.evaluate(() => /Intake Demo cases:/.test((document.querySelector('.ftdd-sheet .ftis-mockcall') || {}).innerText || ''))) fail('a trainee sees the trainer\'s list of every case');
-    let mine = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText, html: el.innerHTML,
-      cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
-    if (!mine || !/Your Intake Demo case/.test(mine.text) || !/New Intake With a Deadline Close/.test(mine.text)) fail(`the trainee doesn't see their case: ${JSON.stringify(mine)}`);
-    else {
-      if (/SCRIPT-|Goal of|CASEFILE|Scenario Picker/.test(mine.html) || (mine.html.match(/ftis-mc-card/g) || []).length !== 1) fail('the trainee sees more than their own case (the script, the goals, the file or the other cases)');
-      if (!/program=intake/.test(mine.cms) || /mock=/.test(mine.cms)) fail(`a first call's CMS link isn't a blank intake: ${mine.cms}`);
-    }
-    // a call back opens the case file in the CMS
-    await put('intakeassign:' + id, { packet: 4, call: 'ft_in_retainer' });
-    await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    // (the Day 8 demo slide shows it)
-    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(2000);
-    mine = await page.evaluate(() => { const el = document.querySelector('.ftdd-sheet .ftis-mockcall'); return el ? { text: el.innerText, cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
-    if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`the Day 8 demo slide doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
-    // unassigned: the placeholder and the Intake line to practice on
-    await put('intakeassign:' + id, { packet: 4 });
-    await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's3p'))); await page.waitForTimeout(1500);
-    const ph = await page.evaluate(() => (document.querySelector('.ftdd-sheet .ftis-mockcall') || {}).innerText || '');
-    if (!/Your demo case appears here/.test(ph)) fail(`an unassigned trainee doesn't see the placeholder: ${ph.slice(0, 200)}`);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall') || /Your Intake Demo case/.test((document.querySelector('.ftdd-sheet') || {}).innerText || ''))) fail('the trainee\'s Day 8 demo slide still shows the Intake Demo case box');
 
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);
     const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
