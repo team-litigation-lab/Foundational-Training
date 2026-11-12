@@ -579,60 +579,10 @@ main{flex:1;max-width:1400px;margin:0 auto;padding:36px 20px 80px;width:100%;ani
 .client-header-text p{margin:0 0 10px;font-size:16px;color:#C9CCE6;}
 .client-tagline{font-size:var(--font-body);font-style:italic;color:var(--orange-soft);font-weight:600;}
 
-.client-intro-banner{
-  background:linear-gradient(135deg, #FFF3E4 0%, #FDEBD8 100%);border:1px solid var(--orange-soft);
-  border-radius:14px;padding:24px 28px;margin-bottom:24px;
-}
-.cib-tag{font-family:'IBM Plex Mono';font-size:var(--font-sub);font-weight:700;color:var(--orange-deep);letter-spacing:.05em;margin-bottom:10px;}
-.client-intro-banner h2{font-family:'Fraunces';font-size:20px;color:var(--navy);margin:0 0 12px;}
-.client-intro-banner p{font-size:var(--font-body);color:#3A2F22;line-height:1.65;margin:0 0 10px;}
-.client-intro-banner p:last-child{margin-bottom:0;}
-.client-intro-banner b{color:var(--orange-deep);}
 .profile-section h3{margin:0 0 10px;font-size:var(--font-body);color:var(--navy);font-family:'Fraunces';}
 .profile-section ul{margin:0;padding-left:18px;}
 .profile-section li{font-size:var(--font-sub);color:#37394A;margin-bottom:7px;line-height:1.45;}
 .profile-section li:last-child{margin-bottom:0;}
-/* drag-and-drop matching cards (Insurance & Risk) */
-.match-board{display:flex;flex-direction:column;gap:18px;}
-.match-tray{
-  background:var(--bg);border:1.5px dashed var(--line);border-radius:12px;padding:12px;
-  min-height:80px;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;align-content:flex-start;
-}
-.match-tray-label{font-size:var(--font-sub);font-weight:700;color:var(--ink-soft);letter-spacing:.05em;margin-bottom:2px;width:100%;}
-.match-zones{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;}
-.match-zone{
-  background:#fff;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;min-height:120px;
-  transition:border-color .15s ease, background .15s ease;
-  display:flex;flex-direction:column;
-}
-.match-zone.zone-hover{border-color:var(--orange);}
-.match-zone-label{
-  font-family:'Fraunces';font-size:var(--font-sub);font-weight:600;color:#fff;padding:9px 12px;margin:0;
-}
-.match-zone-body{display:flex;flex-direction:column;gap:6px;min-height:20px;padding:10px;flex:1;}
-
-.match-zone:nth-child(4n+1){background:#EAF0FA;}
-.match-zone:nth-child(4n+1) .match-zone-label{background:var(--navy);}
-.match-zone:nth-child(4n+2){background:#FDEEE0;}
-.match-zone:nth-child(4n+2) .match-zone-label{background:var(--orange);color:#3A2308;}
-.match-zone:nth-child(4n+3){background:#EEEFF7;}
-.match-zone:nth-child(4n+3) .match-zone-label{background:var(--navy-soft);}
-.match-zone:nth-child(4n+4){background:#FBE4D4;}
-.match-zone:nth-child(4n+4) .match-zone-label{background:var(--orange-deep);}
-.match-zone.zone-hover{box-shadow:0 0 0 2px var(--orange) inset;}
-.match-card{
-  background:#fff;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:9px 11px;font-size:var(--font-sub);color:var(--ink);
-  cursor:grab;box-shadow:0 1px 2px rgba(22,24,41,.06);transition:box-shadow .12s ease, transform .12s ease;
-}
-.match-tray .match-card{flex:1 1 200px;max-width:280px;}
-.match-zone:nth-child(4n+1) .match-card{border-left-color:var(--navy);}
-.match-zone:nth-child(4n+2) .match-card{border-left-color:var(--orange);}
-.match-zone:nth-child(4n+3) .match-card{border-left-color:var(--navy-soft);}
-.match-zone:nth-child(4n+4) .match-card{border-left-color:var(--orange-deep);}
-.match-card:hover{box-shadow:0 4px 10px -2px rgba(22,24,41,.18);}
-.match-card:active{cursor:grabbing;}
-.match-card.card-snap{animation:cardSnap .35s cubic-bezier(.34,1.56,.64,1);}
-@keyframes cardSnap{0%{transform:scale(.9);}60%{transform:scale(1.04);}100%{transform:scale(1);}}
 
 /* advanced travel itinerary tool */
 .pref-ref-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;}
@@ -1699,8 +1649,6 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
   .client-header-text{min-width:0;width:100%;}
   .client-header-text h2{font-size:24px;line-height:1.2;overflow-wrap:normal;word-break:normal;}
   .client-header-text p{font-size:14px;}
-  .client-intro-banner{padding:18px 16px;}
-  .client-intro-banner h2{font-size:18px;}
   .profile-section{padding:16px;}
   .tfb-fab{width:46px;height:46px;padding:0;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;}
   .tfb-fab .fab-label{display:none;}
@@ -14150,7 +14098,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.12-757de23b";
+var APP_BUILD = "ft-2026.11.12-1e695e07";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14199,7 +14147,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-process.js?v=37bae05b9a"></script>
 <script src="/js/ft-assess.js?v=dd5532c41d"></script>
 <script src="/js/ft-claims-email.js?v=b5027dfe47"></script>
-<script src="/js/ft-rules.js?v=e8f14bcc13"></script>
+<script src="/js/ft-rules.js?v=f62a7811d8"></script>
 <script src="/js/ft-calsim-core.js?v=e5a3258e64"></script>
 <script src="/js/ft-calendar.js?v=fc598b7761"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
@@ -14223,7 +14171,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=b25d0989b3"></script>
 <script src="/js/ft-todo.js?v=dc1a7e6767"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
-<script src="/js/ft-day-decks.js?v=090586e492"></script>
+<script src="/js/ft-day-decks.js?v=f7396a4d14"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=1f169d0d29"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
@@ -14247,19 +14195,19 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/blueprint-content.js?v=d290b74ef8"></script>
 <script src="/js/lsh-blueprint-course.js?v=57917aeff1"></script>
 <script src="/js/lsh-blueprint.js?v=29a13302ce"></script>
-<script src="/js/lsh-dashboard.js?v=7283130891"></script>
+<script src="/js/lsh-dashboard.js?v=07284c4590"></script>
 <script src="/js/ft-card-grid.js?v=9e93c91cb0"></script>
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
 <script src="/js/ft-program.js?v=0cfdaa8035"></script>
-<script src="/js/lsh-program.js?v=e2a316dc91"></script>
+<script src="/js/lsh-program.js?v=307facd057"></script>
 <script src="/js/ft-my-pages.js?v=62814196ae"></script>
 <script src="/js/ft-day1-flow.js?v=b0a895932f"></script>
 <script src="/js/ft-day-locks.js?v=5a9b64bd73"></script>
 <script src="/js/ft-kb-articles.js?v=5bfc079d4f"></script>
 <script src="/js/ft-kb-card.js?v=f74ad4c2ed"></script>
 <script src="/js/lsh-tool-links.js?v=9f51b4c733"></script>
-<script src="/js/ft-theme.js?v=27e5c75278"></script>
+<script src="/js/ft-theme.js?v=37cb0e0710"></script>
 <script src="/js/ft-presenter-cues.js?v=902360375b"></script>
 <script src="/js/lsh-one-screen.js?v=a23c8cc0f9"></script>
 <script src="/js/ft-screen-fit.js?v=d16628fdb1"></script>

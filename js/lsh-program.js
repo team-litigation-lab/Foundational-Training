@@ -604,15 +604,6 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
 .dash-pair .ftn-more > summary{padding:2px 0;font-size:12px;}
 .dash-pair .ftn-after{margin-top:2px;font-size:12.5px;}
 @media(max-width:1000px){.dash-pair{grid-template-columns:minmax(0,1fr);}}
-/* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
-.dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
-.lp-lessons-row .module-grid{flex:1;min-width:0;}
-/* 8 lessons read as a balanced 4x2 block beside the orientation card, not 5+3 (narrower screens keep the
-   existing responsive auto-fill/stacked behavior below — this only applies once there's room for it) */
-@media(min-width:1001px){.lp-lessons-row .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
-.lp-orient{flex:0 0 220px;display:flex;}
-.lp-orient .module-card{width:100%;}
-@media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
 /* 8 lessons read as a balanced 4x2 block, not the shared five-across default (js/lsh-dashboard.js) — narrower
    screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
@@ -698,23 +689,6 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
 .lp-home-stats .rank-list li .sc{color:var(--orange-deep);}
 .lp-home-stats .rank-list li.me{background:#FFF3E6;color:var(--navy);}
 .lp-home-stats .rank-list li.gap{color:var(--ink-soft);}
-.lp-lessons{margin-bottom:22px;}
-/* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
-   js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
-   here the card grows to fit its own content instead, so every lesson's activities stay visible. */
-.lp-lessons .module-card, .lp-orient .module-card{height:auto;}
-/* every card in a row matches the tallest one, and every header reserves room for a 3-line title, so a short
-   title ("Receptionist Training") and a long one ("Calendaring & Appointment Setting Training") still line up:
-   the icon sits at the same height across the row and the Start button sits flush with the card bottom. */
-.lp-lessons .module-grid{align-items:stretch;}
-.lp-lessons .module-card.mc-clean .module-head, .lp-orient .module-card.mc-clean .module-head{min-height:92px;}
-.lp-lessons .module-card.mc-clean .module-start-btn, .lp-orient .module-card.mc-clean .module-start-btn{margin-top:auto;}
-.lp-lessons .module-card.mc-clean .module-body, .lp-orient .module-card.mc-clean .module-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 16px 10px;flex:0 1 auto;min-height:0;overflow:visible;container-type:normal;}
-/* the dashboard's module-theme is line-clamped to fit a fixed-height hero card (display:-webkit-box + overflow:hidden,
-   which collapses to 0 height without that fixed height) — here it's plain wrapping text, same specificity so it wins */
-.lp-lessons .module-card.mc-clean .module-theme, .lp-orient .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
-.lp-lessons .module-icon, .lp-orient .module-icon{font-size:30px;line-height:1;}
-.lp-lessons .module-theme, .lp-orient .module-theme{font-size:12.5px;color:var(--ink-soft);}
 .lp-kc{font-weight:700;}
 .sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 /* score colours: 85% and up, 70% (passing) and up, under 70%, nothing yet */

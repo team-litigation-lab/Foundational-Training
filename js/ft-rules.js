@@ -685,8 +685,6 @@ body.ft-orient #lessonSlideWrap .ftr-cam > .ftr-part{min-height:27vh;}
 /* a step's own lettered list (a. b. c. …) */
 body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol{list-style:lower-alpha;margin:4px 0 0;padding-left:26px;}
 body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol li{margin:2px 0;}
-/* the 15 To-Dos stay smaller, one line each */
-body.ft-orient #lessonSlideWrap .ftr-todo-parts .ftr-todo-tx{font-size:14.5px !important;line-height:1.3 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ftr-lesson b, .ftr-part-h, .ftr-chan-h){font-size:21px !important;}
 /* the content takes the sheet's whole width (no narrow column in the middle of it) */
 body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-stakes p, .ftr-habit){max-width:none !important;}
@@ -760,20 +758,6 @@ body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left
 .ftr-calm .ftr-rule:nth-of-type(3){--c:#3A78B8;} .ftr-calm .ftr-rule:nth-of-type(4){--c:#7A62B0;}
 .ftr-calm .ftr-rule b{color:#1E2340 !important;} .ftr-calm .ftr-rule span{color:#2B2F45 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
-body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card{--c:#E8590C;background:#fff;color:#1E2340;border:1px solid #E1E4EE;border-top:5px solid var(--c);border-radius:14px;padding:14px 18px 12px;box-shadow:0 2px 8px rgba(30,35,64,.06);}
-body.ft-orient #lessonSlideWrap .ftr-flow-s1{--c:#2F7DD1;} body.ft-orient #lessonSlideWrap .ftr-flow-s2{--c:#2E9C6A;} body.ft-orient #lessonSlideWrap .ftr-flow-s3{--c:#8A5CC2;}
-body.ft-orient #lessonSlideWrap .ftr-flow-s4{--c:#C2862E;} body.ft-orient #lessonSlideWrap .ftr-flow-s5{--c:#C24E6E;}
-body.ft-orient #lessonSlideWrap .ftr-flow-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
-body.ft-orient #lessonSlideWrap .ftr-flow-n{font:700 12.5px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--c);}
-body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;margin:0 !important;font:800 21px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card ul{list-style:none;margin:0;padding:0;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li{display:flex;gap:10px;margin:0;padding:5px 0;border-top:1px solid #EEF0F5;color:#2A2F4A !important;font-size:17px !important;font-weight:600;line-height:1.35 !important;padding-left:0 !important;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li span{flex:0 0 60px;color:#7A8099;font:700 14px/1.6 'IBM Plex Mono',monospace;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li::before{content:none !important;display:none !important;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li:first-child{border-top:0;}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 /* a slide whose body text is all bold (Auxes) */
 body.ft-orient #lessonSlideWrap .ftr-bold :is(p, span, li, code, .ftr-when, .ftr-sub){font-weight:700 !important;}
 /* the habit cards' links (Sample Updated Trackers, the Monitoring Sheet): a navy block ruled in orange */
@@ -860,16 +844,6 @@ body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-colum
 /* one block, so the slide stays one page (scaled a little to fit a small screen, never split) */
 .ftr-todos-all, .ftr-keep{display:flow-root;}
 .ftr-habit{grid-template-columns:1fr !important;max-width:980px;margin:0 auto;}
-.ftr-todo-parts{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
-.ftr-todo-parts .ftr-todo .btn, .ftr-todos-top .btn{padding:4px 11px !important;font-size:12.5px !important;min-height:0 !important;line-height:1.3 !important;}
-.ftr-todo-parts .ftr-todo-tx em{display:none;}   /* the parts' headers say To-Dos */
-.ftr-todo-parts .ftr-todo-n{width:22px;height:22px;font-size:11.5px;}
-.ftr-todo-parts .ftr-part-h{margin-bottom:2px;}
-.ftr-todos-all .ftr-after{margin-top:8px !important;font-size:13.5px;}
-.ftr-todo-parts .ftr-todos{margin-top:10px;}
-.ftr-todo-parts .ftr-todo{padding:3px 0;gap:10px;flex-wrap:nowrap;}
-.ftr-todo-parts .ftr-todo-tx{flex:1 1 auto;min-width:0;font-size:13.5px;line-height:1.3;}
-@media(max-width:900px){ .ftr-todo-parts{grid-template-columns:1fr;} .ftr-todos-top{flex-direction:column;align-items:stretch;} }
 .ftr-parts{display:flex;flex-direction:column;gap:14px;}
 .ftr-fig{margin:12px 0 0;} .ftr-fig-scroll{overflow-x:auto;border-radius:10px;}
 .ftr-swipe{display:none;margin-top:6px;font-size:13.5px;color:var(--ink-soft);}
