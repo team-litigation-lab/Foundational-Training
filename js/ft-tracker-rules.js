@@ -579,9 +579,13 @@
   // training day n's update, or null when the slides ask for none that day (or its topic isn't covered yet)
   const monitorDue = (n) => { const x = MONITOR_SCHEDULE[Number(n)]; return x && x.on <= Number(n) ? x : null; };
   // a date's training day number from the batch's first day (YYYY-MM-DD): its count of weekdays, 0 before it or with no start
+  // (memoised: a pure walk day by day from the start, asked for every trainee's every day on each Batch Sheet render)
+  const TD = new Map();
   function trainingDay(start, D){
     if(!start || !D || D < start) return 0;
+    const k = start + "|" + D; if(TD.has(k)) return TD.get(k);
     let n = 0; for(let t = Date.parse(start + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && n < 40; t += 864e5) if(isWeekday(new Date(t).toISOString().slice(0, 10))) n++;
+    if(TD.size > 5000) TD.clear(); TD.set(k, n);
     return n;
   }
   const monitorDueOn = (start, D) => monitorDue(trainingDay(start, D));
