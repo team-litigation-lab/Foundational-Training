@@ -820,13 +820,6 @@ function linksEditHtml(){
     <div class="bs-le-rows">${LINKS.map(([k, label]) => `<label class="bs-le-row"><span>${e(label)}</span><input type="url" data-k="${k}" value="${e(dv[k] || "")}" placeholder="https://${/folder|typing|spelling/.test(k) ? "drive.google.com/drive/folders/…" : "docs.google.com/…"}"><small>${e(mark(k))}${(dv.auto || {})[k] ? " · found automatically" : dv.linkedBy === "trainer" && dv[k] ? " · set by a trainer" : ""}</small></label>`).join("")}</div>
     <div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" ${B.leBusy ? "disabled" : ""} onclick="FTBatchSheet.leSave('${e(id)}', this)">${B.leBusy ? "Saving…" : "💾 Save and check"}</button></div></div>`;
 }
-// 🔄 a section's own Update (FTBatchSheet.sync): the trainer's, and its progress while it runs
-const SYNC_OF = {scorecard: "scores", compliance: "links", outputs: "outputs", ranking: "ranking"};
-function updBtn(id){
-  const sc = SYNC_OF[id]; if(!sc || !adminOn() || meOn()) return "";
-  const S = B.sync, mine = S && (S.scope === sc || S.scope === "all");
-  return `<button type="button" class="bs-upd" ${S ? "disabled" : ""} onclick="FTBatchSheet.sync('${sc}')" title="${e({scores: "Run today's check for every trainee now (Monitoring Sheet, Task Tracker, Typing & Spelling, EOD) and read the scores again", links: "Find and link every trainee's Drive files, then check every trainee's links", outputs: "Run today's check for every trainee now (Monitoring Sheet, Task Tracker, Typing & Spelling, EOD)", ranking: "Read the Weekly Ranking again"}[sc])}">${mine ? `⏳ ${e(S.what)}${S.of ? ` ${S.n}/${S.of}` : ""}…` : "🔄 Update"}</button>`;
-}
 function groupedSheetHtml(T, ti){
   const n = T.head.length, empty = !T.rows.length, F = foldOf(T.id);
   // each column's group, and whether it is folded away (a folded group keeps one column: T.keep, else its first)

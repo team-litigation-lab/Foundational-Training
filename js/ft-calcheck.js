@@ -428,10 +428,6 @@ window.FTCalCheck = {
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };
-// 🛠 the Practice Lab's card
-window.ftCalCheckCard = () => `<div class="card fts-card"><div class="fts-kicker">Day 5 · Attorney Calendar Management Activity</div><h3>📅 Calendar Activity Check</h3>
-    <p class="fts-note">Enter what each of the activity’s events holds in your Google Calendar: every field (title, dates and times, time zone, location, guests, reminder, notes) is checked against the activity.</p>
-    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calcheck')">Check my calendar</button></div></div>`;
 // 🏅 My Performance: the latest submission
 window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = rec.submits[rec.submits.length - 1]; if(!s) return [];
   const sc = scored(s);

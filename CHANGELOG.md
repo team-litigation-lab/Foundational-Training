@@ -7,6 +7,7 @@
 - **Size limits:** trainee feedback and certificates are capped at 20 KB, the progress snapshot at 4 MB, and a trainee record at 200 KB.
 - **Lost updates:** a Monitoring Sheet item grade and an assessment grade each write back only their own entry. A save made at the same time is no longer lost.
 - New test `.github/scripts/storage-guards.cjs` runs in CI.
+- Dead code removed (about 40 lines): unused card templates (ftCalCheckCard, ftCalRulesCard, ftDrillsCard, ftGuideCard, ftListenSection), ftShadowItems, the Batch Sheet's updBtn/SYNC_OF and the checkSurpriseTask stub.
 
 ## 2026-11-11: debug round 2 (PR #682)
 

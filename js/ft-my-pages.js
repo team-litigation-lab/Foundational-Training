@@ -32,8 +32,6 @@ window.renderTopbar = function(){
   if(portal) portal.insertAdjacentHTML("beforebegin", mine); else nav.insertAdjacentHTML("beforeend", mine);
   return t.innerHTML;
 };
-// 🎲 Random Tasks are abolished in this program: no trainee page for them and no looking for one in the background
-window.checkSurpriseTask = async function(){ state.activeSurpriseTask = null; };
 const __render = window.render;
 window.render = function(){
   if(state.view === "tasks"){ state.view = "modules"; return window.render.apply(this, arguments); }
