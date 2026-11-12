@@ -270,6 +270,12 @@ function weekRange(st, n) {
 function weekOf(st, d) { for (let n = 1; n <= 6; n++) { const r = weekRange(st, n); if (!r) return 1; if (d <= r[1]) return n; } return 6; }
 // 📅 a date's training day (1 = the batch's first weekday) and what the Training Guide expects of it (FTDays, js/ft-day-activities.js),
 // with the recurring tests every day asks for
+// 🌱 trackerreview:<id> written back after a long read (Drive, the AI): the trainer's Professional Development &
+// Progress scores (pdp, /api/pdp/set) are read again just before, so one saved meanwhile is never written over with the old copy
+async function putKeepPdp(kv, rk, cur) {
+  try { const f = JSON.parse((await kv.get(rk)) || "null"); if (f && f.pdp && typeof f.pdp === "object") cur.pdp = f.pdp; else if (f && !f.pdp) delete cur.pdp; } catch (e) {}
+  await kv.put(rk, JSON.stringify(cur));
+}
 function trainingDay(st, D) { let k = 0; if (st && st <= D) for (let t = Date.parse(st + "T12:00:00Z"); t <= Date.parse(D + "T12:00:00Z") && k < 60; t += 864e5) if (TR.isWeekday(new Date(t).toISOString().slice(0, 10))) k++; return k; }
 function expectedFor(st, D) {
   const FD = globalThis.FTDays, k = trainingDay(st, D), items = FD && FD.items && k ? FD.items(k) : [];
@@ -1400,7 +1406,7 @@ async function checkDrive(env, id, D, o = {}) {
     out.tam = Object.keys(entries).length;
   }
   cur.updatedAt = at;
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return out;
 }
 /* 📘 THE TAM'S ENTRIES BY DAY: the Task Assessment Manual is written day by day, each entry under its date ("11/05/2026",
@@ -1494,7 +1500,7 @@ async function checkShots(env, id, o = {}) {
   // (url: the folder link this check opened, so the 📋 Batch Sheet tells a stale "can't open" from the link saved now)
   const url0 = String(drive.folder || drive.typing || drive.spelling).slice(0, 500);
   cur.shots = res.error ? Object.assign({}, prev, { error: res.error, url: url0, checkedAt: new Date().toISOString() }) : { files, url: url0, checkedAt: new Date().toISOString(), error: "", unread: errs };
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { id, shots: res.error ? null : files.length, error: res.error || "" };
 }
 
@@ -1676,7 +1682,7 @@ async function verifyLinks(env, id) {
   const newBad = Object.keys(out).filter((k) => out[k].ok === false && !out[k].retry && !(prev[k] && prev[k].ok === false && prev[k].url === out[k].url && prev[k].error === out[k].error));
   if (newBad.length) cur.verifyAlert = { at, keys: newBad };
   cur.verify = out; cur.verifyAt = at; delete cur.verifyError;
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { ok: true, verify: out, share: sa };
 }
 
@@ -1741,7 +1747,9 @@ async function receiveEod(env, msg) {
     await kv.put("admin:eod-unmatched", JSON.stringify(un));
     return { matched: false };
   }
-  return keepEod(env, id, { text, subject, at, addr, D, learn: how !== "address" });
+  // (an address is remembered as the trainee's only on a sure match: a first name alone is for the trainer to check, and
+  // remembering it would file every later EOD from that address under the wrong trainee)
+  return keepEod(env, id, { text, subject, at, addr, D, learn: how !== "address" && how !== "first name only" });
 }
 // the trainee (an approved one, not offboarded) an EOD is from: by the address they send from (drive:<id>.eodFrom), else by their
 // name — the sender's name as registered, or with a middle name or "Last, First" (eodNameMatch); the sender's address spelling
@@ -1749,18 +1757,26 @@ async function receiveEod(env, msg) {
 // first name when only one active trainee has it (a married or second surname: Ashanty Linneth Gosden → Ashanty Campbell),
 // flagged "first name only" for the trainer to check. A name rule counts only when it points to one trainee; the address it
 // came from is then kept as theirs (eodFrom), so the next EOD matches at once.
-async function matchEod(env, fromH, text) {
+// (the trainees and their Drive links, read once: 📧 EOD Inbox tries up to 50 waiting EODs again on each open, and reading
+// every trainee for each of them ran past the Worker's KV operations per request)
+async function eodRoster(env) {
+  const kv = kvOf(env), ids = (await listAll(env, "trainee:")).map((k) => k.slice("trainee:".length)), out = [];
+  for (const tid of ids) {
+    const rec = JSON.parse((await kv.get(`trainee:${tid}`)) || "null"); if (!rec || rec.approved !== true || rec.archived || rec.offboarded) continue;
+    out.push({ tid, rec, dv: JSON.parse((await kv.get(`drive:${tid}`)) || "null") || {} });
+  }
+  return out;
+}
+async function matchEod(env, fromH, text, roster) {
   const kv = kvOf(env);
   const addr = ((/<([^>]+)>/.exec(fromH) || [])[1] || fromH).trim().toLowerCase(), name = String(fromH).replace(/<[^>]*>/, "").replace(/"/g, "").trim();
-  const ids = (await listAll(env, "trainee:")).map((k) => k.slice("trainee:".length));
+  const list = roster || (await eodRoster(env));
   const local = addr.split("@")[0].replace(/[^a-z]/g, ""), tail = normName(String(text || "").slice(-600));
   // (the sender's first name: their display name's first word, else the address's first part, maria.santos@ → maria)
   const fn = (normName(name).split(" ")[0] || normName(addr.split("@")[0].split(/[._-]/)[0])) || "";
   let id = null, how = "";
   const hits = { name: [], addr: [], sign: [], first: [] };
-  for (const tid of ids) {
-    const rec = JSON.parse((await kv.get(`trainee:${tid}`)) || "null"); if (!rec || rec.approved !== true || rec.archived || rec.offboarded) continue;
-    const dv = JSON.parse((await kv.get(`drive:${tid}`)) || "null") || {};
+  for (const { tid, rec, dv } of list) {
     if (addr && String(dv.eodFrom || "").trim().toLowerCase() === addr) { id = tid; how = "address"; break; }
     const parts = normName(rec.name).split(" ").filter(Boolean); if (parts.length < 2) continue;
     const first = parts[0], last = parts[parts.length - 1];
@@ -1987,7 +2003,7 @@ async function gradeTranscription(env, id, n, o = {}) {
   // (read again just before it is written: the nightly check may have written trackerreview meanwhile)
   const cur = (await getJSON(kv, rk)) || { days: {} };
   cur.transcribe = Object.assign({}, cur.transcribe, { [n]: grade });
-  await kv.put(rk, JSON.stringify(cur));
+  await putKeepPdp(kv, rk, cur);
   return { status: 200, body: { ok: true, grade } };
 }
 async function checkIntakePacket(env, id, hint = {}) {
@@ -2224,7 +2240,7 @@ async function runTrackerChecks(env, opts) {
     const prev = cur.days[D] || {};
     cur.days[D] = Object.assign({}, res, { review: review || prev.review || "", checkedAt: new Date().toISOString(), comment: prev.comment || "", commentAt: prev.commentAt || "" });
     cur.updatedAt = new Date().toISOString();
-    await kv.put(rk, JSON.stringify(cur));
+    await putKeepPdp(kv, rk, cur);
     done.push({ id, pct: res.pct, flags: res.flags.length });
   } catch (e) { /* the next trainee */ } }
   // the trainees whose tracker and Monitoring Sheet are in Google Drive
@@ -2438,7 +2454,7 @@ async function backtrack(env, id) {
     try {
       const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
       out.days = await trackerDays(env, drive, start, days, cur);
-      await kv.put(rk, JSON.stringify(cur));
+      await putKeepPdp(kv, rk, cur);
       out.tracker = "ok";
     } catch (e) { out.tracker = e.message === "layout" ? "The Task Tracker has no tracker header row (Date Received, Type of Task, Task Details …)" : e.message === "kind" ? "The Task Tracker link isn't a Google Sheet" : "The Task Tracker can't be opened"; }
   }
@@ -2475,7 +2491,7 @@ async function redoCompliance(env, id, ro = {}) {
     const had = (pre.cur.compliance || {})[d];
     await dailyCompliance(env, id, d, { pre, redo: true, fresh: byDay, rec, files: files || undefined, backfill: !had && d < today });
   }
-  await kv.put(`trackerreview:${id}`, JSON.stringify(pre.cur));
+  await putReview(kv, `trackerreview:${id}`, pre.cur, ["compliance", "dayAi", "days"]);   // (🔒 what was saved meanwhile is kept)
   return want.length;
 }
 
@@ -2797,8 +2813,17 @@ async function dailyCompliance(env, id, D, o = {}) {
     if (!ch) return; x.monitorAi = null; const v = Object.values(x.parts || {}).filter((y) => typeof y === "number"); x.pct = v.length ? Math.round(v.reduce((a, y) => a + y, 0) / v.length) : null; });
   // (kept for the training: the last 120 days)
   const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
-  if (pre) pre.cur = cur; else await kv.put(rk, JSON.stringify(cur));
+  if (pre) pre.cur = cur; else await putReview(kv, rk, cur, ["compliance", "dayAi"]);
   return cur.compliance[D];
+}
+// 🔒 a trainee's trackerreview:<id> written back after a long run (dailyCompliance's AI grading, redoCompliance's days):
+// read again just before the write and only the fields the run computed are copied in, so what another request saved in
+// the meantime — a trainer's 🌱 PDP or week evaluation, an assessment or transcription grade, a Drive check — is kept
+async function putReview(kv, rk, cur, fields) {
+  let fresh = null; try { fresh = JSON.parse((await kv.get(rk)) || "null"); } catch (e) { fresh = null; }
+  fresh = fresh && typeof fresh === "object" ? fresh : { days: {} };
+  fields.forEach((f) => { if (cur[f] !== undefined) fresh[f] = cur[f]; });
+  await kv.put(rk, JSON.stringify(fresh));
 }
 
 /* ---------- 🕘 automatic Time In (read by the Training Portal /attendance.html) ----------
@@ -3302,9 +3327,9 @@ export default {
         const un = JSON.parse((await kv.get("admin:eod-unmatched")) || "null") || { items: [] };
         // (🔁 the ones still waiting are tried again as the inbox is read: a trainee registered since, or a rule added since —
         // first name only — takes them, each kept on its trainee's day and logged as matched)
-        const left = [];
-        for (const x of un.items || []) { let m = null; try { m = await matchEod(env, x.from, x.text); } catch (e) { m = null; }
-          if (m && m.id) { const a = /@/.test(m.addr) ? m.addr : ""; await keepEod(env, m.id, { text: x.text, subject: x.subject, at: x.at, addr: a, D: TR.ptDate(new Date(x.at)), learn: true });
+        const left = []; let roster = null;
+        for (const x of un.items || []) { let m = null; try { roster = roster || (await eodRoster(env)); m = await matchEod(env, x.from, x.text, roster); } catch (e) { m = null; }
+          if (m && m.id) { const a = /@/.test(m.addr) ? m.addr : ""; await keepEod(env, m.id, { text: x.text, subject: x.subject, at: x.at, addr: a, D: TR.ptDate(new Date(x.at)), learn: m.how !== "first name only" });
             await eodLog(kv, { at: x.at, from: x.from, subject: x.subject, id: m.id, how: m.how }); } else left.push(x); }
         if (left.length !== (un.items || []).length) { un.items = left; await kv.put("admin:eod-unmatched", JSON.stringify(un)); }
         const log = JSON.parse((await kv.get("admin:eod-log")) || "null") || { items: [] };
