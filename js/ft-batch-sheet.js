@@ -1116,7 +1116,9 @@ const partsTable = ps => { let g0 = null;
     const head = x.group && x.group !== g0 ? `<tr class="bs-parts-g${x.header || /compliance/i.test(x.group) ? " bs-parts-top" : ""}"><th colspan="3">${e(x.group)}${x.groupV ? ` <span class="bs-parts-gv">${e(x.groupV)}</span>` : ""}</th></tr>` : ""; if(x.group) g0 = x.group;
     if(x.header) return head;
     return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
-      + (Array.isArray(x.crit) ? x.crit.map(c => `<tr class="bs-parts-c"><td class="bs-parts-n">↳ ${e(c.n)}</td><td class="bs-parts-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td class="bs-parts-t">${e(c.fb || "")}</td></tr>`).join("") : ""); }).join("")}</tbody></table>`; };
+      // (📋 its criteria in a table of their own under the activity's name, so they don't read as more compliance items)
+      + (Array.isArray(x.crit) && x.crit.length ? `<tr class="bs-parts-cw"><td colspan="3"><table class="bs-crit"><thead><tr><th colspan="3" class="bs-crit-h">📋 ${e(stripTags(x.name))} — criterion by criterion</th></tr><tr><th>Criterion</th><th>Score</th><th>Why</th></tr></thead><tbody>${
+        x.crit.map(c => `<tr><td class="bs-crit-n">${e(c.n)}</td><td class="bs-crit-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td>${e(c.fb || "")}</td></tr>`).join("")}</tbody></table></td></tr>` : ""); }).join("")}</tbody></table>`; };
 /* 🌱 PROFESSIONAL DEVELOPMENT & PROGRESS · Week N on a trainee's page, under the week's heading in 📤 Daily outputs (where
    📏 Following instructions was, now part of the Day's outputs): a trainer's weekly score — Competency in taking on a role,
    Communication, Quality of output, each 1–5 (half points), and a note (worker.js /api/pdp/set → trackerreview:<id>.pdp).
@@ -2524,7 +2526,9 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-parts tr.bs-parts-g th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 14px Arial,sans-serif;letter-spacing:.02em;padding:6px 10px;border-top:2px solid #AEB6C6;}
 .bs-parts tr.bs-parts-g.bs-parts-top th{background:#1E2340;color:#fff;font-size:14.5px;padding:7px 10px;}
 .bs-parts tr.bs-parts-g .bs-parts-gv{float:right;font-weight:700;color:#FDE68A;}
-.bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;}
+.bs-parts tr.bs-parts-c td{background:#F8FAFD;font-size:14px;} .bs-parts tr.bs-parts-c td.bs-parts-n{padding-left:26px;color:#3C4043;font-weight:600;} .bs-parts tr.bs-parts-cw > td{padding:4px 10px 12px 26px;background:#fff;}
+.bs-crit{width:100%;border-collapse:collapse;font-size:14px;border:1px solid #CFD6E6;border-radius:8px;} .bs-crit th,.bs-crit td{border:1px solid #E1E6F0;padding:6px 8px;vertical-align:top;text-align:left;}
+.bs-crit thead th{background:#EEF2FA;color:#1E2340;font-weight:700;} .bs-crit th.bs-crit-h{background:#E3E9F6;font-size:14.5px;} .bs-crit td.bs-crit-n{font-weight:600;width:34%;} .bs-crit td.bs-crit-v{width:70px;white-space:nowrap;}
 .bs-pt-we{padding:8px 10px !important;} .bs-we{border:1px solid #AEB6C6;border-radius:8px;margin:6px 0;background:#fff;} .bs-we>summary{cursor:pointer;padding:8px 12px;font:800 15px Arial,sans-serif;color:#1E2340;background:#F1F4FA;border-radius:8px;}
 .bs-we>summary small{font-weight:600;color:#475569;margin-left:6px;} .bs-we-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 12px 0;} .bs-we-doc{padding:4px 14px 12px;overflow-x:auto;}
 .bs-we-doc .ft-ev-t{width:100%;border-collapse:collapse;margin:8px 0;} .bs-we-doc .ft-ev-t th,.bs-we-doc .ft-ev-t td{border:1px solid #9AA3B5;padding:6px 8px;vertical-align:top;text-align:left;}
