@@ -79,6 +79,8 @@ jobs:
         run: node .github/scripts/calsim-card.cjs
       - name: A day's inputs read for that day (the tracker's and the Monitoring Sheet's dates, in any form)
         run: node .github/scripts/tracker-dates.cjs
+      - name: What a trainee may write (certificates, size limits)
+        run: node .github/scripts/storage-guards.cjs
       - name: The Task Tracker checked as the trainer's sample evaluation does it, and the weekly Task Tracker Evaluation on its seven metrics (js/ft-tracker-rules.js RULES, weekEval; worker.js trackerWeekEval)
         run: node .github/scripts/tracker-eval.cjs
       - name: A Monitoring Sheet kept as a Word file (.docx) in Drive read and checked
