@@ -8,9 +8,9 @@ const path = require('path'); const { pathToFileURL } = require('url');
 const failures = []; const fail = (m) => failures.push(m);
 (async () => {
   const worker = (await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href)).default;
-  const store = new Map();
+  const store = new Map(); let kvGets = 0;
   const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off', EOD_KEY: 'k',
-    LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k),
+    LSH_KV: { get: async (k) => { kvGets++; return store.has(k) ? store.get(k) : null; }, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k),
       list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
   globalThis.fetch = async () => new Response('not found', { status: 404 });
   const T = { maria: 'Maria Clara Santos', jose: 'Jose Reyes', ana: 'Ana Cruz', ana2: 'Ana Lim', pia: 'Pia Dela Rosa' };
@@ -47,10 +47,18 @@ const failures = []; const fail = (m) => failures.push(m);
   r = await inb('Ashanty Linneth Gosden <ashanty.gosden@legalsupporthelp.com>');
   if (r.matched !== false) fail('an EOD matched a trainee who isn\'t registered yet');
   store.set('ft:trainee:ashanty', JSON.stringify({ id: 'ashanty', name: 'Ashanty Campbell', batch: 'B110226', approved: true }));
+  // (the waiting EODs are tried again with the trainees read once, not once per EOD: 30 waiting, KV reads stay small)
+  { const un = JSON.parse(store.get('ft:admin:eod-unmatched') || '{"items":[]}'); for (let i = 0; i < 30; i++) un.items.push({ from: 'Someone Else ' + i + ' <x' + i + '@example.com>', subject: 'EOD', at: '2026-11-0' + (1 + i % 9) + 'T2' + (i % 10) + ':00:00Z', text: 'EOD' });
+    store.set('ft:admin:eod-unmatched', JSON.stringify(un)); }
+  kvGets = 0;
   { const u2 = (await call('/api/eod/unmatched', {}, admin)).body || {};
+    if (kvGets > 80) fail(`opening the EOD Inbox read the KV ${kvGets} times for 31 waiting EODs (each one re-read every trainee)`);
     if ((u2.items || []).some(i => /ashanty/.test(i.from))) fail('an unmatched EOD wasn\'t matched again once its trainee was there');
     if (!(u2.log || []).some(l => l.id === 'ashanty' && l.how === 'first name only')) fail(`the re-match isn't logged as first name only: ${JSON.stringify(u2.log).slice(0, 300)}`);
-    if (!((JSON.parse(store.get('ft:drive:ashanty') || '{}').days || {})['2026-11-09'] || {}).eod) fail('the re-matched EOD isn\'t kept on its trainee\'s day'); }
+    if (!((JSON.parse(store.get('ft:drive:ashanty') || '{}').days || {})['2026-11-09'] || {}).eod) fail('the re-matched EOD isn\'t kept on its trainee\'s day');
+    // (but the address isn't remembered as Ashanty's: a first name alone is for the trainer to check, and remembering it would
+    // file every later EOD from that address under her)
+    if (eodFrom('ashanty')) fail(`a first-name-only match remembered the sender's address as the trainee's: ${eodFrom('ashanty')}`); }
   // 3. trainers only
   const trainee = (await call('/api/auth/trainee', { first: 'Jose', last: 'Reyes', batch: 'B110226' })).body;
   if (trainee && trainee.token && (await call('/api/eod/assign', { id: 'jose' }, trainee.token)).status !== 403) fail('a trainee could give out an EOD');
