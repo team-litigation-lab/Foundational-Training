@@ -144,8 +144,10 @@ const failures = []; const fail = (m) => failures.push(m);
       const old = cur.compliance['2026-10-28'] || {};
       const oldV = Object.values(old.parts || {}).filter(v => typeof v === 'number'), oldAvg = oldV.length ? Math.round(oldV.reduce((a, v) => a + v, 0) / oldV.length) : null;
       if (!old.parts || 'tam' in old.parts || old.pct !== oldAvg) fail(`a day worked out while the TAM was a daily part keeps it: ${JSON.stringify(old)}`);
-      // (and a past day with no following-instructions mark yet gets one from what is on record for it: nothing sent that day)
-      if (!old.instr || old.instr.v !== 2 || old.parts.instructions !== 0) fail(`a past day checked before the mark was kept didn't get one: ${JSON.stringify(old.instr)}`); }
+      // (and a past day with no following-instructions mark yet gets one from what is on record for it: nothing sent that day —
+      // 📤 half of its Day's outputs where it had one, never a part of its own)
+      if (!old.instr || old.instr.v !== 2 || old.instr.pct !== 0 || 'instructions' in old.parts) fail(`a past day checked before the mark was kept didn't get one: ${JSON.stringify(old.instr)} / ${JSON.stringify(old.parts)}`);
+      if (typeof old.parts.outputs === 'number' && old.parts.outputs !== Math.round(old.outputsWork / 2)) fail(`the past day's instructions aren't half of its Day's outputs: ${JSON.stringify({ parts: old.parts, work: old.outputsWork })}`); }
     // 📘 a trainer grades the TAM for a shadowing day: that day's entry, and that day's compliance counts it (no other day)
     { const tg = (await call('/api/drive/tam', { id: ana, date: '2026-10-30' }, admin)).body || {};
       if ((await call('/api/drive/tam', { id: ana }, trainee)).status !== 403) fail('a trainee graded the TAM');
@@ -177,14 +179,16 @@ const failures = []; const fail = (m) => failures.push(m);
     // 📏 following instructions, strictly: the naming convention and saving route of the day's screenshots, the deliverables on time
     // (tests, EOD, Task Tracker) for a day that is over, and today's six Drive links; a day over keeps its mark after a fix or a backtrack
     { const C = get('trackerreview:' + ana).compliance || {}, d30 = C['2026-10-30'] || {}, iss = ((d30.instr || {}).issues || []).map(x => x.k + ': ' + x.why).join(' | ');
-      if (!d30.instr || d30.instr.v !== 2 || typeof (d30.parts || {}).instructions !== 'number' || d30.parts.instructions >= 100) fail(`10/30 isn't marked down for following instructions: ${JSON.stringify(d30.instr)}`);
+      if (!d30.instr || d30.instr.v !== 2 || typeof d30.instr.pct !== 'number' || d30.instr.pct >= 100) fail(`10/30 isn't marked down for following instructions: ${JSON.stringify(d30.instr)}`);
+      // (📤 no part of its own: half of the Day's outputs — the hand-in & graded work and the instructions' share averaged)
+      if ('instructions' in (d30.parts || {}) || (typeof d30.parts.outputs === 'number' && d30.parts.outputs !== Math.round((d30.outputsWork + d30.instr.pct) / 2))) fail(`10/30's instructions aren't in its Day's outputs: ${JSON.stringify({ parts: d30.parts, work: d30.outputsWork, instr: d30.instr.pct })}`);
       if (!/route: Spelling Test screenshot saved in the Assessments\/Activities folder/.test(iss) || !/name: Spelling Test screenshot not named/.test(iss)) fail(`a screenshot saved in the wrong folder and misnamed isn't marked: ${iss}`);
       if (/route: Typing Test \(AM\)/.test(iss)) fail(`the AM typing screenshot, in the Typing Tests folder, was marked as the wrong route: ${iss}`);
       if (!/no EOD sent that day/.test(iss) || !/PM Typing Test not taken that day/.test(iss)) fail(`10/30's missing deliverables aren't marked: ${iss}`);
-      const before = d30.parts.instructions;
+      const before = d30.instr.pct;
       await call('/api/drive/backtrack', { id: ana }, admin);
-      const after = ((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).parts || {};
-      if (after.instructions !== before) fail(`a backtrack changed a past day's following instructions mark: ${before} → ${after.instructions}`);
+      const after = (((get('trackerreview:' + ana).compliance || {})['2026-10-30'] || {}).instr || {}).pct;
+      if (after !== before) fail(`a backtrack changed a past day's following instructions mark: ${before} → ${after}`);
       if (TR.isWeekday(TR.ptDate())) {
         const rv = get('trackerreview:' + ana), A2 = get('drive:' + ana), at = new Date().toISOString();
         rv.verify = {}; for (const k of ['monitor', 'tam', 'typing', 'spelling', 'folder', 'tracker']) rv.verify[k] = { ok: k !== 'monitor', url: A2[k], at, v: 2, error: k === 'monitor' ? "It opens, but it isn't yours." : '' };

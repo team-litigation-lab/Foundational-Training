@@ -205,7 +205,7 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!((nightly.body || {}).results || []).some(r => r.tests && r.shots === 1)) fail(`the nightly check didn't look for the test screenshots: ${JSON.stringify(nightly.body)}`);
     const comp = ((JSON.parse(store.get('ft:trackerreview:' + id)).compliance) || {})[D];
     // (📒 the Monitoring Sheet: no batch start here, so no day the slides ask for an update — null, not counted: TR.MONITOR_SCHEDULE)
-    if (!comp || comp.parts.tests !== 67 || !comp.tests.AM || comp.tests.PM || !comp.tests.SP || comp.parts.eod !== 100 || comp.parts.outputs !== 100
+    if (!comp || comp.parts.tests !== 67 || !comp.tests.AM || comp.tests.PM || !comp.tests.SP || comp.parts.eod !== 100 || comp.outputsWork !== 100 || comp.parts.outputs !== (comp.instr ? Math.round((100 + comp.instr.pct) / 2) : 100)
       || typeof comp.parts.tracker !== 'number' || comp.parts.monitor !== null || typeof comp.pct !== 'number') fail(`the day's compliance: ${JSON.stringify(comp)}`);
     if (!((nightly.body || {}).results || []).some(r => r.id === id && typeof r.compliance === 'number')) fail('the nightly check didn\'t record the day\'s compliance');
     // 🔗 the six monitored links (worker.js verifyLinks): ✓ when it opens and is the right kind with the right name, locked for
