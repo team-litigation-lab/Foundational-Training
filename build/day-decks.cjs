@@ -594,7 +594,9 @@ s3: html => {
   // a trainer sees every case with where to play it on Ring Channel)
   const brk = DEMO_SLIDE.lastIndexOf('<div class="ftdd-pgbreak"></div>');
   if(brk < 0) throw new Error("Day 8's demo instructions no longer end on a page break");
-  return DEMO_SLIDE.slice(0, brk) + `<div class="ftis-mockcall"></div>\n` + DEMO_SLIDE.slice(brk) + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
+  // (no "🎬 Your Intake Demo case" box on the trainee's deck: the trainer runs the demo's case, so it only confused them — the
+  // case is still on the trainer's scoring sheet, js/ft-intake.js .ftis-mcase)
+  return DEMO_SLIDE + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
