@@ -9,6 +9,7 @@
 - New test `.github/scripts/storage-guards.cjs` runs in CI.
 - Dead code removed (about 40 lines): unused card templates (ftCalCheckCard, ftCalRulesCard, ftDrillsCard, ftGuideCard, ftListenSection), ftShadowItems, the Batch Sheet's updBtn/SYNC_OF and the checkSurpriseTask stub.
 - Unused CSS removed (about 110 lines): the drag-and-drop match board, the client intro banner, the old Lessons grid (.lp-lessons / .lp-orient), .ftr-todo-parts and the .ftr-flow slide cards.
+- Seven exports nothing reads removed (FTPoints, FTCheckIn, ftSheetDue, lshGroupTabs, lshSavesPending, FT_LAYER, EAPA_UPDATE_PACK). The Gmail look-alike styles stay: the Training Portal's email simulators use them.
 
 ## 2026-11-11: debug round 2 (PR #682)
 
