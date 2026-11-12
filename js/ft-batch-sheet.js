@@ -577,6 +577,11 @@ function dayDeliverables(p, d){
     const lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
+    // (🎧 a transcription not scored by the trainer: its automatic score, the Worker's /api/transcribe/grade, with its criteria)
+    if(it.at === "trainer" && !acts[it.id]){ const g = autoTr(R, it); if(g){
+      const res = typeof window.ftResult === "function" ? window.ftResult({score: g.pct, redo: false}) : g.pct >= 60 ? "Passed" : "Failed";
+      const c = trainerCtx({score: g.pct, status: res, rubric: {key: g.key || "transcription", scores: g.scores || [], feedback: g.feedback || [], avg: g.avg}, comment: g.summary || ""}, it.t);
+      push(Object.assign(c, {by: "🤖 Scored automatically", why: String(c.why || "").replace(/The trainer scored/, "Scored automatically on")})); return; } }
     // (Day 6's Calendar Management Mock Calls practice isn't on the scores: the scored call is the Calendar Management Mock
     // Call with the trainer)
     // (🟢 no Practice Session is on the scores: they are practice; only graded work is — Day 6's Calendar Management Mock
@@ -1490,7 +1495,10 @@ function autoDone(R, d, it, p){
     return k ? {done: true, how: "Practice Session submitted " + when(runs[k].submittedAt)} : {done: false, how: "Practice Session not submitted yet"}; }
   if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], g = a ? null : autoTr(R, it);
     if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
-    if(!a) return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"};
+    if(!a){ const tr = /^transcription-([12])$/.exec(String(it.id || ""));
+      if(tr){ const run = (((R.transcribe || {}).r) || {})[tr[1]]; return {done: false, how: run && run.submittedAt ? "Submitted · the automatic score is being worked out" : `Not submitted yet (🎧 Transcription Activity, Recording ${tr[1]}): scored automatically once submitted`}; }
+      if(/-live$/.test(String(it.id || ""))) return {done: false, how: "No graded call yet on the Ring Channel: scored automatically from the graded call"};
+      return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"}; }
     const res = resOf(a);
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
     return {done: res !== "Not yet", how: `Trainer: ${res === "Not yet" ? "recorded" : res}${a.score != null ? ` · ${a.score}%` : ""}`}; }
