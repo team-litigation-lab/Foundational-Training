@@ -396,6 +396,8 @@ print("notes:", len(notes), "images copied:", copied)
 # ---------- corrections to the guide's wording (applied to every output, so a re-import keeps them) ----------
 TEXT_FIXES = [
     ("Oscar’s’ Reception Recordings", "Oscar’s Reception Recordings"),
+    # Day 14: the training account's client is John Test Doe (the guide had "I Test Doe")
+    ("The current client name displayed in the training account is “I Test Doe.”", "The current client name displayed in the training account is “John Test Doe.”"),
     ("all extracted files. including", "all extracted files, including"),
     ("Give this material after the following day activities or after the classroom discussion on Insurance Claims Specialist  training,  it depends on the flow or progress of the training.",
      "Give this material after the activities that follow, or after the classroom discussion on Insurance Claims Specialist training, depending on the flow and progress of the training."),
