@@ -155,7 +155,7 @@ const DAYS = [
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:15, role:"Provider Communication Training", lessons:[8], items:[
-    {t:"Recorded Demonstration — Sending MedLOR and Requesting Medical Bills & Records (entire day)", kind:"Demo", at:"trainer", id:"medlor-demo"},
+    {t:"Recorded Demonstration — Sending MedLOR and Requesting Medical Bills & Records (entire day)", kind:"Demo", at:"trainer", id:"medlor-recorded-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:16, role:"Provider Communication Training", lessons:[8], items:[

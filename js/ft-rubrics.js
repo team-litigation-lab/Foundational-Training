@@ -33,6 +33,10 @@ const R = {
   medlor: {title: "MedLOR Demonstration", acts: ["medlor-demo"], time: "The ideal time for the demo is 1 hour and 45 minutes; any time beyond it is a deduction under Time Management & Efficiency.", criteria: C(
     "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
     "Email Drafting", "Time Management & Efficiency")},
+  // Day 15's recorded demonstration: scored on its own scorecard, so it doesn't overwrite Day 14's MedLOR Demo (the same criteria)
+  "medlor-recorded": {title: "MedLOR Recorded Demonstration", acts: ["medlor-recorded-demo"], time: "The ideal time for the demo is 1 hour and 45 minutes; any time beyond it is a deduction under Time Management & Efficiency.", criteria: C(
+    "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
+    "Email Drafting", "Time Management & Efficiency")},
   lv: {title: "LV Demonstration", acts: ["lv-demo"], time: "The ideal completion time is 45 minutes; going beyond it is a significant deduction under Time Management & Efficiency.", criteria: C(
     "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
     "Email Drafting", "Time Management & Efficiency")},
@@ -57,7 +61,7 @@ Object.keys(R).forEach(k => { if(!R[k].criteria.some(c => /grammar|spelling/i.te
 const writingIndex = rb => (rb && rb.criteria || []).findIndex(c => /grammar|spelling/i.test(c.n));
 // an activity's rubric: the one it names (`rubric` in Trainer Inputs' list), else the one listing its id, else by its title
 const BY_TITLE = [[/reception.*mock|mock.*reception/i, "reception"], [/calendar.*mock|mock.*calendar/i, "calendar"], [/intake.*mock|mock.*intake/i, "intake"],
-  [/intake packet/i, "intake-packet"], [/\bLOR\b.*(upload|send|saving)|saving LORs/i, "lor"], [/medlor/i, "medlor"], [/\bLV\b|lien verification/i, "lv"],
+  [/intake packet/i, "intake-packet"], [/\bLOR\b.*(upload|send|saving)|saving LORs/i, "lor"], [/medlor.*recorded|recorded.*medlor/i, "medlor-recorded"], [/medlor/i, "medlor"], [/\bLV\b|lien verification/i, "lv"],
   [/reduction|closing statement|settlement/i, "settlement"], [/transcription/i, "transcription"]];
 function forAct(a){
   if(!a) return null;

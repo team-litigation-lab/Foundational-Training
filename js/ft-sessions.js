@@ -371,11 +371,14 @@ const DEFAULT_ACTS = [
   {id:"transcription-2", title:"Minutes Transcription: Recording 2 (🎧 Transcription Activity)", lesson:6, kind:"Transcription"},
   {id:"lor-demo", title:"LOR Uploading and Sending Demo (1P & 3P)", lesson:7, kind:"Demo"},
   {id:"medlor-demo", title:"Sending MedLOR and Requesting Medical Bills & Records Demo", lesson:8, kind:"Demo"},
+  {id:"medlor-recorded-demo", title:"MedLOR Recorded Demonstration (Day 15)", lesson:8, kind:"Demo"},
   {id:"lv-demo", title:"LV (Lien Verification) Request Demo", lesson:8, kind:"Demo"},
   {id:"settlement-demo", title:"Reduction / Closing & Settlement Demo", lesson:9, kind:"Demo"}
 ];
 const T = {acts:null};
-const acts = () => T.acts || DEFAULT_ACTS;
+// (an activity added after a trainer saved their own list joins it, unless that list already has one for its scorecard)
+const ADDED_ACTS = ["medlor-recorded-demo"];
+const acts = () => !T.acts ? DEFAULT_ACTS : T.acts.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !T.acts.some(a => a.id === d.id || (a.rubric && a.rubric === "medlor-recorded"))));
 // (the Result: Passed or Failed by the score, 3/5 passes — js/ft-rubrics.js ftResult; the trainer's own choice is only a
 // Redo, which keeps the score off the scorecards until it is done again)
 const RES = r => window.ftResult ? ftResult(r) : (r && r.status) || "Not yet";

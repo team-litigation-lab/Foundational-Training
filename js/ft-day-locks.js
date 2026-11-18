@@ -285,9 +285,10 @@ const NOLOAD = "The training couldn’t load. Check your connection and try agai
    one day, except where the Training Guide splits a lesson otherwise (PARTS). Which lesson a day belongs to (its locks,
    its progress) doesn't change: only the card's buttons are grouped. */
 // Personal Injury Process Flow and Receptionist Training are one card, "Personal Injury Process Flow / Reception"
-// (CARD_TITLES): Part 1 is Day 3, Part 2 is Day 4 (js/ft-day-decks.js LESSON_CARDS[3]). Medical Records: Part 1 MedLOR
-// (Days 13–15), Part 2 Lien Balance Verification (Day 16)
-const PARTS = {8: [[13, 14, 15], [16]]};
+// (CARD_TITLES): Part 1 is Day 3, Part 2 is Day 4 (js/ft-day-decks.js LESSON_CARDS[3]). Medical Records: Part 1 the
+// classroom day (Day 13), Part 2 the MedLOR Demo (Day 14), Part 3 the MedLOR recorded demonstration (Day 15), Part 4 Lien
+// Balance Verification (Day 16)
+const PARTS = {8: [[13], [14], [15], [16]]};
 // (a card whose parts are numbered on from another card's, or a one-part card that is a Part: the labels it shows)
 const PART_LABELS = {};
 const CARD_TITLES = {3: "Personal Injury Process Flow / Reception"};

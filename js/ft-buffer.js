@@ -53,7 +53,7 @@ const ACTS = {
   "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1", simple: true},
   "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1", simple: true},
   // (Day 15's recorded demo: no Demos Ongoing box and no Done: the trainer's saved scoresheet makes it done, as a mock call's)
-  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1", simple: true, noTracker: true,
+  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-recorded-demo", rec: true, key: "15:s1", simple: true, noTracker: true,
     plain: "Record your demonstration when your trainer calls you. Your trainer scores it, and it shows as done on your card."},
   "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo", simple: true}
 };
