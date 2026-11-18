@@ -158,11 +158,15 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the kind of work on the pill
+// 📎 the slides labelled Additional Reference, by day: their slide id
+const REFERENCE = {14: ["s1"]};
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
+  // 📎 a slide the trainee keeps for reference rather than works through (Day 14's MedLOR tutorial video: REFERENCE)
+  if((REFERENCE[DD.day] || []).includes(s.id)) return {ic: "📎", label: "Additional Reference"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
   if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
@@ -1324,7 +1328,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
 // the pills a row carries, as the card names its kind
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
-  listen: "Call listening", trainer: "From your trainer"};
+  listen: "Call listening", trainer: "From your trainer", reference: "Additional Reference"};
 // (where a lesson's file goes; a lesson handed in on the platform names its own: its card's submit)
 const SUBMIT = "Assessments › Activities subfolder";
 // (a mock call or demo has two rows, as Day 4's: its preparation slide, "<id>p", then its Done slide: build/day-decks.cjs PREP)
@@ -1464,7 +1468,7 @@ const LESSON_CARDS = {
       // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
       {t: "Call Listening / Breakout Session", sub: "Sample recordings and reference documents, not scored", k: "listen", d: 13, s: "listen", go: "listening"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "reference", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
