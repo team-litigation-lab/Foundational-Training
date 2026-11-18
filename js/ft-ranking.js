@@ -202,7 +202,7 @@ function srcOptions(){
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
-     ["trainer:MedLOR", "🧑‍🏫 MedLOR Demo scorecard"], ["trainer:LV (Lien", "🧑‍🏫 LV Demo scorecard"], ["trainer:Settlement", "🧑‍🏫 Reduction / Closing & Settlement Demo scorecard"]]);
+     ["trainer:MedLOR", "🧑‍🏫 MedLOR Demo scorecard"], ["trainer:MedLOR Recorded", "🧑‍🏫 MedLOR Recorded Demonstration scorecard"], ["trainer:LV (Lien", "🧑‍🏫 LV Demo scorecard"], ["trainer:Settlement", "🧑‍🏫 Reduction / Closing & Settlement Demo scorecard"]]);
 }
 async function fillFromPortal(quiet){
   if(!R.data || R.fill) return;
