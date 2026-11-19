@@ -431,7 +431,19 @@ window.FTCalCheck = {
 // 🏅 My Performance: the latest submission
 window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = rec.submits[rec.submits.length - 1]; if(!s) return [];
   const sc = scored(s);
-  return [{name: "📅 Attorney Calendar Management Activity", pct: sc.pct, note: `${sc.met} of ${sc.total} fields right · sent ${new Date(String(s.at)).toLocaleDateString()}`}]; };
+  const miss = sc.rows.filter(r => r[2] === false).map(r => `${(KEY.find(k => k.n === r[0]) || {}).name || "Event " + r[0]} · ${r[1]}: ${r[3]}`);
+  return [{name: "📅 Attorney Calendar Management Activity", pct: sc.pct, note: `${sc.met} of ${sc.total} fields right · sent ${new Date(String(s.at)).toLocaleDateString()}`,
+    why: miss.length ? `Marked down: ${miss.join("; ")}` : "Every field matches the activity's answer key."}]; };
+// 🧾 how the latest submission was graded, event by event: each field checked against the activity's answer key, ✓ right or
+// ✗ wrong with what it should be (the 📋 Batch Sheet's 📝 Activities in detail, for the trainer and the trainee alike)
+window.ftCalCheckDetailHtml = rec => { rec = clean(rec); const s = rec.submits[rec.submits.length - 1]; if(!s) return "";
+  const sc = scored(s), esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
+  const ev = KEY.map(k => ({k, rows: sc.rows.filter(r => r[0] === k.n && r[2] !== null)})).filter(x => x.rows.length);
+  const tone = p => p >= 80 ? "gs-hi" : p >= 60 ? "gs-mid" : "gs-lo";
+  return `<details class="bs-kd" name="bs-kd"><summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${tone(sc.pct)}">${esc_(sc.pct)}%</span>
+      <small>${esc_(sc.met)} of ${esc_(sc.total)} fields right · sent ${esc_(new Date(String(s.at)).toLocaleString())} · checked automatically against the activity’s answer key, one point a field</small></summary>
+    <ol class="bs-kd-q">${ev.map(({k, rows}) => { const m = rows.filter(r => r[2]).length;
+      return `<li><b>${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol></details>`; };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 📅 Calendar Activity ---------- */
 const AD = {rows: null, loading: false, batch: "", open: {}};

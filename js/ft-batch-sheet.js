@@ -1063,9 +1063,11 @@ function extraRowHtml(p){
 function activitiesHtml(p){
   const gr = ((((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}, forms = window.FTAssess && typeof FTAssess.docs === "function" ? FTAssess.docs() : [];
   const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
-  if(!items.length) return "";
-  return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : "not submitted"}</span>
+  // (📅 the Attorney Calendar Management Activity, checked field by field: js/ft-calcheck.js ftCalCheckDetailHtml)
+  const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"]) : "";
+  if(!items.length && !cal) return "";
+  return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
+    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${actItemsHtml(it, g)}</details>`; }).join("");
 }
