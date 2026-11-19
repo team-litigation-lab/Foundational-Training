@@ -38,7 +38,8 @@ if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'mon
 // Day 3's CRM/CMS Training Videos: the five videos on one slide as small cards (data-card: a preview each, played bigger in the
 // pop-up viewer), with "choose one now, the rest in idle time"; no comma after a link (it reads as part of the address when
 // copied), and without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
-const crm = D[3] && D[3].slides.find(s => s.id === 's2');
+// (now an additional reference at the end of Day 16's deck, r3c: build/day-decks.cjs MOVE)
+const crm = D[16] && D[16].slides.find(s => s.id === 'r3c');
 if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || !/Choose one video/.test(crm.html) || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards with the choose-one line, a link is followed by a comma, or the slide still has its 'Please watch' line");
 // Day 10's two VA-recording folders: one link each, whole, played in the slide; the Astred 09/20 shadowing recording is off the
 // training (Day 11's, then Day 12's, now on neither)

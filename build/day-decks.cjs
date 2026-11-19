@@ -1583,6 +1583,8 @@ for(let n = 1; n <= 16; n++){
 // (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
   14: {s1: [16, "r14v", h => h.replace(/^AM:\s*/, "")]},
+  // (Day 3's CRM/CMS Training Videos, Captora to Smart Advocate: an additional reference at the end of Lien Verification's deck)
+  3: {s2: [16, "r3c"]},
   15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
     s1bp: [14, "r15p", h => h.replace(/^Entire Day:/, "PM:"), html => html.replace(/<h3>Demo Metrics<\/h3>/, "<h3>MedLOR Recorded Demonstration Metrics</h3>")]}};
 for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){

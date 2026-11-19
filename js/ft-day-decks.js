@@ -159,7 +159,7 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the kind of work on the pill
 // 📎 the slides labelled Additional Reference, by day: their slide id
-const REFERENCE = {3: ["s2"], 16: ["s3m", "r14v"]};
+const REFERENCE = {16: ["s3m", "r14v", "r3c"]};
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
@@ -1379,7 +1379,6 @@ const LESSON_CARDS = {
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
@@ -1486,6 +1485,8 @@ const LESSON_CARDS = {
       {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
       // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
       {t: "Sending MedLOR & Requesting Bills and Records", sub: "The MedLOR tutorial video", k: "reference", d: 16, s: "r14v"},
+      // (Day 3's CRM/CMS Training Videos: build/day-decks.cjs MOVE)
+      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate", k: "reference", d: 16, s: "r3c"},
       // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
       ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",

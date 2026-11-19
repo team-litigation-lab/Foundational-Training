@@ -165,7 +165,7 @@ function renderPage(){
   if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h1>📝 Reception Listening Activity: Answers</h1>
       <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p></div>
     ${actSheet(cur)}
-    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 's2')">Next: CRM/CMS Training Videos →</button></div>` : ""}`;
+    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 'end-day')">Next: finish Day 3 →</button></div>` : ""}`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       <div class="ln-pills">${open.map(s => { const l = setLive(s.id), c = countDone(R.rec, l);
