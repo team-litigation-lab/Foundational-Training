@@ -4399,7 +4399,7 @@
      "Example: MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
      "NPIM providers: always add the doctor's name — MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
      "Email subject: [Client Name] - [Lien Holder] - Request for Medical Bills and Records",
-     "SA update: the MEDS tab is under the GENERAL section now, not Plaintiff. For the DOCGEN dummy account use the client name John Test Doe in the documents, but take every other detail from the CURRENT contact card (which shows 'I Test Doe')."
+     "SA update: the MEDS tab is under the GENERAL section now, not Plaintiff. For the DOCGEN dummy account use the client name John Test Doe in the documents, but take every other detail from the CURRENT contact card (which shows 'John Test Doe')."
     ],
     "pitfalls": [
      "Ticking both bills and records when the task asks for one.",
