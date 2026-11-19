@@ -224,7 +224,8 @@ const failures = []; const fail = (m) => failures.push(m);
     const ses = await page.evaluate(() => { const s = (LSH_PROGRAM.sources || []).find(x => x.id === 'sessions'); return { hidden: !!(s && s.hidden), noOverall: !!(s && s.noOverall), card: [...document.querySelectorAll('.sc-src-h b')].some(b => b.textContent.trim() === 'Practice Sessions') }; });
     if (!ses.hidden || !ses.noOverall || ses.card) fail(`Practice Sessions should be off the Scorecard (hidden, not in the overall): ${JSON.stringify(ses)}`);
     if (avg.trainer !== 88) fail(`the Scorecard's trainer inputs: ${JSON.stringify(sc)}`);
-    if (avg.kc !== 82) fail(`the Scorecard's Knowledge Checks: ${JSON.stringify(sc)}`);
+    // (📎 the Knowledge Checks are Additional Reference — js/ft-reference.js: shown, no average)
+    if (avg.kc !== null) fail(`the Scorecard's Knowledge Checks have an average: ${JSON.stringify(sc)}`);
 
     // 7. 👁 Switch View (the trainee view): an admin previewing the portal is not a signed-out visitor. The engine sets
     //    isAdmin=false and adminPreview=true there, so a "!traineeId && !isAdmin" guard would read it

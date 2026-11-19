@@ -25,6 +25,12 @@ const CALL_LESSONS = [4, 5, 6];   // Reception, Calendar Management and Intake M
 
 
 window.LSH_PROGRAM = {
+  // 📎 only what the Training Guide grades is scored (js/ft-reference.js): the trainer's mock-call and demo scorecards and the
+  // three answer-key assessments. Every other source and item is Additional Reference — shown with its feedback, no score,
+  // counted nowhere; no overall score, added points or overrides; a lesson is finished once its Knowledge Check is submitted
+  scored: (it, s) => window.ftReference ? ftReference.scored(it, s) : true,
+  overallReference: true, overridesReference: true,
+  lessonDone: p => window.ftReference ? ftReference.lessonDone(p) : !!(p && p.done),
   // 📚 Dashboard: the modules, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
@@ -85,7 +91,7 @@ window.LSH_PROGRAM = {
   // 🏅 Scorecards and 📈 Overall Performance are folded into the 📋 Batch Sheet (its 🏅 Scores and 📤 Daily outputs): no tabs of their own
   adminScorecardsTab: "batchsheet",
   sources: [
-    {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
+    {id:"kc", reference:true, icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
       about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
       items: ctx => DAYS.filter(d => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(d.id).length).map(d => {
         const p = ctx.progress[d.id] || {}, rv = (((ctx.rec["kcreview:"] || {}).lessons) || {})[d.id];
@@ -107,7 +113,7 @@ window.LSH_PROGRAM = {
         const g = p.readTrainer != null && typeof p.readGraded === "number" ? p.readGraded : p.readScore;
         return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""} : {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:null, note:"Reading Task · not graded yet"}];
       })},
-    {id:"calls", icon:"🎯", label:"Graded calls", key:"callsim:",
+    {id:"calls", reference:true, icon:"🎯", label:"Graded calls", key:"callsim:",
       about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
       items: ctx => CALL_LESSONS.map(id => {
         const b = ((ctx.rec["callsim:"] || {}).best || {})["lesson" + id], name = title(id) + " · Mock Calls";
@@ -116,7 +122,7 @@ window.LSH_PROGRAM = {
         const redo = t && t.redo ? "The trainer asked for a redo · " : "";
         return b ? {name, pct:Number(b.score), note:redo + "Best of " + plural(b.calls || 1, "graded call")} : {name, pct:null, note:redo ? redo + "not scored yet" : "No graded call yet"};
       })},
-    {id:"calendar", icon:"📅", label:"Calendaring Simulators", key:"calsim:",
+    {id:"calendar", reference:true, icon:"📅", label:"Calendaring Simulators", key:"calsim:",
       about:"Each week you worked on: your trainer’s score once they release it, until then your best automated review.",
       items: ctx => {
         const d = ctx.rec["calsim:"] || {}, C = window.FTCalCore, out = [];
@@ -134,7 +140,7 @@ window.LSH_PROGRAM = {
       }},
     // (🟢 Practice Sessions are practice: off the Scorecard — no card, not in the overall — which shows only graded work. Their
     //  records are still read; each session's checks and the trainer's review stay on the session itself.)
-    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:", hidden:true, noOverall:true,
+    {id:"sessions", reference:true, icon:"🟢", label:"Practice Sessions", key:"sessions:", hidden:true, noOverall:true,
       about:"Your live Practice Sessions at your firm: your trainer’s score once they review one, until then its automated checks.",
       items: ctx => typeof window.ftSessionItems === "function" ? window.ftSessionItems(ctx) : []},
     {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",
@@ -143,20 +149,20 @@ window.LSH_PROGRAM = {
     {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
       about:"Your Daily Task Tracker and Training Progress Monitoring Sheet in your main Google Drive: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
-    {id:"skills", icon:"🧪", label:"Typing & Spelling", key:"skills:",
+    {id:"skills", reference:true, icon:"🧪", label:"Typing & Spelling", key:"skills:",
       about:"Your daily tests (Typing twice a day, Spelling once), taken in the Practice Lab or saved as a screenshot in your Drive folder: your daily compliance, your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
       items: ctx => typeof window.ftSkillItems === "function" ? window.ftSkillItems(ctx) : []},
-    {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
+    {id:"drills", reference:true, icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
     // (no 👥 Shadowing: shadowing is off the training)
     // (Day 3's 📝 Reception Listening Activity is one of its items, by its grade: trackerreview:<id>.assess.recact)
-    {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
+    {id:"listening", reference:true, icon:"🎧", label:"Call Listening", key:"listening:",
       about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full, and Day 3’s Reception Listening Activity by its grade once you submit its Answer Sheet.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
     // (📅 one card for the two calendar checks: Day 5's Attorney Calendar Management Activity and the mock-call bookings
     //  against the scheduling rules, each booking set named "📅 Booking rules · …")
-    {id:"calcheck", icon:"📅", label:"Calendar checks", key:"calcheck:",
+    {id:"calcheck", reference:true, icon:"📅", label:"Calendar checks", key:"calcheck:",
       about:"Day 5’s Attorney Calendar Management Activity (each event you entered in Google Calendar, checked field by field: the share of fields right on your latest submission) and your calendar mock-call bookings (each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart).",
       items: ctx => [].concat(
         // (the activity graded by the trainer on 🧑‍🏫 Graders → 📝 Assessments counts there, With your trainer, instead)
@@ -165,25 +171,25 @@ window.LSH_PROGRAM = {
         (typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) || [] : []).map(x => x && Object.assign({}, x, {name: "📅 Booking rules · " + String(x.name).replace(/^📅\s*/, "")})))},
     // (hidden: no card of its own — its items are on 📅 Calendar checks — but its records are still read, and a day's
     //  activity still finds its booking-rule score by this id; noOverall: not counted twice)
-    {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:", hidden:true, noOverall:true,
+    {id:"calrules", reference:true, icon:"📅", label:"Calendar booking rules", key:"calrules:", hidden:true, noOverall:true,
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
-    {id:"calweek", icon:"📅", label:"Calendaring Activity", key:"calweek:",
+    {id:"calweek", reference:true, icon:"📅", label:"Calendaring Activity", key:"calweek:",
       about:"Standard Training - Calendaring Activity (Days 5–6): the tasks you booked on the attorney’s calendar for next week, checked against the attorney’s rules (the score of your submitted calendar).",
       items: ctx => typeof window.ftCalWeekItems === "function" ? window.ftCalWeekItems(ctx) : []},
-    {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
+    {id:"feedback", reference:true, icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},
     // (noOverall: its marks are averages of the other systems' scores, so it is shown but not counted again in the overall)
-    {id:"ranking", icon:"📊", label:"Weekly Ranking", key:"rankshare:", noOverall:true,
+    {id:"ranking", reference:true, icon:"📊", label:"Weekly Ranking", key:"rankshare:", noOverall:true,
       about:"Your final average each week, out of 5, from the weekly progress report your trainer shared with you (and your rank in the batch).",
       items: ctx => Object.values(((ctx.rec["rankshare:"] || {}).weeks) || {}).filter(w => w && w.avg != null).sort((a, b) => a.week - b.week)
         .map(w => ({name:`Week ${w.week}`, pct:Math.round(Number(w.avg) / 5 * 100), note:`${Number(w.avg).toFixed(2)}/5${w.rank ? ` · rank ${w.rank} of ${w.of}` : ""}`}))},
     // 🛠 the Practice Lab, as Admin → 🛠 Practice Lab → 🟢 Practice Sessions measures it (js/ft-utilization.js): the Utilization, the
     // Eagerness to Learn and the scored AI practice tools, roleplays and random tasks (progress:<id>'s work log), counted in the overall
-    {id:"practicelab", icon:"🛠", label:"Practice Lab", key:"progress:",
+    {id:"practicelab", reference:true, icon:"🛠", label:"Practice Lab", key:"progress:",
       about:"How much you use the Practice Lab and how eager you are to learn, as your trainer sees it: 📈 Utilization (the Practice Lab tools you used, and the training days you practiced on), 🔥 Eagerness to Learn (showing up every day, practicing, going back to practice again and getting better), and the latest score of each AI practice tool, roleplay and random task you did.",
       items: ctx => window.FTUtil && typeof window.FTUtil.scoreItems === "function" ? window.FTUtil.scoreItems(ctx) : []},
-    {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
+    {id:"portalsims", reference:true, icon:"🧰", label:"Portal simulators", key:"simresults:",
       about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
       items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
   ]

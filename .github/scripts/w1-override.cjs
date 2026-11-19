@@ -59,7 +59,7 @@ const failures = []; const fail = m => failures.push(m);
       const h = await page.waitForFunction(n => { try { const T = FTBatchSheet.tables(), days = T.find(t => t.id === 'days'), row = days.rows.find(r => r[0].v.includes(n)); if (!row) return null;
         const col = days.head.indexOf('Days complete'), sc = T.find(t => t.id === 'scores'), srow = sc.rows.find(r => r[0].v.includes(n)), dc = sc.head.indexOf('Daily compliance');
         const out = T.find(t => t.id === 'outputs'), orow = out.rows.find(r => r[0].v.includes(n));
-        return { done: row[col].v, comp: srow[dc].v, outputs: orow.map(c => c.v).join('|') }; } catch (e) { return null; } }, name, { timeout: 20000, polling: 200 });
+        return { done: row[col].v, comp: srow[dc].v + ' ' + (srow[dc].f || ''), outputs: orow.map(c => c.v + ' ' + (c.csv || c.f || '')).join('|') }; } catch (e) { return null; } }, name, { timeout: 20000, polling: 200 });
       return h.jsonValue();
     };
     const w = await sheet('B103026', 'Wanda'), c = await sheet('B020225', 'Carl');
@@ -67,8 +67,9 @@ const failures = []; const fail = m => failures.push(m);
     if (!/^4 \/ 15$/.test(w.done)) fail(`the B103026 trainee's Week 1 isn't counted done (Days complete): ${w.done}`);
     if (!/^0 \//.test(c.done)) fail(`another batch's days were counted done: ${c.done}`);
     // (Daily compliance averages both days: Week 1's 75 with Week 2's 50 → 63%; the control batch stays at 50%)
-    if (w.comp !== '63%' || c.comp !== '50%') fail(`the Daily compliance doesn't follow Week 1's 100% EOD: ${w.comp} / ${c.comp}`);
-    if (!/75%/.test(w.outputs)) fail(`📤 Daily outputs doesn't show Week 1's day at 75%: ${w.outputs}`);
+    // (📎 Daily compliance is Additional Reference — js/ft-reference.js: the cell reads the label, the figure is in its hover)
+    if (!/📎 Additional Reference[\s\S]*was 63%/.test(w.comp) || !/📎 Additional Reference[\s\S]*was 50%/.test(c.comp)) fail(`the Daily compliance doesn't follow Week 1's 100% EOD: ${w.comp} / ${c.comp}`);
+    if (!/75%/.test(w.outputs)) fail(`📤 Daily outputs doesn't keep Week 1's day at 75% (in its hover): ${w.outputs}`);
     // (3) nothing written back
     const raw = await get('trackerreview:' + ids.Wanda);
     if (raw.compliance['2026-10-30'].parts.eod !== 0 || raw.compliance['2026-10-30'].pct !== 50) fail(`the override was written back to the record: ${JSON.stringify(raw.compliance['2026-10-30'])}`);

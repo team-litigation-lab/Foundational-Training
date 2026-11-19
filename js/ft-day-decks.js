@@ -159,7 +159,7 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the kind of work on the pill
 // 📎 the slides labelled Additional Reference, by day: their slide id
-const REFERENCE = {16: ["s3m", "r14v", "r3c"]};
+const REFERENCE = {3: ["s2"], 14: ["s1"], 16: ["s3m", "s3f"]};
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
@@ -734,6 +734,8 @@ function dayRubric(title){
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
   if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
+  // (📎 an Additional Reference slide is never scored, whatever its title says: Day 16's Filevine recorded demos)
+  if((REFERENCE[DD.day] || []).includes(s.id)) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video, a preparation slide or a demo's Buffer Time)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial|buffer/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
@@ -1395,6 +1397,7 @@ const LESSON_CARDS = {
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
+      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
@@ -1485,6 +1488,7 @@ const LESSON_CARDS = {
       // (the curriculum's "3. PM: Breakout Session": its four digital handouts, an individual activity)
       {t: boTitle(13), time: "PM", sub: boSub(13), k: "watch", d: 13, run: "ftVideoOrAsk(8)"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "reference", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
@@ -1493,7 +1497,6 @@ const LESSON_CARDS = {
       // then Day 15's recorded demonstration, on Day 14's deck (build/day-decks.cjs MOVE; Day 15 has no day card: js/ft-day-locks.js PARTS)
       {t: "Before Your Recorded Demonstration: the Tutorial Video", time: "PM", sub: "Watch it again before you record", k: "watch", d: 14, s: "r15v"},
       {t: "Gentle Reminders", time: "PM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 14, s: "r15g"},
-      {t: "Demo Preparation: Recorded Demonstration", time: "PM", sub: "How the recorded demo is scored", k: "interactive", d: 14, s: "r15p"},
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
@@ -1502,9 +1505,7 @@ const LESSON_CARDS = {
       // (after the LV demo, as the guide's Day 17: an additional reference, build/day-decks.cjs INSERT[16])
       {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
       // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
-      {t: "Sending MedLOR & Requesting Bills and Records", sub: "The MedLOR tutorial video", k: "reference", d: 16, s: "r14v"},
-      // (Day 3's CRM/CMS Training Videos: build/day-decks.cjs MOVE)
-      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate", k: "reference", d: 16, s: "r3c"},
+      {t: "Sending MedLOR (Filevine): Recorded Demos", sub: "The MedLOR demo as recorded on Filevine · for reference: yours is in SmartAdvocate", k: "reference", d: 16, s: "s3f"},
       // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
       ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",

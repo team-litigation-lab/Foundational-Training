@@ -141,7 +141,8 @@ async function browserPart(){
     if (!row(1) || !row(3) || !/🌱\s*Professional Development & Progress\s*Week 3/.test(row(3).text) || row(3).selects !== 3 || !row(3).save) fail(`the trainer has no Week 3 🌱 Professional Development & Progress row with its three criteria: ${JSON.stringify(v && v.rows)}`);
     if (!/Competency in taking on a role/.test(row(3) && row(3).text) || !/Communication/.test(row(3) && row(3).text) || !/Quality of output/.test(row(3) && row(3).text)) fail(`the row doesn't name the three criteria: ${row(3) && row(3).text}`);
     if (!/Not scored yet — your trainer scores this weekly/.test(row(3) && row(3).text)) fail(`an unscored week doesn't say so: ${row(3) && row(3).text}`);
-    if (E.w3 !== E.w3days || !(chip().includes('Week 3 ' + p5(E.w3days)) || chip().includes('Week 3 ' + E.w3days + '%')) || !/not scored yet this week: not counted/.test(chip())) fail(`an unscored week's Daily compliance isn't the days' alone (${p5(E.w3days)}): ${chip()}`);
+    // (📎 Daily compliance is Additional Reference — js/ft-reference.js: the chip shows the label, the PD&P is still the trainer's to score)
+    if (!/Daily compliance · Week 3[\s\S]*📎 Additional Reference/.test(chip())) fail(`an unscored week's Daily compliance isn't the days' alone (${p5(E.w3days)}): ${chip()}`);
     // (the trainer picks 4.5, 4 and 3.5 and a note, then 💾 Save Week 3)
     const sel = (c, val) => page.selectOption(`#bs-pt-${pid} tr.bs-pdp[data-week="3"] select[data-c="${c}"]`, val);
     await sel('role', '4.5'); await sel('comm', '4'); await sel('quality', '3.5');
@@ -151,11 +152,11 @@ async function browserPart(){
     if (!x[3] || x[3].role !== 4.5 || x[3].comm !== 4 || x[3].quality !== 3.5 || x[3].avg !== 4 || x[3].pct !== 80 || !/PDP-NOTE/.test(x[3].note)) fail(`💾 Save didn't keep the trainer's Week 3 score: ${JSON.stringify(x)}`);
     await openPage(); v = await read(); E = await want();
     // (the week's Daily compliance counts it beside the days — one more entry, 80%; Week 1, not scored, stays its days' alone)
-    if (!(E.w3 > E.w3days) || !chip().includes('Week 3 ' + p5(E.w3)) || !/4\.0\/5 = 80%/.test(chip())) fail(`the week's Daily compliance doesn't count its 🌱 score (${p5(E.w3days)} → ${p5(E.w3)}): ${chip()}`);
-    if (!/4\.0\/5/.test(row(3) && row(3).text) || !/counted in Week 3's Daily compliance/.test(row(3) && row(3).text)) fail(`the scored row doesn't show its score: ${row(3) && row(3).text}`);
+    if (!/Daily compliance · Week 3[\s\S]*📎 Additional Reference/.test(chip())) fail(`the week's Daily compliance doesn't count its 🌱 score (${p5(E.w3days)} → ${p5(E.w3)}): ${chip()}`);
+    if (!/4\.0\/5/.test(row(3) && row(3).text) || !/📎 Additional Reference — not counted/.test(row(3) && row(3).text)) fail(`the scored row doesn't show its score: ${row(3) && row(3).text}`);
     if (!/Not scored yet/.test(row(1) && row(1).text)) fail(`Week 1, not scored, doesn't say so: ${row(1) && row(1).text}`);
     { const w3 = (v.wk || []).find(t => /Week 3/.test(t)) || '', w1 = (v.wk || []).find(t => /Week 1/.test(t)) || '';
-      if (!w3.includes(E.w3 + '% average') || !w1.includes(E.w1 + '% average')) fail(`the week headings don't average the 🌱 score beside the days (Week 3 ${E.w3}%, Week 1 ${E.w1}%): ${JSON.stringify(v.wk)}`); }
+      if (!w3.includes('📎 Additional Reference') || !w1.includes('📎 Additional Reference') || /% average/.test(w3 + w1)) fail(`the week headings don't average the 🌱 score beside the days (Week 3 ${E.w3}%, Week 1 ${E.w1}%): ${JSON.stringify(v.wk)}`); }
     // 🔒 the trainee's own page: the scores read-only, the note, no inputs
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Pia Pdp'; state.view = 'modules'; render(); }, pid); await page.waitForTimeout(400);
     await page.evaluate(() => goto('mysheet'));

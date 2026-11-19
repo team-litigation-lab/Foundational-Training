@@ -115,7 +115,8 @@ const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
   if (!adminFb.includes(want)) fail(`the trainer can't see the answer either: ${adminFb}`);
   await page.evaluate(() => { state.isAdmin = false; });
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!/Naming & Reporting Drills[\s\S]*MedLOR[\s\S]*(90%|4\.5\/5)/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the best MedLOR round');
+  // (📎 the drills are Additional Reference — js/ft-reference.js: the best round is shown, with no score)
+  if (!/Naming & Reporting Drills[\s\S]*MedLOR[\s\S]*📎 Additional Reference/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the best MedLOR round as Additional Reference');
 
   await put('drills:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);

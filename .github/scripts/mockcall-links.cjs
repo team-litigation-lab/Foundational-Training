@@ -55,12 +55,13 @@ const failures = []; const fail = m => failures.push(m);
     let v = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody tr')].map(tr => [(tr.querySelector('input') || {}).value, (tr.querySelector('textarea') || {}).value]));
     if (v[0][0] !== '5' || v[0][1] !== 'Firm and name, clearly') fail(`the graded call's metric didn't fill its criterion: ${JSON.stringify(v[0])}`);
     if (v[1][0] !== '2') fail(`⤓ wrote over a typed score: ${JSON.stringify(v[1])}`);
-    // ⤓ from the CMS checks: 5 of 6 → 4.0/5 into Attention to Details and Tools Utilization, what was missed in their Remarks
+    // ⤓ from the CMS checks: 5 of 6 → 4.0/5 into Attention to Details (not the retired Tools Utilization), what was missed in its Remarks
     await page.evaluate(() => [...document.querySelectorAll('.fms-sheet .mcl button')].find(b => /CMS checks/.test(b.textContent)).click()); await page.waitForTimeout(300);
     v = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody tr')].map(tr => [tr.querySelector('td').textContent, (tr.querySelector('input') || {}).value, (tr.querySelector('textarea') || {}).value]));
     const att = v.find(x => /^Attention to Details/.test(x[0])), tools = v.find(x => /^Tools Utilization/.test(x[0]));
     if (!att || att[1] !== '4' || !/missed: Caller verified first/.test(att[2])) fail(`Attention to Details wasn't filled from the CMS checks: ${JSON.stringify(att)}`);
-    if (!tools || tools[1] !== '4') fail(`Tools Utilization wasn't filled from the CMS checks: ${JSON.stringify(tools)}`);
+    // (Tools Utilization is retired — no guide metrics table has it: hidden, never filled)
+    if (tools && tools[1] !== '') fail(`the retired Tools Utilization was filled from the CMS checks: ${JSON.stringify(tools)}`);
     // 💾 Save keeps what it was scored beside
     await page.evaluate(() => FTMockScores.save(document.querySelector('[data-ms-save]'))); await page.waitForTimeout(1200);
     const cell = (((await get('labreview:' + id)) || {}).acts || {})['reception-live'] || {};

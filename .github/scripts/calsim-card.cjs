@@ -49,13 +49,14 @@ const failures = []; const fail = (m) => failures.push(m);
     const old = (await inCall({ name: 'Abesh Dawn Jamon', batch: 'B103026', card: pcard }, 'gw-secret')).body || {};
     if (!old.skipped || JSON.parse(store.get('ft:labreview:' + id)).acts['calendar-live'].score !== 90) fail(`an older Portal card wrote over a newer one saved here: ${JSON.stringify(old)}`); }
   // 🛠 Tools Utilization (the eighth): a Graders scorecard with it sends all eight to the Portal, and a Portal card with it is
-  // kept with all eight, the average of the eight (here 3/5 = 60%, Passed); an older card without it leaves it unscored (above)
+  // kept with all eight — but it is retired (no Training Guide metrics table has it), so the score is the seven metrics'
+  // average (here 3/5 = 60%, Passed); an older card without it leaves it unscored (above)
   { const p8 = (await call({ id, op: 'put', rows: [5, 4, 4, 3, 4, 5, 4, 2].map((v) => ({ score: v, feedback: '' })), by: 'Coach Tess' }, admin)).body || {}, s8 = seen[seen.length - 1] || {};
     if (!p8.ok || !s8.body || s8.body.rows.length !== 8 || s8.body.rows[7].score !== 2) fail(`Tools Utilization wasn't sent to the Portal: ${JSON.stringify(s8.body)}`);
     const lr = JSON.parse(store.get('ft:labreview:' + id)); delete lr.acts['calendar-live']; store.set('ft:labreview:' + id, JSON.stringify(lr));
     const c8 = { rows: [3, 3, 3, 3, 3, 3, 4, 2].map((v) => ({ score: v, feedback: '' })), by: 'Coach Tess', at: '2026-11-11T16:00:00Z' };
     const r8 = (await inCall({ name: 'Abesh Dawn Jamon', batch: 'B103026', card: c8 }, 'gw-secret')).body || {}, a8 = JSON.parse(store.get('ft:labreview:' + id)).acts['calendar-live'] || {};
-    if (!r8.ok || a8.rubric.scores.length !== 8 || a8.rubric.scores[7] !== 2 || a8.score !== 60 || a8.status !== 'Passed') fail(`a Portal card with Tools Utilization wasn't kept with all eight: ${JSON.stringify(a8)}`); }
+    if (!r8.ok || a8.rubric.scores.length !== 8 || a8.rubric.scores[7] !== 2 || a8.score !== Math.round(a8.rubric.scores.slice(0, 7).reduce((x, v) => x + v, 0) / 7 / 5 * 100) || a8.status !== 'Passed') fail(`a Portal card with Tools Utilization wasn't kept with all eight: ${JSON.stringify(a8)}`); }
   if ((await inCall({ name: 'Nobody Here', batch: 'B103026', card: pcard }, 'gw-secret')).status !== 404) fail('a scorecard for no trainee here wasn\'t refused');
   down = true; const d = (await call({ id, op: 'get' }, admin)).body || {};
   if (d.ok || !/unreachable/.test(d.error || '')) fail(`the Portal down didn't give a clear error: ${JSON.stringify(d)}`);
