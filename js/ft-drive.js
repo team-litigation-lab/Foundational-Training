@@ -500,7 +500,8 @@ ftAdminTab("drivetrackers", "📁 Drive Trackers", renderAdminDrive);
 // the Scorecard (js/ft-program.js): the tracker days and the Monitoring Sheet, the trainer's score else the check
 // ✏️ the on-platform activities that are practice only: graded for the feedback, never counted on a scorecard
 // (Day 11's ✉️ Insurance Email Simulator, js/ft-claims-email.js)
-window.ftPracticeDocs = ["claims-email"];
+// (and the Breakout Session worksheets, off the training: not in the curriculum, so one submitted before isn't scored)
+window.ftPracticeDocs = ["claims-email", "breakout-d1", "breakout-d2", "breakout-d7", "breakout-d10", "breakout-d13"];
 window.ftDriveItems = ctx => {
   const rv = ctx.rec["trackerreview:"] || {}, out = [];
   // (ctx.range: a week's dates, from ⤓ Fill in the Weekly Ranking: the tracker's days in it only; at: each item's date)
