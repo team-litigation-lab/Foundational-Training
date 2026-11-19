@@ -62,7 +62,9 @@ const KV_PREFIX = "ft:";
    Object (RecordGuard, one per record): reads see the latest write at once, writes to a record are taken one at a time,
    and a save that says what it started from (base) has only its own changes merged into the record as it is now
    (merge3), so two saves of different activities both stay. A write's copy is held for GUARD_TTL, then KV (long settled
-   by then) is read again, so a record another site deleted from KV is not kept. */
+   by then) is read again, so a record another site deleted from KV is not kept.
+   (Not bound in wrangler.json for now: the production deploys that carried its migration failed. Without the binding kvOf
+   merges each save itself, over KV — two trainers' saves both stay — and only a read can still be a minute old.) */
 const GUARDED = /^(labreview|kcreview|trainerfb):/;
 const GUARD_TTL = 10 * 60 * 1000;
 const isPlain = (x) => !!x && typeof x === "object" && !Array.isArray(x);

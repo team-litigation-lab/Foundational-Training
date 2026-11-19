@@ -17,9 +17,11 @@ const kvOn = (store) => ({ get: async (k) => store.has(k) ? store.get(k) : null,
   const mod = await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href);
   const worker = mod.default, RecordGuard = mod.RecordGuard;
   if (typeof RecordGuard !== 'function') fail('worker.js exports no RecordGuard class');
+  // (the RECORD_GUARD binding is off the deploy for now — the production builds that carried its migration failed — so
+  //  the Worker merges each save itself, over KV: sections 1–4. The class stays, tested in section 5, for when it is bound.)
   const wr = require(path.join(process.cwd(), 'wrangler.json'));
-  if (!(wr.durable_objects.bindings || []).some(b => b.name === 'RECORD_GUARD' && b.class_name === 'RecordGuard')) fail('wrangler.json binds no RECORD_GUARD');
-  if (!(wr.migrations || []).some(m => (m.new_sqlite_classes || []).includes('RecordGuard'))) fail('wrangler.json has no migration creating RecordGuard');
+  const bound = (wr.durable_objects.bindings || []).some(b => b.name === 'RECORD_GUARD');
+  if (bound && !(wr.migrations || []).some(m => (m.new_sqlite_classes || []).includes('RecordGuard'))) fail('RECORD_GUARD is bound but no migration creates it');
 
   // ---------- 1–4: through /api/storage/set, KV only (no Durable Object binding: the merge is done in the Worker) ----------
   const store = new Map(), id = 'jose-demo--b1';
