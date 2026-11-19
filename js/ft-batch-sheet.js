@@ -1162,7 +1162,7 @@ function pdpRow(p, w, folded){
     : x ? `<b class="bs-sbox ${critTone(x[c])}">${e(x[c])}/5</b>` : "—"}</td></tr>`).join("");
   const note = adm ? `<input type="text" class="bs-pdp-n" placeholder="Note (optional)" value="${e(val("note"))}" oninput="FTBatchSheet.pdpKeep('${e(k)}', 'note', this.value)" style="flex:1;min-width:160px">`
     : x && x.note ? `<p class="bs-pdp-note">🧑‍🏫 ${e(x.note)}</p>` : "";
-  const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: counted in Week ${w}'s Daily compliance.`
+  const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: ${window.ftReference ? REFV + " — not counted" : `counted in Week ${w}'s Daily compliance`}.`
     : `Not scored yet — your trainer scores this weekly. It isn't counted until it is.`;
   return `<tr class="bs-pdp${folded ? " bs-wk-hide" : ""}" data-week="${w}"><td class="bs-pt-m bs-pdp-m"><span class="bs-pdp-ic" aria-hidden="true">🌱</span><span class="bs-pdp-tx">Professional Development &amp; Progress<small>Week ${w}</small></span></td>
     <td class="bs-pt-v ${x ? tone(x.pct) : ""}" title="${e(status)}">${x ? e(x.avg5.toFixed(1)) + "/5" : "—"}</td>
@@ -1218,7 +1218,7 @@ function perTraineeHtml(T){
           // (🌱 the week's Professional Development & Progress counted in its average beside the days: ftPdp.withWeek)
           const avg = window.ftPdp ? ftPdp.withWeek(W.vals, rvP, w) : W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null;
           const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
-          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span><span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span></th></tr>` + pdpRow(p, w, f); }
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${REFV}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
         const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)

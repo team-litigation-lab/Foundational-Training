@@ -44,7 +44,8 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(([id, sid]) => { FTProcessAdmin.sheet(id, sid); }, [id, sid]); await page.waitForTimeout(800);
     f = await fired(); if (f.x || f.img) fail(`the trainer's review ran markup from the grading record: ${JSON.stringify(f)}`);
     const txt = await page.evaluate(() => (document.querySelector('.fp-kcadmin') || {}).innerText || '');
-    if (!/graded best —% ·/.test(txt)) fail(`a best score that isn't a number isn't shown as —: ${txt.slice(0, 300)}`);
+    // (📎 a Knowledge Check is Additional Reference: the trainer sees it graded, with no score — a best score that isn't a number shows nowhere)
+    if (!/📎 Additional Reference · graded ·/.test(txt) || /graded best/.test(txt)) fail(`the trainer's view should show the graded Knowledge Check as Additional Reference, with no score: ${txt.slice(0, 300)}`);
     await page.waitForTimeout(500);
     f = await fired(); if (f.x) fail('markup from the grading record ran');
   } catch (err) { fail(String(err && err.stack || err)); }

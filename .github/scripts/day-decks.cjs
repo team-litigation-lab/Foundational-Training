@@ -401,7 +401,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const findScore = () => page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-sheet .ftdd-score'); if (b) return { i, h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length, avg: /WEIGHTED AVERAGE/.test(b.textContent), remarks: /Remarks/.test(b.textContent), pick: !!b.querySelector('.ftms-pick select'), shot: !!b.querySelector('img') }; } return null; });
   const score = await findScore();
-  if (!score || score.items !== 15 || !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
+  if (!score || score.items !== 14 ||   /* (14 guide metrics: Tools Utilization is retired, not shown) */ !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
   // a trainer scores on it: the batch's trainees to pick, a Remarks column, 💾 Save to the trainee's scores (labreview acts)
   const me = await page.evaluate(() => state.traineeId);
   await page.evaluate(id => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id }) }).then(r => r.json()).then(j => { const rec = JSON.parse(j.value); rec.approved = true; return fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id, value: JSON.stringify(rec) }) }); }), me);
@@ -437,7 +437,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
       const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
         inputs: box.querySelectorAll('input, select').length, mine: (box.querySelector('.ftms-mine') || {}).textContent || '', toast: document.body.innerText.includes('Your trainer scored your') };
       state.isAdmin = was.a; state.adminPreview = was.p; state.traineeId = was.t; return out; }, me);
-    if (mine.cells.length !== 15 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
+    if (mine.cells.length !== 14 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
       fail(`the trainee should see their scored sheet, read only, and be told it is scored: ${JSON.stringify(mine)}`);
   }
   await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });
