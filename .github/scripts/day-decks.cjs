@@ -153,7 +153,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (on top a segment per part of the lesson, Start for a one-part lesson, else Part 1 · Part 2 … (Receptionist: Day 3's session and Day 4; Medical Records: Day 13, the MedLOR Demo, the MedLOR recorded demonstration, Lien Verification), in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (on top a segment per part of the lesson, Start for a one-part lesson, else Part 1 · Part 2 … (Receptionist: Day 3's session and Day 4; Medical Records: Day 13, the MedLOR Demo with its recorded demonstration (Day 15 has no part of its own), Lien Verification), in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
@@ -168,7 +168,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))(c.days.length);
+    const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 3 }[c.id] || c.days.length);
     // (the Personal Injury Process Flow / Reception card: a video for each of its two lessons, PI Workflow and Receptionist)
     if (c.id === 'dayl-3') { if (c.segs.join() !== want.join() || c.steps.length || !/PI Workflow/.test(c.vids[0] || '') || !/Receptionist/.test(c.vids[1] || '')) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps, c.vids).join(' | ')}`); return; }
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
@@ -201,7 +201,9 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     dayCards.push(await page.evaluate(() => { const c = document.querySelector('.ftdd-lcslide .ftlc');
       return c ? { day: Number(c.dataset.day), first: c.dataset.first === '1', h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length } : null; }));
   }
-  dayCards.forEach((c, i) => { const n = i + 1;
+  // (Day 15 has no day card of its own: its slides are on Day 14's deck, Part 2, build/day-decks.cjs MOVE; js/ft-day-locks.js PARTS)
+  const NO_CARD = [15];
+  dayCards.forEach((c, i) => { const n = i + 1; if (NO_CARD.includes(n)) return;
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
     else if ([1, 2, 3, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
   // 📋 Days 2–16 in Day 1's shape: every row of a day's card leads to its own slide(s), in the card's order, each row's slides
@@ -209,6 +211,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // rows, named as the card names them. Day 1's deck is as it was.
   await page.evaluate(() => { state.adminPreview = true; });
   for (let n = 1; n <= 16; n++) {
+    if (NO_CARD.includes(n)) continue;
     await page.evaluate(n => FTDayDecks.open(n, 0), n); await page.waitForTimeout(500);
     const r = await page.evaluate(n => {
       const rows = FTDayDecks.dayRows(n), list = FTDayDecks.list(n);

@@ -1461,7 +1461,8 @@ const EX_RENAME = {
 const PREP_KEEP = {};
 // a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 8, 12,
 // 14 and 16; Day 9's Intake Mock Calls, whose practice links are on its metrics slide, s2, build/days/day09.js)
-const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
+// (Day 15's Recorded Demonstration panel too: its day's slides are on Day 14's deck, MOVE)
+const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 15: ["s1b"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
@@ -1576,12 +1577,17 @@ for(let n = 1; n <= 16; n++){
 // Day 9's Intake Mock Calls Metrics closes Part 2 of Intake Training (Day 8), after the demo's preparation; Part 3 (Day 9)
 // opens on the Sample Transcription Guide. (A new id on Day 8, mcm: nothing saved under Day 8's old s2, off the deck, follows it)
 // (its "AM:" was Day 9's morning: on Day 8 it follows the afternoon's demo preparation, so PM)
-const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]}};
-for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh]] of Object.entries(ids)){
+// (Day 15's recorded demonstration is on Part 2, Day 14's deck, after the MedLOR Demo's preparation: the tutorial video again,
+// the Gentle Reminders and its Demo Preparation, whose metrics are the MedLOR Recorded Demonstration's scorecard; Day 15 has
+// no day card of its own, js/ft-day-locks.js PARTS)
+const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
+  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
+    s1bp: [14, "r15p", h => h.replace(/^Entire Day:/, "PM:"), html => html.replace(/<h3>Demo Metrics<\/h3>/, "<h3>MedLOR Recorded Demonstration Metrics</h3>")]}};
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){
   const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
   const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
   const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
-  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}));
+  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}, rx ? {html: rx(x.html)} : {}));
 }
 function noKB(html){
   return String(html || "")
