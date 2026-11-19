@@ -1047,7 +1047,7 @@ function editBoxHtml(p){
   if(!adminOn() || meOn()) return "";
   const sc = (B.data.rec[p.id] || {}).score, R = B.data.rec[p.id] || {};
   // (📎 only a scored item is edited here — a mock call or demo, a scored assessment: the rest is Additional Reference)
-  const can = it => !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref)) && !it.reference;
+  const can = it => !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref)) && !it.reference && (!window.ftReference || /^act:/.test(it.ref || ""));
   const groups = sc && Array.isArray(sc.rows) ? sc.rows.filter(r => r && r.s && !r.s.hidden).map(r => ({s: r.s, items: (r.items || []).filter(can)})).filter(g => g.items.length) : [];
   const all = groups.flatMap(g => g.items);
   B.edSel = B.edSel || {};
@@ -2363,6 +2363,9 @@ FTBatchSheet.editScore = async function(pid, ref, value, note){
   if(!adminOn() || meOn()) return false;
   ref = String(ref || ""); const raw = String(value == null ? "" : value).trim();
   if(!(window.lshProgram && lshProgram.editable(ref))){ toast("This score can't be edited here."); return false; }
+  // (📎 only a scored item is edited: a mock call or demo scorecard, a scored assessment — js/ft-reference.js)
+  // (an assessment's grade is its answer key's: an override would be a note only, js/lsh-program.js overridesReference)
+  if(window.ftReference && !(/^act:/.test(ref) && ftReference.actScored(ref.slice(4)))){ toast("📎 Additional Reference: not scored, so there is no score to edit."); return false; }
   if(raw !== "" && !(isFinite(Number(raw)) && Number(raw) >= 0 && Number(raw) <= 100)){ toast("A score is a number from 0 to 100."); return false; }
   const v = raw === "" ? null : Math.round(Number(raw)), m = /^([a-z]+):(.+)$/.exec(ref) || [null, ref, ""], kind = m[1], arg = m[2];
   const R = ((B.data || {}).rec || {})[pid] || {};
@@ -2407,6 +2410,7 @@ FTBatchSheet.editRow = function(el){
 };
 // + the points on the Scorecard overall, with their note (empty or 0: none)
 FTBatchSheet.editExtra = async function(el){
+  if(window.ftReference){ toast("📎 There is no overall score, so no points are added."); return false; }
   if(!adminOn() || meOn()) return false;
   const tr = el && el.closest("tr"); if(!tr || !window.lshProgram || !lshProgram.setExtra) return false;
   const pt = tr.querySelector("input.bs-ed[data-extra]"), nt = tr.querySelector("input.bs-ed-note[data-extra]"), raw = String(pt.value || "").trim();

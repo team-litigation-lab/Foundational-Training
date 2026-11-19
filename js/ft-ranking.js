@@ -447,7 +447,8 @@ function headOf(s){
 function formulaOf(s, ci, row, sc, first, last){
   const L = letter;
   if(s.k === "calc") return `=IF(${L(ci - 1)}${row}="","",${L(ci - 1)}${row}/${s.c.max}*5)`;
-  const marks = sc.map((x, i) => x.k === "mark5" || x.k === "calc" ? L(i) + row : null).filter(Boolean);
+  // (📎 a reference column's mark isn't in the average: isRefCol)
+  const marks = sc.map((x, i) => (x.k === "mark5" || x.k === "calc") && !isRefCol(x.c) ? L(i) + row : null).filter(Boolean);
   if(s.k === "avg") return `=IFERROR(AVERAGE(${marks.join(",")}),"")`;
   const a = L(sc.findIndex(x => x.k === "avg"));
   if(s.k === "rank") return `=IF(${a}${row}="","",RANK(${a}${row},$${a}$${first}:$${a}$${last}))`;

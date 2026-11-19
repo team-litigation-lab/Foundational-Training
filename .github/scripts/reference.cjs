@@ -20,6 +20,6 @@ no.forEach(([it, s]) => { if (F.scored(it, s)) fail.push(`${s.id} ${it.ref || it
 if (!F.lessonDone({ score: 40 }) || !F.lessonDone({ submittedAt: '2026-11-01' }) || F.lessonDone({}) || F.lessonDone(null)) fail.push('a submitted or graded Knowledge Check, whatever its mark, should finish the lesson; nothing done, not');
 const col = src => F.refCol({ type: 'score', src });
 if (col('trainer:Intake Packet') || col('drive:Auto Liability') || col('drive:Common Terms') || col('drive:')) fail.push('the scorecards\' and assessments\' Weekly Ranking columns should be scored');
-if (!col('day:monitor') || !col('compliance') || !col('pdp') || !col('drive:PI Reading Task') || !col('') || !col('kc:1')) fail.push('the other Weekly Ranking columns should be Additional Reference');
+if (!col('day:monitor') || !col('compliance') || !col('pdp') || !col('drive:PI Reading Task') || col('') || !col('kc:1')) fail.push('the other Weekly Ranking columns should be Additional Reference');
 if (fail.length) { console.error('Additional Reference check FAILED:\n - ' + fail.join('\n - ')); process.exit(1); }
-console.log('Additional Reference check passed (only the trainer\'s scorecards and the three answer-key assessments are scored; a submitted Knowledge Check finishes its lesson; the Weekly Ranking scores only their columns).');
+console.log('Additional Reference check passed (only the trainer\'s scorecards and the three answer-key assessments are scored; a submitted Knowledge Check finishes its lesson; the Weekly Ranking scores only their columns and the trainer\'s typed ones).');

@@ -39,8 +39,10 @@ function scored(it, s){
 // a lesson is finished once its Knowledge Check is submitted or graded, whatever its mark (no 70% gate: the guide grades none)
 const lessonDone = p => !!p && (p.done === true || typeof p.score === "number" || typeof p.trainerScore === "number" || !!p.submittedAt);
 // a Weekly Ranking column (js/ft-ranking.js): scored only when it reads a scored scorecard or assessment
+// (a column the trainer types in, with no platform source, is the trainer's own score: counted)
 function refCol(c){
   const src = String((c && c.src) || "");
+  if(!src) return false;
   if(/^trainer:/.test(src) || src === "drive:") return false;
   if(/^drive:/.test(src)) return !/common terms|auto liability|policy disclosure|claim (and|&) liability/i.test(src);
   return true;
