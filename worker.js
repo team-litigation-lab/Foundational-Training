@@ -63,7 +63,10 @@ const KV_PREFIX = "ft:";
    account has no room for a new Durable Object namespace): reads see the latest write at once, writes to a record are taken one at a time,
    and a save that says what it started from (base) has only its own changes merged into the record as it is now
    (merge3), so two saves of different activities both stay. A write's copy is held for GUARD_TTL, then KV (long settled
-   by then) is read again, so a record another site deleted from KV is not kept. */
+   by then) is read again, so a record another site deleted from KV is not kept.
+   (It has no namespace or binding of its own: a deploy that created one failed, as the account is at Cloudflare's limit
+   of 500 namespaces. GeminiRelay extends it and answers its requests. Without GEMINI_RELAY, kvOf merges each save itself,
+   over KV — two trainers' saves both stay — and only a read can still be a minute old.) */
 const GUARDED = /^(labreview|kcreview|trainerfb):/;
 const GUARD_TTL = 10 * 60 * 1000;
 const isPlain = (x) => !!x && typeof x === "object" && !Array.isArray(x);
