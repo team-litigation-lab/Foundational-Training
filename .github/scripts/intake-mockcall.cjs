@@ -54,7 +54,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (!cells.length || cells.some(([sel, other, assigns]) => sel !== 1 || other || !assigns)) fail(`📦 Intake Packets should only assign the packets: ${JSON.stringify(cells)}`);
     await page.evaluate(id => FTIntake.cardHtml(id), id); await page.waitForTimeout(1200);
     const card = await page.evaluate(id => FTIntake.cardHtml(id), id);
-    if (!/📦 Intake Packet \(Day 8\)/.test(card) || !/Packet 2/.test(card) || !/New Intake With a Deadline Close/.test(card) || !/Intake Worksheet/.test(card) || !/Accuracy &amp; completeness/.test(card)) fail(`the trainee's 📦 Intake Packet rows (Batch Sheet) don't show the packet and its paired case: ${card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 300)}`);
+    if (!/📦 Intake Packet \(Day 8\)/.test(card) || !/Packet 2/.test(card) || /🎬 Demo case|New Intake With a Deadline Close/.test(card) || !/Intake Worksheet/.test(card) || !/Accuracy &amp; completeness/.test(card)) fail(`the trainee's 📦 Intake Packet rows (Batch Sheet) don't show the packet without a demo-case row (no paired case: ${card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 300)}`);
     await page.evaluate(id => FTIntakeAdmin.assign(id, '4'), id); await page.waitForTimeout(800);
     rec = await get('intakeassign:' + id);
     if (!rec || rec.packet !== 4 || rec.call !== 'ft_in_derek') fail(`a new packet didn't re-pair the case (packet 4: the list's first again): ${JSON.stringify(rec)}`);

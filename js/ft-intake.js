@@ -377,6 +377,10 @@ function loadCard(id){
     .then(([a, d, ck, w, rv]) => { x.a = a && typeof a === "object" ? a : null; x.d = d && typeof d === "object" ? d : null;
       x.g = rv && rv.assess && rv.assess[WS] && rv.assess[WS].score != null ? rv.assess[WS] : null;
       x.ck = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; x.ws = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; })
+    // (no link submitted on the slide: the worksheet in their Assessments/Activities folder, found by name — worker.js
+    // /api/intake/worksheet, which reads their Drive)
+    .then(async () => { if(x.ws) return; try{ const r = await authFetch("/api/intake/worksheet", {id}), j = await r.json().catch(() => ({}));
+      if(j && j.link) x.ws = {answer: j.link, submittedAt: j.submittedAt || "", found: !!j.found}; }catch(err){} })
     .catch(() => {})
     .then(() => { x.loading = false; x.at = Date.now(); if(onSheet()) render(); });
 }
@@ -405,8 +409,8 @@ function cardHtml(id){
       // (🔎 Check beside "rule by rule", on the same line: inside the summary, its click kept from opening or closing the rubric)
       (() => { const btn = pkU ? ` <button type="button" class="btn btn-ghost btn-sm" style="margin-left:8px;vertical-align:middle;" ${checking ? "disabled" : ""} onclick="event.preventDefault();event.stopPropagation();FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : "";
         return ck ? `<details><summary>The Saving Intake Packet rubric, rule by rule${btn}</summary>${checkHtml(ck, true)}</details>` : "Not checked" + btn; })(), ck ? pctCls(ck.pct) : "")
-    + row("🎬 Demo case", c ? e(c.title) : "—", c ? `${e(c.name)} · the Day 8 Intake Demo’s call: play it from Ring Channel’s Scenario Picker` : !mockCalls() ? (PK.failed ? "The cases didn’t load from the CMS" : "Loading the cases…") : n ? "Pairing with the packet…" : "Follows the packet")
-    + row("📝 Intake Worksheet", (ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—") + (x.g ? (window.ftReference ? ` <small>📎 Additional Reference · graded</small>` : ` <b>${e(String(x.g.pct))}%</b>`) : ""), wsGradeHtml(id, x.g) + (ws && wsLink(ws.answer) ? `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}` : "Not submitted"));
+    // (no 🎬 Demo case row: the trainer runs the demo's case from Ring Channel's Scenario Picker)
+    + row("📝 Intake Worksheet", (ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—") + (x.g ? ` <b>${e(String(x.g.pct))}%</b>` : ""), wsGradeHtml(id, x.g) + (ws && wsLink(ws.answer) ? (ws.found || !ws.submittedAt ? "Found in their Assessments/Activities folder" : `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}`) : "Not submitted: none on the slide or in their Assessments/Activities folder"));
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the demo case never overwrite each other, whoever changed the other one and however quickly
