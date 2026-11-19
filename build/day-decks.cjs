@@ -986,6 +986,26 @@ function D12_CARDS(x){
     card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "PDF Editor", "Process Guide"])) +
     card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
       "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
+    "</div></div>\n" + PGBREAK + D12_EMAIL(card, ul);
+}
+// ✉️ Day 12's LORs, e-mailed to the trainers: a real e-mail from the trainee's LSH work account (not a simulator), both letters in
+// one message, the curriculum's subject line and sample body (Day 12, step l) for the two letters together
+function D12_EMAIL(card, ul){
+  const to = ["storage@legalsupporthelp.com", "martin@legalsupporthelp.com (Matt)", "michelle.velarde@legalsupporthelp.com (Michelle)"];
+  return '<div class="ftdd-keep ftdd-d12"><p>Once both LORs are saved in SA, <b>send them by e-mail to your trainers</b>: a real e-mail from your <b>LSH work e-mail account</b>, not in a simulator. Your trainers check it for accuracy and attention to detail.</p>\n' +
+    '<div class="ftdd-cards2">' +
+    card("✉️", "Send your LORs to your trainers", ul([
+      "<b>To:</b> " + to.join(", "),
+      "<b>Attach:</b> both letters, saved as PDF, in <b>one</b> e-mail: your 1P LOR and your 3P LOR with Affidavit, each named by the naming convention",
+      "<b>Subject line:</b> Client Name - 1P &amp; 3P Letters of Representation<br><i>Example: John Test Doe - 1P &amp; 3P Letters of Representation</i>",
+      "<b>Body:</b> <i>Good day! Please see the attached 1P and 3P LORs regarding our client’s claim. Kindly confirm receipt of this email. Thank you.</i>",
+      "<b>Signature:</b> Best regards, your full name, <b>Insurance Claims Specialist</b>, your work e-mail address and the firm’s phone number (for training purposes, Legal Support Help: 702-690-4044)"])) +
+    card("✅", "Before you hit Send", ul([
+      "All three trainers are in the <b>To</b> field, spelled right",
+      "Both PDFs are attached: open each one to check it is the right, final letter (no highlighted text left)",
+      "The file names follow the naming convention exactly",
+      "The subject line and body follow the format above, with no typos",
+      "<b>TIP:</b> fill in the recipients <b>last</b>, so an unfinished e-mail can’t go out by accident"])) +
     "</div></div>\n";
 }
 // edits to a section before it is cut into its rows' slides

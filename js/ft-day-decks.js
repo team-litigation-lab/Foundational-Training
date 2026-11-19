@@ -1450,7 +1450,7 @@ const LESSON_CARDS = {
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
       {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
-      {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
+      {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names · e-mail your LORs to your trainers", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
       // (Day 12's Recorded Demonstration panel and Recorded Shadowing video are off the deck: build/day-decks.cjs SKIP[12])
       ],
