@@ -1317,7 +1317,7 @@ function outputsTable(){
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
-          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => window.ftReference ? `<b class="bs-sbox" title="${REFV}${v == null ? "" : ": " + Math.round(v) + "%"}">📎</b>` : `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
+          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => window.ftReference ? `<b class="bs-sbox" title="${REFV}${v == null ? "" : ": " + Math.round(v) + "%"}">${v == null ? "—" : "📎"}</b>` : `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
           return {v: window.ftReference ? REFV : x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)

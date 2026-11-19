@@ -154,7 +154,8 @@ const failures = []; const fail = m => failures.push(m);
   // Check (90%) and her Reception Mock Call (76%, Practice of the Reception lesson)
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
-  if (!sa || sa[2] !== '90%' || !sa.includes('76%')) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
+  // (📎 her Knowledge Check is Additional Reference — js/ft-reference.js; her Reception Mock Call is scored, without the retired Tools Utilization)
+  if (!sa || sa[2] !== '📎 Additional Reference' || !sa.some((c, i) => i > 1 && /^\d+%$/.test(c))) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
   // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Last checked', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
@@ -294,7 +295,8 @@ const failures = []; const fail = m => failures.push(m);
   if (dd.head.length !== 7 + await page.evaluate(() => FTDays.DAYS.length) || dd.head[7] !== 'Day 1' || dd.head[1] !== 'Average score' || dd.head[2] !== 'Days complete' || JSON.stringify(dd.head.slice(3, 7)) !== JSON.stringify(['✍️ Knowledge Checks', '🛠 Practice', '🎙 Mock Calls & Demos', '🏫 Classroom & outputs'])) fail(`📅 Day by Day's columns: ${dd.head.slice(0, 8)}`);
   const adaKinds = dd.rows.find(r => /Ada/.test(r[0]));
   // (scores, not counts: Ada's Knowledge Check 90%; her Reception Mock Call, scored 76% by the trainer)
-  if (!adaKinds || adaKinds[3] !== '90%' || adaKinds[5] !== '76%' || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
+  // (📎 the Knowledge Checks column counts what is done, with no score; the mock call keeps its score)
+  if (!adaKinds || !/done/.test(adaKinds[3]) || /%/.test(adaKinds[3]) || !/^\d+%$/.test(adaKinds[5]) || !/^\d+%$/.test(adaKinds[1])) fail(`Ada's average / Knowledge Checks / Mock Calls & Demos across the days: ${adaKinds && adaKinds.slice(1, 7)}`);
   // (no ✅ Checklist panel under the table any more; a trainer's tick, saved as before, still counts in the day)
   if (await page.$('#bs-days .bs-ck, .bs-ck-who select[onchange*="ckWho"]')) fail('the ✅ Checklist panel is still under 📅 Day by Day');
   // (a classroom activity the trainer ticks — at: "gc", scored by being done: Day 1's breakout handout; the Exercises are off
@@ -306,7 +308,8 @@ const failures = []; const fail = m => failures.push(m);
   const dc = await get('daycheck:' + ids.Ada);
   if (!dc || !dc.items || !dc.items['1|' + roomT] || !dc.items['1|' + roomT].done) fail(`a trainer's tick wasn't saved: ${JSON.stringify(dc)}`);
   const d1 = (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.find(r => /Ada/.test(r[0].v))))[7];
-  if (!/^\d+%$/.test(d1.v.replace('✓ ', '')) || !/Process Questions 90%/.test(d1.f) || !/ [2-9]\d* of \d+ done/.test(d1.f)) fail(`Ada's Day 1 isn't her score with the ticks counted: ${d1.v} · ${d1.f}`);
+  // (📎 Day 1 has nothing the guide scores — its Process Questions are Additional Reference — so it counts its ticks, with no score)
+  if (/Process Questions 90%/.test(d1.f) || !/ [2-9]\d* of \d+ done/.test(d1.f)) fail(`Ada's Day 1 isn't her score with the ticks counted: ${d1.v} · ${d1.f}`);
 
   // (no 📘 Process Guide among the days' scored activities: the trainee builds it, it isn't scored)
   if (await page.evaluate(() => FTBatchSheet.tables().find(t => t.id === 'days').rows.some(r => r.some(c => /Process Guide/.test((c && c.f) || ''))))) fail('a 📘 Process Guide is still on the scorecards');
@@ -350,9 +353,9 @@ const failures = []; const fail = m => failures.push(m);
           ds[0].open = true; await new Promise(r => setTimeout(r, 50)); ds[1].open = true; await new Promise(r => setTimeout(r, 50));
           return { n: ds.length, open: ds.filter(d => d.open).length, second: ds[1].open }; });
         if (one.n >= 2 && (one.open !== 1 || !one.second)) fail(`the Knowledge Checks don't close when another opens: ${JSON.stringify(one)}`); }
-      if (!/Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
+      if (!/Knowledge Checks & Assessments in detail/.test(kd) || !/💬\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd)
         || !/Auto Liability Insurance – Assessment/.test(kd) || !/The policy limit/.test(kd) || !/✓ 1 pt\s*Right: the policy limit/.test(kd) || !/✗ 0 pts\s*Nevada requires 25\/50\/20/.test(kd)
-        || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/5\/10\s*Missed the conflict check/.test(kd)))
+        || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/💬\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
   // (📅 an answer sheet is expected once its lesson's days are over: a batch that started today has none due yet, so no
   // "missing" list; a batch long under way expects them all)
@@ -385,19 +388,23 @@ const failures = []; const fail = m => failures.push(m);
     const days = T('days'), ds = T('dayscores'), pick = (t, h) => ada(t)[t.head.indexOf(h)];
     return { l3: ada(sc)[at(3) + 1], l4: ada(sc)[at(4) + 1], d3: pick(days, 'Day 3'), practice: pick(days, '🛠 Practice'), ds3: pick(ds, 'Day 3') }; });
   // (the 🎧 Call Listening step of Day 3 doesn't score it again: she logged no recording, so that step has no score)
-  if (!rl.l3 || rl.l3.v !== '80%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l3.f) || /Call Listening/.test(rl.l3.f)) fail(`Lesson 3's 🛠 Practice on the Score Card isn't the Reception Listening Activity's 80% alone: ${JSON.stringify(rl.l3)}`);
-  if (!rl.l4 || rl.l4.v !== '78%' || !/Reception Listening Activity[^;]* 80%/.test(rl.l4.f) || !/ 76%/.test(rl.l4.f)) fail(`Lesson 4's 🛠 Practice isn't the activity (80%) and the mock call (76%): ${JSON.stringify(rl.l4)}`);
-  if (!rl.d3 || rl.d3.v !== '80%' || !/the average of 1 scored activity: Reception Listening Activity[^;]* 80% \(32 of 40 points/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day isn't her graded Reception Listening Activity alone: ${JSON.stringify(rl.d3)}`);
+  // (📎 the Reception Listening Activity is Additional Reference — js/ft-reference.js: graded, shown, scored nowhere; Lesson 4's
+  // 🛠 Practice is the trainer's Reception Mock Call alone, scored without the retired Tools Utilization)
+  if (!rl.l3 || rl.l3.v !== '' || /80%/.test(rl.l3.f)) fail(`Lesson 3's 🛠 Practice on the Score Card counts the Reception Listening Activity: ${JSON.stringify(rl.l3)}`);
+  if (!rl.l4 || !/^\d+%$/.test(rl.l4.v) || /Reception Listening Activity[^;]* 80%/.test(rl.l4.f) || !/Reception Mock Call/.test(rl.l4.f)) fail(`Lesson 4's 🛠 Practice isn't the mock call alone: ${JSON.stringify(rl.l4)}`);
+  if (!rl.d3 || /%/.test(rl.d3.v) || !/nothing scored yet/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day scores the Reception Listening Activity: ${JSON.stringify(rl.d3)}`);
   // (🎯 Graded calls now reads the trainer's Mock Call scorecard, so her 76% mock call counts too, as on Lesson 4)
-  if (!rl.practice || rl.practice.v !== '78%' || !/Reception Listening Activity[^;]* 80%/.test(rl.practice.f) || !/ 76% \(Graded calls/.test(rl.practice.f)) fail(`📅 Day by Day's 🛠 Practice doesn't count the graded activity and the trainer's mock call: ${JSON.stringify(rl.practice)}`);
-  if (!rl.ds3 || rl.ds3.v !== '80%') fail(`Ada's Day 3 on 📅 Day 1–16 isn't her graded Reception Listening Activity: ${JSON.stringify(rl.ds3)}`);
+  if (!rl.practice || /%/.test(rl.practice.v)) fail(`📅 Day by Day's 🛠 Practice counts Additional Reference work: ${JSON.stringify(rl.practice)}`);
+  if (!rl.ds3 || rl.ds3.v !== '' || !/Reception Listening Activity[\s\S]*📎 Additional Reference/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity as Additional Reference: ${JSON.stringify(rl.ds3)}`);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   const rx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception Listening Activity/.test(x.textContent)); return it ? it.innerText : ''; });
-  if (!/32 of 40 points \(80%\)/.test(rx) || !/did best[\s\S]*Call 1: The Missing Email: every answer right/i.test(rx) || !/to be improved[\s\S]*Call 2: Third Time Calling · Reason for the call: Names the letter/i.test(rx)) fail(`the activity's context on 📅 Day 1–16 (why, best, to improve): ${rx}`);
+  // (📎 its context is kept — why, best, to improve — with no score)
+  if (rx && (/\(80%\)/.test(rx) || !/did best[\s\S]*Call 1: The Missing Email: every answer right/i.test(rx))) fail(`the activity's context on 📅 Day 1–16 (why, best, to improve, no score): ${rx}`);
   await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
   const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
-  if (!gd.some(b => /Call Listening/.test(b.h) && /4\.0\/5/.test(b.h) && /Reception Listening Activity[\s\S]*(80%|4\.0\/5)/.test(b.t)))   // (⭐ shown in points: 80% = 4.0/5, js/ft-points.js)
-   fail(`🔎 Grades in detail: the activity isn't 🎧 Call Listening's 80%: ${gd.map(b => b.h).join(' | ')}`);
+  // (📎 🎧 Call Listening is Additional Reference: its block shows the activity, with no score)
+  if (!gd.some(b => /Call Listening/.test(b.h) && !/\d\.\d\/5|\d+%/.test(b.h) && /Reception Listening Activity/.test(b.t)))
+   fail(`🔎 Grades in detail: 🎧 Call Listening isn't Additional Reference with the activity: ${gd.map(b => b.h).join(' | ')}`);
   const elsewhere = gd.filter(b => !/Call Listening/.test(b.h) && /Reception Listening/.test(b.t)).map(b => b.h);
   if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
@@ -413,7 +420,8 @@ const failures = []; const fail = m => failures.push(m);
     await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
     await put('trackerreview:' + ids.Ben, { days: {}, transcribe: { 1: tr } });
     let c9 = await day9();
-    if (!c9 || c9.v !== '83%' || !/Recording 1[^;]* 83% \(automatic check, not reviewed/.test(c9.f) || /Passed|Redo/.test(c9.f)) fail(`Ben's Day 9 doesn't count his automatic score as not reviewed: ${JSON.stringify(c9)}`);
+    // (📎 the Transcription Activity is Additional Reference — its automatic score and the trainer's alike count nowhere)
+    if (!c9 || /%/.test(c9.v) || /83%/.test(c9.f)) fail(`Ben's Day 9 counts his automatic transcription score: ${JSON.stringify(c9)}`);
     // (resubmitted since: the score was for the submission before, so it doesn't count)
     await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: iso(now - 60e3) } } });
     c9 = await day9();
@@ -421,7 +429,7 @@ const failures = []; const fail = m => failures.push(m);
     await put('transcribe:' + ids.Ben, { v: 1, r: { 1: { f: {}, startedAt: iso(now - 1800e3), submittedAt: sub } } });
     await put('labreview:' + ids.Ben, { acts: { 'transcription-1': { status: 'Passed', score: 90, at: iso(now - 60e3) } } });
     c9 = await day9();
-    if (!c9 || c9.v !== '90%' || !/90% \(trainer's score/.test(c9.f) || /automatic check/.test(c9.f)) fail(`the trainer's score didn't replace Ben's automatic one on Day 9: ${JSON.stringify(c9)}`);
+    if (!c9 || /%/.test(c9.v) || /90%/.test(c9.f)) fail(`Ben's Day 9 counts the trainer's transcription score: ${JSON.stringify(c9)}`);
     for (const k of ['transcribe:', 'trackerreview:', 'labreview:']) await put(k + ids.Ben, null);
     await day9(); }
 
@@ -522,7 +530,7 @@ const failures = []; const fail = m => failures.push(m);
   // (✍️ her Knowledge Checks in detail, shared to her page: each answer with its grade and feedback, the trainer's comments)
   { await kcSeed(); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(3000);
     const kd = await page.evaluate(() => (document.querySelector('.bs-mine .bs-kdw') || {}).textContent || '');
-    if (!/My Knowledge Checks & Assessments in detail/.test(kd) || !/9\/10\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
+    if (!/My Knowledge Checks & Assessments in detail/.test(kd) || !/💬\s*Named every step in order/.test(kd) || !/Spot on\./.test(kd) || !/Good start; review the conflict check/.test(kd) || !/Process Questions Responses/.test(kd))
       fail(`the trainee doesn't see her Knowledge Checks in detail on 📋 My Progress: ${kd.slice(0, 400)}`);
     if (/Ben Blank|Cy Waiting|Dee Glitch/.test(kd)) fail('a trainee sees another trainee\'s Knowledge Checks');
     await put('process:' + ids.Ada, null); await put('kcreview:' + ids.Ada, null); await page.evaluate(() => FTBatchSheet.refreshMe()); await page.waitForTimeout(2500); }
@@ -585,11 +593,11 @@ const failures = []; const fail = m => failures.push(m);
     // (📒 the Monitoring Sheet is listed every day: on a day the slides don't ask for an update it reads "Not expected today", greyed)
     if (oc.acts.map(a => a.k).join() !== 'tracker,monitor,tests,outputs,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
     if (by('monitor').box !== '—' || !/Not expected today/.test(by('monitor').say)) fail(`the Monitoring Sheet's box (not expected on a day the slides don't ask): ${JSON.stringify(by('monitor'))}`);
-    if (by('tracker').box !== '2.5/5' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
-    if (by('tests').box !== '3.4/5' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
+    if (by('tracker').box !== '📎' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
+    if (by('tests').box !== '📎' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
     // (📤 nothing handed in, so only the instructions' half counts: a low box, never a row of its own — its two halves under it,
     // each out of 5, the instructions missed listed)
-    if (!/^0\.\d\/5$/.test(by('outputs').box) || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    if (by('outputs').box !== '📎' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
     if (!(by('outputs').crit || []).some(t => /Handed in & graded work \(half of this score\) 0\/5/.test(t)) || !(by('outputs').crit || []).some(t => /Following instructions \(half of this score\) [\d.]+\/5 .*(You followed \d+ of \d+|Excellent)/.test(t))) fail(`the Day's outputs doesn't show its instructions half: ${JSON.stringify(by('outputs').crit)}`);
     const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
