@@ -1580,7 +1580,9 @@ for(let n = 1; n <= 16; n++){
 // (Day 15's recorded demonstration is on Part 2, Day 14's deck, after the MedLOR Demo's preparation: the tutorial video again,
 // the Gentle Reminders and its Demo Preparation, whose metrics are the MedLOR Recorded Demonstration's scorecard; Day 15 has
 // no day card of its own, js/ft-day-locks.js PARTS)
+// (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
+  14: {s1: [16, "r14v", h => h.replace(/^AM:\s*/, "")]},
   15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
     s1bp: [14, "r15p", h => h.replace(/^Entire Day:/, "PM:"), html => html.replace(/<h3>Demo Metrics<\/h3>/, "<h3>MedLOR Recorded Demonstration Metrics</h3>")]}};
 for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){

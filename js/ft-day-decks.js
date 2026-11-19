@@ -159,13 +159,13 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the kind of work on the pill
 // 📎 the slides labelled Additional Reference, by day: their slide id
-const REFERENCE = {14: ["s1"], 16: ["s3m"]};
+const REFERENCE = {3: ["s2"], 16: ["s3m", "r14v"]};
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
-  // 📎 a slide the trainee keeps for reference rather than works through (Day 14's MedLOR tutorial video: REFERENCE)
+  // 📎 a slide the trainee keeps for reference rather than works through (REFERENCE)
   if((REFERENCE[DD.day] || []).includes(s.id)) return {ic: "📎", label: "Additional Reference"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
   if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
@@ -1379,7 +1379,7 @@ const LESSON_CARDS = {
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
+      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
@@ -1468,7 +1468,6 @@ const LESSON_CARDS = {
       // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
       {t: "Call Listening / Breakout Session", sub: "Sample recordings and reference documents, not scored", k: "listen", d: 13, s: "listen", go: "listening"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "reference", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
@@ -1485,6 +1484,8 @@ const LESSON_CARDS = {
       {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
       // (after the LV demo, as the guide's Day 17: an additional reference, build/day-decks.cjs INSERT[16])
       {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
+      // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
+      {t: "Sending MedLOR & Requesting Bills and Records", sub: "The MedLOR tutorial video", k: "reference", d: 16, s: "r14v"},
       // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
       ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
