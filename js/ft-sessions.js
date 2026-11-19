@@ -373,12 +373,19 @@ const DEFAULT_ACTS = [
   {id:"medlor-demo", title:"Sending MedLOR and Requesting Medical Bills & Records Demo", lesson:8, kind:"Demo"},
   {id:"medlor-recorded-demo", title:"MedLOR Recorded Demonstration (Day 15)", lesson:8, kind:"Demo"},
   {id:"lv-demo", title:"LV (Lien Verification) Request Demo", lesson:8, kind:"Demo"},
-  {id:"settlement-demo", title:"Reduction / Closing & Settlement Demo", lesson:9, kind:"Demo"}
+  {id:"settlement-demo", title:"Reduction / Closing & Settlement Demo", lesson:9, kind:"Demo"},
+  // 📝 the two worksheet-style activities the trainer grades too (🧑‍🏫 Graders → 📝 Assessments): a score in % and a comment,
+  // no criteria (the curriculum gives none). Day 5's activity is also checked field by field (📅 Calendar checks): once the
+  // trainer scores it here, theirs counts instead (js/ft-program.js). Day 8's Intake Worksheet is a Google Doc whose link the
+  // trainee submits on the slide (actsub:<id>.items.intakews), which had no score anywhere.
+  {id:"atty-calendar-activity", title:"Attorney Calendar Management Activity (Day 5)", lesson:5, kind:"Assessment"},
+  {id:"intake-worksheet", title:"Intake Worksheet (Day 8)", lesson:6, kind:"Assessment"}
 ];
 const T = {acts:null};
 // (an activity added after a trainer saved their own list joins it, unless that list already has one for its scorecard)
-const ADDED_ACTS = ["medlor-recorded-demo"];
-const acts = () => !T.acts ? DEFAULT_ACTS : T.acts.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !T.acts.some(a => a.id === d.id || (a.rubric && a.rubric === "medlor-recorded"))));
+const ADDED_ACTS = ["medlor-recorded-demo", "atty-calendar-activity", "intake-worksheet"];
+const withAdded = list => !list ? DEFAULT_ACTS : list.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !list.some(a => a.id === d.id || (d.id === "medlor-recorded-demo" && a.rubric && a.rubric === "medlor-recorded"))));
+const acts = () => withAdded(T.acts);
 // (the Result: Passed or Failed by the score, 3/5 passes — js/ft-rubrics.js ftResult; the trainer's own choice is only a
 // Redo, which keeps the score off the scorecards until it is done again)
 const RES = r => window.ftResult ? ftResult(r) : (r && r.status) || "Not yet";
@@ -810,7 +817,7 @@ window.ftSessionItems = ctx => {
 // 🎯 a lesson's Mock Call as the trainer scored it on 🧑‍🏫 Graders (labreview:<id>.acts, the scorecard): for the Scorecard's
 // Graded calls (js/ft-program.js), Passed or Failed; null when the trainer hasn't scored it (a Redo stays off until done again)
 window.ftMockCallItem = (ctx, lesson) => {
-  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
+  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = withAdded((ctx.shared["settings:trainer-acts"] || {}).acts);
   const a = list.find(x => Number(x.lesson) === Number(lesson) && /mock call/i.test(x.kind || "") && mine[x.id]);
   if(!a) return null;
   const r = mine[a.id], res = RES(r), t = tScore(r);
@@ -824,7 +831,8 @@ function actWhy(r){
   return [r && r.scoreEdited ? "Score edited by the trainer" : "", crit.join("; "), r && r.comment ? r.comment : ""].filter(Boolean).join(" · ");
 }
 window.ftTrainerItems = ctx => {
-  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
+  // (an activity added since the trainers saved their own list — the 📝 Assessments — is on it too, as on 🧑‍🏫 Graders)
+  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = withAdded((ctx.shared["settings:trainer-acts"] || {}).acts);
   // 🎧 a Transcription Activity recording the trainer hasn't scored: its automatic score (trackerreview:<id>.transcribe[n],
   // worker.js gradeTranscription) counts, marked auto (the Weekly Ranking's ⤓ Fill leaves it out until the trainer reviews it)
   const auto = (((ctx.rec["trackerreview:"] || {}).transcribe) || {});
