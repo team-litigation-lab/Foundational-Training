@@ -159,7 +159,9 @@ window.LSH_PROGRAM = {
     {id:"calcheck", icon:"📅", label:"Calendar checks", key:"calcheck:",
       about:"Day 5’s Attorney Calendar Management Activity (each event you entered in Google Calendar, checked field by field: the share of fields right on your latest submission) and your calendar mock-call bookings (each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart).",
       items: ctx => [].concat(
-        (typeof window.ftCalCheckItems === "function" ? window.ftCalCheckItems(ctx) || [] : []),
+        // (the activity graded by the trainer on 🧑‍🏫 Graders → 📝 Assessments counts there, With your trainer, instead)
+        ((r => r && r.status !== "Redo" && !r.redo && (r.score != null && r.score !== ""))((((ctx.rec["labreview:"] || {}).acts) || {})["atty-calendar-activity"]) ? []
+          : typeof window.ftCalCheckItems === "function" ? window.ftCalCheckItems(ctx) || [] : []),
         (typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) || [] : []).map(x => x && Object.assign({}, x, {name: "📅 Booking rules · " + String(x.name).replace(/^📅\s*/, "")})))},
     // (hidden: no card of its own — its items are on 📅 Calendar checks — but its records are still read, and a day's
     //  activity still finds its booking-rule score by this id; noOverall: not counted twice)
