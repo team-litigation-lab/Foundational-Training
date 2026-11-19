@@ -17,11 +17,12 @@ const kvOn = (store) => ({ get: async (k) => store.has(k) ? store.get(k) : null,
   const mod = await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href);
   const worker = mod.default, RecordGuard = mod.RecordGuard;
   if (typeof RecordGuard !== 'function') fail('worker.js exports no RecordGuard class');
-  // (the RECORD_GUARD binding is off the deploy for now — the production builds that carried its migration failed — so
-  //  the Worker merges each save itself, over KV: sections 1–4. The class stays, tested in section 5, for when it is bound.)
   const wr = require(path.join(process.cwd(), 'wrangler.json'));
-  const bound = (wr.durable_objects.bindings || []).some(b => b.name === 'RECORD_GUARD');
-  if (bound && !(wr.migrations || []).some(m => (m.new_sqlite_classes || []).includes('RecordGuard'))) fail('RECORD_GUARD is bound but no migration creates it');
+  // (the guard runs in the GeminiRelay namespace: the account has no room for a new one, so no RecordGuard class may be deployed)
+  if (!(wr.durable_objects.bindings || []).some(b => b.name === 'GEMINI_RELAY' && b.class_name === 'GeminiRelay')) fail('wrangler.json binds no GEMINI_RELAY');
+  if ((wr.durable_objects.bindings || []).some(b => b.class_name === 'RecordGuard') || (wr.migrations || []).some(m => (m.new_sqlite_classes || m.new_classes || []).includes('RecordGuard')))
+    fail('wrangler.json creates a RecordGuard namespace: the account is at its 500-namespace limit, so the deploy fails (error 10067)');
+  if (typeof mod.GeminiRelay !== 'function' || !(mod.GeminiRelay.prototype instanceof RecordGuard)) fail('GeminiRelay doesn\'t answer the guard\'s requests (it should extend RecordGuard)');
 
   // ---------- 1–4: through /api/storage/set, KV only (no Durable Object binding: the merge is done in the Worker) ----------
   const store = new Map(), id = 'jose-demo--b1';
