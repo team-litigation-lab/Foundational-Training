@@ -89,7 +89,7 @@ async function evidence(p, range, week){
   // 🌱 the week's Professional Development & Progress, scored by the trainer (index.html ftPdp; null: not scored, not counted)
   const wkN = Number(week) || (window.ftWeeks && range ? ftWeeks.now(p.batch, range[0]) : 0), pdp = window.ftPdp && wkN ? ftPdp.of(rv, wkN) : null;
   const items = Object.values((rv && rv.items) || {}).filter(x => x && inW(x.at));
-  const assess = Object.entries((rv && rv.assess) || {}).filter(([doc, x]) => x && x.score != null && inW(x.at) && !(window.ftPracticeDocs || ["claims-email"]).includes(doc)).map(([, x]) => x);   // (practice only: off the scorecards)
+  const assess = Object.entries((rv && rv.assess) || {}).filter(([doc, x]) => x && x.score != null && inW(x.at) && !(window.ftPracticeDocs || ["claims-email", "breakout-d1", "breakout-d2", "breakout-d7", "breakout-d10", "breakout-d13"]).includes(doc)).map(([, x]) => x);   // (practice only: off the scorecards)
   const days = Object.entries((fb && fb.days) || {}).filter(([l, x]) => x && x.status === "sent" && inW(x.sentAt)).map(([l, x]) => ({l, rating: x.rating || "", summary: clip(x.summary, 400), at: x.sentAt}));
   const sent = Object.values((tfb && tfb.items) || {}).filter(x => x && (has(x.comment) || x.score != null) && inW(x.at)).map(x => ({title: x.title, verdict: x.verdict || "", score: x.score, comment: clip(x.comment, 400), at: x.at}));
   const runs = Object.values((ses && ses.runs) || {}).filter(r => r && r.submittedAt && inW(r.submittedAt)).map(r => (r.auto || {}).pct).filter(v => typeof v === "number");

@@ -2552,7 +2552,9 @@ async function aiDayGrade(env, cur, kind, D, text, facts, name, expected) {
 }
 
 // ✏️ practice-only activities: graded for feedback, never on a scorecard (js/ft-drive.js window.ftPracticeDocs)
-const PRACTICE_DOCS = ["claims-email"];
+// (not counted either: the Breakout Session worksheets, off the training — the curriculum's breakouts are the digital handouts only —
+// so one a trainee submitted before isn't scored)
+const PRACTICE_DOCS = ["claims-email", "breakout-d1", "breakout-d2", "breakout-d7", "breakout-d10", "breakout-d13"];
 /* ✅ A trainee's daily compliance: at the end of every shift (the cron, runTrackerChecks, and an admin's ✅ Check now), what the
    day asked of them and what was found, kept in trackerreview:<id>.compliance[<date>] = {pct, parts: {tracker, monitor, tests,
    outputs, eod}, submissions, checkedAt}. Each part is a % (null where the day had nothing to check, e.g. no Drive links yet):
@@ -2614,7 +2616,7 @@ async function dailyCompliance(env, id, D, o = {}) {
   const subs = [];
   Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { if (x && onD(x.submittedAt)) subs.push("Process Questions: " + sid); });
   Object.entries((tr || {}).r || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt)) subs.push("Transcription · Recording " + n); });
-  Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
+  Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at) && !/^breakout-d/.test(doc)) subs.push("Assessment: " + (x.title || doc)); });
   // 🏅 the scores of what was graded that day — each Knowledge Check, assessment, Transcription, Monitoring Sheet items'
   // review and Practice Session handed in that day — for the Day's outputs (a practice-only activity, the Insurance Email
   // Simulator, isn't counted)

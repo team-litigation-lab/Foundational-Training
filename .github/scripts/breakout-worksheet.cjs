@@ -1,7 +1,8 @@
 // 📝 The Breakout Session worksheets (js/ft-assess.js "breakout-d<day>", assess-keys.js): the Digital Handouts done on one's own,
 //   a worksheet of 5 questions or more on each Breakout day (Days 1, 2, 7, 10 and 13), graded by 📝 Submit for Grading
 //   (worker.js /api/assess/grade): each answer by the AI out of 5 against the key's model answer; without the AI, left to the
-//   trainer, never a 0. The grade counts on the scorecards and in that day's outputs (Assessment: …).
+//   trainer, never a 0. Off the training since the curriculum has no breakout assessment: no longer on any slide, Knowledge
+//   Check page or day's list, and a grade given before counts nowhere (worker.js PRACTICE_DOCS).
 // Usage: node .github/scripts/breakout-worksheet.cjs   (no browser, no network)
 const path = require('path'); const { pathToFileURL } = require('url');
 const failures = []; const fail = (m) => failures.push(m);
@@ -36,17 +37,18 @@ const failures = []; const fail = (m) => failures.push(m);
   if (!r.body || !r.body.ok) fail(`the worksheet wasn't graded: ${JSON.stringify(r.body)}`);
   if (!calls) fail('the AI wasn\'t asked');
   if (g().score !== 20 || g().max !== 25 || g().pct !== 80 || !/Breakout Session Worksheet – Day 7/.test(g().title || '')) fail(`the worksheet's grade isn't 20 of 25 (80%): ${JSON.stringify(g()).slice(0, 300)}`);
-  // 2. it counts in the day's outputs
+  // 2. off the training (not in the curriculum): a worksheet graded before doesn't count in the day's outputs, nor as a submission
   // (the day it was graded, in Pacific time as the platform's days are: not the UTC date, a day ahead in the evening)
   const gd = g().at ? globalThis.FTTrackerRules.ptDate(new Date(g().at)) : D;
   await call('/api/eod/grade', { id, date: gd, score: 80 }, admin);
   { const day = gd, c = ((JSON.parse(store.get('ft:trackerreview:' + id)).compliance) || {})[day] || {};
-    if (!(c.graded || []).some(x => /Breakout Session Worksheet – Day 7/.test(x.what) && x.pct === 80)) fail(`the worksheet's grade isn't among the day's graded work: ${JSON.stringify(c.graded)}`); }
+    if ((c.graded || []).some(x => /Breakout Session Worksheet/.test(x.what))) fail(`a Breakout worksheet still counts in the day's graded work: ${JSON.stringify(c.graded)}`);
+    if (JSON.stringify(c).includes('Breakout Session Worksheet')) fail(`a Breakout worksheet still shows in the day's outputs: ${JSON.stringify(c).slice(0, 300)}`); }
   // 3. without the AI: the answers wait for the trainer, never 0
   delete env.ANTHROPIC_API_KEY;
   { const rv = JSON.parse(store.get('ft:trackerreview:' + id)); delete rv.assess; store.set('ft:trackerreview:' + id, JSON.stringify(rv)); }
   await call('/api/assess/grade', { id, doc: 'breakout-d7' }, admin);
   if (!g().pending || Object.values(g().items || {}).some(x => x.ok === false && !x.pending)) fail(`without the AI the worksheet isn't left to the trainer: ${JSON.stringify(g()).slice(0, 300)}`);
   if (failures.length) { console.error('Breakout worksheet test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Breakout worksheet test passed (a worksheet of 5 questions or more on each Breakout day, each answer graded by the AI out of 5 against its model answer, the grade in the day\'s outputs; without the AI, left to the trainer).');
+  console.log('Breakout worksheet test passed (a worksheet of 5 questions or more on each Breakout day, each answer graded by the AI out of 5 against its model answer, no longer counted in the day\'s outputs; without the AI, left to the trainer).');
 })().catch((e) => { console.error('Breakout worksheet test FAILED:', e && e.stack || e); process.exit(1); });

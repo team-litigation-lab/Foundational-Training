@@ -618,9 +618,8 @@ const HANDOUTS = {1: {items: [
   ["Ridesharing Companies", "https://drive.google.com/file/d/1T10rZY_PL8krUK7Djzm-oMaKxI4kE-Q9/view"],
   ["Dropped Cases", "https://drive.google.com/file/d/1N57yPn1zaPnGU0t-wY5cT01IB-ovZmOa/view"],
   ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
-// 📝 each Breakout Session's worksheet (js/ft-assess.js "breakout-d<day>"): 5 questions on the handouts, answered on one's own
-// and graded (worker.js /api/assess/grade), from the handouts' slide: {day: [lesson, worksheet]}
-const WORKSHEET = {"1": [1, "breakout-d1"], "2": [2, "breakout-d2"], "10": [7, "breakout-d10"], "13": [8, "breakout-d13"]};   // (none on Day 7)
+// (no Breakout Session worksheets: the curriculum's breakouts are the digital handouts only, with no assessment)
+const WORKSHEET = {};
 const worksheetBtn = n => { const w = WORKSHEET[n]; return w ? `<button type="button" class="btn btn-navy ftdd-ws-go" onclick="FTDayDecks.toAssess(${w[0]}, '${w[1]}', '', 'the deck', true)">📝 Breakout Worksheet: 5 questions →</button>` : ""; };
 function handoutsSlide(h){
   // the handouts are open to everyone, always: no lock, no 🔓 / 🔒 badge (the trainer doesn't unlock them)
@@ -630,9 +629,9 @@ function handoutsSlide(h){
     <div class="ftdd-ho-head"><h2>Digital Handouts</h2></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
-        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Answer the 📝 Breakout Worksheet (5 questions).</li>"
+        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li>"
         : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
-        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Answer the 📝 Breakout Worksheet on your own (5 questions).</li>`}</ol>
+        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li>`}</ol>
         </div>
       <div class="ftdd-ho-list">${cards}${worksheetBtn(DD.day)}</div>
     </div></div>`;
