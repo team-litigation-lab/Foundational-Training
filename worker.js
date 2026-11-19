@@ -3249,7 +3249,8 @@ export default {
         const scores = CRIT.map((n, i) => { const r = rowOf(n, i), v = r.score == null || r.score === "" ? NaN : Number(r.score); return isFinite(v) ? Math.max(0, Math.min(5, v)) : null; });
         if (scores.slice(0, 7).some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
         const feedback = CRIT.map((n, i) => String(rowOf(n, i).feedback || "").slice(0, 600));
-        const on = scores.filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
+        // (the average of the seven guide metrics: Tools Utilization, the eighth, is kept on the card but retired — js/ft-rubrics.js)
+        const on = scores.slice(0, 7).filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
         const rk = `labreview:${id}`, read0 = await kvx.get(rk), cur = JSON.parse(read0 || "null") || {};
         cur.acts = cur.acts || {}; const was = cur.acts["calendar-live"] || null;
         if (was && was.at && String(was.at) > at && was.source !== "portal") return json({ ok: true, skipped: "a newer scorecard here" });

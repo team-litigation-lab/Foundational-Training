@@ -6919,7 +6919,7 @@ function workOnNextItems(){
   const fbDays = Object.entries(state.myFeedback||{}).sort((a,b)=>(b[1].sentAt||"").localeCompare(a[1].sentAt||""));
   if(fbDays.length){ (fbDays[0][1].areasToBuild||[]).slice(0,2).forEach(x=>items.push({src:`Trainer · ${ftName(fbDays[0][0])}`, text:x, action:`openDayFeedback(${fbDays[0][0]})`})); }
   // 2) Knowledge Checks not yet passed
-  DAYS.forEach(d=>{ const p = (state.progress||{})[d.id]; if(p && typeof p.score==="number" && !p.done) items.push({src:`${ftName(d.id)} Knowledge Check`, text:`Not yet at 70% (${p.score}%): review the lesson and your trainer's feedback.`, action:`goto('day',${d.id})`}); });
+  // (no "Not yet at 70%": the Knowledge Checks are 📎 Additional Reference, js/ft-reference.js)
   // 3) latest graded-work gaps
   const recent = (state.workLog||[]).filter(e=>e.kind!=="quiz" && (e.growth||e.gaps||[]).length).slice(-3).reverse();
   recent.forEach(e=>{ const t = (e.growth && e.growth[0]) || (e.gaps && e.gaps[0]); if(t) items.push({src:e.label, text:t}); });
@@ -14165,6 +14165,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-day-activities.js?v=36e4e61fff"></script>
 <script src="/js/ft-simulators.js?v=03f496123b"></script>
 <script src="/js/ft-rubrics.js?v=361e027255"></script>
+<script src="/js/ft-reference.js?v=0"></script>
 <script src="/js/ft-sessions.js?v=7b7b33406a"></script>
 <script src="/js/ft-utilization.js?v=3be4bf6949"></script>
 <script src="/js/ft-ranking.js?v=dc65e88a6b"></script>

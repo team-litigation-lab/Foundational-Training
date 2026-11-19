@@ -96,7 +96,8 @@ function cmsFill(rb, L, run){
   const met = a.checks.filter(x => x.ok).length, miss = a.checks.filter(x => !x.ok).map(x => x.label), v = half(met / a.checks.length * 5);
   const note = `CMS record: ${met} of ${a.checks.length} checks met` + (miss.length ? `; missed: ${miss.join("; ")}` : "") + ".";
   const vals = {}, notes = {}, W = (RUB().WRITING || "Tools Utilization").toLowerCase();
-  rb.criteria.forEach((k, i) => { if(norm(k.n) === norm(W) || L.fill.some(re => re.test(k.n))){ vals[i] = v; notes[i] = note.slice(0, 600); } });
+  // (a retired criterion — Tools Utilization, not in the guide's metrics — is never filled)
+  rb.criteria.forEach((k, i) => { if(k.retired) return; if(norm(k.n) === norm(W) || L.fill.some(re => re.test(k.n))){ vals[i] = v; notes[i] = note.slice(0, 600); } });
   return Object.keys(vals).length ? {vals, notes, v, names: rb.criteria.filter((k, i) => vals[i] != null).map(k => k.n)} : null;
 }
 const answer = v => Array.isArray(v) ? v.join(", ") : v === true ? "✓" : v === false ? "—" : String(v == null ? "" : v);

@@ -176,7 +176,8 @@ const previewCase = s => { const f = previewFirm(); return s.area && f ? (FF().c
 const sessionCase = s => isTrainee() ? caseFor(s) : previewCase(s);
 const runOf = (s, c) => (S.data && S.data.runs[keyOf(s, c)]) || null;
 const reviewOf = key => ((S.review || {}).sessions || {})[key] || null;
-const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
+// (worked out again from the saved scorecard without its retired criteria — Tools Utilization — js/ft-rubrics.js scoreOf)
+const tScore = r => { const v = window.FT_RUBRICS && FT_RUBRICS.scoreOf ? FT_RUBRICS.scoreOf(r) : r && r.score; return v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null; };
 // ☎ 🗂 what a mock call was scored beside (the graded call on its Ring Channel line, the CMS record), js/ft-mockcall-links.js
 const mockSources = (id, actId) => { const a = acts().find(x => x.id === actId); return a && window.FTMockLinks ? FTMockLinks.sources(id, a) : undefined; };
 function scoreOf(run, rv){ const t = tScore(rv); return t != null ? t : run && run.auto ? run.auto.pct : null; }
@@ -393,6 +394,8 @@ const STATUSES = ["By the score", "Redo"];
 const pillCls = v => v === "Passed" ? "ok" : v === "Failed" ? "bad" : v === "Redo" ? "mid" : "";
 // What this module's live work is: its Practice Session and anything done with the trainer.
 // Used by 📚 Dashboard to show each module's activities next to it (js/ft-program.js).
+// (the trainer-led activities as the trainers listed them: js/ft-reference.js judges each by its scorecard)
+FTSessions.acts = () => acts();
 FTSessions.forLesson = function(lesson){
   const l = Number(lesson);
   return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))
@@ -844,8 +847,8 @@ window.ftTrainerItems = ctx => {
   return list.filter(a => recorded(a) ? RES(mine[a.id]) !== "Redo" : !!autoItem(a)).map(a => { if(!recorded(a)) return autoItem(a);
     const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
-    const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
-    return {name:a.title, ref:"act:" + a.id, kind:a.kind || "", why:actWhy(r), at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    const av = window.FT_RUBRICS && FT_RUBRICS.avg5Of ? FT_RUBRICS.avg5Of(r) : r.rubric && r.rubric.avg, avg = av != null && isFinite(Number(av)) ? Number(av) : null;
+    return {name:a.title, ref:"act:" + a.id, rubric:(RUB().forAct(a) || {}).key, kind:a.kind || "", why:actWhy(r), at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (avg != null ? " · scorecard " + avg.toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `

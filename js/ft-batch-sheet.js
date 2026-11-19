@@ -243,7 +243,7 @@ function traineesTable(){
     head: ["Trainee", "Status", "Registered", "Last on the platform", "Lesson decks finished", "Knowledge Checks passed", "Last thing they opened"],
     rows: ppl.map(p => {
       const r = (B.data.rec[p.id] || {}).data || {}, decks = L.filter(d => deckOf(p, d).finished).length;
-      const dp = r["day-progress"] || p.progress || {}, kc = L.filter(d => (dp[d.id] || {}).done && typeof (dp[d.id] || {}).score === "number").length;
+      const dp = r["day-progress"] || p.progress || {}, kc = L.filter(d => window.ftReference ? ftReference.lessonDone(dp[d.id]) : (dp[d.id] || {}).done && typeof (dp[d.id] || {}).score === "number").length;
       const lv = r["last-view"], last = lastOpened(lv);
       const lastAt = [p.lastActive, lv && lv.at, B.data.rec[p.id] && B.data.rec[p.id].savedAt].map(t).filter(Boolean).sort((a, b) => b - a)[0];
       const st = p.status;
@@ -253,7 +253,7 @@ function traineesTable(){
         {v: (whenD(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? whenD(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
-        {v: `${kc} / ${L.length}`, f: `${kc} of the ${L.length} Knowledge Checks passed (70% passes)`, cls: "gs-num"},
+        {v: `${kc} / ${L.length}`, f: `${kc} of the ${L.length} Knowledge Checks ${window.ftReference ? "submitted (📎 Additional Reference: not scored)" : "passed (70% passes)"}`, cls: "gs-num"},
         {v: last, f: lv && lv.at ? `${last} · ${new Date(lv.at).toLocaleString()}` : last, cls: "gs-txt"}];
     })};
 }
@@ -307,7 +307,27 @@ function fbCell(p){
 }
 // (the Scorecard overall in words: the grading systems' average, and the trainer's added points on it, 100% at most)
 const ovWhy = sc => window.lshProgram && lshProgram.overallWhy ? lshProgram.overallWhy(sc) : `the average of the grading systems = ${sc.overall}%`;
+// 📎 a cell of something the Training Guide doesn't grade (js/ft-reference.js): shown as Additional Reference, its figure only in
+// the hover, counted nowhere
+const REFV = "📎 Additional Reference";
+const refCell = (c, why) => ({v: REFV, f: `${REFV}: not scored or counted${why ? " · " + why : ""}${c && c.v !== "" && c.v != null && c.v !== REFV ? ` (was ${c.v})` : ""}`, cls: "gs-txt"});
+// (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
+// Overall % are Additional Reference; 📈 Overall Performance the same, with no rank — it has nothing scored left to rank by)
 function scoresTable(){
+  const t = scoresTable0(); if(!window.ftReference) return t;
+  const S = B.data.sources.filter(s => !s.hidden), n0 = 1 + S.length;   // (Trainee, then a column per source, then 💬, then the totals)
+  t.rows = t.rows.map((row, ri) => row.map((c, i) => { if(i === 0 || i === n0) return c;
+    if(i < n0){ const s = S[i - 1], sc = (B.data.rec[(people()[ri] || {}).id] || {}).score, x = sc && sc.rows ? sc.rows.find(y => y.s === s) : null; return x && x.reference ? refCell(c) : c; }
+    return refCell(c); }));
+  return t;
+}
+function overallTable(){
+  const t = overallTable0(); if(!window.ftReference) return t;
+  t.note = `${B.batch}: the whole training, a row per trainee. The weekly averages, the Scorecard overall, the Daily compliance and the Overall % are ${REFV}: the Training Guide grades none of them, so nothing here is counted or ranked. The scored work — the trainer's mock-call and demo scorecards and the three assessments — is on each trainee's page.`;
+  t.rows = t.rows.map(row => row.map((c, i) => i === 0 ? c : i === 1 ? {v: "", f: "Not ranked: 📎 Additional Reference", cls: "gs-rank"} : refCell(c)));
+  return t;
+}
+function scoresTable0(){
   const ppl = people(), S = B.data.sources.filter(s => !s.hidden), reps = B.data.reps || [], weeks = reps.map((r, i) => r ? i + 1 : null).filter(Boolean), me = meOn();
   const rows = ppl.map(p => { const sc = (B.data.rec[p.id] || {}).score, comp = compOf(p), ws = weeks.map(w => weekMark(reps[w - 1], p.id)), wavg = avgOf(ws);
     const overall = avgOf([sc && sc.overall, comp.pct, wavg == null ? null : wavg / 5 * 100]); return {p, sc, comp, ws, wavg, overall}; });
@@ -341,7 +361,7 @@ function liveWeek(){
   try{ const c = window.FTRanking && FTRanking.ctx ? FTRanking.ctx() : null, r = c && c.batch === B.batch && FTRanking.report ? FTRanking.report() : null;
     if(!r) return null; const m = {}; r.ranked.forEach(x => { m[x.id] = x.avg == null ? null : Number(x.avg); }); return {week: c.week, m}; }catch(err){ return null; }
 }
-function overallTable(){
+function overallTable0(){
   const ppl = people(), reps = B.data.reps || [], weeks = ovWeeks(), live = liveWeek();
   const rows = ppl.map(p => { const sc = (B.data.rec[p.id] || {}).score, comp = compOf(p);
     const ws = weeks.map(w => live && live.week === w ? (live.m[p.id] == null ? null : live.m[p.id]) : weekMark(reps[w - 1], p.id)), wavg = avgOf(ws);
@@ -436,19 +456,19 @@ function kdOneHtml(p, single){
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
-        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> <span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
-            ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}</summary>
+        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g.subm || g.pct != null ? "submitted" : "not submitted yet"}${sc.length ? ` · ${sc.length} answer${sc.length === 1 ? "" : "s"} with feedback` : ""}</small>` : `<span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+            ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}`}</summary>
           ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
           ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
           ${its.length ? `<ol class="bs-kd-q">${its.map(it => `<li><b>${e(it.q)}</b>
               <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
-              ${typeof it.score === "number" ? `<div class="bs-kd-fb ${fbTone(Number(it.score))}"><b>${e(String(it.score))}/10</b> ${e(it.feedback || "")}</div>` : it.answer && g.subm ? `<div class="bs-kd-fb"><b>—</b> not graded yet</div>` : ""}
+              ${typeof it.score === "number" ? `<div class="bs-kd-fb ${window.ftReference ? "" : fbTone(Number(it.score))}"><b>${window.ftReference ? "💬" : e(String(it.score)) + "/10"}</b> ${e(it.feedback || "")}</div>` : it.answer && g.subm ? `<div class="bs-kd-fb"><b>—</b> not graded yet</div>` : ""}
               ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
-        return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, pc = g && g.score != null ? numOr(g.pct) : null;
-          return `<details class="bs-kd" name="bs-kd"><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
-              ${g ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : ""}</summary>
+        return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, rf = window.ftReference && !ftReference.assessScored(x.doc), pc = g && g.score != null && !rf ? numOr(g.pct) : null;
+          return `<details class="bs-kd" name="bs-kd"><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${rf ? REFV : pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
+              ${g && !rf ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : rf ? `<small>${g ? "graded" + (g.when ? " " + e(g.when) : "") + " · feedback below" : x.answered ? "answered" : "not started"}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
                 <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
                 ${it.ok != null || it.pending ? `<div class="bs-kd-fb ${it.pending ? "gs-mid" : it.ok ? "gs-hi" : "gs-lo"}"><b>${it.pending ? "⏳ to the trainer" : (it.ok ? "✓" : "✗") + (it.pts != null ? ` ${it.pts}${it.max != null ? "/" + it.max : ""} pt${it.pts === 1 ? "" : "s"}` : "")}</b> ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
@@ -572,8 +592,11 @@ function dayDeliverables(p, d){
   const later = k => L[k] != null && L[k] !== d.day ? L[k] : null;
   list.forEach(x => {
     // (W1-OVERRIDE: a Week 1 activity with no score reads Done, with the note)
-    const it = x.it, grp = groupOf(it);
-    const push = (...os) => out.push(...os.map(o => Object.assign({group: grp}, x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o)));
+    const it = x.it, grp = groupOf(it), REF = window.ftReference;
+    // (📎 what the Training Guide doesn't grade is shown, its feedback kept, with no score: js/ft-reference.js)
+    const scoredIt = !REF || (it.at === "trainer" ? REF.actScored(it.id) : it.assess ? REF.assessScored(it.assess) : false);
+    const asRef = o => scoredIt || o.pct == null ? o : Object.assign({}, o, {pct: null, reference: true, status: REFV + (o.status ? " · " + o.status : "")});
+    const push = (...os) => out.push(...os.map(asRef).map(o => Object.assign({group: grp}, x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o)));
     const lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
     if(it.at === "trainer" && acts[it.id] && (acts[it.id].status || acts[it.id].score != null)){ push(trainerCtx(acts[it.id], it.t)); return; }
@@ -608,7 +631,7 @@ function dayDeliverables(p, d){
   Object.entries(ACTS).filter(([k, a]) => a.submit && Number(k.split(":")[0]) === Number(d.day)).forEach(([, a]) => {
     const key = (a.submit.items || []).join("-"); if(seen.has(key)) return; seen.add(key);
     const r = items[key]; if(!r) return; const g = r.result || {};
-    out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: num100(g.score), status: r.onTime ? "On time" : "Late",
+    out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: window.ftReference ? null : num100(g.score), status: (window.ftReference ? REFV + " · " : "") + (r.onTime ? "On time" : "Late"),
       why: [g.score != null ? `${num100(g.score)}% from the review of the entries` : "Submitted", r.onTime ? "on time (before 5:00 PM ET)" : "late (after 5:00 PM ET)", g.context ? clip(g.context, 260) : ""].filter(Boolean).join(", ").replace(/, ([^,]*)$/, ". $1"),
       best: (g.items || []).filter(x => x.found).slice(0, 3).map(x => `#${x.n} ${x.title || ""} is in`), improve: [...(g.redFlags || []), ...(g.improve || [])].slice(0, 4).map(x => clip(x, 200)), by: "📒 Reviewed"});
   });
@@ -705,7 +728,8 @@ function lessonScore(p, l){
   const comp = ((R.src || {})["trackerreview:"] || {}).compliance || {};
   const cds = days.map(d => ({n: d.day, date: dayDate(d.day)})).filter(x => x.date && comp[x.date] && typeof comp[x.date].pct === "number").map(x => ({n: x.n, date: x.date, pct: comp[x.date].pct}));
   const cl = avgOf(cds.map(x => x.pct));
-  const avg = avgOf([kc, pr, cl]);
+  // (📎 the Knowledge Checks and the end-of-shift check are Additional Reference: the lesson's average is its scored work only)
+  const avg = window.ftReference ? pr : avgOf([kc, pr, cl]);
   const fb = ((((R.feedback || {}).days) || {})[l]) || null, sent = fb && fb.status === "sent" ? fb : null;
   return {kc, kcs, pr, prs, cl, cds, avg, fb: sent};
 }
@@ -719,9 +743,9 @@ function scoreCardTable(){
       return [{v: p.name, f: p.name, cls: "gs-name"}, {v: pct(all), f: all == null ? "Nothing scored yet" : `Overall = the average of the lessons' averages (${S.map((x, i) => x.avg == null ? null : `${L[i].id}: ${Math.round(x.avg)}%`).filter(Boolean).join(", ")}) = ${Math.round(all)}%`, cls: "gs-num gs-calc gs-bold " + tone(all)}]
         .concat(...S.map((x, i) => { const nm = `${L[i].id}. ${lessonName(L[i].id)}`;
           return [
-            {v: pct(x.kc), f: x.kc == null ? `${nm} · Knowledge Checks: not graded yet` : `${nm} · Knowledge Checks: ${x.kcs.map(y => `${y.k.title} ${y.g.pct}% (${y.g.how})`).join("; ")}`, cls: "gs-num " + tone(x.kc)},
+            window.ftReference ? refCell({v: pct(x.kc)}, `${nm} · Knowledge Checks`) : {v: pct(x.kc), f: x.kc == null ? `${nm} · Knowledge Checks: not graded yet` : `${nm} · Knowledge Checks: ${x.kcs.map(y => `${y.k.title} ${y.g.pct}% (${y.g.how})`).join("; ")}`, cls: "gs-num " + tone(x.kc)},
             {v: pct(x.pr), f: x.pr == null ? `${nm} · Practice: nothing scored yet` : `${nm} · Practice: ${x.prs.map(y => `${y.t.replace(/\s*\(.*$/, "")} ${y.pct}%`).join("; ")}`, cls: "gs-num " + tone(x.pr)},
-            {v: pct(x.cl), f: x.cl == null ? `${nm} · Classroom & outputs: no checked day yet` : `${nm} · Classroom & outputs: ${x.cds.map(y => `Day ${y.n} (${y.date}) ${y.pct}%`).join("; ")} — the end-of-shift check`, cls: "gs-num " + tone(x.cl)},
+            window.ftReference ? refCell({v: pct(x.cl)}, `${nm} · Classroom & outputs (the end-of-shift check)`) : {v: pct(x.cl), f: x.cl == null ? `${nm} · Classroom & outputs: no checked day yet` : `${nm} · Classroom & outputs: ${x.cds.map(y => `Day ${y.n} (${y.date}) ${y.pct}%`).join("; ")} — the end-of-shift check`, cls: "gs-num " + tone(x.cl)},
             {v: pct(x.avg), f: x.avg == null ? `${nm}: nothing to average yet` : `${nm} · Average = the average of ${[x.kc, x.pr, x.cl].filter(v => v != null).length} (${[x.kc, x.pr, x.cl].filter(v => v != null).map(v => Math.round(v) + "%").join(" + ")}) = ${Math.round(x.avg)}%`, cls: "gs-num gs-calc gs-bold " + tone(x.avg)},
             {v: x.fb ? (x.fb.rating || "Sent") : "", f: x.fb ? `${nm} · Trainer: ${x.fb.rating || ""}${x.fb.summary ? " — " + String(x.fb.summary).replace(/\s+/g, " ").slice(0, 400) : ""}` : `${nm}: no feedback sent yet`, cls: "gs-txt " + (x.fb ? ratingTone(x.fb.rating) : "")}]; }));
     })};
@@ -744,8 +768,8 @@ function lessonMarks(p, kc){
   const ls = kc ? kcLessons() : lessons(); if(!ls.length || !B.data) return "";
   const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   return `<div class="bs-lkg bs-lkg-n" style="--n:${ls.length}">${ls.map(d => { const k = deckOf(p, d), x = dp[d.id] || {}, sc = typeof x.score === "number" ? Math.round(x.score) : null;
-    const ok = kc ? !!x.done : k.finished;
-    const tip = kc ? (ok ? `Passed${sc != null ? " with " + sc + "%" : ""}` : sc != null ? `Not passed yet: ${sc}% so far (70% passes)` : "Not taken yet")
+    const ok = kc ? (window.ftReference ? ftReference.lessonDone(x) : !!x.done) : k.finished;
+    const tip = kc ? (window.ftReference ? (ok ? "Submitted · 📎 Additional Reference" : "Not taken yet") : ok ? `Passed${sc != null ? " with " + sc + "%" : ""}` : sc != null ? `Not passed yet: ${sc}% so far (70% passes)` : "Not taken yet")
       : ok ? "Finished" : k.seen ? `Not finished: slide ${k.seen} of ${k.total || "?"}` : "Not opened yet";
     return `<div class="bs-lkc" title="${e(lessonName(d.id))}: ${e(tip)}"><span><b>Lesson ${e(d.id)}</b><br>${e(lessonName(d.id))}</span><span class="bs-mk ${ok ? "bs-mk-ok" : "bs-mk-x"}">${ok ? "✓" : "✗"}</span></div>`; }).join("")}</div>`;
 }
@@ -758,7 +782,7 @@ function complianceTable(){
     head: ["Trainee", "Links correct"].concat(LINKS.map(([, label]) => label), ["Last checked", "Lesson decks", "Knowledge Checks passed", "Last on the platform"]),
     rows: ppl.map(p => { const {L, checked} = linkState(p), okN = LINKS.filter(([q]) => /ok|trainer/.test(L[q].st)).length;
       const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {}, ls = lessons();
-      const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => (dp[d.id] || {}).done).length, last = p.lastActive;
+      const kl = kcLessons(), decks = ls.filter(d => deckOf(p, d).finished).length, kcs = kl.filter(d => window.ftReference ? ftReference.lessonDone(dp[d.id]) : (dp[d.id] || {}).done).length, last = p.lastActive;
       const linkCol = k => { const x = L[k], st = x.nf ? ["✗ Not in Drive", "gs-lo"] : x.st === "none" ? ["— Not linked", "gs-lo"] : LSTAT[x.st] || ["—", ""], m = markOf(x);
         // (🔎 not in their Drive: the batch's Drive was searched and has no such file with their name — worker.js autoLinkBatch)
         const f = `${x.label}: ${x.link ? x.link + " · " : ""}${x.nf ? `not in their Drive: the batch’s Drive was searched${x.nf !== true ? " " + when(x.nf) : ""} and has no ${x.label} with their name. They need to make it from the template and link it${x.c && x.c.err ? ` (the check said: ${x.c.err})` : ""}` : x.st === "none" ? "not linked yet" : x.c && x.c.err ? x.c.err : st[0]}`;
@@ -1022,7 +1046,8 @@ const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "
 function editBoxHtml(p){
   if(!adminOn() || meOn()) return "";
   const sc = (B.data.rec[p.id] || {}).score, R = B.data.rec[p.id] || {};
-  const can = it => !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref));
+  // (📎 only a scored item is edited here — a mock call or demo, a scored assessment: the rest is Additional Reference)
+  const can = it => !!(window.lshProgram && lshProgram.editable && lshProgram.editable(it.ref)) && !it.reference;
   const groups = sc && Array.isArray(sc.rows) ? sc.rows.filter(r => r && r.s && !r.s.hidden).map(r => ({s: r.s, items: (r.items || []).filter(can)})).filter(g => g.items.length) : [];
   const all = groups.flatMap(g => g.items);
   B.edSel = B.edSel || {};
@@ -1054,6 +1079,9 @@ function whyOf(p, R, it){
 // 100% at most. A plain field at the end of 🏅 Grades, for a trainer only; the trainee sees it in their overall
 function extraRowHtml(p){
   if(!adminOn() || meOn()) return "";
+  // (📎 no added points: there is no overall score — an older note is shown as it was)
+  if(window.ftReference){ const x0 = window.lshProgram && lshProgram.extra ? lshProgram.extra(((B.data.rec[p.id] || {}).src) || {}) : null;
+    return x0 ? `<tr class="bs-pt-x"><td class="bs-pt-m">+</td><td class="bs-pt-v">${REFV}</td><td class="bs-pt-f">Points added earlier (${e(x0.points)}), not counted${x0.note ? ": " + e(x0.note) : ""}</td></tr>` : ""; }
   const x = window.lshProgram && lshProgram.extra ? lshProgram.extra(((B.data.rec[p.id] || {}).src) || {}) : null, sc = (B.data.rec[p.id] || {}).score;
   return `<tr class="bs-pt-x"><td class="bs-pt-m">+</td><td class="bs-pt-v" title="${e(sc ? ovWhy(sc) : "")}"><input class="bs-ed" type="number" min="-100" max="100" step="0.5" value="${x ? x.points : ""}" placeholder="0" aria-label="Points added to the Scorecard overall" data-pid="${e(p.id)}" data-extra="1" onchange="FTBatchSheet.editExtra(this)"></td>
     <td class="bs-pt-f"><input class="bs-ed-note" maxlength="600" value="${e(x ? x.note : "")}" placeholder="Note (optional)" aria-label="Note on the points" data-pid="${e(p.id)}" data-extra="1" onchange="FTBatchSheet.editExtra(this)"></td></tr>`;
@@ -1067,8 +1095,8 @@ function activitiesHtml(p){
   const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"]) : "";
   if(!items.length && !cal) return "";
   return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> <span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
-        ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}</summary>
+    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
+        ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}`}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${actItemsHtml(it, g)}</details>`; }).join("");
 }
 // (each graded answer of an activity, in the calls' order: ✓ right, ✗ marked down with the grading's note, ⏳ for the trainer)
@@ -1168,7 +1196,7 @@ function perTraineeHtml(T){
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
-        .map(([l, v, f]) => [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, REFV, "", `${REFV}: not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
@@ -1285,14 +1313,15 @@ function outputsTable(){
     rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
       return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
-        {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        window.ftReference ? refCell({v: pct(a)}, "the end-of-shift check") : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
-          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
-          return {v: x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
+          // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
+          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => window.ftReference ? `<b class="bs-sbox" title="${REFV}${v == null ? "" : ": " + Math.round(v) + "%"}">📎</b>` : `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
+          return {v: window.ftReference ? REFV : x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : window.ftReference ? "📎" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : window.ftReference ? "" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -1553,13 +1582,17 @@ function scoreOf(R, d, it, p){
   // (🟢 a Practice Session is practice: off the scorecards, which count only what is graded — the mock calls and demos the
   // trainer scores, the Knowledge Checks, the graded answer sheets and tools. It still counts as done once submitted.)
   if(it.at === "session") return null;
-  if(it.at === "trainer"){ const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(a.score) : null, g = a ? null : autoTr(R, it);
+  // (📎 only what the Training Guide grades has a score: js/ft-reference.js — the rest is Additional Reference, shown, not scored)
+  const REF = window.ftReference;
+  if(it.at === "trainer"){ if(REF && !REF.actScored(it.id)) return null;
+    const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(window.FT_RUBRICS && FT_RUBRICS.scoreOf ? FT_RUBRICS.scoreOf(a) : a.score) : null, g = a ? null : autoTr(R, it);
     return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
-  if(it.assess){ const g = assessOf(R, it), v = gradePct(g), o = ovOf(R, "assess:" + it.assess);
+  if(it.assess){ if(REF && !REF.assessScored(it.assess)) return null;
+    const g = assessOf(R, it), v = gradePct(g), o = REF ? null : ovOf(R, "assess:" + it.assess);
     if(o) return {pct: numOr(o.pct), how: `trainer's score${v != null ? ` (graded ${v}%)` : ""}`};
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;
-  if(it.id === "process"){
+  if(it.id === "process"){ if(REF) return null;
     const rv = src["kcreview:"] || {}, xs = [];
     (d.lessons || []).forEach(l => { const x = dp[l] || {}, t = numOr(((rv.lessons || {})[l] || {}).score), g = t != null ? t : typeof x.score === "number" ? x.score : null;
       if(g != null) xs.push({pct: g, how: `${lessonName(l)} ${g}%${t != null ? " (trainer's final)" : ""}`});

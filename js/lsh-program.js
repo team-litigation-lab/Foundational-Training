@@ -52,7 +52,7 @@ const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one: no 🏅 Scorecards, no 🛡 Admin
 const lessons = () => DAYS.filter(d => d && d.sections && d.sections.length);
-const doneIn = p => lessons().filter(d => p && p[d.id] && p[d.id].done).length;
+const doneIn = p => lessons().filter(d => p && p[d.id] && (CFG.lessonDone ? CFG.lessonDone(p[d.id]) : p[d.id].done)).length;
 const tier = pct => pct == null ? "none" : pct >= 85 ? "top" : pct >= 70 ? "ok" : "low";
 const pctTxt = pct => pct == null ? "—" : Math.round(pct) + "%";
 const batchLabel = id => {
@@ -289,13 +289,20 @@ function compute(ctx){
     // (ctx.reviewedOnly: without the automatic scores no trainer has reviewed yet, items marked auto — the Weekly Ranking's ⤓ Fill)
     try{ items = (s.items(ctx) || []).filter(x => x && !(ctx.reviewedOnly && x.auto)); }catch(err){ items = []; }
     // (✎ an override keeps the item's own date, so a week's ⤓ Fill still places it in its week)
-    items = items.map(x => { const o = overrideOf(ctx.rec, x.ref); return o ? Object.assign({}, x, {orig:x.pct, pct:numPct(o.pct), overridden:true, auto:false,
+    // (CFG.overridesReference: a trainer's override is kept as a note, not as the item's score)
+    items = items.map(x => { const o = overrideOf(ctx.rec, x.ref); if(o && CFG.overridesReference) return Object.assign({}, x, {override:o});
+      return o ? Object.assign({}, x, {orig:x.pct, pct:numPct(o.pct), overridden:true, auto:false,
       why:`Trainer’s score ${numPct(o.pct)}% (was ${typeof x.pct === "number" ? Math.round(x.pct) + "%" : "—"})${o.note ? ": " + o.note : ""}${x.why || x.note ? " · " + (x.why || x.note) : ""}`}) : x; });
+    // (📎 an item the program doesn't score — CFG.scored, or a source marked reference — is shown with no score and counted nowhere)
+    const isRef = x => !!(s.reference || x.reference || (typeof CFG.scored === "function" && !CFG.scored(x, s)));
+    items = items.map(x => isRef(x) ? Object.assign({}, x, {reference:true, refPct:x.pct, pct:null, mark5:null, note:x.refNote != null ? x.refNote : x.note}) : x);
     const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct));
-    return {s, items, graded:g.length, avg:g.length ? Math.round(g.reduce((n, x) => n + x.pct, 0) / g.length) : null};
+    return {s, items, graded:g.length, reference:!!(s.reference || (items.length && items.every(i => i.reference))), avg:g.length ? Math.round(g.reduce((n, x) => n + x.pct, 0) / g.length) : null};
   });
   // (a source marked noOverall is shown with its own average but left out of the overall: its scores come from the others)
-  const have = rows.filter(r => r.avg != null && !r.s.noOverall);
+  const have = rows.filter(r => r.avg != null && !r.s.noOverall && !r.reference);
+  // (CFG.overallReference: no overall score and no added points: 📎 Additional Reference)
+  if(CFG.overallReference) return {rows, overall:null, overallBase:null, extra:null, refExtra:ctx.range ? null : extraOf(ctx.rec), reference:true, graded:have.reduce((n, r) => n + r.graded, 0), systems:have.length, done:doneIn(ctx.progress), total:lessons().length};
   const base = have.length ? Math.round(have.reduce((n, r) => n + r.avg, 0) / have.length) : null;
   // (+ points: on the whole training's overall only, not a week's — they carry no week)
   const extra = ctx.range ? null : extraOf(ctx.rec);
@@ -303,7 +310,7 @@ function compute(ctx){
   return {rows, overall, overallBase:base, extra, graded:have.reduce((n, r) => n + r.graded, 0), systems:have.length, done:doneIn(ctx.progress), total:lessons().length};
 }
 // how the overall was worked out, in words (for a hover)
-const overallWhy = sc => !sc || sc.overall == null ? "Nothing graded yet" : `The average of ${sc.systems} grading system${sc.systems === 1 ? "" : "s"} = ${sc.overallBase}%`
+const overallWhy = sc => sc && sc.reference ? REF_LABEL + ": no overall score" : !sc || sc.overall == null ? "Nothing graded yet" : `The average of ${sc.systems} grading system${sc.systems === 1 ? "" : "s"} = ${sc.overallBase}%`
   + (sc.extra ? ` · base ${sc.overallBase}% ${sc.extra.points < 0 ? "−" : "+"} ${Math.abs(sc.extra.points)} point${Math.abs(sc.extra.points) === 1 ? "" : "s"}${sc.extra.note ? " (" + sc.extra.note + ")" : ""} = ${sc.overall}%${sc.overallBase + sc.extra.points > 100 ? " (100% at most)" : ""}` : "");
 // ✎ the trainer's writes (labreview:<id>): read strictly — a failed read throws, never taken for an empty record and saved over
 // the trainer's other reviews — merged into the fresh record, then the Scorecards read again
@@ -348,19 +355,21 @@ const mineCtx = () => ({id:state.traineeId, progress:state.progress || {}, rec:S
 window.addEventListener("focus", () => { if(isTrainee() && SC.id && state.view === "scorecard") loadMine(); });
 function detail(sc){
   return `<div class="sc-grid">${sc.rows.filter(r => !r.s.hidden).map(r => `<div class="card sc-src">
-      <div class="sc-src-h"><span class="sc-src-ic">${r.s.icon}</span><b>${e(r.s.label)}</b><span class="sc-pill t-${tier(r.avg)}">${pctTxt(r.avg)}</span></div>
+      <div class="sc-src-h"><span class="sc-src-ic">${r.s.icon}</span><b>${e(r.s.label)}</b>${r.reference ? `<span class="sc-pill t-none">${REF_LABEL}</span>` : `<span class="sc-pill t-${tier(r.avg)}">${pctTxt(r.avg)}</span>`}</div>
       ${r.s.about ? `<p class="sc-about">${e(r.s.about)}</p>` : ""}
-      ${r.items.length ? `<table class="sc-tbl"><tbody>${r.items.map(x => `<tr><td>${e(x.name)}${x.note ? `<span>${e(x.note)}</span>` : ""}${x.why && x.why !== x.note ? `<details class="sc-why"><summary>Why</summary>${e(x.why)}</details>` : ""}</td><td class="sc-n t-${tier(x.pct)}" title="${e(x.why || x.note || "")}">${pctTxt(x.pct)}${x.overridden ? ` <small aria-label="the trainer’s score">✎</small>` : ""}</td></tr>`).join("")}</tbody></table>`
+      ${r.items.length ? `<table class="sc-tbl"><tbody>${r.items.map(x => `<tr><td>${e(x.name)}${x.note ? `<span>${e(x.note)}</span>` : ""}${x.why && x.why !== x.note ? `<details class="sc-why"><summary>Why</summary>${e(x.why)}</details>` : ""}${x.override && x.override.note ? `<span>${REF_LABEL} · trainer’s note: ${e(x.override.note)}</span>` : ""}</td><td class="sc-n t-${tier(x.pct)}" title="${e(x.why || x.note || "")}">${x.reference ? `<small>${REF_LABEL}</small>` : pctTxt(x.pct)}${x.overridden ? ` <small aria-label="the trainer’s score">✎</small>` : ""}</td></tr>`).join("")}</tbody></table>`
         : `<p class="sc-empty">Nothing graded here yet.</p>`}
     </div>`).join("")}</div>`;
 }
 function ring(pct, why){
+  if(CFG.overallReference) return `<div class="sc-ring t-none" style="--p:0"${why ? ` title="${e(why)}"` : ""}><span>📎</span><small>Additional Reference</small></div>`;
   const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
   return `<div class="sc-ring t-${tier(pct)}" style="--p:${p}"${why ? ` title="${e(why)}"` : ""}><span>${pctTxt(pct)}</span><small>overall</small></div>`;
 }
 // (a source marked hidden has no card or column of its own: its items are shown on another's, js/ft-program.js)
 const shown = () => CFG.sources.filter(s => !s.hidden);
-const HOW = "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same." +
+const REF_LABEL = "📎 Additional Reference";
+const HOW = (CFG.overallReference ? "Only what the Training Guide grades is scored: each grading system’s score is the average of its scored items. Everything else is 📎 Additional Reference: shown with its feedback, with no score, counted nowhere — and there is no overall score." : "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same.") +
   (shown().some(s => s.noOverall) ? ` (${shown().filter(s => s.noOverall).map(s => s.label).join(", ")}: shown, but not counted again in the overall, as its marks come from the other systems.)` : "");
 function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
@@ -427,7 +436,7 @@ function renderAdminScores(){
       <span><select onchange="lshProgram.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="lshProgram.refresh()">↻ Refresh</button></span></div>
     ${rows.length ? `<div class="sc-scroll"><table class="sc-tbl sc-admin-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Lessons</th>${shown().map(s => `<th>${s.icon} ${e(s.label)}</th>`).join("")}<th>Overall</th></tr></thead><tbody>
-      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.filter(x => !x.s.hidden).map(x => cell(x.avg)).join("")}${cell(r.sc.overall).replace("<td ", `<td title="${e(overallWhy(r.sc))}" `)}</tr>
+      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.filter(x => !x.s.hidden).map(x => x.reference ? `<td class="sc-n t-none"><small>${REF_LABEL}</small></td>` : cell(x.avg)).join("")}${r.sc.reference ? `<td class="sc-n t-none" title="${e(overallWhy(r.sc))}"><small>${REF_LABEL}</small></td>` : cell(r.sc.overall).replace("<td ", `<td title="${e(overallWhy(r.sc))}" `)}</tr>
         ${AS.open[r.id] ? `<tr class="sc-open"><td colspan="${shown().length + 4}">${detail(r.sc)}</td></tr>` : ""}`).join("")}
     </tbody></table></div>` : `<p class="sc-empty">No approved trainees${AS.batch ? " in this batch" : ""} yet.</p>`}
     <p class="sc-how">${HOW}</p></div>`;
