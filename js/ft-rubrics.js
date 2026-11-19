@@ -29,7 +29,9 @@ const R = {
   lor: {title: "Saving LORs to SA and Sending to 1P & 3P Insurance Companies", acts: ["lor-demo"], criteria: C(
     "Task Preparation & Familiarity", "Smart Advocate Navigation", "Insurance Review, Adjuster Information & Claim/Policy Number Accuracy",
     "Document Uploading & File Handling in SA", "Document Properties & Naming Convention Accuracy", "Email/Fax Sending Accuracy & SOP Compliance",
-    "Attention to Detail", "Attention to Detail, Verification & Efficiency")},
+    // (the guide's "Attention to Detail" row is merged into "Attention to Detail, Verification & Efficiency": it keeps its place,
+    // retired, so the scores saved before keep their rows — a retired criterion is not shown, scored or averaged)
+    {n: "Attention to Detail", w: 1, retired: true}, "Attention to Detail, Verification & Efficiency")},
   medlor: {title: "MedLOR Demonstration", acts: ["medlor-demo"], time: "The ideal time for the demo is 1 hour and 45 minutes; any time beyond it is a deduction under Time Management & Efficiency.", criteria: C(
     "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
     "Email Drafting", "Time Management & Efficiency")},
@@ -73,7 +75,7 @@ function forAct(a){
 // the weighted average out of 5 of the criteria scored (null when none is)
 function average(rubric, scores){
   let sum = 0, w = 0;
-  (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
+  (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(!c.retired && isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
   return w ? sum / w : null;
 }
 /* ✅ a mock call's or demo's result, from its record (labreview:<id>.acts[<activity>]): Passed at 3/5 (60%) or more, Failed

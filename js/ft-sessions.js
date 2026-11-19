@@ -430,8 +430,8 @@ FTSessions.trainerCards = function(){
       <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
         const got = isTrainee() && r.rubric && r.rubric.key === rb.key ? r.rubric : null;
-        return `<details class="ti-rub-card"><summary>📋 Scorecard${got && got.avg != null ? ` · weighted average <b>${avgTxt(got.avg)}</b>` : ` · ${rb.criteria.length} criteria`}</summary>
-          ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}<ul>${rb.criteria.map((k, i) => `<li><span>${e(k.n)}</span>${got && got.scores[i] != null ? `<b>${e(got.scores[i])}/5</b>` : ""}${got && got.feedback && got.feedback[i] ? `<em>${e(got.feedback[i])}</em>` : ""}</li>`).join("")}</ul></details>`; })()}</div>`; }).join("");
+        return `<details class="ti-rub-card"><summary>📋 Scorecard${got && got.avg != null ? ` · weighted average <b>${avgTxt(got.avg)}</b>` : ` · ${rb.criteria.filter(k => !k.retired).length} criteria`}</summary>
+          ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}<ul>${rb.criteria.map((k, i) => k.retired ? "" : `<li><span>${e(k.n)}</span>${got && got.scores[i] != null ? `<b>${e(got.scores[i])}/5</b>` : ""}${got && got.feedback && got.feedback[i] ? `<em>${e(got.feedback[i])}</em>` : ""}</li>`).join("")}</ul></details>`; })()}</div>`; }).join("");
 };
 
 /* ---------- Admin → 🟢 Practice Sessions ---------- */
@@ -535,7 +535,7 @@ function rubricForm(a, c){
   return `<div class="fss-wide ti-rub" data-rubric="${e(rb.key)}"><div class="ti-rub-h"><b>📋 ${e(rb.title)} — scorecard</b><span class="fss-muted">Each criterion 0–5 (half points allowed). The weighted average becomes the score.</span></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     <table class="ti-rub-tbl"><thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>${rb.feedback ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
-      ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" oninput="FTInputs.calc(this)"></td>
+      ${rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" oninput="FTInputs.calc(this)"></td>
         ${rb.feedback ? `<td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks"></td>` : ""}</tr>`).join("")}
       <tr class="ti-rub-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(avg)}</td>${rb.feedback ? "<td></td>" : ""}</tr></tbody></table></div>`;
 }
@@ -595,7 +595,7 @@ window.FTInputs = {
       const prompt = `You are the training facilitator of Legal Support Help writing your feedback on a trainee Legal VA's ${a.kind || "activity"}: ${a.title}.
 Trainee's first name: ${String(row.name).split(/\s+/)[0]}
 The scorecard (each criterion out of 5${r.rb.feedback ? ", with your feedback note" : ""}):
-${r.rb.criteria.map((k, i) => `- ${k.n}: ${r.scores[i] == null ? "not scored" : r.scores[i] + "/5"}${r.feedback[i] ? ` (${r.feedback[i]})` : ""}`).join("\n")}
+${r.rb.criteria.map((k, i) => k.retired ? "" : `- ${k.n}: ${r.scores[i] == null ? "not scored" : r.scores[i] + "/5"}${r.feedback[i] ? ` (${r.feedback[i]})` : ""}`).filter(Boolean).join("\n")}
 Weighted average: ${avgTxt(r.avg)}
 ${r.rb.time ? `Time rule: ${r.rb.time}` : ""}
 ${String(box.querySelector("[data-comment]").value || "").trim() ? `Your notes so far: ${box.querySelector("[data-comment]").value}` : ""}
@@ -667,7 +667,7 @@ function metricsTable(key, view){
   // (a trainee: their own scores and the trainer's remarks once the trainer has saved them, read only; until then, 0s)
   const mine = !trainer && a ? myScored(a.id, key) : null;
   if(!trainer || !a) return `<table class="ftms-tbl">${head}${mine ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
-    ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
+    ${rb.criteria.map((k, i) => k.retired ? "" : `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>${mine && mine.rubric.avg != null ? e(Number(mine.rubric.avg).toFixed(2)) : "0"}</td>${mine ? "<td></td>" : ""}</tr></tbody></table>
     ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${RES(mine) !== "Not yet" ? ": " + e(RES(mine)) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
@@ -733,7 +733,7 @@ function metricsSheet(key){
     ${a.id === "intake-packet-demo" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
     ${row && typeof window.ftMockLinks === "function" ? window.ftMockLinks(row, a, true) : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
-      ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
+      ${rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
         <td><textarea rows="1" data-fb="${i}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)">${e((got.feedback || [])[i] || "")}</textarea></td></tr>`).join("")}
       <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
 }
@@ -827,7 +827,7 @@ window.ftMockCallItem = (ctx, lesson) => {
 // (a scored activity's why, for a hover: each criterion scored on its scorecard with its remark, then the trainer's comment)
 function actWhy(r){
   const rb = r && r.rubric && RUB().list ? RUB().list[r.rubric.key] : null;
-  const crit = rb ? (rb.criteria || []).map((c, i) => { const v = (r.rubric.scores || [])[i], f = (r.rubric.feedback || [])[i]; return v == null || v === "" ? "" : `${c.n} ${v}/5${f ? ": " + f : ""}`; }).filter(Boolean) : [];
+  const crit = rb ? (rb.criteria || []).map((c, i) => { const v = (r.rubric.scores || [])[i], f = (r.rubric.feedback || [])[i]; return c.retired || v == null || v === "" ? "" : `${c.n} ${v}/5${f ? ": " + f : ""}`; }).filter(Boolean) : [];
   return [r && r.scoreEdited ? "Score edited by the trainer" : "", crit.join("; "), r && r.comment ? r.comment : ""].filter(Boolean).join(" · ");
 }
 window.ftTrainerItems = ctx => {

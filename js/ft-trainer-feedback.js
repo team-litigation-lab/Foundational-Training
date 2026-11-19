@@ -143,7 +143,7 @@ function renderMine(){
   if(!state.traineeId) return `<div class="card" style="padding:28px;">Sign in to see your trainer’s feedback.</div>`;
   if(!MF.list){ if(!MF.loading) loadAll(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting your trainer’s feedback…</div>`; }
   const html = MF.list.length ? MF.list.map(it => `<div class="card tfb-row${isNew(it.k, it) ? " tfb-new" : ""}"><div class="tfb-kicker">${it.icon} ${e(it.what)}</div>${fbCard(it, it.k)}
-      ${it.rubric && it.rubric.rb ? `<details class="tfb-rub"><summary>📋 The scorecard · weighted average <b>${e((Math.round((it.rubric.r.avg || 0) * 100) / 100).toFixed(2))}/5</b></summary><table>${it.rubric.rb.criteria.map((c, i) =>
+      ${it.rubric && it.rubric.rb ? `<details class="tfb-rub"><summary>📋 The scorecard · weighted average <b>${e((Math.round((it.rubric.r.avg || 0) * 100) / 100).toFixed(2))}/5</b></summary><table>${it.rubric.rb.criteria.map((c, i) => c.retired ? "" :
         `<tr><td>${e(c.n)}</td><td><b>${it.rubric.r.scores[i] == null ? "—" : e(it.rubric.r.scores[i]) + "/5"}</b></td>${it.rubric.rb.feedback ? `<td>${e((it.rubric.r.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}</table></details>` : ""}
       ${it.week ? `<details class="tfb-rub" open><summary>📊 Your row of ${e(it.week.title)}</summary><table>${it.week.cols.map(c => `<tr><td>${e(c.label)}${c.sub ? ` <small>${e(c.sub)}</small>` : ""}</td>
         <td><b>${c.type === "notes" ? "" : c.raw === "" ? "—" : c.max === 5 ? e(c.raw) + "/5" : `${e(c.raw)}/${e(c.max)} → ${c.mark == null ? "—" : Number(c.mark).toFixed(2) + "/5"}`}</b></td><td>${e(c.note)}</td></tr>`).join("")}</table></details>` : ""}</div>`).join("")
