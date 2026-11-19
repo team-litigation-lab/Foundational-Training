@@ -91,6 +91,8 @@ jobs:
         run: node .github/scripts/breakout-worksheet.cjs
       - name: Trainers' score records guarded (two saves from the same copy both stay; reads see the latest save; the simulator-score sync merges)
         run: node .github/scripts/record-guard.cjs
+      - name: The deploy says which commit it is (deploy.json, /version)
+        run: node .github/scripts/deploy-info.cjs
       - name: The Transcription Activity's automatic score (the shared checks and one AI call, clamped to half points; cached, throttled and capped for a trainee; without the AI the trainer scores the rest)
         run: node .github/scripts/transcribe-grade.cjs
       - name: Day 8's Intake Packet checked (the corrected packet and its client subfolder; missing, misidentified and misnamed documents)
