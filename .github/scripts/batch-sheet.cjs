@@ -120,6 +120,26 @@ const failures = []; const fail = m => failures.push(m);
     // (their own record, then Compliance and Platform Utilization Monitoring at the very bottom)
     if (pt && !(/Trainees/.test(pt.secs[pt.secs.length - 2] || '') && /Compliance/.test(pt.secs[pt.secs.length - 1] || ''))) fail(`👥 the trainee's own record, then Compliance, aren't at the bottom of their table: ${pt.secs}`);
     if (pt && /\bRank\b/.test(pt.text)) fail('a trainee\'s table still has a Rank');
+  // (📝 on Ada's page; her record put back as it was, the sheet read again, before the checks below)
+  {
+      // (📝 Day 8's Intake Worksheet: opened, its answers read from the trainee's Google Doc; its grade from 🧑‍🏫 Graders when that's where it was graded)
+      { await page.route('**/api/intake/worksheet', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, link: 'https://docs.google.com/document/d/ADA-WORKSHEET-0000000000/edit', submittedAt: iso(now - 7200e3), text: '1. Police Report: proves fault\n2. HIPAA: lets us request records' }) }));
+        const labWas = await get('labreview:' + ids.Ada), labNow = JSON.parse(JSON.stringify(labWas || {}));
+        labNow.acts = Object.assign({}, labNow.acts, { 'intake-worksheet': { score: 88, status: 'Passed', date: '2026-11-18', comment: 'Thorough answers.', facilitator: 'Coach Tess' } });
+        await put('labreview:' + ids.Ada, labNow);
+        const tabWas = await page.evaluate(() => state.adminTab);
+        await page.evaluate(() => { state.adminTab = 'batchsheet'; render(); }); await page.waitForTimeout(400); await page.evaluate(b => FTBatchSheet.batch(b), BATCH);
+        await page.waitForFunction(() => window.FTBatchSheet && FTBatchSheet.tables(), null, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(500);
+        await page.evaluate(id => FTBatchSheet.ptPick(id), ids.Ada); await page.waitForSelector(`#bs-pt-${ids.Ada} .bs-pt-kd`, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(500);
+        // (on the trainee's page: ✍️ Knowledge Checks, Assessments & Activities → 📝 Activities)
+        const ws = await page.evaluate(async () => { const all = [...document.querySelectorAll('.bs-pt-kd details.bs-kd')], d = all.find(x => /Intake Worksheet/.test(x.querySelector('summary').innerText));
+          if (!d) return { missing: all.map(x => x.querySelector('summary').innerText.slice(0, 40)) }; d.open = true; await new Promise(r => setTimeout(r, 800)); return { sum: d.querySelector('summary').innerText, body: d.innerText }; });
+        if (!ws || !/88\/100|4\.4\/5|Additional Reference/.test(ws.sum) || !/Thorough answers/.test(ws.body) || !/The trainee’s answers/.test(ws.body) || !/Police Report: proves fault/.test(ws.body) || !/Open it/.test(ws.body))
+          fail(`the Intake Worksheet row doesn't show its Graders grade and the trainee's answers: ${JSON.stringify(ws)}`);
+        await page.evaluate(([key, value, base]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value), base: JSON.stringify(base) }) }), ['labreview:' + ids.Ada, labWas || {}, labNow]);   // (with the copy it replaces: a trainer's score record is merged, worker.js merge3)
+        await page.evaluate(b => FTBatchSheet.batch(b), BATCH); await page.waitForTimeout(3500);
+        await page.evaluate(t => { state.adminTab = t; render(); }, tabWas); await page.waitForTimeout(1500); }
+  }
     if (await page.$('#bs-compliance, #bs-drive')) fail('the Drive links are still on the 📋 Batch Sheet'); }
   // 🗂 her weekly Task Tracker Evaluation: a fold "Week 1 — x.x/5" in the sample's layout (the seven metrics' table, the
   // corrections, the overall rating), labelled as from the automatic checks, with ⬇ Download as a .doc
@@ -357,6 +377,15 @@ const failures = []; const fail = m => failures.push(m);
         || !/Auto Liability Insurance – Assessment/.test(kd) || !/The policy limit/.test(kd) || !/✓ 1 pt\s*Right: the policy limit/.test(kd) || !/✗ 0 pts\s*Nevada requires 25\/50\/20/.test(kd)
         || !/Clear on the intake steps/.test(kd) || !/Answer 1 from Ada|Answer \d+ from Ada/.test(kd) || !/Process Questions Responses/.test(kd) || (qs[1] && !/💬\s*Missed the conflict check/.test(kd)))
         fail(`✍️ Knowledge Checks in detail doesn't break the grading down: ${kd.slice(0, 600)}`);
+      // (no Breakout Session worksheet among the 📄 Assessments: off the training; a row with nothing in it says so when opened)
+      if (/Breakout Session Worksheet/.test(kd)) fail('a Breakout Session worksheet is still among the Assessments');
+      { const empty = await page.evaluate(async () => { const ds = [...document.querySelectorAll('#bs-scorecard details.bs-kd')];
+          // (one open at a time: each read as it is opened)
+          const blank = []; for (const d of ds) { d.open = true; await new Promise(r => setTimeout(r, 20));
+            if (!d.innerText.replace(d.querySelector('summary').innerText, '').trim()) blank.push(d.querySelector('summary').innerText.trim().slice(0, 60)); d.open = false; }
+          return blank; });
+        if (empty.length) fail(`rows open to nothing: ${JSON.stringify(empty)}`); }
+
   // (📅 an answer sheet is expected once its lesson's days are over: a batch that started today has none due yet, so no
   // "missing" list; a batch long under way expects them all)
   { const rp = await page.evaluate(() => { const d = FTTrackerRules.ptDate().split('-'), today = 'B' + d[1] + d[2] + d[0].slice(2);

@@ -425,7 +425,8 @@ function gradesHtml(){
 function assessRows(p){
   const A = window.FTAssess; if(!A || typeof A.docs !== "function") return [];
   const R = B.data.rec[p.id] || {}, gr = (((R.src || {})["trackerreview:"] || {}).assess) || {}, ans = (R.assess && R.assess.docs) || {};
-  return A.docs().map(doc => { const g = gr[doc] || null, a = (ans[doc] || {}).answers || {}, it = (g && g.items) || {};
+  // (not the Breakout Session worksheets: off the training — the curriculum's breakouts are digital handouts, with no assessment)
+  return A.docs().filter(doc => !/^breakout-d/.test(doc)).map(doc => { const g = gr[doc] || null, a = (ans[doc] || {}).answers || {}, it = (g && g.items) || {};
     const items = A.questions(doc).map(q => { const r = it[q.id] || null;
       return {q: q.q, part: q.part, answer: String(a[q.id] == null ? "" : a[q.id]).trim(), ok: r ? !!r.ok : null, pts: r && r.pts != null ? Number(r.pts) : null,
         max: r && r.max != null ? Number(r.max) : null, pending: !!(r && r.pending), note: r ? String(r.note || "") : ""}; });
@@ -463,7 +464,7 @@ function kdOneHtml(p, single){
           ${its.length ? `<ol class="bs-kd-q">${its.map(it => `<li><b>${e(it.q)}</b>
               <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
               ${typeof it.score === "number" ? `<div class="bs-kd-fb ${window.ftReference ? "" : fbTone(Number(it.score))}"><b>${window.ftReference ? "💬" : e(String(it.score)) + "/10"}</b> ${e(it.feedback || "")}</div>` : it.answer && g.subm ? `<div class="bs-kd-fb"><b>—</b> not graded yet</div>` : ""}
-              ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
+              ${it.note ? `<div class="bs-kd-note">🧑‍🏫 ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : `<p class="bs-kd-none">Nothing answered yet: the trainee hasn’t submitted this Knowledge Check.</p>`}
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
         return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, rf = window.ftReference && !ftReference.assessScored(x.doc), pc = g && g.score != null && !rf ? numOr(g.pct) : null;
@@ -471,7 +472,7 @@ function kdOneHtml(p, single){
               ${g && !rf ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : rf ? `<small>${g ? "graded" + (g.when ? " " + e(g.when) : "") + " · feedback below" : x.answered ? "answered" : "not started"}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
                 <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
-                ${it.ok != null || it.pending ? `<div class="bs-kd-fb ${it.pending ? "gs-mid" : it.ok ? "gs-hi" : "gs-lo"}"><b>${it.pending ? "⏳ to the trainer" : (it.ok ? "✓" : "✗") + (it.pts != null ? ` ${it.pts}${it.max != null ? "/" + it.max : ""} pt${it.pts === 1 ? "" : "s"}` : "")}</b> ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : ""}
+                ${it.ok != null || it.pending ? `<div class="bs-kd-fb ${it.pending ? "gs-mid" : it.ok ? "gs-hi" : "gs-lo"}"><b>${it.pending ? "⏳ to the trainer" : (it.ok ? "✓" : "✗") + (it.pts != null ? ` ${it.pts}${it.max != null ? "/" + it.max : ""} pt${it.pts === 1 ? "" : "s"}` : "")}</b> ${e(it.note)}</div>` : ""}</li>`).join("")}</ol>` : `<p class="bs-kd-none">Not started yet: the trainee hasn’t answered it.</p>`}
           </details>`; }).join(""); })()}</div>`; };
   return one(p);
 }
@@ -1094,10 +1095,16 @@ function activitiesHtml(p){
   // (📅 the Attorney Calendar Management Activity, checked field by field: js/ft-calcheck.js ftCalCheckDetailHtml)
   const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"]) : "";
   if(!items.length && !cal) return "";
-  return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
+  // (📝 Day 8's Intake Worksheet: graded on 📦 Intake Packets — trackerreview .assess.intakews — or on 🧑‍🏫 Graders → 📝 Assessments —
+  // labreview .acts["intake-worksheet"] — the first one found; its answers read from the trainee's Google Doc when the row opens)
+  const lab = ((((B.data.rec[p.id] || {}).src || {})["labreview:"] || {}).acts) || {};
+  const fromLab = a => a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo ? {score: Number(a.score), max: 100, pct: Number(a.score), when: a.date || "", comment: a.comment || "", by: a.facilitator || "trainer"} : null;
+  return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { if(!g && it.assess === "intakews") g = fromLab(lab["intake-worksheet"]);
+    const ws = it.assess === "intakews";
+    const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
+    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}`}</summary>
-      ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${actItemsHtml(it, g)}</details>`; }).join("");
+      ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${ws ? `<div class="bs-ws-ans" data-ws-ans><p class="bs-kd-none">Opening the trainee’s Intake Worksheet…</p></div>${g ? "" : `<p class="bs-kd-none">Not graded yet: grade it on 📦 Intake Packets or 🧑‍🏫 Graders → 📝 Assessments.</p>`}` : actItemsHtml(it, g)}</details>`; }).join("");
 }
 // (each graded answer of an activity, in the calls' order: ✓ right, ✗ marked down with the grading's note, ⏳ for the trainer)
 function actItemsHtml(it, g){
@@ -1587,6 +1594,8 @@ function scoreOf(R, d, it, p){
   if(it.at === "trainer"){ if(REF && !REF.actScored(it.id)) return null;
     const a = (((src["labreview:"] || {}).acts) || {})[it.id], v = a && resOf(a) !== "Redo" ? numOr(window.FT_RUBRICS && FT_RUBRICS.scoreOf ? FT_RUBRICS.scoreOf(a) : a.score) : null, g = a ? null : autoTr(R, it);
     return v != null ? {pct: v, how: `trainer's score · ${resOf(a)}`} : g ? {pct: Math.round(g.pct), how: "automatic check, not reviewed by your trainer yet"} : null; }
+  if(it.assess === "intakews" && !(REF && !REF.assessScored(it.assess)) && !assessOf(R, it)){ const a = ((((R.src || {})["labreview:"] || {}).acts) || {})["intake-worksheet"];
+    if(a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo) return {pct: numOr(a.score), how: `trainer's score on 🧑‍🏫 Graders${a.date ? ", " + a.date : ""}`}; }
   if(it.assess){ if(REF && !REF.assessScored(it.assess)) return null;
     const g = assessOf(R, it), v = gradePct(g), o = REF ? null : ovOf(R, "assess:" + it.assess);
     if(o) return {pct: numOr(o.pct), how: `trainer's score${v != null ? ` (graded ${v}%)` : ""}`};
@@ -2029,6 +2038,18 @@ window.FTBatchSheet = {
   },
   grWho(id){ if(!adminOn()) return; B.gr = id; render(); },
   kdWho(id){ if(!adminOn()) return; B.kd = id; render(); },
+  // 📝 the trainee's Intake Worksheet as they answered it (worker.js /api/intake/worksheet: their Google Doc read as text), once
+  // per open; kept for this visit
+  async wsAnswers(el){
+    const id = el && el.getAttribute("data-ws"), box = el && el.querySelector("[data-ws-ans]"); if(!id || !box) return;
+    B.ws = B.ws || {};
+    if(!B.ws[id]){ try{ const r = await authFetch("/api/intake/worksheet", {id}); B.ws[id] = await r.json().catch(() => ({})); }catch(err){ B.ws[id] = {error: "offline"}; } }
+    const w = B.ws[id] || {}, open = w.link ? ` <a href="${e(w.link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>` : "";
+    if(w.error){ delete B.ws[id]; box.innerHTML = `<p class="bs-kd-none">Couldn’t open it just now. Close and open this row to try again.</p>`; return; }
+    box.innerHTML = !w.link ? `<p class="bs-kd-none">No Intake Worksheet yet: no link submitted on Day 8’s Intake Documents slide, and none found in their Assessments/Activities folder.</p>`
+      : w.text ? `<div class="bs-ctx bs-best"><b>📝 The trainee’s answers</b>${w.submittedAt ? ` <small>submitted ${e(when(w.submittedAt))}</small>` : w.found ? ` <small>found in their Assessments/Activities folder</small>` : ""}${open}<pre class="bs-ws-text">${e(w.text)}</pre></div>`
+      : `<p class="bs-kd-none">${w.why === "not-a-doc" ? "Their worksheet isn’t a Google Doc (a Word file or a folder), so its answers can’t be shown here:" : "Their worksheet couldn’t be read (it isn’t shared with the platform):"}${open}</p>`;
+  },
   // 🗄 one account archived from the Drive link issues list (not a trainee, or one who left): its record marked archived, as
   // a batch's archive marks each (js/eapa-updates.js confirmArchiveBatch), read strictly so a failed read never writes over it
   async archiveOne(id, name){
@@ -2607,6 +2628,7 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-kd-items{margin:6px 0 10px;padding-left:4px;list-style:none;font:600 13.5px/1.45 Arial,sans-serif;color:#1E2340;}
 .bs-kd-items li{padding:2px 0;} .bs-kd-items li.is-ok b{color:#15803D;} .bs-kd-items li.is-no b{color:#B91C1C;} .bs-kd-items li.is-wait b{color:#9A5B00;}
 .bs-kd-none{margin:6px 0;color:#5A6175;font:600 13px Arial,sans-serif;}
+.bs-ws-text{white-space:pre-wrap;max-height:520px;overflow:auto;margin:8px 0 4px;padding:12px 14px;background:#F7F8FA;border-radius:8px;font:600 15px/1.55 Arial,sans-serif;color:#141A2E;}
 .bs-kd-sub.bs-kd-sub-act{background:#B45309;border-left:6px solid #FCD34D;}
 .bs-kd{margin:8px 0;border:1px solid #E1E3E1;border-radius:10px;background:#fff;padding:0 14px;} .bs-kd > summary{cursor:pointer;padding:10px 0;font:700 15.5px Arial,sans-serif;color:#1E2340;} .bs-kd > summary small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-kd-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font:800 14px Arial,sans-serif;background:#EEF0F6;}

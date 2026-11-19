@@ -135,6 +135,14 @@ async function workerChecks() {
     if (benWs.score !== 85 || benWs.status !== 'Passed') fail(`Cara's Intake Worksheet score wasn't saved: ${JSON.stringify(benWs)}`);
     const onCard = await page.evaluate(async () => window.ftTrainerItems({ rec: { 'labreview:': await sharedGet('labreview:cara-lim--b103026') }, shared: {} }).find(x => x.ref === 'act:intake-worksheet'));
     if (!onCard || onCard.pct !== 85) fail(`the graded Intake Worksheet isn't on Cara's Score Card: ${JSON.stringify(onCard)}`);
+    // 📊 every trainee's score for the activity, at once: an activity searched for opens the table; a name opens that trainee
+    await page.fill('.fms-search input', 'intake worksheet'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(500);
+    const tbl = await page.evaluate(() => ({ open: !!(document.querySelector('.fms-all') || {}).open, rows: [...document.querySelectorAll('.fms-all-tbl tbody tr')].map(r => [...r.cells].map(c => c.innerText.trim())) }));
+    const caraRow = tbl.rows.find(r => /^Cara Lim/.test(r[0]));
+    if (!tbl.open || tbl.rows.length !== 3 || !caraRow || caraRow[1] !== 'Passed' || !/^85%/.test(caraRow[2]) || !tbl.rows.some(r => /^Ana Cruz/.test(r[0]) && r[2] === '—')) fail(`the all-trainees table for the Intake Worksheet isn't right: ${JSON.stringify(tbl)}`);
+    await page.click('.fms-all-tbl a:has-text("Ana Cruz")'); await page.waitForTimeout(400);
+    { const w = await page.evaluate(() => (document.querySelector('.fms-sheet') || {}).getAttribute('data-va'));
+      if (w !== 'ana-cruz--b103026') fail(`a name in the all-trainees table didn't open their scoresheet: ${w}`); }
     // (and a search with no match says so, leaving the sheet as it is)
     await page.fill('.fms-search input', 'zzz nobody'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(300);
     if ((await page.evaluate(() => document.querySelector('.fms-act').value)) !== 'intake-worksheet') fail('a search with no match changed the sheet');
