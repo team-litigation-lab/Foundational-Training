@@ -78,7 +78,7 @@ async function evidence(p, range, week){
   const sheets = Object.entries((lab && lab.acts) || {}).filter(([k, x]) => x && (x.rubric || x.score != null || has(x.comment))).map(([k, x]) => {
     const rb = x.rubric ? rub[x.rubric.key] : null;
     return {act: k, title: rb ? rb.title : k, mock: rb ? /mock call/i.test(rb.title) : /live|mock/i.test(k), at: x.at || x.date || "", status: window.ftResult ? ftResult(x) : x.status || "", score: x.score, avg5: x.rubric && x.rubric.avg != null ? Number(x.rubric.avg) : x.score != null ? Number(x.score) / 20 : null, comment: clip(x.comment, 500),
-      crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
+      crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: c.retired ? null : (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
   // (the week's own work only: a week with no scoresheet has none — it never borrows an earlier week's)
   const use = sheets.filter(x => inW(x.at));
   const kcs = Object.entries((proc && proc.kc) || {}).filter(([, x]) => x && x.last && inW(x.last.at)).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),

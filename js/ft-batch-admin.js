@@ -231,7 +231,7 @@ function renderMockScores(){
       <button class="btn btn-navy btn-sm" type="button" data-ms-accept onclick="FTMockScores.accept('${id}')">✓ Accept the automatic score</button>` : ""}` : `🤖 No automatic score yet (scored when the trainee submits the recording).`}
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTMockScores.regrade('${id}')" title="Score the trainee’s submitted minutes again">🔁 Grade now</button></div>`;
   // (no "name · activity · batch · Saved:" line over the scoresheet: the pickers above say whose it is, and ● not saved is in the trainee dropdown)
-  const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
+  const crit = rb ? rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}"${d.autoFrom && d.scores[i] == null ? ` placeholder="you" title="The automatic check doesn’t score this one: you do"` : ""} aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
@@ -430,7 +430,7 @@ function buildFiles(batch, rows){
   rows.forEach(g => acts.forEach(a => {
     const c = lab(g)[a.id]; if(!c) return;
     const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || "", c.facilitator || ""];
-    if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
+    if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => k.retired || cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
     else cards.push([...base, "", "", "", c.comment || ""]);
   }));
   const lessons = typeof DAYS !== "undefined" ? DAYS : [], nm = d => typeof ftName === "function" ? ftName(d.id) : "Lesson " + d.id;
