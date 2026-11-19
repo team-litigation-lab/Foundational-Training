@@ -6919,7 +6919,7 @@ function workOnNextItems(){
   const fbDays = Object.entries(state.myFeedback||{}).sort((a,b)=>(b[1].sentAt||"").localeCompare(a[1].sentAt||""));
   if(fbDays.length){ (fbDays[0][1].areasToBuild||[]).slice(0,2).forEach(x=>items.push({src:`Trainer · ${ftName(fbDays[0][0])}`, text:x, action:`openDayFeedback(${fbDays[0][0]})`})); }
   // 2) Knowledge Checks not yet passed
-  DAYS.forEach(d=>{ const p = (state.progress||{})[d.id]; if(p && typeof p.score==="number" && !p.done) items.push({src:`${ftName(d.id)} Knowledge Check`, text:`Not yet at 70% (${p.score}%): review the lesson and your trainer's feedback.`, action:`goto('day',${d.id})`}); });
+  // (no "Not yet at 70%": the Knowledge Checks are 📎 Additional Reference, js/ft-reference.js)
   // 3) latest graded-work gaps
   const recent = (state.workLog||[]).filter(e=>e.kind!=="quiz" && (e.growth||e.gaps||[]).length).slice(-3).reverse();
   recent.forEach(e=>{ const t = (e.growth && e.growth[0]) || (e.gaps && e.gaps[0]); if(t) items.push({src:e.label, text:t}); });
@@ -14108,7 +14108,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.19-354c4e30";
+var APP_BUILD = "ft-2026.11.19-f5a7c9f2";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14154,7 +14154,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-tracker-rules.js?v=0a8d962020"></script>
 <script src="/js/ft-tracker.js?v=49e68a23e1"></script>
 <script src="/js/ft-monitoring.js?v=c93e3c2768"></script>
-<script src="/js/ft-process.js?v=e867a12551"></script>
+<script src="/js/ft-process.js?v=2bddfc473e"></script>
 <script src="/js/ft-assess.js?v=91aa984776"></script>
 <script src="/js/ft-claims-email.js?v=b5027dfe47"></script>
 <script src="/js/ft-rules.js?v=f62a7811d8"></script>
@@ -14164,34 +14164,35 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-firms.js?v=a8c29bb11b"></script>
 <script src="/js/ft-day-activities.js?v=43582a8398"></script>
 <script src="/js/ft-simulators.js?v=03f496123b"></script>
-<script src="/js/ft-rubrics.js?v=361e027255"></script>
-<script src="/js/ft-sessions.js?v=4c6cdb3d8d"></script>
+<script src="/js/ft-rubrics.js?v=fca0ed61f7"></script>
+<script src="/js/ft-reference.js?v=6b9ba1f1e2"></script>
+<script src="/js/ft-sessions.js?v=c67781472a"></script>
 <script src="/js/ft-utilization.js?v=3be4bf6949"></script>
-<script src="/js/ft-ranking.js?v=dc65e88a6b"></script>
-<script src="/js/ft-ranking-summary.js?v=46987da53d"></script>
+<script src="/js/ft-ranking.js?v=546c7318c1"></script>
+<script src="/js/ft-ranking-summary.js?v=3b7afee932"></script>
 <script src="/js/ft-overall.js?v=e1c701131a"></script>
-<script src="/js/ft-batch-sheet.js?v=bfda8a6196"></script>
+<script src="/js/ft-batch-sheet.js?v=ecfa069c81"></script>
 <script src="/js/ft-skilltests.js?v=eb925cbde7"></script>
 <script src="/js/ft-drills.js?v=5109af30e5"></script>
 <script src="/js/ft-calrules.js?v=da26797f9d"></script>
 <script src="/js/ft-writing.js?v=f939b19609"></script>
 <script src="/js/ft-calweek-core.js?v=d64da960e4"></script>
 <script src="/js/ft-calweek.js?v=c0d840e5dd"></script>
-<script src="/js/ft-calcheck.js?v=6928d78ae4"></script>
-<script src="/js/ft-listening.js?v=43ab21fc6f"></script>
+<script src="/js/ft-calcheck.js?v=2556fa4b1e"></script>
+<script src="/js/ft-listening.js?v=b25d0989b3"></script>
 <script src="/js/ft-todo.js?v=dc1a7e6767"></script>
 <script src="/js/ft-next-step.js?v=8d93ea70b8"></script>
-<script src="/js/ft-day-decks.js?v=7721b18fe8"></script>
+<script src="/js/ft-day-decks.js?v=1d6764f2fe"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=c334f24366"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
 <script src="/js/ft-minutes-rules.js?v=1637b476a6"></script>
 <script src="/js/ft-transcribe.js?v=fabe3a6c53"></script>
-<script src="/js/ft-intake.js?v=8d7b014326"></script>
-<script src="/js/ft-mockcall-links.js?v=5f87caf448"></script>
+<script src="/js/ft-intake.js?v=3d4296e4a8"></script>
+<script src="/js/ft-mockcall-links.js?v=f03d4083bf"></script>
 <script src="/js/ft-process-guide.js?v=ad5b75c02b"></script>
 <script src="/js/ft-lor.js?v=35d4dd0864"></script>
-<script src="/js/ft-trainer-feedback.js?v=8f750c09cf"></script>
+<script src="/js/ft-trainer-feedback.js?v=47bbd3199e"></script>
 <script src="/js/ft-drive.js?v=615026a488"></script>
 <script src="/js/ft-facilitator-dna.js?v=c883f59a8d"></script>
 <script src="/js/ft-activities.js?v=28795e65ba"></script>
@@ -14209,8 +14210,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-card-grid.js?v=9e93c91cb0"></script>
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
 <script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
-<script src="/js/ft-program.js?v=56fab5ce9c"></script>
-<script src="/js/lsh-program.js?v=5ee4d838b7"></script>
+<script src="/js/ft-program.js?v=bd2d80bcd3"></script>
+<script src="/js/lsh-program.js?v=b5f88dc6cd"></script>
 <script src="/js/ft-my-pages.js?v=62814196ae"></script>
 <script src="/js/ft-day1-flow.js?v=b0a895932f"></script>
 <script src="/js/ft-day-locks.js?v=945549f92c"></script>
@@ -14224,7 +14225,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-buffer.js?v=d4bf20360f"></script>
 <script src="/js/ft-admin-tidy.js?v=572a6ce0cc"></script>
 <script src="/js/ft-trainees-tab.js?v=fa0799d804"></script>
-<script src="/js/ft-trainee-log.js?v=355377d5b2"></script>
+<script src="/js/ft-trainee-log.js?v=0857cb2669"></script>
 <script src="/js/ft-announcement.js?v=0955bb6da6"></script>
 <script src="/js/ft-eod-inbox.js?v=6fa2e41c7d"></script>
 <script src="/js/ft-points.js?v=e9b26fe168"></script>

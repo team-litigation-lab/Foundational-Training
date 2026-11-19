@@ -440,7 +440,7 @@ window.ftCalCheckDetailHtml = rec => { rec = clean(rec); const s = rec.submits[r
   const sc = scored(s), esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
   const ev = KEY.map(k => ({k, rows: sc.rows.filter(r => r[0] === k.n && r[2] !== null)})).filter(x => x.rows.length);
   const tone = p => p >= 80 ? "gs-hi" : p >= 60 ? "gs-mid" : "gs-lo";
-  return `<details class="bs-kd" name="bs-kd"><summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${tone(sc.pct)}">${esc_(sc.pct)}%</span>
+  return `<details class="bs-kd" name="bs-kd"><summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${window.ftReference ? "" : tone(sc.pct)}">${window.ftReference ? "📎 Additional Reference" : esc_(sc.pct) + "%"}</span>
       <small>${esc_(sc.met)} of ${esc_(sc.total)} fields right · sent ${esc_(new Date(String(s.at)).toLocaleString())} · checked automatically against the activity’s answer key, one point a field</small></summary>
     <ol class="bs-kd-q">${ev.map(({k, rows}) => { const m = rows.filter(r => r[2]).length;
       return `<li><b>${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol></details>`; };

@@ -159,7 +159,7 @@ async function workerChecks() {
     if (hd.length !== 3 || hd[1] !== 'Score' || hd[2] !== 'Remarks') fail(`the scorecard's columns aren't criterion | Score | Remarks: ${hd}`);
     const rows = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody tr td:first-child')].map(t => t.textContent));
     if (!rows[0].startsWith('Introduction of Law Firm') || rows[rows.length - 1] !== 'WEIGHTED AVERAGE') fail(`the scorecard rows aren't there: ${rows.slice(0, 3)}`);
-    const nCrit = await page.evaluate(() => FT_RUBRICS.list.reception.criteria.length);
+    const nCrit = await page.evaluate(() => FT_RUBRICS.list.reception.criteria.filter(c => !c.retired).length);   // (Tools Utilization, last, is retired: hidden)
     // Ana: 4 on every criterion → 4.00/5 → 80%
     for (let i = 0; i < nCrit; i++) await page.fill(`.fms-tbl tbody tr:nth-child(${i + 1}) input[type=number]`, '4');
     await page.fill('.fms-tbl tbody tr:nth-child(1) textarea', 'Clear intro');
