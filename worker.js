@@ -59,7 +59,8 @@ const KV_PREFIX = "ft:";
    whole record, changes one activity and writes the whole record back. So a trainer's saved score could be written over by
    the copy another save (another trainer, the simulator-score sync) read a moment before, and a save could read back
    without itself ("saved, then gone", "not on the saved scores"). Each of these records now goes through one Durable
-   Object (RecordGuard, one per record): reads see the latest write at once, writes to a record are taken one at a time,
+   Object (RecordGuard, one per record — run inside the GeminiRelay namespace, as objects named "guard:<key>", since the
+   account has no room for a new Durable Object namespace): reads see the latest write at once, writes to a record are taken one at a time,
    and a save that says what it started from (base) has only its own changes merged into the record as it is now
    (merge3), so two saves of different activities both stay. A write's copy is held for GUARD_TTL, then KV (long settled
    by then) is read again, so a record another site deleted from KV is not kept. */
@@ -115,7 +116,7 @@ export class RecordGuard {
   }
 }
 async function guard(env, body) {
-  const ns = env.RECORD_GUARD, stub = ns.get(ns.idFromName(body.key));
+  const ns = env.GEMINI_RELAY, stub = ns.get(ns.idFromName("guard:" + body.key));
   const r = await stub.fetch("https://guard/", { method: "POST", body: JSON.stringify(body) });
   const j = await r.json();
   if (j.error) throw new Error("record guard: " + j.error);
@@ -124,7 +125,7 @@ async function guard(env, body) {
 function kvOf(env) {
   const raw = env.LSH_KV;
   if (!raw) return null;
-  const guarded = (k) => !!env.RECORD_GUARD && GUARDED.test(String(k));
+  const guarded = (k) => !!env.GEMINI_RELAY && GUARDED.test(String(k));
   return {
     get: (k) => guarded(k) ? guard(env, { op: "get", key: k }).then((j) => j.value) : raw.get(KV_PREFIX + k),
     put: (k, v, o) => guarded(k) && !o ? guard(env, { op: "put", key: k, value: v }) : raw.put(KV_PREFIX + k, v, o),
@@ -918,9 +919,11 @@ async function geminiFetch(env, url, init) {
   geminiViaRelay = true;
   return viaRelay();
 }
-export class GeminiRelay {
-  constructor(state, env) {}
+// (also the RecordGuard for the trainers' score records: a request to https://guard/ goes to RecordGuard's code, so the
+//  guard needs no Durable Object namespace of its own — the account is at Cloudflare's limit of 500)
+export class GeminiRelay extends RecordGuard {
   async fetch(request) {
+    if (new URL(request.url).hostname === "guard") return super.fetch(request);
     const { url, headers, body } = await request.json();
     if (!/^https:\/\/generativelanguage\.googleapis\.com\//.test(String(url))) return new Response("Not allowed", { status: 403 });
     const r = await fetch(url, { method: "POST", headers, body });
