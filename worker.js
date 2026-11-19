@@ -249,6 +249,15 @@ async function useTicketOnce(kv, ticket) {
   await kv.put(key, "1", { expirationTtl: 600 });
   return true;
 }
+/* 🎯 A Portal ticket names the program it was made for (p: the topic key, functions/api/launch.js makeTicket). This
+   program refuses a ticket whose p is another program, a tool, or a course's tool link (p "tool"): why.r "audience", so
+   Program Access on the Portal stays the one gate. A ticket with no p is still taken, so nobody is locked out whichever
+   side deploys first: tickets are signed by the Portal and the courses only and live 5 minutes, and once the Portal and
+   the courses' tool tickets carry p, no ticket without one is made any more. */
+const PORTAL_TOPIC = "STANDARD TRAINING";
+function ticketAudienceOk(env, t) {
+  return !t || t.p == null || String(t.p) === PORTAL_TOPIC;
+}
 async function readPortalTicket(env, ticket, why = {}) {
   if (!portalSecret(env)) { why.r = "format"; return null; }
   const parts = String(ticket || "").split(".");
@@ -258,6 +267,7 @@ async function readPortalTicket(env, ticket, why = {}) {
   let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { why.r = "format"; return null; }
   const exp = Number(t && t.exp);
   if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) { why.r = "expired"; return null; }
+  if (!ticketAudienceOk(env, t)) { why.r = "audience"; return null; }
   if (t.r === "s") return { system: true };   // the Portal's own server-side tools (sign-in check, registration import): never given to a person
   if (t.r === "a") return { admin: true, name: String(t.n || "").trim().slice(0, 60) };   // an administrator signed in on the Portal (their own admin account)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
@@ -3174,13 +3184,15 @@ export default {
         const who = await readPortalTicket(env, ticket, why);
         if (!who) return json({ error: why.r === "signature"
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
+          : why.r === "audience" ? "This sign-in link was made for another program or tool. Open this program from the LSH Training Portal's Training Directory."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
+        // Every Portal ticket works once (a trainee's, a trainer's and the Sign-in check's), so a copy of the link (browser
+        // history, a forwarded URL) can't sign anyone in again inside its 5 minutes.
+        if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
         if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", SESSION_HOURS) });
         if (who.admin) {
           // Single sign-on for trainers too: an administrator signed in on the Main Portal opens every program as a
-          // trainer, with no second password here. Their ticket works once, so a copy of the link (browser history,
-          // a forwarded URL) can't sign anyone in again inside its 5 minutes.
-          if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
+          // trainer, with no second password here (the ticket was taken once, above).
           // (the token keeps the trainer's name, hub:<name>: a trainer who came from the main Hub gets the Portal's simulators
           // signed in too, /api/auth/tool-ticket)
           return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), SESSION_HOURS) });
@@ -3394,9 +3406,9 @@ export default {
         if (tok.role === "a") {
           const b = await request.json().catch(() => ({}));
           if (!secure || tok.id === "open-mode") return json({ error: "not-available" }, 403);
-          if (b.tool === "kb") return json({ ticket: await signTicket({ r: "a", exp: Date.now() + 5 * 60 * 1000 }) });
+          if (b.tool === "kb") return json({ ticket: await signTicket({ r: "a", p: "kb", exp: Date.now() + 5 * 60 * 1000 }) });
           const hub = /^hub:(.+)$/.exec(String(tok.id || ""));
-          if (b.tool === "portal" && hub && hub[1].trim()) return json({ ticket: await signTicket({ r: "a", n: hub[1].trim(), exp: Date.now() + 5 * 60 * 1000 }) });
+          if (b.tool === "portal" && hub && hub[1].trim()) return json({ ticket: await signTicket({ r: "a", n: hub[1].trim(), p: "portal", exp: Date.now() + 5 * 60 * 1000 }) });
           return json({ error: "not-available" }, 403);
         }
         if (tok.role !== "t") return json({ error: "not-available" }, 403);
@@ -3405,7 +3417,8 @@ export default {
         const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
         const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
         if (!first || !last) return json({ error: "no-name" }, 400);
-        return json({ ticket: await signTicket({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }) });
+        // (p "tool": a tool's ticket, for the CMS and the Portal's simulators; no training program takes it, so it can't open one)
+        return json({ ticket: await signTicket({ first, last, b: String(rec.batch || ""), p: "tool", exp: Date.now() + 5 * 60 * 1000 }) });
       }
 
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
