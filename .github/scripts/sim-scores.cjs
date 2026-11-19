@@ -19,9 +19,10 @@ const failures = []; const fail = (m) => failures.push(m);
   store.set('ft:trainee:' + ben, JSON.stringify({ id: ben, name: 'Ben Sim', batch: 'B110226', approved: true }));
   // the Portal's calendar scorecard: every metric 4/5, the newest one last
   let cards = [{ at: '2026-11-05T15:00:00Z', by: 'Trainer Mara', rows: RB.calendar.criteria.map(k => ({ metric: k.n, score: 4, feedback: 'Good' })) }];
-  let asked = '';
+  let asked = '', activity = null;   // (📝 the Portal's Standard Training - Calendaring Activity, ?activity=1)
   globalThis.fetch = async (url, init = {}) => {
     const u = String(url);
+    if (u.includes('/api/calsim-scorecard') && u.includes('activity=1')) return new Response(JSON.stringify({ success: true, username: 'sia', activity }));
     if (u.includes('/api/calsim-scorecard')) { asked = (init.headers || {})['X-Gateway-Key'] || ''; return new Response(JSON.stringify({ success: true, username: 'sia', cards })); }
     return new Response('not found', { status: 404 });
   };
@@ -64,6 +65,23 @@ const failures = []; const fail = (m) => failures.push(m);
   cards = cards.concat([{ at: '2026-11-08T15:00:00Z', rows: RB.calendar.criteria.map(k => ({ metric: k.n, score: 2 })) }]);
   await call('/api/sim-scores/sync', { ids: [id] }, admin);
   if ((acts(id)['calendar-live'] || {}).score !== 95) fail(`a score saved here was written over by the simulator: ${JSON.stringify(acts(id)['calendar-live'])}`);
+
+  // 5. 📝 Day 5's Attorney Calendar Management Activity, from the Portal's Standard Training - Calendaring Activity: the automatic
+  //    check until the trainer finalizes it there, then the trainer's score; a score typed here wins
+  await call('/api/sim-scores/sync', { ids: [id] }, admin);
+  if (acts(id)['atty-calendar-activity']) fail('the Calendaring Activity was filled with nothing submitted');
+  activity = { submittedAt: '2026-11-06T10:00:00Z', checkScore: 84, status: 'submitted', trainerScore: null };
+  await call('/api/sim-scores/sync', { ids: [id] }, admin);
+  { const a = acts(id)['atty-calendar-activity'] || {};
+    if (a.score !== 84 || a.source !== 'simulator' || a.status !== 'Passed' || !/automatic check/.test(a.comment || '')) fail(`the Calendaring Activity's automatic check didn't fill its scoresheet: ${JSON.stringify(a)}`); }
+  activity = Object.assign({}, activity, { status: 'final', trainerScore: 90, finalizedBy: 'Coach Tess' });
+  await call('/api/sim-scores/sync', { ids: [id] }, admin);
+  { const a = acts(id)['atty-calendar-activity'] || {};
+    if (a.score !== 90 || a.simBy !== 'Coach Tess' || !/trainer's final score/.test(a.comment || '')) fail(`the trainer's finalized score on the Portal wasn't followed: ${JSON.stringify(a)}`); }
+  { const L = JSON.parse(store.get('ft:labreview:' + id)); L.acts['atty-calendar-activity'] = Object.assign({}, L.acts['atty-calendar-activity'], { source: undefined, score: 77 }); store.set('ft:labreview:' + id, JSON.stringify(L)); }
+  activity = Object.assign({}, activity, { submittedAt: '2026-11-08T10:00:00Z', trainerScore: 50 });
+  await call('/api/sim-scores/sync', { ids: [id] }, admin);
+  if ((acts(id)['atty-calendar-activity'] || {}).score !== 77) fail('a Calendaring Activity score typed here was written over by the Portal');
 
   if (failures.length) { console.error('Simulator scores test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Simulator scores test passed (the Google Calendar Simulator\'s scorecard and the latest Ring Channel graded call fill the standard mock call scorecards criterion by criterion; a score typed here wins; a newer simulator card is followed; a card saved here isn\'t read back; trainers only).');

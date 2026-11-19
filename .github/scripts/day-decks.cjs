@@ -255,14 +255,23 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // video is not on the deck (its lesson card's 🎬 Video on 📚 Dashboard only)
   await page.evaluate(() => FTDayDecks.open(2, FTDayDecks.list(2).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
   const ho2 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, video: !!document.querySelector('.ftdd-ho-video'), ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '',
-    rows: FTDayDecks.dayRows(2).filter(r => /Handouts/.test(r.t)).length }));
-  if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
+    rows: FTDayDecks.dayRows(2).filter(r => /^Breakout Session/.test(r.t)).length, name: (FTDayDecks.dayRows(2).find(r => /^Breakout Session/.test(r.t)) || {}).t || '' }));
+  if (ho2.cards !== 4 || ho2.video || !/Breakout Session \/ Group Activity/.test(ho2.ribbon) || ho2.rows !== 1 || ho2.name !== 'Breakout Session: Softphones · Law Firm Call Guide · Call Handling · Attorney-Client Privilege') fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
+  // 🧩 every breakout named after its lessons, as the curriculum lists its handouts; Day 13's (an individual activity, PM) has its
+  // four handouts on its own stop, apart from the Call Listening Session
+  const bo = await page.evaluate(() => Object.fromEntries([1, 2, 7, 10, 13].map(n => [n, FTDayDecks.dayRows(n).filter(r => /^Breakout Session: /.test(r.t)).map(r => r.t + ' | ' + r.sub)])));
+  if ([1, 2, 7, 10, 13].some(n => bo[n].length !== 1)) fail(`a Breakout Session isn't one stop named after its lessons: ${JSON.stringify(bo)}`);
+  if (!/^Breakout Session: Protected Health Information · E-Portals · Medical Liens · Medical Documents \| Individual Activity · Afternoon, 2:00–3:00 PM · the 4 digital handouts/.test((bo[13] || [])[0] || '')) fail(`Day 13's Breakout Session isn't its four handouts: ${JSON.stringify(bo[13])}`);
+  if (await page.evaluate(() => FTDayDecks.dayRows(13).some(r => /Call Listening.*Breakout/.test(r.t)))) fail('Day 13\'s Call Listening is still named the Breakout Session');
+  await page.evaluate(() => FTDayDecks.open(13, FTDayDecks.list(13).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
+  const ho13 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
+  if (ho13.cards !== 4 || !/Breakout Session \/ Individual Activity/.test(ho13.ribbon)) fail(`Day 13's Breakout Session slide isn't its four handouts, an individual activity: ${JSON.stringify(ho13)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
   // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → Process Questions (the handouts before the Knowledge Check) → Installation of SA
   // (no AI Discussion Video stop on any deck: the lesson card's 🎬 Video on 📚 Dashboard plays it)
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
-  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^Process Questions/, /^Installation of SA/];
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Breakout Session: US Legal System · LSH Services and VA Task List/, /^Process Questions/, /^Installation of SA/];
   if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
   if (await page.evaluate(() => [...Array(17).keys()].slice(1).some(n => FTDayDecks.list(n).some(s => s.launch && s.launch.play != null)))) fail('a day deck still has an AI Discussion Video stop');
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);

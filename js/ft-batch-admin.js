@@ -156,7 +156,7 @@ async function refOf(r, a){
     } else if(a.id === "atty-calendar-activity"){
       const it = typeof window.ftCalCheckItems === "function" ? (window.ftCalCheckItems({rec: {"calcheck:": await sharedGet("calcheck:" + r.id)}}) || [])[0] : null;
       html = it ? `📅 <b>Automatic check</b> · ${it.pct == null ? "—" : e(it.pct) + "%"} · ${e(it.note || "")} · your score here replaces it on the Score Card`
-        : `📅 Not submitted on the platform yet (📅 Calendar Activity Check). Grade it from what they shared in the GC.`;
+        : `📅 Done on the Portal’s 📝 Standard Training - Calendaring Activity? Its score fills this sheet on its own when you open 🧑‍🏫 Graders (the trainer’s final score there, else its automatic check). Nothing there yet: grade it from what they shared in the GC.`;
     } else html = "";
   }catch(err){ html = "Couldn’t load what they submitted. Check your connection."; }
   if(document.body.contains(box)) { if(html) box.innerHTML = html; else box.remove(); }
