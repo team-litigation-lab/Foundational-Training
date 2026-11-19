@@ -2209,6 +2209,29 @@ async function syncSimScores(env, id, o = {}) {
       m.n ? { rubric: { key, scores: m.scores, feedback: m.feedback, avg: Math.round(avg * 100) / 100 } } : {});
     filled.push({ act: S.act, pct, from: card.from });
   }
+  // 📝 Day 5's Attorney Calendar Management Activity, done on the Portal's Standard Training - Calendaring Activity: its latest
+  // submission fills the scoresheet on 🧑‍🏫 Graders → 📝 Assessments — the trainer's finalized score there, else the automatic
+  // check — unless a score was typed here (it wins). The Portal answers server to server (functions/api/calsim-scorecard.js ?activity=1).
+  if (gatewayOn(env)) {
+    const AK = "atty-calendar-activity", prev = cur.acts[AK];
+    const typed = prev && prev.source !== "simulator" && (prev.score != null || prev.redo);
+    if (!typed) try {
+      const base = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/calsim-scorecard";
+      const r = await fetch(base + "?" + new URLSearchParams({ activity: "1", name: rec.name || "", batch: canonicalBatch(rec.batch) || String(rec.batch || "") }), { headers: { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() } });
+      const j = await r.json().catch(() => ({})), a = j && j.success ? j.activity : null;
+      const pct = a ? (a.trainerScore != null ? a.trainerScore : a.checkScore) : null;
+      if (a && pct != null && isFinite(Number(pct)) && !(prev && prev.simAt === a.submittedAt && prev.score === Math.round(Number(pct)))) {
+        const score = Math.max(0, Math.min(100, Math.round(Number(pct))));
+        const status = typeof globalThis.ftResult === "function" ? globalThis.ftResult({ score, redo: false }) : score >= 60 ? "Passed" : "Failed";
+        cur.acts[AK] = Object.assign({}, prev || {}, { source: "simulator", simFrom: "Standard Training - Calendaring Activity", simAt: a.submittedAt || "",
+          simBy: String(a.finalizedBy || "").slice(0, 80), score, status, redo: false, date: String(a.submittedAt || "").slice(0, 10) || TR.ptDate(),
+          comment: (prev && prev.source === "simulator" && prev.comment && !/^Scored on the Standard Training/.test(prev.comment)) ? prev.comment
+            : `Scored on the Standard Training - Calendaring Activity: ${a.trainerScore != null ? "the trainer's final score" : "its automatic check (" + score + "%), not reviewed by the trainer yet"}.`,
+          at: new Date().toISOString() });
+        filled.push({ act: AK, pct: score, from: "Standard Training - Calendaring Activity" });
+      }
+    } catch (e) { /* the Portal unreachable: next time */ }
+  }
   // (🛡 merged into the record as it is now: a trainer's score saved while the Portal was being asked stays)
   if (filled.length) { cur.updatedAt = new Date().toISOString(); await kv.merge(lk, read0, JSON.stringify(cur)); }
   return filled;
