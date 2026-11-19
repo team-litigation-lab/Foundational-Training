@@ -1093,7 +1093,8 @@ function activitiesHtml(p){
   const gr = ((((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {}).assess) || {}, forms = window.FTAssess && typeof FTAssess.docs === "function" ? FTAssess.docs() : [];
   const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
   // (📅 the Attorney Calendar Management Activity, checked field by field: js/ft-calcheck.js ftCalCheckDetailHtml)
-  const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"]) : "";
+  const lab0 = ((((B.data.rec[p.id] || {}).src || {})["labreview:"] || {}).acts) || {};
+  const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"], lab0["atty-calendar-activity"]) : "";
   if(!items.length && !cal) return "";
   // (📝 Day 8's Intake Worksheet: graded on 📦 Intake Packets — trackerreview .assess.intakews — or on 🧑‍🏫 Graders → 📝 Assessments —
   // labreview .acts["intake-worksheet"] — the first one found; its answers read from the trainee's Google Doc when the row opens)
@@ -1102,7 +1103,7 @@ function activitiesHtml(p){
   return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { if(!g && it.assess === "intakews") g = fromLab(lab["intake-worksheet"]);
     const ws = it.assess === "intakews";
     const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
+    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference && !(it.assess && ftReference.assessScored(it.assess)) ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}`}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${ws ? `<div class="bs-ws-ans" data-ws-ans><p class="bs-kd-none">Opening the trainee’s Intake Worksheet…</p></div>${g ? "" : `<p class="bs-kd-none">Not graded yet: grade it on 📦 Intake Packets or 🧑‍🏫 Graders → 📝 Assessments.</p>`}` : actItemsHtml(it, g)}</details>`; }).join("");
 }
@@ -1601,6 +1602,12 @@ function scoreOf(R, d, it, p){
     if(o) return {pct: numOr(o.pct), how: `trainer's score${v != null ? ` (graded ${v}%)` : ""}`};
     return v != null ? {pct: v, how: `${g.score} of ${g.max} points, graded ${g.when || day(g.at)}`} : null; }
   if(it.at !== "tool") return null;
+  // (🗓 Day 5's Attorney Calendar Management Activity: scored — the trainer's score on 🧑‍🏫 Graders, which the Portal's Calendaring
+  // Activity fills — else the Calendar Activity Check's share of fields right)
+  if(it.id === "calactivity"){ const a = (((src["labreview:"] || {}).acts) || {})["atty-calendar-activity"];
+    if(a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo) return {pct: numOr(a.score), how: `trainer's score on 🧑‍🏫 Graders${a.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}${a.date ? ", " + a.date : ""}`};
+    const ci = typeof window.ftCalCheckItems === "function" ? (ftCalCheckItems({rec: {"calcheck:": src["calcheck:"]}}) || [])[0] : null;
+    return ci && typeof ci.pct === "number" ? {pct: ci.pct, how: `the Calendar Activity Check: ${ci.note || ""}`} : null; }
   if(it.id === "process"){ if(REF) return null;
     const rv = src["kcreview:"] || {}, xs = [];
     (d.lessons || []).forEach(l => { const x = dp[l] || {}, t = numOr(((rv.lessons || {})[l] || {}).score), g = t != null ? t : typeof x.score === "number" ? x.score : null;
