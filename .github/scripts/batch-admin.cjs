@@ -115,7 +115,32 @@ async function workerChecks() {
     const sel = await page.evaluate(() => { const s = document.querySelector('.fms-pick select[aria-label=Batch]'); return s.options[s.selectedIndex].text; });
     if (!/B103026.*current/.test(sel)) fail(`the sheet didn't open on the current batch: ${sel}`);
     const groups = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup')].map(g => g.label));
-    if (groups.join() !== '📞 Mock calls,🖥 Demos') fail(`the Activity list isn't grouped into mock calls and demos: ${groups}`);
+    if (groups.join() !== '📞 Mock calls,🖥 Demos,📝 Assessments') fail(`the Activity list isn't grouped into mock calls, demos and assessments: ${groups}`);
+    // 📝 the Assessments: Day 5's Attorney Calendar Management Activity and Day 8's Intake Worksheet, graded here too
+    const assess = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup[label="📝 Assessments"] option')].map(o => o.value));
+    if (assess.join() !== 'atty-calendar-activity,intake-worksheet') fail(`the Assessments aren't the two worksheet activities: ${assess}`);
+    // 🔎 the search: part of an activity's or a trainee's name opens it; the Intake Worksheet shows the link the trainee submitted
+    await put('actsub:cara-lim--b103026', { items: { intakews: { answer: 'https://docs.google.com/document/d/CARA-WS/edit', submittedAt: '2026-11-05T10:00:00Z' } } });
+    if (!(await page.$('.fms-search input[type=search]'))) fail('no 🔎 search on 🧑‍🏫 Graders');
+    await page.fill('.fms-search input', 'intake work'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(400);
+    await page.fill('.fms-search input', 'cara'); await page.press('.fms-search input', 'Enter');
+    await page.waitForFunction(() => /Open it/.test((document.querySelector('[data-ms-ref]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+    const found = await page.evaluate(() => ({ act: document.querySelector('.fms-act').value, va: (document.querySelector('.fms-sheet') || {}).getAttribute('data-va'),
+      ref: (document.querySelector('[data-ms-ref] a') || {}).href || '' }));
+    if (found.act !== 'intake-worksheet' || found.va !== 'cara-lim--b103026' || !/CARA-WS/.test(found.ref)) fail(`the search didn't open Cara's Intake Worksheet with her link: ${JSON.stringify(found)}`);
+    // an Assessment is scored in %, with no criteria, and saved like any scoresheet; it reaches the trainee's Score Card
+    if (await page.$('.fms-tbl tbody tr td input[type=number]')) fail('an Assessment shows criteria it has none of');
+    await page.fill('.fms-foot input[data-score]', '85'); await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
+    const benWs = (((await get('labreview:cara-lim--b103026')) || {}).acts || {})['intake-worksheet'] || {};
+    if (benWs.score !== 85 || benWs.status !== 'Passed') fail(`Cara's Intake Worksheet score wasn't saved: ${JSON.stringify(benWs)}`);
+    const onCard = await page.evaluate(async () => window.ftTrainerItems({ rec: { 'labreview:': await sharedGet('labreview:cara-lim--b103026') }, shared: {} }).find(x => x.ref === 'act:intake-worksheet'));
+    if (!onCard || onCard.pct !== 85) fail(`the graded Intake Worksheet isn't on Cara's Score Card: ${JSON.stringify(onCard)}`);
+    // (and a search with no match says so, leaving the sheet as it is)
+    await page.fill('.fms-search input', 'zzz nobody'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(300);
+    if ((await page.evaluate(() => document.querySelector('.fms-act').value)) !== 'intake-worksheet') fail('a search with no match changed the sheet');
+    // (back to the Reception Mock Call and Ana, where the rest of this test grades)
+    await page.evaluate(() => { FTMockScores.find('Reception Mock Call'); FTMockScores.find('Ana Cruz'); });
+    await page.waitForFunction(() => !!document.querySelector('.fms-sheet .fms-tbl tbody tr input[type=number]'), null, { timeout: 10000 });
     // one trainee's scorecard at a time: the dropdown lists the batch's trainees, the sheet shows the one picked (the first by name)
     const vas = await page.evaluate(() => [...document.querySelectorAll('.fms-va option')].map(o => o.textContent.split(' · ')[0]));
     if (vas.join() !== 'Ana Cruz,Ben Diaz,Cara Lim') fail(`the trainee dropdown isn't the batch's trainees: ${vas}`);
