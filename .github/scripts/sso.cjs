@@ -158,25 +158,24 @@ async function ticketFor(payloadObj, secret) {
 
     // 6. 🎯 a Portal ticket names the program it is for (p, this program's topic key) and works once, whoever it is for
     //    (platform QA 2026-11-19, finding 1): a ticket made for another program or a tool is refused, so Program Access on
-    //    the Portal stays the one gate; and the trainee's full registered name (finding 8) is kept, the ID unchanged.
+    //    the Portal stays the one gate (one with no p is still taken: the rollout); and the trainee's full registered name (finding 8) is kept, the ID unchanged.
     {
         const soon = () => Date.now() + 60000;
         const e6 = makeEnv({ PORTAL_SSO_SECRET: SECRET });
-        for (const [label, p] of [["another program's", 'SOME OTHER PROGRAM'], ["the Knowledge Base's", 'kb'], ["a course's tool link", 'tool'], ['an unnamed', undefined]]) {
+        for (const [label, p] of [["another program's", 'SOME OTHER PROGRAM'], ["the Knowledge Base's", 'kb'], ["a course's tool link", 'tool'], ['a blank-audience', '']]) {
             for (const [kind, t] of [['trainee', { first: 'Pat', last: 'Lane', b: 'B100926' }], ['admin', { r: 'a', n: 'Coach Ana' }], ['system', { r: 's' }]]) {
                 const res = await call(e6, '/api/auth/portal', { ticket: await ticketFor(Object.assign({}, t, { p, exp: soon() }), SECRET) });
                 if (res.status !== 401 || !res.body || res.body.code !== 'audience' || res.body.token) fail(`${label} ${kind} ticket must be refused (401 audience), got ${JSON.stringify(res)}`);
             }
         }
-        if ([...e6.__store.keys()].some((k) => /pat-lane/.test(k))) fail('a refused ticket must not create or approve a trainee record');
-        // PORTAL_TICKET_AUDIENCE=optional (only while an older Portal is deployed) takes a ticket with no p, never another program's
-        const e7 = makeEnv({ PORTAL_SSO_SECRET: SECRET, PORTAL_TICKET_AUDIENCE: 'optional' });
-        const np = await call(e7, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: undefined, exp: soon() }, SECRET) });
-        if (np.status !== 200 || !np.body || !np.body.token) fail(`with PORTAL_TICKET_AUDIENCE=optional a ticket with no p should still sign in: ${JSON.stringify(np)}`);
-        const op = await call(e7, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: 'SOME OTHER PROGRAM', exp: soon() }, SECRET) });
-        if (op.status !== 401 || !op.body || op.body.code !== 'audience') fail(`PORTAL_TICKET_AUDIENCE=optional must still refuse another program's ticket: ${JSON.stringify(op)}`);
+        if ([...e6.__store.keys()].some((k) => /pat-lane/.test(k) && !/^(\w+:)?sso-used:/.test(k))) fail('a refused ticket must not create or approve a trainee record');
+        // a ticket with no p (made before the Portal named the program) is still taken, so nobody is locked out mid-rollout
+        const np = await call(e6, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: undefined, exp: soon() }, SECRET) });
+        if (np.status !== 200 || !np.body || !np.body.token) fail(`a ticket with no p should still sign in: ${JSON.stringify(np)}`);
+        const ap = await call(e6, '/api/auth/portal', { ticket: await ticketFor({ r: 'a', n: 'Coach Ana', p: undefined, exp: soon() }, SECRET) });
+        if (ap.status !== 200 || !ap.body || !ap.body.admin) fail(`a trainer's ticket with no p should still sign in: ${JSON.stringify(ap)}`);
         // a trainee's own ticket works once, like a trainer's
-        const tt = await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', exp: soon() }, SECRET);
+        const tt = await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: PORTAL_TOPIC, exp: soon() }, SECRET);
         const first = await call(e6, '/api/auth/portal', { ticket: tt });
         if (first.status !== 200 || !first.body || !first.body.token) fail(`this program's own trainee ticket should sign in: ${JSON.stringify(first)}`);
         const second = await call(e6, '/api/auth/portal', { ticket: tt });

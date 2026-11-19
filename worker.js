@@ -246,13 +246,13 @@ async function useTicketOnce(kv, ticket) {
   return true;
 }
 /* 🎯 A Portal ticket names the program it was made for (p: the topic key, functions/api/launch.js makeTicket). This
-   program takes only its own: a ticket the Portal made for another program, a tool, or a course's tool link (p "tool")
-   is refused (why.r "audience"), so Program Access on the Portal stays the one gate. A ticket with no p at all is
-   refused too; PORTAL_TICKET_AUDIENCE=optional takes it again, the way back only while an older Portal is deployed. */
+   program refuses a ticket whose p is another program, a tool, or a course's tool link (p "tool"): why.r "audience", so
+   Program Access on the Portal stays the one gate. A ticket with no p is still taken, so nobody is locked out whichever
+   side deploys first: tickets are signed by the Portal and the courses only and live 5 minutes, and once the Portal and
+   the courses' tool tickets carry p, no ticket without one is made any more. */
 const PORTAL_TOPIC = "STANDARD TRAINING";
 function ticketAudienceOk(env, t) {
-  if (t && t.p != null) return String(t.p) === PORTAL_TOPIC;
-  return String(env.PORTAL_TICKET_AUDIENCE || "").trim().toLowerCase() === "optional";
+  return !t || t.p == null || String(t.p) === PORTAL_TOPIC;
 }
 async function readPortalTicket(env, ticket, why = {}) {
   if (!portalSecret(env)) { why.r = "format"; return null; }
