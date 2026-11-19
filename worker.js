@@ -3700,6 +3700,31 @@ export default {
 
       /* ---------- 📦 Day 8's Intake Packet: check the trainee's corrected packet and its client subfolder (the trainee's own, at
          most every 3 minutes; an admin's for anyone): checkIntakePacket ---------- */
+      /* ---------- 📝 Day 8's Intake Worksheet as the trainee answered it (actsub:<id>.items.intakews: the Google Doc's link they
+         submitted on the slide), read as text for the trainer's 📋 Batch Sheet and the trainee's own page: { ok, link, submittedAt,
+         text } — text null (with why) when the file can't be read here (not shared, or a Word file: open it from the link) ---------- */
+      if (path === "/api/intake/worksheet") {
+        const b = await request.json().catch(() => ({}));
+        const id = subjectOf(tok, b);
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const sub = ((JSON.parse((await kv.get(`actsub:${id}`)) || "null") || {}).items || {}).intakews || null;
+        let link = sub && /^https?:\/\//.test(String(sub.answer || "")) ? String(sub.answer) : "", found = false;
+        // (no link submitted on the slide: the worksheet in their Assessments/Activities folder, a Google Doc named for it —
+        // "Intake Worksheet", "The Intake Tab and the Intake Packet" — the newest one)
+        if (!link) try {
+          const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null"), res = drive && drive.folder ? await folderFiles(env, drive.folder) : null;
+          const docs = ((res && res.files) || []).filter((f) => /google-apps\.document/.test(f.mime || "") && /intake[\s_-]*work\s*sheet|intake tab|work\s*sheet.*intake/i.test(f.name || ""))
+            .sort((x, y) => String(y.modified || y.created).localeCompare(String(x.modified || x.created)));
+          if (docs[0]) { link = docs[0].link || `https://docs.google.com/document/d/${docs[0].id}/edit`; found = true; }
+        } catch (e) { /* the folder can't be read: no worksheet found */ }
+        if (!link) return json({ ok: true, link: "", text: null, why: "none" });
+        const docId = (link.match(/\/document\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1];
+        if (!docId) return json({ ok: true, link, submittedAt: (sub && sub.submittedAt) || "", text: null, why: "not-a-doc" });
+        let text = null, why = "";
+        try { text = await fetchGoogle(`https://docs.google.com/document/d/${docId}/export?format=txt`, env); } catch (e) { why = "not-shared"; }
+        if (text != null) text = String(text).replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 30000);
+        return json({ ok: true, link, submittedAt: (sub && sub.submittedAt) || "", found, text, why });
+      }
       if (path === "/api/intake/check") {
         const b = await request.json().catch(() => ({}));
         const id = subjectOf(tok, b);

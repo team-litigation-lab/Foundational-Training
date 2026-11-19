@@ -840,7 +840,10 @@ window.ftTrainerItems = ctx => {
     return g && typeof g.pct === "number" ? {name:a.title, ref:"act:" + a.id, kind:a.kind || "", at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet", why:String(g.summary || g.comment || "")} : null; };
   // (a graded one counts at once, Passed or Failed; a Redo the trainer asked for stays off until it is done again — and is
   // never replaced by the automatic score)
-  const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet";
+  // (📝 the Intake Worksheet graded on 📦 Intake Packets — trackerreview .assess.intakews, on the Score Card as 📄 Intake Worksheet — is
+  // counted there: the same worksheet scored on 🧑‍🏫 Graders too isn't counted twice)
+  const wsElsewhere = (((ctx.rec["trackerreview:"] || {}).assess) || {}).intakews;
+  const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet" && !(a.id === "intake-worksheet" && wsElsewhere && wsElsewhere.score != null);
   return list.filter(a => recorded(a) ? RES(mine[a.id]) !== "Redo" : !!autoItem(a)).map(a => { if(!recorded(a)) return autoItem(a);
     const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)

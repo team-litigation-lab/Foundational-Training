@@ -71,6 +71,8 @@ jobs:
         run: node .github/scripts/cron-checks.cjs
       - name: Scores given on the simulators mirrored on the standard mock call scorecards, a score typed here winning (worker.js syncSimScores)
         run: node .github/scripts/sim-scores.cjs
+      - name: Day 8's Intake Worksheet read from the trainee's Google Doc (submitted link, else their folder)
+        run: node .github/scripts/intake-worksheet.cjs
       - name: The Saving LORs scorecard's two Attention to Detail rows merged, the retired one keeping its place out of the average (js/ft-rubrics.js)
         run: node .github/scripts/lor-rubric.cjs
       - name: An EOD email matched to its trainee by name, address or sign-off; the unmatched ones given out in 📧 EOD Inbox (worker.js receiveEod)

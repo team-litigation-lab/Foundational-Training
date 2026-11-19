@@ -224,7 +224,7 @@ function renderMockScores(){
       <label>Week <select aria-label="Week" class="fms-wk" onchange="FTMockScores.week(this.value)">${Array.from({length: WEEKS}, (x, i) => i + 1).map(n => `<option value="${n}" ${wk === n ? "selected" : ""}>Week ${n}${hasDates ? " · " + e(wkRange(MS.batch, n)) : ""}${n === nowWeek(MS.batch) && hasDates ? " (this week)" : ""}</option>`).join("")}<option value="all" ${wk === "all" ? "selected" : ""}>All weeks</option></select></label>
       <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
       <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}${assess.length ? `<optgroup label="📝 Assessments">${assess.map(opt).join("")}</optgroup>` : ""}</select>
-      <span class="fms-search"><input type="search" list="fmsFind" placeholder="🔎 Search an activity or trainee" aria-label="Search the scorecards" onchange="FTMockScores.find(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();FTMockScores.find(this.value);}"><datalist id="fmsFind">${acts.map(x => `<option value="${e(x.title)}">`).join("")}${all.map(x => `<option value="${e(x.name || x.id)}">`).join("")}</datalist></span>
+      <span class="fms-search"><input type="search" list="fmsFind" placeholder="🔎 Search an activity (every trainee’s score) or a trainee" aria-label="Search the scorecards" onchange="FTMockScores.find(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();FTMockScores.find(this.value);}"><datalist id="fmsFind">${acts.map(x => `<option value="${e(x.title)}">`).join("")}${all.map(x => `<option value="${e(x.name || x.id)}">`).join("")}</datalist></span>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
           const res = window.ftResult ? ftResult(c) : c.status, tag = dd && dd.dirty ? " · ● not saved" : res && res !== "Not yet" ? ` · ${res}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : a && autoOf(x.id, a.id) ? " · 🤖 auto-scored, to review" : "";
@@ -237,7 +237,18 @@ function renderMockScores(){
   const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
     : `<div class="fms-banner">${ctl}</div>`;
   const head = "";
-  const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
+  // 📊 the activity picked (or found with 🔎), every trainee of the batch at once: the result, the score, the date and who graded
+  // it, from what is saved (and ● for a sheet typed here and not saved yet); a name opens that trainee's scoresheet
+  const allTbl = () => !a || MS.loadedFor !== sig ? "" : `<details class="card fms-all" ${MS.allOpen ? "open" : ""} ontoggle="FTMockScores.allOpen(this.open)">
+      <summary>📊 <b>${e(a.title)}</b> · every trainee in ${e(labelOf(MS.batch))} (${all.length})</summary>
+      <table class="fms-all-tbl"><thead><tr><th>Trainee</th><th>Result</th><th>Score</th><th>Date</th><th>Graded by</th></tr></thead><tbody>
+      ${all.map(x => { const c = cellOf(x.id, a.id), res = window.ftResult ? ftResult(c) : (c.status || "Not yet"), sc = tScore(c), dd = MS.draft[MS.act + "|" + x.id], au = autoOf(x.id, a.id);
+        const src = c.source === "simulator" ? ` <small title="Filled from the ${e(c.simFrom || "simulator")}">🔁</small>` : "";
+        return `<tr class="${x.id === MS.va ? "on" : ""}"><td><a href="#" onclick="event.preventDefault();FTMockScores.va('${e(x.id)}')">${e(x.name || x.id)}</a>${dd && dd.dirty ? " <small>● not saved</small>" : ""}</td>
+          <td class="fms-r ${res === "Passed" ? "ok" : res === "Failed" ? "bad" : res === "Redo" ? "mid" : ""}">${e(res)}</td>
+          <td>${sc != null ? e(sc) + "%" + src : au && au.pct != null ? `<small>🤖 ${e(au.pct)}% to review</small>` : "—"}</td><td>${e(c.date || "")}</td><td>${e(c.facilitator || c.simBy || "")}</td></tr>`; }).join("")}
+      </tbody></table></details>`;
+  const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>${allTbl()}`;
   if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
   if(!a) return wrap(`<p class="fss-muted">No Mock Call, Demo or Assessment in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
   if(!r) return wrap(`<p class="fss-muted">No trainees registered in ${e(labelOf(MS.batch))} yet.</p>`);
@@ -308,6 +319,7 @@ window.FTMockScores = {
   },
   batch(b){ MS.batch = b; MS.va = ""; render(); },
   week(w){ MS.wk = w; render(); },
+  allOpen(v){ MS.allOpen = !!v; },
   // 🔎 the search over the scoresheets: an activity's or a trainee's name (or part of it) opens that activity / that trainee
   find(q){
     const n = String(q || "").trim().toLowerCase(); if(!n) return;
@@ -316,6 +328,7 @@ window.FTMockScores = {
     const v = all.find(x => String(x.name || x.id).toLowerCase() === n) || all.find(x => has(x.name) || has(x.id));
     if(!a && !v){ toast(`Nothing in ${labelOf(MS.batch)}’s scorecards matches “${q}”.`); return; }
     if(a) MS.act = a.id; if(v) MS.va = v.id;
+    if(a && !v) MS.allOpen = true;   // (an activity searched for: every trainee's score for it, open)
     render();
   },
   // (the Result of the trainee on screen: it follows the score, with no picker of its own)
@@ -644,6 +657,11 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;}
 .fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
 .fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
+.fms-all{margin:14px 0 0;padding:10px 16px;} .fms-all > summary{cursor:pointer;font:700 16px Arial,sans-serif;color:#1E2340;padding:4px 0;}
+.fms-all-tbl{width:100%;border-collapse:collapse;margin:10px 0 4px;font:600 15px Arial,sans-serif;color:#141A2E;}
+.fms-all-tbl th{text-align:left;background:#2E7D32;color:#fff;padding:7px 10px;font-weight:800;} .fms-all-tbl td{padding:7px 10px;border-bottom:1px solid #E1E3E1;}
+.fms-all-tbl tr:nth-child(even) td{background:#F4F8F1;} .fms-all-tbl tr.on td{background:#FFF7D6;} .fms-all-tbl a{color:#1E2340;font-weight:800;}
+.fms-all-tbl .fms-r.ok{color:#15803D;} .fms-all-tbl .fms-r.bad{color:#B91C1C;} .fms-all-tbl .fms-r.mid{color:#9A5B00;}
 .fms-pick .fms-search input{font:inherit;font-size:14px;padding:4px 10px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;min-width:220px;max-width:100%;}
 .fms-pick .fms-savebtn{margin-left:auto;} .fms-save{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0 0;}
 /* (🧑‍🏫 Graders: the pickers in the banner's top-right corner, on its dark blue) */
