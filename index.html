@@ -5335,6 +5335,12 @@ async function resendUnsent(){
 }
 setInterval(resendUnsent, 30000);
 window.addEventListener("online", resendUnsent);
+// 🛡 a trainer's score record (labreview: / kcreview: / trainerfb:, worker.js GUARDED): the page remembers the copy it read,
+// and a save sends it as the base, so the Worker merges only this save's changes into the record as it is now — another
+// trainer's score saved meanwhile stays, instead of being written over by this page's older copy
+const GUARDED_KEY = /^(labreview|kcreview|trainerfb):/;
+const SHARED_BASE = new Map();
+const noteBase = (key, text) => { if(GUARDED_KEY.test(key)) SHARED_BASE.set(key, text == null ? null : text); };
 async function sharedSet(key,val){
   sharedInFlight++;
   try{ return await sharedSetNow(key, val); }finally{ sharedInFlight--; }
@@ -5350,8 +5356,11 @@ async function sharedSetNow(key,val){
   // read from. window.storage (when present, e.g. previewing in Claude.ai)
   // is a separate store and must never be treated as a substitute for it.
   try{
-    const response = await authFetch("/api/storage/set", { key, value: JSON.stringify(val) });
-    if(response.ok){ savedAnywhere = true; toServer = true; }
+    const value = JSON.stringify(val), guarded = GUARDED_KEY.test(key) && SHARED_BASE.has(key);
+    const response = await authFetch("/api/storage/set", guarded ? { key, value, base: SHARED_BASE.get(key) } : { key, value });
+    if(response.ok){ savedAnywhere = true; toServer = true;
+      // (the merged record is the base of the next save)
+      if(GUARDED_KEY.test(key)){ const j = await response.clone().json().catch(() => null); noteBase(key, j && typeof j.value === "string" ? j.value : value); } }
     else if(response.status < 500) refused = true;   // (the server said no, e.g. not this trainee's record: not kept to send again)
   }catch(e){ console.warn("shared storage set failed",e); }
   // (a trainee's own work only: an admin's failed write is reported to them, never replayed later over a trainee's record)
@@ -5372,6 +5381,7 @@ async function sharedGet(key){
     const response = await authFetch("/api/storage/get", { key });
     if(!response.ok) return null;
     const data = await response.json();
+    noteBase(key, data.value || null);
     return data.value ? JSON.parse(data.value) : null;
   }catch(e){ return null; }
 }
@@ -5405,7 +5415,7 @@ async function sharedGetMany(keys){
     try{
       const response = await authFetch("/api/storage/get-many", { keys: part });
       if(response.status===404) return Promise.all(part.map(k=>sharedGet(k).catch(()=>null)));
-      if(response.ok) values = (await response.json()).values || {};
+      if(response.ok){ values = (await response.json()).values || {}; part.forEach(k=>{ if(k in values) noteBase(k, values[k] || null); }); }
     }catch(e){ values = null; }
     return part.map(k=>{ try{ return values && values[k] ? JSON.parse(values[k]) : null; }catch(e){ return null; } });
   }));
@@ -5441,6 +5451,7 @@ async function sharedGetStrict(key){
   const response = await authFetch("/api/storage/get", {key});
   if(!response.ok) throw new Error("storage "+response.status);
   const data = await response.json();
+  noteBase(key, data.value || null);
   return data.value ? JSON.parse(data.value) : null;
 }
 async function resolveTraineeId(name, batch){
