@@ -54,13 +54,86 @@ const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
 const KV_PREFIX = "ft:";
+/* 🛡 THE TRAINERS' SCORE RECORDS, GUARDED (labreview:<id> — 🧑‍🏫 Graders, Trainer Inputs, the scorecards; kcreview:<id>;
+   trainerfb:<id>). KV is eventually consistent: a read can be a copy up to a minute old, and every save here reads the
+   whole record, changes one activity and writes the whole record back. So a trainer's saved score could be written over by
+   the copy another save (another trainer, the simulator-score sync) read a moment before, and a save could read back
+   without itself ("saved, then gone", "not on the saved scores"). Each of these records now goes through one Durable
+   Object (RecordGuard, one per record): reads see the latest write at once, writes to a record are taken one at a time,
+   and a save that says what it started from (base) has only its own changes merged into the record as it is now
+   (merge3), so two saves of different activities both stay. A write's copy is held for GUARD_TTL, then KV (long settled
+   by then) is read again, so a record another site deleted from KV is not kept. */
+const GUARDED = /^(labreview|kcreview|trainerfb):/;
+const GUARD_TTL = 10 * 60 * 1000;
+const isPlain = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+const sameJSON = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// base: what the writer read; inc: what it writes; cur: the record now. What the writer didn't change keeps its current value;
+// what it changed (or added) is theirs; what it removed goes unless someone changed it since. With no base (undefined) a
+// record is only ever added to, never thinned.
+function merge3(base, inc, cur) {
+  if (base !== undefined && sameJSON(inc, base)) return cur;
+  if (isPlain(inc) && isPlain(cur) && (base === undefined || isPlain(base))) {
+    const out = Object.assign({}, cur), b = isPlain(base) ? base : {};
+    for (const k of new Set([...Object.keys(inc), ...Object.keys(b)])) {
+      if (!(k in inc)) { if (base !== undefined && sameJSON(cur[k], b[k])) delete out[k]; continue; }
+      const m = merge3(base === undefined || !(k in b) ? undefined : b[k], inc[k], cur[k]);
+      if (m === undefined) delete out[k]; else out[k] = m;
+    }
+    return out;
+  }
+  return inc;
+}
+// (a merge of JSON texts: base null — the record didn't exist when it was read — is an empty record)
+function mergeText(baseText, incText, curText) {
+  let inc, cur, base;
+  try { inc = JSON.parse(incText); } catch (e) { return incText; }
+  try { cur = curText == null ? null : JSON.parse(curText); } catch (e) { cur = null; }
+  if (cur == null) return incText;
+  try { base = baseText === undefined ? undefined : baseText === null ? {} : JSON.parse(baseText); } catch (e) { base = undefined; }
+  return JSON.stringify(merge3(base, inc, cur));
+}
+export class RecordGuard {
+  constructor(state, env) { this.state = state; this.env = env; this.q = Promise.resolve(); }
+  async fetch(request) {
+    const b = await request.json();
+    // (one request at a time: a KV read or write lets another request in, so they queue here)
+    const run = this.q.then(() => this.one(b));
+    this.q = run.catch(() => {});
+    return Response.json(await run);
+  }
+  async one({ op, key, value, base }) {
+    const raw = this.env.LSH_KV, K = KV_PREFIX + key, st = this.state.storage, now = Date.now();
+    const held = await st.get("rec");
+    const fresh = held && now - held.at < GUARD_TTL;
+    const current = async () => fresh ? held.v : await raw.get(K);
+    const keep = async (v) => { if (v == null) await raw.delete(K); else await raw.put(K, v); await st.put("rec", { v: v == null ? null : v, at: now }); };
+    if (op === "get") return { value: await current() };
+    if (op === "put") { await keep(value); return { ok: true, value }; }
+    if (op === "delete") { await keep(null); return { ok: true }; }
+    if (op === "merge") { const v = mergeText(base, value, await current()); await keep(v); return { ok: true, value: v }; }
+    return { error: "unknown op" };
+  }
+}
+async function guard(env, body) {
+  const ns = env.RECORD_GUARD, stub = ns.get(ns.idFromName(body.key));
+  const r = await stub.fetch("https://guard/", { method: "POST", body: JSON.stringify(body) });
+  const j = await r.json();
+  if (j.error) throw new Error("record guard: " + j.error);
+  return j;
+}
 function kvOf(env) {
   const raw = env.LSH_KV;
   if (!raw) return null;
+  const guarded = (k) => !!env.RECORD_GUARD && GUARDED.test(String(k));
   return {
-    get: (k) => raw.get(KV_PREFIX + k),
-    put: (k, v, o) => raw.put(KV_PREFIX + k, v, o),
-    delete: (k) => raw.delete(KV_PREFIX + k),
+    get: (k) => guarded(k) ? guard(env, { op: "get", key: k }).then((j) => j.value) : raw.get(KV_PREFIX + k),
+    put: (k, v, o) => guarded(k) && !o ? guard(env, { op: "put", key: k, value: v }) : raw.put(KV_PREFIX + k, v, o),
+    delete: (k) => guarded(k) ? guard(env, { op: "delete", key: k }) : raw.delete(KV_PREFIX + k),
+    // a save of a record read as baseText: only what it changed is merged into the record as it is now. Returns the merged text.
+    merge: async (k, baseText, v) => {
+      if (guarded(k)) return (await guard(env, { op: "merge", key: k, value: v, base: baseText })).value;
+      const m = mergeText(baseText, v, await raw.get(KV_PREFIX + k)); await raw.put(KV_PREFIX + k, m); return m;
+    },
     list: async (opts = {}) => {
       const r = await raw.list(Object.assign({}, opts, { prefix: KV_PREFIX + (opts.prefix || "") }));
       return Object.assign({}, r, { keys: r.keys.map((x) => Object.assign({}, x, { name: x.name.slice(KV_PREFIX.length) })) });
@@ -2094,7 +2167,7 @@ function simMatch(rb, rows) {
 async function syncSimScores(env, id, o = {}) {
   const kv = kvOf(env), RB = globalThis.FT_RUBRICS; if (!RB) return [];
   const rec = o.rec || JSON.parse((await kv.get(`trainee:${id}`)) || "null"); if (!rec) return [];
-  const lk = `labreview:${id}`, cur = JSON.parse((await kv.get(lk)) || "null") || {}; cur.acts = cur.acts || {};
+  const lk = `labreview:${id}`, read0 = await kv.get(lk), cur = JSON.parse(read0 || "null") || {}; cur.acts = cur.acts || {};
   const calls = ((JSON.parse((await kv.get(`callsim:${id}`)) || "null") || {}).calls) || [];
   const filled = [];
   for (const [key, S] of Object.entries(SIM_ACTS)) {
@@ -2130,7 +2203,8 @@ async function syncSimScores(env, id, o = {}) {
       m.n ? { rubric: { key, scores: m.scores, feedback: m.feedback, avg: Math.round(avg * 100) / 100 } } : {});
     filled.push({ act: S.act, pct, from: card.from });
   }
-  if (filled.length) { cur.updatedAt = new Date().toISOString(); await kv.put(lk, JSON.stringify(cur)); }
+  // (🛡 merged into the record as it is now: a trainer's score saved while the Portal was being asked stays)
+  if (filled.length) { cur.updatedAt = new Date().toISOString(); await kv.merge(lk, read0, JSON.stringify(cur)); }
   return filled;
 }
 
@@ -3145,13 +3219,13 @@ export default {
         if (scores.slice(0, 7).some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
         const feedback = CRIT.map((n, i) => String(rowOf(n, i).feedback || "").slice(0, 600));
         const on = scores.filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
-        const rk = `labreview:${id}`, cur = JSON.parse((await kvx.get(rk)) || "null") || {};
+        const rk = `labreview:${id}`, read0 = await kvx.get(rk), cur = JSON.parse(read0 || "null") || {};
         cur.acts = cur.acts || {}; const was = cur.acts["calendar-live"] || null;
         if (was && was.at && String(was.at) > at && was.source !== "portal") return json({ ok: true, skipped: "a newer scorecard here" });
         cur.acts["calendar-live"] = Object.assign({}, was || {}, { status: avg >= 3 ? "Passed" : "Failed", redo: false, score: pct, scoreEdited: false, date: at.slice(0, 10),
           facilitator: String(card.by || (was && was.facilitator) || "Trainer").slice(0, 120), comment: (was && was.comment) || "", at, source: "portal",
           rubric: { key: "calendar", scores, feedback, avg: Math.round(avg * 100) / 100 } });
-        await kvx.put(rk, JSON.stringify(cur));
+        await kvx.merge(rk, read0, JSON.stringify(cur));   // (🛡 merged: the trainer's other scores saved meanwhile stay)
         return json({ ok: true, id, score: pct, status: cur.acts["calendar-live"].status });
       }
 
@@ -3820,6 +3894,9 @@ export default {
       }
       if (path === "/api/storage/set") {
         if (!key) return json({ error: "Missing key" }, 400);
+        // (🛡 a trainer's score record: merged into the record as it is now, from what the page read — body.base — never written
+        // over it; the page gets the merged record back)
+        if (tok.role === "a" && GUARDED.test(key)) return json({ ok: true, value: await kv.merge(key, "base" in body ? body.base : undefined, body.value) });
         if (tok.role === "a") { await kv.put(key, body.value); return json({ ok: true }); }
         const err = await traineeWrite(env, tok, key, body.value);
         return err ? json({ error: err }, 403) : json({ ok: true });

@@ -51,6 +51,10 @@
       {
         "name": "GEMINI_RELAY",
         "class_name": "GeminiRelay"
+      },
+      {
+        "name": "RECORD_GUARD",
+        "class_name": "RecordGuard"
       }
     ]
   },
@@ -59,6 +63,12 @@
       "tag": "v1-gemini-relay",
       "new_sqlite_classes": [
         "GeminiRelay"
+      ]
+    },
+    {
+      "tag": "v2-record-guard",
+      "new_sqlite_classes": [
+        "RecordGuard"
       ]
     }
   ]

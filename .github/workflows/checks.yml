@@ -87,8 +87,10 @@ jobs:
         run: node .github/scripts/monitor-docx.cjs
       - name: Grading a long answer sheet (in batches; a cut-off AI reply, no AI at all, never a ✗ for a right answer)
         run: node .github/scripts/assess-grade.cjs
-      - name: The Breakout Session worksheets, 5 questions or more on each Breakout day, graded and counted in the day's outputs
+      - name: The Breakout Session worksheets (off the training), 5 questions or more on each Breakout day, graded but not counted in the day's outputs
         run: node .github/scripts/breakout-worksheet.cjs
+      - name: Trainers' score records guarded (two saves from the same copy both stay; reads see the latest save; the simulator-score sync merges)
+        run: node .github/scripts/record-guard.cjs
       - name: The Transcription Activity's automatic score (the shared checks and one AI call, clamped to half points; cached, throttled and capped for a trainee; without the AI the trainer scores the rest)
         run: node .github/scripts/transcribe-grade.cjs
       - name: Day 8's Intake Packet checked (the corrected packet and its client subfolder; missing, misidentified and misnamed documents)
