@@ -41,6 +41,8 @@ jobs:
         run: node .github/scripts/batch-id.cjs
       - name: Single sign-on (the Portal is the only way a trainee gets in; a missing PORTAL_SSO_SECRET says so)
         run: node .github/scripts/sso.cjs
+      - name: The certificate's name takes the middle name and suffix from the full registered name, matching names as whole words (index.html formatCertName)
+        run: node .github/scripts/cert-name.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
       - name: Claude as the primary AI provider (ANTHROPIC_API_KEY; Haiku for chat, Sonnet for grading; the Gemini pool takes over when Claude can't answer)

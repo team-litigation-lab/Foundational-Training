@@ -2172,7 +2172,7 @@ body::before{opacity:.50;}
   .topbar,.btn-primary,.btn-navy{background-image:none;box-shadow:none;}
 }
 </style>
-<script src="/js/portal-gate.js?v=f86dc33a96"></script>
+<script src="/js/portal-gate.js?v=e6e52bd95b"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -12008,11 +12008,12 @@ function formatCertName(first, last, full){
   first = String(first||"").trim(); last = String(last||"").trim();
   if(!last) return first;
   let middle = "", suffix = "";
-  const f = String(full||"").replace(/\s+/g," ").trim(), lo = f.toLowerCase();
-  if(f && lo.startsWith(first.toLowerCase()+" ") && lo.includes(" "+last.toLowerCase())){
-    const at = lo.lastIndexOf(" "+last.toLowerCase());
-    middle = f.slice(first.length, at).trim();
-    suffix = f.slice(at + 1 + last.length).replace(/^,?\s*/, "").trim();
+  // (the first and last names are matched as whole words: last "Le" in "Ana Lee" is no match, so the name stays "Le, Ana")
+  const f = String(full||"").replace(/\s+/g," ").trim(), esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = f && new RegExp("^" + esc(first.replace(/\s+/g, " ")) + "((?: .*)?) " + esc(last.replace(/\s+/g, " ")) + "(?=$|[ ,])(.*)$", "i").exec(f);
+  if(m){
+    middle = m[1].trim();
+    suffix = m[2].replace(/^,?\s*/, "").trim();
   }
   const fmt = (state.certSettings && state.certSettings.nameFormat) || "lastFirst";
   return fmt==="firstLast" ? [first, middle, last].filter(Boolean).join(" ") + (suffix ? ", " + suffix : "")
@@ -14119,7 +14120,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.19-e08774b1";
+var APP_BUILD = "ft-2026.11.20-f1c8eac2";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14158,7 +14159,7 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=b4c6aa68e7"></script>
+<script src="/js/eapa-updates.js?v=1341f5f68e"></script>
 <script src="/js/ft-roster.js?v=908501ce65"></script>
 <script src="/js/ft-updates.js?v=70747a5b7a"></script>
 <script src="/js/ft-slides.js?v=63f91916f2"></script>
@@ -14173,7 +14174,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-calendar.js?v=fc598b7761"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
 <script src="/js/ft-firms.js?v=a8c29bb11b"></script>
-<script src="/js/ft-day-activities.js?v=36e4e61fff"></script>
+<script src="/js/ft-day-activities.js?v=c56a2499eb"></script>
 <script src="/js/ft-simulators.js?v=03f496123b"></script>
 <script src="/js/ft-rubrics.js?v=b561c19ce6"></script>
 <script src="/js/ft-sessions.js?v=c01ab18a07"></script>
@@ -14219,7 +14220,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-dashboard.js?v=07284c4590"></script>
 <script src="/js/ft-card-grid.js?v=9e93c91cb0"></script>
 <script src="/js/lsh-card-frame.js?v=8422ecfa1a"></script>
-<script src="/js/lsh-topbar.js?v=1f7abcccb7"></script>
+<script src="/js/lsh-topbar.js?v=9833dac931"></script>
 <script src="/js/ft-program.js?v=0cfdaa8035"></script>
 <script src="/js/lsh-program.js?v=5ee4d838b7"></script>
 <script src="/js/ft-my-pages.js?v=62814196ae"></script>
@@ -14233,7 +14234,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-one-screen.js?v=a23c8cc0f9"></script>
 <script src="/js/ft-screen-fit.js?v=d16628fdb1"></script>
 <script src="/js/ft-buffer.js?v=d4bf20360f"></script>
-<script src="/js/ft-admin-tidy.js?v=572a6ce0cc"></script>
+<script src="/js/ft-admin-tidy.js?v=931b4fd74f"></script>
 <script src="/js/ft-trainees-tab.js?v=fa0799d804"></script>
 <script src="/js/ft-trainee-log.js?v=355377d5b2"></script>
 <script src="/js/ft-announcement.js?v=0955bb6da6"></script>
