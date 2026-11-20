@@ -285,7 +285,8 @@ const TOKEN_GRACE_MS = 60 * 24 * 3600 * 1000;
    record under the new ID that is newer than it (an empty account made by an earlier sign-in) is archived, mergedInto
    the old one, so neither the Trainee Audit nor attendance lists the trainee twice. Two other same-name records, or
    none, change nothing: the sign-in goes on as before. */
-async function movedBatch(kv, name, batch) {
+// blocked (the program's block list, read fresh): a record on it is never moved or rewritten; { id, rec, blocked: true } says whose.
+async function movedBatch(kv, name, batch, blocked) {
   const { newId } = candidateIds(name, batch), slug = newId.split("--")[0];
   if (!slug || !newId.includes("--")) return null;
   const list = await kv.list({ prefix: `trainee:${slug}--` }).catch(() => null);
@@ -297,6 +298,7 @@ async function movedBatch(kv, name, batch) {
       && batchKey(x.rec.batch || "") !== batchKey(batch));
   if (recs.length !== 1) return null;
   const old = recs[0], id = old.key.slice("trainee:".length);
+  if (blocked && blocked[id]) return { id, rec: old.rec, blocked: blocked[id] };
   const curRaw = await kv.get(`trainee:${newId}`), cur = curRaw ? JSON.parse(curRaw) : null;
   // (a record under the new ID older than the other: it is the trainee's own account in this batch; nothing moves)
   if (cur && !cur.archived && Date.parse(cur.registeredAt || 0) <= Date.parse(old.rec.registeredAt || 0)) return null;
@@ -304,6 +306,8 @@ async function movedBatch(kv, name, batch) {
   const rec = Object.assign({}, old.rec, { batch: canonicalBatch(batch) || String(batch).trim(), batchFrom: old.rec.batch || "", batchMovedAt: at });
   await kv.put(old.key, JSON.stringify(rec));
   if (cur && !cur.archived) await kv.put(`trainee:${newId}`, JSON.stringify(Object.assign({}, cur, { archived: true, archivedAt: at, mergedInto: id })));
+  // (the new id points at the kept record: the Portal's graded results and /api/calsim-card-in follow it)
+  await kv.put(`trainee-alias:${newId}`, id);
   return { id, rec };
 }
 
@@ -3120,7 +3124,8 @@ export default {
         }
         if (kept) chosen = kept;
         else if (!redirected && id && (id === newId || id === rawId || id === legacyId)) chosen = id;
-        const blocked = (await blockedIds(env))[chosen];
+        // (read fresh, as the course contract says: a trainee blocked a moment ago is refused now, not after the cache's minute)
+        const blocked = (await blockedIds(env, true))[chosen];
         if (blocked) return blockedRes(blocked);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, SESSION_HOURS), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
@@ -3171,13 +3176,12 @@ export default {
         // 🔁 a Batch ID changed on the Portal: the trainee's ID is their name + batch, so the new batch would be a second,
         // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
         // to the new batch, with all its progress; a duplicate made since (newer than it) is archived, merged into it.
-        const moved = await movedBatch(kv, who.name, who.batch);
+        const moved = await movedBatch(kv, who.name, who.batch, await blockedIds(env, true));
+        if (moved && moved.blocked) return blockedRes(moved.blocked);   // (blocked: refused, and nothing rewritten)
         // the full name as registered on the Portal (with a middle name or initial), kept beside the record's name
         const withFull = async (id, rec) => { if (rec && who.full && who.full !== who.name && rec.fullName !== who.full) { rec.fullName = who.full; await kv.put(`trainee:${id}`, JSON.stringify(rec)); } return rec; };
         if (moved) {
           await withFull(moved.id, moved.rec);
-          const blockedM = (await blockedIds(env))[moved.id];
-          if (blockedM) return blockedRes(blockedM);
           return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
             name: who.name, first: who.first, last: who.last });
         }
@@ -3221,7 +3225,19 @@ export default {
         if (card.source === "foundational") return json({ ok: true, skipped: "from here" });
         const ids = candidateIds(String(b.name), String(b.batch || "")), kvx = kvOf(env);
         let id = "", rec = null;
-        for (const c of [ids.newId, ids.rawId]) { const r = JSON.parse((await kvx.get(`trainee:${c}`)) || "null"); if (r && !r.archived) { id = c; rec = r; break; } }
+        for (const c of [ids.newId, ids.rawId, ids.legacyId]) { const r = JSON.parse((await kvx.get(`trainee:${c}`)) || "null");
+          if (r && !r.archived && (c !== ids.legacyId || !r.batch || batchKey(r.batch) === batchKey(b.batch || ""))) { id = c; rec = r; break; } }
+        // (platform QA 2026-11-19, FT finding 3) a trainee's record can be under another id: the one a Batch ID change kept
+        // (trainee-alias:<new id>, movedBatch), the one a 👥 merge kept (merged:<id>), or one whose id still carries the old batch
+        if (!rec) { const a = await kvx.get(`trainee-alias:${ids.newId}`); const r = a ? JSON.parse((await kvx.get(`trainee:${a}`)) || "null") : null; if (r && !r.archived) { id = a; rec = r; } }
+        if (!rec) { const m = JSON.parse((await kvx.get(`merged:${ids.newId}`)) || "null"); const r = m && m.into ? JSON.parse((await kvx.get(`trainee:${m.into}`)) || "null") : null; if (r && !r.archived) { id = m.into; rec = r; } }
+        if (!rec) {
+          const slug = ids.newId.split("--")[0], l = await kvx.list({ prefix: `trainee:${slug}--` }).catch(() => ({ keys: [] }));
+          const hits = [];
+          for (const k of (l.keys || []).slice(0, 20)) { const r = JSON.parse((await kvx.get(k.name)) || "null");
+            if (r && !r.archived && slugPart(r.name || "") === slugPart(b.name) && batchKey(r.batch || "") === batchKey(b.batch || "")) hits.push([k.name.slice("trainee:".length), r]); }
+          if (hits.length === 1) [id, rec] = hits[0];
+        }
         if (!rec) return json({ ok: false, error: "No trainee here by that name and batch." }, 404);
         const CRIT = ["Professional Introduction & Call Control", "Client Comprehension & Flow Control", "Information Verification & Accuracy",
           "Slot Identification & Scheduling Rule Compliance", "Alternative Time Offering", "Calendar Creation & Attorney Reminder Setup", "Notes, Recap & Call Closing",

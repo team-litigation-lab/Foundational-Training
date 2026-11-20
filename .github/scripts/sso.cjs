@@ -190,6 +190,28 @@ async function ticketFor(payloadObj, secret) {
         if (fm.status !== 200 || fm.body.id !== 'maria-santos--b100926' || fullName !== 'Maria L. Santos') fail(`a ticket's full name should be kept as fullName with the same ID: ${JSON.stringify(fm.body && { id: fm.body.id, fullName })}`);
     }
 
+    // 9. (platform QA 2026-11-19, FT findings 3 and 4) the block list is read fresh at sign-in, a blocked record is never moved or
+    //    rewritten, a kept record leaves trainee-alias:<new id>, and a Portal mock-call scorecard finds the kept record
+    {
+        const e9 = makeEnv({ PORTAL_SSO_SECRET: SECRET, AI_GATEWAY_SECRET: 'gw' }), s9 = e9.__store, soon = () => Date.now() + 60000;
+        const ok1 = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
+        if (ok1.status !== 200) fail(`sign-in before the block: ${JSON.stringify(ok1)}`);
+        s9.set('ft:access:blocked', JSON.stringify({ ids: { 'bo-lock--b100926': { why: 'offboarded' } } }));
+        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
+        if (at.status !== 403 || at.body.code !== 'access-offboarded' || at.body.token) fail(`a trainee blocked a moment ago is refused at once: ${JSON.stringify(at)}`);
+        const before = s9.get('ft:trainee:bo-lock--b100926');
+        const mv = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B110226', exp: soon() }, SECRET) });
+        if (mv.status !== 403 || mv.body.token) fail(`a blocked trainee whose batch changed is refused: ${JSON.stringify(mv)}`);
+        if (s9.get('ft:trainee:bo-lock--b100926') !== before || s9.has('ft:trainee-alias:bo-lock--b110226')) fail('a blocked record is never moved or rewritten');
+        // a kept record: alias, and the Portal's scorecard (/api/calsim-card-in, sent with the new batch) lands on it
+        await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B100126', exp: soon() }, SECRET) });
+        const mk = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B110226', exp: soon() }, SECRET) });
+        if (mk.body.id !== 'cy-moved--b100126' || s9.get('ft:trainee-alias:cy-moved--b110226') !== 'cy-moved--b100126') fail(`a kept record leaves its alias: ${JSON.stringify(mk.body && mk.body.id)}`);
+        const rows = Array.from({ length: 8 }, (_, i) => ({ score: 4, feedback: 'ok' }));
+        const ci = await call(e9, '/api/calsim-card-in', { name: 'Cy Moved', batch: 'B110226', card: { rows, at: new Date().toISOString() } }, { 'x-gateway-key': 'gw' });
+        if (ci.status !== 200 || !s9.has('ft:labreview:cy-moved--b100126')) fail(`the Portal's scorecard should reach the kept record: ${JSON.stringify(ci)}`);
+    }
+
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });

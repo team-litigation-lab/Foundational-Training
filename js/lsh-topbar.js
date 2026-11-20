@@ -32,7 +32,7 @@
 "use strict";
 var GROUPS = [
   { id: "guides", label: "📚 Guides", title: "Notes, handouts and guides",
-    match: function(b){ return /^(notes|handouts|orientation|facilitatorguide)$/.test(viewOf(b)) || b.matches(".nav-blueprint, #lbp-open-btn"); } },
+    match: function(b){ return /^(notes|handouts|orientation|facilitatorguide)$/.test(viewOf(b)) || b.matches(".nav-blueprint, #lbp-open-btn, .nav-glossary"); } },
   { id: "sheets", label: "📋 My Sheets", title: "Your Task Tracker and Monitoring Sheet",
     match: function(b){ return /^(tracker|monitoring)$/.test(viewOf(b)); } }
 ];

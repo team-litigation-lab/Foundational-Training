@@ -6083,6 +6083,7 @@ function renderTopbar(){
         <div class="nav">
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
+          <button type="button" class="nav-glossary" onclick="window.open('/glossary.html','_blank','noopener')" title="Legal Glossary: about 700 US legal terms and Latin phrases, searchable">📖 Glossary</button>
           ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
         </div>
       </div>
@@ -7009,7 +7010,7 @@ function renderFocusAdmin(rec){
 }
 async function loadMyFocus(){
   if(!state.traineeId || state.isAdmin) return;
-  sharedGet("trainee:"+state.traineeId).then(me=>{ if(me){ state.myCertTrainer = me.certTrainer||""; if(me.certName && !state.certName){ state.certName = me.certName; storeSet("cert-name", me.certName); } } }).catch(()=>{});
+  sharedGet("trainee:"+state.traineeId).then(me=>{ if(me){ state.myCertTrainer = me.certTrainer||""; state.myFullName = me.fullName||""; if(me.certName && !state.certName){ state.certName = me.certName; storeSet("cert-name", me.certName); } } }).catch(()=>{});
   const f = await loadFocusItems(state.traineeId);
   const changed = JSON.stringify(f.items) !== JSON.stringify((state.myFocus||{}).items||[]);
   state.myFocus = f;
@@ -12001,11 +12002,21 @@ const SIG_FONT_URL = "/js/lsh-signature.ttf";
   try{ const st=document.createElement("style"); st.textContent="@font-face{font-family:'LSH Signature';src:url("+SIG_FONT_URL+") format('truetype');font-display:swap;}"; document.head.appendChild(st); }catch(e){}
 })();
 function certHash(t){ let h=2166136261; for(const c of String(t)) { h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h.toString(36).toUpperCase().padStart(6,"0").slice(-6); }
-function formatCertName(first, last){
+// full (optional): the whole name as registered on the Portal ("Maria L. Santos, Jr"): its middle name or initial and suffix are
+// kept on the certificate, in the same order the setting asks for (platform QA 2026-11-19, FT finding 5).
+function formatCertName(first, last, full){
   first = String(first||"").trim(); last = String(last||"").trim();
   if(!last) return first;
+  let middle = "", suffix = "";
+  const f = String(full||"").replace(/\s+/g," ").trim(), lo = f.toLowerCase();
+  if(f && lo.startsWith(first.toLowerCase()+" ") && lo.includes(" "+last.toLowerCase())){
+    const at = lo.lastIndexOf(" "+last.toLowerCase());
+    middle = f.slice(first.length, at).trim();
+    suffix = f.slice(at + 1 + last.length).replace(/^,?\s*/, "").trim();
+  }
   const fmt = (state.certSettings && state.certSettings.nameFormat) || "lastFirst";
-  return fmt==="firstLast" ? `${first} ${last}` : `${last}, ${first}`;
+  return fmt==="firstLast" ? [first, middle, last].filter(Boolean).join(" ") + (suffix ? ", " + suffix : "")
+    : `${last}${suffix ? " " + suffix : ""}, ${[first, middle].filter(Boolean).join(" ")}`;
 }
 function prettyName(n){
   return String(n||"").replace(/[-_.]+/g," ").replace(/\s+/g," ").trim().split(" ").map(w=>w ? w[0].toUpperCase()+w.slice(1) : w).join(" ");
@@ -12020,8 +12031,8 @@ function certData(src){
   const dates = DAYS.map(d=>dp[d.id] && dp[d.id].date).filter(Boolean).sort();
   const completedOn = dates.length ? new Date(dates[dates.length-1]) : new Date();
   const fullName = src
-    ? (src.lastName ? formatCertName(src.firstName, src.lastName) : (src.certName || prettyName(src.name)))
-    : (state.regName ? formatCertName(state.regName.first, state.regName.last) : (state.certName || prettyName(state.traineeName)));
+    ? (src.lastName ? formatCertName(src.firstName, src.lastName, src.fullName) : (src.certName || prettyName(src.fullName || src.name)))
+    : (state.regName ? formatCertName(state.regName.first, state.regName.last, state.myFullName) : (state.certName || prettyName(state.myFullName || state.traineeName)));
   return {traineeId:id, name: fullName, confirmedName: src ? !!(src.lastName || src.certName) : !!(state.regName || state.certName), trainer: src ? (src.certTrainer||"") : (state.myCertTrainer||""),
     batch: cleanBatch(src ? src.batch : state.traineeBatch),
     passed, total:DAYS.length, eligible: passed===DAYS.length, avg, distinction: avg>=90,
