@@ -174,6 +174,14 @@ async function ticketFor(payloadObj, secret) {
         if (np.status !== 200 || !np.body || !np.body.token) fail(`a ticket with no p should still sign in: ${JSON.stringify(np)}`);
         const ap = await call(e6, '/api/auth/portal', { ticket: await ticketFor({ r: 'a', n: 'Coach Ana', p: undefined, exp: soon() }, SECRET) });
         if (ap.status !== 200 || !ap.body || !ap.body.admin) fail(`a trainer's ticket with no p should still sign in: ${JSON.stringify(ap)}`);
+        // SSO_REQUIRE_AUDIENCE=1 (once everything is deployed): a ticket with no p is refused too; this program's own still opens
+        {
+            const eR = makeEnv({ PORTAL_SSO_SECRET: SECRET, SSO_REQUIRE_AUDIENCE: '1' });
+            const noP = await call(eR, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: undefined, exp: soon() }, SECRET) });
+            if (noP.status !== 401 || !noP.body || noP.body.code !== 'audience' || noP.body.token) fail(`with SSO_REQUIRE_AUDIENCE=1 a ticket with no p is refused: ${JSON.stringify(noP)}`);
+            const own = await call(eR, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', exp: soon() }, SECRET) });
+            if (own.status !== 200 || !own.body || !own.body.token) fail(`with SSO_REQUIRE_AUDIENCE=1 this program's own ticket still opens: ${JSON.stringify(own)}`);
+        }
         // a trainee's own ticket works once, like a trainer's
         const tt = await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: PORTAL_TOPIC, exp: soon() }, SECRET);
         const first = await call(e6, '/api/auth/portal', { ticket: tt });
@@ -188,6 +196,28 @@ async function ticketFor(payloadObj, secret) {
         const fm = await call(e6, '/api/auth/portal', { ticket: await ticketFor({ first: 'Maria', last: 'Santos', b: 'B100926', full: 'Maria L. Santos', exp: soon() }, SECRET) });
         const fullName = fm.body && (fm.body.fullName || (fm.body.existing && fm.body.existing.fullName));
         if (fm.status !== 200 || fm.body.id !== 'maria-santos--b100926' || fullName !== 'Maria L. Santos') fail(`a ticket's full name should be kept as fullName with the same ID: ${JSON.stringify(fm.body && { id: fm.body.id, fullName })}`);
+    }
+
+    // 9. (platform QA 2026-11-19, FT findings 3 and 4) the block list is read fresh at sign-in, a blocked record is never moved or
+    //    rewritten, a kept record leaves trainee-alias:<new id>, and a Portal mock-call scorecard finds the kept record
+    {
+        const e9 = makeEnv({ PORTAL_SSO_SECRET: SECRET, AI_GATEWAY_SECRET: 'gw' }), s9 = e9.__store, soon = () => Date.now() + 60000;
+        const ok1 = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
+        if (ok1.status !== 200) fail(`sign-in before the block: ${JSON.stringify(ok1)}`);
+        s9.set('ft:access:blocked', JSON.stringify({ ids: { 'bo-lock--b100926': { why: 'offboarded' } } }));
+        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() + 1 }, SECRET) });   // (+1: another ticket, not the first one again)
+        if (at.status !== 403 || at.body.code !== 'access-offboarded' || at.body.token) fail(`a trainee blocked a moment ago is refused at once: ${JSON.stringify(at)}`);
+        const before = s9.get('ft:trainee:bo-lock--b100926');
+        const mv = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B110226', exp: soon() }, SECRET) });
+        if (mv.status !== 403 || mv.body.token) fail(`a blocked trainee whose batch changed is refused: ${JSON.stringify(mv)}`);
+        if (s9.get('ft:trainee:bo-lock--b100926') !== before || s9.has('ft:trainee-alias:bo-lock--b110226')) fail('a blocked record is never moved or rewritten');
+        // a kept record: alias, and the Portal's scorecard (/api/calsim-card-in, sent with the new batch) lands on it
+        await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B100126', exp: soon() }, SECRET) });
+        const mk = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B110226', exp: soon() }, SECRET) });
+        if (mk.body.id !== 'cy-moved--b100126' || s9.get('ft:trainee-alias:cy-moved--b110226') !== 'cy-moved--b100126') fail(`a kept record leaves its alias: ${JSON.stringify(mk.body && mk.body.id)}`);
+        const rows = Array.from({ length: 8 }, (_, i) => ({ score: 4, feedback: 'ok' }));
+        const ci = await call(e9, '/api/calsim-card-in', { name: 'Cy Moved', batch: 'B110226', card: { rows, at: new Date().toISOString() } }, { 'x-gateway-key': 'gw' });
+        if (ci.status !== 200 || !s9.has('ft:labreview:cy-moved--b100126')) fail(`the Portal's scorecard should reach the kept record: ${JSON.stringify(ci)}`);
     }
 
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }

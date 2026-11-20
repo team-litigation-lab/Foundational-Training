@@ -18,7 +18,7 @@ const keyOf = r => typeof batchKey === "function" ? batchKey(r) : (r.batch || ""
 // (a batch's first day as a time, for ordering: index.html batchStartDate — a B + DDMMYY Batch ID reads as its day; 0 when not a date)
 const startOf = b => { const d = typeof batchStartDate === "function" ? batchStartDate(b) : ""; return d ? Date.parse(d + "T00:00:00Z") : 0; };
 let running = false;
-const RECENT_DAYS = 30;   // (the 18-day programme with room to spare: a batch registered within it is still training)
+const RECENT_DAYS = 30;   // (the 16-day programme with room to spare: a batch registered within it is still training)
 
 // a recent batch archived by this rule before it knew recent batches (not by a trainer: autoArchived) comes back active
 async function restoreRecent(){
