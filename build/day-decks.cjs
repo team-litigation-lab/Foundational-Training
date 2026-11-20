@@ -1607,13 +1607,16 @@ for(let n = 1; n <= 16; n++){
 // no day card of its own, js/ft-day-locks.js PARTS)
 // (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
-  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
+  // (both before Day 14's Demo Preparation: the reminders and guidelines come before the demo's rules)
+  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:"), null, "s1ep"], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration", null, "s1ep"],
     // (not Day 15's Demo Preparation: its metrics would be the same MedLOR metrics a second time on Part 2)
   }};
-for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){
+// (a fifth element: the slide it goes before, in place of the deck's end)
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx, before]] of Object.entries(ids)){
   const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
   const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
-  const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  const k = before ? b.findIndex(y => y.id === before) : b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  if(before && k < 0) throw new Error(`Day ${to} has no ${before} to put ${nid} before`);
   b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}, rx ? {html: rx(x.html)} : {}));
 }
 function noKB(html){

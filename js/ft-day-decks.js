@@ -1492,11 +1492,11 @@ const LESSON_CARDS = {
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
-      {t: "Demo Preparation", time: "PM", sub: "The rules for your recorded demonstration", k: "interactive", d: 14, s: "s1ep"},
-      // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       // then Day 15's recorded demonstration, on Day 14's deck (build/day-decks.cjs MOVE; Day 15 has no day card: js/ft-day-locks.js PARTS)
       {t: "Before Your Recorded Demonstration: the Tutorial Video", time: "PM", sub: "Watch it again before you record", k: "watch", d: 14, s: "r15v"},
       {t: "Gentle Reminders", time: "PM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 14, s: "r15g"},
+      {t: "Demo Preparation", time: "PM", sub: "The rules for your recorded demonstration", k: "interactive", d: 14, s: "s1ep"},
+      // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
