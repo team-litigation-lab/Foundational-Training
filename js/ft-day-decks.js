@@ -737,7 +737,8 @@ function scoreBox(s, info, body){
   // (📎 an Additional Reference slide is never scored, whatever its title says: Day 16's Filevine recorded demos)
   if((REFERENCE[DD.day] || []).includes(s.id)) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video, a preparation slide or a demo's Buffer Time)
-  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial|buffer/i.test(h)) return "";
+  // (nor on the recorded demonstration's own lead-in slides: Before Your Recorded Demonstration, its Gentle Reminders)
+  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your|reminders|video|tutorial|buffer/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
   // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
   if(/instructions|metrics|scenarios/i.test(h)) return "";
