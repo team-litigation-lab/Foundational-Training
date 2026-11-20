@@ -7,8 +7,9 @@
    is signed in, registered and waiting for approval exactly as before.
    Someone who opens this program's link directly sees a short note
    with a button back to the Portal instead of a form. Admins sign in on the
-   Portal too, but every platform asks an admin for the admin password: no
-   ticket signs an admin in (the Admin Portal tab on that note).
+   Portal too: an admin's Portal ticket ({r: "a", n, p}) opens the program as
+   a trainer, once per ticket; signed in some other way, they type the admin
+   password (the Admin Portal tab on that note).
    Single sign-on is how every LSH platform works now: there is no name +
    batch form on a program's own site any more, whatever the Worker is
    configured with. The Worker needs PORTAL_SSO_SECRET (the Portal's value)

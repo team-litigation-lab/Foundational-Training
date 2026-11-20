@@ -16,8 +16,10 @@ const ptParts = ms => Object.fromEntries(new Intl.DateTimeFormat('en-US', { time
 const bid = ms => { const p = ptParts(ms); return `B${p.month}${p.day}${p.year}`; };
 // (it started yesterday: a week on its first day, not over yet, has no scores — js/ft-ranking.js fillFromPortal)
 const BATCH = bid(Date.now() - 864e5);
-// (and one that started three weeks ago: its Week 1 is over, so its report drafts itself)
-const PAST = bid(Date.now() - 21 * 864e5);
+// (and one that started three weeks ago, on a weekday its Week 1 ends that Sunday — not a Thursday or Friday, whose Week 1
+// runs on through the next week — and not B103026, whose Week 1 has its one-off override: its Week 1 is over, so its report
+// drafts itself)
+const PAST = (() => { for (let k = 21; k < 35; k++) { const ms = Date.now() - k * 864e5, w = new Date(ms).getUTCDay(), b = bid(ms); if (w >= 1 && w <= 3 && b !== 'B103026') return b; } return bid(Date.now() - 21 * 864e5); })();
 const failures = []; const fail = m => failures.push(m);
 
 (async () => {
@@ -189,9 +191,10 @@ const failures = []; const fail = m => failures.push(m);
 
   // ⤓ Fill, this week only: Tom's day checks have the Tracker at 100% on a Week 1 day and 40% on a Week 2 day; Week 2's Tracker
   // column ("This week only", the day's checks) takes the Week 2 day alone (2/5), the whole training's would be 70% (3.5/5)
-  const m = /^B(\d\d)(\d\d)(\d\d)$/.exec(BATCH), start = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00Z`), day = k => new Date(start + k * 864e5).toISOString().slice(0, 10);
-  await put('trackerreview:' + ids.Tom, { days: { [day(1)]: { source: 'drive', pct: 100 }, [day(8)]: { source: 'drive', pct: 40 } },
-    compliance: { [day(1)]: { pct: 100, parts: { tracker: 100 } }, [day(8)]: { pct: 40, parts: { tracker: 40 } } } });
+  // (a day in each week as the batch's weeks fall — window.ftWeeks: a batch starting on a Thursday or a Friday has a longer Week 1)
+  const [w1d, w2d] = await page.evaluate(b => { const a = ftWeeks.range(b, 1), c = ftWeeks.range(b, 2), nx = d => new Date(Date.parse(d + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10); return [nx(a[0]), c[0]]; }, BATCH);
+  await put('trackerreview:' + ids.Tom, { days: { [w1d]: { source: 'drive', pct: 100 }, [w2d]: { source: 'drive', pct: 40 } },
+    compliance: { [w1d]: { pct: 100, parts: { tracker: 100 } }, [w2d]: { pct: 40, parts: { tracker: 40 } } } });
   const ti = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].findIndex(x => /^Tracker/.test(x.innerText.trim())));
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
   const ci = await page.evaluate(() => [...document.querySelectorAll('.rk-col input:not(.rk-sub):not([type=number])')].findIndex(x => x.value === 'Tracker'));
