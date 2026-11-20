@@ -111,6 +111,9 @@ export class RecordGuard {
     if (op === "put") { await keep(value); return { ok: true, value }; }
     if (op === "delete") { await keep(null); return { ok: true }; }
     if (op === "merge") { const v = mergeText(base, value, await current()); await keep(v); return { ok: true, value: v }; }
+    // a one-use mark (a sign-in ticket's): checked and set in one step, one request at a time, so two uses of the same ticket at
+    // once can't both get in (KV alone can't: a read, then a write that takes a while to be seen everywhere)
+    if (op === "claim") { if (await current()) return { claimed: false }; await raw.put(K, "1", { expirationTtl: 900 }); await st.put("rec", { v: "1", at: now }); return { claimed: true }; }
     return { error: "unknown op" };
   }
 }
@@ -238,9 +241,12 @@ function portalOnly(env) { return !!(adminPass(env) && String(env.PORTAL_ONLY ||
 // why (optional) gets why a ticket was refused: "format", "signature" (the Portal and this program don't share the same secret) or "expired".
 // An administrator's Portal ticket signs in once: its signature is remembered for 10 minutes (longer than the ticket
 // lives), and a second use is refused.
-async function useTicketOnce(kv, ticket) {
-  if (!kv) return true;
+// (with the RECORD_GUARD Durable Object the check and the mark are one step, so it holds even for two uses at the same moment;
+// without it, the KV check is the best it can do: two uses within a few seconds of each other in different places could both pass)
+async function useTicketOnce(kv, ticket, env) {
   const key = "sso-used:" + String(ticket || "").split(".").pop().slice(0, 43);
+  if (env && env.RECORD_GUARD) { try { return !!(await guard(env, { op: "claim", key })).claimed; } catch (e) { /* the KV check below */ } }
+  if (!kv) return true;
   if (await kv.get(key)) return false;
   await kv.put(key, "1", { expirationTtl: 600 });
   return true;
@@ -275,7 +281,9 @@ async function readPortalTicket(env, ticket, why = {}) {
   // the name shown, fullName; the ID stays first + last name, so a trainee never gets a second account from it)
   const middle = String(t.m || t.middle || t.mi || "").trim().slice(0, 60);
   const full = (String(t.full || "").trim() || [first, middle, last].filter(Boolean).join(" ")).replace(/\s+/g, " ").slice(0, 120);
-  return { name: `${first} ${last}`, first, last, batch, full };
+  // u: the trainee's Portal account id, kept on the record (portalUid): a Batch ID move follows it, and the course's tool tickets carry it
+  const u = String(t.u == null ? "" : t.u).trim().slice(0, 80);
+  return { name: `${first} ${last}`, first, last, batch, full, u };
 }
 // A trainee's expired token still counts for a while (readToken's graceMs: same signature, same trainee), so a trainee
 // midway through the course whose 30 days run out isn't sent back to the portal in the middle of a lesson.
@@ -289,7 +297,10 @@ const TOKEN_GRACE_MS = 60 * 24 * 3600 * 1000;
    the old one, so neither the Trainee Audit nor attendance lists the trainee twice. Two other same-name records, or
    none, change nothing: the sign-in goes on as before. */
 // blocked (the program's block list, read fresh): a record on it is never moved or rewritten; { id, rec, blocked: true } says whose.
-async function movedBatch(kv, name, batch, blocked) {
+// uid: the Portal account id the ticket carries. Only a record of that same account moves (portalUid === uid): two trainees with the
+// same name in two batches are two people, and a record from before portalUid was kept is never moved on a name alone (a trainer
+// merges it with 👥 Duplicate accounts). Data-safety review 2026-11-19.
+async function movedBatch(kv, name, batch, blocked, uid) {
   const { newId } = candidateIds(name, batch), slug = newId.split("--")[0];
   if (!slug || !newId.includes("--")) return null;
   const list = await kv.list({ prefix: `trainee:${slug}--` }).catch(() => null);
@@ -298,7 +309,7 @@ async function movedBatch(kv, name, batch, blocked) {
   const want = slugPart(name);
   const recs = (await Promise.all(keys.map((k) => kv.get(k)))).map((v, i) => { try { return { key: keys[i], rec: JSON.parse(v) }; } catch (e) { return null; } })
     .filter((x) => x && x.rec && x.rec.approved === true && !x.rec.archived && !x.rec.rejected && slugPart(x.rec.name || "") === want
-      && batchKey(x.rec.batch || "") !== batchKey(batch));
+      && batchKey(x.rec.batch || "") !== batchKey(batch) && !!uid && String(x.rec.portalUid || "") === String(uid));
   if (recs.length !== 1) return null;
   const old = recs[0], id = old.key.slice("trainee:".length);
   if (blocked && blocked[id]) return { id, rec: old.rec, blocked: blocked[id] };
@@ -395,7 +406,11 @@ function candidateIds(name, batch) {
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|kcgames|calrules|listening|todo|intake)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
-const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup", "unlockedDays", "batchMovedBy", "registeredAtWas", "registeredAtFixedAt"];
+// (name, firstName, lastName, batch, fullName, portalUid, batchFrom: who the record is, set from the Portal's ticket and by a
+// trainer: a trainee who could change them could have this course sign a tool ticket in someone else's name. Security review
+// 2026-11-19.)
+const FIRST_WRITE_FIELDS = ["name", "firstName", "lastName", "batch"];
+const PROTECTED_TRAINEE_FIELDS = ["name", "firstName", "lastName", "batch", "fullName", "portalUid", "batchFrom", "batchMovedAt", "approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup", "unlockedDays", "batchMovedBy", "registeredAtWas", "registeredAtFixedAt"];
 
 /* ---------- 🚫 trainees whose access is closed (js/ft-batch-admin.js) ----------
    access:blocked = {ids: {"<trainee id>": {why: "offboarded" | "archived", name, batch, at}}}, admins only.
@@ -654,7 +669,8 @@ async function traineeWrite(env, tok, key, value) {
     if (String(value).length > 200000) return "The record is too large to save";   // (🔒 read with every batch-mate's ranking)
     // Trainees keep their own record current, but can never change approval, attempts resets, etc.
     const merged = Object.assign({}, incoming);
-    PROTECTED_TRAINEE_FIELDS.forEach((f) => { if (existing && f in existing) merged[f] = existing[f]; else delete merged[f]; });
+    // (a brand-new record's own name and batch are taken from its first write; after that they are the Worker's)
+    PROTECTED_TRAINEE_FIELDS.forEach((f) => { if (existing && f in existing) merged[f] = existing[f]; else if (existing || !FIRST_WRITE_FIELDS.includes(f)) delete merged[f]; });
     // 📋 a trainer moved them to another batch (js/ft-batch-sheet.js, ✏️ Fix the batch name): that batch stays, whatever an open tab still holds
     if (existing && existing.batchMovedBy === "trainer" && existing.batch) { merged.batch = existing.batch; merged.batchFrom = existing.batchFrom; merged.batchMovedAt = existing.batchMovedAt; }
     if (!existing) { merged.approved = false; merged.registeredAt = new Date().toISOString(); }
@@ -3167,7 +3183,7 @@ export default {
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
         // Every Portal ticket works once (a trainee's, a trainer's and the Sign-in check's), so a copy of the link (browser
         // history, a forwarded URL) can't sign anyone in again inside its 5 minutes.
-        if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
+        if (!(await useTicketOnce(kv, ticket, env))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
         if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", SESSION_HOURS) });
         if (who.admin) {
           // Single sign-on for trainers too: an administrator signed in on the Main Portal opens every program as a
@@ -3179,10 +3195,19 @@ export default {
         // 🔁 a Batch ID changed on the Portal: the trainee's ID is their name + batch, so the new batch would be a second,
         // empty account. The trainee's one other active record by the same name (another batch) is kept instead, moved
         // to the new batch, with all its progress; a duplicate made since (newer than it) is archived, merged into it.
-        const moved = await movedBatch(kv, who.name, who.batch, await blockedIds(env, true));
+        const moved = await movedBatch(kv, who.name, who.batch, await blockedIds(env, true), who.u);
         if (moved && moved.blocked) return blockedRes(moved.blocked);   // (blocked: refused, and nothing rewritten)
         // the full name as registered on the Portal (with a middle name or initial), kept beside the record's name
-        const withFull = async (id, rec) => { if (rec && who.full && who.full !== who.name && rec.fullName !== who.full) { rec.fullName = who.full; await kv.put(`trainee:${id}`, JSON.stringify(rec)); } return rec; };
+        // ... and the Portal account id (portalUid, set once) and the first and last name, which the trainee can't change here
+        const withFull = async (id, rec) => {
+          if (!rec) return rec;
+          let changed = false;
+          if (who.full && who.full !== who.name && rec.fullName !== who.full) { rec.fullName = who.full; changed = true; }
+          if (who.u && !rec.portalUid) { rec.portalUid = who.u; changed = true; }
+          if (!rec.firstName && !rec.lastName) { rec.firstName = who.first; rec.lastName = who.last; changed = true; }
+          if (changed) await kv.put(`trainee:${id}`, JSON.stringify(rec));
+          return rec;
+        };
         if (moved) {
           await withFull(moved.id, moved.rec);
           return json({ id: moved.id, token: await makeToken(env, "t", moved.id, SESSION_HOURS), existing: moved.rec, batch: canonicalBatch(who.batch) || who.batch,
@@ -3406,8 +3431,13 @@ export default {
         const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
         const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
         if (!first || !last) return json({ error: "no-name" }, 400);
-        // (p "tool": a tool's ticket, for the CMS and the Portal's simulators; no training program takes it, so it can't open one)
-        return json({ ticket: await signTicket({ first, last, b: String(rec.batch || ""), p: "tool", exp: Date.now() + 5 * 60 * 1000 }) });
+        // The ticket names only the trainee this session belongs to: the name and batch must lead back to the token's own id (or
+        // to the record a Batch ID change kept for them: trainee-alias:<the id they'd have now>), as CM's tool tickets do.
+        const ids = candidateIds(`${first} ${last}`, rec.batch || "");
+        if (![ids.newId, ids.rawId, ids.legacyId].includes(tok.id) && (await kv.get(`trainee-alias:${ids.newId}`)) !== tok.id) return json({ error: "identity-mismatch" }, 403);
+        // (p "tool": a tool's ticket, for the CMS and the Portal's simulators; no training program takes it, so it can't open one.
+        // u: the trainee's Portal account id, the only thing the Portal trusts about who it is)
+        return json({ ticket: await signTicket(Object.assign({ first, last, b: String(rec.batch || "") }, rec.portalUid ? { u: String(rec.portalUid) } : {}, { p: "tool", exp: Date.now() + 5 * 60 * 1000 })) });
       }
 
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */

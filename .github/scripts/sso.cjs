@@ -122,10 +122,10 @@ async function ticketFor(payloadObj, secret) {
     // the record moved to the new batch; a duplicate already made under the new ID (newer) is archived, merged into it
     {
         const e2 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), st = e2.__store;
-        const t1 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B03101', exp: Date.now() + 60000 }, SECRET) });
+        const t1 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B03101', u: 'U7', exp: Date.now() + 60000 }, SECRET) });
         const oldId = t1.body && t1.body.id;
         st.set('ft:progress:' + oldId, JSON.stringify({ 1: { done: true } }));
-        const t2 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        const t2 = await call(e2, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', u: 'U7', exp: Date.now() + 60000 }, SECRET) });
         if (!t2.body || t2.body.id !== oldId) fail(`a changed Batch ID should keep the trainee's account ${oldId}, got ${JSON.stringify(t2.body && t2.body.id)}`);
         const moved = JSON.parse(st.get('ft:trainee:' + oldId) || 'null');
         // (and renews their session with the new batch and the kept ID)
@@ -135,16 +135,16 @@ async function ticketFor(payloadObj, secret) {
         if (st.has('ft:trainee:valeria-sarti--b103026')) fail('a second account was made for the new batch');
         // (the duplicate the old behaviour made: newer, under the new ID; the next sign-in merges it)
         const e3 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s3 = e3.__store;
-        s3.set('ft:trainee:valeria-sarti--b03101', JSON.stringify({ id: 'valeria-sarti--b03101', name: 'Valeria Sarti', batch: 'B03101', approved: true, registeredAt: '2026-10-30T08:00:00Z' }));
+        s3.set('ft:trainee:valeria-sarti--b03101', JSON.stringify({ id: 'valeria-sarti--b03101', name: 'Valeria Sarti', batch: 'B03101', approved: true, portalUid: 'U7', registeredAt: '2026-10-30T08:00:00Z' }));
         s3.set('ft:trainee:valeria-sarti--b103026', JSON.stringify({ id: 'valeria-sarti--b103026', name: 'Valeria Sarti', batch: 'B103026', approved: true, registeredAt: '2026-11-02T11:21:00Z' }));
-        const t3 = await call(e3, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        const t3 = await call(e3, '/api/auth/portal', { ticket: await ticketFor({ first: 'Valeria', last: 'Sarti', b: 'B103026', u: 'U7', exp: Date.now() + 60000 }, SECRET) });
         const dup = JSON.parse(s3.get('ft:trainee:valeria-sarti--b103026'));
         if (!t3.body || t3.body.id !== 'valeria-sarti--b03101' || !dup.archived || dup.mergedInto !== 'valeria-sarti--b03101') fail(`an existing duplicate should be merged into the older account: ${JSON.stringify(t3.body && t3.body.id)} ${JSON.stringify(dup)}`);
         // (two people with the same name in two batches, each with their own account from the start: nothing moves)
         const e4 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s4 = e4.__store;
-        s4.set('ft:trainee:ana-cruz--b100926', JSON.stringify({ id: 'ana-cruz--b100926', name: 'Ana Cruz', batch: 'B100926', approved: true, registeredAt: '2026-11-01T08:00:00Z' }));
+        s4.set('ft:trainee:ana-cruz--b100926', JSON.stringify({ id: 'ana-cruz--b100926', name: 'Ana Cruz', batch: 'B100926', approved: true, portalUid: 'UA1', registeredAt: '2026-11-01T08:00:00Z' }));
         s4.set('ft:trainee:ana-cruz--b103026', JSON.stringify({ id: 'ana-cruz--b103026', name: 'Ana Cruz', batch: 'B103026', approved: true, registeredAt: '2026-10-01T08:00:00Z' }));
-        const t4 = await call(e4, '/api/auth/portal', { ticket: await ticketFor({ first: 'Ana', last: 'Cruz', b: 'B103026', exp: Date.now() + 60000 }, SECRET) });
+        const t4 = await call(e4, '/api/auth/portal', { ticket: await ticketFor({ first: 'Ana', last: 'Cruz', b: 'B103026', u: 'UA2', exp: Date.now() + 60000 }, SECRET) });
         if (!t4.body || t4.body.id !== 'ana-cruz--b103026' || JSON.parse(s4.get('ft:trainee:ana-cruz--b100926')).batch !== 'B100926') fail(`an account older than the other must stay as it is: ${JSON.stringify(t4.body && t4.body.id)}`);
     }
 
@@ -202,22 +202,49 @@ async function ticketFor(payloadObj, secret) {
     //    rewritten, a kept record leaves trainee-alias:<new id>, and a Portal mock-call scorecard finds the kept record
     {
         const e9 = makeEnv({ PORTAL_SSO_SECRET: SECRET, AI_GATEWAY_SECRET: 'gw' }), s9 = e9.__store, soon = () => Date.now() + 60000;
-        const ok1 = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
+        const ok1 = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', u: 'UB', exp: soon() }, SECRET) });
         if (ok1.status !== 200) fail(`sign-in before the block: ${JSON.stringify(ok1)}`);
         s9.set('ft:access:blocked', JSON.stringify({ ids: { 'bo-lock--b100926': { why: 'offboarded' } } }));
-        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() + 1 }, SECRET) });   // (+1: another ticket, not the first one again)
+        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', u: 'UB', exp: soon() + 1 }, SECRET) });   // (+1: another ticket, not the first one again)
         if (at.status !== 403 || at.body.code !== 'access-offboarded' || at.body.token) fail(`a trainee blocked a moment ago is refused at once: ${JSON.stringify(at)}`);
         const before = s9.get('ft:trainee:bo-lock--b100926');
-        const mv = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B110226', exp: soon() }, SECRET) });
+        const mv = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B110226', u: 'UB', exp: soon() }, SECRET) });
         if (mv.status !== 403 || mv.body.token) fail(`a blocked trainee whose batch changed is refused: ${JSON.stringify(mv)}`);
         if (s9.get('ft:trainee:bo-lock--b100926') !== before || s9.has('ft:trainee-alias:bo-lock--b110226')) fail('a blocked record is never moved or rewritten');
         // a kept record: alias, and the Portal's scorecard (/api/calsim-card-in, sent with the new batch) lands on it
-        await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B100126', exp: soon() }, SECRET) });
-        const mk = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B110226', exp: soon() }, SECRET) });
+        await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B100126', u: 'UC', exp: soon() }, SECRET) });
+        const mk = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Cy', last: 'Moved', b: 'B110226', u: 'UC', exp: soon() }, SECRET) });
         if (mk.body.id !== 'cy-moved--b100126' || s9.get('ft:trainee-alias:cy-moved--b110226') !== 'cy-moved--b100126') fail(`a kept record leaves its alias: ${JSON.stringify(mk.body && mk.body.id)}`);
         const rows = Array.from({ length: 8 }, (_, i) => ({ score: 4, feedback: 'ok' }));
         const ci = await call(e9, '/api/calsim-card-in', { name: 'Cy Moved', batch: 'B110226', card: { rows, at: new Date().toISOString() } }, { 'x-gateway-key': 'gw' });
         if (ci.status !== 200 || !s9.has('ft:labreview:cy-moved--b100126')) fail(`the Portal's scorecard should reach the kept record: ${JSON.stringify(ci)}`);
+    }
+
+    // 10. (security and data-safety reviews 2026-11-19) a record moves only for the same Portal account (portalUid), never to a
+    //     namesake; a trainee can't rewrite who their record is; the tool ticket says who by the Portal account id
+    {
+        const e10 = makeEnv({ PORTAL_SSO_SECRET: SECRET }), s10 = e10.__store, soon = () => Date.now() + 60000;
+        const m1 = await call(e10, '/api/auth/portal', { ticket: await ticketFor({ first: 'Maria', last: 'Santos', b: 'B100126', u: 'M1', exp: soon() }, SECRET) });
+        const m2 = await call(e10, '/api/auth/portal', { ticket: await ticketFor({ first: 'Maria', last: 'Santos', b: 'B110226', u: 'M2', exp: soon() }, SECRET) });
+        if (m1.body.id !== 'maria-santos--b100126' || m2.body.id !== 'maria-santos--b110226' || JSON.parse(s10.get('ft:trainee:maria-santos--b100126')).batch !== 'B100126' || s10.has('ft:trainee-alias:maria-santos--b110226'))
+            fail(`another Maria Santos (another Portal account) must get her own record, not the first one's: ${m1.body.id} / ${m2.body.id}`);
+        // a record from before portalUid was kept is not moved on a name alone
+        s10.set('ft:trainee:leo-old--b010126', JSON.stringify({ id: 'leo-old--b010126', name: 'Leo Old', batch: 'B010126', approved: true, registeredAt: '2026-01-01T00:00:00Z' }));
+        const lo = await call(e10, '/api/auth/portal', { ticket: await ticketFor({ first: 'Leo', last: 'Old', b: 'B020126', u: 'L1', exp: soon() }, SECRET) });
+        if (lo.body.id !== 'leo-old--b020126' || JSON.parse(s10.get('ft:trainee:leo-old--b010126')).batch !== 'B010126') fail(`a record with no Portal account id isn't moved on a name: ${lo.body.id}`);
+        // the trainee rewrites who their record is: ignored; the tool ticket keeps their own name, batch and Portal account id
+        const tok = m1.body.token, recNow = JSON.parse(s10.get('ft:trainee:maria-santos--b100126'));
+        if (recNow.portalUid !== 'M1') fail(`the Portal account id is kept on the record: ${recNow.portalUid}`);
+        await call(e10, '/api/storage/set', { key: 'trainee:maria-santos--b100126', value: JSON.stringify(Object.assign({}, recNow, { name: 'Bob Victim', firstName: 'Bob', lastName: 'Victim', batch: 'B200000', portalUid: 'VICTIM' })) }, { Authorization: 'Bearer ' + tok });
+        const after = JSON.parse(s10.get('ft:trainee:maria-santos--b100126'));
+        if (after.name !== 'Maria Santos' || after.firstName !== 'Maria' || after.batch !== 'B100126' || after.portalUid !== 'M1') fail(`a trainee can't rewrite who their record is: ${JSON.stringify(after)}`);
+        const tt = await call(e10, '/api/auth/tool-ticket', {}, { Authorization: 'Bearer ' + tok });
+        const body = tt.body && tt.body.ticket ? JSON.parse(Buffer.from(tt.body.ticket.split('.')[0], 'base64url').toString('utf8')) : null;
+        if (!body || body.first !== 'Maria' || body.last !== 'Santos' || body.u !== 'M1' || body.p !== 'tool') fail(`the tool ticket is the trainee's own, with their Portal account id: ${JSON.stringify(body)}`);
+        // a record whose name no longer leads back to the session (a trainer renamed it): no tool ticket
+        s10.set('ft:trainee:maria-santos--b100126', JSON.stringify(Object.assign({}, after, { firstName: 'Bob', lastName: 'Victim', name: 'Bob Victim' })));
+        const mm = await call(e10, '/api/auth/tool-ticket', {}, { Authorization: 'Bearer ' + tok });
+        if (mm.status !== 403 || mm.body.error !== 'identity-mismatch') fail(`a record that doesn't lead back to the session gets no tool ticket: ${JSON.stringify(mm)}`);
     }
 
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
