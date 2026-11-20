@@ -109,7 +109,8 @@ const DAYS = [
   ]},
   {day:8, role:"Intake Training", lessons:[6], items:[
     {t:"📘 Process Guide: Saving the Intake Packet in SA (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Intake Worksheet", kind:"Assessment", at:"drive"},
+    // (graded by the trainer on the 📦 Intake Packet card, against the guide's Answer Sheets: trackerreview:<id>.assess.intakews)
+    {t:"Intake Worksheet", kind:"Assessment", at:"drive", assess:"intakews"},
     {t:"Intake Mock Call Activity (Training Platform / Prototype CMS)", kind:"Session", at:"session", id:"intake"},
     {t:"Practice intake calls on the Call Simulator while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
     {t:"Demo Tutorial Viewing and Demo Preparation", kind:"Activity", at:"room"},

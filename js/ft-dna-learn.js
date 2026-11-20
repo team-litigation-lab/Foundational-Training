@@ -32,7 +32,7 @@ function entriesOf(key, val){
   if(key.startsWith("labreview:")){
     const rub = window.FT_RUBRICS && FT_RUBRICS.list;
     Object.entries(val.acts || {}).forEach(([k, x]) => { if(!x) return; const rb = x.rubric && rub ? rub[x.rubric.key] : null;
-      const crit = rb ? (rb.criteria || []).map((c, i) => { const s = (x.rubric.scores || [])[i], f = (x.rubric.feedback || [])[i]; return s == null && !has(f) ? "" : `${c.n} ${s == null ? "–" : s}/5${has(f) ? ": " + f : ""}`; }).filter(Boolean).join("; ") : "";
+      const crit = rb ? (rb.criteria || []).map((c, i) => { const s = (x.rubric.scores || [])[i], f = (x.rubric.feedback || [])[i]; return c.retired || (s == null && !has(f)) ? "" : `${c.n} ${s == null ? "–" : s}/5${has(f) ? ": " + f : ""}`; }).filter(Boolean).join("; ") : "";
       push("act:" + k, rb ? "Scoresheet (0–5 per criterion)" : "Trainer input", rb ? rb.title : k, x, crit); });
     Object.entries(val.sessions || {}).forEach(([k, x]) => push("ses:" + k, "Practice Session review", k.split("|")[0], x));
   }

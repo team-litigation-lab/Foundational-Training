@@ -45,7 +45,8 @@ const keyOf = r => typeof batchKey === "function" ? batchKey(r) : String((r && r
 const labelOf = b => typeof batchLabel === "function" ? batchLabel(b) : b;
 // the trainer-led activities: the Mock Calls and Demos (each with its Training Guide scorecard where it has one)
 const trainerActs = () => (window.FTSessions && typeof FTSessions.trainerActs === "function" ? FTSessions.trainerActs() : []) || [];
-const scoredActs = () => trainerActs().filter(a => RUB().forAct(a) || /mock|demo/i.test(String(a.kind || "") + " " + String(a.title || "")));
+const isAssess = a => /assessment/i.test(String(a && a.kind || ""));
+const scoredActs = () => trainerActs().filter(a => RUB().forAct(a) || isAssess(a) || /mock|demo/i.test(String(a.kind || "") + " " + String(a.title || "")));
 // 📅 the batch's weeks (the banner's: 7 days from the day it started, Weeks 1–6), for the Week dropdown
 const WEEKS = 6, DAY = 864e5;
 const t0Of = b => { const s = b && typeof batchStartDate === "function" ? batchStartDate(b) : ""; const t = s ? Date.parse(s + "T00:00:00Z") : NaN; return isFinite(t) ? t : null; };
@@ -141,6 +142,25 @@ async function msLoad(force){
   MS.loading = false;
   if(state.view === "admin" && state.adminTab === "graders" && !isTyping()) render();
 }
+/* 📝 an Assessment's scoresheet: what the trainee handed in, to grade from — Day 8's Intake Worksheet link (actsub:<id>.items.intakews,
+   submitted on the slide, js/ft-intake.js) and Day 5's Attorney Calendar Management Activity's automatic check (calcheck:<id>,
+   js/ft-calcheck.js: the share of fields right on the latest submission) */
+async function refOf(r, a){
+  const box = document.querySelector(`[data-ms-ref="${CSS.escape(r.id)}"]`); if(!box) return;
+  let html = "";
+  try{
+    if(a.id === "intake-worksheet"){
+      const sub = (((await sharedGet("actsub:" + r.id)) || {}).items || {}).intakews, link = sub && /^https?:\/\//.test(String(sub.answer || "")) ? String(sub.answer) : "";
+      html = link ? `📝 <b>Their Intake Worksheet</b> · submitted ${e(sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "")} · <a href="${e(link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>`
+        : `📝 No Intake Worksheet link submitted yet (the trainee submits it on Day 8’s Intake Documents slide). Grade it from their Assessments/Activities folder.`;
+    } else if(a.id === "atty-calendar-activity"){
+      const it = typeof window.ftCalCheckItems === "function" ? (window.ftCalCheckItems({rec: {"calcheck:": await sharedGet("calcheck:" + r.id)}}) || [])[0] : null;
+      html = it ? `📅 <b>Automatic check</b> · ${it.pct == null ? "—" : e(it.pct) + "%"} · ${e(it.note || "")} · your score here replaces it on the Score Card`
+        : `📅 Done on the Portal’s 📝 Standard Training - Calendaring Activity? Its score fills this sheet on its own when you open 🧑‍🏫 Graders (the trainer’s final score there, else its automatic check). Nothing there yet: grade it from what they shared in the GC.`;
+    } else html = "";
+  }catch(err){ html = "Couldn’t load what they submitted. Check your connection."; }
+  if(document.body.contains(box)) { if(html) box.innerHTML = html; else box.remove(); }
+}
 /* 🧾 Score summary (the Calendar Management Mock Call's scorecard): the score's rationale in words, from what the trainer
    entered — the weighted average from each criterion's score and weight, the % it makes, the strongest criteria and those
    to improve with their feedback notes, any criterion not scored yet, the result and the comment. Worked out, not written by
@@ -185,7 +205,7 @@ function renderMockScores(){
   // 📅 the week picked (this week until another is): it sets the banner's week and dates; the Activity list always has
   // every mock call and demo, whatever the week
   const wk = MS.wk === "all" ? "all" : Number(MS.wk) >= 1 ? Number(MS.wk) : nowWeek(MS.batch);
-  const mocks = allActs.filter(isMock), demos = allActs.filter(x => !isMock(x)), acts = mocks.concat(demos);
+  const mocks = allActs.filter(isMock), demos = allActs.filter(x => !isMock(x) && !isAssess(x)), assess = allActs.filter(isAssess), acts = mocks.concat(demos, assess);
   if(!MS.act || !acts.some(a => a.id === MS.act)) MS.act = (acts[0] || {}).id || "";
   const a = curAct(), rb = a ? RUB().forAct(a) : null, all = registered(MS.batch);
   if(!MS.va || !all.some(r => r.id === MS.va)) MS.va = (all[0] || {}).id || "";
@@ -203,7 +223,8 @@ function renderMockScores(){
   const ctl = `<div class="fms-pick">
       <label>Week <select aria-label="Week" class="fms-wk" onchange="FTMockScores.week(this.value)">${Array.from({length: WEEKS}, (x, i) => i + 1).map(n => `<option value="${n}" ${wk === n ? "selected" : ""}>Week ${n}${hasDates ? " · " + e(wkRange(MS.batch, n)) : ""}${n === nowWeek(MS.batch) && hasDates ? " (this week)" : ""}</option>`).join("")}<option value="all" ${wk === "all" ? "selected" : ""}>All weeks</option></select></label>
       <select aria-label="Batch" onchange="FTMockScores.batch(this.value)">${batches.length ? batches.map((b, i) => `<option value="${e(b)}" ${b === MS.batch ? "selected" : ""}>${e(labelOf(b))}${i === 0 ? " (current)" : ""}</option>`).join("") : `<option value="">No active batch</option>`}</select>
-      <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}</select>
+      <select aria-label="Activity" class="fms-act" onchange="FTMockScores.act(this.value)">${mocks.length ? `<optgroup label="📞 Mock calls">${mocks.map(opt).join("")}</optgroup>` : ""}${demos.length ? `<optgroup label="🖥 Demos">${demos.map(opt).join("")}</optgroup>` : ""}${assess.length ? `<optgroup label="📝 Assessments">${assess.map(opt).join("")}</optgroup>` : ""}</select>
+      <span class="fms-search"><input type="search" list="fmsFind" placeholder="🔎 Search an activity (every trainee’s score) or a trainee" aria-label="Search the scorecards" onchange="FTMockScores.find(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();FTMockScores.find(this.value);}"><datalist id="fmsFind">${acts.map(x => `<option value="${e(x.title)}">`).join("")}${all.map(x => `<option value="${e(x.name || x.id)}">`).join("")}</datalist></span>
       ${all.length ? `<div class="fms-step"><button class="btn btn-ghost btn-sm" ${at > 0 ? "" : "disabled"} onclick="FTMockScores.step(-1)" title="The previous trainee" aria-label="Previous trainee">‹</button>
         <select aria-label="Trainee" class="fms-va" onchange="FTMockScores.va(this.value)">${all.map(x => { const dd = MS.draft[MS.act + "|" + x.id], c = a ? cellOf(x.id, a.id) : {};
           const res = window.ftResult ? ftResult(c) : c.status, tag = dd && dd.dirty ? " · ● not saved" : res && res !== "Not yet" ? ` · ${res}${tScore(c) != null ? " " + tScore(c) + "%" : ""}` : a && autoOf(x.id, a.id) ? " · 🤖 auto-scored, to review" : "";
@@ -216,12 +237,24 @@ function renderMockScores(){
   const banner = typeof window.ftBanner === "function" ? ftBanner("Graders: Mock Calls &amp; Demos", MS.batch, ctl, {week: wk === "all" ? null : wk, cls: "fms-banner"})
     : `<div class="fms-banner">${ctl}</div>`;
   const head = "";
-  const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>`;
+  // 📊 the activity picked (or found with 🔎), every trainee of the batch at once: the result, the score, the date and who graded
+  // it, from what is saved (and ● for a sheet typed here and not saved yet); a name opens that trainee's scoresheet
+  const allTbl = () => !a || MS.loadedFor !== sig ? "" : `<details class="card fms-all" ${MS.allOpen ? "open" : ""} ontoggle="FTMockScores.allOpen(this.open)">
+      <summary>📊 <b>${e(a.title)}</b> · every trainee in ${e(labelOf(MS.batch))} (${all.length})</summary>
+      <table class="fms-all-tbl"><thead><tr><th>Trainee</th><th>Result</th><th>Score</th><th>Date</th><th>Graded by</th></tr></thead><tbody>
+      ${all.map(x => { const c = cellOf(x.id, a.id), res = window.ftResult ? ftResult(c) : (c.status || "Not yet"), sc = tScore(c), dd = MS.draft[MS.act + "|" + x.id], au = autoOf(x.id, a.id);
+        const src = c.source === "simulator" ? ` <small title="Filled from the ${e(c.simFrom || "simulator")}">🔁</small>` : "";
+        return `<tr class="${x.id === MS.va ? "on" : ""}"><td><a href="#" onclick="event.preventDefault();FTMockScores.va('${e(x.id)}')">${e(x.name || x.id)}</a>${dd && dd.dirty ? " <small>● not saved</small>" : ""}</td>
+          <td class="fms-r ${res === "Passed" ? "ok" : res === "Failed" ? "bad" : res === "Redo" ? "mid" : ""}">${e(res)}</td>
+          <td>${sc != null ? e(sc) + "%" + src : au && au.pct != null ? `<small>🤖 ${e(au.pct)}% to review</small>` : "—"}</td><td>${e(c.date || "")}</td><td>${e(c.facilitator || c.simBy || "")}</td></tr>`; }).join("")}
+      </tbody></table></details>`;
+  const wrap = inner => `${banner}<div class="card fss-admin fms">${head}${inner}</div>${allTbl()}`;
   if(!batches.length) return wrap(`<p class="fss-muted">No active batch: a batch shows here once its trainees are registered and approved.</p>`);
-  if(!a) return wrap(`<p class="fss-muted">No Mock Call or Demo in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
+  if(!a) return wrap(`<p class="fss-muted">No Mock Call, Demo or Assessment in 🧑‍🏫 Trainer Inputs’ list of activities.</p>`);
   if(!r) return wrap(`<p class="fss-muted">No trainees registered in ${e(labelOf(MS.batch))} yet.</p>`);
   if(!ready) return wrap(`<p class="fss-muted">Loading ${e(labelOf(MS.batch))}’s scorecards…</p>`);
   setTimeout(growAll, 0);   // (after the draw, the Remarks and Comment boxes take the height of what they hold)
+  if(isAssess(a)) setTimeout(() => refOf(r, a), 0);
   const c = cellOf(r.id, a.id), id = e(r.id), auto = autoOf(r.id, a.id), isTr = /^transcription-[12]$/.test(a.id);
   // 🎧 the automatic score: where it came from, ✓ Accept (it then saves as the trainer's), and 🔁 Grade now (the Worker again)
   // (🔁 a scorecard filled from a simulator — worker.js syncSimScores — says so; a score typed here replaces it)
@@ -231,13 +264,14 @@ function renderMockScores(){
       <button class="btn btn-navy btn-sm" type="button" data-ms-accept onclick="FTMockScores.accept('${id}')">✓ Accept the automatic score</button>` : ""}` : `🤖 No automatic score yet (scored when the trainee submits the recording).`}
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTMockScores.regrade('${id}')" title="Score the trainee’s submitted minutes again">🔁 Grade now</button></div>`;
   // (no "name · activity · batch · Saved:" line over the scoresheet: the pickers above say whose it is, and ● not saved is in the trainee dropdown)
-  const crit = rb ? rb.criteria.map((k, i) => `<tr><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
+  const crit = rb ? rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}${k.w && k.w !== 1 ? ` <em>×${e(k.w)}</em>` : ""}</td>
       <td><input type="number" min="0" max="5" step="0.5" value="${e(d.scores[i] == null ? "" : d.scores[i])}"${d.autoFrom && d.scores[i] == null ? ` placeholder="you" title="The automatic check doesn’t score this one: you do"` : ""} aria-label="${e(k.n)} score" oninput="FTMockScores.crit('${id}',${i},this.value)"></td>
       <td><textarea rows="1" placeholder="Remarks" aria-label="${e(k.n)} remarks" oninput="FTMockScores.fb('${id}',${i},this.value)">${e(d.feedback[i] || "")}</textarea></td></tr>`).join("") : "";
   return wrap(`<div class="fms-sheet" data-va="${id}">
     ${simBar}${autoBar}
     ${rb && (rb.key === "calendar" || rb.key === "transcription") && typeof window.ftRubricAssist === "function" ? `<div class="fms-assist">${window.ftRubricAssist(r, a)}</div>` : ""}
     ${a.id === "intake-packet-demo" ? `<div class="ftis-mcase" data-trainee="${id}"></div>` : ""}
+    ${isAssess(a) ? `<div class="fms-auto" data-ms-ref="${id}">Loading what ${e(r.name || "the trainee")} submitted…</div>` : ""}
     ${typeof window.ftMockLinks === "function" ? window.ftMockLinks(r, a) : ""}
     <table class="ftms-tbl fms-tbl"><thead><tr><th>${e((rb ? rb.title : a.title).toUpperCase())}</th><th>Score</th><th>Remarks</th></tr></thead><tbody>
       ${crit}
@@ -285,6 +319,18 @@ window.FTMockScores = {
   },
   batch(b){ MS.batch = b; MS.va = ""; render(); },
   week(w){ MS.wk = w; render(); },
+  allOpen(v){ MS.allOpen = !!v; },
+  // 🔎 the search over the scoresheets: an activity's or a trainee's name (or part of it) opens that activity / that trainee
+  find(q){
+    const n = String(q || "").trim().toLowerCase(); if(!n) return;
+    const has = x => String(x || "").toLowerCase().includes(n), all = registered(MS.batch);
+    const a = scoredActs().find(x => String(x.title).toLowerCase() === n) || scoredActs().find(x => has(x.title) || has(x.id));
+    const v = all.find(x => String(x.name || x.id).toLowerCase() === n) || all.find(x => has(x.name) || has(x.id));
+    if(!a && !v){ toast(`Nothing in ${labelOf(MS.batch)}’s scorecards matches “${q}”.`); return; }
+    if(a) MS.act = a.id; if(v) MS.va = v.id;
+    if(a && !v) MS.allOpen = true;   // (an activity searched for: every trainee's score for it, open)
+    render();
+  },
   // (the Result of the trainee on screen: it follows the score, with no picker of its own)
   status(){ const d = valOf(MS.va); return d ? d.status : ""; },
   // ↻ the trainer asks for a Redo (or takes it back): the Result is Redo, off the scorecards, until it is graded again
@@ -430,7 +476,7 @@ function buildFiles(batch, rows){
   rows.forEach(g => acts.forEach(a => {
     const c = lab(g)[a.id]; if(!c) return;
     const rb = RUB().forAct(a), base = [name(g), B, a.title, a.kind || "", c.status || "", pct(tScore(c)), c.rubric && c.rubric.avg != null ? c.rubric.avg : "", c.date || "", c.facilitator || ""];
-    if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
+    if(rb && c.rubric && c.rubric.key === rb.key) rb.criteria.forEach((k, i) => k.retired || cards.push([...base, k.n, c.rubric.scores[i] == null ? "" : c.rubric.scores[i], (c.rubric.feedback || [])[i] || "", i === 0 ? c.comment || "" : ""]));
     else cards.push([...base, "", "", "", c.comment || ""]);
   }));
   const lessons = typeof DAYS !== "undefined" ? DAYS : [], nm = d => typeof ftName === "function" ? ftName(d.id) : "Lesson " + d.id;
@@ -611,6 +657,12 @@ window.FTBatchAdmin = {archive:archiveDialog};
 .fms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;}
 .fms-pick label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--navy);}
 .fms-pick select{font:inherit;font-size:15px;font-weight:700;color:#1E2340;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;max-width:100%;white-space:normal;}
+.fms-all{margin:14px 0 0;padding:10px 16px;} .fms-all > summary{cursor:pointer;font:700 16px Arial,sans-serif;color:#1E2340;padding:4px 0;}
+.fms-all-tbl{width:100%;border-collapse:collapse;margin:10px 0 4px;font:600 15px Arial,sans-serif;color:#141A2E;}
+.fms-all-tbl th{text-align:left;background:#2E7D32;color:#fff;padding:7px 10px;font-weight:800;} .fms-all-tbl td{padding:7px 10px;border-bottom:1px solid #E1E3E1;}
+.fms-all-tbl tr:nth-child(even) td{background:#F4F8F1;} .fms-all-tbl tr.on td{background:#FFF7D6;} .fms-all-tbl a{color:#1E2340;font-weight:800;}
+.fms-all-tbl .fms-r.ok{color:#15803D;} .fms-all-tbl .fms-r.bad{color:#B91C1C;} .fms-all-tbl .fms-r.mid{color:#9A5B00;}
+.fms-pick .fms-search input{font:inherit;font-size:14px;padding:4px 10px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;min-width:220px;max-width:100%;}
 .fms-pick .fms-savebtn{margin-left:auto;} .fms-save{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin:12px 0 0;}
 /* (🧑‍🏫 Graders: the pickers in the banner's top-right corner, on its dark blue) */
 .ft-banner.fms-banner{align-items:flex-start;}

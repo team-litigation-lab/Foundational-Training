@@ -526,7 +526,9 @@ window.ftDriveItems = ctx => {
   const inListening = doc => !!(window.FTListen && (FTListen.sets || []).some(s => s.activity && s.id === doc));
   // (a practice activity is graded for its feedback but kept off the scorecards: window.ftPracticeDocs)
   Object.entries(rv.assess || {}).forEach(([doc, x]) => { if(!x || x.score == null || inListening(doc) || ftPracticeDocs.includes(doc)) return;
-    out.push({name:`📄 ${x.title || "Assessment"}`, ref:"assess:" + doc, why:String(x.comment || x.summary || x.feedback || ""), pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
+    // (its current title: a grade saved before a rename — the breakout worksheets' session names — reads as named now)
+    const t = (window.FTAssess && FTAssess.has && FTAssess.has(doc) && FTAssess.title ? FTAssess.title(doc) : "") || x.title || "Assessment";
+    out.push({name:`📄 ${t}`, ref:"assess:" + doc, why:String(x.comment || x.summary || x.feedback || ""), pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
   Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
     out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, ref:"items:" + k, why:String(x.result.context || ""), pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
   return out;

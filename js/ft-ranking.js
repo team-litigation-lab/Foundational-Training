@@ -75,8 +75,11 @@ const typed = cur => !!(cur && num(cur.raw) != null && !cur.auto);
 const fmt = n => (Math.round(n * 100) / 100).toString();
 const fix2 = n => (Math.round(n * 100) / 100).toFixed(2);
 // a cell's mark out of 5 (null when there is no score)
+// (📎 a column of something the Training Guide doesn't grade — js/ft-reference.js refCol — is Additional Reference: its cells are
+// kept and shown in the hover, but give no mark, so the final average and the rank take only the scored columns)
+const isRefCol = col => !!(window.ftReference && col && col.type === "score" && ftReference.refCol(col));
 function mark(col, cell){
-  const raw = num(cell && cell.raw); if(raw == null || col.type !== "score") return null;
+  const raw = num(cell && cell.raw); if(raw == null || col.type !== "score" || isRefCol(col)) return null;
   const max = num(col.max) || 5;
   return Math.max(0, Math.min(5, raw / max * 5));
 }
@@ -383,10 +386,11 @@ function cellOut(c, cell){
   cell = cell || {};
   if(c.type === "notes") return String(cell.note || "").split("\n").map(l => `<p>${e(l)}</p>`).join("");
   const m = mark(c, cell), note = cell.note ? `<p>${e(cell.note)}</p>` : "";
+  if(isRefCol(c)) return `<p><b>📎</b></p>` + note;
   if(m == null) return note;
   return (num(c.max) === 5 ? `<p><b>${e(fmt(num(cell.raw)))}/5</b></p>` : `<p><b>${e(fmt(num(cell.raw)))}/${e(c.max)}</b></p><p><b>${fix2(m)}/5</b></p>`) + note;
 }
-const head = c => `<b>${e(c.label)}${c.type === "score" ? ` (${num(c.max) === 5 ? "5/5" : `${e(c.max)}/${e(c.max)}`})` : ""}${c.sub ? ":" : ""}</b>${c.sub ? `<br><b>${e(c.sub)}</b>` : ""}`;
+const head = c => `<b>${e(c.label)}${isRefCol(c) ? " (📎 Additional Reference)" : c.type === "score" ? ` (${num(c.max) === 5 ? "5/5" : `${e(c.max)}/${e(c.max)}`})` : ""}${c.sub ? ":" : ""}</b>${c.sub ? `<br><b>${e(c.sub)}</b>` : ""}`;
 function reportTable(){
   const cols = R.data.cols;
   return `<table class="rk-doc" border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:Calibri,Arial,sans-serif;font-size:9.5pt;">
@@ -443,7 +447,8 @@ function headOf(s){
 function formulaOf(s, ci, row, sc, first, last){
   const L = letter;
   if(s.k === "calc") return `=IF(${L(ci - 1)}${row}="","",${L(ci - 1)}${row}/${s.c.max}*5)`;
-  const marks = sc.map((x, i) => x.k === "mark5" || x.k === "calc" ? L(i) + row : null).filter(Boolean);
+  // (📎 a reference column's mark isn't in the average: isRefCol)
+  const marks = sc.map((x, i) => (x.k === "mark5" || x.k === "calc") && !isRefCol(x.c) ? L(i) + row : null).filter(Boolean);
   if(s.k === "avg") return `=IFERROR(AVERAGE(${marks.join(",")}),"")`;
   const a = L(sc.findIndex(x => x.k === "avg"));
   if(s.k === "rank") return `=IF(${a}${row}="","",RANK(${a}${row},$${a}$${first}:$${a}$${last}))`;

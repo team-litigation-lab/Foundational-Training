@@ -153,7 +153,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (on top a segment per part of the lesson, Start for a one-part lesson, else Part 1 · Part 2 … (Receptionist: Day 3's session and Day 4; Medical Records: Day 13, the MedLOR Demo, the MedLOR recorded demonstration, Lien Verification), in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (on top a segment per part of the lesson, Start for a one-part lesson, else Part 1 · Part 2 … (Receptionist: Day 3's session and Day 4; Medical Records: Day 13, the MedLOR Demo with its recorded demonstration (Day 15 has no part of its own), Lien Verification), in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
@@ -168,7 +168,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))(c.days.length);
+    const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 3 }[c.id] || c.days.length);
     // (the Personal Injury Process Flow / Reception card: a video for each of its two lessons, PI Workflow and Receptionist)
     if (c.id === 'dayl-3') { if (c.segs.join() !== want.join() || c.steps.length || !/PI Workflow/.test(c.vids[0] || '') || !/Receptionist/.test(c.vids[1] || '')) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps, c.vids).join(' | ')}`); return; }
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
@@ -201,7 +201,9 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     dayCards.push(await page.evaluate(() => { const c = document.querySelector('.ftdd-lcslide .ftlc');
       return c ? { day: Number(c.dataset.day), first: c.dataset.first === '1', h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length } : null; }));
   }
-  dayCards.forEach((c, i) => { const n = i + 1;
+  // (Day 15 has no day card of its own: its slides are on Day 14's deck, Part 2, build/day-decks.cjs MOVE; js/ft-day-locks.js PARTS)
+  const NO_CARD = [15];
+  dayCards.forEach((c, i) => { const n = i + 1; if (NO_CARD.includes(n)) return;
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
     else if ([1, 2, 3, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
   // 📋 Days 2–16 in Day 1's shape: every row of a day's card leads to its own slide(s), in the card's order, each row's slides
@@ -209,6 +211,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // rows, named as the card names them. Day 1's deck is as it was.
   await page.evaluate(() => { state.adminPreview = true; });
   for (let n = 1; n <= 16; n++) {
+    if (NO_CARD.includes(n)) continue;
     await page.evaluate(n => FTDayDecks.open(n, 0), n); await page.waitForTimeout(500);
     const r = await page.evaluate(n => {
       const rows = FTDayDecks.dayRows(n), list = FTDayDecks.list(n);
@@ -251,14 +254,23 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // video is not on the deck (its lesson card's 🎬 Video on 📚 Dashboard only)
   await page.evaluate(() => FTDayDecks.open(2, FTDayDecks.list(2).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
   const ho2 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, video: !!document.querySelector('.ftdd-ho-video'), ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '',
-    rows: FTDayDecks.dayRows(2).filter(r => /Handouts/.test(r.t)).length }));
-  if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
+    rows: FTDayDecks.dayRows(2).filter(r => /^Breakout Session/.test(r.t)).length, name: (FTDayDecks.dayRows(2).find(r => /^Breakout Session/.test(r.t)) || {}).t || '' }));
+  if (ho2.cards !== 4 || ho2.video || !/Breakout Session \/ Group Activity/.test(ho2.ribbon) || ho2.rows !== 1 || ho2.name !== 'Breakout Session: Softphones · Law Firm Call Guide · Call Handling · Attorney-Client Privilege') fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
+  // 🧩 every breakout named after its lessons, as the curriculum lists its handouts; Day 13's (an individual activity, PM) has its
+  // four handouts on its own stop, apart from the Call Listening Session
+  const bo = await page.evaluate(() => Object.fromEntries([1, 2, 7, 10, 13].map(n => [n, FTDayDecks.dayRows(n).filter(r => /^Breakout Session: /.test(r.t)).map(r => r.t + ' | ' + r.sub)])));
+  if ([1, 2, 7, 10, 13].some(n => bo[n].length !== 1)) fail(`a Breakout Session isn't one stop named after its lessons: ${JSON.stringify(bo)}`);
+  if (!/^Breakout Session: Protected Health Information · E-Portals · Medical Liens · Medical Documents \| Individual Activity · Afternoon, 2:00–3:00 PM · the 4 digital handouts/.test((bo[13] || [])[0] || '')) fail(`Day 13's Breakout Session isn't its four handouts: ${JSON.stringify(bo[13])}`);
+  if (await page.evaluate(() => FTDayDecks.dayRows(13).some(r => /Call Listening.*Breakout/.test(r.t)))) fail('Day 13\'s Call Listening is still named the Breakout Session');
+  await page.evaluate(() => FTDayDecks.open(13, FTDayDecks.list(13).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
+  const ho13 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
+  if (ho13.cards !== 4 || !/Breakout Session \/ Individual Activity/.test(ho13.ribbon)) fail(`Day 13's Breakout Session slide isn't its four handouts, an individual activity: ${JSON.stringify(ho13)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
   // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → Process Questions (the handouts before the Knowledge Check) → Installation of SA
   // (no AI Discussion Video stop on any deck: the lesson card's 🎬 Video on 📚 Dashboard plays it)
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
-  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^Process Questions/, /^Installation of SA/];
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Breakout Session: US Legal System · LSH Services and VA Task List/, /^Process Questions/, /^Installation of SA/];
   if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
   if (await page.evaluate(() => [...Array(17).keys()].slice(1).some(n => FTDayDecks.list(n).some(s => s.launch && s.launch.play != null)))) fail('a day deck still has an AI Discussion Video stop');
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);
@@ -389,7 +401,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const findScore = () => page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-sheet .ftdd-score'); if (b) return { i, h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length, avg: /WEIGHTED AVERAGE/.test(b.textContent), remarks: /Remarks/.test(b.textContent), pick: !!b.querySelector('.ftms-pick select'), shot: !!b.querySelector('img') }; } return null; });
   const score = await findScore();
-  if (!score || score.items !== 15 || !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
+  if (!score || score.items !== 14 ||   /* (14 guide metrics: Tools Utilization is retired, not shown) */ !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
   // a trainer scores on it: the batch's trainees to pick, a Remarks column, 💾 Save to the trainee's scores (labreview acts)
   const me = await page.evaluate(() => state.traineeId);
   await page.evaluate(id => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id }) }).then(r => r.json()).then(j => { const rec = JSON.parse(j.value); rec.approved = true; return fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id, value: JSON.stringify(rec) }) }); }), me);
@@ -425,7 +437,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
       const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
         inputs: box.querySelectorAll('input, select').length, mine: (box.querySelector('.ftms-mine') || {}).textContent || '', toast: document.body.innerText.includes('Your trainer scored your') };
       state.isAdmin = was.a; state.adminPreview = was.p; state.traineeId = was.t; return out; }, me);
-    if (mine.cells.length !== 15 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
+    if (mine.cells.length !== 14 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
       fail(`the trainee should see their scored sheet, read only, and be told it is scored: ${JSON.stringify(mine)}`);
   }
   await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });

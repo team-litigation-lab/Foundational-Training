@@ -1481,7 +1481,8 @@ const EX_RENAME = {
 const PREP_KEEP = {};
 // a mock call or demo whose activity slide (its Ongoing panel) is off the deck: only its preparation slide stays (Days 8, 12,
 // 14 and 16; Day 9's Intake Mock Calls, whose practice links are on its metrics slide, s2, build/days/day09.js)
-const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 16: ["s2"]};
+// (Day 15's Recorded Demonstration panel too: its day's slides are on Day 14's deck, MOVE)
+const PREP_OFF = {8: ["s3"], 9: ["s3b"], 12: ["s1d"], 14: ["s1e"], 15: ["s1b"], 16: ["s2"]};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
@@ -1490,9 +1491,14 @@ const PREP = {
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
-// 📥 a slide a day gains that its guide day doesn't have: Day 14 (the Medical Records training's day 2) also teaches Saving
-// Medical Bills & Records (the guide's Day 17, build/lessons/off/lesson09.js d17-s2), after the Gentle Reminders
-const INSERT = {14: [{after: "s1d", id: "s1m", h: "AM: Saving Medical Bills & Records", html: SLOT(14, "s1m-1") + "\n" + "<p>Today you will also learn how to save medical bills and records. Please go to the links below and follow the process.</p>\n<p><b>Topic: Saving Medical Bills &amp; Records </b></p>\n<p>Task 1 - Go to this link and learn the step-by-step process.</p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"Topic: Saving Medical Bills &amp; Records\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing</a></p>\n<p>Task 2 - Watch this sample demo</p>\n<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link</a></p>\n<p><b>Note:</b> Create your own work guide/notes.</p>\n<hr class=\"stars\">\n<h4>You may add these in your notes.</h4>\n<p><i>HCFA or HICF: either is right for the bill.</i></p>\n<p>Complete Naming Convention:</p>\n<p>MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Extracted Docs:</p>\n<p>BILL</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21  (Michelle)</p>\n<p>------------</p>\n<p>RECORDS</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p>\n<p>-----------</p>\n<p>LIEN</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Report Format on Notes tab:</p>\n<p>Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p>\n<p><b>Note:</b> Highlight the filename, right click and paste the internal link. </p>\n<p>--------------</p>\n<p>Report Format on Tasks tab:</p>\n<p>mm.dd.yyyy Received bills &amp; records from <u>lien holder(medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p>"}]};
+// 📥 a slide a day gains that its guide day doesn't have: Day 16 ends on Saving Medical Bills & Records (the guide's Day 17,
+// right after the LV demo: build/lessons/off/lesson09.js d17-s2), an additional reference (js/ft-day-decks.js REFERENCE)
+const INSERT = {16: [
+  // (the MedLOR demo as recorded on Filevine, the guide's Day 16 reference recordings: an additional reference after Saving
+  // Medical Bills & Records — the demo itself is done in SmartAdvocate)
+  {after: "s2b", id: "s3f", h: "Sending MedLOR (Filevine): Recorded Demos", html: "<p>The MedLOR demo as recorded on Filevine, for reference only: do yours in SmartAdvocate.</p>\n" +
+    ["11mvVFbtzbWIVcKM0XwVm_lp11_5mbseR", "13DGgCl5S_FjCUBoj-Oo65_68lBrwZz3u"].map((id, i) => `<p><a class="viewer-link" data-card data-kind="video" data-title="Sending MedLOR (Filevine) · recording ${i + 1}" href="https://drive.google.com/file/d/${id}/view?usp=sharing">Sending MedLOR (Filevine) · recording ${i + 1}</a></p>`).join("\n")},
+  {after: "s2b", id: "s3m", h: "Saving Medical Bills & Records", html: SLOT(16, "s3m-1") + "\n" + "<p>You will also learn how to save medical bills and records. Please go to the links below and follow the process.</p>\n<p><b>Topic: Saving Medical Bills &amp; Records </b></p>\n<p>Task 1 - Go to this link and learn the step-by-step process.</p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"Topic: Saving Medical Bills &amp; Records\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing</a></p>\n<p>Task 2 - Watch this sample demo</p>\n<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link</a></p>\n<p><b>Note:</b> Create your own work guide/notes.</p>\n<hr class=\"stars\">\n<h4>You may add these in your notes.</h4>\n<p><i>HCFA or HICF: either is right for the bill.</i></p>\n<p>Complete Naming Convention:</p>\n<p>MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Extracted Docs:</p>\n<p>BILL</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21  (Michelle)</p>\n<p>------------</p>\n<p>RECORDS</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p>\n<p>-----------</p>\n<p>LIEN</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Report Format on Notes tab:</p>\n<p>Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p>\n<p><b>Note:</b> Highlight the filename, right click and paste the internal link. </p>\n<p>--------------</p>\n<p>Report Format on Tasks tab:</p>\n<p>mm.dd.yyyy Received bills &amp; records from <u>lien holder(medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p>"}]};
 // 🧰 a preparation slide's link to the tool its demo uses (the tool's card in 🛠 Practice Lab, scored on the 🏅 Score Card)
 const PREP_LEAD = {
   12: {s1dp: '<div class="ftdd-pq-go ftdd-lor-go"><p><b>🧰 Your 1P and 3P LORs</b>: the demo uploads and sends the letters you draft in the LOR Drafting Activity (🛠 Practice Lab → 🧰 Drafting Tools). Its score is on your 🏅 Score Card.</p>' +
@@ -1596,12 +1602,19 @@ for(let n = 1; n <= 16; n++){
 // Day 9's Intake Mock Calls Metrics closes Part 2 of Intake Training (Day 8), after the demo's preparation; Part 3 (Day 9)
 // opens on the Sample Transcription Guide. (A new id on Day 8, mcm: nothing saved under Day 8's old s2, off the deck, follows it)
 // (its "AM:" was Day 9's morning: on Day 8 it follows the afternoon's demo preparation, so PM)
-const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]}};
-for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh]] of Object.entries(ids)){
+// (Day 15's recorded demonstration is on Part 2, Day 14's deck, after the MedLOR Demo's preparation: the tutorial video again,
+// the Gentle Reminders and its Demo Preparation, whose metrics are the MedLOR Recorded Demonstration's scorecard; Day 15 has
+// no day card of its own, js/ft-day-locks.js PARTS)
+// (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
+const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
+  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
+    // (not Day 15's Demo Preparation: its metrics would be the same MedLOR metrics a second time on Part 2)
+  }};
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){
   const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
   const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
   const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
-  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}));
+  b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}, rx ? {html: rx(x.html)} : {}));
 }
 function noKB(html){
   return String(html || "")

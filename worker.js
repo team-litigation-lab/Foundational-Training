@@ -59,10 +59,14 @@ const KV_PREFIX = "ft:";
    whole record, changes one activity and writes the whole record back. So a trainer's saved score could be written over by
    the copy another save (another trainer, the simulator-score sync) read a moment before, and a save could read back
    without itself ("saved, then gone", "not on the saved scores"). Each of these records now goes through one Durable
-   Object (RecordGuard, one per record): reads see the latest write at once, writes to a record are taken one at a time,
+   Object (RecordGuard, one per record — run inside the GeminiRelay namespace, as objects named "guard:<key>", since the
+   account has no room for a new Durable Object namespace): reads see the latest write at once, writes to a record are taken one at a time,
    and a save that says what it started from (base) has only its own changes merged into the record as it is now
    (merge3), so two saves of different activities both stay. A write's copy is held for GUARD_TTL, then KV (long settled
-   by then) is read again, so a record another site deleted from KV is not kept. */
+   by then) is read again, so a record another site deleted from KV is not kept.
+   (It has no namespace or binding of its own: a deploy that created one failed, as the account is at Cloudflare's limit
+   of 500 namespaces. GeminiRelay extends it and answers its requests. Without GEMINI_RELAY, kvOf merges each save itself,
+   over KV — two trainers' saves both stay — and only a read can still be a minute old.) */
 const GUARDED = /^(labreview|kcreview|trainerfb):/;
 const GUARD_TTL = 10 * 60 * 1000;
 const isPlain = (x) => !!x && typeof x === "object" && !Array.isArray(x);
@@ -118,7 +122,7 @@ export class RecordGuard {
   }
 }
 async function guard(env, body) {
-  const ns = env.RECORD_GUARD, stub = ns.get(ns.idFromName(body.key));
+  const ns = env.GEMINI_RELAY, stub = ns.get(ns.idFromName("guard:" + body.key));
   const r = await stub.fetch("https://guard/", { method: "POST", body: JSON.stringify(body) });
   const j = await r.json();
   if (j.error) throw new Error("record guard: " + j.error);
@@ -127,7 +131,7 @@ async function guard(env, body) {
 function kvOf(env) {
   const raw = env.LSH_KV;
   if (!raw) return null;
-  const guarded = (k) => !!env.RECORD_GUARD && GUARDED.test(String(k));
+  const guarded = (k) => !!env.GEMINI_RELAY && GUARDED.test(String(k));
   return {
     get: (k) => guarded(k) ? guard(env, { op: "get", key: k }).then((j) => j.value) : raw.get(KV_PREFIX + k),
     put: (k, v, o) => guarded(k) && !o ? guard(env, { op: "put", key: k, value: v }) : raw.put(KV_PREFIX + k, v, o),
@@ -951,9 +955,11 @@ async function geminiFetch(env, url, init) {
   geminiViaRelay = true;
   return viaRelay();
 }
-export class GeminiRelay {
-  constructor(state, env) {}
+// (also the RecordGuard for the trainers' score records: a request to https://guard/ goes to RecordGuard's code, so the
+//  guard needs no Durable Object namespace of its own — the account is at Cloudflare's limit of 500)
+export class GeminiRelay extends RecordGuard {
   async fetch(request) {
+    if (new URL(request.url).hostname === "guard") return super.fetch(request);
     const { url, headers, body } = await request.json();
     if (!/^https:\/\/generativelanguage\.googleapis\.com\//.test(String(url))) return new Response("Not allowed", { status: 403 });
     const r = await fetch(url, { method: "POST", headers, body });
@@ -2236,6 +2242,29 @@ async function syncSimScores(env, id, o = {}) {
       m.n ? { rubric: { key, scores: m.scores, feedback: m.feedback, avg: Math.round(avg * 100) / 100 } } : {});
     filled.push({ act: S.act, pct, from: card.from });
   }
+  // 📝 Day 5's Attorney Calendar Management Activity, done on the Portal's Standard Training - Calendaring Activity: its latest
+  // submission fills the scoresheet on 🧑‍🏫 Graders → 📝 Assessments — the trainer's finalized score there, else the automatic
+  // check — unless a score was typed here (it wins). The Portal answers server to server (functions/api/calsim-scorecard.js ?activity=1).
+  if (gatewayOn(env)) {
+    const AK = "atty-calendar-activity", prev = cur.acts[AK];
+    const typed = prev && prev.source !== "simulator" && (prev.score != null || prev.redo);
+    if (!typed) try {
+      const base = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/calsim-scorecard";
+      const r = await fetch(base + "?" + new URLSearchParams({ activity: "1", name: rec.name || "", batch: canonicalBatch(rec.batch) || String(rec.batch || "") }), { headers: { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() } });
+      const j = await r.json().catch(() => ({})), a = j && j.success ? j.activity : null;
+      const pct = a ? (a.trainerScore != null ? a.trainerScore : a.checkScore) : null;
+      if (a && pct != null && isFinite(Number(pct)) && !(prev && prev.simAt === a.submittedAt && prev.score === Math.round(Number(pct)))) {
+        const score = Math.max(0, Math.min(100, Math.round(Number(pct))));
+        const status = typeof globalThis.ftResult === "function" ? globalThis.ftResult({ score, redo: false }) : score >= 60 ? "Passed" : "Failed";
+        cur.acts[AK] = Object.assign({}, prev || {}, { source: "simulator", simFrom: "Standard Training - Calendaring Activity", simAt: a.submittedAt || "",
+          simBy: String(a.finalizedBy || "").slice(0, 80), score, status, redo: false, date: String(a.submittedAt || "").slice(0, 10) || TR.ptDate(),
+          comment: (prev && prev.source === "simulator" && prev.comment && !/^Scored on the Standard Training/.test(prev.comment)) ? prev.comment
+            : `Scored on the Standard Training - Calendaring Activity: ${a.trainerScore != null ? "the trainer's final score" : "its automatic check (" + score + "%), not reviewed by the trainer yet"}.`,
+          at: new Date().toISOString() });
+        filled.push({ act: AK, pct: score, from: "Standard Training - Calendaring Activity" });
+      }
+    } catch (e) { /* the Portal unreachable: next time */ }
+  }
   // (🛡 merged into the record as it is now: a trainer's score saved while the Portal was being asked stays)
   if (filled.length) { cur.updatedAt = new Date().toISOString(); await kv.merge(lk, read0, JSON.stringify(cur)); }
   return filled;
@@ -3276,7 +3305,8 @@ export default {
         const scores = CRIT.map((n, i) => { const r = rowOf(n, i), v = r.score == null || r.score === "" ? NaN : Number(r.score); return isFinite(v) ? Math.max(0, Math.min(5, v)) : null; });
         if (scores.slice(0, 7).some((v) => v == null)) return json({ error: "Every metric needs a score." }, 400);
         const feedback = CRIT.map((n, i) => String(rowOf(n, i).feedback || "").slice(0, 600));
-        const on = scores.filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
+        // (the average of the seven guide metrics: Tools Utilization, the eighth, is kept on the card but retired — js/ft-rubrics.js)
+        const on = scores.slice(0, 7).filter((v) => v != null), avg = on.reduce((a, v) => a + v, 0) / on.length, pct = Math.round(avg / 5 * 100), at = String(card.at || new Date().toISOString());
         const rk = `labreview:${id}`, read0 = await kvx.get(rk), cur = JSON.parse(read0 || "null") || {};
         cur.acts = cur.acts || {}; const was = cur.acts["calendar-live"] || null;
         if (was && was.at && String(was.at) > at && was.source !== "portal") return json({ ok: true, skipped: "a newer scorecard here" });
@@ -3720,6 +3750,31 @@ export default {
 
       /* ---------- 📦 Day 8's Intake Packet: check the trainee's corrected packet and its client subfolder (the trainee's own, at
          most every 3 minutes; an admin's for anyone): checkIntakePacket ---------- */
+      /* ---------- 📝 Day 8's Intake Worksheet as the trainee answered it (actsub:<id>.items.intakews: the Google Doc's link they
+         submitted on the slide), read as text for the trainer's 📋 Batch Sheet and the trainee's own page: { ok, link, submittedAt,
+         text } — text null (with why) when the file can't be read here (not shared, or a Word file: open it from the link) ---------- */
+      if (path === "/api/intake/worksheet") {
+        const b = await request.json().catch(() => ({}));
+        const id = subjectOf(tok, b);
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const sub = ((JSON.parse((await kv.get(`actsub:${id}`)) || "null") || {}).items || {}).intakews || null;
+        let link = sub && /^https?:\/\//.test(String(sub.answer || "")) ? String(sub.answer) : "", found = false;
+        // (no link submitted on the slide: the worksheet in their Assessments/Activities folder, a Google Doc named for it —
+        // "Intake Worksheet", "The Intake Tab and the Intake Packet" — the newest one)
+        if (!link) try {
+          const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null"), res = drive && drive.folder ? await folderFiles(env, drive.folder) : null;
+          const docs = ((res && res.files) || []).filter((f) => /google-apps\.document/.test(f.mime || "") && /intake[\s_-]*work\s*sheet|intake tab|work\s*sheet.*intake/i.test(f.name || ""))
+            .sort((x, y) => String(y.modified || y.created).localeCompare(String(x.modified || x.created)));
+          if (docs[0]) { link = docs[0].link || `https://docs.google.com/document/d/${docs[0].id}/edit`; found = true; }
+        } catch (e) { /* the folder can't be read: no worksheet found */ }
+        if (!link) return json({ ok: true, link: "", text: null, why: "none" });
+        const docId = (link.match(/\/document\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1];
+        if (!docId) return json({ ok: true, link, submittedAt: (sub && sub.submittedAt) || "", text: null, why: "not-a-doc" });
+        let text = null, why = "";
+        try { text = await fetchGoogle(`https://docs.google.com/document/d/${docId}/export?format=txt`, env); } catch (e) { why = "not-shared"; }
+        if (text != null) text = String(text).replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 30000);
+        return json({ ok: true, link, submittedAt: (sub && sub.submittedAt) || "", found, text, why });
+      }
       if (path === "/api/intake/check") {
         const b = await request.json().catch(() => ({}));
         const id = subjectOf(tok, b);

@@ -91,11 +91,13 @@ const failures = []; const fail = m => failures.push(m);
   const inputs = rhea.locator('.xl-num');
   for (let i = 0; i < scores.length; i++) { await inputs.nth(i).fill(scores[i]); await inputs.nth(i).press('Tab'); await page.waitForTimeout(80); }
   const marks = await rhea.locator('.rk-mark').allInnerTexts();
-  if (marks.join(' ') !== '3.75 5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
-  if ((await rhea.locator('.rk-avg').innerText()) !== '4.32') fail(`Rhea's final average is ${await rhea.locator('.rk-avg').innerText()} (4.32 expected: 30.25 ÷ 7)`);
+  // (📎 the Monitoring Sheet, Tracker and PI Reading Task columns are Additional Reference — js/ft-reference.js: kept, no mark,
+  // left out of the average; Rhea's average is her four scored marks, (5 + 4 + 4 + 4.5) ÷ 4)
+  if (marks.join(' ') !== ' 5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
+  if ((await rhea.locator('.rk-avg').innerText()) !== '4.38') fail(`Rhea's final average is ${await rhea.locator('.rk-avg').innerText()} (4.38 expected: 17.5 ÷ 4)`);
   // the formula bar: a worked-out cell shows its formula; a score takes its note there
   await rhea.locator('.rk-avg').click();
-  if (!/^=IFERROR\(AVERAGE\(C\d+,D\d+,F\d+,H\d+,J\d+,L\d+,M\d+\)/.test(await page.inputValue('#xlBar'))) fail(`the bar doesn't show the average's formula: ${await page.inputValue('#xlBar')}`);
+  if (!/^=IFERROR\(AVERAGE\(H\d+,J\d+,L\d+,M\d+\)/.test(await page.inputValue('#xlBar'))) fail(`the bar doesn't show the average's formula: ${await page.inputValue('#xlBar')}`);
   await inputs.nth(1).click(); await page.fill('#xlBar', 'Initial feedback implemented.'); await page.press('#xlBar', 'Enter'); await page.waitForTimeout(300);
   if (!(await rhea.locator('td.has-note').count())) fail('a score\'s note from the bar isn\'t marked on the cell');
   // Enter goes to the trainee below, as in Excel
@@ -108,7 +110,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(1200);
   const rep = await page.evaluate(() => FTRanking.report());
   const order = rep.ranked.map(x => `${x.name}:${x.avg}:${x.rank}`).join(', ');
-  if (order !== 'Rhea Rank:4.32:1, Sam Second:3.00:2, Tom Unscored:null:null') fail(`the ranking is ${order}`);
+  // (Sam's two typed scores are in Additional Reference columns: no average yet, not ranked)
+  if (order !== 'Rhea Rank:4.38:1, Sam Second:null:null, Tom Unscored:null:null') fail(`the ranking is ${order}`);
   if (rep.title !== `${BATCH} RANKING REPORT WEEK 1`) fail(`the report is titled ${rep.title}`);
   await page.waitForTimeout(900);
   const saved = await get(`ranking:${BATCH}:w1`);
@@ -119,7 +122,7 @@ const failures = []; const fail = m => failures.push(m);
   const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRanking.download())]);
   if (dl.suggestedFilename() !== `${BATCH} RANKING REPORT WEEK 1.doc`) fail(`the Word file is named ${dl.suggestedFilename()}`);
   const doc = fs.readFileSync(await dl.path(), 'utf8');
-  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', '30/40', '3.75/5', '4.32/5', 'mso-page-orientation:landscape'])
+  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', '(📎 Additional Reference)', '4.38/5', 'mso-page-orientation:landscape'])
     if (!doc.includes(t)) fail(`the Word file has no "${t}"`);
   if (!(doc.indexOf('Rhea Rank') > 0 && doc.indexOf('Rhea Rank') < doc.indexOf('Sam Second') && doc.indexOf('Sam Second') < doc.indexOf('Tom Unscored'))) fail('the Word file isn\'t in rank order');
 
@@ -128,13 +131,13 @@ const failures = []; const fail = m => failures.push(m);
   if (xl.suggestedFilename() !== `${BATCH} RANKING REPORT WEEK 1.xlsx`) fail(`the Excel file is named ${xl.suggestedFilename()}`);
   const xb = fs.readFileSync(await xl.path()), xs = xb.toString('latin1');
   if (xb.readUInt32LE(0) !== 0x04034b50 || !xs.includes('xl/worksheets/sheet1.xml')) fail('the Excel file is not an .xlsx');
-  for (const t of ['<f>IF(E3=&quot;&quot;,&quot;&quot;,E3/40*5)</f>', '<f>IFERROR(AVERAGE(C3,D3,F3,H3,J3,L3,M3),&quot;&quot;)</f>', 'RANK(N3,$N$3:$N$5)', 'fullCalcOnLoad="1"', 'state="frozen"', 'Notes on the scores'])
+  for (const t of ['<f>IF(E3=&quot;&quot;,&quot;&quot;,E3/40*5)</f>', '<f>IFERROR(AVERAGE(H3,J3,L3,M3),&quot;&quot;)</f>', 'RANK(N3,$N$3:$N$5)', 'fullCalcOnLoad="1"', 'state="frozen"', 'Notes on the scores'])
     if (!xs.includes(t)) fail(`the Excel file has no ${t}`);
   if (!(xs.indexOf('Rhea Rank') < xs.indexOf('Sam Second') && xs.indexOf('Sam Second') < xs.indexOf('Tom Unscored'))) fail('the Excel file isn\'t in rank order');
   // 📤 share: each trainee gets their own row (rankshare:<id>)
   await page.evaluate(() => FTRanking.share(document.querySelector('button[onclick^="FTRanking.share"]'))); await page.waitForTimeout(2000);
   const sh = (((await get('rankshare:' + ids.Rhea)) || {}).weeks || {})[`${BATCH}|1`];
-  if (!sh || sh.avg !== 4.32 || sh.rank !== 1 || sh.of !== 2 || !sh.cols.some(c => c.label === 'PI Reading Task' && c.raw === '30' && c.mark === 3.75)) fail(`📤 Share didn't give Rhea her row: ${JSON.stringify(sh)}`);
+  if (!sh || sh.avg !== 4.38 || sh.rank !== 1 || sh.of !== 1 || !sh.cols.some(c => c.label === 'PI Reading Task' && c.raw === '30' && c.mark === null)) fail(`📤 Share didn't give Rhea her row: ${JSON.stringify(sh)}`);
   const shT = (((await get('rankshare:' + ids.Tom)) || {}).weeks || {})[`${BATCH}|1`];
   if (!shT || shT.rank !== null || JSON.stringify(shT).includes('Rhea')) fail(`a trainee's shared row carries someone else's: ${JSON.stringify(shT)}`);
   if (process.env.SAVE_XLSX) fs.copyFileSync(await xl.path(), process.env.SAVE_XLSX);
@@ -164,16 +167,18 @@ const failures = []; const fail = m => failures.push(m);
   { const tr = await page.evaluate(() => { const ctx = o => Object.assign({ id: 'x', progress: {}, shared: {}, rec: { 'labreview:': {}, 'trackerreview:': { transcribe: { 1: { key: 'transcription', pct: 70, at: '2026-11-02T10:00:00Z', scores: [] } } } } }, o);
       const items = sc => ((sc.rows.find(r => r.s.id === 'trainer') || {}).items || []).map(x => `${x.name} ${x.pct}${x.auto ? ' auto' : ''}`);
       return { all: items(lshProgram.compute(ctx({}))), ranked: items(lshProgram.compute(ctx({ reviewedOnly: true }))) }; });
-    if (tr.all.length !== 1 || !/Recording 1.* 70 auto$/.test(tr.all[0]) || tr.ranked.length) fail(`an unreviewed automatic score isn't on the Scorecard alone, kept out of the ranking: ${JSON.stringify(tr)}`); }
+    // (📎 the Transcription Activity is Additional Reference: on the Scorecard with no score, never ranked)
+    if (tr.all.length !== 1 || !/Recording 1.* null auto$/.test(tr.all[0]) || tr.ranked.length) fail(`an unreviewed automatic score isn't on the Scorecard alone, kept out of the ranking: ${JSON.stringify(tr)}`); }
 
   // ⤓ fill: Sam's Reception Mock Calls from that scorecard, its own weighted average (4.14/5, as the trainee's card reads, not
   // 83% turned back into 4.15); Rhea's typed scores untouched
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); }); await page.waitForTimeout(800);
   await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);
-  if ((await rowOf('Rhea Rank').locator('.rk-avg').innerText()) !== '4.32') fail('⤓ Fill changed a score the trainer typed');
+  if ((await rowOf('Rhea Rank').locator('.rk-avg').innerText()) !== '4.38') fail('⤓ Fill changed a score the trainer typed');
   const samRec = await rowOf('Sam Second').locator('.xl-num').nth(6).inputValue();
   if (samRec !== '4.14') fail(`⤓ Fill didn't take Sam's Reception Mock Calls from the trainer's scorecard: ${JSON.stringify(samRec)}`);
-  if ((await rowOf('Sam Second').locator('.rk-avg').innerText()) !== '3.38') fail(`Sam's average after the fill is ${await rowOf('Sam Second').locator('.rk-avg').innerText()} (3.38 expected)`);
+  // (his only scored mark is the Reception Mock Calls' 4.14: the rest are Additional Reference)
+  if ((await rowOf('Sam Second').locator('.rk-avg').innerText()) !== '4.14') fail(`Sam's average after the fill is ${await rowOf('Sam Second').locator('.rk-avg').innerText()} (4.14 expected)`);
 
   // Week 2 starts from Week 1's columns, with no scores
   await page.evaluate(() => FTRanking.week(2)); await page.waitForTimeout(1200);
@@ -242,10 +247,11 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(500);
   const ov = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'scores'); const r = t.rows.find(x => /Una/.test(x[0].v)); return { head: t.head, row: r && r.map(c => c.v) }; });
   const col = h => ov.head.indexOf(h);
-  if (!ov.row || ov.row[col('Daily compliance')] !== '70%' || ov.row[col('Weeks average (/5)')] !== '3.50' || !/%$/.test(ov.row[col('Overall %')]) || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
+  // (📎 Daily compliance, the weeks' average and the Overall % are Additional Reference: labelled, their figure in the hover)
+  if (!ov.row || ov.row[col('Daily compliance')] !== '📎 Additional Reference' || ov.row[col('Weeks average (/5)')] !== '📎 Additional Reference' || ov.row[col('Overall %')] !== '📎 Additional Reference' || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
     fail(`📋 Batch Sheet → 🏅 Scores reads: ${JSON.stringify(ov)}`);
   const out = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'outputs'); const r = t.rows.find(x => /Una/.test(x[0].v)); return r && r.map(c => c.v); });
-  if (!out || out[1] !== '70%' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
+  if (!out || out[1] !== '📎 Additional Reference' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
   const tabsNow = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
   if (/Overall Performance|🏅 Scorecards/.test(tabsNow)) fail(`📈 Overall Performance / 🏅 Scorecards still have tabs: ${tabsNow}`);
   await page.evaluate(() => { state.adminTab = 'overall'; render(); }); await page.waitForTimeout(300);

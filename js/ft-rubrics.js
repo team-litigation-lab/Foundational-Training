@@ -29,7 +29,9 @@ const R = {
   lor: {title: "Saving LORs to SA and Sending to 1P & 3P Insurance Companies", acts: ["lor-demo"], criteria: C(
     "Task Preparation & Familiarity", "Smart Advocate Navigation", "Insurance Review, Adjuster Information & Claim/Policy Number Accuracy",
     "Document Uploading & File Handling in SA", "Document Properties & Naming Convention Accuracy", "Email/Fax Sending Accuracy & SOP Compliance",
-    "Attention to Detail", "Attention to Detail, Verification & Efficiency")},
+    // (the guide's "Attention to Detail" row is merged into "Attention to Detail, Verification & Efficiency": it keeps its place,
+    // retired, so the scores saved before keep their rows — a retired criterion is not shown, scored or averaged)
+    {n: "Attention to Detail", w: 1, retired: true}, "Attention to Detail, Verification & Efficiency")},
   medlor: {title: "MedLOR Demonstration", acts: ["medlor-demo"], time: "The ideal time for the demo is 1 hour and 45 minutes; any time beyond it is a deduction under Time Management & Efficiency.", criteria: C(
     "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
     "Email Drafting", "Time Management & Efficiency")},
@@ -53,11 +55,11 @@ const R = {
     "Attention to Detail & Accuracy", "Adherence to Instructions", "Independent Execution & Organization", "Communication & Process Explanation",
     "Drafting (Reduction Letter, Closing Statement & Email)")}
 };
-// 🛠 Tools Utilization on every scorecard (it was ✍️ Writing: Grammar, Spelling & Format, in the same place): how the trainee
-// used the systems and tools for the activity. The last criterion of each rubric (the Transcription Activity keeps its own
-// "Grammar, Spelling & Professional Wording" instead), so the criteria scored before keep their place.
+// 🛠 Tools Utilization was the last criterion of every scorecard (the Transcription Activity keeps its own "Grammar, Spelling &
+// Professional Wording" instead). No Training Guide metrics table has it, so it is retired: its slot stays (the scores saved
+// before keep their rows), but it is not shown, scored or averaged.
 const WRITING = "Tools Utilization";
-Object.keys(R).forEach(k => { if(!R[k].criteria.some(c => /grammar|spelling/i.test(c.n))) R[k].criteria.push({n: WRITING, w: 1}); });
+Object.keys(R).forEach(k => { if(!R[k].criteria.some(c => /grammar|spelling/i.test(c.n))) R[k].criteria.push({n: WRITING, w: 1, retired: true}); });
 const writingIndex = rb => (rb && rb.criteria || []).findIndex(c => /grammar|spelling/i.test(c.n));
 // an activity's rubric: the one it names (`rubric` in Trainer Inputs' list), else the one listing its id, else by its title
 const BY_TITLE = [[/reception.*mock|mock.*reception/i, "reception"], [/calendar.*mock|mock.*calendar/i, "calendar"], [/intake.*mock|mock.*intake/i, "intake"],
@@ -73,7 +75,7 @@ function forAct(a){
 // the weighted average out of 5 of the criteria scored (null when none is)
 function average(rubric, scores){
   let sum = 0, w = 0;
-  (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
+  (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(!c.retired && isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
   return w ? sum / w : null;
 }
 /* ✅ a mock call's or demo's result, from its record (labreview:<id>.acts[<activity>]): Passed at 3/5 (60%) or more, Failed
@@ -88,6 +90,13 @@ function result(c){
   if(isFinite(n)) return n >= PASS_PCT ? "Passed" : "Failed";
   return c.status === "Passed" ? "Passed" : "Not yet";
 }
-root.ftResult = result;
-root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result, PASS_PCT, keys: () => Object.keys(R)};
+// a saved scorecard's score, worked out again from its criteria (retired ones left out: Tools Utilization), so a card saved with
+// them reads as the guide scores it; a score the trainer typed (scoreEdited) or one with no criteria stays as it was saved
+function rubricOf(r){ const k = r && r.rubric && r.rubric.key; return k && R[k] && Array.isArray(r.rubric.scores) && !r.scoreEdited ? R[k] : null; }
+function avg5Of(r){ const rb = rubricOf(r); if(!rb) return r && r.rubric && r.rubric.avg != null ? Number(r.rubric.avg) : null; const a = average(rb, r.rubric.scores); return a == null ? null : Math.round(a * 100) / 100; }
+function scoreOf(r){ if(!r) return null; const a = rubricOf(r) ? avg5Of(r) : null;
+  if(a != null) return Math.round(a / 5 * 100);
+  return r.score == null || r.score === "" || !isFinite(Number(r.score)) ? null : Number(r.score); }
+root.ftResult = c => c && rubricOf(c) ? result(Object.assign({}, c, {score: scoreOf(c)})) : result(c);
+root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result: root.ftResult, PASS_PCT, scoreOf, avg5Of, keys: () => Object.keys(R)};
 })(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this));

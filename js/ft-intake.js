@@ -373,9 +373,14 @@ function loadCard(id){
   const x = TC[id] = TC[id] || {};
   if(x.loading || (x.at && Date.now() - x.at < 60000)) return;
   x.loading = true;
-  Promise.all(["intakeassign:", "drive:", "intakecheck:", "actsub:"].map(k => sharedGet(k + id).catch(() => null)))
-    .then(([a, d, ck, w]) => { x.a = a && typeof a === "object" ? a : null; x.d = d && typeof d === "object" ? d : null;
+  Promise.all(["intakeassign:", "drive:", "intakecheck:", "actsub:", "trackerreview:"].map(k => sharedGet(k + id).catch(() => null)))
+    .then(([a, d, ck, w, rv]) => { x.a = a && typeof a === "object" ? a : null; x.d = d && typeof d === "object" ? d : null;
+      x.g = rv && rv.assess && rv.assess[WS] && rv.assess[WS].score != null ? rv.assess[WS] : null;
       x.ck = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; x.ws = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; })
+    // (no link submitted on the slide: the worksheet in their Assessments/Activities folder, found by name — worker.js
+    // /api/intake/worksheet, which reads their Drive)
+    .then(async () => { if(x.ws) return; try{ const r = await authFetch("/api/intake/worksheet", {id}), j = await r.json().catch(() => ({}));
+      if(j && j.link) x.ws = {answer: j.link, submittedAt: j.submittedAt || "", found: !!j.found}; }catch(err){} })
     .catch(() => {})
     .then(() => { x.loading = false; x.at = Date.now(); if(onSheet()) render(); });
 }
@@ -404,8 +409,8 @@ function cardHtml(id){
       // (🔎 Check beside "rule by rule", on the same line: inside the summary, its click kept from opening or closing the rubric)
       (() => { const btn = pkU ? ` <button type="button" class="btn btn-ghost btn-sm" style="margin-left:8px;vertical-align:middle;" ${checking ? "disabled" : ""} onclick="event.preventDefault();event.stopPropagation();FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : "";
         return ck ? `<details><summary>The Saving Intake Packet rubric, rule by rule${btn}</summary>${checkHtml(ck, true)}</details>` : "Not checked" + btn; })(), ck ? pctCls(ck.pct) : "")
-    + row("🎬 Demo case", c ? e(c.title) : "—", c ? `${e(c.name)} · the Day 8 Intake Demo’s call: play it from Ring Channel’s Scenario Picker` : !mockCalls() ? (PK.failed ? "The cases didn’t load from the CMS" : "Loading the cases…") : n ? "Pairing with the packet…" : "Follows the packet")
-    + row("📝 Intake Worksheet", ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—", ws && wsLink(ws.answer) ? `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}` : "Not submitted");
+    // (no 🎬 Demo case row: the trainer runs the demo's case from Ring Channel's Scenario Picker)
+    + row("📝 Intake Worksheet", (ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—") + (x.g ? ` <b>${e(String(x.g.pct))}%</b>` : ""), wsGradeHtml(id, x.g) + (ws && wsLink(ws.answer) ? (ws.found || !ws.submittedAt ? "Found in their Assessments/Activities folder" : `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}`) : "Not submitted: none on the slide or in their Assessments/Activities folder"));
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the demo case never overwrite each other, whoever changed the other one and however quickly
@@ -423,8 +428,32 @@ function writeAssign(id, patch){
   return run;
 }
 window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
+// 📝 the trainer's grade on the Intake Worksheet, against the Training Guide's Day 8 Answer Sheets: a score out of 100 and a
+// comment, kept with the other graded activities (trackerreview:<id>.assess.intakews), so it is on the trainee's 🏅 Score Card
+// (📄 Intake Worksheet, js/ft-drive.js), their Day 8 line and the 📝 Activities in detail
+const WS_KEYS = [["Answer Sheet 1", "https://drive.google.com/file/d/1er1uyBoPJGlp2ijBdKn_n_CReu1rzyQz/view"], ["Answer Sheet 2", "https://drive.google.com/file/d/13-XjW0CP9vuj1itHrfE0gSsRpQ4fuzUB/view"]];
+function wsGradeHtml(id, g){
+  return `<div class="ftis-wsg" data-wsg="${e(id)}"><label>Grade <input type="number" min="0" max="100" step="1" data-wss value="${g ? e(String(g.score)) : ""}" style="width:64px"> / 100</label>
+    <input type="text" data-wsc placeholder="Comment for the trainee" value="${g ? e(g.comment || "") : ""}" style="min-width:220px">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntakeAdmin.gradeWs('${e(id)}', this)">💾 Save grade</button>
+    <small>Grade against the guide’s ${WS_KEYS.map(([t, u]) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${e(t)} ↗</a>`).join(" · ")}${g ? ` · graded ${e(g.when || "")}` : ""}</small></div> `;
+}
 window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
+  async gradeWs(id, btn){
+    const box = btn.closest("[data-wsg]"), sv = String(box.querySelector("[data-wss]").value || "").trim(), n = Number(sv);
+    if(sv === "" || !isFinite(n) || n < 0 || n > 100){ toast("Give a grade from 0 to 100."); return; }
+    const score = Math.round(n), comment = String(box.querySelector("[data-wsc]").value || "").trim().slice(0, 1500), now = new Date();
+    const when = now.toLocaleString("en-US", {timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) + " ET";
+    const g = {at: now.toISOString(), when, title: "Intake Worksheet", score, max: 100, pct: score, comment, by: "trainer"};
+    btn.disabled = true;
+    try{ const cur = (await sharedGet("trackerreview:" + id)) || {days: {}};
+      cur.assess = Object.assign({}, cur.assess, {[WS]: g});
+      if(await sharedSet("trackerreview:" + id, cur) === false) throw new Error("save");
+      (TC[id] = TC[id] || {}).g = g; toast("✓ Saved. The grade is on the trainee’s 🏅 Score Card.");
+    }catch(err){ toast("Couldn’t save. Check your connection."); }
+    btn.disabled = false; if(onSheet()) render();
+  },
   // 🔎 a trainee's corrected packet and subfolder, checked now (worker.js /api/intake/check)
   async check(id){
     AD.checking = AD.checking || {}; if(AD.checking[id]) return;

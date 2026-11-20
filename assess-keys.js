@@ -129,7 +129,7 @@ export const ASSESS_KEYS = {
   ,
   // 📝 Breakout Session Worksheet – Day 1 (js/ft-assess.js "breakout-d1"): 5 questions on the day's digital handouts, 5 points each
   "breakout-d1": {
-    title: "Breakout Session Worksheet – Day 1",
+    title: "Breakout Session Worksheet – Day 1: VA Essentials",
     context: "the Breakout Session worksheet of Day 1 (VA Essentials): the trainee read the digital handouts (US Legal System, LSH Services and VA Task List, LSH Clients and Clientele, Western Culture, US States and Time Zones) and answers in their own words; grade understanding and application, not wording",
     items: {
       q1: { pts: 5, essay: true, answer: "State courts hear most cases, including personal injury, contracts, family and criminal cases under state law; federal courts hear cases under federal law or the US Constitution, and cases between parties of different states over $75,000 (diversity). Example: a car-accident injury claim goes to state court; a federal civil-rights or interstate case to federal court." },
@@ -141,7 +141,7 @@ export const ASSESS_KEYS = {
   },
   // 📝 Breakout Session Worksheet – Day 2 (js/ft-assess.js "breakout-d2"): 5 questions on the day's digital handouts, 5 points each
   "breakout-d2": {
-    title: "Breakout Session Worksheet – Day 2",
+    title: "Breakout Session Worksheet – Day 2: Law Firm Communication",
     context: "the Breakout Session worksheet of Day 2 (Law Firm Communication): the trainee read the digital handouts (Softphones, Law Firm Call Guide, Call Handling, Attorney-Client Privilege) and answers in their own words; grade understanding and application, not wording",
     items: {
       q1: { pts: 5, essay: true, answer: "Software that makes and takes calls over the internet on a computer (e.g. RingCentral, Dialpad). Advantages: work from anywhere, the firm's number, call logs/recording/notes, transfers and voicemail, lower cost." },
@@ -153,7 +153,7 @@ export const ASSESS_KEYS = {
   },
   // 📝 Breakout Session Worksheet – Day 7 (js/ft-assess.js "breakout-d7"): 5 questions on the day's digital handouts, 5 points each
   "breakout-d7": {
-    title: "Breakout Session Worksheet – Day 7",
+    title: "Breakout Session Worksheet – Day 7: Intake Specialist",
     context: "the Breakout Session worksheet of Day 7 (Intake): the trainee read the digital handouts (Intake Documents to Support the Claim, Intake Packet, Intake Specialist Best Practices) and answers in their own words; grade understanding and application, not wording",
     items: {
       q1: { pts: 5, essay: true, answer: "Any four: police/accident report (how it happened, fault), photos/videos (damage, injuries, scene), medical records and bills (injuries, treatment, cost), insurance information/dec pages (coverage), witness statements, proof of lost wages, the client's ID/driver's license." },
@@ -165,7 +165,7 @@ export const ASSESS_KEYS = {
   },
   // 📝 Breakout Session Worksheet – Day 10 (js/ft-assess.js "breakout-d10"): 5 questions on the day's digital handouts, 5 points each
   "breakout-d10": {
-    title: "Breakout Session Worksheet – Day 10",
+    title: "Breakout Session Worksheet – Day 10: Claims Specialist",
     context: "the Breakout Session worksheet of Day 10 (Insurance Communication): the trainee read the digital handouts (Ridesharing Companies, Dropped Cases, Claims Specialist Best Practices) and answers in their own words; grade understanding and application, not wording",
     items: {
       q1: { pts: 5, essay: true, answer: "The rideshare company's commercial policy applies depending on the app status: app off, the driver's personal policy; app on and waiting, limited contingent liability; on the way to or carrying a passenger, the company's full policy (often $1M liability, UM/UIM). The status decides which insurer and which limits." },
@@ -177,7 +177,7 @@ export const ASSESS_KEYS = {
   },
   // 📝 Breakout Session Worksheet – Day 13 (js/ft-assess.js "breakout-d13"): 5 questions on the day's digital handouts, 5 points each
   "breakout-d13": {
-    title: "Breakout Session Worksheet – Day 13",
+    title: "Breakout Session Worksheet – Day 13: Medical Records Specialist",
     context: "the Breakout Session worksheet of Day 13 (Provider Communication): the trainee read the digital handouts (Protected Health Information, E-Portals, Medical Liens, Medical Documents) and answers in their own words; grade understanding and application, not wording",
     items: {
       q1: { pts: 5, essay: true, answer: "Health information that identifies a person, protected by HIPAA. Examples: medical records, diagnoses, bills, insurance ID, date of birth with treatment details, SSN. Handle it only with authorization, share only what's needed, through secure channels, never by personal email or chat." },

@@ -158,11 +158,15 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the kind of work on the pill
+// 📎 the slides labelled Additional Reference, by day: their slide id
+const REFERENCE = {3: ["s2"], 14: ["s1"], 16: ["s3m", "s3f"]};
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
+  // 📎 a slide the trainee keeps for reference rather than works through (REFERENCE)
+  if((REFERENCE[DD.day] || []).includes(s.id)) return {ic: "📎", label: "Additional Reference"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
   if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
@@ -495,7 +499,8 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
     ["Recorded Call: Feb 27, 2023", "recorded-call-2023-02-27", "1:29"]].map(([t, f, len]) => ({t, src: `/ft/day13/audio/${f}.mp3`, len, pop: true, kind: "Provider call"}))};
 const LISTEN_BARE = [7];
 // a day's Call Listening slide under a name of its own (Day 13: the listening runs as the breakout)
-const LISTEN_H = {13: "Call Listening Session / Breakout Session"};
+// (Day 13's Breakout Session is its own stop now, its four digital handouts: BREAKOUT[13])
+const LISTEN_H = {};
 // a day's reference folders under its recordings (Day 13: the Sample SOPs)
 const LISTEN_LINKS = {13: [["Sample SOPs", "https://drive.google.com/drive/folders/11c5SZrYEueJUzYjXYXhHqG_B-hxMzOrV"]]};
 const listenLinks = day => (LISTEN_LINKS[day] || []).map(([t, u]) => `<p><a class="ftdd-tile k-folder" href="${e(u)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📁</span><span class="ftdd-tile-t"><b>${e(t)}</b><small>Open the folder</small></span></a></p>`).join("");
@@ -594,7 +599,12 @@ const rowLabel = (n, r) => r.t;
 /* 🎬 Day 1's Handouts / Video: the Breakout Session's digital handouts, one per group (the lesson card's 🎬 Video opens
    this slide too: js/ft-day1-flow.js) */
 // (no set hours: the trainer opens the session when the batch is ready, with the Handouts and Videos unlock)
-const HANDOUTS = {1: {items: [
+// 🧩 BREAKOUT SESSIONS, as the curriculum (trainer/curriculum.json) gives them under "Digital Handouts for Breakout Session":
+// each day's handouts are the breakout's lessons, and the stop is named after them (boTitle), with its kind and time (boSub).
+//   Day 1 (VA Essentials, Group, 1:00–3:00 PM) · Day 2 (Law Firm Communication, Group, 1:00–3:00 PM) · Day 7 (Intake Training,
+//   Group, after the discussion until about 12:00 PM) · Day 10 (Insurance Communication, Individual, afternoon until about
+//   3:00 PM) · Day 13 (Provider Communication, "3. PM: Breakout Session", Individual, 2:00–3:00 PM)
+const HANDOUTS = {1: {when: "Afternoon, 1:00–3:00 PM", items: [
   ["US Legal System", "https://drive.google.com/file/d/1lIZN9VxbkKHWDb-wkQp90l8GC60-7T0J/view"],
   ["LSH Services and VA Task List", "https://drive.google.com/file/d/12xvxXorgh_wjR9DidEewbnfokItzpzNY/view"],
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
@@ -602,22 +612,33 @@ const HANDOUTS = {1: {items: [
   ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]},
   // Day 2: Law Firm Communication's breakout session (the trainer runs it in the afternoon, 1:00–3:00 PM): the four digital
   // handouts the trainer sends (trainer/curriculum.json, Day 2)
-  2: {items: [
+  2: {when: "Afternoon, 1:00–3:00 PM", items: [
   ["Softphones", "https://drive.google.com/file/d/1QQh6TvcT5YRj-uNQvGpsh5cGdyoEtMdY/view"],
   ["Law Firm Call Guide", "https://drive.google.com/file/d/11uAKj6HqrSGXnQJ1IdnCc4d-64KVcuUr/view"],
   ["Call Handling", "https://drive.google.com/file/d/1gK2a5X1gY0fxA3I-XTk4AHdL2wwBTqaE/view"],
   ["Attorney-Client Privilege", "https://drive.google.com/file/d/1KogqilWL3R8V4FdPUblq4md9hCHKsUBn/view"]]},
   // Day 7: the Intake Specialist Training breakout (Training Guide: "Digital Handouts for Breakout Session (Group Activity)")
-  7: {items: [
+  7: {when: "After the discussion, until about 12:00 PM", items: [
   ["Intake Documents to Support the Claim", "https://drive.google.com/file/d/1DenG0yNjuWZe9Kc3e5zAnZJOjP4yQB6X/view"],
   ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
   ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]},
   // Day 10: the Claims Specialist breakout, an individual activity (Training Guide: "Digital Handouts for Breakout Session
   // (Individual Activity)")
-  10: {solo: true, items: [
+  10: {solo: true, when: "Afternoon, until about 3:00 PM", items: [
   ["Ridesharing Companies", "https://drive.google.com/file/d/1T10rZY_PL8krUK7Djzm-oMaKxI4kE-Q9/view"],
   ["Dropped Cases", "https://drive.google.com/file/d/1N57yPn1zaPnGU0t-wY5cT01IB-ovZmOa/view"],
-  ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
+  ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]},
+  // Day 13: the Medical Records Specialist breakout, an individual activity (Training Guide: "3. PM: Breakout Session · Digital
+  // Handouts for Breakout Session (Individual Activity) · Schedule: Afternoon (2:00–3:00 PM)")
+  13: {solo: true, when: "Afternoon, 2:00–3:00 PM", items: [
+  ["Protected Health Information", "https://drive.google.com/file/d/12NZ3kLIzF9wSs-XPwZDu_-fiO08ODT8u/view"],
+  ["E-Portals", "https://drive.google.com/file/d/1yW6Oq_8CEJ_a3IGtGSdCvn9GRIlyvti0/view"],
+  ["Medical Liens", "https://drive.google.com/file/d/14ujIMM1N_L2uqLMYv0sMvKMdra9b1B4y/view"],
+  ["Medical Documents", "https://drive.google.com/file/d/1iQb0J3EfyomMjvqN86xrN9O2WTXvJWxQ/view"]]}};
+// (the stop's name: "Breakout Session: <its lessons>"; under it, the kind of activity, when, and how many handouts)
+const boTitle = n => "Breakout Session: " + ((HANDOUTS[n] || {}).items || []).map(x => x[0]).join(" · ");
+const boSub = n => { const h = HANDOUTS[n] || {}, k = (h.items || []).length;
+  return `${h.solo ? "Individual Activity" : "Group Activity"}${h.when ? " · " + h.when : ""} · the ${k} digital handout${k === 1 ? "" : "s"} open here`; };
 // (no Breakout Session worksheets: the curriculum's breakouts are the digital handouts only, with no assessment)
 const WORKSHEET = {};
 const worksheetBtn = n => { const w = WORKSHEET[n]; return w ? `<button type="button" class="btn btn-navy ftdd-ws-go" onclick="FTDayDecks.toAssess(${w[0]}, '${w[1]}', '', 'the deck', true)">📝 Breakout Worksheet: 5 questions →</button>` : ""; };
@@ -626,7 +647,7 @@ function handoutsSlide(h){
   const cards = h.items.map(([t, u], i) => `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts">
-    <div class="ftdd-ho-head"><h2>Digital Handouts</h2></div>
+    <div class="ftdd-ho-head"><h2>Breakout Session</h2><p class="ftdd-ho-sub">${e((h.solo ? "Individual Activity" : "Group Activity") + (h.when ? " · " + h.when : "") + " · the digital handouts")}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
         ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li>"
@@ -713,6 +734,8 @@ function dayRubric(title){
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
   if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
+  // (📎 an Additional Reference slide is never scored, whatever its title says: Day 16's Filevine recorded demos)
+  if((REFERENCE[DD.day] || []).includes(s.id)) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video, a preparation slide or a demo's Buffer Time)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial|buffer/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
@@ -734,7 +757,7 @@ function slideCard(d, info, list, i){
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
   // (the handouts' slide is the Breakout Session: its ribbon says so, not the row's "Digital Handouts")
-  const ribbon = s.launch && /ftVideoOrAsk/.test(s.launch.run || "") && HANDOUTS[DD.day] ? "Breakout Session / Group Activity" : lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  const ribbon = s.launch && /ftVideoOrAsk/.test(s.launch.run || "") && HANDOUTS[DD.day] ? "Breakout Session / " + (HANDOUTS[DD.day].solo ? "Individual Activity" : "Group Activity") : lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
@@ -1323,7 +1346,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
 // the pills a row carries, as the card names its kind
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
-  listen: "Call listening", trainer: "From your trainer"};
+  listen: "Call listening", trainer: "From your trainer", reference: "Additional Reference"};
 // (where a lesson's file goes; a lesson handed in on the platform names its own: its card's submit)
 const SUBMIT = "Assessments › Activities subfolder";
 // (a mock call or demo has two rows, as Day 4's: its preparation slide, "<id>p", then its Done slide: build/day-decks.cjs PREP)
@@ -1332,7 +1355,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
-      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · the digital handouts open here", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: boTitle(1), sub: boSub(1), k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
@@ -1348,7 +1371,7 @@ const LESSON_CARDS = {
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; no AI discussion video on the deck.
       // Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
-      {t: "Digital Handouts", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
+      {t: boTitle(2), time: "PM", sub: boSub(2), k: "watch", run: "ftVideoOrAsk(2)"},
       // (a classroom activity, not homework: before the day's ✍️ Process Questions)
       {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "classroom", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
@@ -1374,7 +1397,7 @@ const LESSON_CARDS = {
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
+      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
@@ -1401,7 +1424,7 @@ const LESSON_CARDS = {
       // Knowledge Check, the insurance providers, the checklist, the blank forms, the mock intake, the sample intake calls
       // made for the platform, the other intake documents, then 🎧 the Call Listening Activity (the four intake recordings,
       // no instructions) ends it. (No shadowing: Day 7's Scheduled Shadowing is off the training)
-      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · three handouts", k: "watch", run: "ftVideoOrAsk(6)", day: 7},
+      {t: boTitle(7), sub: boSub(7), k: "watch", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Knowledge Check", sub: "Process Questions · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(6)", day: 7},
       {t: "Common Insurance Providers", sub: "The eight carriers", k: "interactive", d: 7, s: "insurance"},
       {t: "Checklist", sub: "Claim documents & evidence", k: "read", d: 7, s: "forms", lead: false},
@@ -1441,7 +1464,7 @@ const LESSON_CARDS = {
       {t: "Sample Recordings & Documents: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims · the sample documents", k: "listen", d: 10, s: "s1e"},
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // (the breakout's digital handouts close Part 1, just before ✅ End of Part 1)
-      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", d: 10, run: "ftVideoOrAsk(7)"},
+      {t: boTitle(10), sub: boSub(10), k: "watch", d: 10, run: "ftVideoOrAsk(7)"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
@@ -1461,24 +1484,28 @@ const LESSON_CARDS = {
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
       // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
-      {t: "Call Listening / Breakout Session", sub: "Sample recordings and reference documents, not scored", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "Call Listening Session", sub: "Sample recordings and reference documents, not scored", k: "listen", d: 13, s: "listen", go: "listening"},
+      // (the curriculum's "3. PM: Breakout Session": its four digital handouts, an individual activity)
+      {t: boTitle(13), time: "PM", sub: boSub(13), k: "watch", d: 13, run: "ftVideoOrAsk(8)"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "reference", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
-      {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "watch", d: 14, s: "s1m"},
       {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
       // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
-      {t: "Before Your Demo: the Tutorial Video", time: "AM", sub: "Watch it again before you record", k: "watch", d: 15, s: "s1"},
-      {t: "Gentle Reminders", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1g"},
-      {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
-      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · scored by your trainer", k: "demo", d: 15, s: "s1b"},
+      // then Day 15's recorded demonstration, on Day 14's deck (build/day-decks.cjs MOVE; Day 15 has no day card: js/ft-day-locks.js PARTS)
+      {t: "Before Your Recorded Demonstration: the Tutorial Video", time: "PM", sub: "Watch it again before you record", k: "watch", d: 14, s: "r15v"},
+      {t: "Gentle Reminders", time: "PM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 14, s: "r15g"},
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · how the demo is scored", k: "demo", d: 16, s: "s2b"},
       {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
+      // (after the LV demo, as the guide's Day 17: an additional reference, build/day-decks.cjs INSERT[16])
+      {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
+      // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
+      {t: "Sending MedLOR (Filevine): Recorded Demos", sub: "The MedLOR demo as recorded on Filevine · for reference: yours is in SmartAdvocate", k: "reference", d: 16, s: "s3f"},
       // (its Demo and Shadowing panel is off the deck: build/day-decks.cjs PREP_OFF)
       ],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
@@ -1742,7 +1769,7 @@ function standardRows(n, c, lid, first, title, rows){
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
   // (a Digital Handouts stop only where the day has handouts)
-  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here" : "The digital handouts are posted in the training GC", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts|Breakout Session/)) mid.push({t: boTitle(n), sub: boSub(n), k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
@@ -2715,6 +2742,7 @@ main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1180px;margin:0 auto;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-head .ftdd-ho-sub{margin:0 0 10px;font:600 15px/1.4 'Inter',sans-serif;color:#5B6178;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}

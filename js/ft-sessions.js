@@ -176,7 +176,8 @@ const previewCase = s => { const f = previewFirm(); return s.area && f ? (FF().c
 const sessionCase = s => isTrainee() ? caseFor(s) : previewCase(s);
 const runOf = (s, c) => (S.data && S.data.runs[keyOf(s, c)]) || null;
 const reviewOf = key => ((S.review || {}).sessions || {})[key] || null;
-const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
+// (worked out again from the saved scorecard without its retired criteria — Tools Utilization — js/ft-rubrics.js scoreOf)
+const tScore = r => { const v = window.FT_RUBRICS && FT_RUBRICS.scoreOf ? FT_RUBRICS.scoreOf(r) : r && r.score; return v != null && v !== "" && isFinite(Number(v)) ? Math.round(Number(v)) : null; };
 // ☎ 🗂 what a mock call was scored beside (the graded call on its Ring Channel line, the CMS record), js/ft-mockcall-links.js
 const mockSources = (id, actId) => { const a = acts().find(x => x.id === actId); return a && window.FTMockLinks ? FTMockLinks.sources(id, a) : undefined; };
 function scoreOf(run, rv){ const t = tScore(rv); return t != null ? t : run && run.auto ? run.auto.pct : null; }
@@ -373,12 +374,19 @@ const DEFAULT_ACTS = [
   {id:"medlor-demo", title:"Sending MedLOR and Requesting Medical Bills & Records Demo", lesson:8, kind:"Demo"},
   {id:"medlor-recorded-demo", title:"MedLOR Recorded Demonstration (Day 15)", lesson:8, kind:"Demo"},
   {id:"lv-demo", title:"LV (Lien Verification) Request Demo", lesson:8, kind:"Demo"},
-  {id:"settlement-demo", title:"Reduction / Closing & Settlement Demo", lesson:9, kind:"Demo"}
+  {id:"settlement-demo", title:"Reduction / Closing & Settlement Demo", lesson:9, kind:"Demo"},
+  // 📝 the two worksheet-style activities the trainer grades too (🧑‍🏫 Graders → 📝 Assessments): a score in % and a comment,
+  // no criteria (the curriculum gives none). Day 5's activity is also checked field by field (📅 Calendar checks): once the
+  // trainer scores it here, theirs counts instead (js/ft-program.js). Day 8's Intake Worksheet is a Google Doc whose link the
+  // trainee submits on the slide (actsub:<id>.items.intakews), which had no score anywhere.
+  {id:"atty-calendar-activity", title:"Attorney Calendar Management Activity (Day 5)", lesson:5, kind:"Assessment"},
+  {id:"intake-worksheet", title:"Intake Worksheet (Day 8)", lesson:6, kind:"Assessment"}
 ];
 const T = {acts:null};
 // (an activity added after a trainer saved their own list joins it, unless that list already has one for its scorecard)
-const ADDED_ACTS = ["medlor-recorded-demo"];
-const acts = () => !T.acts ? DEFAULT_ACTS : T.acts.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !T.acts.some(a => a.id === d.id || (a.rubric && a.rubric === "medlor-recorded"))));
+const ADDED_ACTS = ["medlor-recorded-demo", "atty-calendar-activity", "intake-worksheet"];
+const withAdded = list => !list ? DEFAULT_ACTS : list.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !list.some(a => a.id === d.id || (d.id === "medlor-recorded-demo" && a.rubric && a.rubric === "medlor-recorded"))));
+const acts = () => withAdded(T.acts);
 // (the Result: Passed or Failed by the score, 3/5 passes — js/ft-rubrics.js ftResult; the trainer's own choice is only a
 // Redo, which keeps the score off the scorecards until it is done again)
 const RES = r => window.ftResult ? ftResult(r) : (r && r.status) || "Not yet";
@@ -386,6 +394,8 @@ const STATUSES = ["By the score", "Redo"];
 const pillCls = v => v === "Passed" ? "ok" : v === "Failed" ? "bad" : v === "Redo" ? "mid" : "";
 // What this module's live work is: its Practice Session and anything done with the trainer.
 // Used by 📚 Dashboard to show each module's activities next to it (js/ft-program.js).
+// (the trainer-led activities as the trainers listed them: js/ft-reference.js judges each by its scorecard)
+FTSessions.acts = () => acts();
 FTSessions.forLesson = function(lesson){
   const l = Number(lesson);
   return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))
@@ -423,8 +433,8 @@ FTSessions.trainerCards = function(){
       <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
         const got = isTrainee() && r.rubric && r.rubric.key === rb.key ? r.rubric : null;
-        return `<details class="ti-rub-card"><summary>📋 Scorecard${got && got.avg != null ? ` · weighted average <b>${avgTxt(got.avg)}</b>` : ` · ${rb.criteria.length} criteria`}</summary>
-          ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}<ul>${rb.criteria.map((k, i) => `<li><span>${e(k.n)}</span>${got && got.scores[i] != null ? `<b>${e(got.scores[i])}/5</b>` : ""}${got && got.feedback && got.feedback[i] ? `<em>${e(got.feedback[i])}</em>` : ""}</li>`).join("")}</ul></details>`; })()}</div>`; }).join("");
+        return `<details class="ti-rub-card"><summary>📋 Scorecard${got && got.avg != null ? ` · weighted average <b>${avgTxt(got.avg)}</b>` : ` · ${rb.criteria.filter(k => !k.retired).length} criteria`}</summary>
+          ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}<ul>${rb.criteria.map((k, i) => k.retired ? "" : `<li><span>${e(k.n)}</span>${got && got.scores[i] != null ? `<b>${e(got.scores[i])}/5</b>` : ""}${got && got.feedback && got.feedback[i] ? `<em>${e(got.feedback[i])}</em>` : ""}</li>`).join("")}</ul></details>`; })()}</div>`; }).join("");
 };
 
 /* ---------- Admin → 🟢 Practice Sessions ---------- */
@@ -528,7 +538,7 @@ function rubricForm(a, c){
   return `<div class="fss-wide ti-rub" data-rubric="${e(rb.key)}"><div class="ti-rub-h"><b>📋 ${e(rb.title)} — scorecard</b><span class="fss-muted">Each criterion 0–5 (half points allowed). The weighted average becomes the score.</span></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     <table class="ti-rub-tbl"><thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>${rb.feedback ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
-      ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" oninput="FTInputs.calc(this)"></td>
+      ${rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" oninput="FTInputs.calc(this)"></td>
         ${rb.feedback ? `<td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks"></td>` : ""}</tr>`).join("")}
       <tr class="ti-rub-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(avg)}</td>${rb.feedback ? "<td></td>" : ""}</tr></tbody></table></div>`;
 }
@@ -588,7 +598,7 @@ window.FTInputs = {
       const prompt = `You are the training facilitator of Legal Support Help writing your feedback on a trainee Legal VA's ${a.kind || "activity"}: ${a.title}.
 Trainee's first name: ${String(row.name).split(/\s+/)[0]}
 The scorecard (each criterion out of 5${r.rb.feedback ? ", with your feedback note" : ""}):
-${r.rb.criteria.map((k, i) => `- ${k.n}: ${r.scores[i] == null ? "not scored" : r.scores[i] + "/5"}${r.feedback[i] ? ` (${r.feedback[i]})` : ""}`).join("\n")}
+${r.rb.criteria.map((k, i) => k.retired ? "" : `- ${k.n}: ${r.scores[i] == null ? "not scored" : r.scores[i] + "/5"}${r.feedback[i] ? ` (${r.feedback[i]})` : ""}`).filter(Boolean).join("\n")}
 Weighted average: ${avgTxt(r.avg)}
 ${r.rb.time ? `Time rule: ${r.rb.time}` : ""}
 ${String(box.querySelector("[data-comment]").value || "").trim() ? `Your notes so far: ${box.querySelector("[data-comment]").value}` : ""}
@@ -660,7 +670,7 @@ function metricsTable(key, view){
   // (a trainee: their own scores and the trainer's remarks once the trainer has saved them, read only; until then, 0s)
   const mine = !trainer && a ? myScored(a.id, key) : null;
   if(!trainer || !a) return `<table class="ftms-tbl">${head}${mine ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
-    ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
+    ${rb.criteria.map((k, i) => k.retired ? "" : `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>${mine && mine.rubric.avg != null ? e(Number(mine.rubric.avg).toFixed(2)) : "0"}</td>${mine ? "<td></td>" : ""}</tr></tbody></table>
     ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${RES(mine) !== "Not yet" ? ": " + e(RES(mine)) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
@@ -726,7 +736,7 @@ function metricsSheet(key){
     ${a.id === "intake-packet-demo" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
     ${row && typeof window.ftMockLinks === "function" ? window.ftMockLinks(row, a, true) : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
-      ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
+      ${rb.criteria.map((k, i) => `<tr${k.retired ? " hidden" : ""}><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
         <td><textarea rows="1" data-fb="${i}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)">${e((got.feedback || [])[i] || "")}</textarea></td></tr>`).join("")}
       <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
 }
@@ -810,7 +820,7 @@ window.ftSessionItems = ctx => {
 // 🎯 a lesson's Mock Call as the trainer scored it on 🧑‍🏫 Graders (labreview:<id>.acts, the scorecard): for the Scorecard's
 // Graded calls (js/ft-program.js), Passed or Failed; null when the trainer hasn't scored it (a Redo stays off until done again)
 window.ftMockCallItem = (ctx, lesson) => {
-  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
+  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = withAdded((ctx.shared["settings:trainer-acts"] || {}).acts);
   const a = list.find(x => Number(x.lesson) === Number(lesson) && /mock call/i.test(x.kind || "") && mine[x.id]);
   if(!a) return null;
   const r = mine[a.id], res = RES(r), t = tScore(r);
@@ -820,11 +830,12 @@ window.ftMockCallItem = (ctx, lesson) => {
 // (a scored activity's why, for a hover: each criterion scored on its scorecard with its remark, then the trainer's comment)
 function actWhy(r){
   const rb = r && r.rubric && RUB().list ? RUB().list[r.rubric.key] : null;
-  const crit = rb ? (rb.criteria || []).map((c, i) => { const v = (r.rubric.scores || [])[i], f = (r.rubric.feedback || [])[i]; return v == null || v === "" ? "" : `${c.n} ${v}/5${f ? ": " + f : ""}`; }).filter(Boolean) : [];
+  const crit = rb ? (rb.criteria || []).map((c, i) => { const v = (r.rubric.scores || [])[i], f = (r.rubric.feedback || [])[i]; return c.retired || v == null || v === "" ? "" : `${c.n} ${v}/5${f ? ": " + f : ""}`; }).filter(Boolean) : [];
   return [r && r.scoreEdited ? "Score edited by the trainer" : "", crit.join("; "), r && r.comment ? r.comment : ""].filter(Boolean).join(" · ");
 }
 window.ftTrainerItems = ctx => {
-  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
+  // (an activity added since the trainers saved their own list — the 📝 Assessments — is on it too, as on 🧑‍🏫 Graders)
+  const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = withAdded((ctx.shared["settings:trainer-acts"] || {}).acts);
   // 🎧 a Transcription Activity recording the trainer hasn't scored: its automatic score (trackerreview:<id>.transcribe[n],
   // worker.js gradeTranscription) counts, marked auto (the Weekly Ranking's ⤓ Fill leaves it out until the trainer reviews it)
   const auto = (((ctx.rec["trackerreview:"] || {}).transcribe) || {});
@@ -832,12 +843,15 @@ window.ftTrainerItems = ctx => {
     return g && typeof g.pct === "number" ? {name:a.title, ref:"act:" + a.id, kind:a.kind || "", at:g.at || "", pct:g.pct, auto:true, note:"Automatic check, not reviewed by your trainer yet", why:String(g.summary || g.comment || "")} : null; };
   // (a graded one counts at once, Passed or Failed; a Redo the trainer asked for stays off until it is done again — and is
   // never replaced by the automatic score)
-  const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet";
+  // (📝 the Intake Worksheet graded on 📦 Intake Packets — trackerreview .assess.intakews, on the Score Card as 📄 Intake Worksheet — is
+  // counted there: the same worksheet scored on 🧑‍🏫 Graders too isn't counted twice)
+  const wsElsewhere = (((ctx.rec["trackerreview:"] || {}).assess) || {}).intakews;
+  const recorded = a => mine[a.id] && RES(mine[a.id]) !== "Not yet" && !(a.id === "intake-worksheet" && wsElsewhere && wsElsewhere.score != null);
   return list.filter(a => recorded(a) ? RES(mine[a.id]) !== "Redo" : !!autoItem(a)).map(a => { if(!recorded(a)) return autoItem(a);
     const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
-    const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
-    return {name:a.title, ref:"act:" + a.id, kind:a.kind || "", why:actWhy(r), at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    const av = window.FT_RUBRICS && FT_RUBRICS.avg5Of ? FT_RUBRICS.avg5Of(r) : r.rubric && r.rubric.avg, avg = av != null && isFinite(Number(av)) ? Number(av) : null;
+    return {name:a.title, ref:"act:" + a.id, rubric:(RUB().forAct(a) || {}).key, kind:a.kind || "", why:actWhy(r), at:r.at || "", pct:t != null ? t : RES(r) === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:RES(r) + (avg != null ? " · scorecard " + avg.toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `

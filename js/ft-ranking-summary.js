@@ -30,7 +30,7 @@ const clip = (v, n) => { const t = String(v == null ? "" : v).replace(/\s+/g, " 
 const avg = xs => { const v = xs.filter(x => typeof x === "number" && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 const r1 = v => v == null ? null : Math.round(v * 10) / 10;
 const COMP = [
-  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance"], ["pdp", "🌱", "Professional Development & Progress"], ["timely", "⏱", "Timely Submission (Time Management)"],
+  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance (📎 Additional Reference)"], ["pdp", "🌱", "Professional Development & Progress (📎 Additional Reference)"], ["timely", "⏱", "Timely Submission (Time Management) (📎 Additional Reference)"],
   ["communication", "💬", "Communication Proficiency"], ["english", "🔤", "English Proficiency"], ["call", "📞", "Call Handling"], ["tools", "🛠", "Tools Utilization"]];
 const S = {key: "", data: null, loading: false, busy: false, edit: false, err: ""};
 // (a week is scored from its first day on — Pacific time — with the work done so far: an initial score that grows as the days
@@ -78,7 +78,7 @@ async function evidence(p, range, week){
   const sheets = Object.entries((lab && lab.acts) || {}).filter(([k, x]) => x && (x.rubric || x.score != null || has(x.comment))).map(([k, x]) => {
     const rb = x.rubric ? rub[x.rubric.key] : null;
     return {act: k, title: rb ? rb.title : k, mock: rb ? /mock call/i.test(rb.title) : /live|mock/i.test(k), at: x.at || x.date || "", status: window.ftResult ? ftResult(x) : x.status || "", score: x.score, avg5: x.rubric && x.rubric.avg != null ? Number(x.rubric.avg) : x.score != null ? Number(x.score) / 20 : null, comment: clip(x.comment, 500),
-      crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
+      crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: c.retired ? null : (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
   // (the week's own work only: a week with no scoresheet has none — it never borrows an earlier week's)
   const use = sheets.filter(x => inW(x.at));
   const kcs = Object.entries((proc && proc.kc) || {}).filter(([, x]) => x && x.last && inW(x.last.at)).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),
@@ -302,7 +302,10 @@ async function draft(opts){
   if(daily && prev.sharedAt){ await FTRankSummary.share({quiet: true}); toast(`🔄 Week ${c.week}'s report updated with today's scores and shared again with the trainees.`); redraw(); return; }
   toast(daily ? `🔄 Week ${c.week}'s report updated with the latest scores.` : ai ? `📑 Week ${c.week}'s summary is ready: ${Object.keys(rows).length} trainees.` : "📑 The summary is ready from the platform's scores (the AI wasn't available for the comments)."); redraw();
 }
-const overall = r => r1(avg(COMP.map(([k]) => r.scores[k])));
+// (📎 Compliance, PD&P and Timely Submission come from what the Training Guide doesn't grade — the end-of-shift check, the
+// trainer's weekly PD&P — so they are Additional Reference: shown with their comments, left out of the overall)
+const REF_COMP = ["compliance", "pdp", "timely"];
+const overall = r => r1(avg(COMP.filter(([k]) => !(window.ftReference && REF_COMP.includes(k))).map(([k]) => r.scores[k])));
 // (only the batch's trainees now: a trainee revoked, offboarded or archived after the week was summarized drops off the report and
 // its ranking — the summary keeps their row, so restoring them brings it back)
 function ranked(){ const c = ctx(), live = c && Array.isArray(c.people) && c.people.length ? new Set(c.people.map(p => p.id)) : null;

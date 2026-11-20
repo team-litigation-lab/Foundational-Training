@@ -143,7 +143,7 @@ function renderMine(){
   if(!state.traineeId) return `<div class="card" style="padding:28px;">Sign in to see your trainer’s feedback.</div>`;
   if(!MF.list){ if(!MF.loading) loadAll(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting your trainer’s feedback…</div>`; }
   const html = MF.list.length ? MF.list.map(it => `<div class="card tfb-row${isNew(it.k, it) ? " tfb-new" : ""}"><div class="tfb-kicker">${it.icon} ${e(it.what)}</div>${fbCard(it, it.k)}
-      ${it.rubric && it.rubric.rb ? `<details class="tfb-rub"><summary>📋 The scorecard · weighted average <b>${e((Math.round((it.rubric.r.avg || 0) * 100) / 100).toFixed(2))}/5</b></summary><table>${it.rubric.rb.criteria.map((c, i) =>
+      ${it.rubric && it.rubric.rb ? `<details class="tfb-rub"><summary>📋 The scorecard · weighted average <b>${e((Math.round((it.rubric.r.avg || 0) * 100) / 100).toFixed(2))}/5</b></summary><table>${it.rubric.rb.criteria.map((c, i) => c.retired ? "" :
         `<tr><td>${e(c.n)}</td><td><b>${it.rubric.r.scores[i] == null ? "—" : e(it.rubric.r.scores[i]) + "/5"}</b></td>${it.rubric.rb.feedback ? `<td>${e((it.rubric.r.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}</table></details>` : ""}
       ${it.week ? `<details class="tfb-rub" open><summary>📊 Your row of ${e(it.week.title)}</summary><table>${it.week.cols.map(c => `<tr><td>${e(c.label)}${c.sub ? ` <small>${e(c.sub)}</small>` : ""}</td>
         <td><b>${c.type === "notes" ? "" : c.raw === "" ? "—" : c.max === 5 ? e(c.raw) + "/5" : `${e(c.raw)}/${e(c.max)} → ${c.mark == null ? "—" : Number(c.mark).toFixed(2) + "/5"}`}</b></td><td>${e(c.note)}</td></tr>`).join("")}</table></details>` : ""}</div>`).join("")
@@ -221,7 +221,7 @@ function matchOf(r, sc){
   if(/^reading-/.test(id)) return all.filter(it => it.src.id === "kc" && /reading/i.test(it.name));
   return t ? all.filter(it => { const n = norm(it.name); return n && (n === t || n.includes(t) || t.includes(n)); }) : [];
 }
-const evLine = it => `${it.src.icon} ${it.src.label} · ${it.name}: ${typeof it.pct === "number" ? it.pct + "%" : "not scored"}${it.note ? " (" + it.note + ")" : ""}`;
+const evLine = it => `${it.src.icon} ${it.src.label} · ${it.name}: ${it.reference ? "📎 Additional Reference (done; not scored)" : typeof it.pct === "number" ? it.pct + "%" : "not scored"}${it.note ? " (" + it.note + ")" : ""}`;
 async function openRow(i){
   const r = A.rows[i]; if(!r) return;
   A.open = i; A.drafting = false;
@@ -238,7 +238,7 @@ function workHtml(r){
   if(r.manual){
     const ev = r.ev, hit = ev ? ev.hit : null;
     return `${!ev ? `<p class="fss-muted">Reading what the platform recorded…</p>` : hit.length
-        ? `<p class="tfb-sub">📊 What the platform recorded</p><ul class="tfb-ev">${hit.map(it => `<li><b>${e(it.name)}</b> <span class="fss-pill ${typeof it.pct === "number" ? (it.pct >= 70 ? "ok" : "mid") : ""}">${typeof it.pct === "number" ? e(it.pct) + "%" : "not scored"}</span>${it.note ? `<small>${e(it.note)}</small>` : ""}<small>${it.src.icon} ${e(it.src.label)}</small></li>`).join("")}</ul>`
+        ? `<p class="tfb-sub">📊 What the platform recorded</p><ul class="tfb-ev">${hit.map(it => `<li><b>${e(it.name)}</b> <span class="fss-pill ${typeof it.pct === "number" ? (it.pct >= 70 ? "ok" : "mid") : ""}">${it.reference ? "📎 Additional Reference" : typeof it.pct === "number" ? e(it.pct) + "%" : "not scored"}</span>${it.note ? `<small>${e(it.note)}</small>` : ""}<small>${it.src.icon} ${e(it.src.label)}</small></li>`).join("")}</ul>`
         : `<p class="fss-muted">📊 Nothing the platform scores matches this activity: ✨ Draft works from the trainee's other recorded scores.</p>`}
       <p class="fss-muted">✍️ Your own feedback on this activity: write what they did well, what to improve and why. The trainee gets a notification as soon as you send it, and it stays in their 📬 My Feedback.</p>`;
   }
