@@ -174,6 +174,14 @@ async function ticketFor(payloadObj, secret) {
         if (np.status !== 200 || !np.body || !np.body.token) fail(`a ticket with no p should still sign in: ${JSON.stringify(np)}`);
         const ap = await call(e6, '/api/auth/portal', { ticket: await ticketFor({ r: 'a', n: 'Coach Ana', p: undefined, exp: soon() }, SECRET) });
         if (ap.status !== 200 || !ap.body || !ap.body.admin) fail(`a trainer's ticket with no p should still sign in: ${JSON.stringify(ap)}`);
+        // SSO_REQUIRE_AUDIENCE=1 (once everything is deployed): a ticket with no p is refused too; this program's own still opens
+        {
+            const eR = makeEnv({ PORTAL_SSO_SECRET: SECRET, SSO_REQUIRE_AUDIENCE: '1' });
+            const noP = await call(eR, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: undefined, exp: soon() }, SECRET) });
+            if (noP.status !== 401 || !noP.body || noP.body.code !== 'audience' || noP.body.token) fail(`with SSO_REQUIRE_AUDIENCE=1 a ticket with no p is refused: ${JSON.stringify(noP)}`);
+            const own = await call(eR, '/api/auth/portal', { ticket: await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', exp: soon() }, SECRET) });
+            if (own.status !== 200 || !own.body || !own.body.token) fail(`with SSO_REQUIRE_AUDIENCE=1 this program's own ticket still opens: ${JSON.stringify(own)}`);
+        }
         // a trainee's own ticket works once, like a trainer's
         const tt = await ticketFor({ first: 'Pat', last: 'Lane', b: 'B100926', p: PORTAL_TOPIC, exp: soon() }, SECRET);
         const first = await call(e6, '/api/auth/portal', { ticket: tt });
@@ -197,7 +205,7 @@ async function ticketFor(payloadObj, secret) {
         const ok1 = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
         if (ok1.status !== 200) fail(`sign-in before the block: ${JSON.stringify(ok1)}`);
         s9.set('ft:access:blocked', JSON.stringify({ ids: { 'bo-lock--b100926': { why: 'offboarded' } } }));
-        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() }, SECRET) });
+        const at = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B100926', exp: soon() + 1 }, SECRET) });   // (+1: another ticket, not the first one again)
         if (at.status !== 403 || at.body.code !== 'access-offboarded' || at.body.token) fail(`a trainee blocked a moment ago is refused at once: ${JSON.stringify(at)}`);
         const before = s9.get('ft:trainee:bo-lock--b100926');
         const mv = await call(e9, '/api/auth/portal', { ticket: await ticketFor({ first: 'Bo', last: 'Lock', b: 'B110226', exp: soon() }, SECRET) });

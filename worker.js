@@ -251,8 +251,11 @@ async function useTicketOnce(kv, ticket) {
    side deploys first: tickets are signed by the Portal and the courses only and live 5 minutes, and once the Portal and
    the courses' tool tickets carry p, no ticket without one is made any more. */
 const PORTAL_TOPIC = "STANDARD TRAINING";
+// SSO_REQUIRE_AUDIENCE=1 refuses a ticket with no p too: set it on every program once the Portal and every program (whose
+// tool tickets now carry p) are deployed, so no ticket without an audience is taken any more.
 function ticketAudienceOk(env, t) {
-  return !t || t.p == null || String(t.p) === PORTAL_TOPIC;
+  if (t && t.p != null) return String(t.p) === PORTAL_TOPIC;
+  return String((env && env.SSO_REQUIRE_AUDIENCE) || "").trim() !== "1";
 }
 async function readPortalTicket(env, ticket, why = {}) {
   if (!portalSecret(env)) { why.r = "format"; return null; }
