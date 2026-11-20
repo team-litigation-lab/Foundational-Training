@@ -1333,7 +1333,7 @@ const ROWS = {
     // (the tutorial with no topic line or "Tutorial Video" bar over it, played as large as the page allows: data-bare)
     s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]], fix: [
         ["<p><b>Topic: Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</b></p>\n<p>Tutorial Video:</p>\n", ""],
-        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
+        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Reference Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
       // (the reminders in cards, two pages: D14_CARDS)
       {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]], fix: [D14_CARDS]},
       // (step 5 and its screenshot side by side, one page: the picture on the left, as large as the page allows, the step and

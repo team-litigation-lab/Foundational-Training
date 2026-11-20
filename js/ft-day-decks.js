@@ -1488,7 +1488,7 @@ const LESSON_CARDS = {
       // (the curriculum's "3. PM: Breakout Session": its four digital handouts, an individual activity)
       {t: boTitle(13), time: "PM", sub: boSub(13), k: "watch", d: 13, run: "ftVideoOrAsk(8)"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "watch", d: 13, s: "s3"},   // (an activity of the day, not homework)
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "reference", d: 14, s: "s1"},
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Reference video · your work guide", k: "reference", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
