@@ -1351,10 +1351,10 @@ const ROWS = {
           ['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b><b><i>Demo and Shadowing</i></b></span></p>\n', ""],
           ["<p><b><i>Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</i></b></p>\n", ""],
           ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"],
-          // (the two rules on the left and the Demo Metrics on the right, as large as the page allows: ftdd-imgside)
-          h => { const re = /(<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>)\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
+          // (the two rules only: no Demo Metrics scorecard on the preparation slide)
+          h => { const re = /<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
             if(!re.test(h)) throw new Error("Day 14's Demo Metrics and its two rules are no longer where the build looks for them");
-            return h.replace(re, (m, met, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep ftdd-imgside ftdd-imgside-r"><div class="ftdd-imgside-txt"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div><div class="ftdd-imgside-img">' + met + '</div></div>\n'); }]}]
+            return h.replace(re, (m, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div>\n'); }]}]
   },
   15: {
     // the tutorial video alone, then the Gentle Reminders and the rules on a slide of their own
