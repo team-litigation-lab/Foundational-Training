@@ -1094,7 +1094,9 @@ function activitiesHtml(p){
   const items = dayList().flatMap(d => (d.items || []).filter(it => it.assess && !forms.includes(it.assess)).map(it => ({d, it, g: gr[it.assess] || null})));
   // (📅 the Attorney Calendar Management Activity, checked field by field: js/ft-calcheck.js ftCalCheckDetailHtml)
   const lab0 = ((((B.data.rec[p.id] || {}).src || {})["labreview:"] || {}).acts) || {};
-  const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"], lab0["atty-calendar-activity"]) : "";
+  // (always shown: opening it asks the Portal for their Calendaring Activity, with links to their calendar to back-check — FTBatchSheet.calOut)
+  const cal = window.ftCalCheckDetailHtml ? ftCalCheckDetailHtml(((B.data.rec[p.id] || {}).src || {})["calcheck:"], lab0["atty-calendar-activity"],
+    {always: true, attrs: ` data-cal="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.calOut(this)"`, body: `<div class="bs-cal-out" data-cal-out><p class="bs-kd-none">Asking the Portal for their Calendaring Activity…</p></div>`}) : "";
   if(!items.length && !cal) return "";
   // (📝 Day 8's Intake Worksheet: graded on 📦 Intake Packets — trackerreview .assess.intakews — or on 🧑‍🏫 Graders → 📝 Assessments —
   // labreview .acts["intake-worksheet"] — the first one found; its answers read from the trainee's Google Doc when the row opens)
@@ -2056,6 +2058,21 @@ window.FTBatchSheet = {
     box.innerHTML = !w.link ? `<p class="bs-kd-none">No Intake Worksheet yet: no link submitted on Day 8’s Intake Documents slide, and none found in their Assessments/Activities folder.</p>`
       : w.text ? `<div class="bs-ctx bs-best"><b>📝 The trainee’s answers</b>${w.submittedAt ? ` <small>submitted ${e(when(w.submittedAt))}</small>` : w.found ? ` <small>found in their Assessments/Activities folder</small>` : ""}${open}<pre class="bs-ws-text">${e(w.text)}</pre></div>`
       : `<p class="bs-kd-none">${w.why === "not-a-doc" ? "Their worksheet isn’t a Google Doc (a Word file or a folder), so its answers can’t be shown here:" : "Their worksheet couldn’t be read (it isn’t shared with the platform):"}${open}</p>`;
+  },
+  // 📅 the trainee's Calendaring Activity on the Portal (worker.js /api/calactivity): its result and the links to their calendar, to
+  // back-check the score; once per open, kept for this visit
+  async calOut(el){
+    const id = el && el.getAttribute("data-cal"), box = el && el.querySelector("[data-cal-out]"); if(!id || !box) return;
+    B.cal = B.cal || {};
+    if(!B.cal[id]){ try{ const r = await authFetch("/api/calactivity", {id}); B.cal[id] = await r.json().catch(() => ({error: "bad"})); }catch(err){ B.cal[id] = {error: "offline"}; } }
+    const c = B.cal[id] || {}, a = c.activity;
+    if(c.error){ delete B.cal[id]; box.innerHTML = `<p class="bs-kd-none">Couldn’t ask the Portal just now. Close and open this row to try again.</p>`; return; }
+    const links = [c.calendar ? `<a href="${e(c.calendar)}" target="_blank" rel="noopener noreferrer">🗓 Open their calendar on the Portal ↗</a>` : "",
+      c.reviews ? `<a href="${e(c.reviews)}" target="_blank" rel="noopener noreferrer">📝 Calendaring Activity evaluations ↗</a>` : ""].filter(Boolean).join(" · ");
+    const st = a ? (a.status === "final" ? `finalized${a.finalizedBy ? " by " + e(a.finalizedBy) : ""}${a.finalizedAt ? " " + e(when(a.finalizedAt)) : ""}` : a.status === "saved" ? "saved, not submitted" : "submitted, not reviewed yet") : "";
+    box.innerHTML = `<div class="bs-ctx bs-best"><b>🗓 On the Portal (Standard Training - Calendaring Activity)</b> ${a
+      ? `<p>${a.trainerScore != null ? `Trainer’s score <b>${e(String(a.trainerScore))}%</b> · ` : ""}${a.checkScore != null ? `automatic check <b>${e(String(a.checkScore))}%</b> · ` : ""}${st}${a.submittedAt ? ` · ${e(when(a.submittedAt))}` : ""}</p>`
+      : `<p>${c.why === "no-account" ? "No Portal account matches their name and batch, so their calendar can’t be found there." : c.why === "no-gateway" || c.why === "portal" ? "The Portal couldn’t be asked just now." : "Nothing saved or submitted on the Portal yet."}</p>`}${links ? `<p>${links}</p>` : ""}</div>`;
   },
   // 🗄 one account archived from the Drive link issues list (not a trainee, or one who left): its record marked archived, as
   // a batch's archive marks each (js/eapa-updates.js confirmArchiveBatch), read strictly so a failed read never writes over it
