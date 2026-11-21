@@ -135,7 +135,7 @@ window.renderTopbar = function(){
     // 🔓 Open Lessons, one click from every page for a trainer (a program that lists it: LSH_PROGRAM.adminTopOpenLessons)
     + (adminOn() && CFG.adminTopOpenLessons ? btn("opendays", "🔓 Open Lessons", "state.adminTab='opendays'; goto('admin')", "Open a lesson for a batch, or for one trainee") : "")
     + (adminOn() ? (CFG.adminTopScorecards === false ? "" : btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard")) : state.traineeId && !state.isAdmin ? focusBtn() : "");   // 🎯 Focus: a signed-in trainee only, never an admin (nor an admin's 👁 Switch View)
-  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_DIRECTORY}'" title="The LSH Training Portal's Training Directory: every program">🎓 Training Directory</button>`;
+  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_DIRECTORY}'" title="🎓 LSH Academy Index on the LSH Training Portal: every program">🎓 LSH Academy Index</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
   if(home) home.insertAdjacentHTML("beforebegin", secs), home.remove();
   else nav.insertAdjacentHTML("afterbegin", secs);

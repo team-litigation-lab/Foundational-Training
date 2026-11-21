@@ -22,7 +22,7 @@ window.addEventListener("ft-roster-changed", () => { U.key = ""; U.data = null; 
 const TOOLS = [
   {id: "lab", label: "🤖 AI practice tools"}, {id: "roleplay", label: "🎭 Roleplays"}, {id: "task", label: "🎲 Random tasks"},
   {id: "skills", label: "🧪 Typing & Spelling"}, {id: "portalsims", label: "🧰 Portal simulators"}, {id: "sessions", label: "🟢 Practice Sessions"},
-  {id: "callsim:", label: "🎯 Call Simulator"}, {id: "calsim:", label: "📅 Calendaring Simulator"}, {id: "drills:", label: "🏷 Naming & Reporting Drills"},
+  {id: "callsim:", label: "🎯 Call Sim"}, {id: "calsim:", label: "📅 Calendaring Sim"}, {id: "drills:", label: "🏷 Naming & Reporting Drills"},
   {id: "listening:", label: "🎧 Call Listening"}, {id: "calcheck:", label: "📅 Calendar activity check"}, {id: "calrules:", label: "📅 Booking rules"},
   {id: "calweek:", label: "📅 Calendaring Activity"}];
 // 📅 the training day each tool opens on (js/ft-day-activities.js: the first day an activity of it is on), so the Utilization

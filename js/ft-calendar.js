@@ -375,7 +375,7 @@ function reviewHTML(g, notes){
 // The activity's panel: the Calendar Activity Check's verdict on every field of each event (✓, or ✗ with the Check's fix), the
 // simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
 // ← Back: to the deck's slide the page was opened from, else the Simulators page
-const backBtn = () => S.from ? `<button class="btn btn-ghost btn-sm" onclick="FTCalSim.back()">← Back to the slides</button>` : `<button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button>`;
+const backBtn = () => S.from ? `<button class="btn btn-ghost btn-sm" onclick="FTCalSim.back()">← Back to the slides</button>` : `<button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← 🛠 Practice Lab</button>`;
 const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="FTCalSim.toCheck()" title="Copies this calendar’s events into your Calendar Activity Check, then opens it: each field is checked there">✅ Check this calendar in the Calendar Activity Check</button>` : "";
 // ✅ the Calendar Activity Check (#/calcheck) verifies what is done here: this calendar's events, as the Check's entries (the review's
 // own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its
@@ -400,7 +400,7 @@ function actReviewHTML(g, notes){
   const info = g.extras.filter(x => !x.why.length && x.info), bad = g.extras.filter(x => x.why.length);
   const field = c => c.ok ? `<li class="ok">✓ ${e(c.label)}${c.sim ? " 🎨" : ""}</li>` : `<li class="no">✗ <b>${e(c.label)}${c.sim ? " 🎨" : ""}</b><span>${e(c.why)}</span></li>`;
   return `<div class="cs-result ca-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Passes" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} events perfect · ${g.score} of ${g.max} fields right</span></div>
-    <div class="ca-ckline">📅 <b>Calendar Activity Check:</b> ${g.check.met} of ${g.check.total} fields right (${g.check.pct}%) · 🎨 <b>Simulator checks</b> (color, guests’ emails, travel routes and reminders, overlaps, duplicates): ${g.sim.met} of ${g.sim.total} ${CHECK_LINK()}</div>
+    <div class="ca-ckline">📅 <b>Calendar Activity Check:</b> ${g.check.met} of ${g.check.total} fields right (${g.check.pct}%) · 🎨 <b>Sim checks</b> (color, guests’ emails, travel routes and reminders, overlaps, duplicates): ${g.sim.met} of ${g.sim.total} ${CHECK_LINK()}</div>
     ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b>${i.event ? `<em class="ca-as">“${e(i.event.title || "(no title)")}”</em>` : ""} <span>${i.pts} / ${i.weight}</span></div>
       <ul class="ca-fields">${i.checks.filter(c => c.ok).map(field).join("")}${i.checks.filter(c => !c.ok).map(field).join("")}</ul>${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
     ${bad.length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${bad.map(x => `<li><b>${e(x.title)}</b> (${e(x.when)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}
@@ -418,7 +418,7 @@ function historyHTML(){
     const r = S.data.reviews[subKey(last)], au = subReview(s, last);
     return atSub(last, () => `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.short)} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${released(r) ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${feedbackPanel(s, last, r)}</div>`);
   }).join("");
-  const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
+  const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Sim")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
   return `<div class="cs-hist">${evalHTML()}${pv}${rows}${ext}</div>`;
 }
 // The trainee's own space for this week: the calendar as submitted, the automated review, and the AI review set up by the trainer's rules.
@@ -443,8 +443,8 @@ function renderPage(){
   const weeks = C.SCENARIOS.filter(x => x.track === tk.id).length > 1 ? C.SCENARIOS.map((x, i) => x.track === tk.id ? `<button class="cs-tab cs-wk ${i === S.scn ? "active" : ""}" onclick="FTCalSim.pick(${i})">${e(x.title)} <i>${e(x.level)}</i></button>` : "").join("") : "";
   const tabs = tracks + `</div>` + (weeks ? `<div class="cs-tabs cs-weeks">` + weeks : "<div hidden>");      // used as <div class="cs-tabs">${tabs}</div>
   // locked: the tabs stay, so a track that is open can still be picked
-  if(!open()) return `<div class="cs-wrap"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tabs}</div><div class="card" style="padding:20px;">🔒 ${isAct(s) ? "The Attorney Calendar Management Activity opens on Day 5, when your trainer opens it." : `This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.`}</div></div>`;
-  if(isAct(s)) return `<div class="cs-wrap cs-act"><div class="cs-top"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tracks}</div>
+  if(!open()) return `<div class="cs-wrap"><h1>📅 Calendaring Sims</h1><div class="cs-tabs">${tabs}</div><div class="card" style="padding:20px;">🔒 ${isAct(s) ? "The Attorney Calendar Management Activity opens on Day 5, when your trainer opens it." : `This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.`}</div></div>`;
+  if(isAct(s)) return `<div class="cs-wrap cs-act"><div class="cs-top"><h1>📅 Calendaring Sims</h1><div class="cs-tabs">${tracks}</div>
       <div class="ca-back">${backBtn()}</div></div>
     ${weeks ? `<div class="cs-tabs cs-weeks">${weeks}</div>` : ""}<p class="cs-blurb">${e(tk.blurb)} ${CHECK_LINK()}</p>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
@@ -457,7 +457,7 @@ function renderPage(){
     <p class="cs-hint">The automated review is the 📅 Calendar Activity Check’s: every item and travel block, field by field (title, dates and times in the event’s own time zone, the zone, location, guests, reminder, notes), with this calendar’s own checks on top (the color, no overlaps, no duplicates). Every field counts one (${C.PASS}% passes), and it tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
     <div id="csResultBox">${resultHTML()}</div>
     ${historyHTML()}</div>`;
-  return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendaring Simulators</h1>
+  return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendaring Sims</h1>
       <p class="cs-lead">${tk.icon} <b>${e(tk.title)}</b> · ${e(tk.where)}. Build the week in a Google Calendar style, run the automated review, then submit it to your trainer.</p></div>
       <div>${backBtn()}</div></div>
     <div class="cs-tabs">${tabs}</div>
@@ -473,8 +473,8 @@ function renderPage(){
     <p class="cs-hint">The automated review checks your calendar against the attorney’s rules (conflicts, travel time, business hours, each task’s days and times, the color for its length) and tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
     <div id="csResultBox">${resultHTML()}</div>
     ${historyHTML()}
-    <div class="card cs-more"><b>🔗 Also graded for your trainer</b><p>The Portal’s Calendaring Simulator is another week of scheduling conflicts. It opens in its own tab with your name and batch, so its score is saved for your trainer too.</p>
-      <a class="btn btn-ghost btn-sm" href="${e(portalHref())}" target="_blank" rel="noopener">Open the Portal’s Calendaring Simulator ↗</a></div></div>`;
+    <div class="card cs-more"><b>🔗 Also graded for your trainer</b><p>The Portal’s Calendaring Sim is another week of scheduling conflicts. It opens in its own tab with your name and batch, so its score is saved for your trainer too.</p>
+      <a class="btn btn-ghost btn-sm" href="${e(portalHref())}" target="_blank" rel="noopener">Open the Portal’s Calendaring Sim ↗</a></div></div>`;
 }
 function portalHref(){
   const q = new URLSearchParams({program:"FT"});
@@ -1015,7 +1015,7 @@ window.goto = function(view, id){
 // Calendar Management Activity track (ftsCalsim('activity'), in its own tab)
 window.ftCalActivityCard = () => `<div class="card fts-card"><div class="fts-kicker">Day 5 · Calendar Management</div><h3>🗓 Attorney Calendar Management Activity</h3>
     <p class="fts-note">Manage the attorney’s Google Calendar in Pacific Time: the ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes. Checked on the spot by the 📅 Calendar Activity Check, then submitted to your trainer.</p>
-    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calsim','attorney-activity')">Open the activity</button> <button class="btn btn-ghost btn-sm" type="button" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('activity') : 0">📅 Standard Training - Calendar Management Activity ↗</button></div></div>`;
+    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calsim','attorney-activity')">Open the activity</button> <button class="btn btn-ghost btn-sm" type="button" title="Opens on the Main Portal’s Google Calendar Sim, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('activity') : 0">📅 Standard Training - Calendar Management Activity ↗</button></div></div>`;
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
 window.addEventListener("message", ev => {
@@ -1063,7 +1063,7 @@ function renderAdminScores(){
     <p class="cs-hint"><b>🗓 The Attorney Calendar Management Activity (Day 5) is done and graded here.</b> Its submissions are listed below with the automated review and the AI feedback: open one (🖥 Live review or 👁 View) to add your feedback and finalize the report. The rules box below has a place for the activity’s own guidelines.</p>
     <p class="cs-hint"><b>The Standard Training weeks now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsEvaluations()">📋 Open Trainee Evaluations on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training - Mock Call scores on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('activity', true)">Open Standard Training - Calendar Management Activity scores on the Portal ↗</button> Trainee Evaluations has each trainee's submitted calendar with its AI review, your own feedback and the report you send to them; grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older Standard calendars saved here are listed below too.</p>
     ${feedHTML()}${guideHTML()}
-    <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
+    <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Sim are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
       ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row(${js(x.id)})">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
         ${n ? `<span class="cs-pill ok">📤 ${n} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}${scoresOf(x)}${u ? `<span class="cs-pill warn">${u} to review</span>` : n ? `<span class="cs-pill ok">All reviewed</span>` : ""}</div>

@@ -1400,11 +1400,11 @@ const LESSON_CARDS = {
       {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH Voice and LSH CaseWorks · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
     tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
       "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
-    dayTools: {4: ["Call Simulator: practice reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
+    dayTools: {4: ["Call Sim: practice reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
@@ -1414,7 +1414,7 @@ const LESSON_CARDS = {
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
-    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
+    tools: [["Tools:", "Google Calendar Sim, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     // (no screenshots or upload: the activity is handed in as its 📅 Calendar Activity Check, sent to the trainer from there)
     takeaways: [], file: "Attorney Calendar Management Activity: every event entered on the 📅 Calendar Activity Check", submit: "📅 Calendar Activity Check › 📤 Submit to my trainer"},
@@ -1440,7 +1440,7 @@ const LESSON_CARDS = {
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
       {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
-      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · Prototype CMS & Intake line", k: "watch", d: 8, s: "s1e"},
+      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · LSH CaseWorks & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
       // (Part 2 closes on the Intake Mock Calls Metrics: Day 9's metrics slide, moved to Day 8's deck as mcm by
       // build/day-decks.cjs MOVE; Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on it)
@@ -1449,7 +1449,7 @@ const LESSON_CARDS = {
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
-    tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
+    tools: [["Tools:", "LSH CaseWorks, Call Sim, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
@@ -1470,7 +1470,7 @@ const LESSON_CARDS = {
       // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages · in ✍️ Knowledge Check", k: "assessment", run: "FTDayDecks.assessDoc(11, 7, 'policy-disclosure', 's1', 'lor')", day: 11},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
-      {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
+      {t: "Insurance Email Sim", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names · e-mail your LORs to your trainers", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
@@ -1893,9 +1893,9 @@ const SIMS = "https://cm-training-activity.pages.dev/simulators/call.html?";
 const callSim = line => SIMS + new URLSearchParams({program: "FT", line});
 // one click for a mock-call day: practice on the simulators while waiting for your turn
 const PRESETS = [
-  {label: "☎ Reception calls", kind: "practice", title: "Practice reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
-  {label: "☎ Intake calls", kind: "practice", title: "Practice intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
-  {label: "☎ Calendar calls", kind: "practice", title: "Practice calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practice scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
+  {label: "☎ Reception calls", kind: "practice", title: "Practice reception calls on the Call Sim", text: "While you wait for your turn in the mock calls, practice on the Call Sim’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
+  {label: "☎ Intake calls", kind: "practice", title: "Practice intake calls on the Call Sim", text: "While you wait for your turn in the mock calls, practice handling intake calls on the Call Sim’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
+  {label: "☎ Calendar calls", kind: "practice", title: "Practice calendar management calls on the Call Sim", text: "While you wait for your turn in the mock calls, practice scheduling calls on the Call Sim’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
   {label: "🛠 Practice Lab", kind: "practice", title: "Practice in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
 ];
 function loadExtras(force){
@@ -1911,7 +1911,7 @@ function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
   // (an extra that linked the mock calls' calendar, sim "calsim": off the decks; a trainee doesn't see it, the trainer sees it to remove it)
   if(x.sim === "calsim" && !isAdminView()) return "";
-  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
+  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Sim</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -1931,7 +1931,7 @@ function trainerSlide(n){
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
       <div class="ftdd-xgrid">
         <label>Type<select id="ftddXKind">${KINDS.map(k => `<option value="${k[0]}"${f.kind === k[0] ? " selected" : ""}>${k[1]} ${k[2]}</option>`).join("")}</select></label>
-        <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practice intake calls on the Call Simulator"></label>
+        <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practice intake calls on the Call Sim"></label>
         <label class="full">Instructions<textarea id="ftddXText" rows="3" placeholder="What the trainee does, step by step">${e(f.text || "")}</textarea></label>
         <label class="full">Link (optional — a video, a document, a folder or a simulator)<input id="ftddXUrl" value="${e(f.url || "")}" placeholder="https://…"></label>
       </div><button type="button" class="btn btn-navy btn-sm" onclick="FTDayDecks.addX(${n})">➕ Add it</button></div>` : ""}`;
@@ -2055,29 +2055,29 @@ function mapOpen(){
    Every tool this training uses, one at a time: a real screenshot of it, what it is for, where to find it and its
    features, with a button that opens it. The list sits on the left of the sheet and the picked tool fills the rest,
    so the whole slide fits one screen. The screenshots are in ft/day1/img/tools/: the platform's own pages, the CMS's
-   (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Ring Channel's (its tests' pictures). */
+   (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Voice's (its tests' pictures). */
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
-  // (no 🎓 LSH Training Directory tab: taken off Know Your Tools)
-  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
+  // (no 🎓 LSH Academy Index tab: taken off Know Your Tools)
+  {ic: "🗂", name: "LSH CaseWorks", short: "LSH CaseWorks", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s 🗂 LSH CaseWorks link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
-  {ic: "☎", name: "LSH Ring Channel · Mock Calls", short: "Ring Channel", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
+  {ic: "☎", name: "LSH Voice · Mock Calls", short: "LSH Voice", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
     what: "The training phone, where your Mock Calls are taken: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
     feats: ["Answer within 3 rings and greet with the firm’s name and yours",
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "✉️", name: "Email Simulators", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → ✉️ Email (it opens in its own tab)",
+  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims → ✉️ Email (it opens in its own tab)",
     what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
     feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
       "✍️ Email Replies: one email at a time, answered in the sender’s style",
       "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
       "One submission grades filing, security, triage and your replies"]},
-  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulators", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
+  {ic: "📅", name: "Google Calendar Sim", short: "Calendar Sims", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Sims",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
       "Eastern Time on a 15-minute grid, with 15 minutes between events",
@@ -2089,13 +2089,13 @@ const TOOLS = [
       "✎ Edit in Word or ✎ Edit in PDF on your own computer, then upload it",
       "Your upload is checked, and the score goes to your progress",
       "It shows the file name to save it under"]},
-  {ic: "📚", name: "LSH Knowledge Base", short: "Knowledge Base", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 Knowledge Base (it opens in its own tab)",
+  {ic: "📚", name: "LSH Atlas", short: "LSH Atlas", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 LSH Atlas (it opens in its own tab)",
     what: "The LSH library of SOPs, training videos and know-how from the whole LSH VA community: look up how a task is done before you ask.",
     feats: ["★ Opens on Featured: the articles the team has starred as front-page reading, from Personal Injury to the Receptionist SOP",
       "SOPs and step-by-step guides for the work you do for your clients",
       "Opens signed in: no second log-in, straight from this platform",
       "Yours to keep using once you are working with your clients"]},
-  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → 🏥 Medical Records Requests (it opens in its own tab)",
+  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims → 🏥 Medical Records Requests (it opens in its own tab)",
     what: "A records request platform on a real-looking case file: you collect complete medical records and itemized bills for a demand, the way a Case Manager does.",
     feats: ["🔐 Check the HIPAA authorization before anything goes out",
       "🏥 Send each request to the right provider’s department for the right dates, from the Provider Directory",

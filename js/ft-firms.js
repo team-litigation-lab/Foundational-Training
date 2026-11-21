@@ -134,7 +134,7 @@ function renderMyFirm(){
       <div class="ff-ack">${acked ? `<span class="ff-ok">✓ You confirmed you read these rules on ${e(new Date(ack.at).toLocaleDateString())}.</span>`
         : `<button class="btn btn-navy" onclick="FTSessions.acknowledge('${e(f.id)}')">✓ I’ve read and understood my firm’s rules</button>`}</div></div>
     <div class="card ff-card"><h2>🗂 Your cases</h2>
-      <p class="ff-muted">Your Practice Sessions open on your firm’s own cases${f.cases && f.cases.length ? ` (${e(f.cases.join(", "))})` : ""} in the CMS.</p></div>`;
+      <p class="ff-muted">Your Practice Sessions open on your firm’s own cases${f.cases && f.cases.length ? ` (${e(f.cases.join(", "))})` : ""} in LSH CaseWorks.</p></div>`;
 }
 const __render = window.render;
 window.render = function(){
