@@ -438,16 +438,20 @@ window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = r
 // ✗ wrong with what it should be (the 📋 Batch Sheet's 📝 Activities in detail, for the trainer and the trainee alike)
 // (act: the trainer's score on 🧑‍🏫 Graders — the Portal's Calendaring Activity fills it — which is the activity's score; else the
 // share of fields right below)
-window.ftCalCheckDetailHtml = (rec, act) => { rec = clean(rec); const s = rec.submits[rec.submits.length - 1];
+// (o: the 📋 Batch Sheet's — attrs on the row, body inside it (the Portal's result and links, filled when it opens), always: the row
+// shown even with nothing done yet)
+window.ftCalCheckDetailHtml = (rec, act, o) => { o = o || {}; const D = `<details class="bs-kd" name="bs-kd"${o.attrs || ""}>`, B = o.body || "";
+  rec = clean(rec); const s = rec.submits[rec.submits.length - 1];
   const t = act && act.score != null && act.score !== "" && act.status !== "Redo" && !act.redo ? Math.round(Number(act.score)) : null;
-  if(!s){ return t == null ? "" : `<details class="bs-kd" name="bs-kd"><summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${t >= 80 ? "gs-hi" : t >= 60 ? "gs-mid" : "gs-lo"}">${t}%</span> <small>the trainer's score on 🧑‍🏫 Graders${act.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}${act.date ? " · " + String(act.date).replace(/[<>&"]/g, "") : ""}</small></summary>${act.comment ? `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${String(act.comment).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c])}</p></div>` : ""}</details>`; }
+  if(!s && t == null) return o.always ? `${D}<summary><b>📅 Attorney Calendar Management Activity</b> <small>Day 5</small> <span class="bs-kd-pill">not graded yet</span></summary>${B}</details>` : "";
+  if(!s){ return `${D}<summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${t >= 80 ? "gs-hi" : t >= 60 ? "gs-mid" : "gs-lo"}">${t}%</span> <small>the trainer's score on 🧑‍🏫 Graders${act.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}${act.date ? " · " + String(act.date).replace(/[<>&"]/g, "") : ""}</small></summary>${act.comment ? `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${String(act.comment).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c])}</p></div>` : ""}${B}</details>`; }
   const sc = scored(s), esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[c]);
   const ev = KEY.map(k => ({k, rows: sc.rows.filter(r => r[0] === k.n && r[2] !== null)})).filter(x => x.rows.length);
   const tone = p => p >= 80 ? "gs-hi" : p >= 60 ? "gs-mid" : "gs-lo";
-  return `<details class="bs-kd" name="bs-kd"><summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${tone(t != null ? t : sc.pct)}">${esc_(t != null ? t : sc.pct)}%</span>${t != null ? ` <small>the trainer's score on 🧑‍🏫 Graders${act.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}</small>` : ""}
+  return `${D}<summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${tone(t != null ? t : sc.pct)}">${esc_(t != null ? t : sc.pct)}%</span>${t != null ? ` <small>the trainer's score on 🧑‍🏫 Graders${act.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}</small>` : ""}
       <small>${esc_(sc.met)} of ${esc_(sc.total)} fields right · sent ${esc_(new Date(String(s.at)).toLocaleString())} · checked automatically against the activity’s answer key, one point a field</small></summary>
     <ol class="bs-kd-q">${ev.map(({k, rows}) => { const m = rows.filter(r => r[2]).length;
-      return `<li><b>${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol></details>`; };
+      return `<li><b>${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol>${B}</details>`; };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 📅 Calendar Activity ---------- */
 const AD = {rows: null, loading: false, batch: "", open: {}};

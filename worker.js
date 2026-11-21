@@ -2256,7 +2256,7 @@ async function syncSimScores(env, id, o = {}) {
       if (a && pct != null && isFinite(Number(pct)) && !(prev && prev.simAt === a.submittedAt && prev.score === Math.round(Number(pct)))) {
         const score = Math.max(0, Math.min(100, Math.round(Number(pct))));
         const status = typeof globalThis.ftResult === "function" ? globalThis.ftResult({ score, redo: false }) : score >= 60 ? "Passed" : "Failed";
-        cur.acts[AK] = Object.assign({}, prev || {}, { source: "simulator", simFrom: "Standard Training - Calendaring Activity", simAt: a.submittedAt || "",
+        cur.acts[AK] = Object.assign({}, prev || {}, { source: "simulator", simFrom: "Standard Training - Calendaring Activity", simAt: a.submittedAt || "", simUser: String(j.username || "").slice(0, 80),
           simBy: String(a.finalizedBy || "").slice(0, 80), score, status, redo: false, date: String(a.submittedAt || "").slice(0, 10) || TR.ptDate(),
           comment: (prev && prev.source === "simulator" && prev.comment && !/^Scored on the Standard Training/.test(prev.comment)) ? prev.comment
             : `Scored on the Standard Training - Calendaring Activity: ${a.trainerScore != null ? "the trainer's final score" : "its automatic check (" + score + "%), not reviewed by the trainer yet"}.`,
@@ -3774,6 +3774,29 @@ export default {
         try { text = await fetchGoogle(`https://docs.google.com/document/d/${docId}/export?format=txt`, env); } catch (e) { why = "not-shared"; }
         if (text != null) text = String(text).replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 30000);
         return json({ ok: true, link, submittedAt: (sub && sub.submittedAt) || "", found, text, why });
+      }
+      /* ---------- 📅 Day 5's Attorney Calendar Management Activity on the Portal (its Standard Training - Calendaring Activity), asked
+         now for the trainer's 📋 Batch Sheet: { ok, activity (the Portal's ?activity=1 answer, or null), username, calendar (their
+         calendar on the Portal, read only), reviews (the Portal's Calendaring Activity evaluations) } — the links for back-checks ---------- */
+      if (path === "/api/calactivity") {
+        if (tok.role !== "a") return json({ error: "Trainers only" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = subjectOf(tok, b);
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+        if (!rec) return json({ error: "No such trainee" }, 404);
+        const portal = String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "");
+        const out = { ok: true, activity: null, username: "", calendar: "", reviews: portal + "/simulators/gcal-review.html?track=activity" };
+        if (!gatewayOn(env)) return json(Object.assign(out, { why: "no-gateway" }));
+        try {
+          const r = await fetch(portal + "/api/calsim-scorecard?" + new URLSearchParams({ activity: "1", name: rec.name || "", batch: canonicalBatch(rec.batch) || String(rec.batch || "") }), { headers: { "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() } });
+          const j = await r.json().catch(() => ({}));
+          if (!j || !j.success) return json(Object.assign(out, { why: "portal" }));
+          out.username = String(j.username || ""); out.activity = j.activity || null;
+          if (out.username) out.calendar = portal + "/simulators/gcal.html?track=activity&trainee=" + encodeURIComponent(out.username);
+          else out.why = "no-account";
+        } catch (e) { out.why = "portal"; }
+        return json(out);
       }
       if (path === "/api/intake/check") {
         const b = await request.json().catch(() => ({}));
