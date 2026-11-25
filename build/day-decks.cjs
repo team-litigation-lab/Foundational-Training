@@ -1333,7 +1333,7 @@ const ROWS = {
     // (the tutorial with no topic line or "Tutorial Video" bar over it, played as large as the page allows: data-bare)
     s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]], fix: [
         ["<p><b>Topic: Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</b></p>\n<p>Tutorial Video:</p>\n", ""],
-        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Tutorial Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
+        ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Reference Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
       // (the reminders in cards, two pages: D14_CARDS)
       {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]], fix: [D14_CARDS]},
       // (step 5 and its screenshot side by side, one page: the picture on the left, as large as the page allows, the step and
@@ -1351,10 +1351,10 @@ const ROWS = {
           ['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b><b><i>Demo and Shadowing</i></b></span></p>\n', ""],
           ["<p><b><i>Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</i></b></p>\n", ""],
           ["<h3>6. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"],
-          // (the two rules on the left and the Demo Metrics on the right, as large as the page allows: ftdd-imgside)
-          h => { const re = /(<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>)\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
+          // (the two rules only: no Demo Metrics scorecard on the preparation slide)
+          h => { const re = /<h4>Demo Metrics<\/h4>\n<div class="shots">[^\n]*?<\/figure><\/div>\n(<div class="trainer-slot"[^>]*><\/div>\n)?<h3>(All trainees must be fully prepared[^<]*)<\/h3>\n<h3>(The only valid reason for rescheduling[^<]*)<\/h3>\n?/;
             if(!re.test(h)) throw new Error("Day 14's Demo Metrics and its two rules are no longer where the build looks for them");
-            return h.replace(re, (m, met, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep ftdd-imgside ftdd-imgside-r"><div class="ftdd-imgside-txt"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div><div class="ftdd-imgside-img">' + met + '</div></div>\n'); }]}]
+            return h.replace(re, (m, slot, r1, r2) => (slot || "") + '<div class="ftdd-keep"><p class="ftdd-rule">⚠️ ' + r1 + '</p>\n<p class="ftdd-rule">📅 ' + r2 + '</p></div>\n'); }]}]
   },
   15: {
     // the tutorial video alone, then the Gentle Reminders and the rules on a slide of their own
@@ -1607,13 +1607,16 @@ for(let n = 1; n <= 16; n++){
 // no day card of its own, js/ft-day-locks.js PARTS)
 // (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
-  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:")], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration"],
+  // (both before Day 14's Demo Preparation: the reminders and guidelines come before the demo's rules)
+  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:"), null, "s1ep"], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration", null, "s1ep"],
     // (not Day 15's Demo Preparation: its metrics would be the same MedLOR metrics a second time on Part 2)
   }};
-for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx]] of Object.entries(ids)){
+// (a fifth element: the slide it goes before, in place of the deck's end)
+for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx, before]] of Object.entries(ids)){
   const a = decks[from].slides, i = a.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${from} has no ${id} to move to Day ${to}`);
   const [x] = a.splice(i, 1), b = decks[to].slides; if(b.some(y => y.id === nid)) throw new Error(`Day ${to} already has a slide ${nid}`);
-  const k = b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  const k = before ? b.findIndex(y => y.id === before) : b.findIndex(y => y.placeholder || /^extra-/.test(y.id));
+  if(before && k < 0) throw new Error(`Day ${to} has no ${before} to put ${nid} before`);
   b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}, rx ? {html: rx(x.html)} : {}));
 }
 function noKB(html){
