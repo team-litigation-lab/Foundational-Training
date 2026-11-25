@@ -2552,7 +2552,7 @@ window.render = function(){
 // (where the page is: remembered while the sheet is on screen — not while it's being redrawn or still loading)
 window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.data || (meOn() && B.me)) && on()) B.keepY = window.scrollY; }catch(err){} }, {passive: true});
 
-// 🟦 the dark page banner (the Weekly Progress Report's look): Legal Support Help · Foundational Training, the page's
+// 🟦 the dark page banner (the Weekly Progress Report's look): Legal Support Help · Legal VA Foundational Track, the page's
 // name, and Batch · Week · its dates under it; js/ft-batch-admin.js (🧑‍🏫 Graders) draws it too
 // 🟦 the same banner over 📘 Curriculum, 📒 Feedback and Monitoring Rubric and 🗣 Feedback Style (📚 Open Lessons' other tabs), put
 // under the tab row after each draw: their pages are drawn elsewhere (js/ft-curriculum…, js/ft-monitoring.js, js/ft-activities.js)
@@ -2579,7 +2579,7 @@ window.ftBanner = function(title, batch, right, controls, opts){
     const f = ms => new Date(ms).toLocaleDateString(undefined, {month: "long", day: "numeric", year: "numeric", timeZone: "UTC"});
     wk = ` · Week <b>${n}</b> · ${esc(f(a))} – ${esc(f(z))}`;
   }
-  return `<div class="ft-banner${opts.cls ? " " + esc(opts.cls) : ""}"><div><p class="ft-banner-k">Legal Support Help · Foundational Training</p><h2>${title}</h2>
+  return `<div class="ft-banner${opts.cls ? " " + esc(opts.cls) : ""}"><div><p class="ft-banner-k">Legal Support Help · Legal VA Foundational Track</p><h2>${title}</h2>
     ${batch ? `<p class="ft-banner-sub">Batch <b>${esc(batch)}</b>${wk}</p>` : ""}</div>${right ? `<div class="ft-banner-right">${right}</div>` : ""}${controls ? `<div class="ft-banner-ctl">${controls}</div>` : ""}</div>`;
 };
 (function(){ const s = document.createElement("style"); s.id = "ft-batch-sheet"; s.textContent = `

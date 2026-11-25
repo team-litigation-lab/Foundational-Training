@@ -965,7 +965,7 @@ ${ai && ai.strengths.length ? `<h2>What’s working</h2><ul>${li(ai.strengths)}<
 ${(() => { const sec = reportSections(s, sub, r); return SECTION.map(([k, ic, title]) => `<h2>${ic} ${title} (${sec[k].length})</h2>` + (sec[k].length ? sec[k].map(x => `<p><b>${e(x.title)}</b><br>${e(x.text)}${x.note ? `<br><span class="tn">Trainer: ${e(x.note)}</span>` : ""}</p>`).join("") : "<p>Nothing here.</p>")).join(""); })()}
 ${r && r.comment ? `<h2>Trainer’s insights</h2><p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}
 <h2>The calendar you submitted</h2><table><tr><th>When</th><th>Event</th><th>Details</th></tr>${act ? actRows(events) : events.map(x => `<tr><td>${C.DAYS[x.day]}<br>${hh(x.start)} – ${hh(x.start + x.dur)}</td><td><b>${e(x.title)}</b></td><td>${x.meet ? "📹 Google Meet<br>" : ""}${x.remind ? "🔔 Email reminder 1 day before<br>" : ""}${C.colorOf(x.color) ? "🎨 " + e(C.colorOf(x.color).name) + "<br>" : ""}${x.guests ? "Guests: " + e(x.guests) + "<br>" : ""}${e(x.desc)}</td></tr>`).join("") || "<tr><td colspan=3>No events.</td></tr>"}</table>
-<p class="meta">${act ? "Pacific Time (the attorney’s calendar)" : "Eastern Time"} · LSH Foundational Training · Calendar Management</p></body></html>`;
+<p class="meta">${act ? "Pacific Time (the attorney’s calendar)" : "Eastern Time"} · LSH Legal VA Foundational Track · Calendar Management</p></body></html>`;
 }
 function finalOf(scnId){
   const s = C.SCENARIOS.find(x => x.id === scnId), sub = s && subs(scnId).pop(), r = sub && S.data.reviews[subKey(sub)];

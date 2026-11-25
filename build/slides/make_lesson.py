@@ -180,7 +180,7 @@ def claims_pages():
         return S(title(" ".join(b[2])), table([t[0], t[1]], [[t[2], t[3]], [t[4], t[5]], [t[6], t[7]]]), note(x[0]),
                  f'<div class="cs-stat"><span><small>{esc(x[1])}</small>{esc(x[2])}</span></div><p style="color:var(--ink-soft);font-size:14px;">{esc(x[3])}</p>', lab=b[3][0])
     P["n047"] = p47
-    P["n001"] = lambda b: S(title(b[0][0]), hero("LSH Foundational Training", title(b[0][0]), title(b[1][0])))
+    P["n001"] = lambda b: S(title(b[0][0]), hero("LSH Legal VA Foundational Track", title(b[0][0]), title(b[1][0])))
     P["n025"] = lambda b: S(title(b[0][0]), lead(b[1][0]), grid([card("🏬", None, b[1][1], cls="accent"), card("📋", None, b[1][2], cls="accent")], "c2"), lab=b[2][0])
     P["n048"] = lambda b: S(title(" ".join(b[0])), lead(b[2][0]), f'<div class="cs-stat"><span><small>🧩 Example</small>{esc(b[3][0].split(": ",1)[1])}</span></div>', ul(b[4]), lab=b[1][0])
     P["n049"] = lambda b: S("CSL vs Per Person / Per Accident", split(div(sub(b[0][0]), fig([IMG + "csl-example.png"])), div(sub(b[1][0]), fig([IMG + "split-limits-example.png"]))), lab=b[2][0])
@@ -317,7 +317,7 @@ def emph(text, *parts):
 def receptionist_pages():
     P = {}
     T = lambda b: title(J(b[0]))
-    P["p01"] = lambda b: S("The Receptionist Role", hero_photo("LSH Foundational Training", title(J(b[0])), "title"))
+    P["p01"] = lambda b: S("The Receptionist Role", hero_photo("LSH Legal VA Foundational Track", title(J(b[0])), "title"))
     P["p02"] = lambda b: S(T(b), media("intro", pt("1", J(b[1]))))
     P["p03"] = lambda b: S(T(b), media("intro", pt("2", J(b[1])), pt("3", J(b[2]))))
     P["p04"] = lambda b: S(T(b), media("intro", pt("4", J(b[1])), pt("5", J(b[2]))))
@@ -412,7 +412,7 @@ def lfc_pages():
     rest = lambda b, a: " ".join(l for x in b[a:] for l in x)           # every box from a on
     def one(h, a=1):                                                    # a one-paragraph practice page
         return lambda b: S(h, lead(rest(b, a)), lab="Inbound call best practices")
-    P["p01"] = lambda b: S("Law Firm Communication", hero("LSH Foundational Training", "Law Firm Communication"))
+    P["p01"] = lambda b: S("Law Firm Communication", hero("LSH Legal VA Foundational Track", "Law Firm Communication"))
     P["p02"] = lambda b: S("Objectives", grid([card(str(i + 1), None, j(b, i + 1), cls="accent") for i in range(3)], "c3"))
     P["p03"] = lambda b: S("Training Agenda", flow([j(b, i) for i in range(1, 6)]))
     P["p05"] = lambda b: S("Inbound Caller Roles", grid([card(ic, None, j(b, i)) for ic, i in zip("💼👤📅💳", range(2, 6))]))

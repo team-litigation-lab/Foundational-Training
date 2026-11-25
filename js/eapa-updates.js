@@ -219,7 +219,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>STANDARD FOUNDATIONAL TRAINING</b></div>
+        <div class="brand-text"><b>LEGAL VA FOUNDATIONAL TRACK</b></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
@@ -650,7 +650,7 @@ if(PV_IS_AUDIENCE){
   window.updateIsSafe = function(){ return false; };      // never reload itself for an update mid-class (the console offers Update now)
   const app = document.getElementById("app"); if(app) app.innerHTML = "";
   const root = document.createElement("div"); root.id = "audienceRoot";
-  root.innerHTML = `<div class="aud-wait"><b>LSH Foundational Training</b>Waiting for the presenter…</div>`;
+  root.innerHTML = `<div class="aud-wait"><b>LSH Legal VA Foundational Track</b>Waiting for the presenter…</div>`;
   document.body.appendChild(root);
   // arrow keys pressed in the slides window (or while the live copy holds focus) drive the presentation
   document.addEventListener("keydown", (e)=>{
