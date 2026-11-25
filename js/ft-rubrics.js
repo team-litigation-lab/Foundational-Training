@@ -93,16 +93,37 @@ function result(c){
   return c.status === "Passed" ? "Passed" : "Not yet";
 }
 /* ↪ a scorecard saved before a criterion was put back in the middle of it (the Saving LORs scorecard's 6th metric, "Task Reporting,
-   Hyperlinking & Task Attachment", at row 5): its scores and feedback are by row, so the ones from that row on move down one,
-   leaving the new row empty. A card is from before when it has fewer rows than the scorecard has now (Tools Utilization, last,
-   is always saved). Moved once (rows marks it); applied to every labreview: record as it is read (index.html sharedGet*) and to any act here. */
-const INSERTED = {lor: {at: 5, slots: 10}};
+   Hyperlinking & Task Attachment", at row 5). Its scores and feedback are by row, and which row each one belongs on depends on
+   when it was saved:
+   - before Nov 19 the card showed 8 rows (… Document Properties, Email/Fax, Attention to Detail, Attention to Detail, Verification
+     & Efficiency) against the guide's 8 metrics (… Document Properties, Task Reporting, Email/Fax, Attention to Detail, Verification
+     & Efficiency), and the trainers scored it in the guide's order: its 6th, 7th and 8th rows hold Task Reporting, Email/Fax and
+     the merged Attention to Detail. Such a card has a score in the 7th row ("Attention to Detail", hidden since Nov 19): only its
+     last two scores move, Email/Fax to row 6, the merged row to row 8, and the retired row is left empty.
+   - from Nov 19 the card showed 7 rows, Task Reporting missing: everything from row 5 moves down one, the new row left empty.
+   A card the first rule should have caught, already moved and saved by the second (a 10-row card with Task Reporting empty and a
+   score in the retired row), is put right the same way. Moved once (rows marks it); applied to every labreview: record as it is
+   read (index.html sharedGet*) and to any act here. */
+const INSERTED = {lor: {at: 5, slots: 10, guide: 7}};
+const filled = v => v != null && v !== "";
 function upgradeAct(c){
   const r = c && c.rubric, ins = r && INSERTED[r.key];
-  if(!ins || !Array.isArray(r.scores) || r.scores.length >= ins.slots || r.scores.length <= ins.at || r.rows === ins.slots) return c;
-  r.scores.splice(ins.at, 0, null);
-  if(Array.isArray(r.feedback) && r.feedback.length > ins.at) r.feedback.splice(ins.at, 0, "");
-  r.rows = ins.slots;   // (moved: never again, even for a card shorter than the scorecard by more than one row)
+  if(!ins || !Array.isArray(r.scores)) return c;
+  const s = r.scores, fb = Array.isArray(r.feedback) ? r.feedback : null;
+  if(s.length < ins.slots && s.length > ins.at && r.rows !== ins.slots){
+    const at = filled(s[ins.guide - 1]) ? ins.guide : ins.at;   // (scored in the guide's order: only the last rows move)
+    s.splice(at, 0, null);
+    if(fb && fb.length > at) fb.splice(at, 0, "");
+    r.rows = ins.slots;   // (moved: never again, even for a card shorter than the scorecard by more than one row)
+    if(at === ins.guide) r.order = "guide";
+    return c;
+  }
+  // (moved the wrong way and saved: Task Reporting empty, the hidden retired row holding Email/Fax's score)
+  if(s.length >= ins.slots && !r.order && !filled(s[ins.at]) && filled(s[ins.guide])){
+    s.splice(ins.at, 3, s[ins.at + 1], s[ins.guide], null);
+    if(fb){ while(fb.length < ins.slots) fb.push(""); fb.splice(ins.at, 3, fb[ins.at + 1] || "", fb[ins.guide] || "", ""); }
+    r.order = "guide";
+  }
   return c;
 }
 function upgrade(rec){
