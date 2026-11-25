@@ -1502,7 +1502,7 @@ const LESSON_CARDS = {
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · how the demo is scored", k: "demo", d: 16, s: "s2b"},
-      {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "reference", d: 16, s: "s2p"},
+      {t: "Demo Preparation", time: "PM", sub: "Watch the recorded demos while you wait for your turn", k: "reference", d: 16, s: "s2p"},
       // (after the LV demo, as the guide's Day 17: an additional reference, build/day-decks.cjs INSERT[16])
       {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
       // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
