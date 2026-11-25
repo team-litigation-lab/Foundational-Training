@@ -28,7 +28,9 @@ const R = {
     "Uploading Files to SA", "Task Reporting & Notes Documentation", "Attention to Detail", "Time Management & Efficiency")},
   lor: {title: "Saving LORs to SA and Sending to 1P & 3P Insurance Companies", acts: ["lor-demo"], criteria: C(
     "Task Preparation & Familiarity", "Smart Advocate Navigation", "Insurance Review, Adjuster Information & Claim/Policy Number Accuracy",
-    "Document Uploading & File Handling in SA", "Document Properties & Naming Convention Accuracy", "Email/Fax Sending Accuracy & SOP Compliance",
+    "Document Uploading & File Handling in SA", "Document Properties & Naming Convention Accuracy",
+    // (the guide's 6th metric, restored in its place: the scorecards saved without it are moved over one row as they are read — upgrade, below)
+    "Task Reporting, Hyperlinking & Task Attachment", "Email/Fax Sending Accuracy & SOP Compliance",
     // (the guide's "Attention to Detail" row is merged into "Attention to Detail, Verification & Efficiency": it keeps its place,
     // retired, so the scores saved before keep their rows — a retired criterion is not shown, scored or averaged)
     {n: "Attention to Detail", w: 1, retired: true}, "Attention to Detail, Verification & Efficiency")},
@@ -90,13 +92,30 @@ function result(c){
   if(isFinite(n)) return n >= PASS_PCT ? "Passed" : "Failed";
   return c.status === "Passed" ? "Passed" : "Not yet";
 }
+/* ↪ a scorecard saved before a criterion was put back in the middle of it (the Saving LORs scorecard's 6th metric, "Task Reporting,
+   Hyperlinking & Task Attachment", at row 5): its scores and feedback are by row, so the ones from that row on move down one,
+   leaving the new row empty. A card is from before when it has fewer rows than the scorecard has now (Tools Utilization, last,
+   is always saved). Moved once (rows marks it); applied to every labreview: record as it is read (index.html sharedGet*) and to any act here. */
+const INSERTED = {lor: {at: 5, slots: 10}};
+function upgradeAct(c){
+  const r = c && c.rubric, ins = r && INSERTED[r.key];
+  if(!ins || !Array.isArray(r.scores) || r.scores.length >= ins.slots || r.scores.length <= ins.at || r.rows === ins.slots) return c;
+  r.scores.splice(ins.at, 0, null);
+  if(Array.isArray(r.feedback) && r.feedback.length > ins.at) r.feedback.splice(ins.at, 0, "");
+  r.rows = ins.slots;   // (moved: never again, even for a card shorter than the scorecard by more than one row)
+  return c;
+}
+function upgrade(rec){
+  if(rec && typeof rec === "object") ["acts", "sessions"].forEach(k => { const m = rec[k]; if(m && typeof m === "object") Object.values(m).forEach(upgradeAct); });
+  return rec;
+}
 // a saved scorecard's score, worked out again from its criteria (retired ones left out: Tools Utilization), so a card saved with
 // them reads as the guide scores it; a score the trainer typed (scoreEdited) or one with no criteria stays as it was saved
-function rubricOf(r){ const k = r && r.rubric && r.rubric.key; return k && R[k] && Array.isArray(r.rubric.scores) && !r.scoreEdited ? R[k] : null; }
+function rubricOf(r){ upgradeAct(r); const k = r && r.rubric && r.rubric.key; return k && R[k] && Array.isArray(r.rubric.scores) && !r.scoreEdited ? R[k] : null; }
 function avg5Of(r){ const rb = rubricOf(r); if(!rb) return r && r.rubric && r.rubric.avg != null ? Number(r.rubric.avg) : null; const a = average(rb, r.rubric.scores); return a == null ? null : Math.round(a * 100) / 100; }
 function scoreOf(r){ if(!r) return null; const a = rubricOf(r) ? avg5Of(r) : null;
   if(a != null) return Math.round(a / 5 * 100);
   return r.score == null || r.score === "" || !isFinite(Number(r.score)) ? null : Number(r.score); }
 root.ftResult = c => c && rubricOf(c) ? result(Object.assign({}, c, {score: scoreOf(c)})) : result(c);
-root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result: root.ftResult, PASS_PCT, scoreOf, avg5Of, keys: () => Object.keys(R)};
+root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, result: root.ftResult, PASS_PCT, scoreOf, avg5Of, upgrade, upgradeAct, keys: () => Object.keys(R)};
 })(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : this));

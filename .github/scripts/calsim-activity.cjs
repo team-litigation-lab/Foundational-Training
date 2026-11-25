@@ -81,7 +81,12 @@ const p0 = C.review(S, perfect());
 if (p0.kind !== 'activity' || p0.pct !== 100 || p0.score !== p0.max || !p0.passed || p0.done !== 19 || p0.extras.length) fail(`a perfect calendar scores ${p0.pct}% (${p0.score}/${p0.max}, ${p0.done} perfect, ${p0.extras.length} extra): ${problems(p0)}`);
 // through FTCalCheck: its own score of the same entries is 100, and the review's rows are exactly its checkAll
 const own = CK.checkAll({ entries: p0.entries }).filter(r => r[0] !== '11');
-expect('the Check scores the perfect calendar', CK.score(own), { met: own.filter(r => r[2] !== null).length, total: own.filter(r => r[2] !== null).length, pct: 100 });
+{ const sc = CK.score(own); expect('the Check scores the perfect calendar', [sc.met, sc.total, sc.pct, sc.of5], [18, 18, 100, 5]); }
+// the simulator's score is by item, 19 (the 18 events and the whole calendar): each right only when every check on it is
+if (p0.score !== 19 || p0.max !== 19 || p0.of5 !== 5) fail(`a perfect calendar scores ${p0.score}/${p0.max} items (${p0.of5}/5), not 19/19 (5/5)`);
+// one wrong field (the doctor's appointment without its description, then also in the wrong colour): that item alone is wrong, 18/19 = 4.74/5
+[{ desc: '' }, { desc: '', color: 'zzz' }].forEach(o => { const ev = perfect(); Object.assign(ev.find(x => x.id === 'e_5'), o); const g = C.review(S, ev);
+  if (g.score !== 18 || g.max !== 19 || g.of5 !== 4.74 || g.pct !== 95 || g.items.find(i => i.id === '5').perfect) fail(`a calendar with item 5 wrong (${JSON.stringify(o)}) scores ${g.score}/${g.max} (${g.of5}/5, ${g.pct}%): ${problems(g)}`); });
 expect('the review\'s rows are the Check\'s', p0.rows, own);
 expect('the review\'s Check score is the Check\'s', p0.check, CK.score(own));
 expect('every Check event has an entry', Object.keys(p0.entries).sort(), N.slice().sort());

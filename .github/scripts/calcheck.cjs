@@ -1,5 +1,5 @@
 // 📅 Calendar Activity Check (js/ft-calcheck.js): Day 5's Attorney Calendar Management Activity, field by field. The
-//   activity's answer key entered in full scores 100%; a wrong time zone, a wrong time, a missing guest and a wrong
+//   activity's answer key entered in full scores 100% (18 of 18 events, 5/5; an event counts only when every field on it is right); a wrong time zone, a wrong time, a missing guest and a wrong
 //   reminder each fail exactly that field of that event; the accepted alternatives pass (Phoenix for MST, Panama for EST,
 //   the same moment typed in Pacific, 1 day = 24 hours, 1 hour = 60 minutes, an all-day or overnight stay, titles in any case or dashes); events with no
 //   guests or reminder aren't marked down; no screenshots or folder lookup are asked for; a trainee's draft
@@ -133,6 +133,15 @@ async function workerChecks() {
     if (/fixed offset/.test(zfix) || !/Pacific zone/.test(zfix)) out.push(`the time zone's fix reads: ${zfix}`);
     const gfix = FTCalCheck.check(FTCalCheck.key[1], { guests: 'martin@lsh.com' }).find(c => c[0] === 'Guests')[2];
     if (!/by name/.test(gfix)) out.push(`the guests' fix doesn't ask for names: ${gfix}`);
+    // the score is by event: one wrong field makes its whole event wrong — 17 of 18 events, 4.72/5 — and two in one event still 17
+    if (full.total !== 18 || full.met !== 18 || full.of5 !== 5) out.push(`the answer key scores ${full.met} of ${full.total} events (${full.of5}/5), not 18 of 18 (5/5)`);
+    const one = FTCalCheck.score(FTCalCheck.checkAll(change('8.6', { st: '09:00' })));
+    if (one.met !== 17 || one.total !== 18 || one.of5 !== 4.72 || one.pct !== 94) out.push(`one wrong field scores ${one.met}/${one.total} (${one.of5}/5, ${one.pct}%), not 17/18 (4.72/5, 94%)`);
+    const two = FTCalCheck.score(FTCalCheck.checkAll(change('1', { tz: 'America/Denver', loc: 'Room A' })));
+    if (two.met !== 17) out.push(`two wrong fields on one event score ${two.met} events right, not 17`);
+    const both = FTCalCheck.score(FTCalCheck.checkAll(Object.assign(change('1', { loc: 'Room A' }), {})));
+    if (FTCalCheck.score(FTCalCheck.checkAll({ entries: {} })).met !== 0) out.push('an empty record has events right');
+    if (both.fields.met !== full.fields.met - 1) out.push('the field count isn\'t kept beside the event score');
     // an empty record and the answer key count the same fields
     const empty = FTCalCheck.score(FTCalCheck.checkAll({ entries: {}, final: {} }));
     if (empty.total !== full.total) out.push(`an empty record counts ${empty.total} fields, the answer key ${full.total}`);
@@ -253,9 +262,9 @@ async function workerChecks() {
   // 📤 sent to the trainer
   await page.click('text=📤 Submit to my trainer'); await page.waitForTimeout(1500);
   const rec = await get('calcheck:' + id), s = rec && rec.submits && rec.submits[rec.submits.length - 1];
-  // event 1 (12 fields) and event 2's title right, out of the answer key's fields
-  const want = Math.round(13 / pure.total * 100);
-  if (!s || s.met !== 13 || s.total !== pure.total || s.pct !== want || !s.at || !s.snap || !s.snap.entries['1']) fail(`the submission wasn't stamped and scored: ${JSON.stringify(s && { met: s.met, total: s.total, pct: s.pct, at: s.at })}, the key's total ${pure.total}`);
+  // event 1 right in full (its 12 fields) and event 2's title only: one event right of the key's 18 (event 2 is wrong as a whole)
+  const want = Math.round(1 / pure.total * 100);
+  if (!s || s.met !== 1 || s.total !== pure.total || s.pct !== want || !s.at || !s.snap || !s.snap.entries['1']) fail(`the submission wasn't stamped and scored: ${JSON.stringify(s && { met: s.met, total: s.total, pct: s.pct, at: s.at })}, the key's total ${pure.total}`);
   if (!/Last sent/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the page doesn\'t show when it was sent');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (📎 the calendar activity is Additional Reference — js/ft-reference.js: shown with its fields right, with no score)
@@ -341,5 +350,5 @@ async function workerChecks() {
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Calendar Activity Check test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} fields; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; no screenshots or upload scored; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules; and at the anchor 2026-11-02: the key 17 weeks on at 100%, standard time (9:00 AM Pacific for the 11:00 AM EST deposition not accepted), the date's own offsets, a snapshot scored at its anchor, and a B102626 trainee's calendar given 2026-11-02).`);
+  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} events, each right only when all its fields are; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; no screenshots or upload scored; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules; and at the anchor 2026-11-02: the key 17 weeks on at 100%, standard time (9:00 AM Pacific for the 11:00 AM EST deposition not accepted), the date's own offsets, a snapshot scored at its anchor, and a B102626 trainee's calendar given 2026-11-02).`);
 })().catch(e => { console.error(e); process.exit(1); });

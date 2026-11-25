@@ -5341,6 +5341,8 @@ window.addEventListener("online", resendUnsent);
 const GUARDED_KEY = /^(labreview|kcreview|trainerfb):/;
 const SHARED_BASE = new Map();
 const noteBase = (key, text) => { if(GUARDED_KEY.test(key)) SHARED_BASE.set(key, text == null ? null : text); };
+// (a trainer's scorecard saved before a criterion was put back in the middle of it is moved to the rows as they are now: js/ft-rubrics.js upgrade)
+const upgradeRead = (key, v) => { try{ if(v && /^labreview:/.test(key) && window.FT_RUBRICS && FT_RUBRICS.upgrade) FT_RUBRICS.upgrade(v); }catch(e){} return v; };
 async function sharedSet(key,val){
   sharedInFlight++;
   try{ return await sharedSetNow(key, val); }finally{ sharedInFlight--; }
@@ -5371,18 +5373,18 @@ async function sharedSetNow(key,val){
 }
 async function sharedGet(key){
   // (a write of this trainee's that hasn't reached the server yet is newer than the server's copy: it is what's read)
-  if(state.traineeId && !state.isAdmin){ const u = readUnsent(key); if(u){ setTimeout(resendUnsent, 0); return u.val; } }
+  if(state.traineeId && !state.isAdmin){ const u = readUnsent(key); if(u){ setTimeout(resendUnsent, 0); return upgradeRead(key, u.val); } }
   let fromWindowStorage;
   try{
     if(window.storage){ const r = await window.storage.get(key,true); fromWindowStorage = r ? JSON.parse(r.value) : undefined; }
   }catch(e){ /* window.storage unavailable, fall through to the KV-backed API */ }
-  if(fromWindowStorage !== undefined) return fromWindowStorage;
+  if(fromWindowStorage !== undefined) return upgradeRead(key, fromWindowStorage);
   try{
     const response = await authFetch("/api/storage/get", { key });
     if(!response.ok) return null;
     const data = await response.json();
     noteBase(key, data.value || null);
-    return data.value ? JSON.parse(data.value) : null;
+    return upgradeRead(key, data.value ? JSON.parse(data.value) : null);
   }catch(e){ return null; }
 }
 async function sharedList(prefix){
@@ -5417,7 +5419,7 @@ async function sharedGetMany(keys){
       if(response.status===404) return Promise.all(part.map(k=>sharedGet(k).catch(()=>null)));
       if(response.ok){ values = (await response.json()).values || {}; part.forEach(k=>{ if(k in values) noteBase(k, values[k] || null); }); }
     }catch(e){ values = null; }
-    return part.map(k=>{ try{ return values && values[k] ? JSON.parse(values[k]) : null; }catch(e){ return null; } });
+    return part.map(k=>{ try{ return upgradeRead(k, values && values[k] ? JSON.parse(values[k]) : null); }catch(e){ return null; } });
   }));
   return [].concat(...got);   // (in the order asked)
 }
@@ -5447,12 +5449,12 @@ function generateTraineeId(name, batch){
 async function sharedGetStrict(key){
   // Like sharedGet, but a server/network failure throws instead of looking
   // like "no record" — so a blip can't make a returning trainee look new.
-  if(window.storage){ try{ const r = await window.storage.get(key,true); if(r) return JSON.parse(r.value); }catch(e){} }
+  if(window.storage){ try{ const r = await window.storage.get(key,true); if(r) return upgradeRead(key, JSON.parse(r.value)); }catch(e){} }
   const response = await authFetch("/api/storage/get", {key});
   if(!response.ok) throw new Error("storage "+response.status);
   const data = await response.json();
   noteBase(key, data.value || null);
-  return data.value ? JSON.parse(data.value) : null;
+  return upgradeRead(key, data.value ? JSON.parse(data.value) : null);
 }
 async function resolveTraineeId(name, batch){
   const newId = generateTraineeId(name, batch);
@@ -14120,7 +14122,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.25-94982745";
+var APP_BUILD = "ft-2026.11.25-a5a79ae4";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14170,13 +14172,13 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-assess.js?v=91aa984776"></script>
 <script src="/js/ft-claims-email.js?v=a218e597dd"></script>
 <script src="/js/ft-rules.js?v=9df8606e97"></script>
-<script src="/js/ft-calsim-core.js?v=e5a3258e64"></script>
-<script src="/js/ft-calendar.js?v=83275e3294"></script>
+<script src="/js/ft-calsim-core.js?v=61a5b15a2f"></script>
+<script src="/js/ft-calendar.js?v=d3706202b0"></script>
 <script src="/js/ft-cases-data.js?v=b0499a4c9c"></script>
 <script src="/js/ft-firms.js?v=96bfd6a62f"></script>
 <script src="/js/ft-day-activities.js?v=61456f85b3"></script>
 <script src="/js/ft-simulators.js?v=f2a987b02a"></script>
-<script src="/js/ft-rubrics.js?v=fca0ed61f7"></script>
+<script src="/js/ft-rubrics.js?v=ec4e8aa312"></script>
 <script src="/js/ft-reference.js?v=71f700001f"></script>
 <script src="/js/ft-sessions.js?v=e10bbca4ba"></script>
 <script src="/js/ft-score-recover.js?v=155809c37c"></script>
@@ -14191,7 +14193,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-writing.js?v=f939b19609"></script>
 <script src="/js/ft-calweek-core.js?v=d64da960e4"></script>
 <script src="/js/ft-calweek.js?v=c0d840e5dd"></script>
-<script src="/js/ft-calcheck.js?v=ba14d4f520"></script>
+<script src="/js/ft-calcheck.js?v=e933fe8f7f"></script>
 <script src="/js/ft-listening.js?v=b25d0989b3"></script>
 <script src="/js/ft-todo.js?v=dc1a7e6767"></script>
 <script src="/js/ft-next-step.js?v=70c138162b"></script>
