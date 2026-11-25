@@ -9528,6 +9528,11 @@ function friendlyAiError(e){
   if(/x-api-key|authentication_error|invalid api key|API key not valid/i.test(m)) return /gemini/i.test(m) ? "The Gemini API key on the server is invalid — replace GEMINI_API_KEY in Cloudflare (Workers & Pages → ea-pa-training → Settings → Variables and Secrets)." : "The AI key on the server is invalid — replace it in Cloudflare (Settings → Variables and Secrets).";
   if(/quota|RESOURCE_EXHAUSTED|free tier/i.test(m)) return "AI generation limit reached. Try again in a minute.";
   if(/401|sign-in required|unauthor/i.test(m)) return (state.isAdmin || state.view==="admin") ? "Your admin sign-in has expired or was made before secure mode was switched on. Click 🛡 Admin → Sign out, then sign in again with the admin password and retry." : "Your session needs refreshing — sign out and back in, then try again.";
+  // (a 403 with the server's own reason — the trainee's access revoked, their batch archived, the account merged: that reason,
+  // not a guess; "Not allowed" from the Portal's shared AI gateway is this site's setup, not the trainee's account)
+  const why403 = (/AI service error 403: (.+)/i.exec(m) || [])[1];
+  if(why403 && /revoked|ended|archived|merged/i.test(why403)) return why403;
+  if(/AI service error 50\d: Not allowed/i.test(m)) return "The Training Portal refused this course's AI requests (a setup problem on the server, not your account): AI_GATEWAY_SECRET must be the same on this Worker and on the Portal. Tell your trainer.";
   if(/403|not allowed/i.test(m)) return "The server refused this request for your account type. Sign out and back in, then try again.";
   if(/GEMINI_API_KEY|not configured|No AI key/i.test(m)) return "No AI key is set on the server — add GEMINI_API_KEY (free, from Google AI Studio) as a Secret in Cloudflare (Workers & Pages → ea-pa-training → Settings → Variables and Secrets).";
   if(/credit|billing|balance/i.test(m)) return "The Gemini account has hit its quota or billing limit — check Google AI Studio, then retry.";
@@ -14122,7 +14127,7 @@ const IZ_FIXED_INBOX = [
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.11.25-a5a79ae4";
+var APP_BUILD = "ft-2026.11.25-76f9a12c";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -14197,7 +14202,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=b25d0989b3"></script>
 <script src="/js/ft-todo.js?v=dc1a7e6767"></script>
 <script src="/js/ft-next-step.js?v=70c138162b"></script>
-<script src="/js/ft-day-decks.js?v=68fd171a8d"></script>
+<script src="/js/ft-day-decks.js?v=e3c489af2a"></script>
 <script src="/js/ft-deck-motion.js?v=b320f9fe11"></script>
 <script src="/js/ft-checkin.js?v=c334f24366"></script>
 <script src="/js/ft-lor-data.js?v=61d68793de"></script>
