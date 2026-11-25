@@ -107,6 +107,10 @@ const fails = []; const ck = (ok, t) => { if (!ok) fails.push(t); };
     ck(r.ok && w && w.ai === true && w.overall === 3.6 && w.label === 'Good, with Improvements Needed' && w.metrics.organization.rating === 2.5, `the AI's week evaluation isn't kept (3.6 / 5 – Good, with Improvements Needed): ${JSON.stringify(r).slice(0, 400)}`);
     ck(w && JSON.stringify(w.range) === '["2026-11-02","2026-11-08"]' && w.days.join() === days.join(), `not the platform's Week 1: ${JSON.stringify(w && [w.range, w.days])}`);
     ck(/11\/16\/2022/.test(prompt) && /Tracker Organization & Correct Section Placement/.test(prompt) && /Process Questions/.test(prompt) && /MISS Sample row/.test(prompt), 'the AI wasn\'t given the tracker, the rules\' findings, the metrics and the expected activities');
+    // (📅 Days 1 and 2 on the trainer's own list of expected tasks, and the evaluator's reminders among the standards)
+    ck(/Added the To-Dos on Hubstaff/.test(prompt) && /SmartAdvocate \(SA\) plug-ins/.test(prompt) && /Daily Task Tracker updating/.test(prompt) && /Law Firm Communication Training discussion/.test(prompt)
+      && /Common Terms Used and Auto Liability Insurance videos/.test(prompt) && /VLF Tettra/.test(prompt), 'the trainer\'s expected tasks for Days 1 and 2 weren\'t given to the week\'s evaluation');
+    ck(/more detailed than the EOD/.test(prompt) && /Daily Notes or in the VA Notes column/.test(prompt) && /Sanders/.test(prompt) && /diversity jurisdiction/.test(prompt), 'the evaluator\'s reminders aren\'t among the standards');
     ck(calls === 1, `${calls} AI requests for one week`); }
   // (asked again with the same tracker, a trainer's 🔄 writes it again; the nightly run doesn't on the same day)
   delete env.ANTHROPIC_API_KEY;
