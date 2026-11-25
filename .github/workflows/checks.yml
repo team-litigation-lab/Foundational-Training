@@ -77,6 +77,8 @@ jobs:
         run: node .github/scripts/intake-worksheet.cjs
       - name: Day 5's Calendaring Activity on the Portal for the Batch Sheet, with links to the trainee's calendar (worker.js /api/calactivity)
         run: node .github/scripts/calactivity.cjs
+      - name: An AI review refused with the server's reason shows that reason (revoked, archived, merged), the gateway's refusal named as the site's
+        run: node .github/scripts/ai-error-reason.cjs
       - name: The Saving LORs scorecard's two Attention to Detail rows merged, the retired one keeping its place out of the average (js/ft-rubrics.js)
         run: node .github/scripts/lor-rubric.cjs
       - name: Only what the Training Guide grades is scored; everything else is Additional Reference (js/ft-reference.js)
