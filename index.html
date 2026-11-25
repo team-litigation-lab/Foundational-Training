@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LSH Foundational Training Program</title>
+<title>LSH Legal VA Foundational Track</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -5954,7 +5954,7 @@ function orientSlides(){
   const step = (n, icon, t, d)=>`<div class="or-step"><div class="or-step-n">${n}</div><div class="or-step-i">${icon}</div><b>${t}</b><span>${d}</span></div>`;
   const pill = (i,t,d)=>`<div class="or-pill"><div>${i}</div><b>${t}</b><span>${d}</span></div>`;
   return [
-   {k:"Welcome", h:"Welcome to the LSH Foundational Training Program", body:`
+   {k:"Welcome", h:"Welcome to the LSH Legal VA Foundational Track", body:`
      <p class="or-lead">${DAYS.length} lessons to work like a strategic, trusted Executive &amp; Personal Assistant to an attorney — built around one realistic client, from the first lesson to the last.</p>
      <div class="or-3">${pill("📚","Learn",`${topics} short topics across ${DAYS.length} lessons`)}${pill("🧪","Practice",`${PRACTICE_TOOLS.length} hands-on Practice Labs & live calls`)}${pill("✅","Prove","A Knowledge Check each day — and a certificate at the end")}</div>
      <div class="or-note"><b>You'll need:</b> Chrome or Edge on a computer, a headset with a microphone for the live calls, and a stable connection. Your progress saves to your account automatically.</div>`},
@@ -6011,9 +6011,9 @@ function printOrientation(){
   const slides = orientSlides();
   const css = [...document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
   const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print the orientation blueprint."); return; }
-  w.document.write(`<html><head><title>LSH Foundational Training — Platform Orientation</title><style>${css}
+  w.document.write(`<html><head><title>LSH Legal VA Foundational Track — Platform Orientation</title><style>${css}
     @page{size:1280px 720px;margin:0} body{margin:0;background:#fff} .or-slide.or-export{page-break-after:always;break-after:page}</style></head><body>${
-    slides.map((sl,k)=>`<div class="or-slide or-export"><div class="or-kicker">${String(k+1).padStart(2,"0")} · ${esc(sl.k)}</div><h2>${esc(sl.h)}</h2>${sl.body}<img class="or-logo" src="${LOGO_FULL_SRC}" alt=""><div class="or-export-foot">LSH Foundational Training Program · Platform Orientation · ${k+1} / ${slides.length}</div></div>`).join("")
+    slides.map((sl,k)=>`<div class="or-slide or-export"><div class="or-kicker">${String(k+1).padStart(2,"0")} · ${esc(sl.k)}</div><h2>${esc(sl.h)}</h2>${sl.body}<img class="or-logo" src="${LOGO_FULL_SRC}" alt=""><div class="or-export-foot">LSH Legal VA Foundational Track · Platform Orientation · ${k+1} / ${slides.length}</div></div>`).join("")
   }</body></html>`);
   w.document.close(); setTimeout(()=>{ w.focus(); w.print(); }, 600);
 }
@@ -6076,7 +6076,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>STANDARD FOUNDATIONAL TRAINING</b></div>
+        <div class="brand-text"><b>LEGAL VA FOUNDATIONAL TRACK</b></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
@@ -7532,7 +7532,7 @@ function render(){
   afterRender();
 }
 function renderFooter(){
-  return `<div class="footer-note">LSH Foundational Training Program &middot; Internal Training Portal &middot; <span id="saveStatus">${saveStatusText()}</span> &middot; <span class="build-tag">build ${typeof APP_BUILD!=="undefined"?APP_BUILD:""}</span></div>`;
+  return `<div class="footer-note">LSH Legal VA Foundational Track &middot; Internal Training Portal &middot; <span id="saveStatus">${saveStatusText()}</span> &middot; <span class="build-tag">build ${typeof APP_BUILD!=="undefined"?APP_BUILD:""}</span></div>`;
 }
 
 /* ============================================================
@@ -7768,7 +7768,7 @@ function applyPageHero(){
   let sub = h1.nextElementSibling && h1.nextElementSibling.tagName==="P" && !h1.nextElementSibling.className ? h1.nextElementSibling : null;
   const hero = document.createElement("section"); hero.className = "page-hero";
   parent.insertBefore(hero, eyebrow || h1);
-  if(!eyebrow){ eyebrow = document.createElement("p"); eyebrow.className = "eyebrow"; eyebrow.textContent = PAGE_EYEBROWS[state.view] || "LSH Foundational Training Program"; }
+  if(!eyebrow){ eyebrow = document.createElement("p"); eyebrow.className = "eyebrow"; eyebrow.textContent = PAGE_EYEBROWS[state.view] || "LSH Legal VA Foundational Track"; }
   hero.appendChild(eyebrow); hero.appendChild(h1); if(sub) hero.appendChild(sub);
 }
 function afterRender(){
@@ -9292,7 +9292,7 @@ async function downloadQuizResultPdf(dayId){
     lines.push(`   Correct answer: ${q.opts[q.a]}`);
     lines.push(`   Why: ${q.r}`);
   });
-  buildAndSavePdf("LSH Foundational Training Program", `${ftName(dayId)} Knowledge Check — Results`, lines, `LSH_Day${dayId}_Knowledge_Check`);
+  buildAndSavePdf("LSH Legal VA Foundational Track", `${ftName(dayId)} Knowledge Check — Results`, lines, `LSH_Day${dayId}_Knowledge_Check`);
 }
 window.downloadQuizResultPdf = downloadQuizResultPdf;
 function goToNextDay(dayId){
@@ -9860,7 +9860,7 @@ async function downloadEvaluationReportPdf(){
     lines.push("Growth Suggestions:");
     report.growthSuggestions.forEach(s=>lines.push("   • "+s));
   }
-  buildAndSavePdf("LSH Foundational Training Program", `${ftName(dayId)} — Evaluation Report`, lines, `LSH_Day${dayId}_Evaluation_Report`);
+  buildAndSavePdf("LSH Legal VA Foundational Track", `${ftName(dayId)} — Evaluation Report`, lines, `LSH_Day${dayId}_Evaluation_Report`);
 }
 window.downloadEvaluationReportPdf = downloadEvaluationReportPdf;
 function repeatActivity(){
@@ -10008,7 +10008,7 @@ async function downloadDrillPdf(){
     lines.push(`${i+1}. ${it.text}`);
     lines.push(`   Your answer: ${it.choice}  |  Correct: ${it.correctRole}  ${it.ok?"✓":"✗"}`);
   });
-  buildAndSavePdf("LSH Foundational Training Program", "EA vs. PA Differences Drill — Results", lines, "LSH_Drill_Results");
+  buildAndSavePdf("LSH Legal VA Foundational Track", "EA vs. PA Differences Drill — Results", lines, "LSH_Drill_Results");
 }
 window.downloadDrillPdf = downloadDrillPdf;
 
@@ -10536,7 +10536,7 @@ async function downloadCalendarPdf(){
   });
   lines.push("---", "## Daily Briefing Prompt", document.getElementById("calPromptInput")?.value.trim() || "(not written)");
   if(toolState.calPromptReport) lines.push("", "Feedback:", toolState.calPromptReport);
-  buildAndSavePdf("LSH Foundational Training Program", "Weekly Calendar — Results", lines, "LSH_Calendar_Plan");
+  buildAndSavePdf("LSH Legal VA Foundational Track", "Weekly Calendar — Results", lines, "LSH_Calendar_Plan");
 }
 window.downloadCalendarPdf = downloadCalendarPdf;
 function fmtHr(h){
@@ -10994,7 +10994,7 @@ async function downloadFinancialPdf(){
     "## Invoice & Bill Audit Queue", ...auditLines, "---",
     "## Invoice Follow-Up (today: June 30)", ...agingLines
   ];
-  buildAndSavePdf("LSH Foundational Training Program", "Trust Ledger & Billing — Results", lines, "LSH_Financial_Sheet");
+  buildAndSavePdf("LSH Legal VA Foundational Track", "Trust Ledger & Billing — Results", lines, "LSH_Financial_Sheet");
 }
 window.downloadFinancialPdf = downloadFinancialPdf;
 
@@ -11253,7 +11253,7 @@ async function downloadTravelPdf(){
   if(typeof toolState.travel.score === "number"){
     lines.push("---", `Review Score: ${toolState.travel.score}%`);
   }
-  buildAndSavePdf("LSH Foundational Training Program", "Advanced Travel Itinerary — Elias Thorne", lines, "LSH_Travel_Itinerary");
+  buildAndSavePdf("LSH Legal VA Foundational Track", "Advanced Travel Itinerary — Elias Thorne", lines, "LSH_Travel_Itinerary");
 }
 window.downloadTravelPdf = downloadTravelPdf;
 
@@ -11442,7 +11442,7 @@ async function downloadCallsPdf(){
   if(typeof obPdfLines==="function") lines.push(...obPdfLines());
   const leadGenDraft = document.getElementById("leadGenDraft");
   lines.push("---", "## C. Lead Generation Practice", `Scenario: ${LEAD_GEN_SCENARIO.text}`, ...(typeof lgPdfLines==="function" ? lgPdfLines() : []), `Your plan: ${leadGenDraft && leadGenDraft.value.trim() ? leadGenDraft.value.trim() : "(not written)"}`);
-  buildAndSavePdf("LSH Foundational Training Program", `${(PRACTICE_TOOLS.find(t=>t.id==="coldcalling4")||{}).title || "Day 4 Practice Lab"} — Results`, lines, "LSH_Cold_Calling");
+  buildAndSavePdf("LSH Legal VA Foundational Track", `${(PRACTICE_TOOLS.find(t=>t.id==="coldcalling4")||{}).title || "Day 4 Practice Lab"} — Results`, lines, "LSH_Cold_Calling");
 }
 window.downloadCallsPdf = downloadCallsPdf;
 
@@ -11762,7 +11762,7 @@ async function downloadHandoutPdf(day){
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 48;
   const navy=[38,43,69], orange=[219,132,55], ink=[40,42,58], soft=[110,116,140], line=[210,214,226];
   let y;
-  const header = (first)=>{ drawPdfHeader(doc, pdfSafe(h.title), pdfSafe(`LSH Foundational Training Program · ${ftName(day)} handout${first?"":" (continued)"}`)); y = 112; };
+  const header = (first)=>{ drawPdfHeader(doc, pdfSafe(h.title), pdfSafe(`LSH Legal VA Foundational Track · ${ftName(day)} handout${first?"":" (continued)"}`)); y = 112; };
   const need = (n)=>{ if(y+n > H-50){ footer(); doc.addPage(); header(false); } };
   let page = 1;
   const footer = ()=>{ doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...soft); doc.text(`Legal Support Help · ${h.title} · page ${page}`, W/2, H-24, {align:"center"}); page++; };
@@ -11981,7 +11981,7 @@ async function buildAndSavePdf(title, subtitle, bodyLines, filenameBase){
   });
 
   doc.setFontSize(8); doc.setTextColor(110,116,140);
-  doc.text("LSH Foundational Training Program — generated from this trainee's saved activity.", marginX, pageH-30);
+  doc.text("LSH Legal VA Foundational Track — generated from this trainee's saved activity.", marginX, pageH-30);
   doc.save(`${filenameBase}_${(state.traineeName||"trainee").replace(/\s+/g,"_")}.pdf`);
   toast("Downloaded");
 }
@@ -12061,14 +12061,14 @@ function renderCertificateHtml(c, s){
       <div class="cert-sub">This certifies that</div>
       <div class="cert-name">${esc(c.name||"Trainee")}</div>
       <div class="cert-text">has successfully completed the</div>
-      <div class="cert-program">LSH Foundational Training Program</div>
+      <div class="cert-program">LSH Legal VA Foundational Track</div>
       <div class="cert-text">10-Day Legal Executive &amp; Personal Assistant Professional Development Training${c.distinction?`<br><b class="cert-dist">with Distinction</b>`:""}</div>
       <div class="cert-meta">Completed ${esc(dateStr)}</div>
       <div class="cert-seal-float"><svg class="gold-ribbon" viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gr1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7E08A"/><stop offset=".45" stop-color="#D4AF37"/><stop offset="1" stop-color="#9C7A1C"/></linearGradient><linearGradient id="gr2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9C95A"/><stop offset="1" stop-color="#A8841F"/></linearGradient><radialGradient id="gr3" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFF3B8"/><stop offset=".6" stop-color="#E2BE4A"/><stop offset="1" stop-color="#B8911F"/></radialGradient></defs><path d="M38 88 L22 162 L40 150 L50 168 L60 98 Z" fill="url(#gr2)"/><path d="M82 88 L98 162 L80 150 L70 168 L60 98 Z" fill="#B8911F"/><polygon points="60.0,6.0 65.7,12.4 72.9,7.7 76.8,15.3 85.0,12.7 86.8,21.1 95.4,20.6 94.9,29.2 103.3,31.0 100.7,39.2 108.3,43.1 103.6,50.3 110.0,56.0 103.6,61.7 108.3,68.9 100.7,72.8 103.3,81.0 94.9,82.8 95.4,91.4 86.8,90.9 85.0,99.3 76.8,96.7 72.9,104.3 65.7,99.6 60.0,106.0 54.3,99.6 47.1,104.3 43.2,96.7 35.0,99.3 33.2,90.9 24.6,91.4 25.1,82.8 16.7,81.0 19.3,72.8 11.7,68.9 16.4,61.7 10.0,56.0 16.4,50.3 11.7,43.1 19.3,39.2 16.7,31.0 25.1,29.2 24.6,20.6 33.2,21.1 35.0,12.7 43.2,15.3 47.1,7.7 54.3,12.4" fill="url(#gr1)" stroke="#8A6A12" stroke-width="1"/><circle cx="60" cy="56" r="36" fill="url(#gr3)" stroke="#8A6A12" stroke-width="1.2"/><circle cx="60" cy="56" r="30" fill="none" stroke="#FFF6CF" stroke-width="1.2" opacity=".85"/><circle cx="60" cy="56" r="26" fill="none" stroke="#9C7A1C" stroke-width=".8" opacity=".6"/></svg></div>
       <div class="cert-sign cert-sign3">
         ${certSigners(c, s).map(g=>`<div><span class="cert-sig">${esc(g.name)}</span><span class="cert-line"></span><b>${esc(g.name||"")}</b><i>${esc(g.title)}</i></div>`).join("")}
       </div>
-      <div class="cert-foot"><span>Certificate ID: ${esc(c.certId)}</span><span>Legal Support Help · Foundational Training Program</span></div>
+      <div class="cert-foot"><span>Certificate ID: ${esc(c.certId)}</span><span>Legal Support Help · Legal VA Foundational Track</span></div>
     </div>
   </div>`;
 }
@@ -12200,7 +12200,7 @@ async function downloadCertificatePdfInner(adminTraineeId){
   doc.setFont("helvetica","normal"); doc.setFontSize(13); doc.setTextColor(...ink);
   doc.text("has successfully completed the", W/2, 290, {align:"center"});
   doc.setFont("helvetica","bold"); doc.setFontSize(21); doc.setTextColor(...deep);
-  doc.text("LSH Foundational Training Program", W/2, 318, {align:"center"});
+  doc.text("LSH Legal VA Foundational Track", W/2, 318, {align:"center"});
   doc.setFont("helvetica","normal"); doc.setFontSize(12); doc.setTextColor(...ink);
   doc.text("10-Day Legal Executive & Personal Assistant Professional Development Training", W/2, 340, {align:"center"});
   let y = 360;
@@ -12234,7 +12234,7 @@ async function downloadCertificatePdfInner(adminTraineeId){
   doc.setFillColor(247,224,138); doc.circle(cx-9, cy-10, 7, "F");
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...soft);
   doc.text(`Certificate ID: ${c.certId}`, 58, H-54);
-  doc.text("Legal Support Help  ·  Foundational Training Program", W-58, H-54, {align:"right"});
+  doc.text("Legal Support Help  ·  Legal VA Foundational Track", W-58, H-54, {align:"right"});
   const safeName = String(c.name||"Trainee").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_");
   try{ doc.save(`LSH_Certificate_${safeName}.pdf`); }
   catch(e){ const url = doc.output("bloburl"); window.open(url, "_blank"); }
@@ -12837,7 +12837,7 @@ async function downloadCohortPdf(){
     lines.push(`${cleanName(rec.name)||"Unnamed"} (${String(rec.id).slice(0,48)})${cleanBatch(rec.batch)?` · ${cleanBatch(rec.batch)}`:""}`);
     lines.push(`   Days: ${day.done}/${day.total}  ·  Avg score: ${day.avg}%  ·  Practice runs: ${practice.runs}, avg best ${practice.avg}%  ·  Last active: ${rec.lastActive?fmtDate(rec.lastActive):"—"}`);
   });
-  buildAndSavePdf("LSH Foundational Training Program", "Admin — Cohort Report", lines, "LSH_Cohort_Report");
+  buildAndSavePdf("LSH Legal VA Foundational Track", "Admin — Cohort Report", lines, "LSH_Cohort_Report");
 }
 window.downloadCohortPdf = downloadCohortPdf;
 

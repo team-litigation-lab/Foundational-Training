@@ -9,9 +9,9 @@
 // its slide): like every lesson deck, this one leaves them to ✍️ Process Questions.
 const DAY9 = {
   id: 9,
-  title: "Lien Negotiator Training",
+  title: "Lien Negotiator Track",
   video: "https://drive.google.com/file/d/1Kc6H6thd7wa0LRr20UFiQpi08HyEDV8R/view",
-  heading: "Lien Negotiator Training",
+  heading: "Lien Negotiator Track",
   sections: [
     {
       "id": "d17-s1",
@@ -30,8 +30,8 @@ const DAY9 = {
     },
     {
       "id": "deck",
-      "h": "Day 17 · The Lien Negotiator Training deck",
-      "html": "<div class=\"canva-frame\" id=\"lessonDeck9\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Lien Negotiator Training (Canva)\"\n    src=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck9\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"
+      "h": "Day 17 · The Lien Negotiator Track deck",
+      "html": "<div class=\"canva-frame\" id=\"lessonDeck9\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Lien Negotiator Track (Canva)\"\n    src=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck9\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"
     },
     {
       "id": "word-game-1",

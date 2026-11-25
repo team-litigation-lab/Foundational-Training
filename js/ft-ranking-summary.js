@@ -328,7 +328,7 @@ function reportHtml(forDoc, V){
   const chip = v => `<span class="rks-chip rks-${tone(v)}">${v == null ? "—" : v.toFixed(1)}</span>`;
   const bar = v => `<span class="rks-bar"><i class="rks-${tone(v)}" style="width:${v == null ? 0 : Math.round(v / 5 * 100)}%"></i></span>`;
   return `<div class="rks${forDoc ? " rks-doc" : ""}">
-    <div class="rks-head"><div><p class="rks-k">Legal Support Help · Foundational Training</p><h2>${V ? "My Weekly Progress Report" : "Weekly Progress Report"}</h2>
+    <div class="rks-head"><div><p class="rks-k">Legal Support Help · Legal VA Foundational Track</p><h2>${V ? "My Weekly Progress Report" : "Weekly Progress Report"}</h2>
       <p class="rks-sub">Batch <b>${e(c.batch)}</b> · Week <b>${e(c.week)}</b>${d && d.range ? ` · ${e(fmtR(d.range))}` : ""}</p></div>
       <div class="rks-legend">${["ex", "gd", "ok", "lo"].map(t => `<span><i class="rks-${t}"></i>${LBL[t]}</span>`).join("")}<small>Scores out of 5</small></div>${!forDoc && !V && S.acts ? `<div class="rks-head-acts">${S.acts}</div>` : ""}</div>
     <table class="rks-tbl"><thead><tr><th>Rank</th><th class="rks-name">Trainee</th>${COMP.map(([k, ic, n]) => `<th title="${e(n)}">${ic}<br><small>${e(n.replace(/ \(.*\)$/, ""))}</small></th>`).join("")}<th>Overall</th>${one ? `<th class="rks-sumh">Summary & trainer’s feedback</th>` : ""}</tr></thead>

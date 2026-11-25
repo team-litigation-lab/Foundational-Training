@@ -296,7 +296,7 @@ const habitCard = h=>`<div class="ftr-chan ftr-test">
 const SLIDES = [
   ["welcome", "Welcome to LSH!", ()=>`
     <div class="ftr-stakes"><b>👋 Welcome to Legal Support Help!</b>
-      <p>You’re starting the Standard Foundational Training Program: the training that prepares you to work as a legal VA for U.S. Law Firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
+      <p>You’re starting the Legal VA Foundational Track: the training that prepares you to work as a legal VA for U.S. Law Firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
     <div class="ftr-lessons">${[["⏱", "Hubstaff", "How-Tos, your To-Dos, notes and lost hours"], ["☕", "Breaks and Auxes", "Your schedule, your hour of breaks, and reporting your status"],
       ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Deliverables", "Typing and spelling tests, Daily Task Tracker and EOD email every day; the Monitoring Sheet when a slide asks"],
       ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
