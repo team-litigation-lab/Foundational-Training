@@ -242,21 +242,21 @@ function portalCard(id){
 }
 function portalHtml(id){
   const c = portalCard(id);
-  if(c === null) return `<p class="fss-wide fss-muted cr-assist">🗓 Loading the Google Calendar Simulator’s scorecard…</p>`;
+  if(c === null) return `<p class="fss-wide fss-muted cr-assist">🗓 Loading the Google Calendar Sim’s scorecard…</p>`;
   if(c.off) return "";
-  if(c.error) return `<p class="fss-wide fss-muted cr-assist">🗓 The Google Calendar Simulator’s scorecard couldn’t be read (${e(c.error)}).</p>`;
+  if(c.error) return `<p class="fss-wide fss-muted cr-assist">🗓 The Google Calendar Sim’s scorecard couldn’t be read (${e(c.error)}).</p>`;
   const k = (c.cards || [])[c.cards.length - 1];
-  if(!k) return `<p class="fss-wide fss-muted cr-assist">🗓 No scorecard on the Google Calendar Simulator yet${c.user ? "" : " (no Training Portal account found for this trainee’s name and batch)"}.</p>`;
+  if(!k) return `<p class="fss-wide fss-muted cr-assist">🗓 No scorecard on the Google Calendar Sim yet${c.user ? "" : " (no Training Portal account found for this trainee’s name and batch)"}.</p>`;
   const vals = {}, notes = {};
   FT_RUBRICS.list.calendar.criteria.forEach((cr, i) => { const row = (k.rows || []).find(x => x.metric === cr.n) || (k.rows || [])[i]; if(row && row.score != null){ vals[i] = Number(row.score); if(row.feedback) notes[i] = row.feedback; } });
-  return `<div class="fss-wide cr-assist"><b>🗓 Google Calendar Simulator scorecard</b> (${e(k.by || "Trainer")}, ${e(String(k.at || "").slice(0, 10))}${k.source === "foundational" ? ", saved here" : ""}): <b>${num(k.average)} / 5 · ${num(k.pct)}%</b>
+  return `<div class="fss-wide cr-assist"><b>🗓 Google Calendar Sim scorecard</b> (${e(k.by || "Trainer")}, ${e(String(k.at || "").slice(0, 10))}${k.source === "foundational" ? ", saved here" : ""}): <b>${num(k.average)} / 5 · ${num(k.pct)}%</b>
     <button class="btn btn-ghost btn-sm" type="button" onclick='FTCalRules.fillCard(this, ${JSON.stringify({vals, notes}).replace(/'/g, "&#39;")})'>⤓ Fill from the simulator’s scorecard</button></div>`;
 }
 FTCalRules.portalCard = portalCard;
 FTCalRules.fillCard = (btn, x) => {
   if(!(window.FTMockScores && FTMockScores.fillCrit)) return;
   const n = FTMockScores.fillCrit(x.vals, x.notes);
-  toast(n ? `⤓ ${n} criteri${n === 1 ? "on" : "a"} filled from the Google Calendar Simulator’s scorecard` : "Those criteria already have scores: nothing typed was changed.");
+  toast(n ? `⤓ ${n} criteri${n === 1 ? "on" : "a"} filled from the Google Calendar Sim’s scorecard` : "Those criteria already have scores: nothing typed was changed.");
 };
 // 🗓 a Calendar Management Mock Call saved in 🧑‍🏫 Graders, sent to the trainee's Google Calendar Simulator scorecards too (every
 // criterion scored): the same card on both sides

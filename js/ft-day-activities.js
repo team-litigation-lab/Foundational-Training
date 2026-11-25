@@ -91,7 +91,7 @@ const DAYS = [
   ]},
   // (📅 Day 6: the Attorney Calendar Management Activity; the Calendar Management Mock Calls on Day 7, as the trainers run them)
   {day:6, role:"Calendar Management Training", lessons:[5], items:[
-    {t:"Attorney Calendar Management Activity on the 📅 Calendaring Simulators (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
+    {t:"Attorney Calendar Management Activity on the 📅 Calendaring Sims (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
     {t:"Attorney Calendar Management Activity (each event entered on the 📅 Calendar Activity Check and submitted there)", kind:"Activity", at:"tool", id:"calcheck"},
     {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"},
     {t:"Training Video Viewing", kind:"Activity", at:"room"}
@@ -99,7 +99,7 @@ const DAYS = [
   {day:7, role:"Intake Training", lessons:[6], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},
     {t:"Calendar Management Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"calendar-live"},
-    {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
+    {t:"Appointments booked on the Google Calendar Sim (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
     {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"},
     // (no breakout handouts worksheet on Day 7: the trainers don't run one there)
@@ -111,8 +111,8 @@ const DAYS = [
     {t:"📘 Process Guide: Saving the Intake Packet in SA (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     // (graded by the trainer on the 📦 Intake Packet card, against the guide's Answer Sheets: trackerreview:<id>.assess.intakews)
     {t:"Intake Worksheet", kind:"Assessment", at:"drive", assess:"intakews"},
-    {t:"Intake Mock Call Activity (Training Platform / Prototype CMS)", kind:"Session", at:"session", id:"intake"},
-    {t:"Practice intake calls on the Call Simulator while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
+    {t:"Intake Mock Call Activity (Training Platform / LSH CaseWorks)", kind:"Session", at:"session", id:"intake"},
+    {t:"Practice intake calls on the Call Sim while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
     {t:"Demo Tutorial Viewing and Demo Preparation", kind:"Activity", at:"room"},
     {t:"🏷 Naming & Reporting Drill: Intake Packet (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Saving Intake Packet and Extracted Intake Documents to SA Demo", kind:"Demo", at:"trainer", id:"intake-packet-demo"}

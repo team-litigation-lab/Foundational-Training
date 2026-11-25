@@ -42,7 +42,7 @@ const failures = []; const fail = m => failures.push(m);
     let p = await panel();
     if (!p) fail('the Reception Mock Call scorecard has no Ring Channel and CMS panel');
     else {
-      if (!/Ring Channel · Main Line/.test(p.text) || !/best 86%/.test(p.text) || !/2 calls/.test(p.text) || !/latest 86%/.test(p.text)) fail(`the Reception line's graded calls aren't shown: ${p.text.slice(0, 300)}`);
+      if (!/LSH Voice · Main Line/.test(p.text) || !/best 86%/.test(p.text) || !/2 calls/.test(p.text) || !/latest 86%/.test(p.text)) fail(`the Reception line's graded calls aren't shown: ${p.text.slice(0, 300)}`);
       if (/71%/.test(p.text)) fail('an Intake call shows on the Reception scorecard');
       if (!p.links.some(h => /call\.html\?.*line=Reception\+Mock\+Calls/.test(h))) fail(`no Ring Channel button on the Reception line: ${p.links}`);
       if (!p.links.some(h => /drill=1/.test(h)) || !p.links.some(h => /lshcasemanagementtraining-trainingcrm\.pages\.dev\/$/.test(h))) fail(`the CMS buttons (case files, Front Desk Drill) aren't there: ${p.links}`);
@@ -56,7 +56,7 @@ const failures = []; const fail = m => failures.push(m);
     if (v[0][0] !== '5' || v[0][1] !== 'Firm and name, clearly') fail(`the graded call's metric didn't fill its criterion: ${JSON.stringify(v[0])}`);
     if (v[1][0] !== '2') fail(`⤓ wrote over a typed score: ${JSON.stringify(v[1])}`);
     // ⤓ from the CMS checks: 5 of 6 → 4.0/5 into Attention to Details (not the retired Tools Utilization), what was missed in its Remarks
-    await page.evaluate(() => [...document.querySelectorAll('.fms-sheet .mcl button')].find(b => /CMS checks/.test(b.textContent)).click()); await page.waitForTimeout(300);
+    await page.evaluate(() => [...document.querySelectorAll('.fms-sheet .mcl button')].find(b => /LSH CaseWorks checks/.test(b.textContent)).click()); await page.waitForTimeout(300);
     v = await page.evaluate(() => [...document.querySelectorAll('.fms-tbl tbody tr')].map(tr => [tr.querySelector('td').textContent, (tr.querySelector('input') || {}).value, (tr.querySelector('textarea') || {}).value]));
     const att = v.find(x => /^Attention to Details/.test(x[0])), tools = v.find(x => /^Tools Utilization/.test(x[0]));
     if (!att || att[1] !== '4' || !/missed: Caller verified first/.test(att[2])) fail(`Attention to Details wasn't filled from the CMS checks: ${JSON.stringify(att)}`);
@@ -71,11 +71,11 @@ const failures = []; const fail = m => failures.push(m);
     // the Calendar Management and Intake Mock Calls: their own lines and CMS; a trainee with no graded call or session is told so
     await page.evaluate(() => FTMockScores.act('intake-live')); await page.waitForTimeout(600);
     p = await panel();
-    if (!p || !/Ring Channel · Intake Line/.test(p.text) || !/best 71%/.test(p.text) || !p.links.some(h => /line=Intake\+Mock\+Calls/.test(h)) || !p.links.some(h => /program=intake/.test(h))) fail(`the Intake Mock Call's panel isn't on the Intake line and the Prototype CMS: ${p && p.text}`);
+    if (!p || !/LSH Voice · Intake Line/.test(p.text) || !/best 71%/.test(p.text) || !p.links.some(h => /line=Intake\+Mock\+Calls/.test(h)) || !p.links.some(h => /program=intake/.test(h))) fail(`the Intake Mock Call's panel isn't on the Intake line and the Prototype CMS: ${p && p.text}`);
     if (p && !/No Intake Mock Calls Practice Session yet/.test(p.text)) fail(`the Intake panel doesn't say no session was recorded: ${p.text}`);
     await page.evaluate(() => FTMockScores.act('calendar-live')); await page.waitForTimeout(600);
     p = await panel();
-    if (!p || !/No graded call on Ring Channel’s Calendar Management Mock Calls yet/.test(p.text) || !p.links.some(h => /line=Calendar\+Management\+Mock\+Calls/.test(h))) fail(`the Calendar Management panel isn't right: ${p && p.text}`);
+    if (!p || !/No graded call on LSH Voice’s Calendar Management Mock Calls yet/.test(p.text) || !p.links.some(h => /line=Calendar\+Management\+Mock\+Calls/.test(h))) fail(`the Calendar Management panel isn't right: ${p && p.text}`);
     // a demo has none
     await page.evaluate(() => FTMockScores.act('lor-demo')); await page.waitForTimeout(600);
     if (await panel()) fail('a demo\'s scorecard shows the Ring Channel and CMS panel');
@@ -86,12 +86,12 @@ const failures = []; const fail = m => failures.push(m);
     if (!(await page.evaluate(() => !!document.querySelector('#ftmsModal details.mcl-fold:not([open]) .mcl')))) fail('the scoresheet pop-up\'s panel isn\'t folded (the pop-up keeps to one screen)');
     await page.evaluate(() => { const d = document.querySelector('#ftmsModal details.mcl-fold'); if (d) d.open = true; });
     const pop = await page.evaluate(() => (document.querySelector('#ftmsModal .mcl') || {}).innerText || '');
-    if (!/Ring Channel · Main Line/.test(pop) || !/automated checks 83%/.test(pop)) fail(`the scoresheet pop-up has no Ring Channel and CMS panel: ${pop.slice(0, 200)}`);
+    if (!/LSH Voice · Main Line/.test(pop) || !/automated checks 83%/.test(pop)) fail(`the scoresheet pop-up has no Ring Channel and CMS panel: ${pop.slice(0, 200)}`);
     await page.evaluate(() => FTMetrics.close());
     await page.evaluate(() => { state.adminTab = 'trainerinputs'; render(); }); await page.waitForTimeout(1500);
     await page.evaluate(id => FTInputs.cell(id, 'reception-live'), id); await page.waitForTimeout(800);
     const ti = await page.evaluate(() => (document.querySelector('.fss-cellform .mcl') || {}).innerText || '');
-    if (!/Ring Channel · Main Line/.test(ti) || !/best 86%/.test(ti)) fail(`Trainer Inputs has no Ring Channel and CMS panel: ${ti.slice(0, 200)}`);
+    if (!/LSH Voice · Main Line/.test(ti) || !/best 86%/.test(ti)) fail(`Trainer Inputs has no Ring Channel and CMS panel: ${ti.slice(0, 200)}`);
   } catch (e) { fail(e.stack || String(e)); }
   for (const k of ['labreview:', 'callsim:', 'sessions:']) await put(k + id, null).catch(() => {});
   await put('trainee:' + id, { id, name: 'Mona Link', batch: 'B110926', approved: true, archived: true }).catch(() => {});

@@ -139,7 +139,7 @@ const CAL_CARDS = [
    note: "Manage the attorney’s Google Calendar in Pacific Time, check every event you entered, then book next week’s calendar under the attorney’s rules. Three steps, in this order:",
    steps: [
      {id: "calactivity", t: "Do the activity", n: "The ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes.",
-      b: [["Open the activity", "goto('calsim','attorney-activity')"], ["📅 Standard Training - Calendar Management Activity ↗", "window.ftsCalsim ? ftsCalsim('activity') : 0", "Opens on the Main Portal’s Google Calendar Simulator, in its own tab"]]},
+      b: [["Open the activity", "goto('calsim','attorney-activity')"], ["📅 Standard Training - Calendar Management Activity ↗", "window.ftsCalsim ? ftsCalsim('activity') : 0", "Opens on the Main Portal’s Google Calendar Sim, in its own tab"]]},
      {id: "calcheck", t: "Check your calendar on the ✅ Calendar Activity Check", n: "Enter what each event holds: every field is checked against the activity, then submit it.", b: [["Check my calendar", "goto('calcheck')"]]},
      {id: "calweek", t: "Book next week’s calendar: 📅 Standard Training - Calendaring Activity", n: "The Standard Training - Calendaring Activity: the tasks booked on the attorney’s calendar for next week.", b: [["Open the calendar", "goto('calweek')"]]}]},
 ];

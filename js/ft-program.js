@@ -114,15 +114,15 @@ window.LSH_PROGRAM = {
         return [it, typeof g === "number" ? {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:g, note:`Reading Task · ${plural(p.readAttempts || 1, "attempt")}`, why:(rv && rv.comment) || ""} : {name:`📖 ${rs.title}`, ref:"kcread:" + d.id, pct:null, note:"Reading Task · not graded yet"}];
       })},
     {id:"calls", reference:true, icon:"🎯", label:"Graded calls", key:"callsim:",
-      about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the CMS Call Simulator.",
+      about:"Each mock-call line: your trainer’s Mock Call scorecard (🧑‍🏫 Graders, Passed or Failed); until your trainer scores it, your best graded call on the Call Sim.",
       items: ctx => CALL_LESSONS.map(id => {
         const b = ((ctx.rec["callsim:"] || {}).best || {})["lesson" + id], name = title(id) + " · Mock Calls";
         const t = typeof window.ftMockCallItem === "function" ? window.ftMockCallItem(ctx, id) : null;
-        if(t && t.pct != null) return {name, ref:t.ref, pct:t.pct, at:t.at, note:t.note + (b ? ` · Call Simulator best ${Number(b.score)}%` : ""), why:t.why || ""};
+        if(t && t.pct != null) return {name, ref:t.ref, pct:t.pct, at:t.at, note:t.note + (b ? ` · Call Sim best ${Number(b.score)}%` : ""), why:t.why || ""};
         const redo = t && t.redo ? "The trainer asked for a redo · " : "";
         return b ? {name, pct:Number(b.score), note:redo + "Best of " + plural(b.calls || 1, "graded call")} : {name, pct:null, note:redo ? redo + "not scored yet" : "No graded call yet"};
       })},
-    {id:"calendar", reference:true, icon:"📅", label:"Calendaring Simulators", key:"calsim:",
+    {id:"calendar", reference:true, icon:"📅", label:"Calendaring Sims", key:"calsim:",
       about:"Each week you worked on: your trainer’s score once they release it, until then your best automated review.",
       items: ctx => {
         const d = ctx.rec["calsim:"] || {}, C = window.FTCalCore, out = [];
@@ -190,7 +190,7 @@ window.LSH_PROGRAM = {
       about:"How much you use the Practice Lab and how eager you are to learn, as your trainer sees it: 📈 Utilization (the Practice Lab tools you used, and the training days you practiced on), 🔥 Eagerness to Learn (showing up every day, practicing, going back to practice again and getting better), and the latest score of each AI practice tool, roleplay and random task you did.",
       items: ctx => window.FTUtil && typeof window.FTUtil.scoreItems === "function" ? window.FTUtil.scoreItems(ctx) : []},
     {id:"portalsims", reference:true, icon:"🧰", label:"Portal simulators", key:"simresults:",
-      about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
+      about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Sim, Medical Records Requests, …).",
       items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
   ]
 };

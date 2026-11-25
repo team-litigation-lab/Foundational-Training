@@ -59,7 +59,7 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   7: {insurance: "AM: Common Insurance Providers"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
-  11: {s2: "PM: Insurance Email Simulator"},
+  11: {s2: "PM: Insurance Email Sim"},
   // (Day 10's afternoon: its videos, named for what the trainee does)
   10: {s2: "PM: Watch Insurance Communication Videos"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
@@ -136,7 +136,7 @@ const calRange = ([a, b]) => b - a === 1 ? CAL_CARDS[a] : `${CAL_CARDS[a]}–${C
 // Calendar Management Activity track (calsim.html?program=FT&track=activity, js/ft-simulators.js ftsCalsim), in its own tab;
 // where ftsCalsim isn't loaded, the Practice Lab
 const CALSIM_PORTAL = {label: "📅 Standard Training - Calendaring Activity", track: "activity"};
-const calsimPortal = cls => `<button type="button" class="${cls}" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')">${hx(CALSIM_PORTAL.label)}</button>`;
+const calsimPortal = cls => `<button type="button" class="${cls}" title="Opens on the Main Portal’s Google Calendar Sim, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')">${hx(CALSIM_PORTAL.label)}</button>`;
 // (the activity's one link is on its Instructions slide: the items' slides carry none, so no one picks the wrong calendar)
 const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}">\n`;
 // 6's travel blocks: the guide's own lines under "Travel Blocks:" (each on 6's card, under it)
@@ -362,8 +362,8 @@ s3: html => {
   // (and beside it, the activity on the Main Portal's Google Calendar Simulator: CALSIM_PORTAL)
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
     '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you submit →</small></span></button>' +
-    `<button type="button" class="ftdd-tile ftdd-simbtn k-video" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')"><span class="ftdd-tile-ic">📅</span>` +
-    `<span class="ftdd-tile-t"><b>${hx(CALSIM_PORTAL.label.replace(/^📅 /, ""))}</b><small>The activity on the Main Portal’s Google Calendar Simulator ↗</small></span></button></div>\n`;
+    `<button type="button" class="ftdd-tile ftdd-simbtn k-video" title="Opens on the Main Portal’s Google Calendar Sim, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')"><span class="ftdd-tile-ic">📅</span>` +
+    `<span class="ftdd-tile-t"><b>${hx(CALSIM_PORTAL.label.replace(/^📅 /, ""))}</b><small>The activity on the Main Portal’s Google Calendar Sim ↗</small></span></button></div>\n`;
   // after the items here (shown before them: ROWS[5].s3): the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
@@ -438,7 +438,7 @@ s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
     '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
-    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n") + MOCK_RUN;
+    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Sim, then take the call on LSH Voice with the case files in LSH CaseWorks.</p>\n") + MOCK_RUN;
 },
 // Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored); the slide is only the
 // trainee's "Hit Done when you are done with your Mock Call" and Done (js/ft-buffer.js ACTS["4:s3"], simple)
@@ -496,18 +496,18 @@ s3: html => {
   // links, the steps and the reminders are one page; the sample event is the next: ftdd-pgbreak)
   const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<a class="ftdd-linkbtn" href="${url}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
   // (the heading, the buttons, the steps and the reminders are one block, ftdd-one: one page, scaled to fit a short screen)
-  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practice on the Calendaring Tool</b></p>\n' +
-    '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
-    lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
+  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Sim (LSH Voice) and practice on the Calendaring Tool</b></p>\n' +
+    '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Sim’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
+    lnk("☎ LSH Voice: the training phone your mock call rings on", sim + "call.html?program=FT") +
     // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
     "</div>\n" +
     '<div class="ftdd-steps2">\n' +
-    "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
+    "<p>Step 1 - Open the Call Sim’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
-    "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Simulator), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
+    "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Sim), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
     "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
-    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
+    "<p>Step 6 - When it’s your turn, log in to LSH Voice and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
   out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
   if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   // (the reminders' two screenshot bullets are off: the mock calls are booked on the Google Calendar Simulator, so there is
@@ -752,9 +752,9 @@ function DAY8_INS(x){
 }
 const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
   '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practice intake calls with these tools. Each opens in a new tab.</p>\n' +
-  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 Prototype CMS: Intake</a>' +
-  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ Ring Channel: Intake Calls</a></div>\n' +
-  '<p>On Ring Channel, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in the Prototype CMS, as in the mock call.</p>\n';
+  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 LSH CaseWorks: Intake</a>' +
+  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ LSH Voice: Intake Calls</a></div>\n' +
+  '<p>On LSH Voice, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in LSH CaseWorks, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 // (no "Trainer Facilitated Demo" heading or lead paragraph: the slide opens on the instructions, written as general steps)
 const DEMO_SLIDE = `<p><b>Instructions</b></p>\n<ul>` +
@@ -786,29 +786,29 @@ const mockPage = (cls, html) => `<div class="ftdd-mockpage ${cls}">\n${html}</di
 // (where Day 4's Mock Call Preparation slide starts: ROWS[4].s2)
 const MOCK_WARM_AT = '<div class="ftdd-mockpage ftdd-mock-warm">';
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
-const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}` +
-  `${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
+const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Sim", CALL_SIM + "&line=Reception+Mock+Calls")}` +
+  `${tabBtn("☎ LSH Voice", CALL_SIM)}${tabBtn("🗂 LSH CaseWorks Case Files", CMS)}</div>\n`;
 // Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
-const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Simulator, the Ring Channel and the CMS</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Simulator, log in to the Ring Channel, where your mock call rings, and open the CMS with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Sim, LSH Voice and LSH CaseWorks</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Sim, log in to LSH Voice, where your mock call rings, and open LSH CaseWorks with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
   MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
   mockPage("ftdd-steps7", "<p><b>Instructions on Your Mock Call</b></p>\n" +
-  "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
+  "<p>Step 1 - Open the Call Sim’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
-  "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
+  "<p>Step 4 - Find the file in 🔎 Case lookup (in LSH CaseWorks, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
-  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practice the same flow on the case files.</p>\n" +
+  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in LSH CaseWorks to practice the same flow on the case files.</p>\n" +
   "") + PGBREAK;
 // Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
 // where Day 6's metrics start: the Instructions end there and the Metrics slide begins (ROWS[6].s1)
 const MOCK_METRICS_CAL = '<hr class="stars">\n<p><b>Calendar Management Mock Calls Metrics</b></p>';
 const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
-  "<p>Step 1 - While waiting for your turn, keep practicing on the Call Simulator’s Reception line.</p>\n" +
-  "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
+  "<p>Step 1 - While waiting for your turn, keep practicing on the Call Sim’s Reception line.</p>\n" +
+  "<p>Step 2 - Log in to LSH Voice and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
   "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
   MOCK_BTNS);
@@ -848,7 +848,7 @@ const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writi
   '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ For each of the 3 cases</p><ol><li><b>Send the LOR</b>, the right file attached, named by the convention</li><li><b>Request the Dec Pages</b> and the policy limits</li><li><b>Request the claim information</b>: claim number, adjuster, coverage, status</li></ol></div>' +
   '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
   "</div>\n<p><b>This is for practice only: it isn’t counted on your scorecards.</b> 📝 Submit for Grading when you’re done to get feedback on each email: the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone.</p>\n" +
-  '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Simulator.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Simulator →</button></div></div>\n';
+  '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Sim.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Sim →</button></div></div>\n';
 // Day 15: the rules for a scheduled demonstration, in three cards (the trainers' wording)
 const DEMO_GUIDELINES = '<p><b>Guidelines for Scheduled Trainee Demonstrations</b></p>\n' +
   '<p>To ensure your scheduled demonstration runs smoothly and on time, follow these instructions and policies:</p>\n' +
@@ -1176,7 +1176,7 @@ const ROWS = {
       // (the Monitoring Sheet's items #10–11 are no longer a slide of their own: their card and 📤 Submit sit at the lower right of
       // the metrics page, s2b's last, js/ft-buffer.js ACTS["4:s2b"])
       // (one slide, in pages: the warm-up; the seven steps; how the one-on-one runs with the tools' buttons; the metrics)
-      {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [[MOCK_WARM_AT, null]]}]
+      {id: "s2b", h: "Mock Call Preparation: the Call Sim, LSH Voice and LSH CaseWorks", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
     // the activity's own words; then its files, the time zone, the 📅 Calendar Activity Check and ✅ Done

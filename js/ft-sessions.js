@@ -59,7 +59,7 @@ const calls = (line, graded) => PORTAL_SIMS + "call.html?" + new URLSearchParams
 // field: [name, label, type ("text" | "date" | "time" | "number" | "textarea" | "select" | "checks" | "check"), options?]
 const SESSIONS = [
   {id:"reception", icon:"☎️", title:"Reception Mock Calls", lesson:4,
-    about:"Answer your firm’s front desk live on the Call Simulator — ☎ LSH Ring Channel, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
+    about:"Answer your firm’s front desk live on the Call Sim — ☎ LSH Voice, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
     tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&flow=reception&drill=1&from=standard"]],
     fields: f => [["greeting", "The greeting you used", "text"], ["caller", "Caller’s name", "text"], ["role", "Caller’s role", "select", ["Client", "Authorized person on the file", "Unauthorized family member or friend", "Medical provider", "Insurance adjuster", "Opposing counsel", "Media", "Other"]],
       ["callback", "Callback number", "text"], ["besttime", "Best time to call back", "text"], ["caseRef", "Case (client name or case number)", "text"], ["need", "What they need", "textarea"],
@@ -72,9 +72,9 @@ const SESSIONS = [
       ["Caller verified first", !!a.verified, ""],
       ["Initials on the note", has(a.initials), ""]]},
   {id:"calendaring", icon:"📅", title:"Standard Training - Appointment Setting Mock Calls", lesson:5,
-    about:"A caller phones in about one of the firm’s cases (the Call Simulator’s Calendar Management line, on ☎ LSH Ring Channel): get their name, verify them and find the file. Then book the appointment on the Google Calendar Simulator under your firm’s calendar rules, and record it here.",
+    about:"A caller phones in about one of the firm’s cases (the Call Sim’s Calendar Management line, on ☎ LSH Voice): get their name, verify them and find the file. Then book the appointment on the Google Calendar Sim under your firm’s calendar rules, and record it here.",
     // (the simulator is the Main Portal's Calendaring Simulators card for the mock calls, Standard Training - Mock Call: track=standard)
-    tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Simulator: Standard Training - Mock Call", "calsim:standard"]],
+    tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Sim: Standard Training - Mock Call", "calsim:standard"]],
     fields: f => [["caller", "Who called", "text"], ["caseRef", "Which case (client name or case number)", "text"], ["kind", "Appointment", "text"], ["attorney", "With (attorney)", "select", (f.attorneys || []).map(x => x.name)],
       ["date", "Date", "date"], ["start", "Start time (" + f.tz + ")", "time"], ["length", "Length (minutes)", "number"], ["color", "Event color", "select", FF().GCAL],
       ["meet", "Google Meet link added", "check"], ["reminder", "Email reminder 1 day before", "check"], ["desc", "Description (who, why, the case)", "textarea"]],
@@ -96,14 +96,14 @@ const SESSIONS = [
   // detail an intake needs, dates that hold together, the statute of limitations under the firm's rule, a conflict
   // check and a decision.
   {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, program:"intake",
-    about:"Take an intake call (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel). Ask the intake questions, enter what you gather straight into the Prototype CMS’s fields — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Simulator.",
+    about:"Take an intake call (the Call Sim’s Intake Line, on ☎ LSH Voice). Ask the intake questions, enter what you gather straight into the fields in LSH CaseWorks — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Sim.",
     tools: () => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")],
-      ["🗂 The Prototype CMS (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
+      ["🗂 LSH CaseWorks (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
       ["📄 Fillable intake forms (what to ask)", "https://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view?usp=sharing"]],
     fields: f => [["name", "Potential client’s full name", "text"], ["phone", "Callback number", "text"], ["dob", "Date of birth", "date"], ["dol", "Date of the accident (DOL)", "date"],
       ["type", "Case type", "select", ["MVA", "Slip and Fall", "Premise Liability", "Dog Bite", "Medical Malpractice", "Others"]],
       ["injuries", "Injuries and treatment so far", "textarea"], ["carrier", "At-fault party’s carrier (3P), or “Unknown”", "text"], ["sol", "Statute of limitations date", "date"],
-      ["cms", "Every detail entered in the Prototype CMS’s fields", "check"], ["conflict", "Conflict check run on every party", "check"],
+      ["cms", "Every detail entered in LSH CaseWorks’ fields", "check"], ["conflict", "Conflict check run on every party", "check"],
       ["decision", "Decision", "select", ["Accept: send the retainer", "Refer to the Intake Attorney", "Decline and refer out"]]],
     check: (a, c, f) => {
       const today = new Date().toISOString().slice(0, 10), dob = String(a.dob || ""), dol = String(a.dol || "");

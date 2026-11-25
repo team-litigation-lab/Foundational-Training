@@ -59,7 +59,7 @@ for (let n = 1; n <= 16; n++) (D[n] ? D[n].slides : []).forEach(s => { if (/Toda
 if (D[10] && D[10].slides.some(s => s.id === 's1')) fail("Day 10's classroom discussion slide, only pointers, is still on the deck");
 // Day 11's afternoon is the ✉️ Insurance Email Simulator (js/ft-claims-email.js), not shadowing
 { const s2 = D[11] && D[11].slides.find(s => s.id === 's2');
-  if (!s2 || s2.h !== 'PM: Insurance Email Simulator' || !/FTClaimsMail\.fromDeck\(\)/.test(s2.html) || /shadow/i.test(s2.html)) fail("Day 11's afternoon isn't the Insurance Email Simulator, or still mentions shadowing"); }
+  if (!s2 || s2.h !== 'PM: Insurance Email Sim' || !/FTClaimsMail\.fromDeck\(\)/.test(s2.html) || /shadow/i.test(s2.html)) fail("Day 11's afternoon isn't the Insurance Email Sim, or still mentions shadowing"); }
 if (D[13] && !D[13].pq) fail('Day 13 no longer has its Process Questions (its card loses the Process Questions: Submit stop)');
 // a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
 // the one it was cut from, and every trainer slot is on exactly one slide
@@ -286,7 +286,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (pins.length !== 2 || !/Setting of Training Expectations/.test(pins[0]) || pins[1] !== 'Know Your Tools') fail(`the pinned cards are ${JSON.stringify(pins)}`);
   await page.click('.ftkt-card .module-start-btn'); await page.waitForTimeout(1200);
   const kt = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-dtitle') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
-  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 7) fail(`the Know Your Tools card didn't open its page with seven tools (no Training Directory): ${JSON.stringify(kt)}`);
+  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 7) fail(`the Know Your Tools card didn't open its page with seven tools (no LSH Academy Index): ${JSON.stringify(kt)}`);
   const TOOLS_N = kt.tabs;
   for (let t = 0; t < TOOLS_N; t++) {
     await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);
@@ -488,7 +488,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 'mcm'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
   if (!/Intake Mock Calls Metrics/.test(d9.h)) fail(`Part 2's metrics slide is "${d9.h}"`);
-  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Simulator: Intake Line/.test(d9.text) || (await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Sim: Intake Line/.test(d9.text) || (await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
   // the packet's case is the Day 8 demo's: its preparation slide (s3p) carries the case box
