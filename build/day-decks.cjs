@@ -1608,7 +1608,10 @@ for(let n = 1; n <= 16; n++){
 // (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
   // (both before Day 14's Demo Preparation: the reminders and guidelines come before the demo's rules)
-  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:"), null, "s1ep"], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration", null, "s1ep"],
+  // (not the video again: it is Day 14's Reference Video, four slides before, DROP; nor the Gentle Reminders' three points,
+  // Day 14's s1d has them: only the demonstration guidelines)
+  15: {s1g: [14, "r15g", () => "PM: Guidelines for Your Recorded Demonstration", h => { const k = h.indexOf("<p>To ensure your scheduled demonstration");
+      if(k < 0) throw new Error("Day 15's demonstration guidelines are no longer where the build looks for them"); return h.slice(k); }, "s1ep"],
     // (not Day 15's Demo Preparation: its metrics would be the same MedLOR metrics a second time on Part 2)
   }};
 // (a fifth element: the slide it goes before, in place of the deck's end)
@@ -1619,6 +1622,15 @@ for(const [from, ids] of Object.entries(MOVE)) for(const [id, [to, nid, rh, rx, 
   if(before && k < 0) throw new Error(`Day ${to} has no ${before} to put ${nid} before`);
   b.splice(k < 0 ? b.length : k, 0, Object.assign({}, x, {id: nid}, rh ? {h: rh(x.h)} : {}, rx ? {html: rx(x.html)} : {}));
 }
+// 🗑 a slide off the deck once the moves are done (Day 15's tutorial video again: Day 14 opens on it)
+const DROP = {15: ["s1"]};
+for(const [n, ids] of Object.entries(DROP)) for(const id of ids){ const a = decks[n].slides, i = a.findIndex(x => x.id === id);
+  if(i < 0) throw new Error(`Day ${n} has no ${id} to drop`); a.splice(i, 1); }
+// ↕ a slide put after another (Day 16: the LV recorded demo, an additional reference, after Before Your Demo, as its card runs)
+const AFTER = {16: {s2p: "s2b"}};
+for(const [n, m] of Object.entries(AFTER)) for(const [id, after] of Object.entries(m)){ const a = decks[n].slides, i = a.findIndex(x => x.id === id);
+  if(i < 0) throw new Error(`Day ${n} has no ${id} to move`); const [x] = a.splice(i, 1), k = a.findIndex(y => y.id === after);
+  if(k < 0) throw new Error(`Day ${n} has no ${after} to put ${id} after`); a.splice(k + 1, 0, x); }
 function noKB(html){
   return String(html || "")
     .replace(/<p>Knowledge Base:[^<]*<\/p>\n?<p><a [^>]*lsh-knowledge-base[^>]*>[^<]*<\/a><\/p>\n?/g, "")
