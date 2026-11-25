@@ -263,6 +263,10 @@ Return ONLY JSON: {"summary":"..."}`;
 };
 // 🔓 a session waits for one of its days to be opened by the trainer, too (Admin → 📅 Open Lessons → Activity Locks, js/ft-day-locks.js)
 const dayLocksOpen = s => !window.FTDayLocks || FTDayLocks.labOpen(window.FTDays ? FTDays.forSession(s.id) : []);
+// the kicker names the day's role as the Training Guide heads it (trainer/curriculum.json, js/ft-day-activities.js
+// role): "Day 7 · Intake Training", the section the Practice Lab files the card under; the lesson's title when no day has it
+const roleOf = (days, fallback) => { const r = [...new Set((days || []).map(n => ((window.FTDays && FTDays.of(n)) || {}).role).filter(Boolean))];
+  return r.length ? r.join(" / ") : (fallback || ""); };
 // the Practice Lab page's cards (js/ft-simulators.js)
 FTSessions.cards = function(){
   if(isTrainee()) load();
@@ -277,7 +281,7 @@ FTSessions.cards = function(){
     const dayT = window.FTDays ? FTDays.label(FTDays.forSession(s.id)) : "";
     // (✓ done: submitted; the Practice Lab files the card under its first day and shows Done / Review: js/ft-simulators.js)
     const st = !open ? "locked" : run && run.submittedAt ? "done" : run && run.startedAt ? "live" : "todo";
-    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}" data-sid="${e(s.id)}" data-days="${window.FTDays ? FTDays.forSession(s.id).join(",") : ""}" data-status="${st}" data-type="session"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
+    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}" data-sid="${e(s.id)}" data-days="${window.FTDays ? FTDays.forSession(s.id).join(",") : ""}" data-status="${st}" data-type="session"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(roleOf(window.FTDays ? FTDays.forSession(s.id) : [], lessonT))}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
       ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case, and your firm has none in its caseload yet — ask in the training GC."}</p>` : ""}
@@ -428,7 +432,7 @@ FTSessions.trainerCards = function(){
   return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).filter(shown).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
     const dayT = window.FTDays ? FTDays.label(actDays(a)) : "";
     const res = RES(r), st = !isTrainee() ? "todo" : res === "Passed" || res === "Failed" ? "done" : res === "Redo" ? "redo" : "todo";
-    return `<div class="card fts-card" data-days="${actDays(a).join(",")}" data-status="${st}" data-type="trainer"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
+    return `<div class="card fts-card" data-days="${actDays(a).join(",")}" data-status="${st}" data-type="trainer"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${(t => t ? " · " + e(t) : "")(roleOf(actDays(a), a.lesson ? (DAYS.find(d => d.id === a.lesson) || {}).title : ""))}</div>
       <h3>${e(a.title)} ${res !== "Not yet" ? `<span class="fss-pill ${pillCls(res)}">${e(res)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
       <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
