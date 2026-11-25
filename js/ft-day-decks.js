@@ -2010,7 +2010,7 @@ function mapHtml(){
   const total = Object.keys(all).length || COUNT();
   return `<div class="ftmap-box" role="document">
     <button type="button" class="ftmap-x" onclick="FTDayDecks.mapClose()" aria-label="Close the map">✕</button>
-    <div class="ftmap-head"><p class="ftmap-kick">Standard Foundational Training · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
+    <div class="ftmap-head"><p class="ftmap-kick">Legal VA Foundational Track · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
       <p class="ftmap-sub">${onDeck || hereI >= 0 ? `You are on <b>Day ${e(here)}</b>, slide ${hereI + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
       <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (here - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
     <div class="ftmap-body">${groups}${restHtml}</div></div>`;

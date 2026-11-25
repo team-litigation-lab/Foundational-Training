@@ -126,7 +126,7 @@ window.renderTopbar = function(){
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
   const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
   const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
-  const secs = btn("modules", "📚 Dashboard", "goto('modules')", "The Standard Foundational Training: its modules")
+  const secs = btn("modules", "📚 Dashboard", "goto('modules')", "The Legal VA Foundational Track: its modules")
     + (CASE ? btn("case", "📁 Client Profile", `goto('${CASE.view}')`, CASE.title || "") : "")
     // 🛠 Practice Lab and ✍️ Knowledge Check: a trainer's bar only — the trainee view (a trainee, or an admin's 👁 Switch View) hides them
     + (adminOn() ? btn("lab", "🛠 Practice Lab", "goto('simulators')")

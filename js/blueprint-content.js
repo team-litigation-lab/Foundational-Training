@@ -6,11 +6,11 @@
    Change the wording here; the page and the PDF are made from it each time, stamped with the deployed build.
    README → Platform Orientation and the Blueprint PDF. */
 window.LSH_BLUEPRINT = {
-  product: 'Foundational Training',
-  site: 'LSH Standard Foundational Training',
+  product: 'Legal VA Foundational Track',
+  site: 'LSH Legal VA Foundational Track',
   file: 'LSH_FT',
   trainee: {
-    sub: 'Your guide to the platform: the 16-day Standard Foundational Training, day by day',
+    sub: 'Your guide to the platform: the 16-day Legal VA Foundational Track, day by day',
     slides: [
       { icon: '👋', title: 'Welcome to the program', points: [
           'The 16-day program that makes you a Generalist Legal VA: familiar with every role on a personal injury legal team.',
@@ -102,7 +102,7 @@ window.LSH_BLUEPRINT = {
     ]
   },
   trainer: {
-    sub: 'Running the 16-day Foundational Training program: the trainer side of the platform',
+    sub: 'Running the 16-day Legal VA Foundational Track: the trainer side of the platform',
     slides: [
       { icon: '🔑', title: 'Signing in as a trainer', points: [
           'Admin sign-in with the admin password. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',

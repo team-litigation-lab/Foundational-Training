@@ -105,7 +105,7 @@ const PROCESS_SETS = [
     "Analyze the difference between medical bills, treatment records, diagnostic reports, and discharge summaries. What role does each play in a demand letter?",
     "Compare E-Portals from two major healthcare networks. What features should Legal VAs prioritize?",
     "Judge the security and compliance measures of portal usage for PHI. What risks still exist?"]},
-  {id:"lien-negotiator", lesson:9, title:"Lien Negotiator Training", file:"Lien_Negotiator_Training_Process_Question_Answers", questions:[
+  {id:"lien-negotiator", lesson:9, title:"Lien Negotiator Track", file:"Lien_Negotiator_Training_Process_Question_Answers", questions:[
     "Analyze the specific responsibilities of a lien negotiator in relation to the post-settlement process. How do they interact with attorneys, clients, and providers?",
     "Analyze the difference between statutory, contractual, and medical provider liens. What are the legal implications of each?",
     "Compare the documentation required for a simple case with one that includes third-party liens, child support obligations, and extensive treatment.",
@@ -1031,7 +1031,7 @@ function kcResult(raw, qs, extra){
 // ✍️ the grading prompt (the facilitator's DNA, each answer 0–10 and its feedback, the summary): the trainee's 📝 Submit for
 // Grading, and a sheet left "Submitted" graded by itself on the trainer's side (ftKcGradeFor)
 function kcPrompt(d, qs, ans){
-  return `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
+  return `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Legal VA Foundational Track. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
 
 Grade each answer from 0 to 10, rigorously and realistically:
 - Accuracy: correct about U.S. law-firm practice and the personal injury workflow; no wrong legal or procedural statements.

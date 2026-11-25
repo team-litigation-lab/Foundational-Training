@@ -50,7 +50,7 @@ const EXTRA = {
 const by = Object.fromEntries(ROLES.map(r => [r[0], new Map()]));   // role → section → [[title, link]]
 const add = (role, section, title, link) => { const m = by[role]; if(!m.has(section)) m.set(section, []); m.get(section).push([title, link]); };
 const lost = [];
-for(const p of seed("training.json").pages) add(LESSON[p.lesson], `Foundational Training · Lesson ${p.lesson}: ${p.lessonTitle.replace(/ Training$/, "")}`, p.title, `#/topic/${p.id}`);
+for(const p of seed("training.json").pages) add(LESSON[p.lesson], `Legal VA Foundational Track · Lesson ${p.lesson}: ${p.lessonTitle.replace(/ Training$/, "")}`, p.title, `#/topic/${p.id}`);
 for(const r of Object.keys(EXTRA)) for(const [sec, list] of EXTRA[r]) for(const [id, t] of list) add(r, sec, t, `#/e/${id}`);
 for(const d of seed("docs.json")){
   const role = COLLECTION[d.collection]; if(role === "") continue;
@@ -66,7 +66,7 @@ if(lost.length){ console.error("No role for:\n  " + lost.join("\n  ")); process.
 
 const roles = ROLES.map(([key, label, title, collection]) => {
   // the lesson's topics first, then the sections in order
-  const rank = h => /^Foundational Training/.test(h) ? 0 : 1;
+  const rank = h => /^(Legal VA Foundational Track|Foundational Training)\b/.test(h) ? 0 : 1;
   const groups = [...by[key]].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0], "en", {numeric: true}));
   return {key, label, title, collection, count: groups.reduce((n, g) => n + g[1].length, 0), groups};
 });
