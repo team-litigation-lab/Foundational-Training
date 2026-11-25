@@ -12,6 +12,8 @@
      • the location, the guests (each by first and last name) and the reminder (its type, and its time: 1 day = 24 hours);
      • the key details in the description (a few words per event);
    An event with no guests, location or reminder in the activity is never marked down for leaving them empty.
+   The score: one item per event, right only when every field on it is right (one wrong field and the whole event is wrong), out of
+   the 18 events, and its equivalent on the 5-point scale (score: 17 of 18 → 4.72/5, 94%).
    What is typed is kept as a draft; 📤 Submit to my trainer stamps the time and keeps that submission's results.
    The activity's dates: July 6–15, 2026 in its words and in KEY, moved by whole weeks to the trainee's anchor Monday (the
    first on or after their batch's Day 5: FTCalCore.act, js/ft-calsim-core.js). The anchor is kept ONCE, in the trainee's
@@ -260,7 +262,17 @@ function checkAll(rec, anchor){
   keyFor(okAnchor(anchor) ? anchor : okAnchor(rec.anchor) ? rec.anchor : anchorNowSet()).forEach(k => check(k, ents[k.n], ents).forEach(c => rows.push([k.n, c[0], c[1], c[2]])));
   return rows;
 }
-const score = rows => { const on = rows.filter(c => c[c.length === 4 ? 2 : 1] !== null), met = on.filter(c => c[c.length === 4 ? 2 : 1]).length; return {met, total: on.length, pct: on.length ? Math.round(met / on.length * 100) : 0}; };
+/* the score: one item per event (18), right only when EVERY field checked on it is right — one wrong field (a time, the zone, the
+   reminder…) and the whole event is wrong — then its equivalent on the 5-point scale (of5: 17 of 18 → 4.72/5). An event's own rows
+   ([field, met, fix], one event) are still counted field by field, for its ✓ chip on the page. */
+const fieldScore = rows => { const on = rows.filter(c => c[c.length === 4 ? 2 : 1] !== null), met = on.filter(c => c[c.length === 4 ? 2 : 1]).length; return {met, total: on.length, pct: on.length ? Math.round(met / on.length * 100) : 0}; };
+const score = rows => {
+  if(!rows.length || rows[0].length !== 4) return fieldScore(rows);
+  const ev = new Map(); rows.forEach(c => { if(c[2] === null) return; ev.set(c[0], (ev.has(c[0]) ? ev.get(c[0]) : true) && c[2] === true); });
+  const total = ev.size, met = [...ev.values()].filter(Boolean).length;
+  return {met, total, pct: total ? Math.round(met / total * 100) : 0, of5: total ? Math.round(met / total * 500) / 100 : 0, fields: fieldScore(rows)};
+};
+const of5 = sc => `${(sc.of5 || 0).toFixed(2)}/5`;
 
 /* ---------- the trainee's record ---------- */
 const R = {rec: null, recId: null, open: {"1": true}, timer: null, status: "", busy: false, failed: false, loading: null};
@@ -342,7 +354,7 @@ async function submit(){
   R.rec.submits = (R.rec.submits || []).concat([{at, met: sc.met, total: sc.total, pct: sc.pct, checks: rows, snap: snapOf(R.rec)}]).slice(-8);
   render();
   const ok = await save();
-  toast(ok === false ? "Couldn’t send it. Check your connection." : `📤 Sent to your trainer: ${sc.met} of ${sc.total} fields right (${sc.pct}%).`);
+  toast(ok === false ? "Couldn’t send it. Check your connection." : `📤 Sent to your trainer: ${sc.met} of ${sc.total} events right (${of5(sc)}, ${sc.pct}%).`);
 }
 
 /* ---------- the page ---------- */
@@ -380,7 +392,7 @@ function itemHtml(k){
 const started = () => KEY.some(k => touched(R.rec.entries[k.n]));
 function summaryHtml(){
   const sc = score(checkAll(R.rec, anchorOf(R.rec))), go = started();
-  return `<div class="cc-total"><span class="cc-big ${go ? pctCls(sc.pct) : "none"}">${go ? sc.pct + "%" : "—"}</span><span><b>${sc.met} of ${sc.total} fields right</b><small>${e(R.status || (R.rec.saved ? "Draft saved ✓" : preview() ? "👁 Trainee view — nothing is saved" : "Your entries save as a draft as you type"))}</small></span></div>`;
+  return `<div class="cc-total"><span class="cc-big ${go ? pctCls(sc.pct) : "none"}">${go ? of5(sc) : "—"}</span><span><b>${sc.met} of ${sc.total} events right · ${of5(sc)}</b><small>An event counts only when every field on it is right. ${e(R.status || (R.rec.saved ? "Draft saved ✓" : preview() ? "👁 Trainee view — nothing is saved" : "Your entries save as a draft as you type"))}</small></span></div>`;
 }
 function fixHtml(){
   const miss = checkAll(R.rec, anchorOf(R.rec)).filter(c => c[2] === false), byItem = {}; miss.forEach(c => (byItem[c[0]] = byItem[c[0]] || []).push(c));
@@ -424,7 +436,7 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
 };
 window.FTCalCheck = {
-  key: KEY, keyFor, anchorOf, tzOpts, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkAll, score, edit, submit,
+  key: KEY, keyFor, anchorOf, tzOpts, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkAll, score, fieldScore, edit, submit,
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };
@@ -432,12 +444,12 @@ window.FTCalCheck = {
 window.ftCalCheckItems = ctx => { const rec = clean(ctx.rec["calcheck:"]), s = rec.submits[rec.submits.length - 1]; if(!s) return [];
   const sc = scored(s);
   const miss = sc.rows.filter(r => r[2] === false).map(r => `${(KEY.find(k => k.n === r[0]) || {}).name || "Event " + r[0]} · ${r[1]}: ${r[3]}`);
-  return [{name: "📅 Attorney Calendar Management Activity", pct: sc.pct, note: `${sc.met} of ${sc.total} fields right · sent ${new Date(String(s.at)).toLocaleDateString()}`,
+  return [{name: "📅 Attorney Calendar Management Activity", pct: sc.pct, note: `${sc.met} of ${sc.total} events right (${of5(sc)}) · sent ${new Date(String(s.at)).toLocaleDateString()}`,
     why: miss.length ? `Marked down: ${miss.join("; ")}` : "Every field matches the activity's answer key."}]; };
 // 🧾 how the latest submission was graded, event by event: each field checked against the activity's answer key, ✓ right or
 // ✗ wrong with what it should be (the 📋 Batch Sheet's 📝 Activities in detail, for the trainer and the trainee alike)
 // (act: the trainer's score on 🧑‍🏫 Graders — the Portal's Calendaring Activity fills it — which is the activity's score; else the
-// share of fields right below)
+// share of events right below, each right only when all its fields are)
 // (o: the 📋 Batch Sheet's — attrs on the row, body inside it (the Portal's result and links, filled when it opens), always: the row
 // shown even with nothing done yet)
 window.ftCalCheckDetailHtml = (rec, act, o) => { o = o || {}; const D = `<details class="bs-kd" name="bs-kd"${o.attrs || ""}>`, B = o.body || "";
@@ -449,9 +461,9 @@ window.ftCalCheckDetailHtml = (rec, act, o) => { o = o || {}; const D = `<detail
   const ev = KEY.map(k => ({k, rows: sc.rows.filter(r => r[0] === k.n && r[2] !== null)})).filter(x => x.rows.length);
   const tone = p => p >= 80 ? "gs-hi" : p >= 60 ? "gs-mid" : "gs-lo";
   return `${D}<summary><b>📅 Attorney Calendar Management Activity</b> <span class="bs-kd-pill ${tone(t != null ? t : sc.pct)}">${esc_(t != null ? t : sc.pct)}%</span>${t != null ? ` <small>the trainer's score on 🧑‍🏫 Graders${act.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}</small>` : ""}
-      <small>${esc_(sc.met)} of ${esc_(sc.total)} fields right · sent ${esc_(new Date(String(s.at)).toLocaleString())} · checked automatically against the activity’s answer key, one point a field</small></summary>
+      <small>${esc_(sc.met)} of ${esc_(sc.total)} events right (${esc_(of5(sc))}) · sent ${esc_(new Date(String(s.at)).toLocaleString())} · checked automatically against the activity’s answer key, one point an event: right only when every field on it is</small></summary>
     <ol class="bs-kd-q">${ev.map(({k, rows}) => { const m = rows.filter(r => r[2]).length;
-      return `<li><b>${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol>${B}</details>`; };
+      return `<li><b>${m === rows.length ? "✓" : "✗"} ${esc_(k.name)}</b> <small>${m} of ${rows.length} fields right${m === rows.length ? "" : " · the event is wrong"}</small>${rows.map(r => `<div class="bs-kd-fb ${r[2] ? "gs-hi" : "gs-lo"}"><b>${r[2] ? "✓" : "✗"} ${esc_(r[1])}</b> ${r[2] ? "matches the answer key" : "— should be: " + esc_(r[3])}</div>`).join("")}</li>`; }).join("")}</ol>${B}</details>`; };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 📅 Calendar Activity ---------- */
 const AD = {rows: null, loading: false, batch: "", open: {}};
@@ -479,7 +491,7 @@ function checksTable(rows){
 function adminHtml(){
   if(!AD.rows){ if(!AD.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
-  return `<div class="card cc-admin"><div class="ff-bar"><div><h3>📅 Calendar Activity</h3><p class="fss-muted">Day 5’s Attorney Calendar Management Activity: what each trainee entered for the 18 events, checked field by field against the activity. The latest submission is shown; a draft that hasn’t been sent shows as a draft.</p></div>
+  return `<div class="card cc-admin"><div class="ff-bar"><div><h3>📅 Calendar Activity</h3><p class="fss-muted">Day 5’s Attorney Calendar Management Activity: what each trainee entered for the 18 events, checked field by field against the activity. Each event is one item, right only when every field on it is right; the score is the events right out of 18, on the 5-point scale. The latest submission is shown; a draft that hasn’t been sent shows as a draft.</p></div>
       <span><select onchange="FTCalCheckAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="FTCalCheckAdmin.reload()">↻ Refresh</button></span></div>
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Sent</th><th>Score</th><th>Most missed</th><th></th></tr></thead><tbody>
@@ -488,7 +500,7 @@ function adminHtml(){
         const miss = {}; (sc ? sc.rows : []).filter(c => c[2] === false).forEach(c => { miss[c[1]] = (miss[c[1]] || 0) + 1; });
         const top = Object.entries(miss).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${k} (${n})`).join("; ");
         return `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td><td>${s ? e(new Date(String(s.at)).toLocaleString()) : draft ? "Draft only" : "—"}</td>
-          <td>${sc ? `<b>${sc.pct}%</b> (${sc.met}/${sc.total})` : draft ? `<span class="fss-muted">${draft.pct}% so far</span>` : "—"}</td><td>${e(top || "—")}</td>
+          <td>${sc ? `<b>${of5(sc)}</b> (${sc.met}/${sc.total} events · ${sc.pct}%)` : draft ? `<span class="fss-muted">${of5(draft)} so far</span>` : "—"}</td><td>${e(top || "—")}</td>
           <td>${s ? `<button class="btn btn-ghost btn-sm" onclick="FTCalCheckAdmin.open('${e(r.id)}')">${AD.open[r.id] ? "▾ Hide" : "▸ Fields"}</button>` : ""}</td></tr>
           ${sc && AD.open[r.id] ? `<tr class="cc-aopen"><td colspan="5">${checksTable(sc.rows)}</td></tr>` : ""}`; }).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
