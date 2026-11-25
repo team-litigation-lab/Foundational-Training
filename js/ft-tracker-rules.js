@@ -240,6 +240,29 @@
     ["application", "Future Application / Practical Use", "how the learning applies to Legal VA work, with the specific actions or procedures to follow on actual assignments"],
     ["memory", "Memory-Bank Value", "a personal procedural reference to come back to: the specific rules, steps and details from mock calls, assessments and hands-on activities preserved, not a lesson summary"],
     ["instructions", "Overall Compliance with Tracker Instructions", "the tracker kept as instructed: the required dates covered, LSH-TRAINING used, the recurring activities recorded, the sections and fields as the template asks"]];
+  /* 📅 THE TRAINER'S OWN LIST of a training day's expected accomplished tasks (the evaluator's reminders, "11.02.26"), by training
+     day: where a day has one, the tracker is evaluated against it in place of the list worked out from the slides (worker.js
+     expectedFor). "A / B" and "A or B" are alternatives: either counts. They don't each need a row; their completion or pending
+     status must be identifiable. TRACKER_CREDIT: other tasks the trainee mentions are considered to their credit, never required. */
+  const TRACKER_EXPECTED = {
+    1: ["Spelling and Typing Tests (morning deliverables)",
+      "Setting of Expectations and Policies session with Sir Matt",
+      "Added the To-Dos on Hubstaff",
+      "Personal Injury Overview reading task (with questions to answer)",
+      "VA Essentials discussion session",
+      "Brainstorming in the assigned group's breakout session with the process questions answered, or the Digital Handout reviewed with the process questions answered",
+      "Software installation: SmartAdvocate (SA) plug-ins",
+      "Daily Task Tracker updating (end-of-shift deliverable)"],
+    2: ["Spelling and Typing Tests (morning deliverables)",
+      "VA Essentials Process Questions continued / the pending tasks from Day 1 worked on",
+      "Law Firm Communication Training discussion",
+      "Monitoring Sheet",
+      "Law Firm Communication Training Digital Handouts with the Process Questions answered",
+      "Common Terms Used and Auto Liability Insurance videos",
+      "Common Terms Used and Auto Liability Insurance assessments (answered)",
+      "VLF Tettra articles visited or reviewed, or at least the link secured for review during idle time or future reference, as instructed"]
+  };
+  const TRACKER_CREDIT = "Other tasks the trainee completed and mentions count to their credit (e.g. a technical meeting with Sanders for SmartAdvocate tech assistance when the installation had issues).";
   // the standards the sample evaluation applies (given to the AI with every tracker grade)
   const TRACKER_STANDARDS = [
     "⬇ FOR COMPLETION ⬇ holds only tasks genuinely pending or ongoing; ⬇ RECURRING ⬇ holds the Typing Test, the Spelling Test and other continuing requirements; ⬇ COMPLETED ⬇ holds finished training activities with accurate dates and statuses. A task marked Completed but left under For Completion is misplaced.",
@@ -248,7 +271,13 @@
     "The recurring Typing Test (AM and PM) and Spelling Test are recorded for each training date, and every training date is represented.",
     "Each day's expected activities (the deliverables the Training Guide and the slides give for the day: Hubstaff To-Dos, reading questions, breakout and process questions, software installs, assessments, mock calls, calendar activities, and Monitoring Sheet items only on a day the slides instruct them, after the topic is covered) are identifiable as completed or pending. They don't each need a row of their own; consolidated daily entries are fine when the completion of each deliverable can be told. Never mark an activity completed that wasn't finished.",
     "Hands-on activities and mock calls are documented as Activity → What I Did → What I Learned → Mistakes/Feedback → Correct Procedure → Future Application: the caller scenario, what was obtained or missed, the difficulties, the feedback received and the correct procedure for next time. Discussion-based activities document what was learned and how it applies to Legal VA work.",
-    "Notes are a personal procedural reference (the specific rules discussed, e.g. appointment-duration limits, buffers, time zones, event naming, reminders), not generic lesson summaries; statements that are inaccurate or need qualifying against the training materials are named."];
+    "Notes are a personal procedural reference (the specific rules discussed, e.g. appointment-duration limits, buffers, time zones, event naming, reminders), not generic lesson summaries; statements that are inaccurate or need qualifying against the training materials are named (e.g. federal jurisdiction over residents of different states with more than $75,000 at stake is diversity jurisdiction, whose requirements are more specific; third-party authorization follows the firm's authorization procedure, and an SMS or email alone isn't automatically enough).",
+    // (the evaluator's reminders, "11.02.26": as set in the Setting of Expectations and Policies session with Sir Matt)
+    "The tracker is more detailed than the EOD. The EOD lists the tasks completed and what was learned that applies to actual tasks; the tracker goes beyond that, with insights, reflections and additional notes that also serve as a memory bank, not task titles alone.",
+    "Updates may be written either as Daily Notes or in the VA Notes column: either place counts. Each task names its Date Received, Type of Task (LSH-TRAINING), Task Details / Specific Task, Status and completion date.",
+    "The tracker is a simulation of the updates expected in the actual client environment: judge it as a real Legal VA's work record and reference.",
+    "Evaluate the tracker as a whole with the same metrics, criteria and standards for every trainee, for consistency and fairness, while factoring in each day's expected activities.",
+    TRACKER_CREDIT];
   const EVAL_LABELS = [[4.5, "Excellent"], [4, "Very Good"], [3.5, "Good, with Improvements Needed"], [2.5, "Fair, with Significant Improvements Needed"], [0, "Needs Major Improvement"]];
   const evalLabel = (x) => (EVAL_LABELS.find(([m]) => Number(x) >= m) || EVAL_LABELS[EVAL_LABELS.length - 1])[1];
   const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -753,5 +782,5 @@
 
   root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, MONITOR_SCHEDULE, monitorDue, monitorDueOn, trainingDay, googleFile, parseCsv, isoDate, findDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, staleDates, checkDay, dayExcerpt, reviewPrompt,
-    TRACKER_METRICS, TRACKER_STANDARDS, evalLabel, coverage, weekExcerpt, weekEval, evalHtml, evalText, isSample, checkEod, checkPacket, PACKET_DOCS, intakeName};
+    TRACKER_METRICS, TRACKER_STANDARDS, TRACKER_EXPECTED, TRACKER_CREDIT, evalLabel, coverage, weekExcerpt, weekEval, evalHtml, evalText, isSample, checkEod, checkPacket, PACKET_DOCS, intakeName};
 })(typeof globalThis !== "undefined" ? globalThis : this);
