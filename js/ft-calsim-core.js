@@ -598,10 +598,11 @@ function reviewAct(scn, events){
   ].map(c => Object.assign(c, {why:c.ok ? "" : c.why}));
   cal.forEach(c => simRows.push(["calendar", c.label, c.ok, c.why]));
   items.push({id:"calendar", title:"Whole calendar: no overlaps, no duplicates", weight:cal.length, pts:cal.filter(c => c.ok).length, perfect:cal.every(c => c.ok), found:true, via:"", event:null, checks:cal, info:[]});
-  // one score, the Check's (every field counts one): its rows and the simulator's; 100% only when every one is met
+  // one score, the Check's: one point an item — the 18 events and the whole calendar, 19 — right only when every field on it is
+  // (the Check's rows and the simulator's: one wrong and the item is wrong), and its equivalent on the 5-point scale (of5)
   const all = rows.concat(simRows), sc = C.score(all), allOk = all.every(r => r[2] !== false), pct = allOk ? 100 : Math.min(99, sc.pct);
   const fl = flagsAct(scn, events);
-  return {kind:"activity", score:sc.met, max:sc.total, pct, passed:pct >= PASS, items, done:items.filter(i => i.perfect).length,
+  return {kind:"activity", score:sc.met, max:sc.total, pct, of5:allOk ? 5 : Math.min(sc.of5 != null ? sc.of5 : Math.round(sc.pct * 5) / 100, 4.99), passed:pct >= PASS, items, done:items.filter(i => i.perfect).length,
     rows, check:C.score(rows), sim:{met:simRows.filter(r => r[2]).length, total:simRows.length}, entries,
     extras:dupes.map(d => ({title:d.x.title, when:whenOf(d.x), why:[`A duplicate of “${m[d.o.n].title}”`].concat(fl[d.x.id] || [])}))
       .concat(extras.map(d => ({title:d.x.title, when:whenOf(d.x), why:fl[d.x.id] || [], info:"Not matched to an item or travel block. If it is one, name it as the activity does (e.g. “Doctor’s Appointment”); if not, your trainer will look at it."})))};
