@@ -3208,7 +3208,7 @@ export default {
         const who = await readPortalTicket(env, ticket, why);
         if (!who) return json({ error: why.r === "signature"
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
-          : why.r === "audience" ? "This sign-in link was made for another program or tool. Open this program from the LSH Training Portal's Training Directory."
+          : why.r === "audience" ? "This sign-in link was made for another program or tool. Open this program from 🎓 LSH Academy Index on the LSH Training Portal."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
         // Every Portal ticket works once (a trainee's, a trainer's and the Sign-in check's), so a copy of the link (browser
         // history, a forwarded URL) can't sign anyone in again inside its 5 minutes.

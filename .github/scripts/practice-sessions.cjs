@@ -48,7 +48,7 @@ const failures = []; const fail = (m) => failures.push(m);
     // 🧰 Drafting Tools' LOR Drafting Activity — and PI Process Flow isn't either: Day 3 is a discussion.
     if (lab.sessions !== 4) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 4)`);
     if (/PI Process Flow: your case/.test(lab.text)) fail('PI Process Flow is still a Practice Session');
-    if (/All simulators|📅 Calendaring Simulators\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
+    if (/All simulators|📅 Calendaring (Simulators|Sims)\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
     if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
     if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
     // (the card keeps its template list; the compact Lab hides it on screen, so it's read from the card's text)
@@ -236,7 +236,7 @@ const failures = []; const fail = (m) => failures.push(m);
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
     // the trainee's bar, as the platform spec names it (no Client Profile, no Scorecards, no Admin, no search, no full screen)
-    ['Dashboard', 'Training Directory'].forEach(n => {
+    ['Dashboard', 'LSH Academy Index'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
     // (🎯 Focus is a signed-in trainee's own: not in an admin's Trainee view; 🛠 Practice Lab and ✍️ Knowledge Check

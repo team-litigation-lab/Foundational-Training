@@ -105,7 +105,7 @@ function compose(c){
 const graded = () => window.FTAssess ? FTAssess.graded(DOC) : null;
 function page(){
   const c = caseOf(), n = ITEMS.filter(sent).length, g = graded();
-  return `<section class="ce-hero"><p class="ce-eyebrow">Day 11 · PM · Graded activity</p><h1>✉️ Insurance Email Simulator</h1>
+  return `<section class="ce-hero"><p class="ce-eyebrow">Day 11 · PM · Graded activity</p><h1>✉️ Insurance Email Sim</h1>
       <p>Three cases. For each, write the emails a claims specialist sends to open the claim: the <b>LOR</b>, the <b>Dec Pages / policy limits request</b> and the <b>claim information request</b>. Then the adjuster answers, and you reply to get the <b>claim number</b>. Use the case file, attach the right file, and write as you would to a real carrier. All 12 emails get feedback. <b>This is practice only: it isn’t counted on your scorecards.</b></p>
       <div class="ce-tabs">${CASES.map((x, i) => `<button type="button" class="ce-tab${i === C.n ? " on" : ""}" onclick="FTClaimsMail.go(${i})">Case ${i + 1}<small>${e(x.title)} · ${TASKS.filter(t => sent(x.id + "_" + t.k)).length}/4 sent</small></button>`).join("")}</div></section>
     <div class="ce-grid">${caseFile(c)}<div class="ce-main"><div class="ce-tasks">${TASKS.map(t => taskRow(c, t)).join("")}</div>${compose(c)}</div></div>
@@ -152,7 +152,7 @@ window.FTClaimsMail = {
 };
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["claimsmail"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {claimsmail: "Insurance Email Simulator"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {claimsmail: "Insurance Email Sim"});
 const __render = window.render;
 window.render = function(){
   if(state.view !== "claimsmail") return __render.apply(this, arguments);

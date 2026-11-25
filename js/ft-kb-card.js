@@ -16,8 +16,8 @@ function card(){
   const n = R.reduce((t, r) => t + r.count, 0);
   const chips = R.map((r, k) => `<button type="button" class="ftkb-role ftkb-c${k % 6}" onclick="event.stopPropagation(); FTKBCard.open(${k})" title="${e(r.title)}: ${r.count} articles">${e(r.label)}</button>`).join("");
   return `<div class="module-card mc-clean ftkb" id="ftkb-card">
-    <div class="module-head"><div class="mh-day">📚 ${n} articles · this course’s roles</div><div class="mh-title">Knowledge Base</div></div>
-    <div class="module-body ftkb-body"><div class="ftkb-roles" role="group" aria-label="Knowledge Base articles by role">${chips}<button type="button" class="ftkb-role ftkb-open" onclick="event.stopPropagation(); window.open('${KB}', '_blank')" title="Open the LSH Knowledge Base in a new tab" aria-label="Open the Knowledge Base">🔗<span class="ftkb-ot"> Open ↗</span></button></div></div>
+    <div class="module-head"><div class="mh-day">📚 ${n} articles · this course’s roles</div><div class="mh-title">LSH Atlas</div></div>
+    <div class="module-body ftkb-body"><div class="ftkb-roles" role="group" aria-label="LSH Atlas articles by role">${chips}<button type="button" class="ftkb-role ftkb-open" onclick="event.stopPropagation(); window.open('${KB}', '_blank')" title="Open 📚 LSH Atlas in a new tab" aria-label="Open LSH Atlas">🔗<span class="ftkb-ot"> Open ↗</span></button></div></div>
   </div>`;
 }
 // the card goes after the lesson cards (the grid's free slot), on 📚 Dashboard only
@@ -34,14 +34,14 @@ function body(k){
   return `<div class="ftkb-tabs" role="tablist" aria-label="Roles">${R.map((x, i) => `<button type="button" role="tab" aria-selected="${i === k}" class="ftkb-c${i % 6}${i === k ? " on" : ""}" onclick="FTKBCard.open(${i})">${e(x.label)}</button>`).join("")}</div>
     <h2 class="ftkb-h">📚 ${e(r.title)} <span>${r.count} articles</span></h2>
     ${r.groups.map(g => `<section class="ftkb-g"><p class="ftkb-gh">${e(g[0])}</p><ul>${g[1].map(a => `<li><a href="${e(KB + a[1])}" target="_blank" rel="noopener noreferrer">${e(a[0])} <span aria-hidden="true">↗</span></a></li>`).join("")}</ul></section>`).join("")}
-    <p class="ftkb-all">${r.collection ? `<a class="btn btn-ghost btn-sm" href="${e(KB + "#/c/" + r.collection)}" target="_blank" rel="noopener noreferrer">The whole collection ↗</a>` : ""}<a class="btn btn-navy btn-sm" href="${KB}" target="_blank" rel="noopener noreferrer">🔗 Open the Knowledge Base ↗</a></p>`;
+    <p class="ftkb-all">${r.collection ? `<a class="btn btn-ghost btn-sm" href="${e(KB + "#/c/" + r.collection)}" target="_blank" rel="noopener noreferrer">The whole collection ↗</a>` : ""}<a class="btn btn-navy btn-sm" href="${KB}" target="_blank" rel="noopener noreferrer">🔗 Open 📚 LSH Atlas ↗</a></p>`;
 }
 function open(k){
   const R = roles(); if(!R.length) return;
   k = Math.max(0, Math.min(R.length - 1, Number(k) || 0));
   let o = document.getElementById("ftkbModal");
   if(!o){
-    o = document.createElement("div"); o.id = "ftkbModal"; o.className = "ftkb-modal"; o.setAttribute("role", "dialog"); o.setAttribute("aria-label", "Knowledge Base articles");
+    o = document.createElement("div"); o.id = "ftkbModal"; o.className = "ftkb-modal"; o.setAttribute("role", "dialog"); o.setAttribute("aria-label", "LSH Atlas articles");
     o.innerHTML = `<div class="ftkb-box"><button type="button" class="ftkb-x" onclick="FTKBCard.close()" aria-label="Close">✕</button><div class="ftkb-in"></div></div>`;
     o.addEventListener("click", ev => { if(ev.target === o) close(); });
     document.body.appendChild(o); document.addEventListener("keydown", key, true);

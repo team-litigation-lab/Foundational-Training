@@ -15,7 +15,7 @@ window.LSH_BLUEPRINT = {
       { icon: '👋', title: 'Welcome to the program', points: [
           'The 16-day program that makes you a Generalist Legal VA: familiar with every role on a personal injury legal team.',
           'Learn: 8 lessons over the 16 days, each day with its own deck of steps, its videos and its activities.',
-          'Practice: real-time Practice Sessions for your own law firm, on your own case files in the CMS.',
+          'Practice: real-time Practice Sessions for your own law firm, on your own case files in 🗂 LSH CaseWorks.',
           'Prove: your daily trackers and your trainer\'s feedback \u2014 and a certificate at the end.',
           'You\'ll need Chrome or Edge on a computer, a headset with a microphone, your camera for the classroom discussions, and a stable connection.'],
         where: 'The program opens from the LSH Training Portal; 📚 Dashboard is where you land.',
@@ -65,10 +65,10 @@ window.LSH_BLUEPRINT = {
         tip: 'Every rule and routine is written out in 📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.' },
       { icon: '🛠', title: 'Practice Lab: the real tasks', points: [
           'Your firm: your trainer assigns your law firm and your cases. Learn its rules \u2014 every session is checked against them.',
-          'Practice Sessions: reception, calendaring, intake, the PI process, claims and ChartSwap records requests, done live in the CMS, recorded and submitted.',
+          'Practice Sessions: reception, calendaring, intake, the PI process, claims and ChartSwap records requests, done live in 🗂 LSH CaseWorks, recorded and submitted.',
           'With your trainer: demos and live mock calls, with your result recorded.',
           'Each session opens with its lesson, is checked automatically against your case and your firm\'s rules, evaluated, and reviewed by your trainer.'],
-        where: '🛠 Practice Lab in the top bar. The CMS opens already signed in.',
+        where: '🛠 Practice Lab in the top bar. 🗂 LSH CaseWorks opens already signed in.',
         tip: 'Read your firm\'s page in 🛠 Practice Lab before your first session: the firm\'s rules are what you are graded against.' },
       { icon: '💬', title: 'Feedback and your growth', points: [
           '🏅 My Performance: every grade in one place \u2014 your Knowledge Checks, graded calls, calendaring, mock calls and demos, tests and trackers, with your trainer\'s scores and the weekly ranking.',
