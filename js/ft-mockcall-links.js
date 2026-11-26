@@ -108,15 +108,15 @@ function inner(id, key){
   const btn = (label, href) => `<a class="btn btn-ghost btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
   const r = recOf(id);
   const head = (ic, title, tools) => `<div class="mcl-h"><b>${ic} ${title}</b><span class="mcl-tools">${tools}</span></div>`;
-  const ringTools = btn("☎ Open LSH Voice", ring(L.line)), cmsTools = L.cms.map(([l, h]) => btn(l, h)).join("");
-  if(!r) return `<div class="mcl-box">${head("☎", `LSH Voice · ${e(L.phone)}`, ringTools)}<p class="mcl-muted">Loading the trainee’s graded calls…</p></div>
+  const ringTools = btn("☎ Open LSH CommX", ring(L.line)), cmsTools = L.cms.map(([l, h]) => btn(l, h)).join("");
+  if(!r) return `<div class="mcl-box">${head("☎", `LSH CommX · ${e(L.phone)}`, ringTools)}<p class="mcl-muted">Loading the trainee’s graded calls…</p></div>
     <div class="mcl-box">${head("🗂", "LSH CaseWorX", cmsTools)}<p class="mcl-muted">Loading what the trainee recorded from LSH CaseWorX…</p></div>`;
-  if(r.error) return `<div class="mcl-box">${head("☎", `LSH Voice · ${e(L.phone)}`, ringTools)}<p class="mcl-muted">The trainee’s graded calls couldn’t be read. ↻ Refresh to try again.</p></div>
+  if(r.error) return `<div class="mcl-box">${head("☎", `LSH CommX · ${e(L.phone)}`, ringTools)}<p class="mcl-muted">The trainee’s graded calls couldn’t be read. ↻ Refresh to try again.</p></div>
     <div class="mcl-box">${head("🗂", "LSH CaseWorX", cmsTools)}<p class="mcl-muted">The trainee’s LSH CaseWorX record couldn’t be read. ↻ Refresh to try again.</p></div>`;
   // ☎ the graded calls
   const best = ((r.call || {}).best || {})["lesson" + L.lesson] || null, calls = callsOn(r.call, L), last = calls[calls.length - 1] || null;
   const m = last && last.rows.length ? matchRows(rb, last.rows) : null;
-  const ringBody = !best && !calls.length ? `<p class="mcl-muted">No graded call on LSH Voice’s ${e(L.line)} yet. Ring the trainee from 🎭 Call to play (Scenario Picker) → Standard Training → ${e(L.line.replace(/ Mock Calls$/, ""))}.</p>`
+  const ringBody = !best && !calls.length ? `<p class="mcl-muted">No graded call on LSH CommX’s ${e(L.line)} yet. Ring the trainee from 🎭 Call to play (Scenario Picker) → Standard Training → ${e(L.line.replace(/ Mock Calls$/, ""))}.</p>`
     : `<p>🎯 Graded calls: ${best && num(best.score) != null ? `best <b>${e(Math.round(best.score))}%</b>` : ""}${best && best.calls != null ? ` · ${e(best.calls)} call${Number(best.calls) === 1 ? "" : "s"}` : calls.length ? ` · ${calls.length} call${calls.length === 1 ? "" : "s"}` : ""}
       ${last ? ` · latest${last.score != null ? ` <b>${e(Math.round(last.score))}%</b>` : ""}${last.who ? ` (${e(last.who)})` : ""}${day(last.at) ? `, ${e(day(last.at))}` : ""}` : ""}</p>
       ${m && m.n ? `<button class="btn btn-navy btn-sm" type="button" onclick='FTMockLinks.fill(this, ${JSON.stringify({vals: m.vals, notes: m.notes, src: "the graded call"}).replace(/'/g, "&#39;")})'>⤓ Fill ${m.n} criteri${m.n === 1 ? "on" : "a"} from the graded call’s metrics</button>` : ""}`;
@@ -130,14 +130,14 @@ function inner(id, key){
       ${miss.length ? `<p class="mcl-miss">✗ Missed: ${miss.map(x => e(x.label) + (x.want ? ` <em>(expected: ${e(x.want)})</em>` : "")).join("; ")}</p>` : a ? `<p class="mcl-ok">✓ Every check met.</p>` : ""}
       ${fields.length ? `<details class="mcl-rec"><summary>What the trainee recorded (${fields.length})</summary><dl>${fields.map(([n, label]) => `<dt>${e(label)}</dt><dd>${e(answer(run.answers[n]))}</dd>`).join("")}</dl></details>` : ""}
       ${f ? `<button class="btn btn-ghost btn-sm" type="button" onclick='FTMockLinks.fill(this, ${JSON.stringify({vals: f.vals, notes: f.notes, src: "the LSH CaseWorX checks"}).replace(/'/g, "&#39;")})'>⤓ Fill ${f.names.map(e).join(" &amp; ")} from the LSH CaseWorX checks (${e(f.v)}/5)</button>` : ""}`;
-  return `<div class="mcl-box">${head("☎", `LSH Voice · ${e(L.phone)}`, ringTools)}${ringBody}</div><div class="mcl-box">${head("🗂", "LSH CaseWorX", cmsTools)}${cmsBody}</div>`;
+  return `<div class="mcl-box">${head("☎", `LSH CommX · ${e(L.phone)}`, ringTools)}${ringBody}</div><div class="mcl-box">${head("🗂", "LSH CaseWorX", cmsTools)}${cmsBody}</div>`;
 }
 // the placeholder, drawn now and filled in when the records arrive (r: the trainee's record, a: the activity)
 // (fold: folded under one line, for the slide's scoresheet pop-up, which keeps to one screen)
 function panel(r, a, fold){
   const key = keyOfAct(a); if(!key || !r || !r.id) return "";
   const box = `<div class="fss-wide mcl" data-mcl="${e(r.id + "|" + key)}">${inner(r.id, key)}</div>`;
-  return fold ? `<details class="fss-wide mcl-fold"><summary>☎ LSH Voice · ${e(LINES[key].phone)} and 🗂 LSH CaseWorX: the graded calls and what was recorded</summary>${box}</details>` : box;
+  return fold ? `<details class="fss-wide mcl-fold"><summary>☎ LSH CommX · ${e(LINES[key].phone)} and 🗂 LSH CaseWorX: the graded calls and what was recorded</summary>${box}</details>` : box;
 }
 
 /* ---------- ⤓ into whichever scoresheet the button is on, never over a typed score ---------- */

@@ -59,7 +59,7 @@ const calls = (line, graded) => PORTAL_SIMS + "call.html?" + new URLSearchParams
 // field: [name, label, type ("text" | "date" | "time" | "number" | "textarea" | "select" | "checks" | "check"), options?]
 const SESSIONS = [
   {id:"reception", icon:"☎️", title:"Reception Mock Calls", lesson:4,
-    about:"Answer your firm’s front desk live on the Call Sim — ☎ LSH Voice, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
+    about:"Answer your firm’s front desk live on the Call Sim — ☎ LSH CommX, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
     tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&flow=reception&drill=1&from=standard"]],
     fields: f => [["greeting", "The greeting you used", "text"], ["caller", "Caller’s name", "text"], ["role", "Caller’s role", "select", ["Client", "Authorized person on the file", "Unauthorized family member or friend", "Medical provider", "Insurance adjuster", "Opposing counsel", "Media", "Other"]],
       ["callback", "Callback number", "text"], ["besttime", "Best time to call back", "text"], ["caseRef", "Case (client name or case number)", "text"], ["need", "What they need", "textarea"],
@@ -72,7 +72,7 @@ const SESSIONS = [
       ["Caller verified first", !!a.verified, ""],
       ["Initials on the note", has(a.initials), ""]]},
   {id:"calendaring", icon:"📅", title:"Standard Training - Appointment Setting Mock Calls", lesson:5,
-    about:"A caller phones in about one of the firm’s cases (the Call Sim’s Calendar Management line, on ☎ LSH Voice): get their name, verify them and find the file. Then book the appointment on the Google Calendar Sim under your firm’s calendar rules, and record it here.",
+    about:"A caller phones in about one of the firm’s cases (the Call Sim’s Calendar Management line, on ☎ LSH CommX): get their name, verify them and find the file. Then book the appointment on the Google Calendar Sim under your firm’s calendar rules, and record it here.",
     // (the simulator is the Main Portal's Calendaring Simulators card for the mock calls, Standard Training - Mock Call: track=standard)
     tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Sim: Standard Training - Mock Call", "calsim:standard"]],
     fields: f => [["caller", "Who called", "text"], ["caseRef", "Which case (client name or case number)", "text"], ["kind", "Appointment", "text"], ["attorney", "With (attorney)", "select", (f.attorneys || []).map(x => x.name)],
@@ -96,7 +96,7 @@ const SESSIONS = [
   // detail an intake needs, dates that hold together, the statute of limitations under the firm's rule, a conflict
   // check and a decision.
   {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, program:"intake",
-    about:"Take an intake call (the Call Sim’s Intake Line, on ☎ LSH Voice). Ask the intake questions, enter what you gather straight into the fields in LSH CaseWorX — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Sim.",
+    about:"Take an intake call (the Call Sim’s Intake Line, on ☎ LSH CommX). Ask the intake questions, enter what you gather straight into the fields in LSH CaseWorX — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Sim.",
     tools: () => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")],
       ["🗂 LSH CaseWorX (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
       ["📄 Fillable intake forms (what to ask)", "https://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view?usp=sharing"]],

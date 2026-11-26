@@ -438,7 +438,7 @@ s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
     '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
-    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Sim, then take the call on LSH Voice with the case files in LSH CaseWorX.</p>\n") + MOCK_RUN;
+    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Sim, then take the call on LSH CommX with the case files in LSH CaseWorX.</p>\n") + MOCK_RUN;
 },
 // Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored); the slide is only the
 // trainee's "Hit Done when you are done with your Mock Call" and Done (js/ft-buffer.js ACTS["4:s3"], simple)
@@ -496,9 +496,9 @@ s3: html => {
   // links, the steps and the reminders are one page; the sample event is the next: ftdd-pgbreak)
   const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<a class="ftdd-linkbtn" href="${url}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
   // (the heading, the buttons, the steps and the reminders are one block, ftdd-one: one page, scaled to fit a short screen)
-  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Sim (LSH Voice) and practice on the Calendaring Tool</b></p>\n' +
+  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Sim (LSH CommX) and practice on the Calendaring Tool</b></p>\n' +
     '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Sim’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
-    lnk("☎ LSH Voice: the training phone your mock call rings on", sim + "call.html?program=FT") +
+    lnk("☎ LSH CommX: the training phone your mock call rings on", sim + "call.html?program=FT") +
     // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
     "</div>\n" +
     '<div class="ftdd-steps2">\n' +
@@ -507,7 +507,7 @@ s3: html => {
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
     "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Sim), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
     "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
-    "<p>Step 6 - When it’s your turn, log in to LSH Voice and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
+    "<p>Step 6 - When it’s your turn, log in to LSH CommX and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
   out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
   if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   // (the reminders' two screenshot bullets are off: the mock calls are booked on the Google Calendar Simulator, so there is
@@ -753,8 +753,8 @@ function DAY8_INS(x){
 const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
   '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practice intake calls with these tools. Each opens in a new tab.</p>\n' +
   '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 LSH CaseWorX: Intake</a>' +
-  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ LSH Voice: Intake Calls</a></div>\n' +
-  '<p>On LSH Voice, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in LSH CaseWorX, as in the mock call.</p>\n';
+  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ LSH CommX: Intake Calls</a></div>\n' +
+  '<p>On LSH CommX, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in LSH CaseWorX, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 // (no "Trainer Facilitated Demo" heading or lead paragraph: the slide opens on the instructions, written as general steps)
 const DEMO_SLIDE = `<p><b>Instructions</b></p>\n<ul>` +
@@ -787,9 +787,9 @@ const mockPage = (cls, html) => `<div class="ftdd-mockpage ${cls}">\n${html}</di
 const MOCK_WARM_AT = '<div class="ftdd-mockpage ftdd-mock-warm">';
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
 const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Sim", CALL_SIM + "&line=Reception+Mock+Calls")}` +
-  `${tabBtn("☎ LSH Voice", CALL_SIM)}${tabBtn("🗂 LSH CaseWorX Case Files", CMS)}</div>\n`;
+  `${tabBtn("☎ LSH CommX", CALL_SIM)}${tabBtn("🗂 LSH CaseWorX Case Files", CMS)}</div>\n`;
 // Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
-const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Sim, LSH Voice and LSH CaseWorX</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Sim, log in to LSH Voice, where your mock call rings, and open LSH CaseWorX with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Sim, LSH CommX and LSH CaseWorX</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Sim, log in to LSH CommX, where your mock call rings, and open LSH CaseWorX with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
   MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
@@ -808,7 +808,7 @@ const MOCK_METRICS_CAL = '<hr class="stars">\n<p><b>Calendar Management Mock Cal
 const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
   "<p>Step 1 - While waiting for your turn, keep practicing on the Call Sim’s Reception line.</p>\n" +
-  "<p>Step 2 - Log in to LSH Voice and stay on standby: your trainer calls each trainee individually.</p>\n" +
+  "<p>Step 2 - Log in to LSH CommX and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
   "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
   MOCK_BTNS);
@@ -1176,7 +1176,7 @@ const ROWS = {
       // (the Monitoring Sheet's items #10–11 are no longer a slide of their own: their card and 📤 Submit sit at the lower right of
       // the metrics page, s2b's last, js/ft-buffer.js ACTS["4:s2b"])
       // (one slide, in pages: the warm-up; the seven steps; how the one-on-one runs with the tools' buttons; the metrics)
-      {id: "s2b", h: "Mock Call Preparation: the Call Sim, LSH Voice and LSH CaseWorX", parts: [[MOCK_WARM_AT, null]]}]
+      {id: "s2b", h: "Mock Call Preparation: the Call Sim, LSH CommX and LSH CaseWorX", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
     // the activity's own words; then its files, the time zone, the 📅 Calendar Activity Check and ✅ Done
