@@ -295,6 +295,26 @@ body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb) .module-head{backgrou
 body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb) .module-head::after{display:none;}
 body .dash-main .module-card.ftkb .module-head .mh-day,
 body .dash-main .module-card.ftkb .module-head [class*="kicker"]{color:#F5C99A !important;}
+/* 🟨 Every module card's frame as on the LSH Academy Index (Training-Portal programs.html #idx-topics .topic-card): the thick
+   rounded frame navy along the top, fading to gold at the bottom. The card's own 6px frame (js/lsh-card-frame.js) turns
+   transparent and the gradient is painted under it (border-box), the card's face over it (padding-box): near-white for a day
+   card, as the Academy Index's cards are (glass would let the gold through), the workshop banner's navy for the two navy cards. */
+body .dash-main .module-card.module-card{border-color:transparent !important;
+  background:linear-gradient(rgba(248,249,252,.96), rgba(248,249,252,.96)) padding-box,
+             linear-gradient(180deg, #1E2340 0%, #2c3360 30%, #a8692f 78%, #DB8437 100%) border-box !important;}
+body .dash-main .module-card.mc-open.mc-open:not(.ftli):not(.ftkb){
+  background:radial-gradient(520px 180px at 88% -45%, rgba(219,132,55,.32), transparent 62%) padding-box,
+             radial-gradient(360px 180px at -6% 150%, rgba(120,132,190,.28), transparent 62%) padding-box,
+             linear-gradient(135deg, #1F2440 0%, #2B3158 55%, #353C68 100%) padding-box,
+             linear-gradient(180deg, #1E2340 0%, #2c3360 30%, #a8692f 78%, #DB8437 100%) border-box !important;}
+body .dash-main .module-card.module-card:hover{filter:saturate(1.08);}
+/* a narrow phone (≤ 480px): the logo a little smaller and the course's name a size down, so "FOUNDATIONAL" fits whole on its line
+   beside the Menu button instead of breaking mid-word */
+@media(max-width:480px){
+  .brand-mark.brand-logo{height:44px !important;}
+  .topbar .brand{gap:10px !important;}
+  .topbar .brand-text b{font-size:12px !important;letter-spacing:.04em !important;overflow-wrap:normal !important;word-break:normal !important;hyphens:none !important;}
+}
 
 `;
   document.head.appendChild(st);
