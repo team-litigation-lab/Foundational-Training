@@ -7518,7 +7518,8 @@ window.addEventListener("storage", (e)=>{
 Object.assign(window, {openRouteInNewTab});
 function resumeLabel(){
   const lv = state.lastView; if(!lv) return "";
-  if(lv.view==="day" && lv.dayId){ const idx = resumeSlideFor(lv.dayId); const d = DAYS.find(x=>x.id===lv.dayId); const sl = buildDaySlides(d)[idx]; return `${ftName(lv.dayId)} · ${sl ? daySlideTitle(d, sl) : "Lesson"}`; }
+  if(lv.view==="day" && lv.dayId){ const d = DAYS.find(x=>x.id===lv.dayId); if(!d) return "";   /* (a lesson since taken off the platform: no resume line, not a broken dashboard) */
+    const idx = resumeSlideFor(lv.dayId); const sl = buildDaySlides(d)[idx]; return `${ftName(lv.dayId)} · ${sl ? daySlideTitle(d, sl) : "Lesson"}`; }
   if(lv.view==="tool" && lv.toolId){ const t = PRACTICE_TOOLS.find(x=>x.id===lv.toolId); return t ? `Practice Lab · ${t.title}` : ""; }
   if(lv.view==="daydeck" && lv.deck) return `Day ${lv.deck.day} · Activity Deck, step ${(lv.deck.i||0) + 1}`;
   if(lv.view==="knowtools") return "Day 1 · Know Your Tools";
@@ -7526,7 +7527,7 @@ function resumeLabel(){
 }
 function resumeWhereLeftOff(saved){
   const lv = saved || state.lastView; state.resumePending = false; if(!lv) return;
-  if(lv.view==="day" && lv.dayId){ goto("day", lv.dayId); return; }
+  if(lv.view==="day" && lv.dayId){ goto(DAYS.some(x=>x.id===lv.dayId) ? "day" : "dashboard", lv.dayId); return; }   // (a lesson since taken off: back to the dashboard)
   if(lv.view==="tool" && lv.toolId){ state.pendingWizardIndex = lv.wizardIndex||0; state.pendingWizardScrollTop = true; goto("tool", lv.toolId); return; }
   if(lv.view==="daydeck" && lv.deck && window.FTDayDecks){ FTDayDecks.open(lv.deck.day, lv.deck.i||0); return; }
   goto(lv.view);
@@ -12734,7 +12735,8 @@ function auditSummary(rec){
   let where = "Not started";
   if(lv && lv.view==="tool" && lv.toolId){ const t = PRACTICE_TOOLS.find(y=>y.id===lv.toolId); where = t ? `Practice Lab · ${t.title}` : "Practice Lab"; }
   else { const cand = lv && lv.view==="day" && lv.dayId ? lv.dayId : (DAYS.filter(d=>sp[d.id]||dp[d.id]).map(d=>d.id).pop()||null);
-    if(cand){ const d = DAYS.find(z=>z.id===cand); const n = buildDaySlides(d).length; const at = (typeof ls[cand]==="number" ? ls[cand] : (sp[cand]||0)) + 1; where = `${ftName(cand)} · Step ${Math.min(at,n)} of ${n}`; } }
+    const d = cand ? DAYS.find(z=>z.id===cand) : null;   // (a lesson since taken off the platform reads as not started)
+    if(d){ const n = buildDaySlides(d).length; const at = (typeof ls[cand]==="number" ? ls[cand] : (sp[cand]||0)) + 1; where = `${ftName(cand)} · Step ${Math.min(at,n)} of ${n}`; } }
   const fb = (x && x.fb) || {};
   const worked = days.filter(d=>d.reached>0 || d.score!==null || d.labDone).map(d=>d.id);
   const sent = Object.values(fb).filter(v=>v && v.status==="sent" && (!v.auto || v.editedByTrainer));
