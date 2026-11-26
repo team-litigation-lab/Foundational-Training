@@ -179,11 +179,10 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 6 | Intake Specialist Training | ✅ the deck's pages as slides (105, from its PDF in two parts) |
 | 7 | Claims Specialist Training | ✅ the deck's pages as slides (77, from its PDF) |
 | 8 | Medical Records Specialist Training | ✅ the deck's pages as slides (55, from its PDF) |
-| 9 | Lien Negotiator Track | ✅ Days 17–18's instructions as slides (9), with the Canva training deck and Word Game 1 in them |
 
-**Lien Negotiator Track** (id 9, `build/lessons/lesson09.js`) is back on the standard training, as the lesson for **Days 17–18**. It had been taken off to become a separate training, which left those two days with no lesson — so nothing on the platform could record them as done, and a trainee could never reach the end of the programme. Its slides are everything the Training Guide asks of the trainee on those two days, in the order they run: Day 17's carryover, Saving Medical Bills & Records and the PM discussion, the Lien Negotiator **Canva deck** at that discussion, **Word Game 1** (`ft/day17/word-game-1.html`), then Day 18's exercise and materials, live demo, shadowing and the instructions for requesting a new role. Like every lesson deck it carries **no process questions** — the Day 18 list was taken off its slide; they are answered in ✍️ Process Questions after the day's activities. They come from the trainee-facing day files (`build/days/day17.js`, `day18.js`), so no facilitator content is in them — only the trainer-slot placeholders, which a trainer in trainer view sees filled with the Day 17–18 facilitator notes. Its **Process Questions** (the `lien-negotiator` set, 12 questions, `js/ft-process.js`) were already written and come back with it. Like every lesson day it runs Lesson → Activities → Process Questions; when those pass, the programme is complete and 📚 Dashboard shows 🎓.
+**Lien Negotiator Track** (the old lesson 9, Days 17–18) is its own course now (the LienNegotiatorTraining repo); its lesson file, Day 17–18 screenshots and Word Game 1 have been removed from this repo.
 
-Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which `index.html` doesn't include. To bring one back, add its lesson to `index.html` by hand; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
+Onboarding and Setting of Expectations & Tech Set-up (the old ids 10 and 11) are off the platform; their lesson files and Day 0 screenshots have been removed. Their ids stay unused, so saved progress never shifts (git history has the files if one is ever brought back).
 
 Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer. Lessons are finished from their last slide (📋 Classroom Activity, which opens the lesson's Activity deck). **Videos stay locked** (🔒 Video Presentation) until a trainer unlocks them in **Admin → 📅 Open Lessons → 🎬 Unlock Videos**, for all batches or one batch (`settings:openvideos`, same shape as `settings:opendays`). Trainers and 👁 Trainee view always see them.
 
@@ -744,7 +743,6 @@ Where the token lives:
 
 - `index.html` (the platform) declares `--font-ui` in `:root` and `body` inherits it; the display face (`h1`–`h4`, `.display`) stays Fraunces and `.mono` stays IBM Plex Mono — this token is the **UI** font, not the whole type scale.
 - `glossary.html` and `kb.html` declare the same token in their own `:root` and use it for `body` and the brand mark. Nothing else about them changes: the sizes, line heights and layouts are exactly as they were.
-- `ft/day17/word-game-1.html` keeps its own typeset design (Gloock, Marcellus, Zilla Slab on warm paper) on purpose — it is a game board, not a UI surface.
 
 **A new page gets the token, not a new font choice.** Copy the `--font-ui` declaration into its `:root` and point `body` at it; don't add a Google Fonts link for a UI face.
 
@@ -759,7 +757,6 @@ Where the token lives:
 | `js/ft-slides.js`, `build/slides/` | The design for native slides, and the tools that rebuild a deck as native slides with its scripts. In full screen and the slides window, a native slide (and an orientation slide) fills the screen: no width cap, no presenter column, and the text scales with the screen. |
 | `build/days/dayNN.js` | The curriculum's days as HTML. Not built into the lessons; `build/day-decks.cjs` turns them into the 📋 Day decks (`js/ft-day-decks-data.js`, built on deploy, not committed). |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
-| `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Track deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
 | `js/ft-day-locks.js` | 🔓 Activity Locks: Days 2–16 in Day 1's order, each step unlocked by the trainer, by hand or on a schedule; the lesson cards' Start / Part 1 · Part 2 … segments; Admin → 📅 Open Lessons → 🔓 Activity Locks; the trainer's deck, each segment's lock shown and set on it (Days 1–16). |
 | `js/ft-day-activities.js` | **The 16 days and their activities**: which activity belongs to which classroom day, and where it is done (a Practice Session, a trainer-led demo, a platform tool, Drive, the training GC or the room). Read off `trainer/curriculum.json`. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |

@@ -116,7 +116,7 @@ const PROCESS_SETS = [
     "Analyze how the closing statement reflects the full financial breakdown of a personal injury case.",
     "Evaluate the role of transparency in the closing statement. How does it support trust and prevent disputes?",
     "Analyze the net sheet’s function in summarizing what the client will receive after deductions. Why must it match the closing statement exactly?"]}
-].filter(set=>DAYS.find(d=>d.id===set.lesson))   // a lesson taken off the platform (build/lessons/off/) takes its set with it
+].filter(set=>DAYS.find(d=>d.id===set.lesson))   // a lesson taken off the platform takes its set with it
 // ✍️ ten process questions at most on every answer sheet (its Knowledge Check): the first ten, so the answers already saved
 // (kept by the question's place on the sheet) stay with their questions
  .map(set=>Object.assign(set, {questions:set.questions.slice(0, KC_MAX)}));

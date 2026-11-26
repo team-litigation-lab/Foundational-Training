@@ -4557,17 +4557,6 @@ const ROLE_DRILL_ITEMS = [
 ];
 
 /* ---------- 1. Inbox Sweep: Label & Color-Code ---------- */
-const LABEL_LEGEND = [
-  {label:"Court / Filing", color:"#B54A3F"},
-  {label:"Opposing Counsel", color:"#6B4FA0"},
-  {label:"Client Communication", color:"#DB8437"},
-  {label:"Trust & Billing", color:"#3F7D58"},
-  {label:"Case Team / Co-Counsel", color:"#3C4268"},
-  {label:"Compliance", color:"#2C7A7B"},
-  {label:"Internal / Admin", color:"#7C82A0"},
-  {label:"Marketing / Networking", color:"#A8ADBD"},
-  {label:"Security Alert", color:"#4A2545"}
-];
 
 /* ---------- 2. Legal Calendar Conflict Resolver (week view) ---------- */
 const DAY_ORDER = ["Mon","Tue","Wed","Thu","Fri"];
@@ -4624,7 +4613,6 @@ const CAL_EVENTS = [
   {t:"Vendor Renewal Review", day:"Fri", s:13.25, e:13.75, p:"Low", loc:"Virtual", type:"Vendor"}
 ];
 const PRI_COLOR = {High:"#B54A3F", Medium:"#DB8437", Low:"#7C82A0"};
-const COLOR_PRESETS = ["#B54A3F","#DB8437","#7C82A0","#3F7D58","#3C4268","#6B4FA0","#2C7A7B","#B5651F"];
 
 /* ---------- 3. Trust Account, Invoices & Billing ---------- */
 const SOA_DATA = [
@@ -4862,30 +4850,6 @@ const COLD_LEADS = [
 /* ---------- Inbox Triage Training Simulator ----------
    No tier labels anywhere in this data — the trainee must judge
    each message on its own and decide what to do with it. */
-const EMAIL_SIM_MESSAGES = [
-  {type:"actionable", from:"R. Alvarez, Client — Matter 24-0113", subj:"Status update requested — Contract Review", meta:"9:02 AM", correctLabel:"Client Communication",
-   body:"Ms. Chen,\n\nCould you please provide a status update on the contract review for Matter 24-0113? We are approaching our internal deadline and require confirmation of next steps.\n\nRegards,\nR. Alvarez"},
-  {type:"clutter", from:"LegalTech Weekly", subj:"5 AI Tools Every Law Firm Should Know About", meta:"7:15 AM", correctLabel:"Marketing / Networking",
-   body:"This week's roundup of legal technology news and trends, curated for busy professionals. Read the top 5 tools changing how firms manage discovery..."},
-  {type:"phishing", from:"IT Security Team <security@lsh-support-verify.com>", subj:"URGENT: Your Mailbox Storage Is Full", meta:"8:47 AM", correctLabel:"Security Alert",
-   body:"Your mailbox has exceeded its storage limit. Click below immediately to verify your account, or you will lose access to your email within 24 hours.\n\n{{LINK:Verify My Account Now}}\n\nIT Security Team",
-   redFlags:["Sender domain doesn't match the real company domain","Manufactured urgency (a 24-hour countdown)","Generic, impersonal greeting","Pressures you to click a link immediately instead of verifying through a known channel"]},
-  {type:"actionable", from:"T. Whitfield, Client", subj:"quick q about our meeting!!", meta:"9:20 AM", correctLabel:"Client Communication",
-   body:"hi!! hope you're doing well :) quick question — any chance we could push our call from thursday to friday instead? also totally random but do you guys have a preferred format for sending over documents, pdf or word doc? no rush at all just wondering! thanks so much!!"},
-  {type:"clutter", from:"Continuing Education Network", subj:"50% Off All CLE Webinars This Month Only!", meta:"6:30 AM", correctLabel:"Marketing / Networking",
-   body:"Don't miss our biggest sale of the year on continuing legal education courses. Browse our full catalog and register before the offer ends Friday."},
-  {type:"actionable", from:"D. Osei, Client — Matter 24-0098", subj:"Why haven't I received an update?", meta:"9:41 AM", correctLabel:"Client Communication",
-   body:"This is the third time I'm reaching out. I was told two weeks ago that the invoice discrepancy would be resolved and I still have not heard anything. I need this addressed today. This is unacceptable."},
-  {type:"clutter", from:"LinkedIn", subj:"You have 12 new notifications", meta:"6:05 AM", correctLabel:"Marketing / Networking",
-   body:"See who's viewed your profile, plus new posts from your network this week."},
-  {type:"phishing", from:"DocuSign Notifications <no-reply@docusign-secure-verify.net>", subj:"Action Required: Confirm Wire Transfer Details", meta:"9:55 AM", correctLabel:"Security Alert",
-   body:"A pending wire transfer requires verification before it can be processed. Please reply to this email with the account number and routing number on file to confirm the transaction before it is automatically canceled.",
-   redFlags:["Legitimate parties never request account or routing numbers by email reply","Suspicious, non-official sender domain","Creates urgency around a financial transaction to short-circuit normal verification"]},
-  {type:"actionable", from:"M. Chen, Referred Prospect", subj:"Documents needed for contract dispute intake", meta:"10:05 AM", correctLabel:"Client Communication",
-   body:"Hello,\n\nFollowing our referral conversation, here is what I believe you'll need to get started:\n1. Signed copy of the original vendor agreement (2022)\n2. Email correspondence regarding the breach (attached separately)\n3. Invoice history for the last 12 months\n4. A list of all parties involved\n\nPlease let me know if anything else is required before we schedule an initial consultation.\n\nBest,\nM. Chen"},
-  {type:"clutter", from:"Office Events Committee", subj:"Sign up for the Fall Potluck!", meta:"7:50 AM", correctLabel:"Internal / Admin",
-   body:"It's that time of year again — please sign up for what dish you'll bring to this year's fall potluck. Sign-up sheet is on the shared drive."}
-];
 const HANDOUTS = [
   {day:1, title:"Command Hierarchy & Escalation Checklist", icon:"⛓"},
   {day:2, title:"Managing Up: One-Day Schedule Worksheet", icon:"📋"},
@@ -4898,132 +4862,6 @@ const HANDOUTS = [
   {day:9, title:"CLE & Membership Renewal Tracker", icon:"🎓"},
   {day:10, title:"Weekly Social Content Calendar", icon:"📱"}
 ];
-
-/* ---------- Day 9: Events, CLE & Reputation Tracker ---------- */
-const CLE_ROSTER = [
-  {name:"R. Alvarez", completed:12, required:12, deadline:"Dec 31"},
-  {name:"D. Osei", completed:9, required:12, deadline:"Dec 31"},
-  {name:"M. Chen", completed:12, required:12, deadline:"Jun 30"},
-  {name:"T. Whitfield", completed:6, required:12, deadline:"Dec 31"},
-  {name:"L. Farrow", completed:15, required:12, deadline:"Dec 31"},
-  {name:"J. Reyes", completed:11, required:12, deadline:"Dec 31"}
-]; // correct status: completed >= required -> "On Track", else "Needs Follow-up"
-
-const EVENT_REGISTRANTS = [
-  {name:"A. Kim", confirmed:true}, {name:"B. Lopez", confirmed:false},
-  {name:"C. Carter", confirmed:true}, {name:"D. Davis", confirmed:false},
-  {name:"E. Wong", confirmed:true}, {name:"F. Martinez", confirmed:true},
-  {name:"G. Singh", confirmed:false}, {name:"H. Brown", confirmed:true},
-  {name:"I. Clark", confirmed:true}, {name:"J. Patel", confirmed:false}
-]; // correct action: not confirmed -> needs follow-up
-
-const NEGATIVE_REVIEW = {
-  author:"Former Client", stars:2,
-  text:"I waited nearly three weeks for a callback about my case and no one from the firm reached out. Very disappointed in the lack of communication — I had to keep calling just to get a status update."
-};
-
-/* ---------- Day 10: Social Media Metrics Lab ---------- */
-const SOCIAL_POSTS = [
-  {label:"Instagram — Post A", likes:120, comments:15, shares:10, followers:4000},
-  {label:"Instagram — Post B", likes:300, comments:20, shares:5, followers:10000},
-  {label:"LinkedIn — Post C", likes:45, comments:30, shares:25, followers:1200},
-  {label:"LinkedIn — Post D", likes:500, comments:10, shares:2, followers:25000}
-]; // correct best performer by engagement rate: Post C
-
-const PLATFORM_VERSIONS = [
-  {id:"A", text:"🎉 WE WON! Best Regional Law Firm 2026! Huge thanks to our incredible clients & team 🙌 #LegalExcellence #ProudMoment #TeamWin", platform:"Instagram"},
-  {id:"B", text:"We're honored to share that our firm has been recognized as the Best Regional Law Firm for 2026. This achievement reflects the dedication of our attorneys and staff, and the trust our clients place in us every day.", platform:"LinkedIn"}
-];
-
-const CAMPAIGN_DATA = {spend:500, leads:50, productPrice:20};
-// Correct: Cost per Lead = 500/50 = $10. Revenue = 50*20 = $1,000. ROI = (1000-500)/500*100 = 100%
-
-/* ============================================================
-   DAY 1: CLIENT DOSSIER & TRACKER BUILDER
-   Client: Elias Thorne, Managing Owner & CEO, Thorne & Partners
-   Law Group. Facts drawn from his executive profile.
-   ============================================================ */
-const DOSSIER_SECTIONS = ["Firm & Role", "Personal & Family", "Standing Instructions", "Known Quirks"];
-const DOSSIER_FACTS = [
-  {text:"Managing Owner & CEO of Thorne & Partners Law Group, a 450-attorney firm handling corporate litigation, white-collar defense, and international arbitration.", section:"Firm & Role", keywords:["450","litigation","arbitration","ceo","managing owner"]},
-  {text:"Firm culture is described internally as \"uncompromising excellence\" — strict confidentiality and meticulous attention to detail.", section:"Firm & Role", keywords:["confidentiality","excellence","detail"]},
-  {text:"Personal brand internally is \"The Legal Strategist\" — sharp intellect, evidence-driven, fiercely protective of trial prep and confidentiality.", section:"Firm & Role", keywords:["strategist","trial prep","evidence"]},
-  {text:"Married to Sarah; two children, Leo (8) and Maya (5); one dog, Barnaby.", section:"Personal & Family", keywords:["sarah","leo","maya","barnaby"]},
-  {text:"Based in New York City (Eastern time); travels heavily to Washington D.C., London, and Singapore.", section:"Personal & Family", keywords:["new york","london","singapore","d.c.","washington"]},
-  {text:"Feedback style is blunt, direct, and unemotional — he won't micromanage, but expects the EA to anticipate rather than be told.", section:"Personal & Family", keywords:["blunt","direct","anticipate","micromanage"]},
-  {text:"Requires a mandatory 15-minute debrief buffer after every key client or court session.", section:"Standing Instructions", keywords:["15-minute","debrief","buffer"]},
-  {text:"Strict Paleo diet, zero dairy — all client dinners must be vetted with the venue in advance.", section:"Standing Instructions", keywords:["paleo","dairy","dinner","venue"]},
-  {text:"No back-to-back depositions or court hearings are ever allowed on the calendar.", section:"Standing Instructions", keywords:["back-to-back","deposition","hearing"]},
-  {text:"Aggressively filters media inquiries, cold client calls, and non-essential partner check-ins.", section:"Standing Instructions", keywords:["media","filters","cold call","gatekeep"]},
-  {text:"Sends rapid, cryptic voice notes around 5:30 AM that need to become a structured agenda by 8:00 AM.", section:"Known Quirks", keywords:["5:30","voice note","8:00","agenda"]},
-  {text:"Needs aisle seats near the front of the plane and hates connecting flights.", section:"Known Quirks", keywords:["aisle","connecting flight","front"]}
-];
-
-const TRACKER_SECTIONS = ["Travel Preferences", "Inbox Preferences", "Meeting Rhythms"];
-const TRACKER_FACTS = [
-  {text:"Needs aisle seats near the front of the plane.", section:"Travel Preferences", keywords:["aisle","front"]},
-  {text:"Hates connecting flights — book direct whenever possible.", section:"Travel Preferences", keywords:["connecting","direct"]},
-  {text:"Monitor flight delays proactively and rebook without being asked.", section:"Travel Preferences", keywords:["delay","rebook","proactive"]},
-  {text:"Only reads concise case summaries and action points at the top of an email (BLUF).", section:"Inbox Preferences", keywords:["bluf","summary","action point"]},
-  {text:"Detailed briefs must be attached separately — never pasted into the body.", section:"Inbox Preferences", keywords:["attach","brief","body"]},
-  {text:"The 5:30 AM voice notes need to become a structured, prioritized agenda by 8:00 AM.", section:"Inbox Preferences", keywords:["5:30","voice note","8:00","agenda"]},
-  {text:"No back-to-back depositions or court hearings.", section:"Meeting Rhythms", keywords:["back-to-back","deposition","hearing"]},
-  {text:"Mandatory 15-minute debrief buffer after every key client or court session.", section:"Meeting Rhythms", keywords:["15-minute","debrief","buffer"]},
-  {text:"Emergency court filings can disrupt the daily agenda — know which internal partner meetings can be rescheduled instantly.", section:"Meeting Rhythms", keywords:["emergency","filing","reschedule"]}
-];
-
-/* ============================================================
-   DAY 5: INSURANCE & RISK ASSESSMENT
-   Household/personal risk scenarios facing the Thorne family.
-   ============================================================ */
-const RISK_CATEGORIES = ["Financial Risk", "Legal & Liability Risk", "Operational Risk", "Reputational Risk"];
-const RISK_SCENARIOS = [
-  {text:"The umbrella insurance policy on the family's NYC apartment auto-renews Friday, but no one has confirmed the payment went through.", category:"Financial Risk"},
-  {text:"The lease on the family's London townhouse renews next month, and a new clause hasn't been reviewed yet.", category:"Legal & Liability Risk"},
-  {text:"Leo's school pickup schedule conflicts with a last-minute Singapore trip that just landed on the calendar.", category:"Operational Risk"},
-  {text:"A tabloid reporter has contacted Sarah directly asking for comment on one of Elias's active cases.", category:"Reputational Risk"},
-  {text:"The nanny's contract renewal is overdue and the current agreement has technically lapsed.", category:"Legal & Liability Risk"},
-  {text:"Barnaby's vet bills this quarter have exceeded the pet insurance policy's annual cap.", category:"Financial Risk"},
-  {text:"A last-minute venue change for a client dinner means the Paleo/dairy-free requirements haven't been re-confirmed.", category:"Operational Risk"},
-  {text:"An old photo of Elias at a competitor's event has resurfaced online right before a major trial.", category:"Reputational Risk"},
-  {text:"A home monitoring subscription auto-renewed at triple the promotional rate because nobody reviewed it before the renewal date.", category:"Financial Risk"}
-];
-
-const RISK_STRATEGIES = ["Avoidance", "Reduction", "Transfer", "Retention"];
-const RISK_STRATEGY_SCENARIOS = [
-  {text:"The firm purchases a directors & officers insurance policy to cover Elias against personal liability in his role as Managing Owner.", strategy:"Transfer"},
-  {text:"Given an active trial, Elias declines an invitation to be photographed at a high-profile industry event that could invite media scrutiny.", strategy:"Avoidance"},
-  {text:"A home security system with cameras and monitored alarms is installed at the Thorne residence.", strategy:"Reduction"},
-  {text:"A minor fender-bender on the family car is paid for out of pocket rather than filing a claim that could raise premiums.", strategy:"Retention"}
-];
-
-/* ============================================================
-   DAY 6: BUSINESS COMPLIANCE & PROJECT RECOVERY
-   Thorne & Partners' multi-jurisdiction footprint (NYC, DC,
-   London, Singapore) and an active trial-team recovery scenario.
-   ============================================================ */
-const FIRM_LICENSES = [
-  {name:"NY Department of State — Corporate Registration", expires:"Sep 2026", status:"Renew Soon"},
-  {name:"Singapore Legal Services Regulatory Authority — Foreign Law Practice License", expires:"Oct 2026", status:"Renew Soon"},
-  {name:"D.C. Bar — Foreign Legal Consultant Registration", expires:"Nov 2026", status:"Renew Soon"},
-  {name:"UK Solicitors Regulation Authority — London Office License", expires:"Jan 2027", status:"Current"},
-  {name:"New York State Bar — Firm Registration", expires:"Mar 2027", status:"Current"},
-  {name:"International Arbitration Institute — Membership", expires:"Aug 2028", status:"Current"}
-]; // "Renew Soon" = expires within ~60 days of the training's reference date
-
-const FIRM_KPIS = [
-  {category:"Executive Productivity", kpi:"Calendar Accuracy Rate", target:"≥ 98%", actual:"99%", correctStatus:"On Target"},
-  {category:"Executive Productivity", kpi:"Executive Inbox Response Time", target:"≤ 4 hrs", actual:"6.5 hrs", correctStatus:"Off Target"},
-  {category:"Client Service", kpi:"Avg. Client Response Time", target:"≤ 2 hrs", actual:"1.5 hrs", correctStatus:"On Target"},
-  {category:"Client Service", kpi:"Client Retention Rate", target:"≥ 90%", actual:"88%", correctStatus:"Off Target"},
-  {category:"Operational Efficiency", kpi:"Task Completion Rate", target:"≥ 95%", actual:"97%", correctStatus:"On Target"},
-  {category:"Legal Compliance", kpi:"Filing Deadline Adherence", target:"100%", actual:"100%", correctStatus:"On Target"}
-];
-
-const TRIAL_RECOVERY_SCENARIO = {
-  matter:"Meridian Dynamics — International Arbitration",
-  text:"The discovery review team on the Meridian Dynamics arbitration is two weeks behind schedule, and the hearing date hasn't moved. Elias needs to know what happened and what you're doing about it."
-};
 
 /* ---------- Client Profile Reference Document (always accessible) ---------- */
 const CLIENT_PROFILE_DOC = [
@@ -5119,7 +4957,6 @@ const LOGO_ICON_SRC = "/favicon.png";
 const LOGO_FULL_SRC = "/js/lsh-logo-dark.png";
 /* Empty means "no asset": the render sites below leave the element out rather
    than emitting src="", which makes the browser re-request this page. */
-const ELIAS_VOICE_NOTE_AUDIO_SRC = "";
 
 const state = {
   view:"dashboard",
@@ -7221,16 +7058,6 @@ function refreshTaskStatuses(){
 function openTasksCount(){ refreshTaskStatuses(); return taskLog().filter(e=>e.status==="new"||e.status==="progress").length; }
 
 /* ---------- Day 10: strict single-attempt (no time limit) ---------- */
-function checkDay10SingleAttempt(actionId){
-  if(!state.completedLabActions) state.completedLabActions = {};
-  if(state.completedLabActions[actionId]){
-    toast("Day 10's lab allows exactly one attempt per section — this one's already been submitted.");
-    return false;
-  }
-  state.completedLabActions[actionId] = true;
-  storeSet("completed-lab-actions", state.completedLabActions);
-  return true;
-}
 function moduleCard(d){
   const prog = state.progress[d.id];
   const unlocked = dayUnlocked(d.id);
@@ -8503,24 +8330,6 @@ function renderMeetClientSlide(){
     </div>
   `;
 }
-function renderMeetClientTrainerGuide(){
-  return `
-    <div class="trainer-checkpoint">
-      <div class="tc-tag">🧑‍🏫 Trainer Guide — Running This Roleplay</div>
-      <p><b>Opening line (say this in character, cold, no preamble):</b><br>"Alright — before we get into any of the formal stuff, you've got a few minutes to ask me whatever you actually want to know. What do you need to know before we start working together?"</p>
-      <p><b>Tone to hold throughout:</b> blunt, direct, unemotional. He does not soften bad news, does not over-explain, and does not fill silence. Short answers are correct — resist the urge to over-elaborate on his behalf. He also doesn't micromanage; if a question is really "you'll figure that out," say so plainly rather than inventing a rule that doesn't exist.</p>
-      <p><b>Sample Q&amp;A pairs, ready to use or adapt:</b></p>
-      <ul>
-        <li><i>"What's your biggest pet peeve with assistants?"</i> → "Being told about a problem after it's already blown up. If you see something coming, I want to hear about it before it happens, not after."</li>
-        <li><i>"How do you like to be updated on things?"</i> → "Short. Whatever it is, lead with what I actually need to know and what you need from me. I don't need the whole story to get there."</li>
-        <li><i>"What happens if you're unreachable and something urgent comes up?"</i> → "Then you make the call that protects the business, and you tell me the second I'm back — not two hours later because you were waiting for the 'right time.'"</li>
-        <li><i>"Is there anything you just won't compromise on?"</i> → "A few things. You'll learn what they are. Break one and you won't need me to tell you twice."</li>
-      </ul>
-      <p><b>If a trainee asks something not covered above or in the dossier:</b> improvise, but stay consistent with the personality — blunt and unsentimental, never cruel, never chatty. A good fallback: "That's not something I'd have a rule for — use your judgment, and if you get it wrong once, we'll fix it."</p>
-      <p><b>Wrapping up:</b> after 5–8 minutes (or when questions run dry), drop the character explicitly — "Okay, that's Elias — now let's build the real dossier" — and move on to the next slide. Don't let the roleplay bleed into the formal content that follows.</p>
-    </div>
-  `;
-}
 function renderVideoPlaceholder(d){
   return `
     <div class="video-placeholder">
@@ -9048,13 +8857,6 @@ function renderProminentDisclaimer(c){
       </div>
     </div>`;
 }
-function renderExample(e){
-  return `
-    <div class="example-block">
-      <div class="ex-label">${esc(e.label||"Example")}</div>
-      ${e.lines.map(x=>`<div class="ex-line">${esc(x)}</div>`).join("")}
-    </div>`;
-}
 function renderTable(t){
   return `
     <div class="mini-table-wrap">
@@ -9496,12 +9298,6 @@ function submissionSections(text){
   if(cur.length) parts.push(cur.join("\n"));
   return parts.map(x=>x.trim()).filter(Boolean);
 }
-// Keyword "Check" buttons: refuse keyboard mash with a notice instead of a score.
-function labInputRejected(texts, noticeId){
-  if(texts.every(looksLikeWriting)) return false;
-  inlineNotice(noticeId, "Some of this looks like random characters rather than real writing. Write each section in real sentences, then check again.");
-  return true;
-}
 function assessSubmissionQuality(text){
   const cleaned = String(text||"")
     .split("\n").filter(l=>!/^\s*#/.test(l)).join("\n")
@@ -9558,14 +9354,6 @@ function refundLastLabAttempt(){
   else if(la.actionId && state.completedLabActions){ delete state.completedLabActions[la.actionId]; storeSet("completed-lab-actions", state.completedLabActions); }
   state.lastLabAttempt = null;
   syncToLedger();
-}
-function inlineNotice(id, msg){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.innerHTML = `<div class="ai-result ai-error"><b>Not checked yet</b><div class="ai-result-body">${esc(msg)}</div></div>`;
-  // a report from an earlier submission of this same part no longer matches what's written: clear it
-  const scope = el.closest(".wizard-screen") || el.parentElement;
-  if(scope) scope.querySelectorAll('[id$="Result"]').forEach(x=>{ if(x!==el && x.querySelector(".eval-report, .ai-result")) x.innerHTML = ""; });
 }
 async function useLabAttempt(dayId, actionId){
   if(!state.completedLabActions) state.completedLabActions = {};
@@ -9676,81 +9464,6 @@ Return ONLY a JSON object with this exact shape, no other text:
     blindspots: Array.isArray(raw.blindspots) ? raw.blindspots : [],
     growthSuggestions: Array.isArray(raw.growthSuggestions) ? raw.growthSuggestions : []
   };
-}
-// Day 2's Practice Lab scores against a fixed checklist instead of calling Gemini, so it works
-// even when the AI quota is used up. Set to false to go back to the AI review.
-const DAY2_CHECKLIST_SCORING = true;
-// checks: [{cat:"accuracy"|"presence"|"risk"|"efficiency", pts, ok, good, fix}]. Returns the same
-// shape as runRubricEvaluation, so renderEvaluationReport shows it the same way.
-function checklistRubric(submissionText, checks){
-  const quality = assessSubmissionQuality(submissionText);
-  if(!quality.ok){ refundLastLabAttempt(); const err = new Error(quality.msg); err.invalidInput = true; throw err; }
-  state.lastLabAttempt = null;
-  const max = {accuracy:35, presence:30, risk:20, efficiency:15}, got = {accuracy:0, presence:0, risk:0, efficiency:0};
-  checks.forEach(c=>{ if(c.ok) got[c.cat] += c.pts; });
-  Object.keys(got).forEach(k=>{ got[k] = Math.min(max[k], Math.round(got[k])); });
-  const totalScore = got.accuracy + got.presence + got.risk + got.efficiency;
-  const fixes = checks.filter(c=>!c.ok && c.fix).map(c=>c.fix);
-  return {
-    accuracyScore:got.accuracy, presenceScore:got.presence, riskScore:got.risk, efficiencyScore:got.efficiency, totalScore,
-    gradeTier: gradeTierFor(totalScore),
-    strengths: checks.filter(c=>c.ok && c.good).map(c=>c.good).slice(0,4),
-    blindspots: fixes.slice(0,4),
-    growthSuggestions: fixes.length ? ["Not yet — rework the points above, then run it again."] : ["Strong work. Try the same approach on a messier, longer email next."]
-  };
-}
-const wordCount = (t)=>String(t||"").split(/\s+/).filter(Boolean).length;
-function fm2PromptChecks(draft){
-  const d = draft.toLowerCase(), n = wordCount(draft);
-  return [
-    {cat:"accuracy", pts:9, ok:/bullet|•|\blist\b|point/.test(d), good:"Asks for bullet points.", fix:"Not yet: say the format you want — \"3 bullet points\"."},
-    {cat:"accuracy", pts:9, ok:/\b(3|three)\b/.test(d), good:"Fixes the number of bullets at 3.", fix:"Not yet: give the exact count — 3 bullets, so the output is always the same shape."},
-    {cat:"accuracy", pts:9, ok:/\b(15|fifteen)\b/.test(d) || /(word|length) (limit|max)/.test(d), good:"Sets the 15-word limit.", fix:"Not yet: add the length limit — \"no more than 15 words per bullet\"."},
-    {cat:"accuracy", pts:8, ok:/action|to-?do|next step|task|follow.?up|what .* (needs|has) to/.test(d), good:"Asks for action items, not a general summary.", fix:"Not this way — \"summarize\" gets you a recap. Ask for action items only."},
-    {cat:"presence", pts:12, ok:/elias|executive|attorney|briefing|8 ?am|morning|boss/.test(d), good:"Gives the audience and purpose (the executive's briefing).", fix:"Not yet: say who it's for and why — \"for Elias's 8 AM briefing\"."},
-    {cat:"presence", pts:8, ok:/you are|act as|as an? (assistant|ea|executive)|professional|concise|clear/.test(d), good:"Sets the role or tone.", fix:"Try giving the tool a role or tone — \"You're an executive assistant; be concise\"."},
-    {cat:"presence", pts:10, ok:/\bonly\b|no (intro|preamble|extra|other)|nothing else|don't add|do not add|exclude/.test(d), good:"Rules out filler (only the bullets).", fix:"Not yet: rule out padding — \"only the bullets, no intro\"."},
-    {cat:"risk", pts:12, ok:/confidential|privileg|anonymi|placeholder|redact|remove (the )?(names|client)|no (client )?names|\[client\]/.test(d), good:"Protects client details before pasting them into an AI tool.", fix:"Not this way — client emails are confidential. Swap names for placeholders like [Client] before pasting."},
-    {cat:"risk", pts:8, ok:/verify|double.?check|flag|confirm|accurate|don't (invent|make up|guess)|do not (invent|make up|guess)/.test(d), good:"Asks the tool not to guess and to flag anything unclear.", fix:"Add a guardrail — \"don't invent details; flag anything unclear\"."},
-    {cat:"efficiency", pts:15, ok:n>=12 && n<=120, good:"Clear and to the point.", fix: n<12 ? "Not yet: the prompt is too thin to steer the tool — spell out format, length and focus." : "Tighten it: a prompt over 120 words is harder to reuse. Keep only the instructions that change the output."},
-    {cat:"efficiency", pts:0, ok:true}
-  ];
-}
-const FM2_MODEL_OUTPUT = [
-  "Confirm with legal that moving the closing date up won't affect financing.",
-  "Schedule the CFO call next week; confirm the exact day with the client.",
-  "Prepare the escrow holdback percentage answer before the CFO call."
-];
-function fm2PlanChecks(draft){
-  const d = draft.toLowerCase();
-  return [
-    {cat:"accuracy", pts:12, ok:/what happened|find out|look into|review (the )?(filing|docket|thread|file)|check (the )?(filing|docket|status|case)|investigat|status of the filing/.test(d), good:"Finds out what actually happened with the filing first.", fix:"Not yet: start by finding out what happened with the filing and whether the timeline is affected."},
-    {cat:"accuracy", pts:12, ok:/attorney|lawyer|associate|elias|loop in|check with|escalat|partner/.test(d), good:"Loops in the attorney handling the filing.", fix:"Not this way — questions about the case timeline need the attorney. Say who you'd loop in."},
-    {cat:"accuracy", pts:11, ok:/timeline|by (end of|eod|tomorrow|\d)|today|within \d|follow.?up|update (them|the client)|next step/.test(d), good:"Commits to a clear follow-up and timeline for the client.", fix:"Not yet: give the client a time for the next update — \"I'll update you by 3 PM\"."},
-    {cat:"presence", pts:15, ok:/acknowledg|apolog|understand|hear (you|your)|concern|frustrat|upset|sorry/.test(d), good:"Acknowledges the client's frustration.", fix:"Not yet: acknowledge how the client feels before explaining — it lowers the temperature."},
-    {cat:"presence", pts:15, ok:/prompt|ask (the )?ai|using ai|with ai|ai tool|chatgpt|claude|gemini|copilot/.test(d) && /draft|summar|respon|reply|email|bullet/.test(d), good:"Uses AI for a specific task (drafting the reply or summarizing the thread).", fix:"Not yet: include the actual AI prompt you'd use — e.g. to draft the client reply or summarize the thread."},
-    {cat:"risk", pts:12, ok:/confidential|privileg|anonymi|placeholder|redact|remove (the )?(names|client)|no (client )?names|approv/.test(d), good:"Keeps privileged details out of the AI tool.", fix:"Not this way — the thread is privileged. Remove names and case details before using AI, and only with approval."},
-    {cat:"risk", pts:8, ok:!/guarantee|won'?t affect|will not affect|no impact|definitely|promise/.test(d), good:"Avoids promising outcomes the attorney hasn't confirmed.", fix:"Careful: don't promise the case timeline isn't affected — only the attorney can say that."},
-    {cat:"efficiency", pts:15, ok:/\n\s*(\d+[.)]|[-•*])/.test(draft) || /first|then|next|finally/.test(d), good:"Laid out as clear steps.", fix:"Lay the plan out as numbered steps so it's easy to follow."}
-  ];
-}
-// replies: the trainee's reply to each client email that needed one ("" if none was sent)
-function fm2InboxChecks(replies){
-  replies = (replies||[]).map(r=>String(r||"").trim());
-  const msgs = replies;
-  const sent = replies.filter(r=>r.length), share = (f)=> sent.length ? sent.filter(f).length/sent.length : 0;
-  const allSent = sent.length === msgs.length;
-  return [
-    {cat:"accuracy", pts:35*(sent.length/Math.max(1,msgs.length)), ok:true, good: allSent ? "Replied to every client email that needed an answer." : ""},
-    {cat:"accuracy", pts:0, ok:allSent, fix:`Not yet: ${msgs.length-sent.length} client email(s) that needed a reply were left without one.`},
-    {cat:"presence", pts:15*share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r)), ok:true, good: share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r))===1 ? "Every reply opens with a greeting." : ""},
-    {cat:"presence", pts:0, ok:share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r))===1 || !sent.length, fix:"Open every reply with a greeting that fits the client — \"Dear Mr. Lee\" for the formal one, \"Hi Sam\" for the casual one."},
-    {cat:"presence", pts:15*share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r)), ok:true, good: share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r))===1 ? "Every reply closes with a proper sign-off." : ""},
-    {cat:"presence", pts:0, ok:share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r))===1 || !sent.length, fix:"Close every reply with a sign-off and your name."},
-    {cat:"risk", pts:20, ok:!sent.some(r=>/password|ssn|social security|account (number|no)|routing|pin\b/i.test(r)), good:"No sensitive information shared in replies.", fix:"Not this way — a reply included sensitive details (a password or account number). Never send those by email."},
-    {cat:"efficiency", pts:15*share(r=>wordCount(r)>=20 && wordCount(r)<=220), ok:true, good: share(r=>wordCount(r)>=20 && wordCount(r)<=220)===1 ? "Replies are complete but not padded." : ""},
-    {cat:"efficiency", pts:0, ok:share(r=>wordCount(r)>=20 && wordCount(r)<=220)===1 || !sent.length, fix:"Keep each reply between about 20 and 220 words — enough to answer fully, short enough to read on a phone."}
-  ];
 }
 async function runRoleplayRubricEvaluation(scenario, transcript){
   const prompt = `You are an automated evaluator grading a trainee Executive/Personal Assistant's performance in a live, unscripted roleplay call. Grade rigorously and realistically — do not default to the same score every time, and don't award high marks just because the trainee said something plausible-sounding.
@@ -11272,27 +10985,6 @@ window.downloadTravelPdf = downloadTravelPdf;
 /* ============================================================
    5. CALL HANDLING STUDIO (embedded within Inbox Triage / Day 4)
    ============================================================ */
-function renderGatekeepingSection(letter){
-  return `
-    <h3 style="margin:36px 0 6px;color:var(--navy);font-size:15px;">${letter}. Inbound Gatekeeping Practice</h3>
-    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 14px;">Pick the response that best matches the gatekeeping technique in play.</p>
-    ${CALL_SCENARIOS.map((s,i)=>`
-      <div class="scenario-card">
-        <span class="stag">${esc(s.tag)}</span>
-        <p class="scn">${esc(s.scn)}</p>
-        <div class="quiz-opts">
-          ${s.opts.map((o,oi)=>`
-            <label class="quiz-opt">
-              <input type="radio" name="call${i}" value="${oi}" onchange="setCallAns(${i},${oi})">
-              <span>${esc(o)}</span>
-            </label>`).join("")}
-        </div>
-        <div class="quiz-rationale" id="callFb${i}"></div>
-      </div>`).join("")}
-    <button class="btn btn-primary" onclick="submitCalls()">Check My Responses</button>
-    <div id="callsResult"></div>
-  `;
-}
 function renderColdCallingSection(letter){
   return `
     <h3 style="margin:${letter==='A'?'0':'32px'} 0 10px;color:var(--navy);font-size:15px;">${letter}. Prospective Client Intake Call Log</h3>
@@ -11743,8 +11435,6 @@ const HANDOUT_CONTENT = {
    {type:"table", h:"Weekly results", headers:["Post","Reach","Engagements","Engagement rate","Clicks","Notes"], rows:[], blank:5}]}
 };
 function handoutList(){ return DAYS.map(d=>Object.assign({day:d.id, dayTitle:d.title}, HANDOUT_CONTENT[d.id]||{title:`${ftName(d.id)} handout`, icon:"📄", blocks:[]})); }
-function handoutLink(day){ return ((state.handoutLinks||{})[day]||"").trim(); }
-async function loadHandoutLinks(){ const v = await sharedGet("handouts:links").catch(()=>null); state.handoutLinks = v||{}; state.handoutLinksLoaded = true; if(state.view==="handouts") render(); }
 function handoutHtml(h){
   const blk = (b)=>{
     if(b.type==="table"){ const rows = b.rows.concat(Array.from({length:b.blank||0},()=>b.headers.map(()=>""))); return `<h4>${esc(b.h)}</h4><div class="mini-table-wrap"><table class="mini-table ho-table"><thead><tr>${b.headers.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
@@ -13770,42 +13460,8 @@ window.setAdminShowArchived = setAdminShowArchived;
    wrap up. Trainers can also generate a fuller AI script, which is
    saved and shared with every trainer.
    ============================================================ */
-function scriptShort(t, n){
-  t = String(t||"").split(" — ")[0].replace(/\s+/g," ").trim();
-  n = n || 150;
-  return t.length>n ? t.slice(0, t.lastIndexOf(" ", n)) + "…" : t;
-}
-function lessonParts(l){
-  const fp = l.fourPart || {};
-  const principles = fp.corePrinciples || (l.b||[]).slice(0,2);
-  const steps = fp.howTo || l.howTo || (l.processSteps||[]).map(p=>`${p.label}: ${p.desc}`);
-  const pool = fp.bestPractices || (l.b||[]).slice(1);
-  const pitfalls = pool.filter(x=>/\b(never|pitfall|don't|do not|mistake|avoid|instead of|isn't|is not|common error|failure)\b/i.test(x));
-  return {principles, steps, pitfalls, callout: l.callout && l.callout.text};
-}
 
 /* Speech-friendly text: whole sentences, never cut mid-thought, no "…". */
-function speakable(t, max){
-  t = String(t||"").replace(/\s+/g," ").trim().replace(/^[\-•*\d.)\s]+/, "");
-  max = max || 220;
-  if(t.length <= max) return t;
-  let firstSentence = "";
-  const re = /[.!?](?=\s|$)/g; let m;
-  while((m = re.exec(t))){
-    const before = t.slice(0, m.index+1);
-    if(before.length < 20) continue;
-    if(/\b(e\.g|i\.e|vs|etc|Mr|Mrs|Ms|Dr|approx|incl|No)\.$/i.test(before)) continue;
-    firstSentence = before; break;
-  }
-  if(firstSentence && firstSentence.length <= max) return firstSentence;
-  const cut = t.slice(0, max);
-  const strong = Math.max(cut.lastIndexOf("; "), cut.lastIndexOf(" — "));
-  const at = strong > 60 ? strong : cut.lastIndexOf(", ");
-  let out = at > 60 ? cut.slice(0, at) : cut.slice(0, cut.lastIndexOf(" "));
-  const open = out.lastIndexOf("("); if(open > -1 && out.indexOf(")", open) === -1) out = out.slice(0, open);   // drop an unfinished "(e.g. …"
-  for(let k=0;k<4;k++) out = out.replace(/\s+(vs|e\.g|i\.e|etc|to|and|or|nor|the|a|an|of|for|with|specifically|before|after|so|that|which|by|in|on|at|without|than|when|if|as|from|into|about|unless|until|while|is|are|be|not|no|just|only|also|then|per|via|every|each|any|its|their|your|our|\d+)\.?$/i, "").replace(/[,;:\s—-]+$/,"");
-  return out + ".";
-}
 function asSentence(t){ t = String(t||"").trim(); if(!t) return ""; t = t[0].toUpperCase()+t.slice(1); return /[.!?]["”’')]?$/.test(t) ? t : t+"."; }
 /* "Label: explanation" → {label, rest} so notes can use the natural half. */
 function splitLabel(t){ const m = String(t||"").match(/^([^:]{3,60}):\s+(.+)$/); return m ? {label:m[1].trim(), rest:m[2].trim()} : {label:"", rest:String(t||"").trim()}; }
@@ -13820,152 +13476,15 @@ function shortPhrase(t, max){
   for(let k=0;k<4;k++) t = t.replace(/\s+(vs|e\.g|i\.e|etc|to|and|or|nor|the|a|an|of|for|with|specifically|before|after|so|that|which|by|in|on|at|without|than|when|if|as|from|into|about|unless|until|while|is|are|be|not|no|just|only|also|then|per|via|every|each|any|its|their|your|our|\d+)\.?$/i,"").replace(/[,;:\s]+$/,"");
   return t;
 }
-function lowerFirst(t){ t = String(t||"").trim(); return /^[A-Z][a-z]/.test(t) ? t[0].toLowerCase()+t.slice(1) : t; }
-function buildDiscussionScript(d, l, i){
-  const {principles, steps, pitfalls, callout} = lessonParts(l);
-  const next = d.lessons[i+1];
-  const cue = l.trainerCue || "";
-  const quoted = cue.match(/[“"']([^“"']{12,}?\?)[”"']/);
-  const direct = /^(ask|have|invite)\b.*\?$/i.test(cue.trim()) ? cue.replace(/^(ask( the room| the group| trainees)?[:,]?\s*)/i,"").trim() : "";
-  const asks = [
-    "Think about your own work — when has this come up for you, and how did you handle it?",
-    "If Elias handed you this exact situation today, what would your first move be?",
-    "Where have you seen this go wrong in a real office — and what would have prevented it?",
-    "Which part of this feels hardest to do consistently, and why?"
-  ];
-  const ask = quoted ? quoted[1] : (direct || asks[i % asks.length]);
-  const p0 = speakable(splitLabel(principles[0] || "").rest || principles[0] || "", 150);
-  const listen = steps.slice(0,2).map(x=>asSentence(shortPhrase(splitLabel(x).label || x, 90)));
-  const correctRaw = pitfalls.map(x=>String(x).replace(/^pitfall:\s*/i,"")).find(x=>!listen.some(y=>x.startsWith(y.slice(0,30))));
-  const wrapSrc = splitLabel(callout || [...steps].reverse().find(x=>!/next topic|covered (earlier|elsewhere|in)|per day|day \d/i.test(x)) || principles[0] || "").rest;
-  const title = l.h.replace(/[.?!:]+$/,"");
-  return {
-    open: `"Next up: ${title}. ${asSentence(p0)}"`,
-    ask: `"${ask}"`,
-    listen,
-    correct: correctRaw ? asSentence(speakable(correctRaw, 120)) : "",
-    wrap: `"To sum up: ${lowerFirst(speakable(wrapSrc, 150)).replace(/[.!?]["”’')]?$/,"")}.${next ? ` Next, we'll look at ${next.h.replace(/[.?!:]+$/,"")}.` : " That's the last topic for today — next is the Practice Lab."}"`
-  };
-}
 /* ---------- trainer speaker notes (hardcoded in js/days/dayN/notes.js) ----------
    One note per slide: "On this slide" (what's on screen), the script (Say / Ask /
    Wrap) and, on the topic's last slide, the scenario to run with the room.
    No AI writes these while a session runs. */
-function presenterNote(d, l, part){
-  const n = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`];
-  if(n) return l.singleSlide ? Object.assign({}, n.p1, {wrap: n.p2 && n.p2.wrap, scenario: n.p2 && n.p2.scenario}) : (part===2 ? n.p2 : n.p1) || {};
-  // A topic added later in the Content Studio has no written note yet: use the lesson's own lines.
-  const sc = buildDiscussionScript(d, l, d.lessons.indexOf(l)), unq = t=>String(t||"").replace(/^"|"$/g,"");
-  const scen = (l.fourPart && l.fourPart.discussionCase) || "";
-  // (A course built on this engine keeps its own trainer cue, e.g. the CM deck's speaker notes.)
-  const cue = l.trainerCue || "";
-  if(part===1 || l.singleSlide) return {cue, say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
-  return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
-}
 /* ---------- Full spoken script for a slide ----------
    Built from exactly what is on the slide (the same data the slide renders), so it always matches
    what the room sees — including topics added later in the Content Studio. Part 1 covers ① Core
    Principles and ② Step-by-Step; Part 2 covers ③ Best Practices & Pitfalls and ④ Go Deeper.
    A hand-written "steps" script in js/days/dayN/notes.js replaces the generated ② section. */
-const SCRIPT_ORDINALS = ["First","Second","Third","Fourth","Fifth","Sixth","Seventh","Eighth","Ninth","Tenth"];
-function scriptSentence(t){
-  let x = String(t||"").replace(/\s+/g," ").trim();
-  if(!x) return "";
-  if(!/[.!?:"”')]$/.test(x)) x += ".";
-  return x;
-}
-function scriptSoften(t){
-  // "First, the calendar…" reads better than "First, The calendar…" for ordinary opening words.
-  const x = scriptSentence(t);
-  return /^(A|An|The|This|That|These|Those|Every|Each|Your|You|It|Its|If|When|Most|Many|Some|Good|Always|Never|Once|Before|After|Treat|Use|Keep|Build|Set|Make|Don't|Do|Know|Ask|Check|Write|Log|Map|Track|Confirm|Identify|Review|Protect|Name|Plan)\b/.test(x)
-    ? x.charAt(0).toLowerCase() + x.slice(1) : x;
-}
-function scriptList(items, intro){
-  const xs = (items||[]).map(scriptSentence).filter(Boolean);
-  if(!xs.length) return "";
-  if(xs.length===1) return (intro ? intro+" " : "") + xs[0];
-  return (intro ? intro+"\n" : "") + xs.map((x,i)=>{
-    const lead = i===xs.length-1 && xs.length>2 ? "And finally" : (SCRIPT_ORDINALS[i]||"Next");
-    const soft = scriptSoften(x);
-    // A point that opens with a name or a label ("Five categories: …") keeps its capital: "Second point: Five categories…"
-    return soft !== x ? `${lead}, ${soft}` : `${lead === "And finally" ? "And finally" : lead + " point"}: ${x}`;
-  }).join("\n");
-}
-function scriptLabelled(items, pick){
-  return (items||[]).map(pick).filter(Boolean).map(scriptSentence).join("\n");
-}
-function slideScriptSections(d, l, part){
-  const out = {};
-  const notes = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`] || {};
-  const fp = l.fourPart || null;
-  const topic = `"${l.h}"`;
-  if(part !== 2){
-    // ① Core Principles
-    let core = "";
-    if(fp && fp.corePrinciples && fp.corePrinciples.length){
-      core = scriptList(fp.corePrinciples, `Let's start with the core principles behind ${topic}.`);
-    }else if(l.layout==="QUADRANT" && l.quadrants){
-      core = `This slide breaks ${topic} into ${l.quadrants.length} areas. Let's walk through each one.\n` + scriptLabelled(l.quadrants, q=>q.label ? `${q.label}: ${q.desc||""}` : q.desc);
-    }else if(l.layout==="COMPARE" && l.compareLeft && l.compareRight){
-      core = `This slide puts two approaches side by side.\n` +
-        `On the left, ${l.compareLeft.label}:\n${(l.compareLeft.items||[]).map(scriptSentence).join("\n")}\n` +
-        `On the right, ${l.compareRight.label}:\n${(l.compareRight.items||[]).map(scriptSentence).join("\n")}\n` +
-        `Notice the difference between the two columns: that contrast is the point of this topic.`;
-    }else if(l.layout==="THREEBOX" && l.boxes){
-      core = `There are ${l.boxes.length} pieces to ${topic}. Let's take them one at a time.\n` + scriptLabelled(l.boxes, x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc);
-    }else if(l.layout==="STAT"){
-      core = `Take a look at the number on this slide: ${l.statNumber}${l.statLabel ? ` ${l.statLabel}` : ""}. Keep that figure in mind as we go through ${topic}.`;
-    }else if(l.layout==="ICONLIST" && l.icons){
-      core = `This slide lays out ${l.icons.length} parts of ${topic}.\n` + scriptLabelled(l.icons, x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc);
-    }else if(l.layout==="PALETTE" && l.palette){
-      core = `Here is the palette, color by color.\n` + scriptLabelled(l.palette, c=>`${c.name}${c.hex ? ` (${c.hex})` : ""}: ${c.use||""}`);
-    }else if(l.layout==="TABLE" && l.tableHeaders && l.tableRows){
-      const h = l.tableHeaders;
-      core = `This table compares ${h.slice(1).join(" and ")}, row by row.\n` + l.tableRows.map(r=>scriptSentence(`${r[0]}: ${h.slice(1).map((hh,k)=>`${hh}, ${r[k+1]}`).join("; ")}`)).join("\n");
-    }else if(l.layout==="PROCESS"){
-      core = `${topic} is a sequential skill. The core principle is to follow the steps in order, not to treat them as optional or interchangeable.`;
-    }else if((l.b||[]).length){
-      core = `Here's the core idea behind ${topic}. ${scriptSentence(l.b[0])}`;
-    }
-    if(core) out[1] = core;
-    // ② Step-by-Step How-To Framework
-    let steps = "";
-    if(notes.steps) steps = notes.steps;
-    else{
-      const list = (fp && fp.howTo && fp.howTo.length) ? fp.howTo
-        : (l.layout==="PROCESS" && l.processSteps) ? l.processSteps.map(x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc)
-        : (l.howTo || []);
-      if(list.length) steps = `Continuing on, here is our step-by-step how-to framework for putting ${topic} into practice:\n` + list.map((x,i)=>`${i+1}. ${scriptSentence(x)}`).join("\n");
-    }
-    if(steps) out[2] = steps;
-  }
-  if(part === 2 || l.singleSlide){
-    if(l.singleSlide && part !== 2){ /* single-slide topics show only ① and ② */ }
-    else{
-      // ③ Best Practices & Pitfalls
-      const bp = (fp && fp.bestPractices) ? fp.bestPractices : ((!l.layout && (l.b||[]).length > 1) ? l.b.slice(1) : (l.b||[]));
-      const lines = [];
-      const plain = bp.map(x=>String(x||"").trim()).filter(t=>t && !/^(pitfall|discussion prompt):/i.test(t));
-      const LEAD = ["To begin with,","Next,","Also,","On top of that,","Another key point:","Keep in mind,","Beyond that,"];
-      let n = 0;
-      bp.forEach(x=>{
-        const t = String(x||"").trim(); if(!t) return;
-        if(/^pitfall:/i.test(t)) lines.push(`Here's a pitfall to watch out for: ${scriptSentence(t.replace(/^pitfall:\s*/i,""))}`);
-        else if(/^discussion prompt:/i.test(t)) lines.push(`Let's discuss this as a group: ${scriptSentence(t.replace(/^discussion prompt:\s*/i,""))}`);
-        else{ const lead = plain.length>1 && n===plain.length-1 ? "And finally," : LEAD[Math.min(n, LEAD.length-1)]; n++;
-          const soft = scriptSoften(t);
-          // Points that open with a label or a name are read as they are, without a connector in front.
-          lines.push(plain.length===1 || (soft===scriptSentence(t) && !/:$/.test(lead)) ? scriptSentence(t) : `${lead} ${/:$/.test(lead) ? scriptSentence(t) : soft}`); }
-      });
-      if(l.callout && l.callout.text) lines.push(`Notice the ${l.callout.label ? `"${l.callout.label}"` : "highlighted"} box on this slide: ${scriptSentence(l.callout.text)}`);
-      if(lines.length) out[3] = `Now let's move on to the practices that make ${topic} work, and the pitfalls to avoid.\n` + lines.join("\n");
-      // ④ Go Deeper
-      const extra = typeof LESSON_EXTRA_LEARNING!=="undefined" && LESSON_EXTRA_LEARNING[d.id+"::"+l.h];
-      if(extra && extra.p && extra.p.length) out[4] = `To go deeper, let's look at ${extra.t}.\n` + extra.p.map((x,i)=>`${i===0 ? "" : (i===extra.p.length-1 ? "Finally, " : "Also, ")}${i===0 ? scriptSentence(x) : scriptSoften(x)}`).join("\n");
-    }
-  }
-  return out;
-}
 // Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
 // ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper (used for the "On this page" summary when
 // a slide is split over pages).
@@ -13978,74 +13497,11 @@ function slideScriptSections(d, l, part){
    Hand-written scripts live in js/days/dayN/scripts.js (window.SLIDE_SCRIPTS["day::title"].p1 / .p2).
    A topic without one (e.g. added later in the Content Studio) gets the same four beats built from
    what is on the slide. */
-function scriptInline(t){
-  // A point read mid-sentence: "Perform the check" → "perform the check"; a label or a name keeps its capitals.
-  const x = scriptSentence(t), w = x.split(/\s+/);
-  const head = x.split(/\s[—–-]\s|:/)[0].split(/\s+/).filter(v=>!/^(of|the|and|a|an|to|for|in|on|with|or|vs\.?|&)$/i.test(v) && !/^[A-Z0-9/&().-]{2,}$/.test(v));
-  const label = head.length >= 2 && head.every(v=>/^[A-Z“"(]/.test(v));
-  if(label || /^[A-Z][A-Z0-9]|^[A-Z][a-z]+[A-Z]/.test(w[0]) || /^(I|Elias|Thorne|Meridian|Harrington|Clio|Outlook|Slack|Zoom|Teams|Google|Microsoft|QuickBooks|LinkedIn|Claude|ChatGPT|Gemini|Loom|Asana|Trello)\b/.test(w[0])) return x;
-  return x.charAt(0).toLowerCase() + x.slice(1);
-}
-function scriptWalk(items){
-  const xs = (items||[]).map(x=>String(x||"").replace(/^\s*\d+[.)]\s*/,"").trim()).filter(Boolean);
-  return xs.map((x,i)=>{
-    const lead = xs.length===1 ? "" : i===0 ? "First, " : i===xs.length-1 ? "Finally, " : (i===1 ? "Next, " : (i%2 ? "After that, " : "Then, "));
-    return lead ? lead + scriptInline(x) : scriptSentence(x);
-  });
-}
-function slideScript(d, l, part){
-  const key = (part===2 && !l.singleSlide) ? "p2" : "p1";
-  const hand = ((window.SLIDE_SCRIPTS || {})[`${d.id}::${l.h}`] || {})[key];
-  if(hand) return {why: hand.why||"", talk: hand.talk||"", walk: hand.walk||[], ask: hand.ask||"", scenario: hand.scenario||"", hand: true};
-  const n = presenterNote(d, l, part), secs = slideScriptSections(d, l, part);
-  let walk = [];
-  if(secs[2]) walk = scriptWalk(secs[2].split("\n").slice(1));
-  const talk = [secs[1], secs[3], secs[4]].filter(Boolean).join("\n\n");
-  const ask = key==="p1" ? (n.ask || (l.singleSlide ? n.wrap : "")) : (n.wrap || n.ask || "");
-  return {why: n.say || "", talk, walk, ask, scenario: (key==="p2" || l.singleSlide) ? (n.scenario || "") : "", hand: false};
-}
 /* When a long slide is split over pages, each page gets its own part of the slide's script:
    page 1 opens with the why and the explanation, the pages that show the steps (slide 1) or the
    practices (slide 2) share the walk-through in order, and the last page ends with the question. */
-function slideScriptForPage(s, l, part, pg){
-  const P = pg && pg.pages > 1 && Array.isArray(pg.secsByPage) && pg.secsByPage.length===pg.pages ? pg.pages : 1;
-  if(P===1) return Object.assign({}, s, {more: false, cont: false});
-  const k = Math.max(0, Math.min(pg.page||0, P-1));
-  const walkSecs = (part===2 && !l.singleSlide) ? [3,4] : [2];
-  // a page with no numbered section on it (e.g. only a diagram) carries on from the page before
-  let prev = [];
-  const byPage = pg.secsByPage.map(ss=>{ const x = (ss && ss.length) ? ss : prev; prev = x; return x; });
-  let wp = byPage.map((ss,i)=>ss.some(x=>walkSecs.includes(x)) ? i : -1).filter(i=>i>=0);
-  if(!wp.length) wp = [P-1];
-  const n = s.walk.length, pos = wp.indexOf(k);
-  let walk = [];
-  let from = 0;
-  if(pos >= 0){ from = Math.round(n*pos/wp.length); const to = Math.round(n*(pos+1)/wp.length); walk = s.walk.slice(from, to); }
-  return {why: k===0 ? s.why : "", talk: k===0 ? s.talk : "", walk, ask: k===P-1 ? s.ask : "", scenario: k===P-1 ? s.scenario : "",
-    more: k < P-1, cont: from > 0, hand: s.hand, page: k, pages: P};
-}
 /* The script reads like speaker notes: one flowing paragraph the trainer can say out loud (the
    why, the explanation and the points in order), then the closing question on its own line. */
-function scriptProse(s){
-  const body = [s.why, String(s.talk||"").replace(/\s*\n+\s*/g, " "), (s.walk||[]).join(" ")].filter(Boolean).join(" ");
-  return [body, s.ask].filter(Boolean);
-}
-function renderPresenterNote(d, l, part, secs, allSecs, pg){
-  const n = presenterNote(d, l, part);
-  const s = slideScriptForPage(slideScript(d, l, part), l, part, pg);
-  const lastSlide = l.singleSlide || part===2;
-  const where = (l.singleSlide ? "" : ` · slide ${part===2 ? 2 : 1} of 2`) + (s.pages > 1 ? ` · page ${s.page+1} of ${s.pages}` : "");
-  let paras = scriptProse(s);
-  if(!paras.length) paras = ["Give the room a moment to read this page, then ask which point here matters most in their own work."];
-  return `<div class="pn">
-    <div class="script-block"><div class="script-head"><span>🎙 Script — read aloud${where}</span></div>
-      ${paras.map((x,i)=>`<p class="script-say${i && s.ask && i===paras.length-1 ? " script-ask" : ""}">${esc(x)}</p>`).join("")}
-      ${s.more ? `<p class="script-next">Continues on the next page →</p>` : ""}
-    </div>
-    ${n.cue && s.page ? "" : (n.cue ? `<div class="pn-on pn-cue"><b>Trainer note — not read aloud</b><p>${esc(n.cue)}</p></div>` : "")}
-    ${s.scenario ? `<div class="pn-scen"><b>🎬 Scenario — work through it with the room</b><p>${esc(s.scenario)}</p></div>` : ""}
-  </div>`;
-}
 /* ============================================================
    PUBLISHED ADD-ON CONTENT (the engine's Content Studio wrote these;
    this program has no Content Studio): only published entries
@@ -14105,26 +13561,6 @@ window.refreshAdminData = refreshAdminData;
 
 /* The engine's own email simulator and Inbox Zero board are gone (js/eapa-updates.js has the Gmail one):
    its Gmail simulator still reads these two. */
-const SENSITIVE_REPLY_PATTERN = /(password|routing number|account number|ssn|social security|pin\s*(is|:)|\b\d{6,}\b)/i;
-// Day 2's Eisenhower inbox when AI is off (DAY2_CHECKLIST_SCORING). q: 1 Do, 2 Schedule, 3 Delegate, 4 Delete.
-const IZ_FIXED_INBOX = [
-  {q:"1", from:"Arbitration Clerk <clerk@aaa-adr.org>", subject:"Meridian Dynamics — hearing moved to tomorrow 9 AM", preview:"The panel has moved the evidentiary hearing to tomorrow at 9 AM; confirm counsel's attendance by noon today."},
-  {q:"1", from:"Dana Whitfield <dana@meridiandynamics.com>", subject:"URGENT: exhibit 14 missing from our production", preview:"Our GC just noticed exhibit 14 isn't in last night's production — the deadline is 5 PM today."},
-  {q:"1", from:"First National Bank <wires@firstnational.com>", subject:"Wire on hold — client escrow release needs your approval", preview:"The $240,000 escrow release for the Harlow closing is on hold until an authorized signer approves it today."},
-  {q:"1", from:"Sarah Thorne <sarah.thorne@gmail.com>", subject:"School called — Maya has a fever", preview:"The school nurse called; someone needs to pick Maya up within the hour and I'm in surgery until 2."},
-  {q:"2", from:"Rob Kessler <rkessler@thornepartners.com>", subject:"Q3 partner meeting agenda — your input by Friday", preview:"Could you add your items for the Q3 partner strategy meeting? Agenda goes out Friday."},
-  {q:"2", from:"Bar Association CLE <cle@statebar.org>", subject:"You need 4 more ethics hours by December 31", preview:"Our records show Elias still needs 4 ethics CLE hours this reporting period."},
-  {q:"2", from:"Priya Nair <pnair@thornepartners.com>", subject:"Draft engagement letter for the new Calloway matter", preview:"Attached is the draft engagement letter — Elias should review before we send it next week."},
-  {q:"2", from:"Dr. Alan Brooks <office@brookscardiology.com>", subject:"Time to book Elias's annual check-up", preview:"Elias is due for his annual cardiology check-up; please call to book a slot in the next month."},
-  {q:"3", from:"Conference Desk <events@legaltechsummit.com>", subject:"Speaker bio and headshot needed by Thursday", preview:"Please send Elias's bio and a headshot for the panel program by Thursday."},
-  {q:"3", from:"IT Helpdesk <it@thornepartners.com>", subject:"Laptop update will restart devices at 6 PM", preview:"A required security update will restart all firm laptops at 6 PM tonight; save your work."},
-  {q:"3", from:"Marco Ruiz <marco@ruizcatering.com>", subject:"Menu choice for Friday's client lunch", preview:"Can you confirm the menu (chicken or salmon) for Friday's lunch for 12 by tomorrow?"},
-  {q:"3", from:"Accounts Payable <ap@thornepartners.com>", subject:"Expense report missing two receipts", preview:"Elias's travel expense report is missing the hotel and taxi receipts; please send them this week."},
-  {q:"4", from:"LegalWeekly <newsletter@legalweekly.com>", subject:"This week's top 10 law firm marketing tips", preview:"Ten ways to grow your firm's brand this quarter, plus our webinar schedule."},
-  {q:"4", from:"Premium Pens Co. <deals@premiumpens.com>", subject:"40% off engraved executive pens", preview:"Treat your team to engraved executive pens — this week only."},
-  {q:"4", from:"Networking Hub <invite@networkinghub.io>", subject:"You're invited: virtual mixer for professionals", preview:"Join 300 professionals for a virtual mixer next Tuesday evening."},
-  {q:"4", from:"Cloud Storage <no-reply@cloudbox.com>", subject:"Your storage is 80% full — upgrade today", preview:"Upgrade your personal plan to get 2 TB more space."}
-];
 
 /* ============================================================
    BUTTON FEEDBACK + ERROR VISIBILITY

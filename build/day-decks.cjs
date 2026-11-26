@@ -1492,7 +1492,7 @@ const PREP = {
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
 // 📥 a slide a day gains that its guide day doesn't have: Day 16 ends on Saving Medical Bills & Records (the guide's Day 17,
-// right after the LV demo: build/lessons/off/lesson09.js d17-s2), an additional reference (js/ft-day-decks.js REFERENCE)
+// right after the LV demo; the retired Lien Negotiator lesson's d17-s2), an additional reference (js/ft-day-decks.js REFERENCE)
 const INSERT = {16: [
   // (the MedLOR demo as recorded on Filevine, the guide's Day 16 reference recordings: an additional reference after Saving
   // Medical Bills & Records — the demo itself is done in SmartAdvocate)
