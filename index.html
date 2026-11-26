@@ -122,6 +122,10 @@ button{font-family:inherit;cursor:pointer;}
 .brand-mark{height:52px;width:auto;flex:0 0 auto;object-fit:contain;display:block;}
 /* the Legal Support Help logo (navy background) sits straight on the navy top bar */
 .brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
+/* The standard Legal Support Help logo, whole: its "LEGAL SUPPORT HELP" wording is navy and was lost on the navy bar
+   (only the LSH square showed), so in the top bar it sits on a white tile, as on the sign-in card. */
+html body .topbar .brand .brand-mark.brand-logo{height:56px;background:#fff;padding:3px 6px;box-sizing:content-box;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+@media(max-width:760px){html body .topbar .brand .brand-mark.brand-logo{height:40px;padding:2px 4px;border-radius:6px;}}
 /* The standard page header, the same on every LSH page: the mark, then the page's own name in
    capitals — and nothing else beside it. No "LSH" in front of the name, no strapline under it and
    no search box. */

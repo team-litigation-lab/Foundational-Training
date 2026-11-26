@@ -3,24 +3,26 @@
 
    The owner: "Fix the color contrast, lost the elegance … pattern it in the same way as this" (the LSH Academy Index's
    track cards). Same layout and content, restyled on top of js/ft-card-grid.js, scoped to the Dashboard (main.main-dash):
-     • each lesson card is one white rounded surface with one soft orange border and glow, no navy header block;
+     • each lesson card is one white rounded surface in a thick blue-gold frame with a soft glow, no navy header block;
      • its title sits in a rounded pill outlined in the lesson's own colour (--c, the deep shade, AA on white), bold;
      • Start / Part 1·2·3 are solid pills in that colour with white caps text (locked: a grey pill, done: green, the part
        you're on: ringed), and the Video row is a small outlined pill;
      • the two pinned cards (Setting of Training Expectations, Know Your Tools) and the LSH Atlas card wear the same frame
        in LSH navy;
      • the stat tiles are navy banners (white value, light caps label), as the Academy Index's tool bar is;
-     • the Drive notice is a white card in the same frame.
+     • the Drive notice is a white card in the same frame;
+     • every card's frame is thick (5px) and blue-gold: navy at the top fading to gold, the Academy Index's gridlines.
    Every text colour here is WCAG AA (4.5:1) on its own background. Nothing is moved or resized beyond padding, so the
    Dashboard still fits one screen.
    ============================================================ */
 (function(){
   if(typeof document === "undefined") return;
   const st = document.createElement("style"); st.id = "ft-dash-academy"; st.textContent = `
-/* ── the card: one white surface, one soft orange frame ── */
-html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean{background:#fff !important;border:2px solid rgba(219,132,55,.55) !important;border-radius:18px !important;
+/* ── the card: one white surface in a thick blue-gold frame (navy along the top, fading to gold at the bottom), as on the
+   LSH Academy Index. The border is transparent and the gradient is painted under it (border-box), the white face over it. ── */
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#1E2340 0%,#2c3360 30%,#a8692f 78%,#DB8437 100%) border-box !important;border:5px solid transparent !important;border-radius:18px !important;
   box-shadow:0 10px 24px -14px rgba(219,132,55,.70),0 2px 8px rgba(30,35,64,.10) !important;overflow:hidden;}
-html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean:hover{border-color:#DB8437 !important;box-shadow:0 12px 28px -12px rgba(219,132,55,.85),0 2px 10px rgba(30,35,64,.12) !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean:hover{border-color:transparent !important;filter:saturate(1.12);box-shadow:0 12px 28px -12px rgba(219,132,55,.85),0 2px 10px rgba(30,35,64,.12) !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .module-head{background:#fff !important;border-top:0 !important;box-shadow:none !important;padding:10px 12px 2px !important;min-height:0 !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .module-head::before,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .module-head::after{display:none !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .module-body{background:#fff !important;}
@@ -70,7 +72,7 @@ html body main.main-dash .dash-side-inner > .card.stat.stat{background:linear-gr
 html body main.main-dash .dash-side-inner > .card.stat.stat .num{color:#fff !important;}
 html body main.main-dash .dash-side-inner > .card.stat.stat .lbl,html body main.main-dash .dash-side-inner > .card.stat.stat .sub{color:#E6E9F5 !important;opacity:1 !important;font-weight:800 !important;letter-spacing:.05em;}
 /* ── the Drive notice: the same white frame ── */
-html body main.main-dash .dash-main .card.card.fdr-notice{background:#fff !important;border:2px solid rgba(219,132,55,.55) !important;border-radius:18px !important;box-shadow:0 10px 24px -14px rgba(219,132,55,.70) !important;color:#1E2340 !important;}
+html body main.main-dash .dash-main .card.card.fdr-notice{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#1E2340 0%,#2c3360 30%,#a8692f 78%,#DB8437 100%) border-box !important;border:5px solid transparent !important;border-radius:18px !important;box-shadow:0 10px 24px -14px rgba(219,132,55,.70) !important;color:#1E2340 !important;}
 html body main.main-dash .dash-main .card.card.fdr-notice span{color:#3F4560 !important;}
 `; document.head.appendChild(st);
 })();
