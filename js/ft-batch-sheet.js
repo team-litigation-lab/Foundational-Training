@@ -2648,6 +2648,17 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 /* (bold and bigger: the trainer reads the scorecards on a projector and across the room) */
 .bs-card .gs td{font-weight:700;color:#141A2E;} .bs-card .gs .gs-head th{font:800 15.5px Arial,sans-serif;color:#141A2E;} .bs-card .gs td.gs-name{font-weight:800;}
 .bs-card .gs .gs-group th{font-size:14.5px;} .bs-card .bs-h{font:800 21px Arial,sans-serif;} .bs-card .bs-note{font:600 14.5px Arial,sans-serif;color:#2E3450;}
+/* 🏅 Scores: a navy-blue card (the Dashboard banner's navy, with its soft orange and blue glows) — the title, the row count and
+   the note in white / light ink on it (AA), the table itself on white inside it so the grades read as before */
+html body #bs-scores.bs-sec{background:radial-gradient(520px 180px at 92% -40%,rgba(219,132,55,.30),transparent 62%),radial-gradient(360px 180px at -4% 140%,rgba(120,132,190,.26),transparent 62%),
+  linear-gradient(135deg,#1F2440 0%,#2B3158 55%,#353C68 100%) !important;border:0 !important;border-radius:16px !important;padding:16px 16px 14px !important;margin:6px 0 10px !important;
+  box-shadow:0 14px 30px -18px rgba(20,24,48,.7) !important;}
+html body #bs-scores .bs-h,html body #bs-scores .bs-h .bs-fold-sec{color:#fff !important;}
+html body #bs-scores .bs-h > span{color:#C9CFE6 !important;}
+html body #bs-scores .bs-note{color:#E6E9F5 !important;}
+html body #bs-scores .bs-fold-all{background:rgba(255,255,255,.12) !important;border-color:rgba(255,255,255,.45) !important;color:#fff !important;}
+html body #bs-scores .bs-fold-all:hover{border-color:#E9CC7E !important;color:#E9CC7E !important;}
+html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35) !important;border-radius:10px !important;overflow:auto;}
 .bs-kdw .bs-dl{margin-left:10px;} .bs-kd-p{margin:12px 0 18px;} .bs-kd-p h5{margin:0 0 6px;font:800 17px Arial,sans-serif;color:#141A2E;} .bs-kd-p h5 em{font-style:normal;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:14px;} .bs-kd-p h5 small{font:600 13px Arial,sans-serif;color:#5F6368;margin-left:6px;}
 .bs-kd-rep{white-space:pre-wrap;margin:8px 0 10px;padding:10px 14px;background:#2E3A75;border-left:6px solid #8EA2FF;border-radius:8px;font:800 14.5px Arial,sans-serif;color:#fff;}
 /* (✍️ Knowledge Checks, 📄 Assessments and 📝 Activities: a coloured band each, so the three groups stand apart) */
