@@ -525,6 +525,6 @@ main.main-ftdd .ftdd-tool-shot{max-height:46vh;}
 /* the tools' tabs: no icons, each name centred in its tab, in the decks' heading type */
 main.main-ftdd .ftdd-tools-bar .ftdd-tools-ic{display:none !important;}
 main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab{justify-content:center !important;text-align:center !important;font:700 15px/1.2 'Poppins','Inter',sans-serif !important;letter-spacing:.01em;color:#1E2340;padding:6px 10px !important;}
-main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab.on{color:#fff !important;}`;
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab.on{color:var(--gold-btn-ink) !important;}`;
   document.head.appendChild(css);
 })();

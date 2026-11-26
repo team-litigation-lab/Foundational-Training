@@ -340,7 +340,7 @@ main.main-tr{max-width:1240px;margin:0 auto;padding:18px 20px 48px;display:flex;
 }
 .tr-due{white-space:nowrap;}
 .tr-tab small{font-weight:500;font-size:12px;color:#C9CFDD;}
-.tr-tab.on{background:#DB8437;border-color:#DB8437;} .tr-tab.on small{color:#fff;}
+.tr-tab.on{background:var(--gold-btn);border-color:#e0a43a;color:var(--gold-btn-ink);} .tr-tab.on small{color:var(--gold-btn-ink);}
 .tr-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
 .tr-steps li{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700;color:#262B45;}
 .tr-step-ic{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#FBF1E6;font-size:15px;}

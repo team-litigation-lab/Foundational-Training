@@ -612,7 +612,7 @@ window.FTIntake = {
 .ftis-lines{list-style:none;margin:6px 0 0;padding:8px 10px;max-height:300px;overflow:auto;background:#F6F7FB;border-radius:8px;font-size:13.5px;line-height:1.5;}
 .ftis-lines li{margin:0 0 6px;}
 .ftis-at{border:0;background:#EAF1FF;color:#262B45;border-radius:6px;padding:0 5px;margin-right:6px;font:600 12px 'IBM Plex Mono',ui-monospace,monospace;cursor:pointer;}
-.ftis-at:hover{background:#DB8437;color:#fff;}
+.ftis-at:hover{background:var(--gold-btn-hover);color:var(--gold-btn-ink);}
 .ftis-who{margin-right:2px;} .ftis-who.ftis-a{color:#B5651F;} .ftis-who.ftis-b{color:#262B45;}
 .ftis-min{background:#fff;border:1px solid #DCE0EA;border-radius:8px;padding:12px 16px;margin-top:6px;font-size:13.5px;line-height:1.5;}
 .ftis-min-h{margin:0 0 8px;text-align:center;font:800 15px 'Poppins','Inter',sans-serif;color:#262B45;letter-spacing:.04em;}

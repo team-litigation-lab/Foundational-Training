@@ -2596,7 +2596,7 @@ window.ftBanner = function(title, batch, right, controls, opts){
 .bs-wkswitch button.on{background:#1E2340;color:#fff;} .bs-ovtools{margin:0 0 8px;}
 .ft-banner-ctl{flex-basis:100%;margin-top:6px;} .bs-ctl .gs-top{background:transparent !important;padding:0 !important;margin:0 !important;}
 .bs-ctl .bs-batchmenu label{color:#fff !important;} .bs-ctl .bs-at{color:#E8ECF7 !important;}
-.bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;}
+.bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:var(--gold-btn) !important;border-color:#e0a43a !important;color:var(--gold-btn-ink) !important;}
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}

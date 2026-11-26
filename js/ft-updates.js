@@ -107,7 +107,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ftc-body .shots figure{margin:0;} .ftc-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
 .ftc-body .shots img{max-width:100%;max-height:100%;object-fit:contain;} .ftc-body .shots figcaption{font-size:13px;color:var(--ink-soft);text-align:center;}
 .ftc-body a.ft-lesson-link{display:inline-block;background:var(--navy);color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;}
-.ftc-body a.ft-lesson-link:hover{background:var(--orange-deep);color:#fff;}
+.ftc-body a.ft-lesson-link:hover{background:var(--gold-btn-hover);color:var(--gold-btn-ink);}
 .ftc-body .canva-frame{position:relative;width:100%;height:0;padding-top:56.25%;overflow:hidden;border-radius:8px;background:#161829;}
 .ftc-body .canva-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
 /* dashboard: every lesson on one timeline row */
@@ -143,7 +143,7 @@ body.lv-dragging{user-select:none;}
 #lecture-viewer-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
 #lecture-viewer-tabs{display:flex;gap:6px;margin:0 auto 0 4px;flex-shrink:0;} #lecture-viewer-tabs:empty{display:none;}
 #lecture-viewer-tabs button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font:700 12px/1 inherit;border-radius:999px;padding:5px 11px;cursor:pointer;}
-#lecture-viewer-tabs button.on{background:#E8590C;border-color:#E8590C;}
+#lecture-viewer-tabs button.on{background:var(--gold-btn);border-color:#e0a43a;color:var(--gold-btn-ink);}
 #lecture-viewer-open-link, #lecture-viewer-fullscreen, #lecture-viewer-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-size:12px;font-weight:700;font-family:inherit;border-radius:5px;padding:4px 8px;cursor:pointer;text-decoration:none;line-height:1.4;display:inline-block;}
 #lecture-viewer-open-link:hover, #lecture-viewer-fullscreen:hover{background:rgba(255,255,255,.15);}
 #lecture-viewer-close:hover{background:#dc2626;border-color:#dc2626;}
@@ -520,7 +520,7 @@ const __ftAfterRender2 = window.afterRender;
 window.afterRender = function(){ const r = __ftAfterRender2.apply(this, arguments); try{ ftDeckConsole(); }catch(e){} return r; };
 (function(){ const st = document.createElement("style"); st.textContent = `
 .ft-deck-go{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;border:0;border-radius:12px;background:#141833;color:#fff;font:inherit;text-align:center;cursor:pointer;}
-.ft-deck-go b{font-family:'Fraunces',Georgia,serif;font-size:22px;color:#F0C08A;}
+.ft-deck-go b{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--gold-text);}
 .ft-deck-go span{font-size:14px;line-height:1.5;max-width:420px;opacity:.9;}
 .ft-deck-go:hover{background:#1F2440;} .ft-deck-go:hover b{text-decoration:underline;}
 .ft-deck-go:focus-visible{outline:3px solid #F0C08A;outline-offset:-3px;}`; document.head.appendChild(st); })();

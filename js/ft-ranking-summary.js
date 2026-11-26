@@ -378,7 +378,7 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-how-ok{color:#1E6B40;}
 .rks-head-acts{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
 .rks-head-acts .btn-ghost{background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.45) !important;color:#fff !important;}
-.rks-head-acts .btn-navy{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;} .rks-head-acts select{font-weight:800;}
+.rks-head-acts .btn-navy{background:var(--gold-btn) !important;border-color:#e0a43a !important;color:var(--gold-btn-ink) !important;} .rks-head-acts select{font-weight:800;}
 .rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
 // ⏳ a week that hasn't begun: every trainee at 0.0 for now (grey, "Not started") — no week carries another's scores
