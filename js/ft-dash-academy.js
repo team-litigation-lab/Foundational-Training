@@ -77,6 +77,9 @@ html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clea
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mh-title{background:transparent !important;border-color:rgba(255,255,255,.85) !important;color:#fff !important;-webkit-text-fill-color:#fff;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn{background:#DB8437 !important;color:#1E2340 !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn:hover,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn:hover{background:#fff !important;color:#1E2340 !important;}
+/* ── the workshop banner: with no completion ribbon beside it (an admin's view), the title starts at the banner's left edge
+   instead of after the ribbon's empty column ── */
+html body main.main-dash .dash-hero:not(:has(.dash-hero-ribbon)) .dash-hero-text{grid-column:1 / -1 !important;}
 /* ── the stat tiles: navy banners, white value, light caps label ── */
 html body main.main-dash .dash-side-inner > .card.stat.stat{background:linear-gradient(160deg,#1E2340,#2D3762) !important;border:1px solid rgba(255,255,255,.22) !important;border-radius:14px !important;box-shadow:0 6px 16px -10px rgba(0,0,0,.6) !important;}
 html body main.main-dash .dash-side-inner > .card.stat.stat .num{color:#fff !important;}
