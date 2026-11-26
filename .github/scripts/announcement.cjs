@@ -1,6 +1,6 @@
 // 📢 The announcement ticker (js/ft-announcement.js): this platform's own, for the Foundational trainees only (Admin → 📢
 //   Announcements; the Main Portal's broadcast isn't shown or edited here), read through /api/announcement, shown under the
-//   top bar for a trainee and a trainer, as text (never HTML), with the live clock and its time zone; hidden when there is none.
+//   top bar for a trainee and a trainer, as text (never HTML), with no clock or time zone; hidden when there is none.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/announcement.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
@@ -26,17 +26,14 @@ const failures = []; const fail = m => failures.push(m);
     await page.waitForFunction(() => /Mock calls start/.test((document.querySelector('.ft-ann [data-ft-ann-text]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
     const t = await page.evaluate(() => { const b = document.querySelector('.ft-ann'), r = b && b.getBoundingClientRect(), top = document.querySelector('.topbar');
       return { shown: !!b && !b.hidden && r.height > 0, text: b ? b.querySelector('[data-ft-ann-text]').textContent : '', imgs: b ? b.querySelectorAll('img').length : -1,
-        under: !!(b && top && b.getBoundingClientRect().top >= top.getBoundingClientRect().bottom - 2), clock: b ? b.querySelector('[data-ft-ann-clock]').textContent : '', xss: window.__xss || 0 }; });
+        under: !!(b && top && b.getBoundingClientRect().top >= top.getBoundingClientRect().bottom - 2), clock: b ? !!b.querySelector('[data-ft-ann-clock], .ft-ann-clock, select') : true, xss: window.__xss || 0 }; });
     if (!t.shown || !/Mock calls start at 9:00 AM PHT/.test(t.text)) fail(`the trainee doesn't see the announcement: ${JSON.stringify(t)}`);
     if (t.imgs || t.xss) fail('the announcement was drawn as HTML');
     if (/PORTAL BROADCAST/.test(t.text)) fail('the Main Portal\'s broadcast is on this platform\'s ticker');
     if (!t.under) fail('the ticker isn\'t under the top bar');
     if (method !== 'POST') fail(`the page asks for the announcement with ${method}, not POST (the Worker's /api/ routes are POST only)`);
-    if (!/\d{1,2}:\d{2}:\d{2}/.test(t.clock)) fail(`no live clock: ${t.clock}`);
+    if (t.clock) fail('the ticker still has the clock or its time zone picker (taken off at the trainer\'s request)');
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 1500, height: 220 } });
-    // (the time zone picked is kept, and the clock follows it)
-    await page.selectOption('.ft-ann select', 'America/New_York');
-    if (await page.evaluate(() => { try { return localStorage.getItem('ft_ann_tz'); } catch (e) { return ''; } }) !== 'America/New_York') fail('the time zone picked isn\'t kept');
     // (a trainer sees it too)
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(800);
     if (!(await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return !!b && !b.hidden && /Mock calls/.test(b.textContent); }))) fail('a trainer doesn\'t see the announcement');
@@ -91,5 +88,5 @@ const failures = []; const fail = m => failures.push(m);
   } catch (e) { fail(e.stack || String(e)); }
   await browser.close();
   if (failures.length) { console.error('Announcement test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Announcement test passed (this platform\'s own announcement under the top bar for a trainee and a trainer, as text, with the live clock and its time zone kept; hidden when there is none).');
+  console.log('Announcement test passed (this platform\'s own announcement under the top bar for a trainee and a trainer, as text, with no clock; hidden when there is none).');
 })();
