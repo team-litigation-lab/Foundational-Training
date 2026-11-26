@@ -562,7 +562,7 @@ function keepLead(html){
   t.content.insertBefore(first, box);   // beside the slide's content, where the splitter reads it as a heading
   return t.innerHTML;
 }
-const ORIENT_ID = 12;   // not used by any lesson (1–9, and 10–11 in build/lessons/off/)
+const ORIENT_ID = 12;   // not used by any lesson (1–8; 9–11 were retired lessons and stay unused)
 const ORIENT = {id:ORIENT_ID, title:"Setting of Training Expectations and Company Policies", heading:"Setting of Training Expectations and Company Policies", label:"Orientation", short:"📌",
   sections: SLIDES.map(([id, h, fn])=>({id, h, get html(){ return keepLead(`<div class="ftr-slide">${fn()}</div>`); }})),
   quiz:[], quickChecks:[]};
