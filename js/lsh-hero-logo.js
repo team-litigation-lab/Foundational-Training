@@ -26,8 +26,9 @@ html body .dash-hero.has-lsh-logo > .lsh-hero-logo{position:absolute;left:28px;t
   html body .dash-hero.has-lsh-logo > .lsh-hero-logo{height:80px;left:22px;}
 }
 @media(max-width:560px){
-  html body .dash-hero.has-lsh-logo{padding-left:16px !important;min-height:0;}
-  html body .dash-hero.has-lsh-logo > .lsh-hero-logo{position:static;transform:none;height:64px;margin:0 0 10px;}
+  /* still beside the hero's text on a phone, level with the title, never above it */
+  html body .dash-hero.has-lsh-logo{padding-left:118px !important;min-height:84px;}
+  html body .dash-hero.has-lsh-logo > .lsh-hero-logo{height:56px;left:14px;top:20px;transform:none;}
 }
 /* the bar: no logo where the hero carries it, the bar's logo bare (no tile or light panel) elsewhere, one slim height */
 html body.lsh-logo-in-hero .topbar .brand-mark{display:none !important;}
