@@ -2347,14 +2347,14 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;c
 .ftdd-tools-bar .ftdd-tools-list{flex-direction:row;flex-wrap:wrap;gap:6px;width:100%;}
 .ftdd-tools-bar .ftdd-tools-tab{flex:1 1 0;justify-content:center;padding:4px 6px;font-size:13.5px;font-weight:800;line-height:1.15;white-space:normal;text-align:center;background:#fff;}
 .ftdd-tools-bar .ftdd-tools-tab span:last-child{overflow:visible;text-overflow:clip;white-space:normal;}
-.ftdd-tools-bar .ftdd-tools-tab.on{background:#E8590C !important;border-color:#E8590C !important;color:#fff !important;}
+.ftdd-tools-bar .ftdd-tools-tab.on{background:var(--gold-btn) !important;border-color:#e0a43a !important;color:var(--gold-btn-ink) !important;}
 .ftdd-tools-list{display:flex;flex-direction:column;gap:4px;min-height:0;}
 .ftdd-hint{position:fixed;z-index:80;max-width:280px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:12px 36px 12px 14px;box-shadow:0 10px 28px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftddHintIn .25s ease-out;}
 .ftdd-hint::before{content:"";position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:#E8590C;border-left:0;}
 .ftdd-hint-down::before{left:24px;top:-10px;border:8px solid transparent;border-bottom-color:#E8590C;border-top:0;}
 .ftdd-hint b{display:block;font-size:15px;color:#F4B77A;margin-bottom:3px;} .ftdd-hint span{display:block;color:#E6E8F2;}
 .ftdd-hint-x{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 12px/1 'Inter',sans-serif;cursor:pointer;}
-.ftdd-hint-x:hover{background:#E8590C;}
+.ftdd-hint-x:hover{background:var(--gold-btn-hover);color:var(--gold-btn-ink);}
 @keyframes ftddHintIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
 .ftdd-tools-tab{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #E3E6EE;background:#F6F7FA;color:#262B45;border-radius:10px;padding:5px 10px;font:600 13px/1.25 'Inter',sans-serif;cursor:pointer;min-width:0;}
 .ftdd-tools-tab > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
@@ -2489,10 +2489,10 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-ht p .lp-kc{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:10.5px;vertical-align:1px;}
 .ftlc-acts{display:flex;gap:8px;flex:0 0 auto;}
 .ftlc-start,.ftlc-tag{border:0;border-radius:999px;padding:7px 14px;font:800 11.5px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;white-space:nowrap;}
-.ftlc-start{background:#DB8437;} .ftlc-start:not(:disabled):hover{background:#C9742B;}
+.ftlc-start{background:var(--gold-btn);color:var(--gold-btn-ink);} .ftlc-start:not(:disabled):hover{background:var(--gold-btn-hover);}
 .ftlc-tag{background:#5C626C;} .ftlc-tag:not(:disabled):hover{background:#6B727D;}
 .ftlc-start:disabled,.ftlc-tag:disabled{cursor:not-allowed;opacity:.7;}
-.ftlc.locked .ftlc-start{background:#5C626C;}
+.ftlc.locked .ftlc-start{background:#5C626C;color:#fff;}
 .ftlc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;padding:14px 16px 16px;align-items:start;}
 @media(max-width:700px){ .ftlc-body{grid-template-columns:minmax(0,1fr);} .ftlc-head{flex-wrap:wrap;} }
 .ftlc-h{margin:0 0 8px;font:800 13px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
@@ -2605,7 +2605,7 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftms-pick .ftms-save{margin-left:auto;}
 /* (the scoresheet's button is in the bar under the slide: .ftdd-scoresheet; the slide's own copy would be drawn at the slide's zoom) */
 .ftdd-sheet .ftms-launch .ftms-open{display:none;} .ftdd-sheet .ftms-hint{font-size:15px;}
-.ftdd-nav .ftdd-scoresheet{background:#F28C28;color:#fff;border-color:#F28C28;font-weight:800;}
+.ftdd-nav .ftdd-scoresheet{background:var(--gold-btn);color:var(--gold-btn-ink);border-color:#e0a43a;font-weight:800;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 /* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
 .ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
@@ -2697,7 +2697,7 @@ main.main-ftdd .ftdd-sheet:has(> .ftdd-lor-set){justify-content:flex-start !impo
 .ftdd-pic.ftdd-pic-sheet:hover{background:#FDEBDD;box-shadow:0 6px 16px rgba(232,89,12,.2);}
 .ftdd-pic-sheet-ic{font-size:30px;line-height:1;} .ftdd-pic-sheet b{font:800 19px/1.3 'Poppins','Inter',sans-serif;}
 .ftdd-pic-sheet small{font-size:14px;line-height:1.4;color:#30364F;}
-.ftdd-pic-sheet-go{margin-top:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(180deg,#E8943A,#C8642A);color:#fff;font:700 15px/1.2 'Inter',sans-serif;}
+.ftdd-pic-sheet-go{margin-top:6px;padding:8px 16px;border-radius:10px;background:var(--gold-btn);color:var(--gold-btn-ink);font:700 15px/1.2 'Inter',sans-serif;}
 .ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 /* Day 3's Reception Listening Activity: its task in cards (Listen, Analyze, Extract), and the challenge's two halves */
 .ftdd-sheet p.ftdd-cix-lead{font-size:17px !important;line-height:1.5 !important;}
@@ -2755,7 +2755,7 @@ main.main-ftdd .ftdd-handouts .ftdd-ho{display:flex;align-items:center;gap:14px;
 main.main-ftdd .ftdd-handouts .ftdd-ho:hover{background:#FFF4EC;}
 main.main-ftdd .ftdd-handouts .ftdd-ho span{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#1E2340;color:#fff !important;font:800 18px 'Poppins','Inter',sans-serif !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho b{flex:1;font:800 19px/1.25 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
-main.main-ftdd .ftdd-handouts .ftdd-ho i{flex:none;font-style:normal;font:800 15px 'Inter',sans-serif !important;color:#fff !important;background:#C2410C;padding:7px 14px;border-radius:8px;}
+main.main-ftdd .ftdd-handouts .ftdd-ho i{flex:none;font-style:normal;font:800 15px 'Inter',sans-serif !important;color:var(--gold-btn-ink) !important;background:var(--gold-btn);padding:7px 14px;border-radius:8px;}
 @media(max-width:900px){ .ftdd-handouts .ftdd-ho-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;min-height:100%;padding:24px;}
 .ftdd-dv-done{margin:0 !important;font:800 15px 'Inter',sans-serif !important;color:#1E7A46 !important;letter-spacing:.04em;}
@@ -2854,8 +2854,8 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftmap-off .ftmap-sn{color:#C46A1E;}
 @media(max-width:760px){ .ftmap-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-prev:disabled{opacity:.45;}
-.ftdd-next{background:linear-gradient(135deg,#E8913A,#C9742B);border:1px solid #C9742B;color:#fff;}
-.ftdd-next:hover{filter:brightness(1.05);}
+.ftdd-next{background:var(--gold-btn);border:1px solid #e0a43a;color:var(--gold-btn-ink);}
+.ftdd-next:hover{background:var(--gold-btn-hover);}
 .ftdd-next:disabled{opacity:.65;cursor:not-allowed;filter:none;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
@@ -2991,7 +2991,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B61
 .ftdd-linkbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:10px 0 14px;}
 main.main-ftdd .ftdd-sheet a.ftdd-linkbtn{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px 16px;border-radius:12px;background:#1E2340;border:2px solid #1E2340;border-bottom:4px solid #E8590C;color:#fff !important;font:700 15.5px/1.3 'Inter',system-ui,sans-serif;text-decoration:none !important;box-shadow:0 4px 12px rgba(30,35,64,.18);transition:transform .15s,box-shadow .15s;}
 main.main-ftdd .ftdd-sheet a.ftdd-linkbtn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(30,35,64,.25);background:#262D55;}
-main.main-ftdd .ftdd-sheet a.ftdd-linkbtn span{color:#F4B77A;}
+main.main-ftdd .ftdd-sheet a.ftdd-linkbtn span{color:var(--gold-text);}
 .ftdd-steps2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;align-items:stretch;}
 main.main-ftdd .ftdd-sheet .ftdd-steps2 .ftdd-step{margin:4px 0;}
 main.main-ftdd .ftdd-sheet .ftdd-steps2 .ftdd-step-t{font-size:16px;text-align:left;}
@@ -3118,7 +3118,7 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 /* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
 main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{color:#F4B77A !important;} main.main-ftdd .ftdd-sheet .ftln-card b{color:#fff !important;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;font-size:14px;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:var(--gold-btn-ink) !important;font-size:14px;text-decoration:none;}
 main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
 .ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
 /* (navy cards on the white sheet, the title white and the kind orange, so each recording stands out) */
@@ -3128,7 +3128,7 @@ main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} 
 .ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;}
 .ft-body .ftln-tag{color:#FFE2C2;text-transform:none;letter-spacing:0;}
 .ft-body .ftln-aud{height:60px;border-radius:8px;overflow:hidden;background:#fff;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
-.ft-body .ftln-card .btn{background:#DB8437;border-color:#DB8437;font-weight:700;} .ft-body .ftln-card .btn:hover{background:#C9742B;border-color:#C9742B;}
+.ft-body .ftln-card .btn{background:var(--gold-btn);border-color:#e0a43a;color:var(--gold-btn-ink);font-weight:700;} .ft-body .ftln-card .btn:hover{background:var(--gold-btn-hover);border-color:#e0a43a;}
 /* (its cells 1pt smaller than the slide's text, main.main-ftdd .ftdd-sheet td) */
 main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt);}
 .ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
@@ -3158,7 +3158,7 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage .ftdd-step-n{width:30px;height:30px;}
 main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0;}
 .ft-body .ftdd-mock-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px 0 12px;}
 .ft-body a.ftdd-mock-btn{display:inline-flex;align-items:center;padding:10px 18px;border-radius:8px;background:#1E2340;color:#fff !important;font:700 16px/1.2 'Inter',sans-serif;text-decoration:none !important;border-bottom:3px solid #E8590C;}
-.ft-body a.ftdd-mock-btn:hover{background:#E8590C;}
+.ft-body a.ftdd-mock-btn:hover{background:var(--gold-btn-hover);color:var(--gold-btn-ink) !important;}
 .ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
@@ -3404,8 +3404,8 @@ body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-lin
   display:inline-flex !important;align-items:center;justify-content:center;border-radius:50%;background:#1E2340;border:2px solid #fff;
   box-shadow:0 0 0 2px #1E2340, 0 4px 12px rgba(30,35,64,.45);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:800 18px/1 'Inter',sans-serif;color:#fff;}
-body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;box-shadow:0 0 0 2px #E8590C, 0 4px 12px rgba(30,35,64,.45);}
-body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mid > a.back-link:hover::before{color:#fff;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:var(--gold-btn-hover);box-shadow:0 0 0 2px var(--gold-glow), 0 4px 12px rgba(30,35,64,.45);}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mid > a.back-link:hover::before{color:var(--gold-btn-ink);}
 /* the top row on the lesson grid's columns: each pinned card one lesson card wide, the scores panel the other two,
    with the grid's own 14px gap */
 @media(min-width:1001px){

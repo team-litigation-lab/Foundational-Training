@@ -179,7 +179,7 @@ main.main-ce{max-width:1320px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .ce-hero p{margin:0;color:#DDE2EE;max-width:100ch;line-height:1.5;}
 .ce-tabs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
 .ce-tab{display:flex;flex-direction:column;align-items:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:12px;padding:8px 16px;cursor:pointer;font:700 14.5px 'Inter',sans-serif;}
-.ce-tab small{font-weight:500;font-size:12px;color:#C9CFDD;} .ce-tab.on{background:#DB8437;border-color:#DB8437;} .ce-tab.on small{color:#fff;}
+.ce-tab small{font-weight:500;font-size:12px;color:#C9CFDD;} .ce-tab.on{background:var(--gold-btn);border-color:#e0a43a;color:var(--gold-btn-ink);} .ce-tab.on small{color:var(--gold-btn-ink);}
 .ce-grid{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:14px;align-items:start;}
 @media(max-width:900px){ .ce-grid{grid-template-columns:minmax(0,1fr);} }
 .ce-file{padding:14px 16px;margin:0;} .ce-file .ce-eyebrow{color:var(--orange-deep);} .ce-file h3{margin:0 0 8px;color:var(--navy);font-size:17px;}

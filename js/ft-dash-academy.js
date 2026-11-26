@@ -54,7 +54,7 @@ html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clea
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean > .module-start-btn,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > .module-start-btn{background:#1E2340 !important;color:#fff !important;
   border:0 !important;border-radius:999px !important;margin:6px 14px 12px !important;width:auto !important;padding:9px 16px !important;font-weight:800 !important;letter-spacing:.02em;font-size:13px !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean > .module-start-btn::after,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > .module-start-btn::after{content:" →";}
-html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean > .module-start-btn:hover,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > .module-start-btn:hover{background:#DB8437 !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean > .module-start-btn:hover,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > .module-start-btn:hover{background:var(--gold-btn-hover) !important;color:var(--gold-btn-ink) !important;box-shadow:0 4px 14px -4px var(--gold-glow);}
 /* a short screen (a laptop): the pills and the frame tighten, so the lesson cards keep room for their Part buttons */
 @media (max-height:900px){
   html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .module-head{padding:6px 8px 0 !important;}
