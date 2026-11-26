@@ -111,7 +111,7 @@ const DAYS = [
     {t:"📘 Process Guide: Saving the Intake Packet in SA (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     // (graded by the trainer on the 📦 Intake Packet card, against the guide's Answer Sheets: trackerreview:<id>.assess.intakews)
     {t:"Intake Worksheet", kind:"Assessment", at:"drive", assess:"intakews"},
-    {t:"Intake Mock Call Activity (Training Platform / LSH CaseWorks)", kind:"Session", at:"session", id:"intake"},
+    {t:"Intake Mock Call Activity (Training Platform / LSH CaseWorX)", kind:"Session", at:"session", id:"intake"},
     {t:"Practice intake calls on the Call Sim while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
     {t:"Demo Tutorial Viewing and Demo Preparation", kind:"Activity", at:"room"},
     {t:"🏷 Naming & Reporting Drill: Intake Packet (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},

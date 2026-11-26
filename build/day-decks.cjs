@@ -438,7 +438,7 @@ s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
     '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
-    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Sim, then take the call on LSH Voice with the case files in LSH CaseWorks.</p>\n") + MOCK_RUN;
+    mockPrep("<p>Get ready for this afternoon’s one-on-one mock call: practice on the Call Sim, then take the call on LSH Voice with the case files in LSH CaseWorX.</p>\n") + MOCK_RUN;
 },
 // Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored); the slide is only the
 // trainee's "Hit Done when you are done with your Mock Call" and Done (js/ft-buffer.js ACTS["4:s3"], simple)
@@ -752,9 +752,9 @@ function DAY8_INS(x){
 }
 const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
   '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practice intake calls with these tools. Each opens in a new tab.</p>\n' +
-  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 LSH CaseWorks: Intake</a>' +
+  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 LSH CaseWorX: Intake</a>' +
   '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ LSH Voice: Intake Calls</a></div>\n' +
-  '<p>On LSH Voice, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in LSH CaseWorks, as in the mock call.</p>\n';
+  '<p>On LSH Voice, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in LSH CaseWorX, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 // (no "Trainer Facilitated Demo" heading or lead paragraph: the slide opens on the instructions, written as general steps)
 const DEMO_SLIDE = `<p><b>Instructions</b></p>\n<ul>` +
@@ -787,9 +787,9 @@ const mockPage = (cls, html) => `<div class="ftdd-mockpage ${cls}">\n${html}</di
 const MOCK_WARM_AT = '<div class="ftdd-mockpage ftdd-mock-warm">';
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
 const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Sim", CALL_SIM + "&line=Reception+Mock+Calls")}` +
-  `${tabBtn("☎ LSH Voice", CALL_SIM)}${tabBtn("🗂 LSH CaseWorks Case Files", CMS)}</div>\n`;
+  `${tabBtn("☎ LSH Voice", CALL_SIM)}${tabBtn("🗂 LSH CaseWorX Case Files", CMS)}</div>\n`;
 // Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
-const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Sim, LSH Voice and LSH CaseWorks</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Sim, log in to LSH Voice, where your mock call rings, and open LSH CaseWorks with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Sim, LSH Voice and LSH CaseWorX</b></p>\n<p class="ftdd-warm-lead">Practice on the Call Sim, log in to LSH Voice, where your mock call rings, and open LSH CaseWorX with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
   MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
@@ -797,10 +797,10 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 1 - Open the Call Sim’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
-  "<p>Step 4 - Find the file in 🔎 Case lookup (in LSH CaseWorks, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
+  "<p>Step 4 - Find the file in 🔎 Case lookup (in LSH CaseWorX, search by the client’s name with 🔍 Search Cases; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
-  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in LSH CaseWorks to practice the same flow on the case files.</p>\n" +
+  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in LSH CaseWorX to practice the same flow on the case files.</p>\n" +
   "") + PGBREAK;
 // Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
 // where Day 6's metrics start: the Instructions end there and the Metrics slide begins (ROWS[6].s1)
@@ -1176,7 +1176,7 @@ const ROWS = {
       // (the Monitoring Sheet's items #10–11 are no longer a slide of their own: their card and 📤 Submit sit at the lower right of
       // the metrics page, s2b's last, js/ft-buffer.js ACTS["4:s2b"])
       // (one slide, in pages: the warm-up; the seven steps; how the one-on-one runs with the tools' buttons; the metrics)
-      {id: "s2b", h: "Mock Call Preparation: the Call Sim, LSH Voice and LSH CaseWorks", parts: [[MOCK_WARM_AT, null]]}]
+      {id: "s2b", h: "Mock Call Preparation: the Call Sim, LSH Voice and LSH CaseWorX", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
     // the activity's own words; then its files, the time zone, the 📅 Calendar Activity Check and ✅ Done
