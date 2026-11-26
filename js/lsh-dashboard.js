@@ -274,6 +274,28 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 /* "Resume where you left off": a compact button, not a full-width bar */
 .dash-main .bottom-actions{background:none !important;border:none !important;padding:0 !important;margin:8px 0 0 !important;box-shadow:none !important;}
 .dash-main .bottom-actions .resume-btn{padding:7px 16px;font-size:13.5px;border-radius:999px;}
+/* 🟦 Every module card's title band in the workshop banner's look (.dash-top): navy with the gold glow top right, the blue
+   glow bottom left, and the faint grid lines fading in from the left. The card's colour line stays on top of the band; the
+   two navy cards (Setting of Training Expectations, Know Your Tools) take it over their whole navy face. */
+body .dash-main .module-card.module-card.module-card .module-head,
+body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb){position:relative;overflow:hidden;
+  background:radial-gradient(520px 180px at 88% -45%, rgba(219,132,55,.32), transparent 62%),
+             radial-gradient(360px 180px at -6% 150%, rgba(120,132,190,.28), transparent 62%),
+             linear-gradient(135deg, #1F2440 0%, #2B3158 55%, #353C68 100%) !important;
+  color:#fff !important;border-bottom-color:rgba(255,255,255,.10) !important;}
+body .dash-main .module-card.module-card.module-card .module-head::after,
+body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb)::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.09;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.9) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.9) 1px, transparent 1px);
+  background-size:22px 22px;
+  -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 55%, transparent 100%);mask-image:linear-gradient(90deg, transparent 0%, #000 55%, transparent 100%);}
+body .dash-main .module-card.module-card.module-card .module-head > *{position:relative;z-index:1;}
+body .dash-main .module-card.module-card.module-card .module-head .mh-title{color:#fff !important;text-shadow:0 1px 2px rgba(0,0,0,.35);}
+body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb) > *{position:relative;z-index:1;}
+body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb) .module-head{background:transparent !important;}
+body .dash-main .module-card.mc-open:not(.ftli):not(.ftkb) .module-head::after{display:none;}
+body .dash-main .module-card.ftkb .module-head .mh-day,
+body .dash-main .module-card.ftkb .module-head [class*="kicker"]{color:#F5C99A !important;}
+
 `;
   document.head.appendChild(st);
   /* the portal may have drawn the dashboard before this file loaded */
