@@ -46,8 +46,9 @@ function bar(){
     <div class="ft-ann-clock"><span data-ft-ann-clock>${esc_(clock())}</span><select aria-label="Time zone" onchange="FTAnnouncement.tz(this.value)">${TZS.map(([z, l]) => `<option value="${z}"${z === tz() ? " selected" : ""}>${l}</option>`).join("")}</select></div>
   </div></div>`;
 }
-const __top = window.renderTopbar;
-if(typeof __top === "function") window.renderTopbar = function(){ return __top.apply(this, arguments) + bar(); };
+// (🚫 the bar under the top bar is gone, as the trainer asked: Admin → 📢 Announcements and each lesson card's announcement stay;
+//  bar() is kept for FTAnnouncement.bar, but no page draws it)
+load();
 setInterval(() => { const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); }, 1000);
 setInterval(() => { A.at = 0; load(); }, 5 * 60 * 1000);
 /* 📝 Admin → 📢 Announcements: this platform's own announcement and each lesson's (settings:announcements, read back through
