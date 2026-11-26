@@ -96,14 +96,14 @@ const SESSIONS = [
   // detail an intake needs, dates that hold together, the statute of limitations under the firm's rule, a conflict
   // check and a decision.
   {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, program:"intake",
-    about:"Take an intake call (the Call Sim’s Intake Line, on ☎ LSH Voice). Ask the intake questions, enter what you gather straight into the fields in LSH CaseWorks — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Sim.",
+    about:"Take an intake call (the Call Sim’s Intake Line, on ☎ LSH Voice). Ask the intake questions, enter what you gather straight into the fields in LSH CaseWorX — not the fillable intake forms — then record the intake here. Between your turns, practice intake calls on the Call Sim.",
     tools: () => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")],
-      ["🗂 LSH CaseWorks (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
+      ["🗂 LSH CaseWorX (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
       ["📄 Fillable intake forms (what to ask)", "https://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view?usp=sharing"]],
     fields: f => [["name", "Potential client’s full name", "text"], ["phone", "Callback number", "text"], ["dob", "Date of birth", "date"], ["dol", "Date of the accident (DOL)", "date"],
       ["type", "Case type", "select", ["MVA", "Slip and Fall", "Premise Liability", "Dog Bite", "Medical Malpractice", "Others"]],
       ["injuries", "Injuries and treatment so far", "textarea"], ["carrier", "At-fault party’s carrier (3P), or “Unknown”", "text"], ["sol", "Statute of limitations date", "date"],
-      ["cms", "Every detail entered in LSH CaseWorks’ fields", "check"], ["conflict", "Conflict check run on every party", "check"],
+      ["cms", "Every detail entered in LSH CaseWorX’ fields", "check"], ["conflict", "Conflict check run on every party", "check"],
       ["decision", "Decision", "select", ["Accept: send the retainer", "Refer to the Intake Attorney", "Decline and refer out"]]],
     check: (a, c, f) => {
       const today = new Date().toISOString().slice(0, 10), dob = String(a.dob || ""), dol = String(a.dol || "");

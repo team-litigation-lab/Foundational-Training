@@ -1401,7 +1401,7 @@ const LESSON_CARDS = {
       {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH Voice and LSH CaseWorks · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH Voice and LSH CaseWorX · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
     tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
       "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
@@ -1441,7 +1441,7 @@ const LESSON_CARDS = {
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
       {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
-      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · LSH CaseWorks & Intake line", k: "watch", d: 8, s: "s1e"},
+      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · LSH CaseWorX & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
       // (Part 2 closes on the Intake Mock Calls Metrics: Day 9's metrics slide, moved to Day 8's deck as mcm by
       // build/day-decks.cjs MOVE; Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on it)
@@ -1450,7 +1450,7 @@ const LESSON_CARDS = {
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
-    tools: [["Tools:", "LSH CaseWorks, Call Sim, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
+    tools: [["Tools:", "LSH CaseWorX, Call Sim, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
@@ -2060,19 +2060,19 @@ function mapOpen(){
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
   // (no 🎓 LSH Academy Index tab: taken off Know Your Tools)
-  {ic: "🗂", name: "LSH CaseWorks", short: "LSH CaseWorks", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s 🗂 LSH CaseWorks link (it opens signed in)",
+  {ic: "🗂", name: "LSH CaseWorX™", short: "LSH CaseWorX™", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s 🗂 LSH CaseWorX link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
-  {ic: "☎", name: "LSH Voice · Mock Calls", short: "LSH Voice", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
+  {ic: "☎", name: "LSH Voice™ · Mock Calls", short: "LSH Voice™", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
     what: "The training phone, where your Mock Calls are taken: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
     feats: ["Answer within 3 rings and greet with the firm’s name and yours",
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims → ✉️ Email (it opens in its own tab)",
+  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims™ → ✉️ Email Sims (it opens in its own tab)",
     what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
     feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
       "✍️ Email Replies: one email at a time, answered in the sender’s style",
@@ -2090,13 +2090,13 @@ const TOOLS = [
       "✎ Edit in Word or ✎ Edit in PDF on your own computer, then upload it",
       "Your upload is checked, and the score goes to your progress",
       "It shows the file name to save it under"]},
-  {ic: "📚", name: "LSH Atlas", short: "LSH Atlas", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 LSH Atlas (it opens in its own tab)",
+  {ic: "📚", name: "LSH Atlas™", short: "LSH Atlas™", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 LSH Atlas (it opens in its own tab)",
     what: "The LSH library of SOPs, training videos and know-how from the whole LSH VA community: look up how a task is done before you ask.",
     feats: ["★ Opens on Featured: the articles the team has starred as front-page reading, from Personal Injury to the Receptionist SOP",
       "SOPs and step-by-step guides for the work you do for your clients",
       "Opens signed in: no second log-in, straight from this platform",
       "Yours to keep using once you are working with your clients"]},
-  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims → 🏥 Medical Records Requests (it opens in its own tab)",
+  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims™ → 🏥 Medical Records Requests (it opens in its own tab)",
     what: "A records request platform on a real-looking case file: you collect complete medical records and itemized bills for a demand, the way a Case Manager does.",
     feats: ["🔐 Check the HIPAA authorization before anything goes out",
       "🏥 Send each request to the right provider’s department for the right dates, from the Provider Directory",
