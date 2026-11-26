@@ -80,6 +80,13 @@ html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clea
 /* ── the workshop banner: with no completion ribbon beside it (an admin's view), the title starts at the banner's left edge
    instead of after the ribbon's empty column ── */
 html body main.main-dash .dash-hero:not(:has(.dash-hero-ribbon)) .dash-hero-text{grid-column:1 / -1 !important;}
+/* ── no gridlines: the faint square grid over the workshop banner, the score tiles' panel and the cards, and the thin lines
+   inside a card (under its title, above and between its buttons) are all gone; the cards are plain surfaces in their frame ── */
+html body main.main-dash .dash-top::after,html body main.main-dash .dash-top::before,
+html body main.main-dash .dash-main .module-card::after,html body main.main-dash .dash-main .module-card::before,
+html body main.main-dash .dash-main .module-card .module-head::after,html body main.main-dash .dash-main .module-card .module-head::before{display:none !important;background-image:none !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card .module-head{border-bottom:0 !important;border-top:0 !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card .mc-grid{border-top:0 !important;}
 /* ── the stat tiles: navy banners, white value, light caps label ── */
 html body main.main-dash .dash-side-inner > .card.stat.stat{background:linear-gradient(160deg,#1E2340,#2D3762) !important;border:1px solid rgba(255,255,255,.22) !important;border-radius:14px !important;box-shadow:0 6px 16px -10px rgba(0,0,0,.6) !important;}
 html body main.main-dash .dash-side-inner > .card.stat.stat .num{color:#fff !important;}
