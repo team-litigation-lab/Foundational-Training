@@ -252,6 +252,8 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   const dx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception/i.test(x.textContent)); return it ? it.innerText : ''; });
   if (!/Why this score/i.test(dx) || !/3\.80\/5/.test(dx) || !/did best[\s\S]*Warm, branded greeting/i.test(dx) || !/to be improved[\s\S]*Skipped the caller verification/i.test(dx)) fail(`the mock call's context (why, best, to improve): ${dx}`);
+  // (📊 the trainer scored it by hand: its own line, not a row of the "why this score" table, which is for what the app grades)
+  if (await page.evaluate(() => [...document.querySelectorAll('.bs-ds-st tbody th')].some(x => /Reception Mock Call/.test(x.textContent)))) fail('the trainer-scored mock call is a row of the "why this score" table');
   // 📊 the Weekly Ranking is its own button, 📊 Weekly Reports: not on the Batch Sheet; there alone, for the same batch
   if (await page.$('#bs-ranking')) fail('the 📊 Weekly Ranking is still on the 📋 Batch Sheet');
   { await page.evaluate(() => { state.adminTab = 'weeklyreports'; render(); }); await page.waitForTimeout(1500);
@@ -426,9 +428,17 @@ const failures = []; const fail = m => failures.push(m);
   if (!rl.practice || /%/.test(rl.practice.v)) fail(`📅 Day by Day's 🛠 Practice counts Additional Reference work: ${JSON.stringify(rl.practice)}`);
   if (!rl.ds3 || rl.ds3.v !== '' || !/Reception Listening Activity[\s\S]*📎 Additional Reference/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity as Additional Reference: ${JSON.stringify(rl.ds3)}`);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
-  const rx = await page.evaluate(() => { const it = [...document.querySelectorAll('.bs-ds-it.is-rich')].find(x => /Reception Listening Activity/.test(x.textContent)); return it ? it.innerText : ''; });
-  // (📎 its context is kept — why, best, to improve — with no score)
-  if (rx && (/\(80%\)/.test(rx) || !/did best[\s\S]*Call 1: The Missing Email: every answer right/i.test(rx))) fail(`the activity's context on 📅 Day 1–16 (why, best, to improve, no score): ${rx}`);
+  // (📊 graded by the app, it is a row of the day's "why this score" table — not a line of its own — the trainer's mock call keeps its line)
+  const rx = await page.evaluate(() => { const tr = [...document.querySelectorAll('.bs-ds-st tbody tr')].find(x => /Reception Listening Activity/.test(x.querySelector('th').textContent));
+    return tr ? { cells: [...tr.children].map(c => c.textContent), head: [...tr.closest('table').querySelectorAll('thead th')].map(h => h.textContent) } : null; });
+  const line = await page.evaluate(() => [...document.querySelectorAll('.bs-ds-it')].some(x => /Reception Listening Activity/.test(x.textContent)));
+  if (!rx || line) fail(`the Reception Listening Activity isn't a row of the day's "why this score" table: ${JSON.stringify(rx)} (own line: ${line})`);
+  else {
+    if (rx.head.join('|') !== 'Activity|Score|🧾 Why this score|⭐ What you did great|❌ What was wrong|💡 What could have been done better') fail(`the "why this score" table's headings: ${rx.head.join(' | ')}`);
+    // (📎 its context is kept — why, great, wrong, better — with no score)
+    if (/^80%$/.test(rx.cells[1].trim()) || !/32 of 40 points/.test(rx.cells[2]) || !/Call 1: The Missing Email: every answer right/i.test(rx.cells[3]) || !/Names the letter, not the pain clinic/.test(rx.cells[4]) || !/again/.test(rx.cells[5]))
+      fail(`the activity's row on 📅 Day 1–16 (why, great, wrong, better, no score): ${JSON.stringify(rx.cells)}`);
+  }
   await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
   const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
   // (📎 🎧 Call Listening is Additional Reference: its block shows the activity, with no score)
