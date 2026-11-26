@@ -7,8 +7,8 @@
      • its title sits in a rounded pill outlined in the lesson's own colour (--c, the deep shade, AA on white), bold;
      • Start / Part 1·2·3 are solid pills in that colour with white caps text (locked: a grey pill, done: green, the part
        you're on: ringed), and the Video row is a small outlined pill;
-     • the two pinned cards (Setting of Training Expectations, Know Your Tools) and the LSH Atlas card wear the same frame
-       in LSH navy;
+     • the two pinned cards (Setting of Training Expectations, Know Your Tools) are navy-blue cards in the same frame, and
+       the LSH Atlas card wears the same frame;
      • the stat tiles are navy banners (white value, light caps label), as the Academy Index's tool bar is;
      • the Drive notice is a white card in the same frame;
      • every card's frame is thick (5px) and blue-gold: navy at the top fading to gold, the Academy Index's gridlines.
@@ -67,6 +67,16 @@ html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clea
   html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > button.module-finish-btn,
   html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean .mc-grid > .ftli-vids > button{padding:2px 10px !important;font-size:12px !important;}
 }
+/* ── the two pinned cards (Setting of Training Expectations, Know Your Tools): blue again — the workshop banner's navy face
+   with its soft orange and blue glows, inside the same blue-gold frame; the title a white-outlined pill in white, and Start an
+   orange pill with navy text (6.1:1) that turns white on hover ── */
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb){background:radial-gradient(520px 180px at 88% -45%, rgba(219,132,55,.32), transparent 62%) padding-box,
+  radial-gradient(360px 180px at -6% 150%, rgba(120,132,190,.28), transparent 62%) padding-box,
+  linear-gradient(135deg,#1F2440 0%,#2B3158 55%,#353C68 100%) padding-box,linear-gradient(180deg,#1E2340 0%,#2c3360 30%,#a8692f 78%,#DB8437 100%) border-box !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .module-head,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .module-body,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid{background:transparent !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mh-title{background:transparent !important;border-color:rgba(255,255,255,.85) !important;color:#fff !important;-webkit-text-fill-color:#fff;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn{background:#DB8437 !important;color:#1E2340 !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn:hover,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn:hover{background:#fff !important;color:#1E2340 !important;}
 /* ── the stat tiles: navy banners, white value, light caps label ── */
 html body main.main-dash .dash-side-inner > .card.stat.stat{background:linear-gradient(160deg,#1E2340,#2D3762) !important;border:1px solid rgba(255,255,255,.22) !important;border-radius:14px !important;box-shadow:0 6px 16px -10px rgba(0,0,0,.6) !important;}
 html body main.main-dash .dash-side-inner > .card.stat.stat .num{color:#fff !important;}
