@@ -43,7 +43,6 @@ const begun = r => !!(r && r[0] && ptNow() >= r[0]);
 const SUMV = 3;
 // 🔄 a summary drafted an hour or more ago, of a week whose scores can still come in: the week itself and the two days after it
 // (the last day's end-of-shift check, a mock call scored the next morning) — so it follows the daily scorecards by itself
-const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
 const plusDays = (iso, n) => { const t = Date.parse(`${iso}T12:00:00Z`); return isFinite(t) ? new Date(t + n * 864e5).toISOString().slice(0, 10) : ""; };
 const FRESH = 60 * 60 * 1000;
 // (🤖 a week with no summary yet is tried again after 10 minutes — not once a session — so one that failed or was cut short is never left unsummarized)
