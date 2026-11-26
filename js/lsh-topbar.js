@@ -100,6 +100,8 @@ css.textContent = ".lsh-grp{position:relative;display:flex;}"
   + ".lsh-subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:6px;background:#fff;border:1px solid rgba(31,37,71,.12);border-radius:12px;width:fit-content;max-width:100%;}"
   + ".lsh-subtabs button{border:0;background:transparent;color:#1F2547;font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;}"
   + ".lsh-subtabs button:hover{background:#F3F4F9;} .lsh-subtabs button.on{background:#1F2547;color:#fff;}"
+  /* the page title in the bar: the Academy Index's gold, the same lettering as the LSH Elev8 / Atlas / CommX / CaseWorX banners */
+  + ".topbar .brand-text b{font-weight:900 !important;letter-spacing:.09em;background:linear-gradient(180deg,#ffffff 0%,#fde7b0 45%,#f5c451 75%,#e0a43a 100%);-webkit-background-clip:text;background-clip:text;color:transparent !important;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 10px rgba(245,196,81,.30)) drop-shadow(0 2px 2px rgba(0,0,0,.45));}"
   /* phones (☰ Menu open): the menus open in place, under their button */
   + "@media(max-width:760px){.topbar.nav-open .lsh-grp{flex-direction:column;align-items:stretch;}"
   + ".topbar.nav-open .lsh-grp-menu{position:static;box-shadow:none;background:rgba(255,255,255,.06);margin:2px 0 4px 12px;}"
