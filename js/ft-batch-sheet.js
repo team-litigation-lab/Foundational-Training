@@ -310,6 +310,9 @@ const ovWhy = sc => window.lshProgram && lshProgram.overallWhy ? lshProgram.over
 // 📎 a cell of something the Training Guide doesn't grade (js/ft-reference.js): shown as Additional Reference, its figure only in
 // the hover, counted nowhere
 const REFV = "📎 Additional Reference";
+// 📎 what the end-of-shift check's Additional Reference is made of, named, so a trainer never has to guess (dayActs' activities)
+const REF_DAY_TOPICS = ["📋 Task Tracker", "📒 Monitoring Sheet", "🧪 Typing & Spelling", "📤 Day's outputs", "✉️ EOD email", "📘 TAM (shadowing)", "🖥 Platform"];
+const refTopics = (list, plus) => `${REFV}: ` + (list && list.length ? list : REF_DAY_TOPICS).concat(plus || []).join(" · ");
 const refCell = (c, why) => ({v: REFV, f: `${REFV}: not scored or counted${why ? " · " + why : ""}${c && c.v !== "" && c.v != null && c.v !== REFV ? ` (was ${c.v})` : ""}`, cls: "gs-txt"});
 // (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
 // Overall % are Additional Reference; 📈 Overall Performance the same, with no rank — it has nothing scored left to rank by)
@@ -1206,7 +1209,7 @@ function perTraineeHtml(T){
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
-        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, REFV, "", `${REFV}: not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, /^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`, "", `${REFV}: not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
@@ -1221,14 +1224,14 @@ function perTraineeHtml(T){
       const nowWk = dts ? Math.max(...Object.keys(wks).map(Number).concat([1])) : 0;
       const folded = w => { const k = p.id + "|" + w; return B.fold && k in B.fold ? !!B.fold[k] : w < nowWk; };
       let lastWk = null;
-      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
+      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = c.refv || stripTags(c.v);
         const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
         let wkHead = "";
         if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, f = folded(w), rvP = ((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {};
           // (🌱 the week's Professional Development & Progress counted in its average beside the days: ftPdp.withWeek)
           const avg = window.ftPdp ? ftPdp.withWeek(W.vals, rvP, w) : W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null;
           const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
-          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${REFV}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${e(refTopics(null, ["🌱 PD&P"]))}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
         const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
@@ -1323,7 +1326,7 @@ function outputsTable(){
     rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
       return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
-        window.ftReference ? refCell({v: pct(a)}, "the end-of-shift check") : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics()}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
@@ -1331,6 +1334,7 @@ function outputsTable(){
           return {v: window.ftReference ? REFV : x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
+            refv: window.ftReference ? refTopics(acts.filter(a => !a.na).map(a => `${a.icon} ${a.label}`)) : undefined,
             parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : window.ftReference ? "📎" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : window.ftReference ? "" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
