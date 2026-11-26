@@ -170,15 +170,15 @@
   .dash-hero p{white-space:nowrap;max-width:none !important;font-size:14px !important;}
 }
 /* The top bar follows the Training Portal's: a taller bar, so the standard LSH logo is as visible here as it is
-   there. The logo is drawn for a navy background, so it sits straight on the navy bar — no white square behind it. */
-.topbar-inner{padding:16px 20px;}
+   there (72px tall, 52px on a phone, with less padding so the bar itself grows only a little). The logo is drawn for a navy background, so it sits straight on the navy bar — no white square behind it. */
+.topbar-inner{padding:12px 20px;}
 .brand{gap:14px;}
-.brand-mark.brand-logo{width:auto;height:60px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
-.brand-mark:not(.brand-logo){width:60px;height:60px;}
+.brand-mark.brand-logo{width:auto;height:72px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
+.brand-mark:not(.brand-logo){width:72px;height:72px;}
 @media(max-width:760px){
-  .topbar-inner{padding:11px 12px;}
-  .brand-mark.brand-logo{width:auto;height:44px;}
-  .brand-mark:not(.brand-logo){width:44px;height:44px;}
+  .topbar-inner{padding:9px 12px;}
+  .brand-mark.brand-logo{width:auto;height:52px;}
+  .brand-mark:not(.brand-logo){width:52px;height:52px;}
 }
 img[alt="Legal Support Help"]{border-radius:8px;}
 
