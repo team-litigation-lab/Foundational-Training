@@ -57,3 +57,33 @@ let pending = 0;
 addEventListener("resize", () => { if(!pending) pending = requestAnimationFrame(() => { pending = 0; fit(); }); });
 fit();
 })();
+
+/* ============================================================
+   📱 Phones: the safety net
+   The pages already have their own narrow-screen rules (index.html's @media(max-width:760px) block, where a wide table
+   also scrolls sideways in its own box); this only catches what they miss, so on a phone (760 px wide or less) nothing
+   runs off the right edge where it can't be reached (the app's page bodies clip what overflows). Every rule is wrapped
+   in :where() (no specificity), so any page's own rule still wins, and none of it applies on a wider screen: the
+   desktop layout is untouched.
+     • text is never inflated by the phone's own font boost when it turns sideways;
+     • pictures, video and embedded frames shrink to the screen instead of pushing past it;
+     • a select, input or text box is never wider than the box it sits in (a select is as wide as its longest
+       option: 📝 Send Feedback's activity list ran 900 px past the screen, 🎧 Listening's batch list 45 px), and the
+       box a select sits in may shrink with it;
+     • a long unbroken word (an email address, a link, a case number) breaks rather than running off the edge.
+   (The same net as the LSH Training Portal's theme.css.)
+   ============================================================ */
+(function(){
+const st = document.createElement("style"); st.id = "ft-phone-net"; st.textContent = `
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+@media (max-width:760px){
+  :where(body){overflow-wrap:break-word;}
+  :where(img, video, iframe, embed, object){max-width:100%;}
+  :where(img:not([height]), video){height:auto;}
+  :where(pre){white-space:pre-wrap;}
+  :where(input, select, textarea){max-width:100%;}
+  :where(:has(> select)){min-width:0;}
+}
+`;
+document.head.appendChild(st);
+})();

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-26: phones
+
+- A safety net for phones in `js/ft-screen-fit.js` (760 px or less; nothing changes on a wider screen): a select, input or picture is never wider than the box it sits in, and a long word breaks. 📝 Send Feedback's filters ran about 900 px past a phone's edge (its activity list is as wide as its longest option), hiding the status filter and ↻; 🎧 Listening's batch list ran 45 px past it.
+- Day 10's Sample Insurance Communication Documents page: on a phone the document list takes its own line instead of running off the edge.
+
 ## 2026-11-12: repo-wide audit
 
 - **Cloud progress:** if the read at sign-in fails, the next save no longer overwrites the trainee's cloud copy. It reads the cloud copy again and merges it, or waits and retries.
