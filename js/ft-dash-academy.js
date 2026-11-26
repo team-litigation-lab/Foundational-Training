@@ -69,13 +69,13 @@ html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clea
 }
 /* ── the two pinned cards (Setting of Training Expectations, Know Your Tools): blue again — the workshop banner's navy face
    with its soft orange and blue glows, inside the same blue-gold frame; the title a white-outlined pill in white, and Start an
-   orange pill with navy text (6.1:1) that turns white on hover ── */
+   gold pill with navy text (7:1 or better) that turns white on hover ── */
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb){background:radial-gradient(520px 180px at 88% -45%, rgba(219,132,55,.32), transparent 62%) padding-box,
   radial-gradient(360px 180px at -6% 150%, rgba(120,132,190,.28), transparent 62%) padding-box,
-  linear-gradient(135deg,#1F2440 0%,#2B3158 55%,#353C68 100%) padding-box,linear-gradient(180deg,#1E2340 0%,#2c3360 30%,#a8692f 78%,#DB8437 100%) border-box !important;}
+  linear-gradient(135deg,#1F2440 0%,#2B3158 55%,#353C68 100%) padding-box,linear-gradient(180deg,#2A3050 0%,#3A4168 35%,#B98E66 80%,#C9A27A 100%) border-box !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .module-head,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .module-body,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid{background:transparent !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mh-title{background:transparent !important;border-color:rgba(255,255,255,.85) !important;color:#fff !important;-webkit-text-fill-color:#fff;}
-html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn{background:#DB8437 !important;color:#1E2340 !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn{background:linear-gradient(180deg,#E9CC7E 0%,#D4AF5A 55%,#BF9640 100%) !important;color:#1E2340 !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 10px -6px rgba(0,0,0,.5) !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) > .module-start-btn:hover,html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean.mc-open:not(.ftli):not(.ftkb) .mc-grid > .module-start-btn:hover{background:#fff !important;color:#1E2340 !important;}
 /* ── the workshop banner: with no completion ribbon beside it (an admin's view), the title starts at the banner's left edge
    instead of after the ribbon's empty column ── */
@@ -87,6 +87,16 @@ html body main.main-dash .dash-main .module-card::after,html body main.main-dash
 html body main.main-dash .dash-main .module-card .module-head::after,html body main.main-dash .dash-main .module-card .module-head::before{display:none !important;background-image:none !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card .module-head{border-bottom:0 !important;border-top:0 !important;}
 html body main.main-dash .dash-main .module-card.module-card.module-card .mc-grid{border-top:0 !important;}
+/* ── toned down: Start / Part 1·2·3 are soft pills — the lesson's light tint (--bg) with its deep colour for the text and a
+   thin outline (AA, 5:1 or better) — and turn solid in the lesson's colour only under the pointer; the frame's gold is muted ── */
+html body main.main-dash .dash-main .module-card.module-card.module-card.ftli .ftseg-b:not(.locked):not(.tlocked):not(.done){background:var(--bg,#EEF0F6) !important;
+  color:var(--c,#1E2340) !important;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c,#1E2340) 40%,#fff) !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.ftli .ftseg-b.now:not(.locked):not(.tlocked):not(.done){box-shadow:inset 0 0 0 2px var(--c,#1E2340) !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.ftli .ftseg-b:not(.locked):not(.tlocked):hover,
+html body main.main-dash .dash-main .module-card.module-card.module-card.ftli .ftseg-b:not(.locked):not(.tlocked):focus-visible{background:var(--c,#1E2340) !important;color:#fff !important;}
+html body main.main-dash .dash-main .module-card.module-card.module-card.mc-clean:is(.ftli,.ftkb){background:linear-gradient(#fff,#fff) padding-box,
+  linear-gradient(180deg,#2A3050 0%,#3A4168 35%,#B98E66 80%,#C9A27A 100%) border-box !important;
+  box-shadow:0 8px 20px -14px rgba(30,35,64,.45),0 2px 6px rgba(30,35,64,.08) !important;}
 /* ── the stat tiles: navy banners, white value, light caps label ── */
 html body main.main-dash .dash-side-inner > .card.stat.stat{background:linear-gradient(160deg,#1E2340,#2D3762) !important;border:1px solid rgba(255,255,255,.22) !important;border-radius:14px !important;box-shadow:0 6px 16px -10px rgba(0,0,0,.6) !important;}
 html body main.main-dash .dash-side-inner > .card.stat.stat .num{color:#fff !important;}
