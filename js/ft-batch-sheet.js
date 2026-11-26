@@ -1277,7 +1277,7 @@ function perTraineeHtml(T){
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
-        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, /^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`, "", `${REFV}: not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, "📎 Reference", "bs-pt-ref", `${/^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`} — not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
@@ -1307,7 +1307,9 @@ function perTraineeHtml(T){
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
             + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
-        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
+        // (📎 a reference value: a short label in its narrow column, the topics it covers beside it, so nothing wraps a word a line)
+        const isRef = !!v && v.indexOf(REFV) === 0, refList = isRef ? v.slice(REFV.length).replace(/^:\s*/, "") : "";
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${isRef ? "📎 Reference" : v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -2799,6 +2801,8 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-k.gs-hi{background:#E6F4EA;border-color:#1E8E3E;} .bs-pt-k.gs-hi b{color:#0B5D1E !important;}
 .bs-pt-k.gs-mid{background:#FFF4E0;border-color:#E8A400;} .bs-pt-k.gs-mid b{color:#7A4B00 !important;}
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
+.bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
+.bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:14px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
