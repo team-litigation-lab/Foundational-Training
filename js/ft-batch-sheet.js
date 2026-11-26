@@ -1542,7 +1542,7 @@ function autoDone(R, d, it, p){
     if(g) return {done: true, how: `Submitted · automatic check ${g.pct}% (not reviewed by the trainer yet)`};
     if(!a){ const tr = /^transcription-([12])$/.exec(String(it.id || ""));
       if(tr){ const run = (((R.transcribe || {}).r) || {})[tr[1]]; return {done: false, how: run && run.submittedAt ? "Submitted · the automatic score is being worked out" : `Not submitted yet (🎧 Transcription Activity, Recording ${tr[1]}): scored automatically once submitted`}; }
-      if(/-live$/.test(String(it.id || ""))) return {done: false, how: "No graded call yet on LSH Voice: scored automatically from the graded call"};
+      if(/-live$/.test(String(it.id || ""))) return {done: false, how: "No graded call yet on LSH CommX: scored automatically from the graded call"};
       return {done: false, how: "Not recorded by the trainer yet (🧑‍🏫 Trainer Inputs)"}; }
     const res = resOf(a);
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};

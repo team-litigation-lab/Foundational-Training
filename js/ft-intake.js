@@ -166,7 +166,7 @@ function caseCard(c){
 function trainerCase(c, who){
   const doc = caseDoc(c);
   return `<details class="ftis-mc-t"><summary><b>${e(c.title)}</b> · ${e(c.name)} <span class="ftis-mc-lv">${e(c.level || "")}</span>${who ? ` <span class="ftis-mc-n">${e(who)}</span>` : ""}</summary>
-    <p class="ftis-mc-ring">☎ <b>On LSH Voice:</b> 🎭 Call to play (Scenario Picker) → Standard Training → Intake → <b>${e(c.title)}</b> → ☎ Play on the Console.</p>
+    <p class="ftis-mc-ring">☎ <b>On LSH CommX:</b> 🎭 Call to play (Scenario Picker) → Standard Training → Intake → <b>${e(c.title)}</b> → ☎ Play on the Console.</p>
     <p><b>Opening line:</b> “${e(c.opening || "")}”</p>
     <p><b>The caller’s script:</b> ${e(c.hidden || "")}</p>
     ${(c.goals || []).length ? `<p><b>What the call is graded on:</b></p><ul>${c.goals.map(g => `<li>${e(g)}</li>`).join("")}</ul>` : ""}
@@ -479,7 +479,7 @@ window.FTIntakeAdmin = {
     const c = callById(v);
     try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString(), client: c ? String(c.name || "") : ""}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     paint();
-    toast(c ? `✓ ${c.title} assigned — play it from LSH Voice’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Demo case unassigned.");
+    toast(c ? `✓ ${c.title} assigned — play it from LSH CommX’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Demo case unassigned.");
   },
   async save(){
     // read the form first: loading the saved settings re-renders the page and the form with it

@@ -1401,7 +1401,7 @@ const LESSON_CARDS = {
       {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH Voice and LSH CaseWorX · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH CommX and LSH CaseWorX · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
     tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
       "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
@@ -2056,7 +2056,7 @@ function mapOpen(){
    Every tool this training uses, one at a time: a real screenshot of it, what it is for, where to find it and its
    features, with a button that opens it. The list sits on the left of the sheet and the picked tool fills the rest,
    so the whole slide fits one screen. The screenshots are in ft/day1/img/tools/: the platform's own pages, the CMS's
-   (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Voice's (its tests' pictures). */
+   (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH CommX's (its tests' pictures). */
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
   // (no 🎓 LSH Academy Index tab: taken off Know Your Tools)
@@ -2066,13 +2066,13 @@ const TOOLS = [
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
-  {ic: "☎", name: "LSH Voice™ · Mock Calls", short: "LSH Voice™", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
+  {ic: "☎", name: "LSH CommX™ · Mock Calls", short: "LSH CommX™", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
     what: "The training phone, where your Mock Calls are taken: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
     feats: ["Answer within 3 rings and greet with the firm’s name and yours",
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims™ → ✉️ Email Sims (it opens in its own tab)",
+  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Elev8™ → ✉️ Email Sims (it opens in its own tab)",
     what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
     feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
       "✍️ Email Replies: one email at a time, answered in the sender’s style",
@@ -2096,7 +2096,7 @@ const TOOLS = [
       "SOPs and step-by-step guides for the work you do for your clients",
       "Opens signed in: no second log-in, straight from this platform",
       "Yours to keep using once you are working with your clients"]},
-  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Sims™ → 🏥 Medical Records Requests (it opens in its own tab)",
+  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Elev8™ → 🏥 Medical Records Requests (it opens in its own tab)",
     what: "A records request platform on a real-looking case file: you collect complete medical records and itemized bills for a demand, the way a Case Manager does.",
     feats: ["🔐 Check the HIPAA authorization before anything goes out",
       "🏥 Send each request to the right provider’s department for the right dates, from the Provider Directory",
