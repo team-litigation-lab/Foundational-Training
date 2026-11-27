@@ -131,6 +131,9 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 /* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
 .dash-layout > .dash-side{order:1;}
+/* the band's tiles (Program complete, Lessons finished, Ranking, Batch Sheet, Tests today …): a blue-to-gold gradient grid */
+body .dash-side .dash-side-inner > .card{background:linear-gradient(135deg,#1B2452 0%,#27418F 58%,#B8862B 100%) !important;border:1px solid rgba(240,192,138,.55) !important;box-shadow:0 6px 16px rgba(10,14,40,.28) !important;}
+body .dash-side .dash-side-inner > .card:hover{border-color:#F0C08A !important;}
 .topics-modal-list .tm-pages{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-left:6px;white-space:nowrap;}
 .ft-od-day b{display:block;color:var(--navy);font-weight:800;}
 /* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
