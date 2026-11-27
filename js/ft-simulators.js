@@ -241,6 +241,9 @@ function labItems(){
     const days = window.FTDays ? FTDays.forTool(id) : [];
     if(typeof window.lshOpenPortalDrafting === "function" && listed(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, key: id, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
   });
+  // 📦 Day 8's Intake Packet activity (its steps, done here rather than on the deck: js/ft-intake.js #/intakepacket)
+  push(miniCard("Day 8 · Intake Training", "📦 Intake Packet &amp; Intake Documents", "Download and rename your assigned packet, extract and rename its documents, answer the Intake Worksheet here, then update #16 of your Monitoring Sheet.", "Open the activity", "goto('intakepacket')"),
+    {days: [8], type: "tool", key: "intakepacket"});
   // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
   if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
     push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready.", "Open the guide", `FTGuide.open('${g.id}')`),

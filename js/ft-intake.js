@@ -612,6 +612,29 @@ window.FTIntake = {
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }
 };
 
+/* 🛠 📦 the Intake Packet activity on the Practice Lab (#/intakepacket): Day 8's steps, done here rather than on the deck —
+   the assigned packet to download and rename, the documents to extract and rename, the Intake Worksheet answered on the
+   platform, and item #16 of the Monitoring Sheet. The 📦 packet box and the worksheet are the same as everywhere (paint). */
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["intakepacket"]);
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {intakepacket: "Intake Packet"});
+const __ipRender = window.render;
+window.render = function(){
+  if(state.view !== "intakepacket") return __ipRender.apply(this, arguments);
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __ipRender.apply(this, arguments); }
+  const step = (n, body, cls) => `<div class="ftdd-step${cls ? " " + cls : ""}"><span class="ftdd-step-n">${n}</span><div class="ftdd-step-t">${body}</div></div>`;
+  const mon = `<a href="#/monitoring" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
+  document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ip ft-body"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>
+    <div class="ip-hero"><p class="lp-eyebrow">Day 8 · Intake Training</p><h1>📦 Intake Packet &amp; Intake Documents</h1>
+      <p>Your assigned packet, step by step: download it, extract and rename its documents, answer the worksheet, then update your Monitoring Sheet.</p></div>
+    <div class="card ip-steps">
+      ${step(1, `Download your assigned Intake Packet and rename it by adding your name to its filename: <b>INTAKE - Packet (VA’s Name)</b>. Create a subfolder under your <b>Assessments/Activities</b> folder and name it after your assigned client. Upload all the extracted intake documents ALONG with the renamed assigned Intake Packet there.<div class="ftis-packet"></div>`)}
+      ${step(2, "Extract each document from the Intake Packet and rename it properly using the standard naming convention (Day 8’s 📄 Document Naming Convention).")}
+      ${step(3, `Answer the worksheet for intake documents, here on the platform.<div class="ftis-wsub"></div>`)}
+      ${step(4, `Update #16 (Intake Documents) in your ${mon}.`, "ftdd-step-check")}
+    </div></main>` + (typeof renderFooter === "function" ? renderFooter() : "");
+  try{ afterRender(); }catch(err){}
+  try{ loadK(); paint(); }catch(err){}
+};
 (function(){ const s = document.createElement("style"); s.id = "ft-intake"; s.textContent = `
 .ftis-calls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0;}
 .ftis-consult{margin:8px 0;}
@@ -653,6 +676,13 @@ window.FTIntake = {
 .ftis-pk-steps{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.55;} .ftis-pk-steps li{margin-bottom:4px;}
 .ftis-name{background:#262B45;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;}
 .ftis-pk-note{margin:0;font-size:12.5px;color:#5B6178;}
+main.main-ip{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
+.ip-hero h1{margin:0 0 4px;} .ip-hero p{margin:0;color:var(--ink-soft);}
+.ip-steps{padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+.ip-steps .ftdd-step{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:2px solid #343C66;border-radius:12px;background:#fff;}
+.ip-steps .ftdd-step-n{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:#E8590C;color:#fff;font:800 16px/32px 'Inter',sans-serif;text-align:center;}
+.ip-steps .ftdd-step-t{flex:1;font-size:16.5px;line-height:1.5;font-weight:600;}
+.ip-steps .ftdd-step-check{background:#EEF7F1;}
 .ftis-wsub{margin:8px 0;padding:12px 14px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#fff;text-align:left;}
 .ftis-ws-h{margin:0 0 8px;font-weight:800;color:#141A3C;} .ftis-ws-row{display:flex;gap:8px;align-items:center;}
 .ftis-ws-row input{flex:1;min-width:0;padding:9px 12px;border:1.5px solid #9AA0AB;border-radius:8px;font:600 15px/1.3 'Inter',sans-serif;color:#0B0D1A;}
