@@ -229,9 +229,9 @@ const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-ca
 const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
 function labItems(){
   // (off the Practice Lab, not in the curriculum or not the trainee's to do here: the 🩺 Medical Records practice session
-  // (Day 14's MedLOR is the 🩺 MedLOR + HIPAA Drafting card), the trainer's Intake Mock Call card, and the Intake Worksheet's
+  // (Day 14's MedLOR is the 🩺 MedLOR + HIPAA Drafting card), the trainer's Intake Mock Call and LV Request Demo cards, and the Intake Worksheet's
   // trainer card (the worksheet is answered on the 📦 Intake Packet & Intake Documents card). The trainer still scores them.)
-  const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet)\b/;
+  const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet|LV \(Lien Verification\) Request Demo)\b/;
   const out = [], push = (html, meta) => out.push(...mark(html, meta).filter(x => !OFF.test(x.html)));
   const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
   if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
