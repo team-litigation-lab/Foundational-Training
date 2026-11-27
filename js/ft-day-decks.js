@@ -2648,8 +2648,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
-main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{visibility:hidden;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s) */
-@keyframes ftddReveal{to{visibility:visible;}}
+main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{opacity:0;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s. Opacity, not visibility: the slide's text stays readable to the page's own code meanwhile) */
+@keyframes ftddReveal{to{opacity:1;}}
 main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-ins .btn{font-size:21px !important;padding:14px 30px !important;border-radius:12px;box-shadow:0 6px 16px rgba(30,35,64,.25);}
 /* (its two links side by side: the Calendar Simulator here, then the activity on the Main Portal) */
 .ft-body .ftdd-calsim > .btn + .btn{margin-left:8px;}
