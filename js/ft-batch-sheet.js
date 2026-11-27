@@ -1243,7 +1243,9 @@ const critTone = v => v >= 4 ? "gs-hi" : v >= 3 ? "gs-mid" : "gs-lo";
    one long scroll and a trainer finds a day by its date. */
 const dayFold = (ps, open, extra) => {
   const items = ps.filter(x => !x.header && x.name), ic = n => (String(stripTags(n)).match(/^\s*(\p{Extended_Pictographic}\uFE0F?)/u) || [, "•"])[1];
-  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}">${e(ic(x.name))} ${e(stripTags(x.v))}</span>`).join("");
+  // (each check by name with its figure, the chips sharing the row's whole width)
+  const nm = n => String(stripTags(n)).replace(/^\s*\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}"><i>${e(ic(x.name))}</i><span>${e(nm(x.name))}</span><b>${e(stripTags(x.v))}</b></span>`).join("");
   return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${items.length} activit${items.length === 1 ? "y" : "ies"}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
 };
 const partsTable = ps => { let g0 = null;
@@ -2766,11 +2768,15 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-ref{display:inline-block;padding:1px 8px;border:1px solid #C9CFE6;border-radius:999px;background:#F2F4FA;font-size:13px;cursor:help;}
 .bs-pt-t td,.bs-pt-t th{overflow-wrap:anywhere;}
 .bs-pt-t tr.bs-pt-sec th{scroll-margin-top:64px;}
-.bs-day > summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 2px;list-style:none;}
+.bs-day > summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;padding:6px 2px;list-style:none;}
 .bs-day > summary::-webkit-details-marker{display:none;}
 .bs-day > summary::before{content:"▸";color:#B5651F;font-weight:800;margin-right:2px;} .bs-day[open] > summary::before{content:"▾";}
-.bs-day-n{font:800 13px Arial,sans-serif;color:#1E2340;margin-right:4px;}
-.bs-dchip{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border:1px solid #DDE1EC;border-radius:999px;background:#fff;font:700 12.5px Arial,sans-serif;color:#2E3450;white-space:nowrap;}
+.bs-day-n{flex:0 0 auto;align-self:center;font:800 15px Arial,sans-serif;color:#1E2340;margin-right:4px;}
+.bs-dchip{flex:1 1 150px;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1.5px solid #D2D7E6;border-radius:10px;background:#fff;font:700 15px/1.25 Arial,sans-serif;color:#1E2340;min-width:0;}
+.bs-dchip i{font-style:normal;font-size:18px;flex:0 0 auto;}
+.bs-dchip span{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bs-dchip b{flex:0 0 auto;font:900 15px Arial,sans-serif;background:#F2F4FA;border-radius:999px;padding:2px 9px;white-space:nowrap;}
+.bs-dchip.gs-na b{font-weight:700;color:#5B6178;}
 .bs-day[open] > summary{margin-bottom:6px;border-bottom:1px solid #E3E6EE;padding-bottom:6px;}
 /* 🏅 Scores: a navy-blue card (the Dashboard banner's navy, with its soft orange and blue glows) — the title, the row count and
    the note in white / light ink on it (AA), the table itself on white inside it so the grades read as before */
