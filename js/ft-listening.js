@@ -151,7 +151,7 @@ function recHtml(s, r, next, opt){
   return `<div class="card ln-rec ${ok ? "ok" : ""}"><button class="ln-head" ${opt.all ? `type="button" tabindex="-1"` : `onclick="FTListen.toggle('${e(key)}')"`}>
       <span class="ln-mark">${ok ? "✓" : r.n}</span>
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
-      ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
+      ${r.url && !opt.noAudio ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
       ${opt.all ? "" : `<span>${open ? "▾" : "▸"}</span>`}</button>
     ${open ? `<div class="ln-form">${r.audio && !opt.noAudio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
         ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === val(f) ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
@@ -164,16 +164,28 @@ function recHtml(s, r, next, opt){
 // 🎧 the five recordings together, as on the deck's slide: a card each, its title, length and VA, and its player
 function actCalls(cur){
   const set = setOf(cur.id) || {}, mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
-  return `<div class="lnx-card lnx-calls"><p class="lnx-card-h">🎧 The 5 recordings</p><div class="lnx-calls-grid">${cur.recs.map((r, i) => {
+  const emb = u => typeof window.lvEmbedUrl === "function" && u ? window.lvEmbedUrl(u) : "";
+  return `<div class="lnx-card lnx-calls"><p class="lnx-card-h">🎧 The ${cur.recs.length} recording${cur.recs.length === 1 ? "" : "s"}</p><div class="lnx-calls-grid">${cur.recs.map((r, i) => {
     const t = String(r.title).replace(/^Call \d+:\s*/, ""), sec = (set.secs || [])[i];
     return `<div class="lnx-call"><p class="lnx-call-h"><span>${r.n}</span><b>${e(t)}</b>${sec ? `<small>${mmss(sec)}${set.va ? " · VA " + e(set.va) : ""}</small>` : ""}</p>
-      ${r.audio ? `<audio controls preload="metadata" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}</div>`; }).join("")}</div></div>`;
+      ${r.audio ? `<audio controls preload="metadata" src="${e(r.audio)}" title="${e(r.title)}"></audio>`
+        : emb(r.url) ? `<iframe class="lnx-call-emb" src="${e(emb(r.url))}" title="${e(r.title)}" loading="lazy" allow="autoplay"></iframe>`
+        : r.url ? `<a class="btn btn-ghost btn-sm lnx-call-link" href="${e(r.url)}" target="_blank" rel="noopener noreferrer">🎧 Listen ↗</a>` : `<p class="lnx-call-none">Your trainer hasn’t added this recording yet.</p>`}</div>`; }).join("")}</div></div>`;
 }
 function actSheet(cur, noAudio){
   const k = countDone(R.rec, cur), next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
   return `<div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · ${cur.n} practice calls</b><p>Your trainer reads your answers.</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
     ${cur.recs.map(r => recHtml(cur, r, next, {all: true, noAudio})).join("")}`;
+}
+// 📋 a Call Listening set's instructions, in the deck's cards: what to do, what to log for each call, and the set itself
+function setIns(cur){
+  const step = (n, ic, t, body) => `<div class="lnx-step"><p class="lnx-step-h"><span>${n}</span>${ic} ${t}</p><p>${body}</p></div>`;
+  return `<div class="lnx-card"><p class="lnx-card-h">📋 Instructions</p>
+      <p class="lnx-lead">${e(cur.about || "")}</p>
+      <div class="lnx-steps">${step(1, "🎧", "Listen", "Play each recording carefully. Pause, rewind and replay it as often as you need.")}${step(2, "🔍", "Notice", "How the VA opens the call, verifies the caller, handles the request and closes.")}${step(3, "📝", "Log", "Fill in every field of the recording's log on the right, then <b>💾 Save this log</b>. A recording counts once all its fields are filled.")}</div></div>
+    <div class="lnx-card"><p class="lnx-card-h">📋 What to log for each call</p><ol class="lnx-pts">${FIELDS.map(f => `<li><b>${e(f[1])}</b>${f[3] ? `: ${e(f[3])}` : ""}</li>`).join("")}</ol></div>
+    <div class="lnx-card lnx-done"><p>There’s no right answer to find: your log is what your trainer reads. Log ${cur.n === 1 ? "the recording" : `all ${cur.n} recordings`} to complete the set.</p>${deckBack(true)}</div>`;
 }
 // 📋 the activity's instructions, in the deck's cards (Day 3's Reception Listening Activity slide, build/day-decks.cjs PI_HTML)
 function actIns(){
@@ -209,13 +221,17 @@ function renderPage(){
       <section class="lnx-work">${actCalls(cur)}${actSheet(cur, true)}
         <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div></section>
     </div>`;
-  return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
-      <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
-      ${pills}</div>
-    <div class="card ln-about"><div><b>${cur.icon} ${e(cur.title)}</b><p>${e(cur.about)}</p></div>
-      <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div>
-      </div></div>
-    ${cur.recs.map(r => recHtml(cur, r, 0, {all: true})).join("")}`;   // (every recording open: no ▸ to click)
+  // (as the Reception Listening Activity: its instructions on the left, the recordings and their logs on the right)
+  const days = [...new Set(open.map(x => x.day))].sort((a, b) => a - b);
+  return `<div class="lnx-top"><div><p class="lp-eyebrow">🛠 Practice Lab · Call Listening · Day${days.length > 1 ? "s" : ""} ${days.join(", ")}</p><h1>${cur.icon} ${e(cur.title)}</h1></div>${pills}</div>
+    <div class="lnx">
+      <aside class="lnx-ins">${setIns(cur)}</aside>
+      <section class="lnx-work">${actCalls(cur)}
+        <div class="card ln-about"><div><b>${cur.icon} ${e(cur.title)}: your log</b><p>Your trainer reads it.</p></div>
+          <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
+        ${cur.recs.map(r => recHtml(cur, r, 0, {all: true, noAudio: true})).join("")}
+        <div class="ln-end">${deckBack()}</div></section>
+    </div>`;   // (every recording open: no ▸ to click)
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["listening"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {listening: "Call Listening Log"});
@@ -229,7 +245,7 @@ function renderLn(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   load(); loadSets();
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-ln"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-ln"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 }
 /* ---------- 📝 the activity's answer sheet in a pop-up, over the deck (Day 3's calls slide: build/day-decks.cjs PI_CALLS_HTML) ----------
@@ -498,7 +514,8 @@ main.main-ln:has(.lnx){max-width:none;}
 .lnx-card .lnx-call-h{margin:0;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;}
 .lnx-call-h span{display:inline-grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;background:#E8590C;color:#fff;font-weight:800;font-size:13px;}
 .lnx-call-h b{flex:1;font:800 15.5px/1.2 'Poppins','Inter',sans-serif;color:#fff;} .lnx-call-h small{color:#FFD7B5;font-weight:700;white-space:nowrap;}
-.lnx-call audio{display:block;width:calc(100% - 20px);margin:10px;} .lnx-done p{margin:0 0 8px;}
+.lnx-call audio{display:block;width:calc(100% - 20px);margin:10px;}
+.lnx-call-emb{display:block;width:calc(100% - 20px);height:96px;margin:10px;border:0;border-radius:8px;background:#F1F3FA;} .lnx-call-link{margin:10px;} .lnx-call-none{margin:10px;font-size:14px;color:#5A6080;} .lnx-done p{margin:0 0 8px;}
 @media (max-width:1000px){ .lnx{grid-template-columns:minmax(0,1fr);} .lnx-ins{position:static;max-height:none;} }
 main.main-ln{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */

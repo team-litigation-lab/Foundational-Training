@@ -639,7 +639,7 @@ window.render = function(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __ipRender.apply(this, arguments); }
   const step = (n, body, cls) => `<div class="ftdd-step${cls ? " " + cls : ""}"><span class="ftdd-step-n">${n}</span><div class="ftdd-step-t">${body}</div></div>`;
   const mon = `<a href="#/monitoring" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
-  document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ip ft-body"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>
+  document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ip ft-body"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>
     <div class="ip-hero"><p class="lp-eyebrow">Day 8 · Intake Training</p><h1>📦 Intake Packet &amp; Intake Documents</h1>
       <p>Your assigned packet, step by step: download it, extract and rename its documents, answer the worksheet, then update your Monitoring Sheet.</p></div>
     <div class="card ip-steps">

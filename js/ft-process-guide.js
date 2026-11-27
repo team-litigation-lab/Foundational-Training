@@ -325,7 +325,7 @@ window.render = function(){
     const o = GUIDES.filter(guideOpen), here = o.filter(g => g.day >= day)[0] || o.filter(g => g.day <= day).pop() || o[0] || GUIDES[0]; G.cur = here.id; }
   if(!guideOpen(GUIDES.find(g => g.id === G.cur) || GUIDES[0])){ const o = GUIDES.filter(guideOpen); if(o.length) G.cur = o[o.length - 1].id; }
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-pg"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${adminOn() ? renderAdmin() : ""}${renderEditor()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-pg"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>${adminOn() ? renderAdmin() : ""}${renderEditor()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   try{ document.execCommand("styleWithCSS", false, true); }catch(err){}
 };

@@ -164,7 +164,7 @@ window.render = function(){
   }
   const wait = saves() && C.ok !== state.traineeId;
   const back = C.ret ? `<a class="back-link" onclick="FTClaimsMail.toDeck()">&larr; Back to the deck${C.ret.h ? ": " + e(C.ret.h) : ""}</a>`
-    : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
+    : `<a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>`;
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ce">${back}${adminOn() ? `<p class="ce-copy card">👁 Your test copy: practice only: the trainees’ emails are graded for feedback but not counted on their scorecards.</p>` : ""}${wait ? `<p class="ce-muted card ce-copy">Loading your emails…</p>` : page()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}

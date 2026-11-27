@@ -126,7 +126,8 @@ async function workerChecks() {
   await page.evaluate(() => FTListen.open('reception')); await page.waitForTimeout(1200);
   const recs = await page.evaluate(() => [...document.querySelectorAll('.ln-rec b')].map(x => x.innerText));
   if (recs.length !== 3 || recs[0] !== 'Angry caller, wrong department') fail(`the trainee doesn't see the trainer's recordings: ${JSON.stringify(recs)}`);
-  if (!(await page.locator('.ln-rec').first().locator('a[href*="/file/d/ABC/"]').count())) fail('a recording\'s own link isn\'t offered');
+  // (each recording plays on the page, in the 🎧 recordings card beside the instructions: the trainer's Drive file embedded)
+  if (!(await page.locator('.lnx-call').first().locator('iframe[src*="/file/d/ABC/"], a[href*="/file/d/ABC/"]').count())) fail('a recording\'s own link isn\'t offered');
   // (the log kept for the trainee's own recording counts only if it is still one of the set's three)
   if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== (Number(N) <= 3 ? '1 of 3 logged' : '0 of 3 logged')) fail('the count doesn\'t follow the trainer\'s set');
 

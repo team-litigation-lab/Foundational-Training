@@ -138,15 +138,14 @@ async function workerChecks({ perfect, practice }) {
   await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
 
-  // the Practice Lab: the renamed session and the new card
+  // the Practice Lab: one calendaring activity, 🗓 Attorney Calendar Management Activity (do it, then check it), and the
+  // Appointment Setting Mock Calls' session; the Calendaring Activity (next week's calendar) isn't a step of either
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(600);
   const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.textContent.trim()));
-  if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Practice Session isn't renamed: ${JSON.stringify(lab)}`);
-  if (lab.some(t => /Calendaring Practice Lab/.test(t))) fail('the old name is still on the Practice Lab');
-  // (the Calendaring Activity is a step of Day 5's one card, 🗓 Attorney Calendar Management Activity: its button opens it)
-  const calStep = await page.evaluate(() => [...document.querySelectorAll('.fts-card')].filter(c => /Attorney Calendar Management Activity/.test((c.querySelector('h3') || {}).textContent || ''))
-    .some(c => [...c.querySelectorAll('.fts-calstep button')].some(b => /goto\('calweek'\)/.test(b.getAttribute('onclick') || ''))));
-  if (!calStep) fail(`no Calendaring Activity step on the Attorney Calendar Management Activity card: ${JSON.stringify(lab)}`);
+  const cals = lab.filter(t => /Calendar|Calendaring/.test(t) && !/Appointment Setting/.test(t));
+  if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Appointment Setting Mock Calls aren't on the Practice Lab: ${JSON.stringify(lab)}`);
+  const weekStep = await page.evaluate(() => [...document.querySelectorAll('.fts-card button')].some(b => /goto\('calweek'\)/.test(b.getAttribute('onclick') || '')));
+  if (cals.length !== 1 || !/Attorney Calendar Management Activity/.test(cals[0]) || weekStep) fail(`the Practice Lab should have one calendaring activity, with no next-week step: ${JSON.stringify(cals)}`);
   // (only scored work on the Practice Lab: the unscored 🧪 Calendar Practice (VA Practice Only) isn't there)
   if (lab.some(t => /VA Practice Only/.test(t))) fail(`the unscored VA Practice Only card is on the Practice Lab: ${JSON.stringify(lab)}`);
 
