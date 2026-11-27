@@ -296,7 +296,8 @@ function renderSimulators(){
     x.days.forEach(d => { (byDay[d] = byDay[d] || []).push(d === first ? x : Object.assign({}, x, {cont: first, html: contRow(x, first)})); }); });
   const COUNT = window.FTDays ? FTDays.COUNT : 16, upto = seesAll() ? COUNT : Math.min(COUNT, reachedDay());
   for(let d = 1; d <= upto; d++) byDay[d] = byDay[d] || [];
-  const days = Object.keys(byDay).map(Number).filter(d => d <= upto || byDay[d].length).sort((a, b) => a - b);
+  // (a day with no Practice Lab work, Days 1–2's lesson decks and classroom, has no section and no chip)
+  const days = Object.keys(byDay).map(Number).filter(d => byDay[d].length).sort((a, b) => a - b);
   const order = {session: 0, calendar: 1, drafting: 2, listening: 3, tool: 4, trainer: 5};
   const flt = (isTrainee() && state.ftsFilter) || "all", counted = x => x.status !== "locked" && x.type !== "any";
   const pass = x => flt === "all" || (flt === "done" ? x.status === "done" : x.status !== "done");
@@ -314,7 +315,7 @@ function renderSimulators(){
       <summary><span class="fts-day-n">Day ${d}</span>${lp ? `<span class="fts-day-lp"><b>${esc(lp.title)}</b>${lp.part ? `<i>${esc(lp.part)}</i>` : ""}</span>` : `<span class="fts-day-role">${info ? esc(info.role) : ""}</span>`}
         ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : `<span class="fts-day-count">${list.length ? `${list.length} item${list.length === 1 ? "" : "s"}` : "Classroom day"}</span>`}</summary>
       ${shown.some(x => x.cont) ? `<div class="fts-conts">${shown.filter(x => x.cont).map(x => x.html).join("")}</div>` : ""}
-      ${shown.some(x => !x.cont) ? `<div class="fts-grid">${shown.filter(x => !x.cont).map(x => x.html).join("")}</div>` : shown.length ? "" : `<p class="fts-day-none">No Practice Lab work today: the day is the lesson deck and the classroom.</p>`}</details>`;
+      ${shown.some(x => !x.cont) ? `<div class="fts-grid">${shown.filter(x => !x.cont).map(x => x.html).join("")}</div>` : ""}</details>`;
   };
   const chips = days.map(d => { const c = byDay[d].filter(counted).filter(own), dn = c.filter(x => x.status === "done").length;
     return `<a class="fts-jump ${isTrainee() && c.length && dn === c.length ? "ok" : ""}" onclick="ftsJump(${d})">Day ${d}${isTrainee() && c.length ? ` <small>${dn === c.length ? "✓" : dn + "/" + c.length}</small>` : ""}</a>`; }).join("");
