@@ -38,6 +38,8 @@ function scored(it, s){
   if(!it || it.auto) return false;
   if(sid === "trainer" && /^act:/.test(ref)) return SCORED_ACTS.includes(ref.slice(4)) || (it.rubric ? SCORED_RUBRICS.includes(it.rubric) : actScored(ref.slice(4)));
   if(sid === "drive" && /^assess:/.test(ref)) return assessScored(ref.slice(7));
+  // (🎧 Call Listening counts on the Score Card: each set's share logged, and the Reception Listening Activity by its grade)
+  if(sid === "listening") return true;
   return false;
 }
 // a lesson is finished once its Knowledge Check is submitted or graded, whatever its mark (no 70% gate: the guide grades none)

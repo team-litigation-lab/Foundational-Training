@@ -157,7 +157,8 @@ window.LSH_PROGRAM = {
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
     // (no 👥 Shadowing: shadowing is off the training)
     // (Day 3's 📝 Reception Listening Activity is one of its items, by its grade: trackerreview:<id>.assess.recact)
-    {id:"listening", reference:true, icon:"🎧", label:"Call Listening", key:"listening:",
+    {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",   // (scored: the owner asked it counted on the Score Card)
+     
       about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full, and Day 3’s Reception Listening Activity by its grade once you submit its Answer Sheet.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
     // (📅 one card for the two calendar checks: Day 5's Attorney Calendar Management Activity and the mock-call bookings

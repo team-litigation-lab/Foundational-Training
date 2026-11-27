@@ -417,7 +417,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!rl.d3 || /%/.test(rl.d3.v) || !/nothing scored yet/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day scores the Reception Listening Activity: ${JSON.stringify(rl.d3)}`);
   // (🎯 Graded calls now reads the trainer's Mock Call scorecard, so her 76% mock call counts too, as on Lesson 4)
   if (!rl.practice || (/%/.test(rl.practice.v) && !/^📎/.test(rl.practice.v))) fail(`📅 Day by Day's 🛠 Practice counts Additional Reference work: ${JSON.stringify(rl.practice)}`);
-  if (!rl.ds3 || rl.ds3.v !== '' || !/Reception Listening Activity[\s\S]*📎/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity as Additional Reference: ${JSON.stringify(rl.ds3)}`);
+  // (🎧 Call Listening counts on the Score Card now, the Reception Listening Activity by its grade)
+  if (!rl.ds3 || !/Reception Listening Activity/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity: ${JSON.stringify(rl.ds3)}`);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   // (📊 graded by the app, it is a row of the day's "why this score" table — not a line of its own — the trainer's mock call keeps its line)
   const rx = await page.evaluate(() => { const tr = [...document.querySelectorAll('.bs-ds-st tbody tr')].find(x => /Reception Listening Activity/.test(x.querySelector('th').textContent));
@@ -427,14 +428,14 @@ const failures = []; const fail = m => failures.push(m);
   else {
     if (rx.head.join('|') !== 'Activity|Score|🧾 Why this score|⭐ What you did great|❌ What was wrong|💡 What could have been done better') fail(`the "why this score" table's headings: ${rx.head.join(' | ')}`);
     // (📎 its context is kept — why, great, wrong, better — with no score)
-    if (/^80%$/.test(rx.cells[1].trim()) || !/32 of 40 points/.test(rx.cells[2]) || !/Call 1: The Missing Email: every answer right/i.test(rx.cells[3]) || !/Names the letter, not the pain clinic/.test(rx.cells[4]) || !/again/.test(rx.cells[5]))
-      fail(`the activity's row on 📅 Day 1–16 (why, great, wrong, better, no score): ${JSON.stringify(rx.cells)}`);
+    if (!/80%/.test(rx.cells[1]) || !/32 of 40 points/.test(rx.cells[2]) || !/Call 1: The Missing Email: every answer right/i.test(rx.cells[3]) || !/Names the letter, not the pain clinic/.test(rx.cells[4]) || !/again/.test(rx.cells[5]))
+      fail(`the activity's row on 📅 Day 1–16 (its 80% score, why, great, wrong, better): ${JSON.stringify(rx.cells)}`);
   }
   await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
   const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
-  // (📎 🎧 Call Listening is Additional Reference: its block shows the activity, with no score)
-  if (!gd.some(b => /Call Listening/.test(b.h) && !/\d\.\d\/5|\d+%/.test(b.h) && /Reception Listening Activity/.test(b.t)))
-   fail(`🔎 Grades in detail: 🎧 Call Listening isn't Additional Reference with the activity: ${gd.map(b => b.h).join(' | ')}`);
+  // (🎧 Call Listening counts now: its block is scored, the graded activity in it)
+  if (!gd.some(b => /Call Listening/.test(b.h) && /\d\.\d\/5|\d+%/.test(b.h) && /Reception Listening Activity/.test(b.t)))
+   fail(`🔎 Grades in detail: 🎧 Call Listening isn't scored with the activity: ${gd.map(b => b.h).join(' | ')}`);
   const elsewhere = gd.filter(b => !/Call Listening/.test(b.h) && /Reception Listening/.test(b.t)).map(b => b.h);
   if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)

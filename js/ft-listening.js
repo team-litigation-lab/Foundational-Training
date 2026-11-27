@@ -49,6 +49,17 @@ const SETS = [
     about:"Play each of the five Harbor & Pine practice calls, then log its 5 data points and its challenge: the obstacle, and how the VA handled it."}
 ];
 const setOf = id => SETS.find(s => s.id === id);
+// 🎲 each trainee's own five recordings of a set, chosen by the platform from their id (the same five every time, a different
+// five for each trainee); a set of five or fewer, and the Reception Listening Activity's five calls, are logged whole
+const MINE = 5;
+function mine(l, who){
+  if(!l || l.activity || l.recs.length <= MINE) return l;
+  let h = 2166136261; String((who || "") + "|" + l.id).split("").forEach(c => { h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; });
+  const pool = l.recs.slice(), out = [];
+  while(out.length < MINE && pool.length){ h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); }
+  out.sort((a, b) => a.n - b.n);
+  return Object.assign({}, l, {recs: out, n: out.length});
+}
 const WHO = ["Existing client", "Potential client", "Authorized person on the file", "Medical provider", "Insurance adjuster", "Opposing counsel", "Court staff", "Other"];
 // each field, with what makes it filled in: [name, label, kind, placeholder, minimum characters, full width]
 const FIELDS = [
@@ -101,7 +112,8 @@ function load(force){
     if(state.view === "listening" || state.view === "daydeck") render(); }).catch(() => { R.rec = R.rec || {logs: {}}; });
 }
 const logOf = (sid, n) => ((R.rec || {logs: {}}).logs[sid] || {})[n] || {};
-const countDone = (rec, s) => { const l = ((rec || {logs: {}}).logs || {})[s.id] || {}; let k = 0; for(let i = 1; i <= s.n; i++) if(done(l[i], s)) k++; return k; };
+const countDone = (rec, s) => { const l = ((rec || {logs: {}}).logs || {})[s.id] || {}; let k = 0;
+  (s.recs ? s.recs.map(r => r.n) : Array.from({length: s.n}, (_, i) => i + 1)).forEach(i => { if(done(l[i], s)) k++; }); return k; };
 function readRec(sid, n){
   const out = {};
   fieldsOf(setOf(sid)).forEach(f => { const el = document.getElementById(`ln_${sid}_${n}_${f[0]}`); out[f[0]] = el ? String(el.value || "").trim().slice(0, 1500) : ""; });
@@ -139,7 +151,7 @@ function recHtml(s, r, next, opt){
       <span class="ln-mark">${ok ? "✓" : r.n}</span>
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
       ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
-      <span>${open ? "▾" : "▸"}</span></button>
+      ${opt.all ? "" : `<span>${open ? "▾" : "▸"}</span>`}</button>
     ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
         ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === val(f) ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
           : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(val(f))}</textarea>`
@@ -152,29 +164,30 @@ function actSheet(cur){
   const k = countDone(R.rec, cur), next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
   return `<div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · ${cur.n} practice calls</b><p>Your trainer reads your answers.</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
-    ${cur.recs.map(r => recHtml(cur, r, next)).join("")}`;
+    ${cur.recs.map(r => recHtml(cur, r, next, {all: true})).join("")}`;
 }
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   // a set opens with its day: 🔓 once the trainer has opened the day (js/ft-day-locks.js); a trainee catches up on any set opened
-  const open = R.set === "recact" ? SETS.filter(s => s.id === "recact") : SETS.filter(s => setOpen(s) && !s.activity);
+  // (📝 the Reception Listening Activity is a tab of the log, beside the sets: its five calls, its 📝 Submit for Grading)
+  const open = SETS.filter(s => setOpen(s));
   if(!open.length) return `<div class="card" style="padding:24px;"><h2 style="margin:0 0 6px;">🔒 Call Listening</h2><p style="margin:0;">The recordings open when your trainer unlocks the Call Listening step of the day.</p></div>`;
-  const cur = setLive(R.set && open.some(s => s.id === R.set) ? R.set : open[0].id); R.set = cur.id;
+  const cur = mine(setLive(R.set && open.some(s => s.id === R.set) ? R.set : open[0].id), state.traineeId); R.set = cur.id;
   const k = countDone(R.rec, cur);
   // 📝 the Reception Listening Activity's answers: a page of its own, its five calls only
-  if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h1>📝 Reception Listening Activity: Answers</h1>
-      <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p></div>
+  const pills = `<div class="ln-pills">${open.map(s => { const l = mine(setLive(s.id), state.traineeId), c = countDone(R.rec, l);
+        return `<button class="ln-pill ${s.id === cur.id ? "on" : ""}" onclick="FTListen.set('${e(s.id)}')">${s.icon} ${e(s.activity ? "Reception Listening Activity" : s.title)} <em>${c}/${l.n}</em></button>`; }).join("")}</div>`;
+  if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Day ${cur.day}</p><h1>🎧 Call Listening Log</h1>
+      <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go, then 📝 Submit for Grading.</p>${pills}</div>
     ${actSheet(cur)}
-    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 's2')">Next: CRM/CMS Training Videos →</button></div>` : ""}`;
+    <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button></div>`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
-      <div class="ln-pills">${open.map(s => { const l = setLive(s.id), c = countDone(R.rec, l);
-        return `<button class="ln-pill ${s.id === cur.id ? "on" : ""}" onclick="FTListen.set('${e(s.id)}')">${s.icon} ${e(s.title)} <em>${c}/${l.n}</em></button>`; }).join("")}</div></div>
+      ${pills}</div>
     <div class="card ln-about"><div><b>${cur.icon} ${e(cur.title)}</b><p>${e(cur.about)}</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div>
-      ${cur.folder ? `<a class="btn btn-ghost btn-sm" href="${e(cur.folder)}" target="_blank" rel="noopener noreferrer">📂 The recordings ↗</a>` : ""}</div></div>
-    ${(() => { const next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;   // only the next one to log is open
-      return cur.recs.map(r => recHtml(cur, r, next)).join(""); })()}`;
+      </div></div>
+    ${cur.recs.map(r => recHtml(cur, r, 0, {all: true})).join("")}`;   // (every recording open: no ▸ to click)
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["listening"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {listening: "Call Listening Log"});
@@ -327,7 +340,7 @@ window.FTListen = {
 const setOpen = s => !window.FTDayLocks || FTDayLocks.toolOpen("listening", s.day);
 // 🛠 the Practice Lab's section
 // (each set's card, filed under its day by the Practice Lab: rec is the trainee's listening:<id>, for ✓ Done when every recording is logged)
-window.ftListenCards = rec => SETS.filter(s => setOpen(s) && !s.activity).map(s => { const l = setLive(s.id), c = rec ? countDone(rec, l) : 0;
+window.ftListenCards = rec => SETS.filter(s => setOpen(s) && !s.activity).map(s => { const l = mine(setLive(s.id), state.traineeId), c = rec ? countDone(rec, l) : 0;
       return `<div class="card fts-card" data-days="${s.day}" data-type="listening" data-status="${rec && c >= l.n ? "done" : c ? "live" : "todo"}"><div class="fts-kicker">Day ${s.day} · 🎧 Call Listening · ${l.n} recordings</div><h3>${s.icon} ${e(s.title)}</h3>
         <p class="fts-note">${e(s.about)}${c ? ` <b>${c} of ${l.n} logged.</b>` : ""}</p>
         <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="FTListen.open('${e(s.id)}')">Open the log</button></div></div>`; }).join("");
@@ -342,7 +355,7 @@ window.ftListenItems = ctx => { const rec = ctx.rec["listening:"], logs = (rec &
   // (an activity's grade is in trackerreview:<id>, which the Scorecard reads for 📋 Task Tracker & Monitoring Sheet)
   const graded = ((ctx.rec["trackerreview:"] || {}).assess) || {};
   // (a set of sample recordings, for reference only — Day 13's provider calls — is never scored: sample)
-  return SETS.filter(s => !s.sample).map(s => { const l = setLive(s.id), c = countDone(rec, l), g = s.activity ? graded[s.id] : null;
+  return SETS.filter(s => !s.sample).map(s => { const l = mine(setLive(s.id), ctx.id), c = countDone(rec, l), g = s.activity ? graded[s.id] : null;
     if(!c && !logs[s.id] && !g) return null;
     // 📝 the activity counts by its 📝 Submit for Grading, not by the share logged: one item, as each set is one, so the
     // average stays fair to the other sets (js/ft-drive.js leaves it out of 📋, so it counts once). Not submitted yet, or a
@@ -354,7 +367,7 @@ window.ftListenItems = ctx => { const rec = ctx.rec["listening:"], logs = (rec &
       return {name: `${s.icon} Reception Listening Activity`, ref: "assess:" + s.id, why: why ? "Marked down: " + why : "", pct: ok ? g.pct : null, at: (g && g.at) || "", assess: s.id,
         note: ok ? `${g.score} of ${g.max} points${g.when ? " · graded " + g.when : ""}${g.pending ? " · your trainer grades the rest" : ""}`
           : g && g.score != null ? "Being graded again: the earlier grading marked right answers ✗"
-          : `Not graded yet · ${c} of ${l.n} calls logged · 📝 Submit for Grading on the Answer Sheet`}; }
+          : `Not graded yet · ${c} of ${l.n} calls logged · 📝 Submit for Grading on the Call Listening Log`}; }
     return {name: `${s.icon} ${s.title}`, pct: Math.round(c / l.n * 100), note: `${c} of ${l.n} recordings logged`}; }).filter(Boolean); };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 🎧 Call Listening ---------- */
@@ -393,7 +406,7 @@ function adminHtml(){
       <label class="w">Recordings<textarea id="lnaRecs" rows="${Math.min(12, s.n + 1)}">${e(s.recs.map(r => [r.title, r.url].filter(Boolean).join(" | ")).join("\n"))}</textarea></label>
       <div class="w"><button class="btn btn-navy btn-sm" onclick="FTListenAdmin.saveSet()">💾 Save this set</button></div></div>` : ""}
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl ln-atbl"><thead><tr><th>Trainee</th>${SETS.map(x => `<th>Day ${x.day}</th>`).join("")}<th>${e(s.title)}</th></tr></thead><tbody>
-      ${rows.map(r => { const cells = SETS.map(x => { const l = setLive(x.id), c = countDone(r.rec, l);
+      ${rows.map(r => { const cells = SETS.map(x => { const l = mine(setLive(x.id), r.id), c = countDone(r.rec, l);
           return `<td class="${c >= l.n ? "ok" : c ? "mid" : ""}">${c}/${l.n}</td>`; }).join("");
         return `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>${cells}
           <td><button class="btn btn-ghost btn-sm" onclick="FTListenAdmin.open('${e(r.id)}')">${AD.open[r.id] ? "Hide" : "Read"} ${AD.open[r.id] ? "▾" : "▸"}</button></td></tr>
@@ -419,9 +432,9 @@ window.FTListenAdmin = {
 ftAdminTab("listening", "🎧 Call Listening", adminHtml);
 
 (function(){ const st = document.createElement("style"); st.id = "ft-listening"; st.textContent = `
-main.main-ln{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
+main.main-ln{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
-.ln-hero h1{margin:0 0 4px;} .ln-hero p{margin:0;color:var(--ink-soft);max-width:76ch;}
+.ln-hero h1{margin:0 0 4px;} .ln-hero p{margin:0;color:var(--ink-soft);max-width:none;}
 .ln-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
 .ln-pill{border:1px solid var(--line,#d6d9e0);background:var(--card,#fff);color:var(--ink);border-radius:999px;padding:7px 14px;font:600 13px inherit;cursor:pointer;}
 .ln-pill.on{background:var(--navy,#1F2A44);color:#fff;border-color:var(--navy,#1F2A44);} .ln-pill em{font-style:normal;opacity:.75;margin-left:4px;}
