@@ -2658,6 +2658,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
+/* (Day 14's sample process guide on one slide: steps 1–4 beside step 5 and its screenshot) */
+.ftdd-sheet .ftdd-pg1{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start;width:100%;text-align:left;} .ftdd-sheet .ftdd-pg1 .shots figure{margin:6px 0 0 !important;} @media(max-width:1000px){.ftdd-sheet .ftdd-pg1{grid-template-columns:1fr;}}
 main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{opacity:0;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s. Opacity, not visibility: the slide's text stays readable to the page's own code meanwhile) */
 @keyframes ftddReveal{to{opacity:1;}}
 main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-ins .btn{font-size:21px !important;padding:14px 30px !important;border-radius:12px;box-shadow:0 6px 16px rgba(30,35,64,.25);}

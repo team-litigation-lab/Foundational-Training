@@ -1339,7 +1339,9 @@ const ROWS = {
         h => h.replace(/<p><b>Here are the first 5 steps of the process guide as your sample\. Feel free to format the guide according to your preference<\/b><\/p>\n/, ""), h => {
         const re = /<p>5\. Kindly also obtain the  DOL of the client in the summary page\.<\/p>\n<p><b>How to find the DOL\/DOI\/DOA<\/b><\/p>\n(<div class="shots"><figure><a href="\/ft\/day14\/img\/image51\.png"[^\n]*?<\/figure><\/div>)\n?/;
         if(!re.test(h)) throw new Error("Day 14's step 5 and its DOL/DOI/DOA screenshot are no longer where the build looks for them");
-        return h.replace(re, (m, shot) => PGBREAK + '<div class="ftdd-keep ftdd-imgside"><div class="ftdd-imgside-img">' + shot + '</div><div class="ftdd-imgside-txt"><p><b>How to find the DOL/DOI/DOA</b></p>\n<p>5. Kindly also obtain the DOL of the client in the summary page.</p></div></div>\n');
+        // (one slide: steps 1–4 on the left, step 5 and its screenshot on the right, kept together and fitted to the slide)
+        const i = h.search(re); if(i < 0) throw new Error("Day 14's step 5 is no longer where the build looks for it");
+        return '<div class="ftdd-keep ftdd-pg1"><div class="ftdd-pg1-l">' + h.slice(0, i) + '</div><div class="ftdd-pg1-r">' + h.slice(i).replace(re, (m, shot) => '<p><b>How to find the DOL/DOI/DOA</b></p>\n<p>5. Kindly also obtain the DOL of the client in the summary page.</p>\n' + shot + '\n') + '</div></div>\n';
       }]},
       {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""],
         // (no "FYI – Current SmartAdvocate (SA) Updates" line: the bar under it names the updates)
