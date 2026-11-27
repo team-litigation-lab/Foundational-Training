@@ -3131,11 +3131,12 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
 .ft-body table.ftdd-terms a{color:#1A56C4;}
 /* 🌳 the decision trees (Day 3's Frontline Management, build/day-decks.cjs TREES): two to a row */
-/* Day 2's Softphones video, its Action (📒 Monitoring Sheet) and Note at its lower right (build/day-decks.cjs TRIM[2].s4) */
-.ft-body .ftdd-soft{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,30%);gap:16px;align-items:end;margin:4px 0 12px;}
+/* Day 2's Softphones video, its Action (📒 Monitoring Sheet) and Note beside it, centred (build/day-decks.cjs TRIM[2].s4) */
+.ft-body .ftdd-soft{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,30%);gap:16px;align-items:center;margin:4px 0 12px;}
 .ft-body .ftdd-soft-side{display:flex;flex-direction:column;gap:10px;}
 .ft-body .ftdd-soft-side > p{margin:0;}
-.ft-body .ftdd-soft .ftdd-mon-btn{margin-top:6px;}
+.ft-body .ftdd-soft-side > p:first-child{text-align:center;}   /* (Day 2: the Action and its Monitoring Sheet button centred beside the video) */
+.ft-body .ftdd-soft-side .ftdd-mon-btn{display:table;margin:8px auto 0;}
 @media(max-width:900px){ .ft-body .ftdd-soft{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 12px;}
 @media(max-width:900px){ .ft-body .ftdt-grid{grid-template-columns:minmax(0,1fr);} }
