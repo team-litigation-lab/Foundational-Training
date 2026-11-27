@@ -243,7 +243,8 @@ async function authFetch(url, payload){
   const doFetch = ()=>fetch(url, {method:"POST", headers:authHeaders(), body: JSON.stringify(payload)});
   let res = await doFetch();
   if(res.status===401 && !state.isAdmin && await reauthTrainee()) res = await doFetch();
-  if(res.status===401 && (state.isAdmin || state.adminPreview)){ setAdminToken(""); state.isAdmin = false; state.adminPreview = false; try{ sessionStorage.removeItem("lsh_admin_preview"); }catch(e){} toast("Your admin session expired — click 🛡 Admin and sign in again."); }
+  // (a 401 from a trainee-only endpoint in 👁 Trainee view is not the admin's sign-in running out: index.html adminTokenDead)
+  if(res.status===401 && (state.isAdmin || state.adminPreview) && (typeof adminTokenDead !== "function" || await adminTokenDead())){ if(typeof signOutWhy === "function") signOutWhy("the server refused the admin sign-in (" + url + ")"); setAdminToken(""); state.isAdmin = false; state.adminPreview = false; try{ sessionStorage.removeItem("lsh_admin_preview"); }catch(e){} toast("Your admin session expired — click 🛡 Admin and sign in again."); }
   return res;
 }
 Narrator.slideText = function(){

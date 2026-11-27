@@ -300,7 +300,8 @@ async function ticketFor(payloadObj, secret) {
             for (const [ago, alive] of [[0.1, true], [7, true], [9, false], [30, false]]) {
                 const ta = tk('a', ago), tt = tk('t', ago), p = page({ lsh_admin_token: ta, lsh_auth_token: tt });
                 if ((p.state.adminToken === ta) !== alive || (p.state.authToken === tt) !== alive) fail(`index.html: tokens ${ago} h idle should read ${alive ? 'signed in' : 'signed out'} as the page opens`);
-                if (!alive && (p.localStorage.m.size || p.sessionStorage.m.size)) fail(`index.html: tokens ${ago} h idle should be dropped from the device`);
+                // (the only thing left is lsh_signout_why, the reason shown on the sign-in screen: no token)
+                if (!alive && ([...p.localStorage.m.keys()].some(k => k !== 'lsh_signout_why') || p.sessionStorage.m.size || !/8 hours/.test(p.localStorage.getItem('lsh_signout_why') || ''))) fail(`index.html: tokens ${ago} h idle should be dropped from the device`);
             }
             const s = page({}, { lsh_admin_token: tk('a', 1) });
             if (!s.state.adminToken) fail('index.html: a live trainer token in sessionStorage (from before) should still sign the trainer in');

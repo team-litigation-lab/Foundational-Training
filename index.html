@@ -5084,7 +5084,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
    is dropped as the page opens, which reads as signed out */
 function tokenRunOut(t){ const p = String(t||"").split("."); return p.length===4 && !(Number(p[2]) > Date.now()); }
 state.authToken = (()=>{ try{ const t = localStorage.getItem("lsh_auth_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_auth_token"); }catch(e){} return ""; })();
-state.adminToken = (()=>{ try{ const t = localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_tab_admin_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_tab_admin_token"); }catch(e){} return ""; })();
+state.adminToken = (()=>{ try{ const t = localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_tab_admin_token")||""; if(t && !tokenRunOut(t)) return t; if(t) try{ localStorage.setItem("lsh_signout_why", JSON.stringify({why: "8 hours with no activity: the sign-in ran out", at: new Date().toISOString()})); }catch(e){} localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_tab_admin_token"); }catch(e){} return ""; })();
 /* an open page renews its tokens (worker.js /api/auth/refresh) every ten minutes and as the tab comes back into view: each
    fresh token runs 8 hours, so a session in use never runs out, and it ends only 8 hours after the last page was closed (or
    the computer slept). A token that ran out meanwhile (a laptop asleep overnight with the tab open) is not renewed: the page
@@ -5118,6 +5118,7 @@ function tabIsAdmin(){ try{ return sessionStorage.getItem("lsh_tab_admin") === "
 // View and 🛡 Admin in a trainee's top bar. Whenever a trainee is signed in, the admin session is dropped.
 function dropAdminSession(){
   if(!state.isAdmin && !state.adminPreview && !state.adminToken) return;
+  if(state.adminToken) signOutWhy("a trainee signed in on this browser");
   setAdminToken(""); state.isAdmin = false; state.adminPreview = false;
   try{ sessionStorage.removeItem("lsh_admin_preview"); }catch(e){}
 }
@@ -5142,9 +5143,23 @@ async function authFetch(url, payload){
   const doFetch = ()=>fetch(url, {method:"POST", headers:authHeaders(), body: JSON.stringify(payload)});
   let res = await doFetch();
   if(res.status===401 && !state.isAdmin && await reauthTrainee()) res = await doFetch();
-  if(res.status===401 && state.isAdmin){ setAdminToken(""); state.isAdmin = false; toast("Your admin session expired — click 🛡 Admin and sign in again."); }
+  if(res.status===401 && state.isAdmin && await adminTokenDead()){ signOutWhy("the server refused the admin sign-in (" + url + ")"); setAdminToken(""); state.isAdmin = false; toast("Your admin session expired — click 🛡 Admin and sign in again."); }
   return res;
 }
+/* 🔐 a 401 is not proof the admin's sign-in is over: a trainee-only endpoint refuses an admin token though it is good (a page
+   in 👁 Trainee view, a trainee's own record). Only when the server also refuses to renew the token is the session over. */
+async function adminTokenDead(){
+  const t = state.adminToken; if(!t) return true;
+  if(tokenRunOut(t)) return true;
+  try{ const r = await fetch("/api/auth/refresh", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + t}, body:"{}"});
+    if(r.status === 401 || r.status === 403) return true;
+    const j = r.ok ? await r.json().catch(() => ({})) : {}; if(j.token && t === state.adminToken) setAdminToken(j.token);
+    return false; }catch(e){ return false; }   // (no answer: the network, not the sign-in — keep it)
+}
+window.adminTokenDead = adminTokenDead;
+/* 🧾 why an admin was signed out, kept on this device: the sign-in screen says it (js/portal-gate.js) */
+function signOutWhy(why){ try{ localStorage.setItem("lsh_signout_why", JSON.stringify({why: String(why).slice(0, 200), at: new Date().toISOString()})); }catch(e){} }
+window.signOutWhy = signOutWhy;
 async function storeGet(key){
   let fromWindowStorage;
   try{
@@ -12204,6 +12219,7 @@ function openAdmin(){
 window.openAdmin = openAdmin;
 
 function adminLogout(){
+  signOutWhy("🚪 Log out");
   setAdminToken("");
   state.isAdmin=false;
   state.adminData=null;
