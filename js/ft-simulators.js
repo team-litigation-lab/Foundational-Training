@@ -241,12 +241,8 @@ function labItems(){
   CAL_CARDS.forEach(c => { const html = calCard(c); if(html) push(html.h, {days: html.days, status: html.status, type: "calendar", key: "calendar", kicker: `${window.FTDays ? FTDays.label(html.days) : "Day 6"} · Calendar Management`}); });
   tool("ftTranscribeCard", "transcribe", "drafting"); tool("ftLorCard", "lor", "drafting");
   const DAYMAX = window.FTDays ? FTDays.COUNT : 16;
-  // the MedLOR + HIPAA packet (Day 14) and the Lien Balance Verification (Day 16): the same Portal tool, on their own day
-  [["medlor", "🩺 MedLOR + HIPAA Drafting", "Draft the MedLOR with Unsworn COR and merge it with the client’s signed HIPAA into one PDF, on the Training Portal. Checked when you upload it.", "Open the MedLOR"],
-   ["lienbv", "🧾 Lien Balance Verification Drafting", "Draft the Lien Balance Verification request letter on the Training Portal, in the firm’s own template. Checked when you upload it.", "Open the Lien BV"]].forEach(([id, t, n, b]) => {
-    const days = window.FTDays ? FTDays.forTool(id) : [];
-    if(typeof window.lshOpenPortalDrafting === "function" && listed(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, key: id, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
-  });
+  // (no 🩺 MedLOR + HIPAA Drafting or 🧾 Lien Balance Verification Drafting cards: not curriculum activities, only practice
+  // the trainees were told of to help them with their demos. The LOR Drafting Activity, Day 11's, is the curriculum's)
   // 📦 Day 8's Intake Packet activity (its steps, done here rather than on the deck: js/ft-intake.js #/intakepacket)
   push(miniCard("Day 8 · Intake Training", "📦 Intake Packet &amp; Intake Documents", "Download and rename your assigned packet, extract and rename its documents, answer the Intake Worksheet here, then update #16 of your Monitoring Sheet.", "Open the activity", "goto('intakepacket')"),
     {days: [8], type: "tool", key: "intakepacket"});
