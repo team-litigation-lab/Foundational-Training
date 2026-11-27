@@ -51,15 +51,21 @@
     // ✅ an activity handed in (its own submit, below): when the trainee came from a deck, a bar says so and takes them back
     // to the slide they left after 3 seconds (📍 Stay here keeps them on the activity; Back now goes at once)
     done(){
-      const f = state.ftLabFrom; if(!f || !window.FTDayDecks) return;
+      // (sent by a deck: back to that slide in 3 seconds. Opened from the Practice Lab itself: the button back to the deck slide
+      // last open, the trainee's place in their lessons, waits for them)
+      const from = state.ftLabFrom, f = from || (window.FTDayDecks && FTDayDecks.lastAt ? FTDayDecks.lastAt() : null);
       clearTimeout(LR.t); const old = document.getElementById("ftlr-done"); if(old) old.remove();
-      const t = slideTitle(f.day, f.i), bar = document.createElement("div"); bar.id = "ftlr-done"; bar.setAttribute("role", "status");
-      bar.innerHTML = `<b>✓ Submitted.</b><span>Taking you back to your lesson${t ? `: ${esc(t)}` : ""}…</span>
-        <button type="button" class="btn ftlr-back-btn" onclick="FTLabRoute.home()">Back now →</button><button type="button" class="ftlr-stay" onclick="FTLabRoute.stay()">📍 Stay here</button>`;
+      const t = f ? slideTitle(f.day, f.i) : "", bar = document.createElement("div"); bar.id = "ftlr-done"; bar.setAttribute("role", "status");
+      bar.innerHTML = `<b>✓ Submitted.</b><span>${from ? "Taking you back to your lesson" : "Back to where you left off"}${f ? `: Day ${f.day}${t ? " · " + esc(t) : ""}` : ""}${from ? "…" : ""}</span>
+        <button type="button" class="btn ftlr-back-btn" onclick="FTLabRoute.home()">${f ? "📚 Back to my lesson →" : "📚 My lessons →"}</button><button type="button" class="ftlr-stay" onclick="FTLabRoute.stay()">📍 Stay here</button>`;
       document.body.appendChild(bar);
-      LR.t = setTimeout(() => LR.home(), 3000);
+      LR.f = f;
+      if(from) LR.t = setTimeout(() => LR.home(), 3000);
     },
-    home(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); LR.back(); },
+    home(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove();
+      if(state.ftLabFrom) return LR.back();
+      const f = LR.f; LR.f = null;
+      if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto("modules"); },
     stay(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); },
     keyOf
   };

@@ -2150,7 +2150,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC,
+root.FTDayDecks = {open, go, next: nextKC, lastAt,   // (lastAt: the deck slide last open, the way back to the lesson after an activity)
   // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
   // Day decks test)
   cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
