@@ -157,7 +157,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
-    segs: [...c.querySelectorAll('.mc-grid > .ftseg > .ftseg-b')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
+    segs: [...c.querySelectorAll('.mc-grid > .ftseg > .ftseg-b')].map(b => b.textContent.replace(/^[^A-Za-z]+/, '').trim()),
     steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
     vids: [...c.querySelectorAll('.mc-grid > .ftli-vids > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.module-body.ftli-days') || {}).id })));
   // (Personal Injury Process Flow and Receptionist Training are one card, Part 1 Day 3 and Part 2 Day 4: no card of Lesson 4's)

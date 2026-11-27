@@ -156,7 +156,9 @@ async function browserPart(){
     if (!/4\.0\/5/.test(row(3) && row(3).text) || !/📎 Additional Reference — not counted/.test(row(3) && row(3).text)) fail(`the scored row doesn't show its score: ${row(3) && row(3).text}`);
     if (!/Not scored yet/.test(row(1) && row(1).text)) fail(`Week 1, not scored, doesn't say so: ${row(1) && row(1).text}`);
     { const w3 = (v.wk || []).find(t => /Week 3/.test(t)) || '', w1 = (v.wk || []).find(t => /Week 1/.test(t)) || '';
-      if (!w3.includes('📎 Additional Reference') || !w1.includes('📎 Additional Reference') || /% average/.test(w3 + w1)) fail(`the week headings don't average the 🌱 score beside the days (Week 3 ${E.w3}%, Week 1 ${E.w1}%): ${JSON.stringify(v.wk)}`); }
+      // (an Additional Reference week heading is the week, its dates and its days only: the trainer had its reference list
+      // removed, as the Average row's table above sets it out; and never an average, as nothing is counted)
+      if (!w3 || !w1 || /📎|Additional Reference|% average/.test(w3 + w1)) fail(`the week headings should show only the week, its dates and days (no reference list, no average): ${JSON.stringify(v.wk)}`); }
     // 🔒 the trainee's own page: the scores read-only, the note, no inputs
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; state.traineeName = 'Pia Pdp'; state.view = 'modules'; render(); }, pid); await page.waitForTimeout(400);
     await page.evaluate(() => goto('mysheet'));

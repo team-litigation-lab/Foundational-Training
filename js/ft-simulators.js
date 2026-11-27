@@ -374,7 +374,8 @@ const __callCard = window.moduleCard;
 window.moduleCard = function(d){
   const html = __callCard.apply(this, arguments), b = CALL_LESSONS.includes(d.id) && isTrainee() ? callBest(d.id) : null;
   if(!b) return html;
-  return html.replace(/(<div class="mh-day">)([\s\S]*?)(<\/div>)/, (m, a, t, c)=>`${a}${t.replace(/^&nbsp;$/, "")}${t && t !== "&nbsp;" ? " &middot; " : ""}📞 ${b.score}%${c}`);
+  // (in its own badge inside the Day line, so it still shows where the card hides the "Day N" words: js/ft-dash-academy.js)
+  return html.replace(/(<div class="mh-day">)([\s\S]*?)(<\/div>)/, (m, a, t, c)=>`${a}${t.replace(/^&nbsp;$/, "")}<span class="mh-call">${t && t !== "&nbsp;" ? `<span class="mh-call-sep"> &middot; </span>` : ""}📞 ${b.score}%</span>${c}`);
 };
 (function(){ const s = document.createElement("style"); s.id = "ft-simulators"; s.textContent = `
 main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
