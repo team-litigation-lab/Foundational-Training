@@ -354,7 +354,7 @@ async function submit(){
   R.rec.submits = (R.rec.submits || []).concat([{at, met: sc.met, total: sc.total, pct: sc.pct, checks: rows, snap: snapOf(R.rec)}]).slice(-8);
   render();
   const ok = await save();
-  toast(ok === false ? "Couldn’t send it. Check your connection." : `📤 Sent to your trainer: ${sc.met} of ${sc.total} events right (${of5(sc)}, ${sc.pct}%).`);
+  toast(ok === false ? "Couldn’t send it. Check your connection." : `📤 Sent to your trainer: ${sc.met} of ${sc.total} events right (${of5(sc)}, ${sc.pct}%).`); if(ok !== false && window.ftActivityDone) ftActivityDone();
 }
 
 /* ---------- the page ---------- */

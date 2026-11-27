@@ -274,7 +274,7 @@ window.FTGuide = {
     if(pct < 50 && !confirm(`Only ${pct}% of the checks pass. Submit anyway?`)) return;
     r.submittedAt = new Date().toISOString(); r.pct = pct;
     if(saves()){ clearTimeout(G.timer); const ok = await sharedSet(keyOf(G.cur), r); if(ok === false){ delete r.submittedAt; toast("Couldn’t submit. Check your connection."); return; } }
-    toast(`📤 Submitted to your trainer · ${pct}% on the checks`); render();
+    toast(`📤 Submitted to your trainer · ${pct}% on the checks`); render(); if(window.ftActivityDone) ftActivityDone();
   },
   async redo(){ const r = rec(G.cur); delete r.submittedAt; if(saves()) await sharedSet(keyOf(G.cur), r); render(); },
   toggleVideo(){ saveNow(); G.video = !G.video; render(); },

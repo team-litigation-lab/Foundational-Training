@@ -281,7 +281,7 @@ window.FTTranscribe = {
       }catch(err){ r.ai = {error: "The automatic evaluation isn’t available right now. Your checks and your trainer’s review still count."}; }
     } else r.ai = {summary: "Test copy: the automatic score and evaluation are worked out when a trainee submits."};
     T.busy = false; save(); render();
-    toast(`📤 Submitted to your trainer · ${pct}% on the checks`);
+    toast(`📤 Submitted to your trainer · ${pct}% on the checks`); if(window.ftActivityDone) ftActivityDone();
   },
   reloadAdmin(){ T.admin = null; render(); },
   checks, docHtml, fields: FIELDS

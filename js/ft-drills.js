@@ -187,6 +187,7 @@ async function saveRun(set, score, total){
   const id = state.traineeId; if(!id) return;
   await load(); D.rec.runs = (D.rec.runs || []).concat([{set, score, total, at: new Date().toISOString()}]).slice(-300);
   if(await sharedSet("drills:" + id, D.rec) === false) toast("Couldn’t save your round. Check your connection.");
+  else if(window.ftActivityDone) ftActivityDone();   // (a round handed in: the way back to the lesson)
 }
 const best = (rec, set) => (rec.runs || []).filter(r => r.set === set).reduce((m, r) => Math.max(m, Math.round(r.score / r.total * 100)), -1);
 

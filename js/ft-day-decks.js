@@ -1635,7 +1635,9 @@ function deckNextUp(){
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
   const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s), lab = labOf(s);
-  if(lab) lab.run(); else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
+  // (a slide whose Next is its Practice Lab activity: once handed in, the activity brings the trainee back to the slide after it,
+  // js/ft-lab-route.js FTLabRoute.done)
+  if(lab){ state.ftLabFrom = {day: Number(DD.day), i: DD.i + 1}; lab.run(); } else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
@@ -2148,7 +2150,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC,
+root.FTDayDecks = {open, go, next: nextKC, lastAt,   // (lastAt: the deck slide last open, the way back to the lesson after an activity)
   // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
   // Day decks test)
   cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
