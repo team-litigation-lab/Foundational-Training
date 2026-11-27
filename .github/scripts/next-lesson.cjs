@@ -38,7 +38,7 @@ const segs = page => page.evaluate(() => Object.fromEntries([...document.querySe
     await done(page, []);
     let s = await segs(page);
     // 📚 Dashboard: a segment per part (Start for a one-part lesson)
-    const labels = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.ftli')].map(c => [c.id, [...c.querySelectorAll('.mc-grid .ftseg .ftseg-b')].map(x => x.innerText.replace(/^[^A-Za-z]+/, '').trim()).join()])));
+    const labels = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.ftli')].map(c => [c.id, [...c.querySelectorAll('.mc-grid .ftseg .ftseg-b')].map(x => x.textContent.replace(/^[^A-Za-z]+/, '').trim()).join()])));
     if (labels['dayl-1'] !== 'Start' || labels['dayl-3'] !== 'Part 1,Part 2' || labels['dayl-6'] !== 'Part 1,Part 2,Part 3' || labels['dayl-8'] !== 'Part 1,Part 2,Part 3') fail(`the cards' parts don't match their days: ${JSON.stringify(labels)}`);
     if ((s['dayl-2'] || [])[0] !== 'locked') fail(`Law Firm Communication was open before VA Essentials was finished: ${JSON.stringify(s['dayl-2'])}`);
     if ((s['dayl-3'] || []).join() !== 'open,open') fail(`an open lesson's parts aren't all open: ${JSON.stringify(s['dayl-3'])}`);
