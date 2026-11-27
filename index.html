@@ -5079,9 +5079,31 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
    admin password checked on the server). If the Worker has no
    MASTER_ADMIN_PASSWORD set, the portal runs in the old open mode.
    ============================================================ */
-state.authToken = (()=>{ try{ return localStorage.getItem("lsh_auth_token")||""; }catch(e){ return ""; } })();
-// (a trainer stays signed in on this browser — closing it doesn't sign them out — until 🚪 Log out)
-state.adminToken = (()=>{ try{ return localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||""; }catch(e){ return ""; } })();
+/* 🔓 a sign-in lasts until 8 hours go by with no activity (worker.js SESSION_HOURS), or 🚪 Log out: both tokens are kept in
+   localStorage, so closing the tab or the browser signs no one out; one that ran out while no page was open (8 hours idle)
+   is dropped as the page opens, which reads as signed out */
+function tokenRunOut(t){ const p = String(t||"").split("."); return p.length===4 && !(Number(p[2]) > Date.now()); }
+state.authToken = (()=>{ try{ const t = localStorage.getItem("lsh_auth_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_auth_token"); }catch(e){} return ""; })();
+state.adminToken = (()=>{ try{ const t = localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); }catch(e){} return ""; })();
+/* an open page renews its tokens (worker.js /api/auth/refresh) every ten minutes and as the tab comes back into view: each
+   fresh token runs 8 hours, so a session in use never runs out, and it ends only 8 hours after the last page was closed (or
+   the computer slept). A token that ran out meanwhile (a laptop asleep overnight with the tab open) is not renewed: the page
+   opens again, signed out. (A year-long token from before this rule is swapped for an 8-hour one the first time.) */
+async function ftRefreshTokens(){
+  ftRefreshTokens.at = Date.now();
+  for(const [t, set] of [[state.adminToken, setAdminToken], [state.authToken, setTraineeToken]]){
+    if(t && tokenRunOut(t)){ try{ location.reload(); }catch(e){} return; }
+    const p = String(t||"").split("."), left = p.length===4 ? Number(p[2]) - Date.now() : 0;
+    if(left <= 30000) continue;
+    try{
+      const r = await fetch("/api/auth/refresh", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer "+t}, body:"{}"});
+      const j = r.ok ? await r.json() : {};
+      if(j.token && (t === state.adminToken || t === state.authToken)) set(j.token);
+    }catch(e){}
+  }
+}
+setInterval(ftRefreshTokens, 10*60e3); setTimeout(ftRefreshTokens, 5000);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible" && Date.now() - (ftRefreshTokens.at||0) > 60e3) ftRefreshTokens(); });
 function authHeaders(){
   const t = (state.isAdmin && state.adminToken) || state.authToken;
   return Object.assign({"Content-Type":"application/json"}, t ? {"Authorization":"Bearer "+t} : {});
