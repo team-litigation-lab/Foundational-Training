@@ -247,6 +247,77 @@ async function ticketFor(payloadObj, secret) {
         if (mm.status !== 403 || mm.body.error !== 'identity-mismatch') fail(`a record that doesn't lead back to the session gets no tool ticket: ${JSON.stringify(mm)}`);
     }
 
+    // 8. 🔓 a sign-in lasts until 8 hours with no activity (worker.js SESSION_HOURS; it was a year): every token runs 8 hours from
+    //    when it was made and an open page renews it (/api/auth/refresh), so a closed tab is still signed in 7 hours later and
+    //    signed out 9 hours later; a token that ran out can't be brought back by the name + batch renewal (no grace) either
+    {
+        const H = 3600e3, near = (t, ms) => Math.abs(Number(String(t || '').split('.')[2]) - Date.now() - ms) < 60000;
+        if (!(adminTicket.body && near(adminTicket.body.token, 8 * H))) fail(`a trainer's Portal sign-in should run 8 hours: ${adminTicket.body && adminTicket.body.token}`);
+        if (!(good.body && near(good.body.token, 8 * H))) fail(`a trainee's Portal sign-in should run 8 hours (it was a year): ${good.body && good.body.token}`);
+        if (!(pw.body && near(pw.body.token, 8 * H))) fail(`a trainer's admin-password sign-in should run 8 hours: ${JSON.stringify(pw.body)}`);
+        const ren = await call(env, '/api/auth/refresh', {}, { Authorization: 'Bearer ' + good.body.token });
+        if (!(ren.status === 200 && near(ren.body && ren.body.token, 8 * H) && ren.body.token.split('.')[0] === 't')) fail(`a live trainee token should be renewed for 8 hours from now: ${JSON.stringify(ren)}`);
+        const signed = async (role, subj, ago, life = 8) => {   // a token made <ago> hours ago, signed as the Worker signs one
+            const body = `${role}.${encodeURIComponent(subj).replace(/\./g, '%2E')}.${Date.now() - ago * H + life * H}`;
+            const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('ci-secret'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+            const sig = btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body))))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            return `${body}.${sig}`;
+        };
+        const tid = good.body.id;
+        for (const [ago, alive] of [[0.05, true], [7, true], [9, false], [24, false]]) {
+            for (const [role, subj] of [['a', 'hub:Coach Ana'], ['t', tid]]) {
+                const r = await call(env, '/api/auth/refresh', {}, { Authorization: 'Bearer ' + await signed(role, subj, ago) });
+                if ((r.status === 200) !== alive) fail(`a ${role === 'a' ? "trainer's" : "trainee's"} sign-in idle ${ago} h should read ${alive ? 'signed in' : 'signed out'}, got ${r.status}`);
+            }
+            const rn = await call(env, '/api/auth/trainee', { name: 'Ana Cruz', batch: 'B100926', id: tid }, { Authorization: 'Bearer ' + await signed('t', tid, ago) });
+            if ((rn.status === 200) !== alive) fail(`the name + batch renewal of a trainee idle ${ago} h should be ${alive ? 'accepted' : 'refused (portal-required)'}, got ${rn.status}`);
+        }
+        // a year-long token made before this rule is still taken (no one is signed out by the deploy) and renewed as an 8-hour one
+        const legacy = await call(env, '/api/auth/refresh', {}, { Authorization: 'Bearer ' + await signed('t', tid, 48, 24 * 365) });
+        if (!(legacy.status === 200 && near(legacy.body && legacy.body.token, 8 * H))) fail(`a year-long token from before the 8-hour rule should be swapped for an 8-hour one: ${JSON.stringify(legacy)}`);
+    }
+
+    // 9. the page's half (index.html's SECURE MODE block, in a small shim): both tokens in localStorage (closing the tab keeps the
+    //    sign-in), a token 7 hours idle still signed in and one 9 hours idle dropped as the page opens, an open page renews its
+    //    tokens whatever is left on them, one that ran out while the laptop slept reloads the page (signed out)
+    {
+        const vm = require('vm'), fs = require('fs');
+        const html = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8');
+        const a0 = html.indexOf('function tokenRunOut('), z0 = html.indexOf('\n', html.indexOf('function setAdminToken('));
+        if (a0 < 0 || z0 < 0) fail('index.html: the SECURE MODE token block (function tokenRunOut … function setAdminToken) was not found');
+        else {
+            const H = 3600e3, tk = (role, ago) => `${role}.someone.${Date.now() - ago * H + 8 * H}.sig`;
+            const store = () => { const m = new Map(); return { m, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
+            const page = (local = {}, session = {}) => {
+                const ctx = { state: {}, localStorage: store(), sessionStorage: store(), Date, Number, String, Promise, JSON, Object, calls: [], listeners: {},
+                    setInterval: () => 0, setTimeout: () => 0, toast: () => {}, location: { reloads: 0, reload() { this.reloads++; } } };
+                ctx.document = { visibilityState: 'visible', addEventListener: (t, f) => { ctx.listeners[t] = f; } };
+                ctx.fetch = async (url, o) => { ctx.calls.push(url); return { ok: true, json: async () => ({ token: tk(o.headers.Authorization.slice(7, 8), 0) }) }; };
+                Object.entries(local).forEach(([k, v]) => ctx.localStorage.setItem(k, v)); Object.entries(session).forEach(([k, v]) => ctx.sessionStorage.setItem(k, v));
+                vm.createContext(ctx); vm.runInContext(html.slice(a0, z0) + '\n;this.api = { ftRefreshTokens, setAdminToken, setTraineeToken };', ctx);
+                return ctx;
+            };
+            for (const [ago, alive] of [[0.1, true], [7, true], [9, false], [30, false]]) {
+                const ta = tk('a', ago), tt = tk('t', ago), p = page({ lsh_admin_token: ta, lsh_auth_token: tt });
+                if ((p.state.adminToken === ta) !== alive || (p.state.authToken === tt) !== alive) fail(`index.html: tokens ${ago} h idle should read ${alive ? 'signed in' : 'signed out'} as the page opens`);
+                if (!alive && (p.localStorage.m.size || p.sessionStorage.m.size)) fail(`index.html: tokens ${ago} h idle should be dropped from the device`);
+            }
+            const s = page({}, { lsh_admin_token: tk('a', 1) });
+            if (!s.state.adminToken) fail('index.html: a live trainer token in sessionStorage (from before) should still sign the trainer in');
+            s.api.setAdminToken(tk('a', 0));
+            if (!s.localStorage.getItem('lsh_admin_token') || s.sessionStorage.getItem('lsh_admin_token') !== null) fail('index.html: the trainer token should be kept in localStorage, so closing the tab does not sign them out');
+            const o = page({ lsh_admin_token: tk('a', 0.5), lsh_auth_token: tk('t', 0.5) });
+            await o.api.ftRefreshTokens();
+            if (o.calls.length !== 2 || o.calls.some((u) => u !== '/api/auth/refresh') || !(Number(o.state.authToken.split('.')[2]) - Date.now() > 7.9 * H)) fail(`index.html: an open page should renew both tokens for 8 hours: ${JSON.stringify(o.calls)}`);
+            if (typeof o.listeners.visibilitychange !== 'function') fail('index.html: the page should renew its tokens as a tab comes back into view');
+            o.state.adminToken = tk('a', 9); o.state.authToken = tk('t', 9); o.calls.length = 0;
+            await o.api.ftRefreshTokens();
+            if (o.location.reloads !== 1 || o.calls.length) fail('index.html: a token that ran out (9 hours idle, the laptop asleep) should not be renewed: the page reloads, signed out');
+            o.api.setAdminToken(''); o.api.setTraineeToken('');
+            if (o.localStorage.m.size || o.sessionStorage.m.size) fail('index.html: 🚪 Log out should clear both tokens');
+        }
+    }
+
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
     console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });

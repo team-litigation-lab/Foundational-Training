@@ -196,9 +196,14 @@ function adminPassStatus(env) {
   return "MASTER_ADMIN_PASSWORD" + (ignored.length ? ` (had ${ignored.join(", ")}: ignored)` : "") + odd;
 }
 function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
-// (a sign-in — a trainer's or a trainee's — lasts a year: no one is signed out by the clock, only by 🚪 Log out, a revoked access
-// or offboarding, which the Worker checks on every request)
-const SESSION_HOURS = 24 * 365;
+/* 🔓 A sign-in — a trainer's or a trainee's — lasts until 8 hours go by with no activity (the same rule as the LSH Training
+   Portal's SESSION_IDLE_SECONDS), or until 🚪 Log out, a revoked access or offboarding (the Worker checks those on every request).
+   Every token runs SESSION_HOURS from when it was made, and an open page asks for a fresh one every few minutes
+   (/api/auth/refresh, index.html ftRefreshTokens), so closing the tab or the browser signs no one out: back within 8 hours,
+   the token is still good. 8 hours with no page open and it has run out; an expired token is never renewed (a sign-in again,
+   from the Portal). (It was a year, so nothing ever ended a session left on a shared computer; a year-long token made
+   before this change is still taken, and the first page that opens with it swaps it for an 8-hour one.) */
+const SESSION_HOURS = 8;
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
   // (a dot in the subject — an admin named "Ma. Theresa" or "Jr." — would split the token into 5 parts, which readToken rejects:
@@ -289,9 +294,10 @@ async function readPortalTicket(env, ticket, why = {}) {
   const u = String(t.u == null ? "" : t.u).trim().slice(0, 80);
   return { name: `${first} ${last}`, first, last, batch, full, u };
 }
-// A trainee's expired token still counts for a while (readToken's graceMs: same signature, same trainee), so a trainee
-// midway through the course whose 30 days run out isn't sent back to the portal in the middle of a lesson.
-const TOKEN_GRACE_MS = 60 * 24 * 3600 * 1000;
+// readToken's graceMs for the name + batch renewal of a trainee's own session. It used to take a token up to 60 days past its
+// expiry; now none: a token that has run out means 8 hours with no activity (SESSION_HOURS), and the renewal must not bring
+// that session back (an open page never lets its token run out: /api/auth/refresh).
+const TOKEN_GRACE_MS = 0;
 
 /* ---------- 🔁 a trainee whose Batch ID was changed on the Portal ----------
    Their ID is name + batch (candidateIds), so a sign-in with the new batch would find no record and start a new, empty
@@ -3336,6 +3342,15 @@ export default {
           }
           return blockedRes(blocked);
         }
+      }
+
+      /* ---------- 🔓 a session in use is renewed (SESSION_HOURS: 8 hours without activity ends it) ----------
+         The page asks for a fresh token every few minutes while it is open, so a session in use never runs out and a closed
+         tab is still signed in when it comes back within 8 hours. Only a live token is renewed (readToken above: an expired
+         or forged one is a 401), and a blocked trainee's is refused just above, so a revoked access still ends the session. */
+      if (path === "/api/auth/refresh") {
+        if (!secure) return json({ token: "" });
+        return json({ token: await makeToken(env, tok.role, tok.id, SESSION_HOURS) });
       }
 
       /* ---------- 🗂 Batch Folders (admins): 🚫 offboard a VA, and 📦 archive a batch to Google Drive, then clear it (js/ft-batch-admin.js) ---------- */
