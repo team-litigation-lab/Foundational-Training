@@ -77,7 +77,7 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.click('.tfb-tbl tbody tr:has-text("Fey")'); await page.waitForTimeout(2000);
   const kw = await page.evaluate(() => (document.querySelector('.tfb-panel') || {}).innerText || '');
   // (📎 a Knowledge Check is Additional Reference: recorded as done, with no score)
-  if (!/What the platform recorded/i.test(kw) || !/📎 Additional Reference/.test(kw) || /85%/.test(kw)) fail(`a Knowledge Check isn't shown for the feedback as recorded Additional Reference: ${kw.slice(0, 300)}`);
+  if (!/What the platform recorded/i.test(kw) || !/📎 done, not scored/.test(kw) || /85%/.test(kw)) fail(`a Knowledge Check isn't shown for the feedback as recorded Additional Reference: ${kw.slice(0, 300)}`);
   await page.evaluate(() => { FTFeedback.close(); FTFeedback.act(''); FTFeedback.status('todo'); }); await page.waitForTimeout(300);
   // the guide: read when opened, nothing in it runs
   await page.click('.tfb-tbl tbody tr:has-text("Sending the MedLOR")'); await page.waitForTimeout(1500);

@@ -88,6 +88,11 @@ const reached = days => seesAll() || !days || !days.length || Math.min(...days) 
 window.ftsReached = reached;
 // (and 🔓 once the trainer has opened one of the tool's days: js/ft-day-locks.js)
 const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; return reached(days) && (!window.FTDayLocks || FTDayLocks.labOpen(days)); };
+/* 🔒 Every activity is on the Practice Lab from the start, locked: it opens for a trainee only when its day's training is
+   unlocked (the trainer's 📅 Open Lessons: the day reached and started, js/ft-day-locks.js labOpen). Until then its card says
+   which day it opens with and its buttons do nothing. Trainers (and 👁 Switch View) see every activity open. */
+const dayOn = days => !isTrainee() || !days || !days.length || (reached([Math.min(...days)]) && (!window.FTDayLocks || FTDayLocks.labOpen([Math.min(...days)])));
+const listed = () => true;
 window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 /* ---------- ✓ Done: what the trainee has finished, read once a visit ----------
    The records each tool already keeps for 🏅 My Performance, read together: a card is ✓ Done once its work is in
@@ -147,7 +152,7 @@ const CAL_CARDS = [
 // Calls, session "calendaring"): after each mock call, the booking is recorded and checked against the scheduling rules
 const RULES_STEP = {id: "calrules", t: "After each call: check the booking", n: "Record the booking you made on the call: consult days, phone hours, buffers, length limits, EST, the reminder, checked on the spot.", b: [["📅 Check a booking", "goto('calrules')"]]};
 function foldRules(html){
-  if(!html || !toolOn("calrules")) return html;
+  if(!html) return html;
   const t = document.createElement("template"); t.innerHTML = html;
   const c = t.content.querySelector('.fts-card[data-sid="calendaring"]:not(.fts-locked)'); if(!c) return html;
   c.classList.add("fts-calcard");
@@ -161,7 +166,7 @@ const STEP_CHIP = {done: "✓ Done", live: "🟢 In progress", todo: "Not starte
 function calCard(c){
   const days = id => window.FTDays ? FTDays.forTool(id) : [];
   // (a step shows once its day is open; the simulator step, kept on no record here, with the card's other steps)
-  const steps = c.steps.filter(x => x.free ? c.steps.some(y => !y.free && toolOn(y.id)) : toolOn(x.id));
+  const steps = c.steps;
   if(!steps.length) return null;
   const graded = steps.filter(x => TOOL_STATUS[x.id]), sts = graded.map(x => isTrainee() ? TOOL_STATUS[x.id]() : "todo");
   const status = sts.length && sts.every(x => x === "done") ? "done" : sts.some(x => x !== "todo") ? "live" : "todo";
@@ -185,6 +190,10 @@ function mark(html, meta){
   const t = document.createElement("template"); t.innerHTML = html;
   return [...t.content.children].filter(el => el.classList.contains("fts-card")).map(el => {
     const days = meta && meta.days ? meta.days : String(el.dataset.days || "").split(",").map(Number).filter(Boolean);
+    // (🔒 its day not unlocked yet for this trainee: locked, its buttons off, the day it opens with on its chip)
+    const lockedDay = days.length && !dayOn(days) ? Math.min(...days) : 0;
+    if(lockedDay){ el.classList.add("fts-locked");
+      el.querySelectorAll("button, a.btn").forEach(b => { b.setAttribute("disabled", ""); b.removeAttribute("onclick"); b.removeAttribute("href"); b.title = `Opens when Day ${lockedDay}'s training is unlocked`; }); }
     const status = el.classList.contains("fts-locked") ? "locked" : (meta && meta.status) || el.dataset.status || "todo";
     const type = (meta && meta.type) || el.dataset.type || "tool";
     el.dataset.days = days.join(","); el.dataset.status = status; el.dataset.type = type;
@@ -202,7 +211,7 @@ function mark(html, meta){
     const tag = document.createElement("span"); tag.className = "fts-type"; tag.textContent = typeTag[type] || ""; top.appendChild(tag);
     const chip = document.createElement("span"); chip.className = "fts-chip fts-chip-" + status;
     // (a trainer-led activity isn't the trainee's to start: it waits for the session with the trainer, who records the result)
-    chip.textContent = {done: "✓ Done", live: "🟢 In progress", redo: "🔁 Redo", locked: "🔒 Locked", todo: !isTrainee() ? "" : type === "trainer" ? "⏳ With your trainer" : "Not started"}[status] || "";
+    chip.textContent = {done: "✓ Done", live: "🟢 In progress", redo: "🔁 Redo", locked: lockedDay ? `🔒 Opens with Day ${lockedDay}` : "🔒 Locked", todo: !isTrainee() ? "" : type === "trainer" ? "⏳ With your trainer" : "Not started"}[status] || "";
     if(chip.textContent) top.appendChild(chip);
     el.insertBefore(top, el.firstChild);
     if(status === "done"){
@@ -218,7 +227,7 @@ const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-ca
 const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
 function labItems(){
   const out = [], push = (html, meta) => out.push(...mark(html, meta));
-  const tool = (fn, id, type) => typeof window[fn] === "function" && toolOn(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
+  const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
   if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
   // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
@@ -230,24 +239,21 @@ function labItems(){
   [["medlor", "🩺 MedLOR + HIPAA Drafting", "Draft the MedLOR with Unsworn COR and merge it with the client’s signed HIPAA into one PDF, on the Training Portal. Checked when you upload it.", "Open the MedLOR"],
    ["lienbv", "🧾 Lien Balance Verification Drafting", "Draft the Lien Balance Verification request letter on the Training Portal, in the firm’s own template. Checked when you upload it.", "Open the Lien BV"]].forEach(([id, t, n, b]) => {
     const days = window.FTDays ? FTDays.forTool(id) : [];
-    if(typeof window.lshOpenPortalDrafting === "function" && toolOn(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, key: id, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
+    if(typeof window.lshOpenPortalDrafting === "function" && listed(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, key: id, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
   });
   // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
-  if(window.FTGuide && toolOn("guide")) FTGuide.list.filter(g => g.day <= DAYMAX && dayOpen(g.day) && (seesAll() || typeof dayUnlocked !== "function" || dayUnlocked(g.lesson))).forEach(g =>
+  if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
     push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready.", "Open the guide", `FTGuide.open('${g.id}')`),
       {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting", key: "guide:" + g.id}));
-  if(window.FTDrills && toolOn("drills")) FTDrills.sets.filter(x => x.day <= DAYMAX && dayOpen(x.day)).forEach(x =>
+  if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX).forEach(x =>
     push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions.", "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
       {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
-  if(typeof window.ftListenCards === "function" && toolOn("listening")) push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
-  // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet) and ✉️ Day 11's Insurance
-  // Email Sim: in the curriculum and the decks, so here too, where the activity is done
-  if(window.FTListen && FTListen.pop && dayOpen(3))
+  if(typeof window.ftListenCards === "function") push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
+  // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
+  // deck, so here too, where the activity is done
+  if(window.FTListen && FTListen.pop)
     push(miniCard("Day 3 · Reception Training", "🎧 Reception Listening Activity: 5 practice calls", "Five calls with their challenges: listen, then answer the Answer Sheet and 📝 Submit for Grading.", "Open the activity", "FTListen.open('reception'); FTListen.pop('recact')"),
       {days: [3], type: "listening", key: "recact"});
-  if(window.FTClaimsMail && dayOpen(11))
-    push(miniCard("Day 11 · Insurance Communication Training", "✉️ Insurance Email Sim", "Three cases: send the LOR, request the Dec Pages and claim information, and get the claim number from the adjuster.", "Open the Email Sim", "goto('claimsmail')"),
-      {days: [11], type: "tool", key: "claimsmail"});
   return out;
 }
 // 📚 a day's lesson card and Part, as the Dashboard shows them (js/ft-day-decks.js LESSON_CARDS, js/ft-day-locks.js PARTS/CARD_TITLES)
@@ -307,7 +313,7 @@ function renderSimulators(){
   const chips = days.map(d => { const c = byDay[d].filter(counted).filter(own), dn = c.filter(x => x.status === "done").length;
     return `<a class="fts-jump ${isTrainee() && c.length && dn === c.length ? "ok" : ""}" onclick="ftsJump(${d})">Day ${d}${isTrainee() && c.length ? ` <small>${dn === c.length ? "✓" : dn + "/" + c.length}</small>` : ""}</a>`; }).join("");
   const anyShown = any.filter(pass);
-  const more = !seesAll() ? `<p class="fts-sub fts-more">📅 More of the Practice Lab opens as your training goes on, day by day.</p>` : "";
+  const more = !seesAll() ? `<p class="fts-sub fts-more">🔒 An activity opens when its day's training is unlocked.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Your live practice, day by day. Each training day lists its Practice Sessions, activities, drafting tools, Call Listening and the work you do with your trainer. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
     <div class="fts-bar card">
@@ -430,7 +436,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-kicker{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange-deep);}
 .fts-note{margin:0;font-size:13.5px;color:var(--ink-soft);}
 .fts-label{margin-top:4px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
-.fts-locked{opacity:.65;} #fts-skills{scroll-margin-top:84px;}
+.fts-locked{opacity:.6;filter:grayscale(.35);} .fts-locked button[disabled], .fts-locked a.btn[disabled]{cursor:not-allowed;} #fts-skills{scroll-margin-top:84px;}
 .fts-tpl{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft);} .fts-tpl li{margin:1px 0;}
 .fts-file{align-self:flex-start;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;background:#f1f5f9;color:var(--navy);border-radius:6px;padding:4px 8px;overflow-wrap:anywhere;}
 .fts-sample{margin:0;} .fts-sample img{display:block;width:100%;height:auto;border:1px solid var(--line,#e5e7eb);border-radius:8px;}

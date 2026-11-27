@@ -253,7 +253,7 @@ function traineesTable(){
         {v: (whenD(p.registeredAt) || day(p.registeredAt)) + (p.registeredAtWas != null ? " ✎" : ""), f: p.registeredAt ? `Registered ${new Date(p.registeredAt).toLocaleString()}${p.registeredAtWas != null ? ` · ✎ fixed by a trainer${p.registeredAtWas ? ", it was " + new Date(p.registeredAtWas).toLocaleString() : ""}` : ""}` : "", cls: ""},
         {v: lastAt ? whenD(lastAt) : "Not yet", f: lastAt ? `${lastAt.toLocaleString()} (${ago(lastAt)})` : "Hasn't been on the platform since registering", cls: lastAt && Date.now() - lastAt < 2 * 86400000 ? "" : "gs-lo"},
         {v: `${decks} / ${L.length}`, f: `${decks} of the ${L.length} lesson decks finished`, cls: "gs-num"},
-        {v: `${kc} / ${L.length}`, f: `${kc} of the ${L.length} Knowledge Checks ${window.ftReference ? "submitted (📎 Additional Reference: not scored)" : "passed (70% passes)"}`, cls: "gs-num"},
+        {v: `${kc} / ${L.length}`, f: `${kc} of the ${L.length} Knowledge Checks ${window.ftReference ? "submitted (📎 not scored)" : "passed (70% passes)"}`, cls: "gs-num"},
         {v: last, f: lv && lv.at ? `${last} · ${new Date(lv.at).toLocaleString()}` : last, cls: "gs-txt"}];
     })};
 }
@@ -307,12 +307,12 @@ function fbCell(p){
 }
 // (the Scorecard overall in words: the grading systems' average, and the trainer's added points on it, 100% at most)
 const ovWhy = sc => window.lshProgram && lshProgram.overallWhy ? lshProgram.overallWhy(sc) : `the average of the grading systems = ${sc.overall}%`;
-// 📎 a cell of something the Training Guide doesn't grade (js/ft-reference.js): shown as Additional Reference, its figure only in
-// the hover, counted nowhere
-const REFV = "📎 Additional Reference";
-// 📎 what the end-of-shift check's Additional Reference is made of, named, so a trainer never has to guess (dayActs' activities)
+// 📎 a cell of something the Training Guide doesn't grade (js/ft-reference.js): its own figure in grey beside a 📎, named by
+// its row or column (Daily compliance, Knowledge Checks, Overall …), counted nowhere
+const REFV = "📎";
+// 📎 what the end-of-shift check is made of, named, so a trainer never has to guess (dayActs' activities)
 const REF_DAY_TOPICS = ["📋 Task Tracker", "📒 Monitoring Sheet", "🧪 Typing & Spelling", "📤 Day's outputs", "✉️ EOD email", "📘 TAM (shadowing)", "🖥 Platform"];
-const refTopics = (list, plus) => `${REFV}: ` + (list && list.length ? list : REF_DAY_TOPICS).concat(plus || []).join(" · ");
+const refTopics = (list, plus) => `📎 Daily compliance: ` + (list && list.length ? list : REF_DAY_TOPICS).concat(plus || []).join(" · ");
 // (📎 the end-of-shift check's Additional Reference on a trainee's page: a heading line, then a little table — one row per
 // check, the last its old figure — in the look of a day's parts table; the CSV keeps the plain text of the cell's f)
 // (each end-of-shift check's figures for a trainee: its average over the days it was checked, how many, and the latest)
@@ -327,11 +327,12 @@ function refFigures(p, dates, c){
 }
 // (📎 the Average row's table: each end-of-shift check with its own figures across the row — its average over the days
 // checked, how many days, and the latest day's — shown, not behind a 📎 to hover; not scored or counted)
-const refTable = (rows, was) => `<div class="bs-reft-h">${e(REFV)} — not scored or counted</div><table class="bs-parts bs-reft"><thead><tr><th>The end-of-shift check</th><th>Average</th><th>Days checked</th><th>Latest day</th></tr></thead><tbody>${
+const refTable = (rows, was) => `<div class="bs-reft-h">📎 Daily compliance · not counted</div><table class="bs-parts bs-reft"><thead><tr><th>The end-of-shift check</th><th>Average</th><th>Days checked</th><th>Latest day</th></tr></thead><tbody>${
   rows.map(r => { const x = typeof r === "string" ? {name: r} : r;
     return `<tr><td class="bs-parts-n">${e(x.name)}</td><td class="bs-parts-v"><b class="bs-sbox">${x.avg == null ? "—" : e(pct(x.avg))}</b></td><td class="bs-parts-v">${x.n ? e(x.n) : "—"}</td><td class="bs-parts-v">${x.last == null ? "—" : `<b class="bs-sbox">${e(pct(x.last))}</b>${x.lastD ? ` <small>${e(x.lastD)}</small>` : ""}`}</td></tr>`; }).join("")}${
   was ? `<tr class="bs-reft-was"><td class="bs-parts-n">All checks</td><td class="bs-parts-v"><b class="bs-sbox">${e(was)}</b></td><td></td><td></td></tr>` : ""}</tbody></table>`;
-const refCell = (c, why) => ({v: REFV, f: `${REFV}: not scored or counted${why ? " · " + why : ""}${c && c.v !== "" && c.v != null && c.v !== REFV ? ` (was ${c.v})` : ""}`, cls: "gs-txt"});
+const refCell = (c, why) => { const x = c && c.v !== "" && c.v != null && !/^📎/.test(stripTags(c.v)) ? stripTags(c.v) : "—";
+  return {v: `📎 ${x}`, f: `${why ? why + ": " : ""}not scored or counted`, cls: "gs-num gs-ref"}; };
 // (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
 // Overall % are Additional Reference; 📈 Overall Performance the same, with no rank — it has nothing scored left to rank by)
 function scoresTable(){
@@ -344,8 +345,8 @@ function scoresTable(){
 }
 function overallTable(){
   const t = overallTable0(); if(!window.ftReference) return t;
-  t.note = `${B.batch}: the whole training, a row per trainee. The weekly averages, the Scorecard overall, the Daily compliance and the Overall % are ${REFV}: the Training Guide grades none of them, so nothing here is counted or ranked. The scored work — the trainer's mock-call and demo scorecards and the three assessments — is on each trainee's page.`;
-  t.rows = t.rows.map(row => row.map((c, i) => i === 0 ? c : i === 1 ? {v: "", f: "Not ranked: 📎 Additional Reference", cls: "gs-rank"} : refCell(c)));
+  t.note = `${B.batch}: the whole training, a row per trainee. The weekly averages, the Scorecard overall, the Daily compliance and the Overall % are shown in grey with a 📎: the Training Guide grades none of them, so nothing here is counted or ranked. The scored work — the trainer's mock-call and demo scorecards and the three assessments — is on each trainee's page.`;
+  t.rows = t.rows.map(row => row.map((c, i) => i === 0 ? c : i === 1 ? {v: "", f: "Not ranked: nothing here is scored", cls: "gs-rank"} : refCell(c)));
   return t;
 }
 function scoresTable0(){
@@ -478,7 +479,7 @@ function kdOneHtml(p, single){
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
-        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> ${window.ftReference ? `<span class="bs-kd-pill" title="${e(REFV)}: not scored or counted">📎 Reference</span> <small>${g.subm || g.pct != null ? "submitted" : "not submitted yet"}${sc.length ? ` · ${sc.length} answer${sc.length === 1 ? "" : "s"} with feedback` : ""}</small>` : `<span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> ${window.ftReference ? `<span class="bs-kd-pill" title="Not scored or counted">📎${g.pct != null ? " " + e(String(Math.round(g.pct))) + "%" : ""}</span> <small>${g.subm || g.pct != null ? "submitted" : "not submitted yet"}${sc.length ? ` · ${sc.length} answer${sc.length === 1 ? "" : "s"} with feedback` : ""}</small>` : `<span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
             ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}`}</summary>
           ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
           ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
@@ -489,7 +490,7 @@ function kdOneHtml(p, single){
         </details>`; }).join("")}
       ${(() => { const as = assessRows(p); if(!as.length) return "";
         return `<h5 class="bs-kd-sub bs-kd-sub-as">📄 Assessments</h5>` + as.map(x => { const g = x.g, rf = window.ftReference && !ftReference.assessScored(x.doc), pc = g && g.score != null && !rf ? numOr(g.pct) : null;
-          return `<details class="bs-kd" name="bs-kd"><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${rf ? REFV : pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
+          return `<details class="bs-kd" name="bs-kd"><summary><b>${e(x.title)}</b> <span class="bs-kd-pill ${tone(pc)}">${rf ? (g && g.pct != null ? "📎 " + Math.round(Number(g.pct)) + "%" : "📎") : pc != null ? pc + "%" : x.answered ? "not graded yet" : "not started"}</span>
               ${g && !rf ? `<small>${e(String(g.score))}/${e(String(g.max))} points${g.when ? " · graded " + e(g.when) : ""}${g.pending ? " · the trainer grades the essays" : ""}</small>` : rf ? `<small>${g ? "graded" + (g.when ? " " + e(g.when) : "") + " · feedback below" : x.answered ? "answered" : "not started"}</small>` : ""}</summary>
             ${x.answered || g ? `<ol class="bs-kd-q bs-kd-mix">${x.items.map(it => `<li${kdShort(it) ? ' class="bs-kd-s"' : ""}><b>${e(it.q)}</b> <small>${e(it.part)}</small>
                 <div class="bs-kd-a">${it.answer ? e(it.answer).replace(/\n/g, "<br>") : `<span class="bs-ctx-none">(unanswered)</span>`}</div>
@@ -652,7 +653,7 @@ function dayDeliverables(p, d){
     const it = x.it, grp = groupOf(it), REF = window.ftReference;
     // (📎 what the Training Guide doesn't grade is shown, its feedback kept, with no score: js/ft-reference.js)
     const scoredIt = !REF || (it.at === "trainer" ? REF.actScored(it.id) : it.assess ? REF.assessScored(it.assess) : false);
-    const asRef = o => scoredIt || o.pct == null ? o : Object.assign({}, o, {pct: null, reference: true, status: REFV + (o.status ? " · " + o.status : "")});
+    const asRef = o => scoredIt || o.pct == null ? o : Object.assign({}, o, {pct: null, reference: true, status: `📎 ${Math.round(Number(o.pct))}%` + (o.status ? " · " + o.status : "")});
     const push = (...os) => out.push(...os.map(asRef).map(o => Object.assign({group: grp}, x.w1 && o.pct == null && !/Done|Passed/.test(o.status || "") ? Object.assign({}, o, {status: "Done", why: ftW1Override.NOTE + (o.why ? ". " + o.why : "")}) : o)));
     const lk = it.at === "trainer" || it.at === "session" ? later(it.at + "|" + it.id) : null;
     if(lk) return;   // (scored on the last day it runs: no "Scored on Day N" line on the days before)
@@ -696,7 +697,7 @@ function dayDeliverables(p, d){
   Object.entries(ACTS).filter(([k, a]) => a.submit && Number(k.split(":")[0]) === Number(d.day)).forEach(([, a]) => {
     const key = (a.submit.items || []).join("-"); if(seen.has(key)) return; seen.add(key);
     const r = items[key]; if(!r) return; const g = r.result || {};
-    out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: window.ftReference ? null : num100(g.score), status: (window.ftReference ? REFV + " · " : "") + (r.onTime ? "On time" : "Late"),
+    out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: window.ftReference ? null : num100(g.score), status: (window.ftReference ? "📎 " : "") + (r.onTime ? "On time" : "Late"),
       why: [g.score != null ? `${num100(g.score)}% from the review of the entries` : "Submitted", r.onTime ? "on time (before 5:00 PM ET)" : "late (after 5:00 PM ET)", g.context ? clip(g.context, 260) : ""].filter(Boolean).join(", ").replace(/, ([^,]*)$/, ". $1"),
       best: (g.items || []).filter(x => x.found).slice(0, 3).map(x => `#${x.n} ${x.title || ""} is in`), improve: [...(g.redFlags || []), ...(g.improve || [])].slice(0, 4).map(x => clip(x, 200)), by: "📒 Reviewed",
       // (📊 reviewed by the app on 📤 Submit: a row of the "why this score" table — its red flags what was wrong, its "to improve" what could be better)
@@ -859,7 +860,7 @@ function lessonMarks(p, kc){
   const R = B.data.rec[p.id] || {}, dp = (R.data || {})["day-progress"] || p.progress || {};
   return `<div class="bs-lkg bs-lkg-n" style="--n:${ls.length}">${ls.map(d => { const k = deckOf(p, d), x = dp[d.id] || {}, sc = typeof x.score === "number" ? Math.round(x.score) : null;
     const ok = kc ? (window.ftReference ? ftReference.lessonDone(x) : !!x.done) : k.finished;
-    const tip = kc ? (window.ftReference ? (ok ? "Submitted · 📎 Additional Reference" : "Not taken yet") : ok ? `Passed${sc != null ? " with " + sc + "%" : ""}` : sc != null ? `Not passed yet: ${sc}% so far (70% passes)` : "Not taken yet")
+    const tip = kc ? (window.ftReference ? (ok ? "Submitted · 📎 not scored" : "Not taken yet") : ok ? `Passed${sc != null ? " with " + sc + "%" : ""}` : sc != null ? `Not passed yet: ${sc}% so far (70% passes)` : "Not taken yet")
       : ok ? "Finished" : k.seen ? `Not finished: slide ${k.seen} of ${k.total || "?"}` : "Not opened yet";
     return `<div class="bs-lkc" title="${e(lessonName(d.id))}: ${e(tip)}"><span><b>Lesson ${e(d.id)}</b><br>${e(lessonName(d.id))}</span><span class="bs-mk ${ok ? "bs-mk-ok" : "bs-mk-x"}">${ok ? "✓" : "✗"}</span></div>`; }).join("")}</div>`;
 }
@@ -1171,7 +1172,7 @@ function extraRowHtml(p){
   if(!adminOn() || meOn()) return "";
   // (📎 no added points: there is no overall score — an older note is shown as it was)
   if(window.ftReference){ const x0 = window.lshProgram && lshProgram.extra ? lshProgram.extra(((B.data.rec[p.id] || {}).src) || {}) : null;
-    return x0 ? `<tr class="bs-pt-x"><td class="bs-pt-m">+</td><td class="bs-pt-v">${REFV}</td><td class="bs-pt-f">Points added earlier (${e(x0.points)}), not counted${x0.note ? ": " + e(x0.note) : ""}</td></tr>` : ""; }
+    return x0 ? `<tr class="bs-pt-x"><td class="bs-pt-m">+</td><td class="bs-pt-v">📎</td><td class="bs-pt-f">Points added earlier (${e(x0.points)}), not counted${x0.note ? ": " + e(x0.note) : ""}</td></tr>` : ""; }
   const x = window.lshProgram && lshProgram.extra ? lshProgram.extra(((B.data.rec[p.id] || {}).src) || {}) : null, sc = (B.data.rec[p.id] || {}).score;
   return `<tr class="bs-pt-x"><td class="bs-pt-m">+</td><td class="bs-pt-v" title="${e(sc ? ovWhy(sc) : "")}"><input class="bs-ed" type="number" min="-100" max="100" step="0.5" value="${x ? x.points : ""}" placeholder="0" aria-label="Points added to the Scorecard overall" data-pid="${e(p.id)}" data-extra="1" onchange="FTBatchSheet.editExtra(this)"></td>
     <td class="bs-pt-f"><input class="bs-ed-note" maxlength="600" value="${e(x ? x.note : "")}" placeholder="Note (optional)" aria-label="Note on the points" data-pid="${e(p.id)}" data-extra="1" onchange="FTBatchSheet.editExtra(this)"></td></tr>`;
@@ -1194,7 +1195,7 @@ function activitiesHtml(p){
   return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { if(!g && it.assess === "intakews") g = fromLab(lab["intake-worksheet"]);
     const ws = it.assess === "intakews";
     const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference && !(it.assess && ftReference.assessScored(it.assess)) ? `<span class="bs-kd-pill" title="${e(REFV)}: not scored or counted">📎 Reference</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
+    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference && !(it.assess && ftReference.assessScored(it.assess)) ? `<span class="bs-kd-pill" title="Not scored or counted">📎</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}`}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${ws ? `<div class="bs-ws-ans" data-ws-ans><p class="bs-kd-none">Opening the trainee’s Intake Worksheet…</p></div>${g ? "" : `<p class="bs-kd-none">Not graded yet: grade it on 📦 Intake Packets or 🧑‍🏫 Graders → 📝 Assessments.</p>`}` : actItemsHtml(it, g)}</details>`; }).join("");
 }
@@ -1285,7 +1286,7 @@ function pdpRow(p, w, folded){
     : x ? `<b class="bs-sbox ${critTone(x[c])}">${e(x[c])}/5</b>` : "—"}</td></tr>`).join("");
   const note = adm ? `<input type="text" class="bs-pdp-n" placeholder="Note (optional)" value="${e(val("note"))}" oninput="FTBatchSheet.pdpKeep('${e(k)}', 'note', this.value)" style="flex:1;min-width:160px">`
     : x && x.note ? `<p class="bs-pdp-note">🧑‍🏫 ${e(x.note)}</p>` : "";
-  const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: ${window.ftReference ? REFV + " — not counted" : `counted in Week ${w}'s Daily compliance`}.`
+  const status = x ? `Scored ${x.avg5.toFixed(1)}/5 (the average of the three = ${x.pct}%)${x.by ? " by " + e(x.by) : ""}${x.at ? ", " + e(when(x.at)) : ""}: ${window.ftReference ? "📎 not counted" : `counted in Week ${w}'s Daily compliance`}.`
     : `Not scored yet — your trainer scores this weekly. It isn't counted until it is.`;
   return `<tr class="bs-pdp${folded ? " bs-wk-hide" : ""}" data-week="${w}"><td class="bs-pt-m bs-pdp-m"><span class="bs-pdp-ic" aria-hidden="true">🌱</span><span class="bs-pdp-tx">Professional Development &amp; Progress<small>Week ${w}</small></span></td>
     <td class="bs-pt-v ${x ? tone(x.pct) : ""}" title="${e(status)}">${x ? e(x.avg5.toFixed(1)) + "/5" : "—"}</td>
@@ -1323,7 +1324,7 @@ function perTraineeHtml(T){
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
-        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, "📎 Reference", "bs-pt-ref", `${/^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`} — not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, v == null ? "📎 —" : `📎 ${v}%`, "bs-pt-ref", `${/^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : "📎 Overall: Scorecard + Daily compliance"} · not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
@@ -1340,7 +1341,7 @@ function perTraineeHtml(T){
       let lastWk = null;
       // (the latest day with a date: its activities open, every earlier day folded to one line, dayFold)
       const lastDay = dts ? dts.reduce((m, d, j) => d ? j : m, -1) : -1;
-      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = c.refv || stripTags(c.v);
+      const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = stripTags(c.v);
         const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
         let wkHead = "";
         if(w != null && w !== lastWk){ lastWk = w; const W = wks[w] || {days: [], vals: []}, f = folded(w), rvP = ((B.data.rec[p.id] || {}).src || {})["trackerreview:"] || {};
@@ -1357,8 +1358,8 @@ function perTraineeHtml(T){
           : Array.isArray(c.refRows) ? refTable(c.refRows, c.refWas)
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         // (📎 a reference value: a short label in its narrow column, the topics it covers beside it, so nothing wraps a word a line)
-        const isRef = !!v && v.indexOf(REFV) === 0, refList = isRef ? v.slice(REFV.length).replace(/^:\s*/, "") : "";
-        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${isRef ? "📎 Reference" : v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : isRef ? String(f).replace(/^📎 Additional Reference: not scored or counted( · )?/, "") : f}</td></tr>`; })()).join("");
+        const isRef = !!v && v.indexOf("📎") === 0, refList = isRef && c.refv ? String(c.refv).replace(/^[^:]*:\s*/, "") : "";
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : isRef ? String(f).replace(/^[^]*?not scored or counted\s*/, "") : f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -1394,7 +1395,7 @@ function perTraineeHtml(T){
     // once here, for every 📎 below)
     const titles = [...body.matchAll(/<tr class="bs-pt-sec"><th colspan="3">([\s\S]*?)<\/th><\/tr>/g)].map(m => m[1]);
     const jump = titles.length > 1 ? `<nav class="bs-pt-jump" aria-label="Sections of ${e(p.name)}'s card">${titles.map((t, k) => `<button type="button" onclick="(function(b){var s=b.closest('.bs-pt').querySelectorAll('tr.bs-pt-sec')[${k}];if(s)s.scrollIntoView({behavior:'smooth',block:'start'});})(this)">${t}</button>`).join("")}</nav>` : "";
-    const key = window.ftReference ? `<p class="bs-pt-key">📎 <b>Additional Reference</b>: shown so you can check it, not scored or counted. Hover a 📎 Reference for what it covers.</p>` : "";
+    const key = window.ftReference ? `<p class="bs-pt-key">📎 Grey figures are for reference: shown so you can check them, not scored or counted.</p>` : "";
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
       ${jump}${key}${insightsHtml(p)}
@@ -1454,8 +1455,8 @@ function outputsTable(){
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
-          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => window.ftReference ? `<b class="bs-sbox" title="${REFV}${v == null ? "" : ": " + Math.round(v) + "%"}">${v == null ? "—" : "📎"}</b>` : `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
-          return {v: window.ftReference ? REFV : x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
+          const acts = dayActs(B.data.rec[p.id] || {}, d), box = v => window.ftReference ? `<b class="bs-sbox" title="Not scored or counted">${v == null ? "—" : "📎 " + Math.round(v) + "%"}</b>` : `<b class="bs-sbox ${tone(v)}">${v == null ? "—" : Math.round(v) + "%"}</b>`;
+          return {v: window.ftReference && !x.day1 && !x.open ? "📎 " + pct(vs[i]) : x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i]), csv: `${x.day1 ? "Day 1: not counted" : x.open ? "Today: not final" : pct(vs[i])} — ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}`).join(" | ")}`,
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
             refv: window.ftReference ? refTopics(acts.filter(a => !a.na).map(a => `${a.icon} ${a.label}`)) : undefined,
@@ -2538,7 +2539,7 @@ FTBatchSheet.editScore = async function(pid, ref, value, note){
   if(!(window.lshProgram && lshProgram.editable(ref))){ toast("This score can't be edited here."); return false; }
   // (📎 only a scored item is edited: a mock call or demo scorecard, a scored assessment — js/ft-reference.js)
   // (an assessment's grade is its answer key's: an override would be a note only, js/lsh-program.js overridesReference)
-  if(window.ftReference && !(/^act:/.test(ref) && ftReference.actScored(ref.slice(4)))){ toast("📎 Additional Reference: not scored, so there is no score to edit."); return false; }
+  if(window.ftReference && !(/^act:/.test(ref) && ftReference.actScored(ref.slice(4)))){ toast("📎 Not scored, so there is no score to edit."); return false; }
   if(raw !== "" && !(isFinite(Number(raw)) && Number(raw) >= 0 && Number(raw) <= 100)){ toast("A score is a number from 0 to 100."); return false; }
   const v = raw === "" ? null : Math.round(Number(raw)), m = /^([a-z]+):(.+)$/.exec(ref) || [null, ref, ""], kind = m[1], arg = m[2];
   const R = ((B.data || {}).rec || {})[pid] || {};
@@ -2888,6 +2889,7 @@ html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35)
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
 .bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
 .bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:12.5px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;vertical-align:middle;padding:6px 3px !important;overflow:hidden;overflow-wrap:anywhere;}   /* (📎 Reference: inside its narrow column at any width) */
+.gs-ref, .bs-sbox.gs-ref{color:#8A90A6 !important;font-weight:700;}   /* 📎 a reference figure: grey, not counted */
 .bs-reft-h{font:800 14.5px Arial,sans-serif;color:#1E2340;margin:0 0 6px;} .bs-pt .bs-parts.bs-reft{width:100%;min-width:300px;max-width:100%;} .bs-reft .bs-parts-n{width:auto;white-space:nowrap;} .bs-reft .bs-parts-v{width:84px;text-align:center;} .bs-pt .bs-reft th{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;} .bs-reft tr.bs-reft-was td{background:#F4F6FB;font-weight:800;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}

@@ -151,7 +151,7 @@ async function workerChecks() {
     if (mine.inputs) fail(`the trainee's page has ${mine.inputs} editing field(s)`);
     if (mine.ring !== '📎') fail(`the trainee's overall ring isn't 📎 Additional Reference: ${mine.ring}`);
     { const rl = mine.cells.find(c => /Reception Listening Activity/.test(c.name)) || {};
-      if (!/📎 Additional Reference/.test(rl.v || '') || /%/.test(rl.v || '')) fail(`the trainee's Reception Listening Activity isn't Additional Reference: ${JSON.stringify(rl)}`); }
+      if (!/📎/.test(rl.v || '')) fail(`the trainee's Reception Listening Activity isn't Additional Reference: ${JSON.stringify(rl)}`); }
     { const mc = mine.cells.find(c => /Reception Mock Call with the trainer/.test(c.name)) || {};
       if (!/^(50%|2\.5\/5)/.test(mc.v) || !/GRADERS-COMMENT/.test(mc.t)) fail(`the trainee doesn't see the mock call's score with its rationale: ${JSON.stringify(mc)}`); }
     if (mine.ran) fail('a note ran on the trainee\'s page');

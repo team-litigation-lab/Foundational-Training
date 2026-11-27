@@ -93,9 +93,9 @@ const failures = []; const fail = m => failures.push(m);
   const inputs = rhea.locator('.xl-num');
   for (let i = 0; i < scores.length; i++) { await inputs.nth(i).fill(scores[i]); await inputs.nth(i).press('Tab'); await page.waitForTimeout(80); }
   const marks = await rhea.locator('.rk-mark').allInnerTexts();
-  // (📎 the Monitoring Sheet, Tracker and PI Reading Task columns are Additional Reference — js/ft-reference.js: kept, no mark,
-  // left out of the average; Rhea's average is her four scored marks, (5 + 4 + 4 + 4.5) ÷ 4)
-  if (marks.join(' ') !== ' 5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
+  // (📎 the Monitoring Sheet, Tracker and PI Reading Task columns are references — js/ft-reference.js: their figure shown in
+  // grey with a 📎, left out of the average; Rhea's average is her four scored marks, (5 + 4 + 4 + 4.5) ÷ 4)
+  if (!/^📎 \d/.test(marks[0]) || marks.slice(1).join(' ') !== '5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
   if ((await rhea.locator('.rk-avg').innerText()) !== '4.38') fail(`Rhea's final average is ${await rhea.locator('.rk-avg').innerText()} (4.38 expected: 17.5 ÷ 4)`);
   // the formula bar: a worked-out cell shows its formula; a score takes its note there
   await rhea.locator('.rk-avg').click();
@@ -124,7 +124,7 @@ const failures = []; const fail = m => failures.push(m);
   const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRanking.download())]);
   if (dl.suggestedFilename() !== `${BATCH} RANKING REPORT WEEK 1.doc`) fail(`the Word file is named ${dl.suggestedFilename()}`);
   const doc = fs.readFileSync(await dl.path(), 'utf8');
-  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', '(📎 Additional Reference)', '4.38/5', 'mso-page-orientation:landscape'])
+  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', ' 📎', '4.38/5', 'mso-page-orientation:landscape'])
     if (!doc.includes(t)) fail(`the Word file has no "${t}"`);
   if (!(doc.indexOf('Rhea Rank') > 0 && doc.indexOf('Rhea Rank') < doc.indexOf('Sam Second') && doc.indexOf('Sam Second') < doc.indexOf('Tom Unscored'))) fail('the Word file isn\'t in rank order');
 
@@ -251,10 +251,10 @@ const failures = []; const fail = m => failures.push(m);
   const ov = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'scores'); const r = t.rows.find(x => /Una/.test(x[0].v)); return { head: t.head, row: r && r.map(c => c.v) }; });
   const col = h => ov.head.indexOf(h);
   // (📎 Daily compliance, the weeks' average and the Overall % are Additional Reference: labelled, their figure in the hover)
-  if (!ov.row || ov.row[col('Daily compliance')] !== '📎 Additional Reference' || ov.row[col('Weeks average (/5)')] !== '📎 Additional Reference' || ov.row[col('Overall %')] !== '📎 Additional Reference' || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
+  if (!ov.row || !/^📎/.test(ov.row[col('Daily compliance')]) || !/^📎/.test(ov.row[col('Weeks average (/5)')]) || !/^📎/.test(ov.row[col('Overall %')]) || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
     fail(`📋 Batch Sheet → 🏅 Scores reads: ${JSON.stringify(ov)}`);
   const out = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'outputs'); const r = t.rows.find(x => /Una/.test(x[0].v)); return r && r.map(c => c.v); });
-  if (!out || out[1] !== '📎 Additional Reference' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
+  if (!out || !/^📎/.test(out[1]) || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
   const tabsNow = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
   if (/Overall Performance|🏅 Scorecards/.test(tabsNow)) fail(`📈 Overall Performance / 🏅 Scorecards still have tabs: ${tabsNow}`);
   await page.evaluate(() => { state.adminTab = 'overall'; render(); }); await page.waitForTimeout(300);

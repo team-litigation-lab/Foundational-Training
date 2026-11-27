@@ -438,7 +438,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
   const best = readOn ? (trainerScore(readReview(lesson)) != null ? trainerScore(readReview(lesson)) : rr && rr.attempts ? rr.best : null) : studied ? kcBest(lesson) : null, prog = (state.progress || {})[lesson] || {};
   const st = readOn ? (rr && rr.attempts ? {k:"done", t:"Graded"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"}) : prog.done && studied ? {k:"done", t:"Passed"} : done === sq.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<div class="card fp-set">
-    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-done">${readOn ? "📖 Reading Task" : "Knowledge Check"} · 📎 Additional Reference</span>` : ""}</div>
+    <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${sq.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-done">📎 ${readOn ? "Reading Task" : "Knowledge Check"} · not scored</span>` : ""}</div>
     <div class="fp-body">
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." ${studied && onScreen.includes(x.set) && kcLeft(lesson, readOn) <= 0 ? "readonly" : ""} oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
@@ -468,7 +468,7 @@ function moduleRow(lesson){
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
   return `<button type="button" class="card fp-row" onclick="FTProcess.openLesson(${lesson}, true)">
     <span class="fp-row-main"><b>${e(title)}</b><span class="fp-muted">${done} of ${qs.length} answered</span></span>
-    <span class="fp-row-pills"><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-done">📎 Additional Reference</span>` : ""}</span>
+    <span class="fp-row-pills"><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-done">📎 Knowledge Check · not scored</span>` : ""}</span>
   </button>`;
 }
 
@@ -708,7 +708,7 @@ function renderAdminProcess(){
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
               const sc = sheetScore(x, s), fl = folderCell(x, s, a);
               return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>
-                ${sc.pct != null ? `<span class="fp-pill ok">📎 Additional Reference · graded${sc.trainer ? " · trainer reviewed" : ""}</span>` : a && a.submittedAt ? `<span class="fp-pill">not graded yet</span>` : ""} ${fl}</div>
+                ${sc.pct != null ? `<span class="fp-pill ok">📎 graded${sc.trainer ? " · trainer reviewed" : ""}</span>` : a && a.submittedAt ? `<span class="fp-pill">not graded yet</span>` : ""} ${fl}</div>
                 ${FPA.sheetOpen[k] ? `${sc.summary ? `<p class="fp-muted fp-why"><b>Why ${num(sc.pct)}%:</b> ${e(sc.how)}. ${e(sc.summary)}</p>` : sc.pct != null ? `<p class="fp-muted fp-why"><b>Why ${num(sc.pct)}%:</b> ${e(sc.how)}.</p>` : ""}
                   <ol class="fp-aans">${s.questions.map((q,i)=>{ const g = answerGrade(x, s, i);
                     return `<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div>
@@ -778,7 +778,7 @@ function kcAdmin(x){
     ${entries.map(({l, read, title, qs, rec, rv})=>{ const k = x.id + "|" + l + (read ? "|read" : ""), open = !!FPA.kcOpen[k], last = rec && rec.last;
       const t = trainerScore(rv);
       return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.kc('${x.id}', ${l}, ${read})">${open ? "▾" : "▸"} ${e(title)}
-          ${rec && rec.attempts ? `<span class="fp-pill ok">📎 Additional Reference · graded · ${num(rec.attempts)} of ${kcAllowed(x.rv, l, read)} attempt${kcAllowed(x.rv, l, read) === 1 ? "" : "s"} used</span>` : `<span class="fp-pill bad">not taken</span>`}
+          ${rec && rec.attempts ? `<span class="fp-pill ok">📎 ${read ? "Reading Task" : "Knowledge Check"} · graded · ${num(rec.attempts)} of ${kcAllowed(x.rv, l, read)} attempt${kcAllowed(x.rv, l, read) === 1 ? "" : "s"} used</span>` : `<span class="fp-pill bad">not taken</span>`}
           ${rec && rec.attempts && rec.attempts < kcAllowed(x.rv, l, read) ? `<span class="fp-pill">↺ retry granted, not used yet</span>` : ""}
           ${t != null ? `<span class="fp-pill ok">🧑‍🏫 reviewed</span>` : rv.comment ? `<span class="fp-pill">🧑‍🏫 commented</span>` : ""}</div>
         ${open ? `<div class="fp-kcform">
@@ -789,7 +789,7 @@ function kcAdmin(x){
               <textarea rows="2" data-note="${e(q.set.id + "|" + q.i)}" placeholder="Your comment on this answer (optional)">${e((rv.notes || {})[q.set.id + "|" + q.i] || "")}</textarea></li>`; }).join("")}</ol>
           <label class="fp-kclabel">Overall comment<textarea rows="3" data-comment placeholder="Your overall review, added to the graded feedback">${e(rv.comment || "")}</textarea></label>
           <div class="fp-kcrow"><label>Final score <input type="number" min="0" max="100" data-score value="${t != null ? t : ""}" placeholder="${rec && rec.attempts ? num(rec.best) : "—"}"> %</label>
-            <span class="fp-muted">Empty keeps the graded score. ${read ? "Yours replaces it as the Reading Task’s own score; the lesson’s score is its own sheet’s." : `Kept with the review as 📎 Additional Reference: not counted anywhere; the lesson is finished once it is submitted.`}</span>
+            <span class="fp-muted">Empty keeps the graded score. ${read ? "Yours replaces it as the Reading Task’s own score; the lesson’s score is its own sheet’s." : `Kept with the review (📎): not counted anywhere; the lesson is finished once it is submitted.`}</span>
             <button class="btn btn-navy btn-sm" type="button" onclick="FTProcessAdmin.saveKc('${x.id}', ${l}, this, ${read})">Save my review</button></div>
           ${retryBox(x, l, read, rec)}
         </div>` : ""}</div>`; }).join("")}</div>`;
@@ -977,7 +977,7 @@ function applyReviews(){
 function reviewBlock(id, rr){
   const r = rr || kcReview(id); if(!r || (!r.comment && trainerScore(r) == null && !Object.values(r.notes || {}).some(has))) return "";
   const t = trainerScore(r);
-  return `<div class="card kc-trainer"><div class="kc-trainer-h">🧑‍🏫 <b>Your trainer’s review</b>${t != null ? `<span class="fp-pill ok">📎 Additional Reference</span>` : ""}</div>
+  return `<div class="card kc-trainer"><div class="kc-trainer-h">🧑‍🏫 <b>Your trainer’s review</b>${t != null ? `<span class="fp-pill ok">📎 Knowledge Check · not scored</span>` : ""}</div>
     ${r.comment ? `<p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}
     <p class="fp-muted">${r.at ? `Reviewed ${e(new Date(r.at).toLocaleString())}. ` : ""}${t != null ? "Your trainer’s score is this Knowledge Check’s final score." : ""}</p></div>`;
 }
@@ -995,7 +995,7 @@ function kcReport(id, r){
   return `<div class="eval-report kc-report">
     <div class="eval-report-header">
       <div class="eval-score-ring" style="--ring-color:var(--navy);"><span>📎</span></div>
-      <div><div class="eval-tier" style="color:${color};">📎 Additional Reference · feedback only</div>
+      <div><div class="eval-tier" style="color:${color};">📎 feedback only</div>
         <div class="eval-subscore-row">${(r.items||[]).map(it=>`<span>Q${num(it.i)+1} ✓</span>`).join("")}</div></div>
     </div>
     ${mindsetNote(r.pct)}
@@ -1012,7 +1012,7 @@ function renderKc(){
   const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>`;
   if(!d || !qs.length) return `${back}<div class="card" style="padding:28px;">This lesson has no Knowledge Check.</div>`;
   const intro = `<p class="eyebrow">Knowledge Check</p><h1>${e(d.title)}</h1>
-    <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; the Knowledge Check is 📎 Additional Reference: it isn’t scored or counted, and submitting it finishes the lesson. It is taken <b>once</b>, so submit when every answer is final; your trainer adds their own review (and can grant a retry if a technical problem affects your attempt).</p>`;
+    <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; the Knowledge Check is for reference (📎): it isn’t scored or counted, and submitting it finishes the lesson. It is taken <b>once</b>, so submit when every answer is final; your trainer adds their own review (and can grant a retry if a technical problem affects your attempt).</p>`;
   if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
     <div class="card kc-card">${bySheet(qs, x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`)}
     <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Knowledge Check in the top bar.</p></div>`;
@@ -1216,7 +1216,7 @@ window.moduleCard = function(d){
 function kcPills(p){
   const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b);
   const kc = (p && p.kc) || {};
-  return lessons.filter(l=>kc[l]).map(l=>`<span class="fp-pill ok" title="${e(ftName(l))} Knowledge Check: 📎 Additional Reference">L${l} ✓</span>`).join(" ");
+  return lessons.filter(l=>kc[l]).map(l=>`<span class="fp-pill ok" title="${e(ftName(l))} Knowledge Check: submitted, not scored">L${l} ✓</span>`).join(" ");
 }
 
 (function(){ const s = document.createElement("style"); s.id = "ft-process"; s.textContent = `

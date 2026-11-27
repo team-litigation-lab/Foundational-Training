@@ -85,7 +85,7 @@ async function workerChecks() {
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (📎 Call Listening is Additional Reference — js/ft-reference.js: the log is shown, with no score)
   { const mt = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Call Listening[\s\S]*Reception calls[\s\S]*📎 Additional Reference/.test(mt) || /Reception calls[^\n]*\n?[^\n]*(10%|0\.5\/5)/.test(mt)) fail('🏅 My Performance doesn\'t show the listening log as Additional Reference, with no score'); }
+    if (!/Call Listening[\s\S]*Reception calls[\s\S]*📎 Not scored/.test(mt) || /Reception calls[^\n]*\n?[^\n]*(10%|0\.5\/5)/.test(mt)) fail('🏅 My Performance doesn\'t show the listening log as Additional Reference, with no score'); }
 
   // 📝 Day 3's Reception Listening Activity counts in 🎧 Call Listening by its grade: logged and not submitted, it is not graded
   // (no score, never a 0); graded, its score is there, and not under 📋 Task Tracker & Monitoring Sheet as well (counted once)
@@ -96,12 +96,12 @@ async function workerChecks() {
   await put('listening:' + id, Object.assign({}, logged, { logs: Object.assign({}, logged.logs, { recact: { 1: { caller: 'Gloria Benton, existing client', at: new Date().toISOString() } } }) }));
   let cardsNow = await perf(), act = actOf(cardsNow);
   if (!/Not graded yet/.test(act.row) || /\d+%/.test(act.row)) fail(`a Reception Listening Activity not submitted yet isn't "not graded" on My Performance: ${act.row || act.h}`);
-  if (!/📎 Additional Reference/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening should be Additional Reference, with no score: ${act.h}`);
+  if (!/📎 Not scored/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening should be Additional Reference, with no score: ${act.h}`);
   await put('trackerreview:' + id, { days: {}, assess: { recact: { at: new Date().toISOString(), when: 'Nov 5, 9:30 AM ET', title: 'Reception Listening Activity: Harbor & Pine Calls', score: 32, max: 40, pct: 80, pending: false, ai: true, items: { c1_caller: { ok: true, pts: 1 } } } } });
   cardsNow = await perf(); act = actOf(cardsNow);
-  if (!/📎 Additional Reference/.test(act.row) || /80%|4\.0\/5/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance as Additional Reference (graded, no score): ${act.row || act.h}`);
-  // (🎧 Call Listening has no score: 📎 Additional Reference, the graded activity included)
-  if (!/📎 Additional Reference/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening got a score from the graded activity: ${act.h}`);
+  if (!/📎 Not scored/.test(act.row) || /80%|4\.0\/5/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance as Additional Reference (graded, no score): ${act.row || act.h}`);
+  // (🎧 Call Listening has no score: 📎 Not scored, the graded activity included)
+  if (!/📎 Not scored/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening got a score from the graded activity: ${act.h}`);
   const twice = cardsNow.filter(c => !/Call Listening/.test(c.h) && c.rows.some(r => /Reception Listening/.test(r))).map(c => c.h);
   if (twice.length) fail(`the Reception Listening Activity also counts under ${twice.join(', ')}`);
   await put('trackerreview:' + id, null); await put('listening:' + id, logged);

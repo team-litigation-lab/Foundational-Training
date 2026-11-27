@@ -221,7 +221,7 @@ function matchOf(r, sc){
   if(/^reading-/.test(id)) return all.filter(it => it.src.id === "kc" && /reading/i.test(it.name));
   return t ? all.filter(it => { const n = norm(it.name); return n && (n === t || n.includes(t) || t.includes(n)); }) : [];
 }
-const evLine = it => `${it.src.icon} ${it.src.label} · ${it.name}: ${it.reference ? "📎 Additional Reference (done; not scored)" : typeof it.pct === "number" ? it.pct + "%" : "not scored"}${it.note ? " (" + it.note + ")" : ""}`;
+const evLine = it => `${it.src.icon} ${it.src.label} · ${it.name}: ${it.reference ? "📎 done, not scored" : typeof it.pct === "number" ? it.pct + "%" : "not scored"}${it.note ? " (" + it.note + ")" : ""}`;
 async function openRow(i){
   const r = A.rows[i]; if(!r) return;
   A.open = i; A.drafting = false;
@@ -238,7 +238,7 @@ function workHtml(r){
   if(r.manual){
     const ev = r.ev, hit = ev ? ev.hit : null;
     return `${!ev ? `<p class="fss-muted">Reading what the platform recorded…</p>` : hit.length
-        ? `<p class="tfb-sub">📊 What the platform recorded</p><ul class="tfb-ev">${hit.map(it => `<li><b>${e(it.name)}</b> <span class="fss-pill ${typeof it.pct === "number" ? (it.pct >= 70 ? "ok" : "mid") : ""}">${it.reference ? "📎 Additional Reference" : typeof it.pct === "number" ? e(it.pct) + "%" : "not scored"}</span>${it.note ? `<small>${e(it.note)}</small>` : ""}<small>${it.src.icon} ${e(it.src.label)}</small></li>`).join("")}</ul>`
+        ? `<p class="tfb-sub">📊 What the platform recorded</p><ul class="tfb-ev">${hit.map(it => `<li><b>${e(it.name)}</b> <span class="fss-pill ${typeof it.pct === "number" ? (it.pct >= 70 ? "ok" : "mid") : ""}">${it.reference ? "📎 done, not scored" : typeof it.pct === "number" ? e(it.pct) + "%" : "not scored"}</span>${it.note ? `<small>${e(it.note)}</small>` : ""}<small>${it.src.icon} ${e(it.src.label)}</small></li>`).join("")}</ul>`
         : `<p class="fss-muted">📊 Nothing the platform scores matches this activity: ✨ Draft works from the trainee's other recorded scores.</p>`}
       <p class="fss-muted">✍️ Your own feedback on this activity: write what they did well, what to improve and why. The trainee gets a notification as soon as you send it, and it stays in their 📬 My Feedback.</p>`;
   }
