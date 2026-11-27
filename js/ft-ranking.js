@@ -27,8 +27,9 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 // the report's columns: the compliance one, the marks out of 5, and the activities scored on their own points
 const COL = (label, sub, max, src, period) => Object.assign({id: uid(), label, sub: sub || "", max: max == null ? 5 : max, type: "score", src: src || ""}, period ? {period} : {});
+// (no Spelling & Typing Tests notes column: the owner asked it gone; the day's Typing & Spelling Tests score is its own
+// connected column, filled from the end-of-shift check)
 const BASE = () => [
-  {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes", src: "skills"},
   COL("Monitoring Sheet", "", 5, "day:monitor", "week"), COL("Tracker", "", 5, "day:tracker", "week")];
 const TEMPLATES = {
   week1: {label: "📋 Week 1 columns", cols: () => BASE().concat([COL("PI Reading Task", "", 40, "kc:Reading Task"), COL("Ass: Common Terms", "", 27, "drive:Common Terms"),
@@ -124,6 +125,8 @@ async function loadWeek(){
   if(R.key !== key) return;
   R.data = v && Array.isArray(v.cols) ? Object.assign({rows: {}}, v) : null;
   let named = 0;
+  // (a report made with the Spelling & Typing Tests notes column has it taken off)
+  if(R.data){ const n0 = R.data.cols.length; R.data.cols = R.data.cols.filter(c => !(c.type === "notes" && (c.src === "skills" || /spelling\s*&\s*typing/i.test(c.label || "")))); if(R.data.cols.length !== n0) named++; }
   if(R.data) R.data.cols.forEach(c => { if(c.src) return; const k = Object.keys(KNOWN_SRC).find(x => String(c.label || "").toLowerCase().includes(x)); if(k && (KNOWN_SRC[k] === "skills") === (c.type === "notes")){ c.src = KNOWN_SRC[k]; named++; } });
   // (🔗 a report not approved yet gets the scorecards it doesn't have a column for yet: connectAll)
   // (every report, approved too: the day's deliverables and the scorecards follow what the trainees do)

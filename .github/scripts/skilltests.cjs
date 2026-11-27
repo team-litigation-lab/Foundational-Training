@@ -126,20 +126,7 @@ async function workerChecks() {
   if (!/Tia Typist/.test(grid) || !/Spelling Test – Complied; however, lacking/.test(grid)) fail(`the trainer's grid doesn't show the trainee and the compliance line: ${grid.slice(0, 300)}`);
   if (!(await page.$('.st-grid i.mk'))) fail('the grid doesn\'t mark the made-up slot');
 
-  // 📊 the Weekly Ranking's Spelling & Typing column fills from the log
-  await put(`ranking:${BATCH}:w1`, null);
-  await page.evaluate(() => { state.adminTab = 'ranking'; FTRanking.reload(); render(); }); await page.waitForTimeout(2500);
-  // (Week 1 itself: the ranking opens on the batch's current week, which depends on today's date)
-  await page.evaluate(b => FTRanking.batch(b), BATCH); await page.waitForTimeout(1500);
-  await page.evaluate(() => FTRanking.week(1)); await page.waitForTimeout(1200);
-  await page.evaluate(() => FTRanking.start('week1')); await page.waitForTimeout(600);
-  await page.evaluate(sub => FTRanking.col(0, 'sub', sub), `${oldMD} to ${md(new Date())}`); await page.waitForTimeout(400);
-  await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);
-  const rk = await get(`ranking:${BATCH}:w1`);
-  const c0 = rk && rk.cols[0], cell = c0 && rk.rows && rk.rows[id] && rk.rows[id].cells[c0.id];
-  // (one line: the overall compliance, FTSkills.complianceSummary)
-  const sum = await page.evaluate(([f, t]) => FTSkills.complianceSummary(FTSkills.record(), f, t), [from, to]);
-  if (!cell || cell.note !== sum || !/^Overall compliance \d+% \(\d+ of \d+ tests\)$/.test(sum)) fail(`the ranking's Spelling & Typing column isn't the overall compliance: ${JSON.stringify(cell)} vs ${sum}`);
+  // (📊 no Spelling & Typing Tests column on the Weekly Ranking any more: the owner asked it gone)
 
   // 🏅 My Performance
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; }, [id]);
