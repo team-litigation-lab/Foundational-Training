@@ -5369,10 +5369,11 @@ window.ftWeeks = {
     let t = Date.parse(st + "T00:00:00Z"), k = 0;
     for(let i = 0; i < 14; i++, t += DAY){ const w = new Date(t).getUTCDay(); if(w >= 1 && w <= 5) k++; if(w === 5 && k >= 3) break; }
     if(!(Number(n) > 1)) return [st, iso(t + 2 * DAY)];
-    const a = t + 3 * DAY + (Math.floor(Number(n)) - 2) * 7 * DAY; return [iso(a), iso(a + 6 * DAY)]; },
+    // (the training is 15–16 days: three weeks at most, the third running to its end)
+    const m = Math.min(3, Math.floor(Number(n))), a = t + 3 * DAY + (m - 2) * 7 * DAY; return [iso(a), iso(a + (m === 3 ? 20 : 6) * DAY)]; },
   // the week a date (YYYY-MM-DD, default today in Pacific time) falls in, 1 to 6
   now(b, d){ d = d || (window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10));
-    for(let n = 1; n <= 6; n++){ const r = this.range(b, n); if(!r) return 1; if(d <= r[1]) return n; } return 6; }
+    for(let n = 1; n <= 3; n++){ const r = this.range(b, n); if(!r) return 1; if(d <= r[1]) return n; } return 3; }
 };
 // 📅 A batch's Day 1 (its first weekday from the Batch ID's date) counts like any other day (it was held back as a setup day
 // once: such a record is counted from its day1Parts here). Earlier note, kept for the record: its Daily compliance didn't count,
@@ -8149,9 +8150,12 @@ window.applyUpdate = applyUpdate;
   // FTDayDecks. On a slow device the awaits above can finish while the scripts after this one still load, and a reload of
   // #/modules then resumed the last deck instead)
   if(document.readyState === "loading") await new Promise(r => document.addEventListener("DOMContentLoaded", r, {once: true}));
-  if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
+  // (🔄 a trainer — in 👁 Switch View too — reloading a page stays on it, signed in: the page's address reopens it; with no
+  // address, 📚 Dashboard, never the sign-in screen)
+  const staff = state.isAdmin || state.adminPreview;
+  if(staff){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
-    state.view = "login";
+    state.view = "login";   // (a trainer with no page address: the sign-in card opens 📚 Dashboard for them, js/portal-gate.js)
   }else if(state.traineeId){
     const traineeRecord = await traineeRecordP;
     const status = approvalFromRecord(traineeRecord);

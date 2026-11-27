@@ -750,9 +750,18 @@ function scoreBox(s, info, body){
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
   return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
+// 🏷 the standard slide header: a slide's video or document names (one or two of them) go up beside its pill (🎬 Watch & Do,
+// 📝 Read & Do …) instead of a name bar over each, so the content below is as large as the slide allows. A slide of more
+// (Day 7's blank intake forms) or a Drive folder (its box is labelled by it) keeps its name bars.
+function liftTitles(html){
+  const re = /<div class="ftdd-(?:inline|pdoc)-h"><b>([^<]*)<\/b>(?:<\/div>)?/g, found = [...String(html).matchAll(re)];
+  if(!found.length || found.length > 2 || found.some(m => /^📁/.test(m[1]))) return {html, titles: []};
+  return {html: String(html).replace(/<div class="ftdd-inline-h"><b>[^<]*<\/b><\/div>/g, "").replace(/(<div class="ftdd-pdoc[^"]*")/g, "$1 data-lifted"), titles: found.map(m => m[1])};
+}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s)));
+  const body0 = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s)));
+  const lift = s.agenda || s.divider || s.launch || s.trainer ? {html: body0, titles: []} : liftTitles(body0), body = lift.html;
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -764,7 +773,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(deckTitle(DD.day, info, d))}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => `<span class="ftdd-bar-t">${m[1]}</span>`).join("")}`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => m[1]).concat(lift.titles).map(t => `<span class="ftdd-bar-t">${t}</span>`).join("")}`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
         ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
@@ -2071,12 +2080,7 @@ const TOOLS = [
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Elev8™ → ✉️ Email Sims (it opens in its own tab)",
-    what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
-    feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
-      "✍️ Email Replies: one email at a time, answered in the sender’s style",
-      "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
-      "One submission grades filing, security, triage and your replies"]},
+  // (✉️ Email Sims: off the training)
   {ic: "📅", name: "Google Calendar Sim", short: "Calendar Sims", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Sims",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
@@ -2217,7 +2221,7 @@ if(!document.getElementById("ftdd-deck-font")){
   document.head.appendChild(f);
 }
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
-main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display:flex;flex-direction:column;gap:10px;}
+main.main-ftdd{max-width:none;margin:0 auto;padding:12px 6px 14px 10px;display:flex;flex-direction:column;gap:10px;}
 /* the day picker and the day's lesson sit in rails either side, so the slide itself takes the width */
 .ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:10px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
@@ -2509,6 +2513,11 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-row:hover{background:#3A4160;border-color:#DB8437;}
 .ftlc-n{font:800 18px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
 .ftlc-t{min-width:0;}
+/* (the decks use the screen's whole width; an activity's name wraps between words, never inside one, and its kind pill
+   wraps onto two lines before the name has to) */
+.ftlc-row .ftlc-t, .ftlc-row .ftlc-t b{overflow-wrap:normal !important;word-break:normal !important;hyphens:none !important;}
+.ftlc-row{grid-template-columns:auto minmax(11ch,1fr) auto !important;}
+.ftlc-row > :last-child:not(.ftlc-t):not(.ftlc-n){white-space:normal !important;text-align:center;max-width:12em;line-height:1.2;}
 .ftlc-t b{display:block;font:700 16.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
 .ftlc-t small{display:block;margin-top:3px;font-size:14px;line-height:1.35;color:#C9CFDD;}
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
@@ -2751,7 +2760,7 @@ main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36p
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
 main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
-main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1180px;margin:0 auto;}
+main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1560px;margin:0 auto;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head .ftdd-ho-sub{margin:0 0 10px;font:600 15px/1.4 'Inter',sans-serif;color:#5B6178;}
@@ -3350,7 +3359,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:
    bigger on a click (the Sample SOP's zoom, below) */
 .ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
-main.main-ftdd .ftdd-sheet .ftdd-pdoc-barred > .ftdd-pdoc-h{display:none;}   /* (its name is in the slide's bar: data-bartitle) */
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-barred > .ftdd-pdoc-h, main.main-ftdd .ftdd-sheet .ftdd-pdoc[data-lifted] > .ftdd-pdoc-h{display:none;}   /* (its name is in the slide's bar: data-bartitle) */
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:20px;}
 /* (the 💡/📌 yellow callouts: big, bold and dark enough to read from across the room) */

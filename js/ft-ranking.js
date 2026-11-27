@@ -330,7 +330,7 @@ async function fillFromPortal(quiet){
         put(row, c, cur, {raw: fmt(pct / 100 * (num(c.max) || 5)), period: "all", why: `Drive links ✓ Correct: ${Math.round(pct / 100 * 6)} of 6 (${Math.round(pct)}%) → ${fmt(pct / 20)} out of 5.`});
       }));
     }
-    // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
+    // 🧪 the Spelling & Typing column: the overall compliance for the column's dates, one line (js/ft-skilltests.js)
     if(notesCols.length && window.FTSkills){
       const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id)), rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
       if(gone()){ R.fill = false; return; }
@@ -340,7 +340,7 @@ async function fillFromPortal(quiet){
         ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
           if(cur && String(cur.note || "").trim() && !(cur.auto && !cur.noteBy)) return;      // never over what the trainer typed
           const rec = FTSkills.withShots(recs[i], (rvs[i] || {}).shots);   // 📷 the screenshots in Drive count too
-          put(row, c, cur, {note: FTSkills.complianceText(rec, range[0], range[1], p.since)}); });
+          put(row, c, cur, {note: FTSkills.complianceSummary(rec, range[0], range[1], p.since)}); });
       });
     }
     if(n) save();
