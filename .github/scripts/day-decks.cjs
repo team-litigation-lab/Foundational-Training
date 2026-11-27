@@ -100,8 +100,9 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // the Instructions slide is its two cards and links there beside the Main Portal's button)
   const txt = sl(5, 's3'), ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length;
   if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || (D[5].slides || []).some(s => /^s3[ijkl]$/.test(s.id)) || !/onclick="goto\('calsim','attorney-activity'\)">🧪 Activity Items: Practice Lab</.test(txt))
-    fail(`Day 5's activity isn't its Instructions in two cards with the Practice Lab's Activity Items link, its item slides off: ${JSON.stringify({ ins, ids: (D[5].slides || []).map(s => s.id) })}`);
+    || (D[5].slides || []).some(s => /^s3[ijkl]$/.test(s.id)) || !/data-bartitle="Remember the RULES!"/.test(txt) || /ftdd-calsim-ins|ftsCalsim/.test(txt)
+    || !/class="ftdd-calsim ftdd-calsim-lab"><button[^>]*onclick="goto\('calsim','attorney-activity'\)">🧪 Activity Items: Practice Lab</.test(sl(5, 's3b')))
+    fail(`Day 5's activity isn't its Instructions in two cards under "Remember the RULES!" (no Portal button), its item slides off and the Practice Lab's Activity Items link ending the Sample & Time Zone slide: ${JSON.stringify({ ins, ids: (D[5].slides || []).map(s => s.id) })}`);
   if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || /Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, lost its drawn samples (Day 6\'s format), or still has the Calendar Activity Check tile (the activity\'s one link is on its Instructions slide)');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
   // (the samples and the time zone, s3b, come before the items, right after the Instructions; the sample's title names the
@@ -113,9 +114,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
   // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
   // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Sample & Time Zone)
-  const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">📅 Standard Training - Calendaring Activity</;
-  if (!portal.test(sl(5, 's3')) || /ftsCalsim|#\/calsim\/attorney-activity|attorney-activity|goto\(\\?'calcheck/.test(sl(5, 's3b')))
-    fail('Day 5\'s activity should link its calendar once, on the Instructions slide, and nowhere after');
+  if ([sl(5, 's3'), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
+    fail('Day 5\'s activity still links the Main Portal\'s calendar or the Check on its slides (its one link is the Practice Lab\'s Activity Items)');
   // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
   // (the mock calls' calendar, Standard Training - Mock Call, has no link on the deck)
   const d6 = sl(6, 's1');

@@ -1554,7 +1554,14 @@ const ASSESS_NEXT = {2: {
   // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
 };
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
+// 🛠 a slide whose Next is its Practice Lab activity, where the activity's instructions sit beside its simulator (Day 5's
+// Sample & Time Zone, the Attorney Calendar Management Activity's last slide: its Activity Items beside the Calendar Simulator,
+// #/calsim/attorney-activity, whose ← Back to the slides returns here)
+const LAB_NEXT = {5: {s3b: {label: "Next: 🧪 The Activity Items in the 🛠 Practice Lab →", ok: () => typeof root.goto === "function", run: () => goto("calsim", "attorney-activity")}}};
+const labOf = s => { const l = s && (LAB_NEXT[DD.day] || {})[s.id]; return l && l.ok() ? l : null; };
 function kcNext(s){
+  const lab = labOf(s);
+  if(lab) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(lab.label)}</button>`;
   const a = asOf(s);
   if(a && root.FTProcess) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
   const k = kcOf(s); if(!k || !root.FTProcess) return "";
@@ -1592,7 +1599,7 @@ function wireReaders(){
   const left = unread(kcOf(s));
   go.disabled = left.length > 0;
   // (on its last page, the button names where it goes: the reading's questions, or the slide's assessment)
-  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (labOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
 }
 // 👩‍🏫 the presenter at the foot of the side panel (Activity decks and Know Your Tools), as on the lesson slides
@@ -1627,8 +1634,8 @@ function deckNextUp(){
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
-  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s);
-  if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s), lab = labOf(s);
+  if(lab) lab.run(); else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
@@ -2672,6 +2679,9 @@ main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} 
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (and a point bigger than the other cards, header included: the slide has no button over them) */
+.ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-size:18.5px !important;} .ftdd-sheet .ftdd-cards2-b .ftdd-card4 > p.ftdd-card4-h{font-size:19.5px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-calsim-lab{margin:12px 0 0;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-lab .btn{font-size:19px !important;padding:12px 26px !important;border-radius:12px;}
 /* (Day 10's sample documents: a tile each, four to a row, white on navy with an orange edge; each opens in a new tab) */
 .ft-body .ftdd-doctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin:8px 0 4px;}
 .ft-body a.ftdd-doctile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#1E2340;border-left:5px solid #E8590C;color:#fff !important;text-decoration:none !important;box-shadow:0 3px 10px rgba(30,35,64,.2);}
