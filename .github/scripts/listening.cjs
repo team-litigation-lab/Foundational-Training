@@ -62,30 +62,32 @@ async function workerChecks() {
 
   await page.click('text=Open the log'); await page.waitForTimeout(1000);
   if (await page.evaluate(() => state.view) !== 'listening') fail('the card doesn\'t open #/listening');
-  if (await page.$$eval('.ln-rec', x => x.length) !== 10) fail('the reception set doesn\'t show its ten recordings');
+  // (🎲 each trainee logs their own five of the set's ten, chosen by the platform from their id)
+  if (await page.$$eval('.ln-rec', x => x.length) !== 5) fail('the reception set doesn\'t show the trainee\'s five recordings');
+  const N = await page.evaluate(() => /^ln_reception_(\d+)_/.exec(document.querySelector('.ln-rec select').id)[1]);
 
   // a half-filled log doesn't count
-  await page.fill('#ln_reception_1_purpose', 'Client asking for a case status update');
-  await page.selectOption('#ln_reception_1_who', 'Existing client');
+  await page.fill(`#ln_reception_${N}_purpose`, 'Client asking for a case status update');
+  await page.selectOption(`#ln_reception_${N}_who`, 'Existing client');
   await page.locator('.ln-rec').first().locator('.ln-act button').click(); await page.waitForTimeout(1200);
   let rec = await get('listening:' + id);
-  if (!rec || !rec.logs.reception || !rec.logs.reception['1']) fail(`a part-filled log wasn't saved: ${JSON.stringify(rec)}`);
-  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '0 of 10 logged') fail('a part-filled log counted as logged');
+  if (!rec || !rec.logs.reception || !rec.logs.reception[N]) fail(`a part-filled log wasn't saved: ${JSON.stringify(rec)}`);
+  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '0 of 5 logged') fail('a part-filled log counted as logged');
   if (!/still to fill in/.test(await page.evaluate(() => document.querySelector('.ln-rec').innerText))) fail('a part-filled log doesn\'t say what is left');
 
   // filled in, it counts
-  await page.fill('#ln_reception_1_handled', 'Answered with the firm name and her own, verified the caller by name, DOB and date of loss, checked the file, gave the status and the next step, then closed with the firm\'s spiel.');
-  await page.fill('#ln_reception_1_phrase', '“Let me pull up your file so I can give you the exact date.”');
-  await page.fill('#ln_reception_1_better', 'I would confirm the callback number before ending the call, so the attorney can reach them.');
+  await page.fill(`#ln_reception_${N}_handled`, 'Answered with the firm name and her own, verified the caller by name, DOB and date of loss, checked the file, gave the status and the next step, then closed with the firm\'s spiel.');
+  await page.fill(`#ln_reception_${N}_phrase`, '“Let me pull up your file so I can give you the exact date.”');
+  await page.fill(`#ln_reception_${N}_better`, 'I would confirm the callback number before ending the call, so the attorney can reach them.');
   await page.locator('.ln-rec').first().locator('.ln-act button').click(); await page.waitForTimeout(1300);
-  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '1 of 10 logged') fail('a full log doesn\'t count');
+  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '1 of 5 logged') fail('a full log doesn\'t count');
   rec = await get('listening:' + id);
-  if (!rec.logs.reception['1'].better || !rec.logs.reception['1'].at) fail(`the full log wasn't saved: ${JSON.stringify(rec.logs.reception['1'])}`);
-  if (!(await page.evaluate(() => FTListen.done(FTListen.state().rec.logs.reception['1'])))) fail('the page doesn\'t count the full log as done');
+  if (!rec.logs.reception[N].better || !rec.logs.reception[N].at) fail(`the full log wasn't saved: ${JSON.stringify(rec.logs.reception[N])}`);
+  if (!(await page.evaluate(() => FTListen.done(FTListen.state().rec.logs.reception[N])))) fail('the page doesn\'t count the full log as done');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  // (📎 Call Listening is Additional Reference — js/ft-reference.js: the log is shown, with no score)
+  // (🎧 Call Listening counts on the Score Card: one of the trainee's five logged is 20%)
   { const mt = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Call Listening[\s\S]*Reception calls[\s\S]*📎 Not scored/.test(mt) || /Reception calls[^\n]*\n?[^\n]*(10%|0\.5\/5)/.test(mt)) fail('🏅 My Performance doesn\'t show the listening log as Additional Reference, with no score'); }
+    if (!/Call Listening[\s\S]*Reception calls[\s\S]*(20%|1\.0\/5)/.test(mt)) fail('🏅 My Performance doesn\'t score the listening log (1 of 5 logged = 20%)'); }
 
   // 📝 Day 3's Reception Listening Activity counts in 🎧 Call Listening by its grade: logged and not submitted, it is not graded
   // (no score, never a 0); graded, its score is there, and not under 📋 Task Tracker & Monitoring Sheet as well (counted once)
@@ -96,12 +98,9 @@ async function workerChecks() {
   await put('listening:' + id, Object.assign({}, logged, { logs: Object.assign({}, logged.logs, { recact: { 1: { caller: 'Gloria Benton, existing client', at: new Date().toISOString() } } }) }));
   let cardsNow = await perf(), act = actOf(cardsNow);
   if (!/Not graded yet/.test(act.row) || /\d+%/.test(act.row)) fail(`a Reception Listening Activity not submitted yet isn't "not graded" on My Performance: ${act.row || act.h}`);
-  if (!/📎 Not scored/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening should be Additional Reference, with no score: ${act.h}`);
   await put('trackerreview:' + id, { days: {}, assess: { recact: { at: new Date().toISOString(), when: 'Nov 5, 9:30 AM ET', title: 'Reception Listening Activity: Harbor & Pine Calls', score: 32, max: 40, pct: 80, pending: false, ai: true, items: { c1_caller: { ok: true, pts: 1 } } } } });
   cardsNow = await perf(); act = actOf(cardsNow);
-  if (!/📎 Not scored/.test(act.row) || /80%|4\.0\/5/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't on My Performance as Additional Reference (graded, no score): ${act.row || act.h}`);
-  // (🎧 Call Listening has no score: 📎 Not scored, the graded activity included)
-  if (!/📎 Not scored/.test(act.h) || /\d+%|\/5/.test(act.h)) fail(`🎧 Call Listening got a score from the graded activity: ${act.h}`);
+  if (!/80%|4\.0\/5/.test(act.row) || !/32 of 40 points/.test(act.row)) fail(`the graded Reception Listening Activity isn't scored by its grade on My Performance: ${act.row || act.h}`);
   const twice = cardsNow.filter(c => !/Call Listening/.test(c.h) && c.rows.some(r => /Reception Listening/.test(r))).map(c => c.h);
   if (twice.length) fail(`the Reception Listening Activity also counts under ${twice.join(', ')}`);
   await put('trackerreview:' + id, null); await put('listening:' + id, logged);
@@ -111,7 +110,7 @@ async function workerChecks() {
   await page.waitForTimeout(2500);
   await page.evaluate(b => FTListenAdmin.batch(b), BATCH); await page.waitForTimeout(400);
   const grid = await page.evaluate(() => (document.querySelector('.ln-atbl') || {}).innerText || '');
-  if (!/Lena Listener[\s\S]*1\/10/.test(grid)) fail(`the trainer's grid doesn't count the log: ${grid.slice(0, 300)}`);
+  if (!/Lena Listener[\s\S]*1\/5/.test(grid)) fail(`the trainer's grid doesn't count the log: ${grid.slice(0, 300)}`);
   await page.locator('.ln-atbl tbody tr').first().locator('td:last-child button').click(); await page.waitForTimeout(600);
   const read = await page.evaluate(() => (document.querySelector('.ln-alogs') || {}).innerText || '');
   if (!/complete/.test(read) || !/pull up your file/.test(read)) fail(`the trainer can't read the log: ${read.slice(0, 300)}`);
@@ -128,7 +127,8 @@ async function workerChecks() {
   const recs = await page.evaluate(() => [...document.querySelectorAll('.ln-rec b')].map(x => x.innerText));
   if (recs.length !== 3 || recs[0] !== 'Angry caller, wrong department') fail(`the trainee doesn't see the trainer's recordings: ${JSON.stringify(recs)}`);
   if (!(await page.locator('.ln-rec').first().locator('a[href*="/file/d/ABC/"]').count())) fail('a recording\'s own link isn\'t offered');
-  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '1 of 3 logged') fail('the count doesn\'t follow the trainer\'s set');
+  // (the log kept for the trainee's own recording counts only if it is still one of the set's three)
+  if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== (Number(N) <= 3 ? '1 of 3 logged' : '0 of 3 logged')) fail('the count doesn\'t follow the trainer\'s set');
 
   // 🔁 a Reception Listening grade saved by the broken grading (the AI's reply unreadable, every answer ✗ with no note) is graded
   // again by itself when the trainee opens the answer sheet: the caller ✓ by the key, the rest left to the trainer, not ✗

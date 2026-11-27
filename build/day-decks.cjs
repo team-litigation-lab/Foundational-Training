@@ -724,15 +724,15 @@ const PI_HTML =
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
   `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
-  // the answers are logged on the activity's 📝 Answer Sheet, a pop-up over the deck (js/ft-listening.js "recact")
-  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTListen.pop('recact')"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity: Answer Sheet</b><small>Log each call’s 5 data points and its challenge →</small></span></button></div>\n`;
+  // (the answers are logged on the 🎧 Call Listening Log, in the 🛠 Practice Lab: js/ft-listening.js "recact")
+  "";
 // the five calls on one slide (the trainer's key with them), and in the last row's free place the 📝 Answer Sheet, a pop-up
 // over the deck to log each call and 📝 Submit for Grading (js/ft-listening.js FTListen.pop)
 const PI_SHEET_CARD = `<button type="button" class="ftdd-pic ftdd-pic-sheet" onclick="FTListen.pop('recact')"><span class="ftdd-pic-sheet-ic">📝</span>` +
   `<b>Answer Sheet</b><small>Log each call’s 5 data points and its challenge, then 📝 Submit for Grading</small><span class="ftdd-pic-sheet-go">Open the answer sheet →</span></button>`;
 const PI_CALLS_HTML =
-  `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your 📝 Answer Sheet.</p>\n` +
-  piCallRows(PI_SHEET_CARD) +
+  `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your 🎧 Call Listening Log (🛠 Practice Lab).</p>\n` +
+  piCallRows("") +   // (no 📝 Answer Sheet card: the activity is a tab of the Call Listening Log)
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +

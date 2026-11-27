@@ -245,14 +245,15 @@ function labItems(){
   if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
     push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready.", "Open the guide", `FTGuide.open('${g.id}')`),
       {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting", key: "guide:" + g.id}));
-  if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX).forEach(x =>
+  // (only the drills the curriculum lists: no 🗂 Answer files drill)
+  if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX && x.id !== "answers").forEach(x =>
     push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions.", "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
       {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
   if(typeof window.ftListenCards === "function") push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
   // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
   // deck, so here too, where the activity is done
   if(window.FTListen && FTListen.pop)
-    push(miniCard("Day 3 · Reception Training", "🎧 Reception Listening Activity: 5 practice calls", "Five calls with their challenges: listen, then answer the Answer Sheet and 📝 Submit for Grading.", "Open the activity", "FTListen.open('reception'); FTListen.pop('recact')"),
+    push(miniCard("Day 3 · Reception Training", "🎧 Reception Listening Activity: 5 practice calls", "Five calls with their challenges: listen, log each on the Call Listening Log, then 📝 Submit for Grading.", "Open the activity", "FTListen.open('recact')"),
       {days: [3], type: "listening", key: "recact"});
   return out;
 }
