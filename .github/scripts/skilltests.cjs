@@ -137,7 +137,9 @@ async function workerChecks() {
   await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);
   const rk = await get(`ranking:${BATCH}:w1`);
   const c0 = rk && rk.cols[0], cell = c0 && rk.rows && rk.rows[id] && rk.rows[id].cells[c0.id];
-  if (!cell || cell.note !== line) fail(`the ranking's Spelling & Typing column didn't fill from the log: ${JSON.stringify(cell)} vs ${line}`);
+  // (one line: the overall compliance, FTSkills.complianceSummary)
+  const sum = await page.evaluate(([f, t]) => FTSkills.complianceSummary(FTSkills.record(), f, t), [from, to]);
+  if (!cell || cell.note !== sum || !/^Overall compliance \d+% \(\d+ of \d+ tests\)$/.test(sum)) fail(`the ranking's Spelling & Typing column isn't the overall compliance: ${JSON.stringify(cell)} vs ${sum}`);
 
   // 🏅 My Performance
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; }, [id]);
