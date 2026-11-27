@@ -880,8 +880,8 @@ function centerPage(sheet){
   // (Day 3's CRM/CMS Training Videos starts at the top: its "Choose one video" band leads the slide)
   if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || sheet.querySelector(":scope > .ftdd-pick-note") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
   const shown = [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none");
-  // (and Day 4's mock call preparation opens at the top: its lead, the tools' band and their buttons)
-  if(!shown.length || shown.some(k => k.classList.contains("ftdd-mock-warm"))) return;
+  // (Day 4's mock call preparation is centred too: its lead, the tools' band and their buttons in the middle of the slide)
+  if(!shown.length) return;
   const st = getComputedStyle(sheet), pt = parseFloat(st.paddingTop) || 0, pb = parseFloat(st.paddingBottom) || 0;
   const top = Math.min(...shown.map(k => k.getBoundingClientRect().top - (parseFloat(getComputedStyle(k).marginTop) || 0)));
   const bottom = Math.max(...shown.map(k => k.getBoundingClientRect().bottom + (parseFloat(getComputedStyle(k).marginBottom) || 0)));
