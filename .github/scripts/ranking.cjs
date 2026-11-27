@@ -67,14 +67,14 @@ const failures = []; const fail = m => failures.push(m);
   // (📘 the TAM isn't a daily deliverable: no column for it)
   if (conn.some(c => /^TAM/.test(c))) fail(`the report has a TAM column: ${JSON.stringify(conn)}`);
   // (the sheet's own arithmetic below is on the Week 1 columns alone: the six connected ones taken off again)
-  for (let k = 0; k < 6; k++) { await page.evaluate(() => FTRanking.delCol(8)); await page.waitForTimeout(250); }
+  for (let k = 0; k < 6; k++) { await page.evaluate(() => FTRanking.delCol(7)); await page.waitForTimeout(250); }   // (no Spelling & Typing notes column: one fewer)
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
   const heads = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
-  const want = ['2', 'Trainee Name', 'Spelling & Typing Tests', 'Monitoring Sheet (5/5)', 'Tracker (5/5)', 'PI Reading Task (40/40)', 'PI Reading Task ÷ 5', 'Ass: Common Terms (27/27)', 'Ass: Common Terms ÷ 5',
+  const want = ['2', 'Trainee Name', 'Monitoring Sheet (5/5)', 'Tracker (5/5)', 'PI Reading Task (40/40)', 'PI Reading Task ÷ 5', 'Ass: Common Terms (27/27)', 'Ass: Common Terms ÷ 5',
     'Ass: Auto Liability Insurance (45/45)', 'Ass: Auto Liability Insurance ÷ 5', 'RC: Data Extraction (125/125)', 'RC: Data Extraction ÷ 5', 'Reception Mock Calls (5/5)', 'W1 Final Average', 'Rank', '🤖 AI summary of the week', 'Additional Notes'];
   if (JSON.stringify(heads) !== JSON.stringify(want)) fail(`the Week 1 columns are ${JSON.stringify(heads)}`);
   const letters = await page.$$eval('.xl-letters th', t => t.map(x => x.innerText.trim()).join(''));
-  if (letters !== 'ABCDEFGHIJKLMNOPQ') fail(`the sheet's column letters are ${letters}`);
+  if (letters !== 'ABCDEFGHIJKLMNOP') fail(`the sheet's column letters are ${letters}`);
   // ▾/▸ retractable: Collapse all folds the points columns and notes away (the marks out of 5, the average and the rank stay);
   // Expand all brings them back
   await page.evaluate(() => FTRanking.foldAll()); await page.waitForTimeout(300);
@@ -301,15 +301,13 @@ const failures = []; const fail = m => failures.push(m);
   { const rv = await get('trackerreview:' + ids.Rhea); rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'] = Object.assign(rv.assess['14sz5f3HTQKmryc7Upvlc6qua008rPnmw'], { score: 24.3, pct: 90 }); await put('trackerreview:' + ids.Rhea, rv);
     // (the column names Week 2's own dates: a report's week is the dates a column names, and Week 2's grades are in them)
     const r2 = await page.evaluate(b => ftWeeks.range(b, 2), BATCH), md = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
-    const w = await get(`ranking:${BATCH}:w2`); w.cols.push({ id: 'c-st', label: 'Spelling & Typing Tests', sub: `${md(r2[0])} to ${md(r2[1])}`, type: 'notes', src: 'skills' });
-    w.rows[ids.Rhea].cells['c-st'] = { note: 'NO SUBMISSION', auto: true }; w.rows[ids.Sam].cells['c-st'] = { note: 'Typed by the trainer', auto: true, noteBy: 'trainer' };
+    const w = await get(`ranking:${BATCH}:w2`); void md;   // (no Spelling & Typing Tests column any more)
     await put(`ranking:${BATCH}:w2`, w);
     await put('skills:' + ids.Rhea, { typing: [{ date: r2[0], slot: 'AM', net: 40, acc: 95 }], spelling: [] }); }
   await page.evaluate(b => { FTRanking.reload(); FTRanking.open(b, 2); }, BATCH); await page.waitForTimeout(4000);
   { const w = await get(`ranking:${BATCH}:w2`), r = ((w.rows[ids.Rhea] || {}).cells) || {}, sm = ((w.rows[ids.Sam] || {}).cells) || {};
     if (Number((r[ct] || {}).raw) !== 24.3) fail(`a platform-filled score didn't follow the scorecard (90% of 27 = 24.3): ${JSON.stringify(r[ct])}`);
-    if (!r['c-st'] || /NO SUBMISSION/.test(r['c-st'].note || '') || !/Overall compliance|No test due/.test(r['c-st'].note || '')) fail(`an auto NO SUBMISSION didn't update to the trainee's compliance: ${JSON.stringify(r['c-st'])}`);
-    if ((sm[ct] || {}).raw !== '20' || (sm['c-st'] || {}).note !== 'Typed by the trainer') fail(`the refresh wrote over what the trainer typed: ${JSON.stringify(sm)}`); }
+    if ((sm[ct] || {}).raw !== '20') fail(`the refresh wrote over what the trainer typed: ${JSON.stringify(sm)}`); }
   await put('skills:' + ids.Rhea, null);
 
   for (const w of [1, 2]) await put(`ranking:${BATCH}:w${w}`, null);
