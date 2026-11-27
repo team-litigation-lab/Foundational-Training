@@ -222,6 +222,8 @@ function mark(html, meta){
   });
 }
 // a small card of our own (a day's Process Guide, drill set, MedLOR, Lien BV)
+// (📌 on every demo's card: what the tutorial shows is the firm's own way)
+const VLF = `<span class="fts-vlf">📌 This is a VLF-established protocol. The process may vary depending on the law firm you will work with.</span>`;
 const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-card"><div class="fts-kicker">${esc(kicker)}</div><h3>${title}</h3>
     <p class="fts-note">${note}</p><div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="${onclick}">${btn}</button></div></div>`;
 const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
@@ -243,10 +245,10 @@ function labItems(){
   });
   // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
   if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
-    push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready.", "Open the guide", `FTGuide.open('${g.id}')`),
+    push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready." + VLF, "Open the guide", `FTGuide.open('${g.id}')`),
       {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting", key: "guide:" + g.id}));
   if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX).forEach(x =>
-    push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions.", "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
+    push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions." + VLF, "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
       {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
   if(typeof window.ftListenCards === "function") push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
   // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
@@ -436,6 +438,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-kicker{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange-deep);}
 .fts-note{margin:0;font-size:13.5px;color:var(--ink-soft);}
 .fts-label{margin-top:4px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
+.fts-vlf{display:block;margin-top:8px;padding:6px 10px;border-left:4px solid #E8590C;background:#FFF6EC;border-radius:8px;font-size:13.5px;font-weight:700;color:#7A3A0A;}
 .fts-locked{opacity:.6;filter:grayscale(.35);} .fts-locked button[disabled], .fts-locked a.btn[disabled]{cursor:not-allowed;} #fts-skills{scroll-margin-top:84px;}
 .fts-tpl{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft);} .fts-tpl li{margin:1px 0;}
 .fts-file{align-self:flex-start;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;background:#f1f5f9;color:var(--navy);border-radius:6px;padding:4px 8px;overflow-wrap:anywhere;}

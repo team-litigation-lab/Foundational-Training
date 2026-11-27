@@ -584,7 +584,8 @@ s2: html => {
     // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
     // (under step 3's note, the box the trainee submits their completed worksheet's link in: js/ft-intake.js .ftis-wsub)
     // (and the naming convention reference read on the slide, page by page, in place of its PDF embed: pdocHtml)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC, "bar")}${step4}`);
+    // (no "upload your completed worksheet to your folder" note: the worksheet is answered on the platform, in the box itself)
+    .replace(naming, (m, line, link, step3, step4) => `${step3.replace(/\n<p>Note: For your completed Intake Worksheet[^\n]*<\/p>$/, "")}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC, "bar")}${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');

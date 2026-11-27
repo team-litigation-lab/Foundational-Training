@@ -503,11 +503,8 @@ function worksheetCard(lesson){
   const grade = state.isAdmin ? `<p class="fp-ws-g">Trainers grade it on the trainee's 📋 Batch Sheet card (📦 Intake Packet → 📝 Intake Worksheet).</p>`
     : pct != null ? `<p class="fp-ws-g ok">✓ Graded: <b>${pct}%</b>${g.comment ? ` · “${e(g.comment)}”` : ""}</p>`
     : `<p class="fp-ws-g">Graded by your trainer against the Answer Sheets once you submit it. Your score shows here.</p>`;
-  return `<div class="card fp-set fp-assess fp-ws"><div class="fp-head"><b>📄 ${e(w.t)}</b><span class="fp-count">Part of this Knowledge Check: complete it, then submit its link</span></div>
+  return `<div class="card fp-set fp-assess fp-ws"><div class="fp-head"><b>📄 ${e(w.t)}</b><span class="fp-count">Part of this Knowledge Check: answer it here, then submit</span></div>
     <div class="fp-body">
-      <ol class="fp-ws-steps"><li>✏️ Make your editable copy and answer the table in it.</li><li>Move it into your Assessments/Activities folder.</li><li>📤 Paste its link below and submit.</li></ol>
-      <div class="ftis-sheet" data-href="${e(w.href)}"></div>
-      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${e(w.doc)}/preview" title="${e(w.t)}" loading="lazy"></iframe></div>
       <div class="ftis-wsub"></div>
       ${grade}
     </div></div>`;
