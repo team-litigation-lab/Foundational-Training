@@ -129,8 +129,8 @@ window.renderTopbar = function(){
   const secs = btn("modules", "📚 Dashboard", "goto('modules')", "The Legal VA Foundational Track: its modules")
     + (CASE ? btn("case", "📁 Client Profile", `goto('${CASE.view}')`, CASE.title || "") : "")
     // 🛠 Practice Lab and ✍️ Knowledge Check: a trainer's bar only — the trainee view (a trainee, or an admin's 👁 Switch View) hides them
-    + (adminOn() ? btn("lab", "🛠 Practice Lab", "goto('simulators')")
-      + btn("process", "✍️ Knowledge Check", processGo, "Every trainee's answer sheets") : "")
+    // (no 🛠 Practice Lab: the Practice Lab is off the platform; each activity opens from its lesson's slide)
+    + (adminOn() ? btn("process", "✍️ Knowledge Check", processGo, "Every trainee's answer sheets") : "")
     + pagesMenu()
     // 🔓 Open Lessons, one click from every page for a trainer (a program that lists it: LSH_PROGRAM.adminTopOpenLessons)
     + (adminOn() && CFG.adminTopOpenLessons ? btn("opendays", "🔓 Open Lessons", "state.adminTab='opendays'; goto('admin')", "Open a lesson for a batch, or for one trainee") : "")
