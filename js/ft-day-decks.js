@@ -1468,7 +1468,7 @@ const LESSON_CARDS = {
       // (Part 3: the Transcription Activity; no Buffer Time)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       // (done on the Practice Lab's 🎧 Transcription Activity, not on the deck: build/day-decks.cjs takes Day 9's s3 off)
-      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2 · 🛠 Practice Lab", k: "interactive", run: "goto('transcribe')"}],
+      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2 · 🛠 Practice Lab", k: "interactive", run: "goto('transcribe')", day: 9}],
     discuss: {7: "s1"},
     tools: [["Tools:", "LSH CaseWorX, Call Sim, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
