@@ -1538,7 +1538,6 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-// (Day 3's Reception Listening Activity: the five calls' slide, s1d, goes on to the slide after it, not ✍️ Knowledge Check)
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
@@ -1554,7 +1553,13 @@ const ASSESS_NEXT = {2: {
   // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
 };
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
+// 🛠 a slide whose Next is a Practice Lab activity (Day 3's Reception Listening Activity: its five calls are logged on the
+// 🎧 Call Listening Log's tab, which comes back to the deck on the slide after this one: js/ft-listening.js fromDeck)
+const LAB_NEXT = {3: {s1c: {label: "Next: 🎧 The 5 practice calls in the 🛠 Practice Lab →", run: () => root.FTListen && FTListen.fromDeck("recact")}}};
+const labOf = s => s && (LAB_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
+  const lab = labOf(s);
+  if(lab && root.FTListen) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(lab.label)}</button>`;
   const a = asOf(s);
   if(a && root.FTProcess) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
   const k = kcOf(s); if(!k || !root.FTProcess) return "";
@@ -1592,7 +1597,7 @@ function wireReaders(){
   const left = unread(kcOf(s));
   go.disabled = left.length > 0;
   // (on its last page, the button names where it goes: the reading's questions, or the slide's assessment)
-  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (labOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
 }
 // 👩‍🏫 the presenter at the foot of the side panel (Activity decks and Know Your Tools), as on the lesson slides
@@ -1627,8 +1632,8 @@ function deckNextUp(){
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
-  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s);
-  if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s), lab = labOf(s);
+  if(lab && root.FTListen) lab.run(); else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)

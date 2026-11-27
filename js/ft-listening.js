@@ -180,7 +180,7 @@ function renderPage(){
   if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Day ${cur.day}</p><h1>🎧 Call Listening Log</h1>
       <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go, then 📝 Submit for Grading.</p>${pills}</div>
     ${actSheet(cur)}
-    <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button></div>`;
+    <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div>`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       ${pills}</div>
@@ -201,7 +201,7 @@ function renderLn(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   load(); loadSets();
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-ln">${R.set === "recact" && window.FTDayDecks ? `<a class="back-link" onclick="FTDayDecks.slide(3, 's1d')">&larr; Back to the 5 practice calls</a>` : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`}${renderPage()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-ln"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 }
 /* ---------- 📝 the activity's answer sheet in a pop-up, over the deck (Day 3's calls slide: build/day-decks.cjs PI_CALLS_HTML) ----------
@@ -308,11 +308,25 @@ async function submitPop(){
   // (the sheet painted again itself: the page's redraw doesn't always come round to it — FTListen.pop)
   POP.sending = false; try{ render(); }catch(err){} try{ paintPop(); }catch(err){}
 }
+// the way back to the deck the activity was opened from (FTListen.fromDeck)
+const LN_RET = "ftLnBack";
+try{ R.ret = JSON.parse(sessionStorage.getItem(LN_RET) || "null"); }catch(err){ R.ret = null; }
+const deckBack = () => R.ret && window.FTDayDecks ? `<button class="btn btn-primary" type="button" onclick="FTListen.toDeck()">Back to the deck${R.ret.h ? ": " + e(R.ret.h) : ""} →</button>` : "";
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,
   // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
+  // opened from a deck slide's Next (Day 3's Reception Listening Activity): the tab, then ← back to the deck on the slide
+  // after that one (kept for the tab, so a reload still goes back where the trainee left off)
+  fromDeck(sid){
+    const d = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state();
+    const i = (Number(d && d.i) || 0) + 1, nx = d && d.day != null && FTDayDecks.list ? (FTDayDecks.list(d.day) || [])[i] : null;
+    R.ret = d && d.day != null && state.view === "daydeck" ? {day: d.day, i, h: nx ? String(nx.h || "").replace(/^(AM|PM|Entire Day):\s*/, "") : ""} : null;
+    try{ if(R.ret) sessionStorage.setItem(LN_RET, JSON.stringify(R.ret)); else sessionStorage.removeItem(LN_RET); }catch(err){}
+    FTListen.open(sid);
+  },
+  toDeck(){ const r = R.ret; R.ret = null; try{ sessionStorage.removeItem(LN_RET); }catch(err){} if(r && window.FTDayDecks) FTDayDecks.open(r.day, r.i); else goto("simulators"); },
   // 📝 the activity's answer sheet in a pop-up over the deck
   // (the sheet is painted again as soon as the trainee's log and the sets are in — not only through the page's redraw, which
   // a slide's own trouble could stop — and after 8 seconds still waiting it says so, with ↻ Try again)
@@ -449,7 +463,7 @@ main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk on
 .ln-form label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;font-weight:600;color:var(--ink-soft);} .ln-form label.w,.ln-form .w{grid-column:1/-1;}
 .ln-form input,.ln-form select,.ln-form textarea{box-sizing:border-box;width:100%;min-width:0;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;background:var(--card,#fff);color:var(--ink);}
 .ln-act{display:flex;gap:8px;}
-.ln-audio{width:100%;margin:2px 0 4px;} .ln-end{display:flex;justify-content:flex-end;}
+.ln-audio{width:100%;margin:2px 0 4px;} .ln-end{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
 .ln-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .ln-aedit{display:grid;grid-template-columns:2fr 1fr;gap:10px 12px;padding:12px 0;} .ln-aedit label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-soft);}
 .ln-aedit .w{grid-column:1/-1;} .ln-aedit input,.ln-aedit textarea{box-sizing:border-box;width:100%;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
