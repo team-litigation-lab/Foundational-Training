@@ -584,7 +584,7 @@ s2: html => {
     // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
     // (under step 3's note, the box the trainee submits their completed worksheet's link in: js/ft-intake.js .ftis-wsub)
     // (and the naming convention reference read on the slide, page by page, in place of its PDF embed: pdocHtml)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC)}${step4}`);
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC, "bar")}${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -1084,11 +1084,12 @@ const pdocHtml = ([slug, title, n, dir = PDOC_DIR, note], big) => note && big !=
     `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p><div class="ftdd-pdoc-pages">${Array.from({length: n}, (_, i) =>
     `<a class="ftdd-pdoc-pg${i ? " ftdd-pdoc-hid" : ""}" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
     `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy">${i ? "" : `<span>🔍 Click to open ${n > 1 ? `all ${n} pages` : "it"}</span>`}</a>`).join("")}</div></div></div>\n`
-  : `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
+  : `<div class="ftdd-pdoc${big === true || big === "bar" ? " ftdd-pdoc-big" : ""}${big === "bar" ? " ftdd-pdoc-barred" : ""}" data-pages="${n}"${big === "bar" ? ` data-bartitle="📄 ${title}"` : ""}><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
   (note ? `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p>` : "") +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
-// Day 8's naming convention reference (Topic 2, between steps 3 and 4)
+// Day 8's naming convention reference (Topic 2, between steps 3 and 4): its name beside the slide's Watch & Do pill
+// ("bar": data-bartitle, js/ft-day-decks.js), its six pages in one row, each as large as the row allows
 const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)", 6, "/ft/day8/docs"];
 // Day 7's blank PI intake forms, a page of the slide each, and the other intake documents
 const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
@@ -1232,7 +1233,7 @@ const ROWS = {
         ["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>\n", ""],
         x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
           if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
-          return x.replace(re, (m, line, a0, rest) => a0.replace('<a class="viewer-link"', '<a class="viewer-link" data-bare data-bartitle="The Intake Packet and the Intake Documents (MVA Cases)"') + "The Intake Packet and the Intake Documents (MVA Cases)" + rest + "\n"); }]},
+          return x.replace(re, (m, line, a0, rest) => a0.replace('<a class="viewer-link"', '<a class="viewer-link" data-bare data-bartitle="🎬 The Intake Packet and the Intake Documents (MVA Cases)"') + "The Intake Packet and the Intake Documents (MVA Cases)" + rest + "\n"); }]},
       {id: "s1c", h: "AM: Other Intake Documents", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]],
         // (the day file's page break before the documents was Topic 2's: here they open the slide)
         fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},

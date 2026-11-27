@@ -763,7 +763,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(deckTitle(DD.day, info, d))}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${(m => m ? `<span class="ftdd-bar-t">🎬 ${m[1]}</span>` : "")(/data-bartitle="([^"]+)"/.exec(body || ""))}`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => `<span class="ftdd-bar-t">${m[1]}</span>`).join("")}`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
         ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
@@ -3333,6 +3333,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:
    bigger on a click (the Sample SOP's zoom, below) */
 .ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-barred > .ftdd-pdoc-h{display:none;}   /* (its name is in the slide's bar: data-bartitle) */
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:20px;}
 /* (the 💡/📌 yellow callouts: big, bold and dark enough to read from across the room) */
