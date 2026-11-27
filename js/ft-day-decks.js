@@ -1635,7 +1635,9 @@ function deckNextUp(){
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
   const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s), lab = labOf(s);
-  if(lab) lab.run(); else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
+  // (a slide whose Next is its Practice Lab activity: once handed in, the activity brings the trainee back to the slide after it,
+  // js/ft-lab-route.js FTLabRoute.done)
+  if(lab){ state.ftLabFrom = {day: Number(DD.day), i: DD.i + 1}; lab.run(); } else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)

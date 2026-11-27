@@ -48,8 +48,23 @@
     back(){ const f = state.ftLabFrom; state.ftLabFrom = null; state.ftLabFocus = null;
       if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto("dashboard"); },
     clear(){ state.ftLabFrom = null; render(); },
+    // ✅ an activity handed in (its own submit, below): when the trainee came from a deck, a bar says so and takes them back
+    // to the slide they left after 3 seconds (📍 Stay here keeps them on the activity; Back now goes at once)
+    done(){
+      const f = state.ftLabFrom; if(!f || !window.FTDayDecks) return;
+      clearTimeout(LR.t); const old = document.getElementById("ftlr-done"); if(old) old.remove();
+      const t = slideTitle(f.day, f.i), bar = document.createElement("div"); bar.id = "ftlr-done"; bar.setAttribute("role", "status");
+      bar.innerHTML = `<b>✓ Submitted.</b><span>Taking you back to your lesson${t ? `: ${esc(t)}` : ""}…</span>
+        <button type="button" class="btn ftlr-back-btn" onclick="FTLabRoute.home()">Back now →</button><button type="button" class="ftlr-stay" onclick="FTLabRoute.stay()">📍 Stay here</button>`;
+      document.body.appendChild(bar);
+      LR.t = setTimeout(() => LR.home(), 3000);
+    },
+    home(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); LR.back(); },
+    stay(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); },
     keyOf
   };
+
+  window.ftActivityDone = () => { try{ LR.done(); }catch(e){} };
 
   // 🔀 a deck's activity button → the Practice Lab (capture: before the button's own onclick runs)
   document.addEventListener("click", ev => {
@@ -133,6 +148,10 @@ main.main-sims .fts-card.fts-st-done{background:linear-gradient(#fff,#fff) paddi
 main.main-sims .fts-card.ftlr-focus{animation:ftlrGlow 1.2s ease-in-out 3;box-shadow:0 0 0 4px #E9CC7E,0 18px 34px -14px rgba(30,35,64,.6) !important;}
 @keyframes ftlrGlow{50%{box-shadow:0 0 0 8px rgba(233,204,126,.55),0 18px 34px -14px rgba(30,35,64,.6);}}
 @media (prefers-reduced-motion: reduce){ main.main-sims .fts-card.ftlr-focus{animation:none;} }
+/* ✅ submitted: back to the lesson in 3 seconds */
+#ftlr-done{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:calc(100vw - 32px);
+  padding:12px 18px;border-radius:14px;background:#1E2340;color:#E3E7F5;font-size:15.5px;font-weight:600;box-shadow:0 18px 40px -14px rgba(0,0,0,.6);border-left:6px solid #2E9D5B;}
+#ftlr-done b{color:#7BE0A1;font-weight:900;} .ftlr-stay{background:none;border:0;color:#C9CFE6;font-weight:700;cursor:pointer;}
 /* ← back to the lesson */
 .ftlr-back{position:sticky;top:0;z-index:7;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:10px 16px;border-radius:14px;
   background:#1E2340;color:#E3E7F5;font-size:15px;font-weight:600;box-shadow:0 10px 24px -14px rgba(0,0,0,.6);}

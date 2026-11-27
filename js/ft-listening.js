@@ -332,6 +332,7 @@ async function submitPop(){
     if(!r.ok) throw new Error(j.error || "send");
     POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review;
     const g = gradedOf(sid); toast(g ? `✓ Graded: ${g.score} of ${g.max} (${g.pct}%). Your score is on 📋 My Progress & Performance.` : "✓ Submitted for grading.");
+    if(window.ftActivityDone) ftActivityDone();
   }catch(err){ toast(err.message === "late" ? "The grading is taking long: your answers are saved. Close the sheet and open it again in a minute to see your score, or submit again." : err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
   // (the sheet painted again itself: the page's redraw doesn't always come round to it — FTListen.pop)
   POP.sending = false; try{ render(); }catch(err){} try{ paintPop(); }catch(err){}

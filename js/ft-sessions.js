@@ -244,7 +244,7 @@ Return ONLY JSON: {"summary":"..."}`;
       run.ai = {summary:String((out && out.summary) || "").slice(0, 2000), at:new Date().toISOString()};
     }catch(err){ run.ai = {error:"The AI evaluation isn’t available right now. Your checks and your trainer’s review still count."}; }
     S.busy = false; await save(); render(); window.scrollTo(0, 0);
-    toast(pct >= PASS ? `✓ ${pct}% on the checks. Submitted to your trainer.` : `${pct}% on the checks: see what was missed. Submitted to your trainer.`);
+    toast(pct >= PASS ? `✓ ${pct}% on the checks. Submitted to your trainer.` : `${pct}% on the checks: see what was missed. Submitted to your trainer.`); if(window.ftActivityDone) ftActivityDone();
   },
   again(){ const s = sessionById(S.cur); this.start(s.id); },
   // a session's tool links (its graded and practice calls, its case in the CMS), for the checks in .github/scripts

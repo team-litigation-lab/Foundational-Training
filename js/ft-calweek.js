@@ -56,7 +56,8 @@ function make(cfg){
   async function save(list, submit){
     if(R.saving) return; R.saving = true; render();
     try{ R.data = await call("save", {events: list, submit: !!submit}); R.edit = null;
-      toast(submit ? "📤 Sent to your trainer." : cfg.practice ? "💾 Saved to your practice calendar (never graded)." : "💾 Saved: it’s on next week’s calendar."); }
+      toast(submit ? "📤 Sent to your trainer." : cfg.practice ? "💾 Saved to your practice calendar (never graded)." : "💾 Saved: it’s on next week’s calendar.");
+      if(submit && window.ftActivityDone) ftActivityDone(); }
     catch(err){ toast("Couldn’t save: " + (err.message || err)); }
     R.saving = false; render();
   }
