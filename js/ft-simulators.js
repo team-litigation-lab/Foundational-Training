@@ -313,23 +313,21 @@ function renderSimulators(){
     const info = window.FTDays ? FTDays.of(d) : null, lp = lessonPart(d);
     // a day fully done folds away (its cards stay one click off, for review); the trainer's choice of open/closed is kept
     const open = flt !== "all" || (d in state.ftsDayOpen ? state.ftsDayOpen[d] : !complete || d === last);
-    return `<details class="fts-group fts-day ${complete ? "fts-day-done" : ""}" id="fts-day-${d}" ${open ? "open" : ""} ontoggle="ftsDayToggle(${d}, this.open)">
-      <summary><span class="fts-day-n">Day ${d}</span>${lp ? `<span class="fts-day-lp"><b>${esc(lp.title)}</b>${lp.part ? `<i>${esc(lp.part)}</i>` : ""}</span>` : `<span class="fts-day-role">${info ? esc(info.role) : ""}</span>`}
-        ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : `<span class="fts-day-count">${list.length ? `${list.length} item${list.length === 1 ? "" : "s"}` : "Classroom day"}</span>`}</summary>
-      ${shown.some(x => x.cont) ? `<div class="fts-conts">${shown.filter(x => x.cont).map(x => x.html).join("")}</div>` : ""}
-      ${shown.some(x => !x.cont) ? `<div class="fts-grid">${shown.filter(x => !x.cont).map(x => x.html).join("")}</div>` : ""}</details>`;
+    // (a row a day: its label on the left (the day, its lesson card and Part, how much is done), its cards on the right,
+    // every card the same size with its button at the bottom; nothing folds away: what is left is the trainee's own work)
+    return `<section class="fts-group fts-day fts-row ${complete ? "fts-day-done" : ""}" id="fts-day-${d}">
+      <header class="fts-row-h"><span class="fts-day-n">Day ${d}</span>${lp ? `<span class="fts-day-lp"><b>${esc(lp.title)}</b>${lp.part ? `<i>${esc(lp.part)}</i>` : ""}</span>` : `<span class="fts-day-role">${info ? esc(info.role) : ""}</span>`}
+        ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : ""}</header>
+      <div class="fts-grid">${shown.map(x => x.html).join("")}</div></section>`;
   };
-  const chips = days.map(d => { const c = byDay[d].filter(counted).filter(own), dn = c.filter(x => x.status === "done").length;
-    return `<a class="fts-jump ${isTrainee() && c.length && dn === c.length ? "ok" : ""}" onclick="ftsJump(${d})">Day ${d}${isTrainee() && c.length ? ` <small>${dn === c.length ? "✓" : dn + "/" + c.length}</small>` : ""}</a>`; }).join("");
   const anyShown = any.filter(pass);
   const more = !seesAll() ? `<p class="fts-sub fts-more">🔒 An activity opens when its day's training is unlocked.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
-      <p>Your live practice, day by day. Each training day lists its Practice Sessions, activities, drafting tools, Call Listening and the work you do with your trainer. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
-    <div class="fts-bar card">
+      <p>Your live practice, day by day. Each training day lists the activities you do on the platform: Practice Sessions, Call Listening, the calendar, drafting, Process Guides and drills. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
+    ${!isTrainee() ? "" : `<div class="fts-bar card">
       ${isTrainee() && all.length ? `<div class="fts-prog"><b>${doneN} of ${all.length} done</b><span class="fts-prog-bar"><i style="width:${Math.round(doneN / all.length * 100)}%"></i></span></div>` : ""}
       ${isTrainee() ? `<div class="fts-filter" role="group" aria-label="Show">${[["all", "All"], ["todo", "To do"], ["done", "✓ Done"]].map(([k, l]) => `<button type="button" class="btn btn-sm ${flt === k ? "btn-navy" : "btn-ghost"}" onclick="ftsFilter('${k}')">${l}</button>`).join("")}</div>` : ""}
-      ${days.length ? `<nav class="fts-jumps" aria-label="Jump to a day">${chips}${anyShown.length ? `<a class="fts-jump" onclick="ftsJump(0)">Any day</a>` : ""}</nav>` : ""}
-    </div>
+    </div>`}
     ${days.map(section).join("") || (flt !== "all" ? `<p class="fts-sub">${flt === "done" ? "Nothing marked done yet." : "Everything open so far is done. 🎉"}</p>` : "")}
     ${anyShown.length ? `<details class="fts-group fts-day" id="fts-day-0" open><summary><span class="fts-day-n">Any day</span><span class="fts-day-role">Practice and reference, whenever you like</span></summary>
       <div class="fts-grid">${anyShown.map(x => x.html).join("")}</div></details>` : ""}
@@ -459,7 +457,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 main.main-sims{max-width:1320px;padding:16px 20px 40px;}
 main.main-sims .fts-hero{margin-bottom:10px;} main.main-sims .fts-hero h1{font-size:24px;margin:0 0 4px;}
 main.main-sims .fts-hero p{margin:0;font-size:14px;max-width:900px;}
-.fts-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;margin:0 0 14px;position:sticky;top:var(--fts-bar-top,0px);z-index:5;}
+.fts-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;margin:0 0 14px;}   /* (no day chips: the days are rows one under the other) */
 .fts-prog{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--navy);}
 .fts-prog-bar{display:inline-block;width:140px;height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;} .fts-prog-bar i{display:block;height:100%;background:#16a34a;border-radius:99px;}
 .fts-filter{display:flex;gap:6px;}
