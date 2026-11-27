@@ -203,12 +203,11 @@ async function workerChecks() {
   if (deck.bar) fail('Day 5\'s Attorney Calendar Management Activity slide still has link pills on its bar');
   // (the activity's one link is on its Instructions slide: its Sample & Time Zone slide has no tiles)
   if (deck.tile || deck.portal) fail('Day 5\'s Sample & Time Zone slide still has the Check\'s or the Portal\'s tile');
-  // the Instructions slide links the activity's simulator (the Main Portal's Calendaring Activity calendar), under the instructions
+  // the Instructions slide has no button over its cards ("Remember the RULES!" beside its pill); the activity's link is
+  // its Sample & Time Zone slide's 🧪 Activity Items: Practice Lab (and the Main Portal's calendar is still ftsCalsim('activity'))
   await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
-  const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
-  if (!ins.link || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should link the Portal's simulator (and carry no link pills): ${JSON.stringify(ins)}`);
-  // (and the link opens the activity's own calendar: gcal.html?track=activity, not the Calendaring Simulators' list)
-  // (for a trainee and a trainer alike: each is signed in there by their ticket, js/lsh-tool-links.js)
+  const ins = await page.evaluate(() => ({ portal: !!document.querySelector('.ftdd-calsim-ins'), rules: [...document.querySelectorAll('.ftdd-bar .ftdd-bar-t')].some(x => /Remember the RULES!/.test(x.textContent)), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
+  if (ins.portal || !ins.rules || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should have "Remember the RULES!" beside its pill and no Portal button (and no link pills): ${JSON.stringify(ins)}`);
   const opened = await page.evaluate(() => { let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; return u; });
   if (!/\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(opened)) fail(`the activity's link should open its own calendar: ${opened}`);
   // the Calendaring Simulator opened from a slide: ← Back to the slides returns to that slide (not the Simulators page)
