@@ -372,9 +372,9 @@ s3: html => {
   const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), six = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">6.</span>');
   if(at < 0 || six < 0 || six > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
-    '<div class="ftdd-cards2 ftdd-cards2-b">' + card("📋", "Instructions 1–5", text.slice(0, six).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 6–9", text.slice(six, at)) + "</div>\n" +
-    // (under the Instructions, the link to the activity's simulator: the Main Portal's Calendaring Activity calendar, in its own tab)
+    // (over the Instructions, large: the link to the activity's simulator, the Main Portal's Calendaring Activity calendar, in its own tab)
     `<div class="ftdd-calsim ftdd-calsim-ins" data-calsim-activity="5:s3-ins">${calsimPortal("btn btn-navy")}</div>\n` +
+    '<div class="ftdd-cards2 ftdd-cards2-b">' + card("📋", "Instructions 1–5", text.slice(0, six).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 6–9", text.slice(six, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
       .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")
@@ -763,7 +763,9 @@ const DEMO_SLIDE = `<p><b>Instructions</b></p>\n<ul>` +
   `<li>Find your task in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>. It names the Intake Packets to save.</li>` +
   `<li>Only one user can be in SA at a time. Your trainer gives you access, with 10–15 minutes to explore it first.</li></ul>\n` +
   // (the Additional Reminder on the first page, with the Instructions; the metrics open the next page on their own)
-  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n<div class="ftdd-pgbreak"></div>\n`;
+  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n` +
+  // (the first demo is where the trainee learns to keep their own guide: from then on they know to)
+  `<p class="ftdd-callout">💡 While watching the tutorial video, create your own notes or work guide so that you have something to refer to during your recorded demonstration.</p>\n<div class="ftdd-pgbreak"></div>\n`;
 const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
   `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
   `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
@@ -1050,8 +1052,8 @@ const EDIT = {
         '<p><a class="viewer-link" data-embed data-kind="video" data-title="Tutorial Video: Sending the MedLOR and Requesting Medical Bills &amp; Records"', 1, "Day 15 s1");
       // the reminders' three points, then the demonstration rules as the trainers' three cards (in place of the guide's
       // "Please resolve…" lines and its two rules)
-      const gentle = borrow(14, "s1", "<p><b>Gentle Reminders:</b></p>", "<p><b>Please resolve any tool-related issues");
-      return tut + gentle + DEMO_GUIDELINES + rep(h, "<h3>Demo Metrics</h3>", "<h3>Demo Metrics</h3>", 1, "Day 15 s1");
+      // (Day 14's Gentle Reminders and the demonstration guidelines aren't repeated here: the trainee read them on Day 14)
+      return tut + rep(h, "<h3>Demo Metrics</h3>", "<h3>Demo Metrics</h3>", 1, "Day 15 s1");
     },
     // (its only line, the facilitator's timing note, is not shown: the shadowing slide had nothing on it)
     s2: h => borrow(14, "s2", "<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>", null).split("\n")[0] + "\n" + SHADOW_HOWTO + h},
@@ -1323,19 +1325,37 @@ const ROWS = {
     // (the tutorial with no topic line or "Tutorial Video" bar over it, played as large as the page allows: data-bare)
     s1: [{id: "s1", parts: [[null, "<h4>Please take note and include these reminders"]], fix: [
         ["<p><b>Topic: Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills &amp; Records</b></p>\n<p>Tutorial Video:</p>\n", ""],
+        // (in place of "Please proceed to watch …": the firm's protocol, which may vary from firm to firm; the note to keep a
+        // guide is on the first demo, Day 8's Intake, so here only the part of the video to skip)
+        ["<p>Please proceed to watch the tutorial video and learn how we, here at VLF handle the process of sending MedLOR and requesting medical bills and records. </p>", '<p class="ftdd-callout ftdd-vlf">📌 This is a VLF-established protocol. The process may vary depending on the law firm you will work with.</p>'],
+        ["<p>NOTE:  While watching the tutorial video, create your own notes or work guide so that you have something to refer to during your recorded demonstration. Additionally, please skip [Time stamp range 58:12-58:45 mins] in the video. Thank you.</p>", "<p>⏩ Skip 58:12–58:45 in the video.</p>"],
         ['<a class="viewer-link" data-kind="video" data-title="Tutorial Video: https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp"', '<a class="viewer-link" data-kind="video" data-embed data-bare data-title="Reference Video: Sending MedLOR and Requesting Medical Bills &amp; Records"']]},
       // (the reminders in cards, two pages: D14_CARDS)
       {id: "s1b", h: "AM: Notes for Your Work Guide", parts: [["<h4>Please take note and include these reminders", "<p><b>Here are the first 5 steps of the process guide as your sample"]], fix: [D14_CARDS]},
       // (step 5 and its screenshot side by side, one page: the picture on the left, as large as the page allows, the step and
       // "How to find the DOL/DOI/DOA" on the right, ftdd-imgside)
-      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]], fix: [h => {
+      {id: "s1c", h: "AM: Sample Process Guide: the First 5 Steps", parts: [["<p><b>Here are the first 5 steps of the process guide as your sample", "<p><b>Gentle Reminders:</b></p>"]], fix: [
+        // (no "Here are the first 5 steps … your preference" line: the slide's ribbon says what it is)
+        h => h.replace(/<p><b>Here are the first 5 steps of the process guide as your sample\. Feel free to format the guide according to your preference<\/b><\/p>\n/, ""), h => {
         const re = /<p>5\. Kindly also obtain the  DOL of the client in the summary page\.<\/p>\n<p><b>How to find the DOL\/DOI\/DOA<\/b><\/p>\n(<div class="shots"><figure><a href="\/ft\/day14\/img\/image51\.png"[^\n]*?<\/figure><\/div>)\n?/;
         if(!re.test(h)) throw new Error("Day 14's step 5 and its DOL/DOI/DOA screenshot are no longer where the build looks for them");
         return h.replace(re, (m, shot) => PGBREAK + '<div class="ftdd-keep ftdd-imgside"><div class="ftdd-imgside-img">' + shot + '</div><div class="ftdd-imgside-txt"><p><b>How to find the DOL/DOI/DOA</b></p>\n<p>5. Kindly also obtain the DOL of the client in the summary page.</p></div></div>\n');
       }]},
       {id: "s1d", h: "AM: Gentle Reminders & SA Updates", parts: [["<p><b>Gentle Reminders:</b></p>", '<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>']], fix: [["<p>@everyone</p>\n", ""],
         // (no "FYI – Current SmartAdvocate (SA) Updates" line: the bar under it names the updates)
-        ["<p>FYI – Current SmartAdvocate (SA) Updates</p>\n", ""]]},
+        ["<p>FYI – Current SmartAdvocate (SA) Updates</p>\n", ""],
+        // (two cards a page, so each is read at a glance: 💡 the Gentle Reminders beside SA update 1; then updates 2 and 3–4)
+        h => {
+          const cut = (a, b) => { const i = h.indexOf(a), j = b ? h.indexOf(b, i + 1) : h.length; if(i < 0 || j < 0) throw new Error("Day 14's Gentle Reminders & SA Updates are no longer where the build looks for them: " + a); return h.slice(i, j); };
+          const drop = (x, re) => x.replace(re, "");
+          const g = drop(cut("<p><b>Gentle Reminders:</b></p>", '<hr class="stars">'), /<p><b>Gentle Reminders:<\/b><\/p>\n?/);
+          const u1 = drop(cut("<p><b>1. MEDS Tab Location Has Changed</b></p>", "<p><b>2. Client Contact Card"), /<p><b>1\. MEDS Tab Location Has Changed<\/b><\/p>\n?/);
+          const u2 = drop(cut("<p><b>2. Client Contact Card", "<p><b>3. Update the Client Information"), /<p><b>2\. Client Contact Card Has Been Updated\.<\/b><\/p>\n?/);
+          const u3 = cut("<p><b>3. Update the Client Information", null).replace("<p><b>3. Update the Client Information in Your Documents</b></p>", "");
+          const card = (t, b) => `<div class="ftdd-gcard"><p class="ftdd-gcard-h">${t}</p>\n${b}</div>`;
+          return `<div class="ftdd-gcards">${card("💡 Gentle Reminders", g)}${card("🛠 SA Update 1: The MEDS Tab Location Has Changed", '<p class="ftdd-gcard-sub">Take note of these current updates in SmartAdvocate (SA) before proceeding with the demo.</p>\n' + u1)}</div>\n` +
+            PGBREAK + `<div class="ftdd-gcards">${card("🛠 SA Update 2: The Client Contact Card Has Been Updated", u2)}${card("🛠 SA Update 3: Update the Client Information in Your Documents", u3)}</div>\n`;
+        }]},
       {id: "s1e", h: "PM: Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills & Records",
         parts: [['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b>', null]], fix: [
           ['<p class="li" style="--lvl:0"><span class="lbl">1.</span><span><b>PM: </b><b><i>Demo and Shadowing</i></b></span></p>\n', ""],
@@ -1348,8 +1368,8 @@ const ROWS = {
   },
   15: {
     // the tutorial video alone, then the Gentle Reminders and the rules on a slide of their own
-    s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<p><b>Gentle Reminders:</b></p>"]]},
-      {id: "s1g", h: "AM: Gentle Reminders", parts: [["<p><b>Gentle Reminders:</b></p>", "<h3>Demo Metrics</h3>"]]},
+    // (no Gentle Reminders slide: Day 14 has them, the owner asked the repeat gone)
+    s1: [{id: "s1", h: "AM: Before Your Recorded Demonstration", parts: [[null, "<h3>Demo Metrics</h3>"]]},
       {id: "s1b", parts: [["<h3>Demo Metrics</h3>", null]]}]
   },
   16: {
@@ -1486,13 +1506,18 @@ const PREP = {
 const INSERT = {16: [
   // (the MedLOR demo as recorded on Filevine, the guide's Day 16 reference recordings: an additional reference after Saving
   // Medical Bills & Records — the demo itself is done in SmartAdvocate)
-  {after: "s2b", id: "s3f", h: "Sending MedLOR (Filevine): Recorded Demos", html: "<p>The MedLOR demo as recorded on Filevine, for reference only: do yours in SmartAdvocate.</p>\n" +
-    ["11mvVFbtzbWIVcKM0XwVm_lp11_5mbseR", "13DGgCl5S_FjCUBoj-Oo65_68lBrwZz3u"].map((id, i) => `<p><a class="viewer-link" data-card data-kind="video" data-title="Sending MedLOR (Filevine) · recording ${i + 1}" href="https://drive.google.com/file/d/${id}/view?usp=sharing">Sending MedLOR (Filevine) · recording ${i + 1}</a></p>`).join("\n")},
-  {after: "s2b", id: "s3m", h: "Saving Medical Bills & Records", html: SLOT(16, "s3m-1") + "\n" + "<p>You will also learn how to save medical bills and records. Please go to the links below and follow the process.</p>\n<p><b>Topic: Saving Medical Bills &amp; Records </b></p>\n<p>Task 1 - Go to this link and learn the step-by-step process.</p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"Topic: Saving Medical Bills &amp; Records\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing</a></p>\n<p>Task 2 - Watch this sample demo</p>\n<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link</a></p>\n<p><b>Note:</b> Create your own work guide/notes.</p>\n<hr class=\"stars\">\n<h4>You may add these in your notes.</h4>\n<p><i>HCFA or HICF: either is right for the bill.</i></p>\n<p>Complete Naming Convention:</p>\n<p>MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Extracted Docs:</p>\n<p>BILL</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p>\n<p>MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21  (Michelle)</p>\n<p>------------</p>\n<p>RECORDS</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p>\n<p>-----------</p>\n<p>LIEN</p>\n<p>Naming Convention:  </p>\n<p>MED - Provider - Unsigned Lien (va’s first name)</p>\n<p>Sample:</p>\n<p>MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p>\n<p>--------------</p>\n<p>Report Format on Notes tab:</p>\n<p>Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p>\n<p><b>Note:</b> Highlight the filename, right click and paste the internal link. </p>\n<p>--------------</p>\n<p>Report Format on Tasks tab:</p>\n<p>mm.dd.yyyy Received bills &amp; records from <u>lien holder(medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p>"}]};
+  {after: "s2b", id: "s3f", h: "Sending MedLOR (Filevine): Recorded Demos", html: "" +   // (the two recordings play on the slide: no line over them)
+    ["11mvVFbtzbWIVcKM0XwVm_lp11_5mbseR", "13DGgCl5S_FjCUBoj-Oo65_68lBrwZz3u"].map((id, i) => `<p><a class="viewer-link" data-kind="video" data-title="Sending MedLOR (Filevine) · recording ${i + 1}" href="https://drive.google.com/file/d/${id}/view?usp=sharing">Sending MedLOR (Filevine) · recording ${i + 1}</a></p>`).join("\n")},
+  // (Saving Medical Bills & Records: the step-by-step slides themselves on the slide, the sample demo as large as the page
+  // allows, then the pointers for the trainee's own guide as six cards on one page)
+  {after: "s2b", id: "s3m", h: "Saving Medical Bills & Records", html: SLOT(16, "s3m-1") + "\n" +
+    "<p><b>Sample Step by Step Process on 📽 Saving Medical Bills &amp; Records in Filevine</b></p>\n" +
+    "<p><a class=\"viewer-link\" data-embed data-full data-kind=\"doc\" data-title=\"Saving Medical Bills &amp; Records: Step by Step\" href=\"https://docs.google.com/presentation/d/1zngNLRUxYDy-tF8uPWiEytN3apLfgm0C/edit?usp=sharing\">Saving Medical Bills &amp; Records: Step by Step</a></p>\n" +
+    "<p><a class=\"viewer-link\" data-embed data-kind=\"video\" data-title=\"Saving Medical Bills &amp; Records: Sample Demo\" href=\"https://drive.google.com/file/d/1L2AkDVDJWKVD9VH1xyQ0pkpBjsPUNNQl/view?usp=drive_link\">Saving Medical Bills &amp; Records: Sample Demo</a></p>\n" +
+    "<p class=\"ftdd-callout\">💡 Reminder: Create your own work guide/notes. You may add these pointers.</p>\n" +
+    "<div class=\"ftdd-ncards\"><div class=\"ftdd-ncard\"><b>Complete naming convention</b><p><i>HCFA or HICF: either is right for the bill.</i></p><p class=\"ftdd-nconv\">🏷 MED - Provider - HCFA $0.00 &amp; Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va’s first name)</p><p class=\"ftdd-nsamp\">MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 &amp; Records DOS 06.15.21 with Signed COR and Unsigned Lien (Michelle)</p></div><div class=\"ftdd-ncard\"><b>Bill</b><p class=\"ftdd-nconv\">🏷 MED - Provider - HCFA $0.00 DOS mm.dd.yy (va’s first name)</p><p class=\"ftdd-nsamp\">MED - Tsao Consultants Dr. Tsao - HCFA $1015.00 DOS 06.15.21 (Michelle)</p></div><div class=\"ftdd-ncard\"><b>Records</b><p class=\"ftdd-nconv\">🏷 MED - Provider - Records DOS mm.dd.yy with Signed COR (va’s first name)</p><p class=\"ftdd-nsamp\">MED - Tsao Consultants Dr. Tsao - Records DOS 06.15.21 with Signed COR (Michelle)</p></div><div class=\"ftdd-ncard\"><b>Lien</b><p class=\"ftdd-nconv\">🏷 MED - Provider - Unsigned Lien (va’s first name)</p><p class=\"ftdd-nsamp\">MED - Tsao Consultants Dr. Tsao - Unsigned Lien (Michelle)</p></div><div class=\"ftdd-ncard\"><b>Report format on the Notes tab</b><p class=\"ftdd-nsamp\">Received [filename w/o va&#x27;s name]. Saved in Meds and Docs tab. Thank you. (va’s first name)</p><p class=\"ftdd-nnote\">💡 Highlight the filename, right click and paste the internal link.</p></div><div class=\"ftdd-ncard\"><b>Report format on the Tasks tab</b><p class=\"ftdd-nsamp\">mm.dd.yyyy Received bills &amp; records from <u>lien holder (medical provider)</u>. Saved in Meds and Docs tab. Thank you. (va&#x27;s first name)</p></div></div>"}]};
 // 🧰 a preparation slide's link to the tool its demo uses (the tool's card in 🛠 Practice Lab, scored on the 🏅 Score Card)
-const PREP_LEAD = {
-  12: {s1dp: '<div class="ftdd-pq-go ftdd-lor-go"><p><b>🧰 Your 1P and 3P LORs</b>: the demo uploads and sends the letters you draft in the LOR Drafting Activity (🛠 Practice Lab → 🧰 Drafting Tools). Its score is on your 🏅 Score Card.</p>' +
-    '<button type="button" class="btn btn-navy" onclick="lshOpenPortalDrafting()">🧰 Open the LOR Drafting Activity →</button> <button type="button" class="btn btn-ghost" onclick="goto(\'simulators\')">🛠 Practice Lab</button></div>\n'}};
+const PREP_LEAD = {};   // (Day 12's LOR Drafting line is off its preparation slide: the owner asked it gone)
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
@@ -1598,7 +1623,7 @@ for(let n = 1; n <= 16; n++){
 // (and Day 14's MedLOR tutorial video, an additional reference, closes Lien Verification's deck, after Saving Medical Bills)
 const MOVE = {9: {s2: [8, "mcm", h => h.replace(/^AM:/, "PM:")]},
   // (both before Day 14's Demo Preparation: the reminders and guidelines come before the demo's rules)
-  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:"), null, "s1ep"], s1g: [14, "r15g", () => "PM: Gentle Reminders: Your Recorded Demonstration", null, "s1ep"],
+  15: {s1: [14, "r15v", h => h.replace(/^AM:/, "PM:"), null, "s1ep"],   // (no Gentle Reminders a second time: Day 14 has them)
     // (not Day 15's Demo Preparation: its metrics would be the same MedLOR metrics a second time on Part 2)
   }};
 // (a fifth element: the slide it goes before, in place of the deck's end)

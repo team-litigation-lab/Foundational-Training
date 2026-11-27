@@ -70,7 +70,7 @@ function consultHtml(d){
       <table>${row("Date", m.date)}${row("Time", m.time)}${row("Attendees", m.attendees)}${row("Purpose", m.purpose)}</table>
       <h5>Discussion</h5><p>${nl(m.discussion)}</p><h5>The client’s concerns and questions</h5><p>${nl(m.concerns)}</p>
       <h5>The attorney’s advice and answers</h5><p>${nl(m.advice)}</p><h5>Action items and next steps</h5><p>${nl(m.actions)}</p></div></details>
-    ${typeof goto === "function" && window.FTTranscribe && !document.querySelector("main.main-tr") ? `<div class="ftis-go"><button type="button" class="btn btn-navy btn-sm" onclick="FTTranscribe.fromDeck()">🎧 Open the Transcription Activity →</button></div>` : ""}
+    ${""/* (a sample to study: no link to the Transcription Activity from it) */}
   </article>`;
 }
 
@@ -692,7 +692,8 @@ window.FTIntake = {
 /* (seven to a row: Day 8's fourteen documents in two rows) */
 .ftis-docs-lead{margin:0 0 6px;}
 .ftis-docs-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin:8px 0;}
-.ftis-dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin:10px 0;}
+.ftis-dg{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:12px;margin:10px 0;}   /* (eight to a row, each as large as the row allows) */
+@media(max-width:1300px){.ftis-dg{grid-template-columns:repeat(4,minmax(0,1fr));}}
 .ftis-dg-c{display:flex;flex-direction:column;gap:8px;padding:8px;border:1.5px solid #C9CEE0;border-radius:12px;background:#fff;cursor:pointer;text-align:left;box-shadow:0 2px 8px rgba(30,35,64,.08);transition:transform .12s,box-shadow .12s,border-color .12s;}
 .ftis-dg-c:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(30,35,64,.18);border-color:#E8590C;}
 .ftis-dg-pic{position:relative;display:block;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#F1F3F8;}
