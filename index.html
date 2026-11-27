@@ -8150,9 +8150,12 @@ window.applyUpdate = applyUpdate;
   // FTDayDecks. On a slow device the awaits above can finish while the scripts after this one still load, and a reload of
   // #/modules then resumed the last deck instead)
   if(document.readyState === "loading") await new Promise(r => document.addEventListener("DOMContentLoaded", r, {once: true}));
-  if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
+  // (🔄 a trainer — in 👁 Switch View too — reloading a page stays on it, signed in: the page's address reopens it; with no
+  // address, 📚 Dashboard, never the sign-in screen)
+  const staff = state.isAdmin || state.adminPreview;
+  if(staff){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
-    state.view = "login";
+    state.view = "login";   // (a trainer with no page address: the sign-in card opens 📚 Dashboard for them, js/portal-gate.js)
   }else if(state.traineeId){
     const traineeRecord = await traineeRecordP;
     const status = approvalFromRecord(traineeRecord);

@@ -2077,12 +2077,7 @@ const TOOLS = [
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "✉️", name: "Email Sims", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 LSH Academy Index → 🛠 LSH Elev8™ → ✉️ Email Sims (it opens in its own tab)",
-    what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
-    feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
-      "✍️ Email Replies: one email at a time, answered in the sender’s style",
-      "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
-      "One submission grades filing, security, triage and your replies"]},
+  // (✉️ Email Sims: off the training)
   {ic: "📅", name: "Google Calendar Sim", short: "Calendar Sims", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Sims",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
