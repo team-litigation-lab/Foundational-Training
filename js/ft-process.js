@@ -480,6 +480,43 @@ const ASSESSMENTS = {2: [
   // (Day 11's, answered on the platform: js/ft-assess.js)
   7: [{t: "Policy Disclosure, Claim & Liability Evaluation", id: "policy-disclosure"}]};
   // (no Breakout Session worksheets: the curriculum's breakouts are the digital handouts only, with no assessment)
+/* 📄 Day 8's Intake Worksheet, on the Intake lesson's Knowledge Check (the owner: "embed this in Knowledge Check so trainees
+   won't miss it; right now its scores are not assessed and the document just ignored even if answered"). Always on the page,
+   not only when a slide's link opened it: the worksheet itself to read, ✏️ Make my editable copy, and 📤 the link of the
+   completed one submitted here (js/ft-intake.js paints .ftis-sheet / .ftis-wsub: actsub:<id>.items.intakews, the same
+   submission the Day 8 slide takes). Its grade — the trainer's, against the Training Guide's Answer Sheets, on the trainee's
+   📋 Batch Sheet card (trackerreview:<id>.assess.intakews) — shows here as soon as it's in, so a submitted worksheet is never
+   left unseen. */
+const KC_WORKSHEETS = {6: {t: "Worksheet for Intake Documents (Day 8)", key: "intakews",
+  doc: "1O1Oxh2vmK7OPFaJjGyjjofZwNZG5vDqJ", href: "https://docs.google.com/document/d/1O1Oxh2vmK7OPFaJjGyjjofZwNZG5vDqJ/edit"}};
+const WSG = {id: null, at: 0, loading: null, g: {}};
+function loadWsGrade(){
+  if(!state.traineeId || state.isAdmin || WSG.loading || (WSG.id === state.traineeId && Date.now() - WSG.at < 60000)) return;
+  const id = state.traineeId; WSG.at = Date.now();
+  WSG.loading = sharedGet("trackerreview:" + id).then(v => { WSG.id = id; WSG.g = (v && v.assess) || {}; })
+    .catch(() => {}).then(() => { WSG.loading = null; if(["kc", "process"].includes(state.view)) render(); });
+}
+function worksheetCard(lesson){
+  const w = KC_WORKSHEETS[lesson]; if(!w) return "";
+  loadWsGrade();
+  const g = WSG.id === state.traineeId ? WSG.g[w.key] : null, pct = g && isFinite(Number(g.pct)) ? Math.round(Number(g.pct)) : null;
+  const grade = state.isAdmin ? `<p class="fp-ws-g">Trainers grade it on the trainee's 📋 Batch Sheet card (📦 Intake Packet → 📝 Intake Worksheet).</p>`
+    : pct != null ? `<p class="fp-ws-g ok">✓ Graded: <b>${pct}%</b>${g.comment ? ` · “${e(g.comment)}”` : ""}</p>`
+    : `<p class="fp-ws-g">Graded by your trainer against the Answer Sheets once you submit it. Your score shows here.</p>`;
+  return `<div class="card fp-set fp-assess fp-ws"><div class="fp-head"><b>📄 ${e(w.t)}</b><span class="fp-count">Part of this Knowledge Check: complete it, then submit its link</span></div>
+    <div class="fp-body">
+      <ol class="fp-ws-steps"><li>✏️ Make your editable copy and answer the table in it.</li><li>Move it into your Assessments/Activities folder.</li><li>📤 Paste its link below and submit.</li></ol>
+      <div class="ftis-sheet" data-href="${e(w.href)}"></div>
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${e(w.doc)}/preview" title="${e(w.t)}" loading="lazy"></iframe></div>
+      <div class="ftis-wsub"></div>
+      ${grade}
+    </div></div>`;
+}
+(function(){ const st = document.createElement("style"); st.id = "fp-worksheet"; st.textContent = `
+.fp-ws .fp-ws-steps{margin:0 0 10px;padding-left:22px;font-weight:600;line-height:1.6;}
+.fp-ws .fp-ws-g{margin:10px 0 0;padding:8px 12px;border-radius:8px;background:#F3F5FB;font-weight:600;color:#1E2340;}
+.fp-ws .fp-ws-g.ok{background:#E7F6EC;color:#14603A;}
+`; document.head.appendChild(st); })();
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
@@ -538,7 +575,7 @@ function renderPage(){
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then <b>📄 Save PDF to my Folder</b> before the end of your shift: your answer sheet is saved as a PDF in your Assessment and Activities Folder, named by its convention. <span class="fp-save" id="fpSave"></span></p></div>
-    ${assessCard(lesson)}${assessBack}${moduleCard(lesson, backBtn)}`;
+    ${assessCard(lesson)}${assessBack}${worksheetCard(lesson)}${moduleCard(lesson, backBtn)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
