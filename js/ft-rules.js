@@ -849,7 +849,7 @@ body.ft-orient #lessonSlideWrap .ftr-why2 .ftr-rule b{font-size:clamp(16px,1.6vw
 .ftr-status{margin-top:14px;} .ftr-status .ftr-when{margin-top:6px!important;}
 .ftr-copyrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0;} .ftr-copyrow .ftr-code{overflow-wrap:anywhere;}
 .ftr-to{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:15px;display:flex;flex-direction:column;gap:2px;} .ftr-to b{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .ftr-to span{overflow-wrap:anywhere;}
-.ftr-rule b{display:block;font-size:17px;color:#1F4FA3 !important;}   /* (a rule card's header in blue, against its rose card: contrast) */ .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
+.ftr-rule b{display:block;font-size:17px;color:var(--danger);} .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
 .ftr-chan,.ftr-part{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;}
 .ftr-chan-h{font-size:17px;color:#5865F2;font-weight:800;} .ftr-chan p{margin:6px 0 10px;font-size:15px;color:var(--ink-soft);}
 .ftr-aux{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0;font-size:15px;}
