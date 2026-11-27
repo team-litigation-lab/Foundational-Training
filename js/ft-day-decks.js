@@ -2385,7 +2385,7 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;c
 .ftdd-tools-ic{flex:0 0 22px;text-align:center;font-size:16px;}
 .ftdd-tool{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0;}
 .ftdd-tool-shot{display:block;aspect-ratio:16/10;border:1px solid #E3E6EE;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(38,43,69,.14);background:#F6F7FA;}
-.ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:top center;}   /* every screenshot in the same 16:10 frame, from its top */
+.ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:contain;object-position:center;}   /* every screenshot in the same 16:10 frame, whole (none cropped) */
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt h3{margin:0 0 8px !important;font:800 22px/1.2 'Poppins','Inter',sans-serif !important;color:#fff !important;letter-spacing:0;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p{margin:0 0 8px;font-size:15px;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:700 18px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
