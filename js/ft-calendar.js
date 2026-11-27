@@ -375,7 +375,7 @@ function reviewHTML(g, notes){
 // The activity's panel: the Calendar Activity Check's verdict on every field of each event (✓, or ✗ with the Check's fix), the
 // simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
 // ← Back: to the deck's slide the page was opened from, else the Simulators page
-const backBtn = () => S.from ? `<button class="btn btn-ghost btn-sm" onclick="FTCalSim.back()">← Back to the slides</button>` : `<button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← 🛠 Practice Lab</button>`;
+const backBtn = () => S.from ? `<button class="btn btn-ghost btn-sm" onclick="FTCalSim.back()">← Back to the slides</button>` : `<button class="btn btn-ghost btn-sm" onclick="FTLabRoute.home()">← Back to the lesson</button>`;
 const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="FTCalSim.toCheck()" title="Copies this calendar’s events into your Calendar Activity Check, then opens it: each field is checked there">✅ Check this calendar in the Calendar Activity Check</button>` : "";
 // ✅ the Calendar Activity Check (#/calcheck) verifies what is done here: this calendar's events, as the Check's entries (the review's
 // own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its
@@ -973,7 +973,7 @@ function finalOf(scnId){
   return s && sub && released(r) ? {s, sub, r, name:state.certName || state.traineeName || ""} : null;
 }
 window.FTCalSim = {
-  back(){ const f = S.from; S.from = null; if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto('simulators'); },
+  back(){ const f = S.from; S.from = null; if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else if(window.FTLabRoute) FTLabRoute.home(); else goto('modules'); },
   submit, toCheck,
   download(id){ const f = finalOf(id); if(!f){ toast("Your final feedback isn’t released yet."); return; }
     const blob = new Blob([feedbackDoc(f.s, f.sub, f.r, f.name)], {type:"text/html"}), a = document.createElement("a");

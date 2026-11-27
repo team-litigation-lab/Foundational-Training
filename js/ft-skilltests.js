@@ -436,7 +436,7 @@ window.render = function(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   if(state.isAdmin && !state.adminPreview && !state.traineeId){ state.adminTab = "skilltests"; state.view = "admin"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-st"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderTrainee()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-st"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>${renderTrainee()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   if(S.run && S.run.kind === "typing" && !S.run.done){ paintTyping(); const t = document.getElementById("stType"); if(t){ t.value = S.run.typed; t.focus(); } }
 };
