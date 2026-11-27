@@ -25,7 +25,6 @@
     [/goto\('listening'\)/, () => "listening"],
     [/ftsCalsim\('activity'\)|goto\('calsim'|goto\('calcheck'\)|goto\('calweek'\)/, () => "calendar"],
     [/goto\('calrules'\)/, () => "session:calendaring"],
-    [/FTClaimsMail\.fromDeck\(\)|goto\('claimsmail'\)/, () => "claimsmail"],
     [/goto\('transcribe'\)/, () => "transcribe"],
     [/FTSessions\.open\('([\w-]+)'\)/, m => "session:" + m[1]],
     [/FTDrills\.start\('([\w-]+)'\)/, m => "drills:" + m[1]],

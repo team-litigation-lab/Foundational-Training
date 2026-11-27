@@ -57,9 +57,10 @@ if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 // 💬 Classroom Discussion stops are those), and no slide left with only that: Day 10's classroom discussion slide is off
 for (let n = 1; n <= 16; n++) (D[n] ? D[n].slides : []).forEach(s => { if (/Today’s Process Questions|Today’s lesson deck/.test(s.html)) fail(`Day ${n} ${s.id}: a Process Questions or lesson deck pointer on the slide`); });
 if (D[10] && D[10].slides.some(s => s.id === 's1')) fail("Day 10's classroom discussion slide, only pointers, is still on the deck");
-// Day 11's afternoon is the ✉️ Insurance Email Simulator (js/ft-claims-email.js), not shadowing
-{ const s2 = D[11] && D[11].slides.find(s => s.id === 's2');
-  if (!s2 || s2.h !== 'PM: Insurance Email Sim' || !/FTClaimsMail\.fromDeck\(\)/.test(s2.html) || /shadow/i.test(s2.html)) fail("Day 11's afternoon isn't the Insurance Email Sim, or still mentions shadowing"); }
+// Day 11's afternoon is off the deck: no shadowing, and no ✉️ Insurance Email Simulator (not in the curriculum)
+{ const d11 = (D[11] && D[11].slides) || [];
+  if (d11.some(s => /FTClaimsMail|Insurance Email Sim/.test(s.h + s.html))) fail("Day 11's deck still has the Insurance Email Sim");
+  if (d11.some(s => /shadow/i.test(s.h))) fail("Day 11's deck still has a shadowing slide"); }
 if (D[13] && !D[13].pq) fail('Day 13 no longer has its Process Questions (its card loses the Process Questions: Submit stop)');
 // a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
 // the one it was cut from, and every trainer slot is on exactly one slide

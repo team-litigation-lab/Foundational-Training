@@ -34,7 +34,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   5: ["s1", "s2"],
   // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: Part 1 opens on the Call Listening)
   13: ["s1", "s2"],
-  // (Day 11's Shadowing is off the training: its section is the ✉️ Insurance Email Simulator's slide instead, EDIT[11].s2)
+  // (Day 11's afternoon is off the deck: its Shadowing is off the training, and so is the ✉️ Insurance Email Simulator that
+  // took its place, which isn't in the curriculum; its recorded shadowing session is Day 12's, EDIT[12].s1)
+  11: ["s2"],
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
   8: ["s2", "s3b"],
@@ -58,8 +60,6 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"}, 5: {s1: "Update Your Monitoring Sheet"},
   7: {insurance: "AM: Common Insurance Providers"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
-  // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
-  11: {s2: "PM: Insurance Email Sim"},
   // (Day 10's afternoon: its videos, named for what the trainee does)
   10: {s2: "PM: Watch Insurance Communication Videos"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
@@ -840,15 +840,8 @@ const DOC_TILES_10 = '<div class="ftdd-doctiles">' + DOCS_10.map(([slug, t, n]) 
 const SLOT = (n, k) => `<div class="trainer-slot" data-slot="${n}:${k}"></div>`;
 const UPSKILL = "<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>";
 // a shadowing slide's own line on how the session runs on the platform
-// Day 11's afternoon, in place of its shadowing: the ✉️ Insurance Email Simulator (js/ft-claims-email.js), graded. Its
-// recorded shadowing session (Astred, 09/20/2023) moves to Day 12's deck, a slide of its own (EDIT[12].s1, ROWS[12].s1)
+// Day 11's recorded shadowing session (Astred, 09/20/2023) is on Day 12's deck, a slide of its own (EDIT[12].s1, ROWS[12].s1)
 const SHADOW_VID_11 = ["<p><b>SHADOWING ASTRED 09/20/2023", "<p><b><i>*** Free Communication Upskill"];
-const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writing: the emails a claims specialist sends to the insurance companies to open a claim and get what the case needs.</p>\n" +
-  '<div class="ftdd-cards2">' +
-  '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ For each of the 3 cases</p><ol><li><b>Send the LOR</b>, the right file attached, named by the convention</li><li><b>Request the Dec Pages</b> and the policy limits</li><li><b>Request the claim information</b>: claim number, adjuster, coverage, status</li></ol></div>' +
-  '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
-  "</div>\n<p><b>This is for practice only: it isn’t counted on your scorecards.</b> 📝 Submit for Grading when you’re done to get feedback on each email: the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone.</p>\n" +
-  '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Sim.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Sim →</button></div></div>\n';
 // Day 15: the rules for a scheduled demonstration, in three cards (the trainers' wording)
 const DEMO_GUIDELINES = '<p><b>Guidelines for Scheduled Trainee Demonstrations</b></p>\n' +
   '<p>To ensure your scheduled demonstration runs smoothly and on time, follow these instructions and policies:</p>\n' +
@@ -1037,11 +1030,6 @@ const EDIT = {
     // (the video with no name bar over it, data-bare: the slide's ribbon names it)
     borrow(11, "s2", ...SHADOW_VID_11).replace('<a class="viewer-link" data-embed data-kind="video"', '<a class="viewer-link" data-embed data-bare data-kind="video"')},
   11: {
-    // the shadowing is off: the trainer's slot stays, the rest is the Email Simulator (the recording is Day 12's, above)
-    s2: h => {
-      if(!SHADOW_VID_11.every(x => h.includes(x))) throw new Error("Day 11 s2: its recorded shadowing session is no longer where the build looks for it");
-      return rep(h, h.slice(h.indexOf("</div>") + 7), "", 1, "Day 11 s2") + CLAIMS_EMAIL_11;
-    },
     s1: h => {
       // the guidelines' text in place of their link, and the templates' addresses without the guide's doubled-up query
       const out = rep(h, '<p>LOR Drafting Activity (Guidelines and Instructions):</p>\n<p><a class="viewer-link" data-kind="doc" data-title="LOR Drafting Activity (Guidelines and Instructions): https://drive.google.com/file/d/11N15" href="https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing">https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing</a> </p>\n', LOR_GUIDE(), 1, "Day 11 s1");

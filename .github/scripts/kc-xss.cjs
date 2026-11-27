@@ -45,7 +45,7 @@ const failures = []; const fail = (m) => failures.push(m);
     f = await fired(); if (f.x || f.img) fail(`the trainer's review ran markup from the grading record: ${JSON.stringify(f)}`);
     const txt = await page.evaluate(() => (document.querySelector('.fp-kcadmin') || {}).innerText || '');
     // (📎 a Knowledge Check is Additional Reference: the trainer sees it graded, with no score — a best score that isn't a number shows nowhere)
-    if (!/📎 Additional Reference · graded ·/.test(txt) || /graded best/.test(txt)) fail(`the trainer's view should show the graded Knowledge Check as Additional Reference, with no score: ${txt.slice(0, 300)}`);
+    if (!/📎 (Knowledge Check · )?graded/.test(txt) || /graded best/.test(txt)) fail(`the trainer's view should show the graded Knowledge Check as Additional Reference, with no score: ${txt.slice(0, 300)}`);
     await page.waitForTimeout(500);
     f = await fired(); if (f.x) fail('markup from the grading record ran');
   } catch (err) { fail(String(err && err.stack || err)); }

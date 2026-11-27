@@ -78,6 +78,9 @@ const fix2 = n => (Math.round(n * 100) / 100).toFixed(2);
 // (📎 a column of something the Training Guide doesn't grade — js/ft-reference.js refCol — is Additional Reference: its cells are
 // kept and shown in the hover, but give no mark, so the final average and the rank take only the scored columns)
 const isRefCol = col => !!(window.ftReference && col && col.type === "score" && ftReference.refCol(col));
+// (📎 a reference column's own figure out of 5, shown in grey beside a 📎: never in the average or the rank)
+const refMark = (col, cell) => { const raw = num(cell && cell.raw); return raw == null || !isRefCol(col) ? null : Math.max(0, Math.min(5, raw / (num(col.max) || 5) * 5)); };
+const refTxt = (col, cell) => { const m = refMark(col, cell); return m == null ? "" : "📎 " + fix2(m); };
 function mark(col, cell){
   const raw = num(cell && cell.raw); if(raw == null || col.type !== "score" || isRefCol(col)) return null;
   const max = num(col.max) || 5;
@@ -257,14 +260,16 @@ async function fillFromPortal(quiet){
         const items = week ? src.items.filter(inWeek) : src.items;
         if(week && src.items.some(x => typeof x.pct === "number" && !x.at)) undated++;
         let pct = null, mark5 = null, whyIt = "";
-        if(!words){ const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct)); pct = week ? (g.length ? Math.round(g.reduce((a, x) => a + x.pct, 0) / g.length) : null) : src.avg; }
+        // (📎 a reference column: the figure the scorecard keeps beside its 📎, refPct — shown in grey, never counted)
+        const ref = isRefCol(c), gp = x => typeof x.pct === "number" && isFinite(x.pct) ? x.pct : ref && typeof x.refPct === "number" && isFinite(x.refPct) ? x.refPct : null;
+        if(!words){ const g = items.filter(x => gp(x) != null); pct = week || (ref && src.avg == null) ? (g.length ? Math.round(g.reduce((a, x) => a + gp(x), 0) / g.length) : null) : src.avg; }
         else {
           // the item named so first (the Monitoring Sheet itself, not "Monitoring Sheet items #5, #7"), else the first that
           // names the words
-          const w = words.toLowerCase(), graded = items.filter(x => typeof x.pct === "number"), nm = x => String(x.name).toLowerCase();
+          const w = words.toLowerCase(), graded = items.filter(x => gp(x) != null), nm = x => String(x.name).toLowerCase();
           const it = graded.find(x => nm(x) === w || nm(x).endsWith(" " + w) || nm(x).startsWith(w + " ·")) || graded.find(x => nm(x).includes(w));
-          pct = it ? it.pct : null; mark5 = it && typeof it.mark5 === "number" ? it.mark5 : null;
-          if(it) whyIt = `${it.name}: ${it.pct}%${it.note ? " (" + it.note + ")" : ""}${it.at ? ", " + String(it.at).slice(0, 10) : ""}`;
+          pct = it ? gp(it) : null; mark5 = it && typeof it.mark5 === "number" ? it.mark5 : null;
+          if(it) whyIt = `${it.name}: ${gp(it)}%${it.note ? " (" + it.note + ")" : ""}${it.at ? ", " + String(it.at).slice(0, 10) : ""}`;
         }
         if(pct == null){ clear(row, c, cur); return; }
         const max = num(c.max) || 5;
@@ -386,11 +391,11 @@ function cellOut(c, cell){
   cell = cell || {};
   if(c.type === "notes") return String(cell.note || "").split("\n").map(l => `<p>${e(l)}</p>`).join("");
   const m = mark(c, cell), note = cell.note ? `<p>${e(cell.note)}</p>` : "";
-  if(isRefCol(c)) return `<p><b>📎</b></p>` + note;
+  if(isRefCol(c)) return `<p style="color:#8A90A6"><b>${e(refTxt(c, cell) || "📎")}</b></p>` + note;
   if(m == null) return note;
   return (num(c.max) === 5 ? `<p><b>${e(fmt(num(cell.raw)))}/5</b></p>` : `<p><b>${e(fmt(num(cell.raw)))}/${e(c.max)}</b></p><p><b>${fix2(m)}/5</b></p>`) + note;
 }
-const head = c => `<b>${e(c.label)}${isRefCol(c) ? " (📎 Additional Reference)" : c.type === "score" ? ` (${num(c.max) === 5 ? "5/5" : `${e(c.max)}/${e(c.max)}`})` : ""}${c.sub ? ":" : ""}</b>${c.sub ? `<br><b>${e(c.sub)}</b>` : ""}`;
+const head = c => `<b>${e(c.label)}${isRefCol(c) ? " 📎" : c.type === "score" ? ` (${num(c.max) === 5 ? "5/5" : `${e(c.max)}/${e(c.max)}`})` : ""}${c.sub ? ":" : ""}</b>${c.sub ? `<br><b>${e(c.sub)}</b>` : ""}`;
 function reportTable(){
   const cols = R.data.cols;
   return `<table class="rk-doc" border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:Calibri,Arial,sans-serif;font-size:9.5pt;">
@@ -510,9 +515,9 @@ function grid(){
           if(s.k === "notes"){ const cell = r.cells[s.c.id] || {};
             return `<td class="xl-td"><textarea class="xl-in xl-txt" rows="2" ${at} data-c="${s.c.id}" ${ev} onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'note', this.value)">${e(cell.note || "")}</textarea></td>`; }
           if(s.k === "mark5" || s.k === "raw"){ const cell = r.cells[s.c.id] || {};
-            return `<td class="xl-td${cell.note ? " has-note" : ""}${cell.auto ? " is-auto" : ""} ${toneCls(mark(s.c, cell))}" data-cell="${e(p.id)}|${s.c.id}" data-tip="${e(tipOf(s.c, cell, p))}"><input class="xl-in xl-num" inputmode="decimal" ${at} data-c="${s.c.id}" ${ev} value="${e(cell.raw == null ? "" : cell.raw)}" onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'raw', this.value)"></td>`; }
+            return `<td class="xl-td${cell.note ? " has-note" : ""}${cell.auto ? " is-auto" : ""}${isRefCol(s.c) ? " is-ref" : ""} ${toneCls(mark(s.c, cell))}" data-cell="${e(p.id)}|${s.c.id}" data-tip="${e(tipOf(s.c, cell, p))}"><input class="xl-in xl-num" inputmode="decimal" ${at} data-c="${s.c.id}" ${ev} value="${e(cell.raw == null ? "" : cell.raw)}" onchange="FTRanking.cell('${e(p.id)}', '${s.c.id}', 'raw', this.value)"></td>`; }
           if(s.k === "calc"){ const m = mark(s.c, r.cells[s.c.id]);
-            return `<td class="xl-calc rk-mark ${toneCls(m)}" tabindex="0" ${at} data-tip="${e(tipOf(s.c, r.cells[s.c.id] || {}, p))}" data-f="${e(formulaOf(s, ci, row, sc, first, last))}" data-m="${e(p.id)}|${s.c.id}" ${ev}>${m == null ? "" : fix2(m)}</td>`; }
+            return `<td class="xl-calc rk-mark${isRefCol(s.c) ? " is-ref" : ""} ${toneCls(m)}" tabindex="0" ${at} data-tip="${e(tipOf(s.c, r.cells[s.c.id] || {}, p))}" data-f="${e(formulaOf(s, ci, row, sc, first, last))}" data-m="${e(p.id)}|${s.c.id}" ${ev}>${m == null ? e(refTxt(s.c, r.cells[s.c.id])) : fix2(m)}</td>`; }
           if(s.k === "avg") return `<td class="xl-calc xl-avg rk-avg ${toneCls(x.avg)}" tabindex="0" ${at} data-tip="${e(`${p.name}'s final average: the average of their marks out of 5 (the columns with a score), ranked ${x.rank || "—"}. ${x.avg == null ? "" : TONE_TXT[toneCls(x.avg)] || ""}`)}" data-f="${e(formulaOf(s, ci, row, sc, first, last))}" data-a="${e(p.id)}" ${ev}>${x.avg == null ? "" : fix2(x.avg)}</td>`;
           if(s.k === "rank") return `<td class="xl-calc xl-rank rk-rank" tabindex="0" ${at} data-f="${e(formulaOf(s, ci, row, sc, first, last))}" data-r="${e(p.id)}" ${ev}>${x.rank || ""}</td>`;
           return `<td class="xl-td xl-addl"><textarea class="xl-in xl-txt" rows="2" ${at} ${ev} placeholder="Additional notes" onchange="FTRanking.notes('${e(p.id)}', this.value)">${e(r.notes || "")}</textarea>
@@ -526,7 +531,7 @@ function grid(){
 function paintFigures(id, cid){
   const col = R.data.cols.find(c => c.id === cid), el = [...document.querySelectorAll(".rk-mark")].find(x => x.getAttribute("data-m") === id + "|" + cid);
   const tone = (x, m) => { if(!x) return; x.classList.remove("t-ex", "t-gd", "t-ok", "t-lo"); const t = toneCls(m); if(t) x.classList.add(t); };
-  if(col && el){ const m = mark(col, rowOf(id).cells[cid]); el.textContent = m == null ? "" : fix2(m); tone(el, m); }
+  if(col && el){ const m = mark(col, rowOf(id).cells[cid]); el.textContent = m == null ? refTxt(col, rowOf(id).cells[cid]) : fix2(m); tone(el, m); }
   ranked().forEach(x => {
     const a = [...document.querySelectorAll(".rk-avg")].find(t => t.getAttribute("data-a") === x.p.id), r = [...document.querySelectorAll(".rk-rank")].find(t => t.getAttribute("data-r") === x.p.id);
     if(a){ a.textContent = x.avg == null ? "" : fix2(x.avg); tone(a, x.avg); }
@@ -955,6 +960,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .rk-xn{color:var(--ink-soft);font-size:13px;margin:4px 0;} .rk-xcols{margin:6px 0 10px;padding-left:18px;} .rk-xcols li{margin:3px 0;} .rk-xp{display:block;margin:10px 0 6px;} .rk-xp select{font:inherit;padding:4px 8px;}
 .rk-xw h4{margin:10px 0 2px;color:var(--navy);font-size:14px;} .rk-xw ul{margin:2px 0;padding-left:18px;} .rk-xw p{margin:2px 0;}
 .rk-xt{border-collapse:collapse;font-size:13px;margin-top:4px;} .rk-xt th,.rk-xt td{border:1px solid #E3E6EF;padding:3px 7px;text-align:center;} .rk-xt th{background:#F4F6FA;}
+.is-ref, .is-ref .xl-in{color:#8A90A6 !important;}   /* 📎 a reference figure: grey, not in the average or the rank */
 .xl-td.is-auto::before{content:"⤓";position:absolute;bottom:1px;left:2px;font-size:9px;color:#217346;}
 .xl-addl{min-width:190px;}
 .xl-ai{position:absolute;top:2px;right:2px;border:1px solid #D4D4D4;background:#fff;border-radius:4px;font-size:11px;padding:0 4px;cursor:pointer;opacity:.75;}

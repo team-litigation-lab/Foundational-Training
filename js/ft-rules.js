@@ -386,6 +386,9 @@ const SLIDES = [
     ${rule("🧩 This Is Not Your Typical Training", "Not everything will be laid out for you. Your ability to adapt, think outside the box and stay resilient, while maintaining your composure, is part of what training tests.")}
     ${rule("🌱 Keep an Open Mind", "Your past exposures can help, but keep in mind that we are building new skill sets here, so keep an open mind. If you have concerns, positive or negative, your trainers are the best people to talk to.")}
     ${rule("🔄 Unlearn, and Live the Moment", "Be ready to unlearn: some habits from past jobs won't fit how we work here, so let them go. Live the moment: give each task, discussion and feedback your full focus as it happens, not what came before or what comes next.")}
+    ${rule("👔 Be Professional, Always", "You are working in the legal industry, alongside experts and for paying clients. The quality of the work you hand in today shows how professionally you handle things, so treat every task as client work.")}
+    <div class="ftr-rule ftr-values"><b>🫱 Respect, and the Right Channel</b><span>Treat everyone with respect. When you have a concern, bring it to your trainers or the proper channel, not to people who can only make it worse. Live by our 9 Core Values:</span>
+      <div class="ftr-vals"><i>Integrity &amp; Loyalty Through Compliance</i><i>Accountability</i><i>Ownership &amp; Follow-Through</i><i>Taking Initiative &amp; Proactive Problem-Solving</i><i>Adaptability &amp; Flexibility</i><i>Excellence in Detail &amp; Quality</i><i>Transparent &amp; Proactive Communication</i><i>Results-Driven Time Management</i><i>Growth Mindset &amp; Continuous Improvement</i></div></div>
     </div>
 `],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
@@ -811,7 +814,10 @@ body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-colum
 .ftr-lesson{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:10px;background:#fff;color:var(--ink);text-decoration:none;}
 .ftr-lesson:hover{border-color:var(--orange);box-shadow:var(--shadow);}
 .ftr-lesson b{font-size:16px;color:var(--navy);} .ftr-lesson span{font-size:14px;color:var(--ink-soft);}
-.ftr-why2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;align-items:stretch;}
+.ftr-why2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;align-items:stretch;}
+.ftr-vals{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.ftr-vals i{font-style:normal;font-weight:700;font-size:12.5px;line-height:1.25;color:#1E2340;background:#fff;border:1px solid #E9C9C3;border-radius:999px;padding:2px 8px;}
+@media (max-width:1100px){ .ftr-why2{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .ftr-why2 .ftr-rule{margin:0 !important;}
 .ftr-why2 .ftr-rule:first-child{grid-column:1 / -1;}
 body.ft-orient #lessonSlideWrap .ftr-why2 .ftr-rule span{font-size:clamp(14px,1.45vw,18px) !important;line-height:1.4 !important;}
@@ -843,7 +849,7 @@ body.ft-orient #lessonSlideWrap .ftr-why2 .ftr-rule b{font-size:clamp(16px,1.6vw
 .ftr-status{margin-top:14px;} .ftr-status .ftr-when{margin-top:6px!important;}
 .ftr-copyrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0;} .ftr-copyrow .ftr-code{overflow-wrap:anywhere;}
 .ftr-to{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:15px;display:flex;flex-direction:column;gap:2px;} .ftr-to b{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .ftr-to span{overflow-wrap:anywhere;}
-.ftr-rule b{display:block;font-size:17px;color:var(--danger);} .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
+.ftr-rule b{display:block;font-size:17px;color:#1F4FA3 !important;}   /* (a rule card's header in blue, against its rose card: contrast) */ .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
 .ftr-chan,.ftr-part{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;}
 .ftr-chan-h{font-size:17px;color:#5865F2;font-weight:800;} .ftr-chan p{margin:6px 0 10px;font-size:15px;color:var(--ink-soft);}
 .ftr-aux{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0;font-size:15px;}
