@@ -289,15 +289,13 @@ function docsHtml(el){
 // says so and offers the folder.
 const LOCAL_DOCS = {13: "ft/day7/forms/conflict-waiver.html"};
 function docViewHtml(own, links, folder){
-  const n = DOCS.length, i = Math.max(0, Math.min(n - 1, Number(K.di) || 0)), t = DOCS[i];
+  // (📄 the documents as cards on the slide, each its number, name and preview: a click pops it up in the viewer, in the
+  // platform; one with no link yet opens the folder)
   const urlOf = j => String(own[j] || "").trim() || String(links[j] || "").trim();
-  const u = urlOf(i), src = u ? embed(u) : LOCAL_DOCS[i] || "";
-  const pane = src ? `<iframe class="ftis-dv-f" title="${e(t)}" src="${e(src)}" allow="fullscreen"></iframe>`
-    : `<div class="ftis-dv-none"><span>📄</span><p><b>${e(t)}</b> isn't linked in the platform yet.</p><p>${isTrainee() ? "Add its link under ✏️ My document links, or open" : "A trainer adds its link in Admin → 📦 Intake Packets. Until then, open"} the <a href="${e(folder)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>.</p></div>`;
-  return `<div class="ftis-dv"><ol class="ftis-dv-l">${DOCS.map((x, j) => `<li><button type="button" class="${j === i ? "is-on" : ""}${urlOf(j) || LOCAL_DOCS[j] ? "" : " is-none"}" onclick="FTIntake.docGo(${j})"${j === i ? ' aria-current="true"' : ""}>${e(x)}</button></li>`).join("")}</ol>
-    <div class="ftis-dv-main"><div class="ftis-dv-bar"><button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docGo(${i - 1})"${i ? "" : " disabled"}>← Previous</button>
-      <b>${i + 1} of ${n} · ${e(t)}</b>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.docGo(${i + 1})"${i < n - 1 ? "" : " disabled"}>Next →</button></div>${pane}</div></div>`;
+  return `<div class="ftis-dg">${DOCS.map((t, j) => { const u = urlOf(j), loc = !u && LOCAL_DOCS[j] ? "/" + LOCAL_DOCS[j] : "", src = u ? embed(u) : loc;
+    return `<button type="button" class="ftis-dg-c${src ? "" : " is-none"}" data-title="${e(t)}" data-url="${e(u || loc)}" onclick="${src ? "FTIntake.view(this)" : `window.open('${e(folder)}', '_blank', 'noopener')`}" title="${src ? "Open " + e(t) : e(t) + ": not linked yet, opens the folder"}">
+      <span class="ftis-dg-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-dg-ic">📄</span>`}<span class="ftis-dg-n">${j + 1}</span></span>
+      <span class="ftis-dg-t">${e(t)}</span></button>`; }).join("")}</div>`;
 }
 // 📋 the sample intake forms: shown in the slide for reference, bigger on a click
 function formsHtml(el){
@@ -655,6 +653,15 @@ window.FTIntake = {
 /* (seven to a row: Day 8's fourteen documents in two rows) */
 .ftis-docs-lead{margin:0 0 6px;}
 .ftis-docs-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin:8px 0;}
+.ftis-dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin:10px 0;}
+.ftis-dg-c{display:flex;flex-direction:column;gap:8px;padding:8px;border:1.5px solid #C9CEE0;border-radius:12px;background:#fff;cursor:pointer;text-align:left;box-shadow:0 2px 8px rgba(30,35,64,.08);transition:transform .12s,box-shadow .12s,border-color .12s;}
+.ftis-dg-c:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(30,35,64,.18);border-color:#E8590C;}
+.ftis-dg-pic{position:relative;display:block;aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#F1F3F8;}
+.ftis-dg-pic iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;background:#fff;}
+.ftis-dg-ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;opacity:.55;}
+.ftis-dg-n{position:absolute;top:6px;left:6px;min-width:26px;height:26px;padding:0 6px;border-radius:999px;background:#1E2340;color:#fff;font:800 13px/26px 'Inter',sans-serif;text-align:center;}
+.ftis-dg-t{font:800 14.5px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;}
+.ftis-dg-c.is-none{border-style:dashed;} .ftis-dg-c.is-none .ftis-dg-t{color:#5A6175;}
 .ftis-dv{display:grid;grid-template-columns:minmax(200px,22%) 1fr;gap:14px;margin:8px 0;min-height:60vh;}
 .ftis-dv-l{margin:0;padding:0;list-style:none;counter-reset:dv;display:flex;flex-direction:column;gap:4px;max-height:66vh;overflow:auto;}
 .ftis-dv-l li{counter-increment:dv;}
