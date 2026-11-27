@@ -313,6 +313,11 @@ const REFV = "📎 Additional Reference";
 // 📎 what the end-of-shift check's Additional Reference is made of, named, so a trainer never has to guess (dayActs' activities)
 const REF_DAY_TOPICS = ["📋 Task Tracker", "📒 Monitoring Sheet", "🧪 Typing & Spelling", "📤 Day's outputs", "✉️ EOD email", "📘 TAM (shadowing)", "🖥 Platform"];
 const refTopics = (list, plus) => `${REFV}: ` + (list && list.length ? list : REF_DAY_TOPICS).concat(plus || []).join(" · ");
+// (📎 the end-of-shift check's Additional Reference on a trainee's page: a heading line, then a little table — one row per
+// check, the last its old figure — in the look of a day's parts table; the CSV keeps the plain text of the cell's f)
+const refTable = (rows, was) => `<div class="bs-reft-h">${e(REFV)} — not scored or counted</div><table class="bs-parts bs-reft"><thead><tr><th>The end-of-shift check</th><th>Score</th></tr></thead><tbody>${
+  rows.map(r => `<tr><td class="bs-parts-n">${e(r)}</td><td class="bs-parts-v"><b class="bs-sbox" title="${e(REFV)}: not scored or counted">📎</b></td></tr>`).join("")}${
+  was ? `<tr class="bs-reft-was"><td class="bs-parts-n">Was</td><td class="bs-parts-v"><b class="bs-sbox">${e(was)}</b></td></tr>` : ""}</tbody></table>`;
 const refCell = (c, why) => ({v: REFV, f: `${REFV}: not scored or counted${why ? " · " + why : ""}${c && c.v !== "" && c.v != null && c.v !== REFV ? ` (was ${c.v})` : ""}`, cls: "gs-txt"});
 // (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
 // Overall % are Additional Reference; 📈 Overall Performance the same, with no rank — it has nothing scored left to rank by)
@@ -1111,7 +1116,7 @@ function rowFor(x, p, i, n){ const rs = x.rows || []; return rs.length === n && 
    Calendar checks, ✍️ the Knowledge Checks… — its score and what it says; and the buttons to the screens where a trainer reviews
    them (📅 Calendaring, 🟢 Practice Sessions, 🎧 Call Listening), which have no buttons of their own on top any more. */
 const REVIEW = [["calendaring", "📅 Review their calendaring"], ["sessions", "🟢 Review their Practice Sessions"], ["listening", "🎧 Review their Call Listening"]];
-/* ✎ EDIT A SCORE (a trainer's, on a trainee's page): 🏅 Grades is gone — 📤 Daily outputs & 📅 Day scores and ✍️ Knowledge
+/* ✎ EDIT A SCORE (a trainer's, on a trainee's page): 🏅 Grades is gone — 📤 Daily Outputs & 📅 Day Scores and ✍️ Knowledge
    Checks, Assessments & Activities show every grade — so a trainer's own score goes in here: the grade picked from the list
    (each one the Scorecard lets a trainer set, js/lsh-program.js EDITABLE, by grading system), its % and, on an override, why;
    then + points on the Scorecard overall (extraRowHtml). The fields are the same as before (FTBatchSheet.editRow, editExtra). */
@@ -1284,7 +1289,7 @@ function perTraineeHtml(T){
       // (a table in groups of the same columns — 🏅 Score Card's lessons, each Knowledge Checks · Practice · Classroom & outputs ·
       // Average · Remarks — is a small grid: a row per group, a column per measure, how it was worked out on a hover)
       const M = matrixOf(x), inM = new Set(M ? M.cols : []);
-      // (📤 Daily outputs & 📅 Day scores, week by week: a heading row per week — its dates and the average of its days — that
+      // (📤 Daily Outputs & 📅 Day Scores, week by week: a heading row per week — its dates and the average of its days — that
       // folds the week's days away; the current week open, the weeks before folded, so the page isn't one long scroll)
       const wkOf = d => { try{ return window.ftWeeks && ftWeeks.now ? ftWeeks.now(p.batch || B.batch, d) : 1; }catch(err){ return 1; } };
       const dts = x.id === "outputs" && x.dates ? x.dates : null, wks = {};
@@ -1299,13 +1304,14 @@ function perTraineeHtml(T){
           // (🌱 the week's Professional Development & Progress counted in its average beside the days: ftPdp.withWeek)
           const avg = window.ftPdp ? ftPdp.withWeek(W.vals, rvP, w) : W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null;
           const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
-          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${e(refTopics(null, ["🌱 PD&P"]))}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th class="bs-pt-m bs-wk-m"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span></th><th colspan="2" class="bs-wk-r">${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${e(refTopics(null, ["🌱 PD&P"]))}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
         const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
           : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
             + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
+          : Array.isArray(c.refRows) ? refTable(c.refRows, c.refWas)
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         // (📎 a reference value: a short label in its narrow column, the topics it covers beside it, so nothing wraps a word a line)
         const isRef = !!v && v.indexOf(REFV) === 0, refList = isRef ? v.slice(REFV.length).replace(/^:\s*/, "") : "";
@@ -1314,14 +1320,14 @@ function perTraineeHtml(T){
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
     // (🗂 the weekly Task Tracker Evaluations right after the days' tracker rows: weekEvalHtml)
-    const sec = x => { const rows = rowsOf(x); return (rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.id === "outputs" ? "📤 Daily outputs & 📅 Day scores" : x.title)}</th></tr>${rows}` : "") + (x.id === "outputs" ? weekEvalHtml(p) : ""); };
+    const sec = x => { const rows = rowsOf(x); return (rows ? `<tr class="bs-pt-sec"><th colspan="3">${e(x.id === "outputs" ? "📤 Daily Outputs & 📅 Day Scores" : x.title)}</th></tr>${rows}` : "") + (x.id === "outputs" ? weekEvalHtml(p) : ""); };
     /* 🏅 GRADES, in one: the Overall % and its parts, the 🏅 Score Card (lesson by lesson), the Practice Lab's use, every grading
        system with each of its items, and the lessons with their dates — what 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
        📅 Lessons & Knowledge Checks day by day and 📚 Lessons each showed a part of, the same grades over and over */
     const byId = id => T.find(x => x.id === id);
     const sub = t => `<tr class="bs-pt-sub bs-pt-gsub"><td colspan="3">${t}</td></tr>`;
     const part = (t, rows) => rows ? sub(t) + rows : "";
-    // (no 🏅 Grades table: every grade is in 📤 Daily outputs & 📅 Day scores and in ✍️ Knowledge Checks, Assessments &
+    // (no 🏅 Grades table: every grade is in 📤 Daily Outputs & 📅 Day Scores and in ✍️ Knowledge Checks, Assessments &
     // Activities; a trainer's own score and + points go in ✎ Edit a score)
     const grades = editBoxHtml(p);
     // (the sheet's tables, then 🔎 every grade, then 👥 the trainee's own record at the bottom)
@@ -1396,7 +1402,7 @@ function outputsTable(){
     rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
       return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
-        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics()}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics(), refRows: REF_DAY_TOPICS, refWas: pct(a)}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
@@ -2695,7 +2701,9 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-t tr.bs-pt-wk th{background:#E8ECF6;color:#1E2340;text-align:left;font:800 15.5px Arial,sans-serif;padding:8px 12px;cursor:pointer;border-top:2px solid #AEB6C6;}
 .bs-pt-t tr.bs-pdp td{background:#F3FAF4;} .bs-pt-t td.bs-pdp-m{vertical-align:top;font-size:15px !important;line-height:1.3;} .bs-pdp-m .bs-pdp-ic{margin-right:4px;} .bs-pdp-m small{display:block;margin-top:3px;font-size:13px;font-weight:700;color:#4B5563;letter-spacing:.02em;} .bs-pdp-t select{font:inherit;padding:2px 4px;} .bs-pdp-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 2px;} .bs-pdp-note{margin:4px 0;} .bs-pdp-st{margin:4px 0 0;}
 .bs-pt-t tr.bs-pt-wk:hover th{background:#DCE2F0;} .bs-wk-car{display:inline-block;width:18px;color:#C2410C;} .bs-wk-d{font-weight:600;color:#475569;margin-left:6px;}
-.bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-wk-hide{display:none;}
+.bs-wk-avg{float:right;font-weight:800;padding:1px 8px;border-radius:999px;} .bs-pt-t tr.bs-pt-wk th.bs-wk-r{vertical-align:middle;} .bs-wk-r .bs-wk-avg{float:none;display:inline-block;}
+/* (📤 Daily Outputs & 📅 Day Scores: the left column's labels — Average, a week's heading, 🌱 PD&P, each day — centred in their cells) */
+.bs-pt-t.bs-pt-s-outputs .bs-pt-m,.bs-pt-t.bs-pt-s-outputs tr.bs-pt-wk th.bs-pt-m{text-align:center;vertical-align:middle;} .bs-pt-t tr.bs-pt-wk th.bs-wk-m .bs-wk-d{display:block;margin-left:0;} .bs-pt-t tr.bs-wk-hide{display:none;}
 /* (🏅 Grades' parts: a light band across the table) */
 .bs-pt-t tr.bs-pt-gsub td{background:#E9ECF5;color:#1E2340;font-weight:800;font-size:15px;padding:6px 10px;}
 :is(.bs-card,.bs-ctl) .gs-file b{font-size:17px;white-space:nowrap;}
@@ -2802,7 +2810,8 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-pt-k.gs-mid{background:#FFF4E0;border-color:#E8A400;} .bs-pt-k.gs-mid b{color:#7A4B00 !important;}
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
 .bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
-.bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:14px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
+.bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:12.5px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;vertical-align:middle;padding:6px 3px !important;overflow:hidden;overflow-wrap:anywhere;}   /* (📎 Reference: inside its narrow column at any width) */
+.bs-reft-h{font:800 14.5px Arial,sans-serif;color:#1E2340;margin:0 0 6px;} .bs-pt .bs-parts.bs-reft{width:auto;min-width:300px;max-width:100%;} .bs-reft .bs-parts-n{width:auto;white-space:nowrap;} .bs-reft .bs-parts-v{width:84px;text-align:center;} .bs-pt .bs-reft th{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;} .bs-reft tr.bs-reft-was td{background:#F4F6FB;font-weight:800;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
