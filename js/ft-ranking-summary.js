@@ -80,6 +80,9 @@ async function evidence(p, range, week){
       crit: rb ? (rb.criteria || []).map((c, i) => ({n: c.n, s: c.retired ? null : (x.rubric.scores || [])[i], f: (x.rubric.feedback || [])[i] || ""})).filter(c => c.s != null && c.s !== "") : []}; });
   // (the week's own work only: a week with no scoresheet has none — it never borrows an earlier week's)
   const use = sheets.filter(x => inW(x.at));
+  // 📞 (Call Handling and English Proficiency come from the mock calls: a week with no mock call of its own takes the trainee's
+  // mock calls so far, so the two are never blank once a mock call has been scored)
+  const mocksTo = sheets.filter(x => x.mock && (!range || String(x.at || "").slice(0, 10) <= range[1]));
   const kcs = Object.entries((proc && proc.kc) || {}).filter(([, x]) => x && x.last && inW(x.last.at)).map(([l, x]) => x && x.last ? {l, pct: (kcr && kcr.lessons && kcr.lessons[l] && kcr.lessons[l].score != null) ? Number(kcr.lessons[l].score) : x.best, at: x.last.at, summary: clip(x.last.summary, 400),
     weak: (x.last.items || []).filter(q => q.score <= 6).map(q => clip(q.feedback, 160)).slice(0, 2)} : null).filter(Boolean);
   const rvW0 = window.ftW1Override ? ftW1Override.comp(rv, p.batch) : rv;   // W1-OVERRIDE
@@ -112,8 +115,9 @@ async function evidence(p, range, week){
     // answer sheets, the listening activity) and the EOD emails
     communication: r1(avg([critAvg(/customer service|listening|assertive|tone|closing|introduction|transfer|resolution|rapport|empathy/i),
       avg(use.map(x => x.avg5)), pct5(avg(eodOn.map(x => x.pct))), pct5(prog.calls), pct5(prog.written)])),
-    english: r1(avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))])),
-    call: r1(avg(use.filter(x => x.mock).map(x => x.avg5))),
+    english: r1((v => v != null ? v : avg(mocksTo.flatMap(x => x.crit.filter(c => /grammar|spelling|writing|clarity of speech|articulation|dead air|filler|tone/i.test(c.n)).map(c => Number(c.s)))))(
+      avg([critAvg(/grammar|spelling|writing|clarity of speech|articulation|dead air|filler/i), pct5(avg(spell)), pct5(avg(kcs.map(k => k.pct)))]))),
+    call: r1((v => v != null ? v : avg(mocksTo.map(x => x.avg5)))(avg(use.filter(x => x.mock).map(x => x.avg5)))),
     // (and the tools on the platform day by day — the end-of-shift check's "platform" part: lessons finished, Knowledge Checks,
     // the Practice Lab's tools and simulators used, answer sheets submitted — so the week has a score before any demo)
     tools: r1(avg([avg(use.filter(x => !x.mock).map(x => x.avg5)), pct5(avg(runs)), critAvg(/navigation|system|tool|cms|softphone/i), pct5(avg(comp.map(c => c.parts.platform).filter(v => v != null)))]))};
@@ -129,8 +133,8 @@ const MADE = {attention: "the accuracy criteria of your mock calls and demos (At
   pdp: "your trainer's weekly score: Competency in taking on a role, Communication and Quality of output, each out of 5, averaged",
   timely: "your EOD sent before the end of the shift, your Monitoring Sheet entries on time and each day's outputs handed in",
   communication: "the communication criteria of your mock calls and demos, their overall scores, your practice calls in the simulators, your graded written output and your EOD emails",
-  english: "the grammar, spelling, writing and speech criteria of your mock calls, your spelling tests and your Knowledge Checks",
-  call: "your mock calls' scoresheets with the trainer",
+  english: "the grammar, spelling, writing and speech criteria of your mock calls, your spelling tests and your Knowledge Checks (your mock calls so far, in a week with none of these)",
+  call: "your mock calls' scoresheets with the trainer (your mock calls so far, in a week with none of its own)",
   tools: "your demos' scoresheets, your Practice Sessions, the system and tool criteria, and your daily work on the platform's tools"};
 function howOf(rv, range, x){
   rv = rv || {}; const inW = d => !range || (d >= range[0] && d <= range[1]);
