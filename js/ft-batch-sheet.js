@@ -460,7 +460,7 @@ function kdOneHtml(p, single){
       ${rep ? `<pre class="bs-kd-rep">✍️ ${e(rep)}</pre>` : ""}
       ${rows.map(({k, g}) => { const last = g.last, rv = g.rv || {}, its = g.items, sc = its.filter(it => typeof it.score === "number");
         // (one trainee: every graded sheet open; every trainee: shut, a click opens one)
-        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> ${window.ftReference ? `<span class="bs-kd-pill">${REFV}</span> <small>${g.subm || g.pct != null ? "submitted" : "not submitted yet"}${sc.length ? ` · ${sc.length} answer${sc.length === 1 ? "" : "s"} with feedback` : ""}</small>` : `<span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
+        return `<details class="bs-kd" name="bs-kd"><summary><b>${e(k.title)}</b> ${window.ftReference ? `<span class="bs-kd-pill" title="${e(REFV)}: not scored or counted">📎 Reference</span> <small>${g.subm || g.pct != null ? "submitted" : "not submitted yet"}${sc.length ? ` · ${sc.length} answer${sc.length === 1 ? "" : "s"} with feedback` : ""}</small>` : `<span class="bs-kd-pill ${tone(g.pct)}">${g.pct != null ? g.pct + "%" : e(g.how)}</span>
             ${g.pct != null ? `<small>${e(g.how)}</small>` : ""}${sc.length ? ` <small>· ${sc.length} answer${sc.length === 1 ? "" : "s"} graded: ${sc.reduce((a, it) => a + Number(it.score), 0)}/${sc.length * 10}</small>` : ""}`}</summary>
           ${last && last.summary ? `<div class="bs-ctx bs-why"><b>🧾 Graded${last.at ? " " + e(when(last.at)) : ""}</b><p>${e(last.summary)}</p></div>` : ""}
           ${rv.comment ? `<div class="bs-ctx bs-best"><b>🧑‍🏫 Trainer’s overall comment</b><p>${e(rv.comment)}</p></div>` : ""}
@@ -1176,7 +1176,7 @@ function activitiesHtml(p){
   return `<h5 class="bs-kd-sub bs-kd-sub-act">📝 Activities</h5>` + cal + items.map(({d, it, g}) => { if(!g && it.assess === "intakews") g = fromLab(lab["intake-worksheet"]);
     const ws = it.assess === "intakews";
     const pc = g ? numOr(g.pct) : null, notes = g ? [g.comment, g.note, g.feedback, g.summary].filter(x => typeof x === "string" && x.trim()) : [];
-    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference && !(it.assess && ftReference.assessScored(it.assess)) ? `<span class="bs-kd-pill">${REFV}</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
+    return `<details class="bs-kd" name="bs-kd"${ws ? ` data-ws="${e(p.id)}" ontoggle="if(this.open)FTBatchSheet.wsAnswers(this)"` : ""}><summary><b>${e(it.t.replace(/\s*\(.*$/, ""))}</b> <small>Day ${e(d.day)}</small> ${window.ftReference && !(it.assess && ftReference.assessScored(it.assess)) ? `<span class="bs-kd-pill" title="${e(REFV)}: not scored or counted">📎 Reference</span> <small>${g ? (g.score != null ? "graded" : "submitted") + (g.when ? " " + e(g.when) : g.at ? " · " + e(when(g.at)) : "") : it.at === "drive" ? "not graded yet" : "not submitted"}</small>` : `<span class="bs-kd-pill ${tone(pc)}">${pc != null ? pc + "%" : g && g.at ? "submitted · not graded yet" : it.at === "drive" ? "not graded yet" : "not submitted"}</span>
         ${g && g.score != null ? `<small>${e(String(g.score))}${g.max != null ? "/" + e(String(g.max)) : ""} points${g.when ? " · graded " + e(g.when) : g.at ? " · " + e(when(g.at)) : ""}</small>` : ""}`}</summary>
       ${notes.map(n => `<div class="bs-ctx bs-why"><p>🧑‍🏫 ${e(n)}</p></div>`).join("")}${ws ? `<div class="bs-ws-ans" data-ws-ans><p class="bs-kd-none">Opening the trainee’s Intake Worksheet…</p></div>${g ? "" : `<p class="bs-kd-none">Not graded yet: grade it on 📦 Intake Packets or 🧑‍🏫 Graders → 📝 Assessments.</p>`}` : actItemsHtml(it, g)}</details>`; }).join("");
 }
@@ -1220,6 +1220,14 @@ function matrixOf(x){
 // (a day's parts in sections — ✅ Daily compliance, then each kind of scored work — with a section's header once, and a mock
 // call's or demo's scorecard criteria, each its own row under it)
 const critTone = v => v >= 4 ? "gs-hi" : v >= 3 ? "gs-mid" : "gs-lo";
+/* 📅 a day in 📤 Daily outputs on a trainee's card: one line — each activity's icon and score, at a glance — that opens to the
+   day's full table (and 🔎 What was read). The latest day opens by itself; the days before stay folded, so the card isn't
+   one long scroll and a trainer finds a day by its date. */
+const dayFold = (ps, open, extra) => {
+  const items = ps.filter(x => !x.header && x.name), ic = n => (String(stripTags(n)).match(/^\s*(\p{Extended_Pictographic}\uFE0F?)/u) || [, "•"])[1];
+  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}">${e(ic(x.name))} ${e(stripTags(x.v))}</span>`).join("");
+  return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${items.length} activit${items.length === 1 ? "y" : "ies"}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
+};
 const partsTable = ps => { let g0 = null;
   return `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => {
     const head = x.group && x.group !== g0 ? `<tr class="bs-parts-g${x.header || /compliance/i.test(x.group) ? " bs-parts-top" : ""}"><th colspan="3">${e(x.group)}${x.groupV ? ` <span class="bs-parts-gv">${e(x.groupV)}</span>` : ""}</th></tr>` : ""; if(x.group) g0 = x.group;
@@ -1261,7 +1269,11 @@ function pdpMineHtml(){
 function perTraineeHtml(T){
   const all = people(); if(!all.length) return `<p class="sc-empty">No trainee in ${e(B.batch)} yet.</p>`;
   const ppl = all;   // (one trainee per page: 🔎 beside Batch)
-  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 2 + LINKS.length);
+  const skipCol = (x, k, h) => k === 0 || h === "Rank" || (x.id === "compliance" && k >= 2 && k <= 2 + LINKS.length)
+    // (🧹 each fact once on a trainee's card: the lesson decks and Knowledge Checks in Compliance, with each lesson's mark;
+    // when they were last on the platform in 👥 Trainees, beside the rest of their record)
+    || (x.id === "trainees" && /^(Lesson decks finished|Knowledge Checks (passed|submitted))$/.test(stripTags(h)))
+    || (x.id === "compliance" && /^Last on the platform$/.test(stripTags(h)));
   // (👥 the trainee's own record — status, registered, last on the platform, lessons… — at the bottom of their table)
   // (🏅 Score Card after the day-by-day detail; then 🔎 every grade; 👥 the trainee's own record at the very bottom)
   const use = T.filter(x => !["drive", "trainees", "scorecard"].includes(x.id)).concat(T.filter(x => x.id === "scorecard"), T.filter(x => x.id === "trainees"));
@@ -1292,6 +1304,8 @@ function perTraineeHtml(T){
       const nowWk = dts ? Math.max(...Object.keys(wks).map(Number).concat([1])) : 0;
       const folded = w => { const k = p.id + "|" + w; return B.fold && k in B.fold ? !!B.fold[k] : w < nowWk; };
       let lastWk = null;
+      // (the latest day with a date: its activities open, every earlier day folded to one line, dayFold)
+      const lastDay = dts ? dts.reduce((m, d, j) => d ? j : m, -1) : -1;
       const lines = (x.head || []).map((h, k) => skipCol(x, k, h) || inM.has(k) || (keep && !keep(stripTags(h))) ? "" : (() => { const c = r[k] || {}, v = c.refv || stripTags(c.v);
         const day = dts && k >= 2 ? dts[k - 2] : "", w = day ? wkOf(day) : null;
         let wkHead = "";
@@ -1299,17 +1313,17 @@ function perTraineeHtml(T){
           // (🌱 the week's Professional Development & Progress counted in its average beside the days: ftPdp.withWeek)
           const avg = window.ftPdp ? ftPdp.withWeek(W.vals, rvP, w) : W.vals.length ? Math.round(W.vals.reduce((a, b) => a + b, 0) / W.vals.length) : null;
           const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8))}`;
-          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(REFV)}: the end-of-shift check and 🌱 PD&P are not scored or counted">${e(refTopics(null, ["🌱 PD&P"]))}</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
+          wkHead = `<tr class="bs-pt-wk${f ? " is-folded" : ""}" onclick="FTBatchSheet.foldWeek('${e(p.id)}', ${w})" title="${f ? "Show" : "Fold"} Week ${w}'s days"><th colspan="3"><span class="bs-wk-car">${f ? "▸" : "▾"}</span> Week ${w} <span class="bs-wk-d">${W.days.length ? e(md(W.days[0]) + (W.days.length > 1 ? " – " + md(W.days[W.days.length - 1]) : "")) : ""} · ${W.days.length} day${W.days.length === 1 ? "" : "s"}</span>${window.ftReference ? `<span class="bs-wk-avg" title="${e(refTopics(null, ["🌱 PD&P"]))}: not scored or counted">📎 Reference</span>` : `<span class="bs-wk-avg ${avg != null ? tone(avg) : ""}">${avg != null ? avg + "% average" : "no score yet"}</span>`}</th></tr>` + pdpRow(p, w, f); }
         const hide = w != null && folded(w) ? " bs-wk-hide" : "";
         const hd = stripTags(h), f = x.id === "compliance" && k === 1 ? linkMarks(p) : x.id === "compliance" && hd === "Lesson decks" ? lessonMarks(p, false)
           : x.id === "compliance" && hd === "Knowledge Checks passed" ? lessonMarks(p, true)
-          : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? partsTable((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))))
+          : x.id === "outputs" && k >= 2 && x.dates && x.dates[k - 2] ? dayFold((Array.isArray(c.parts) ? c.parts : []).concat(dayExtras(p, x.dates[k - 2], T.find(y => y.id === "dayscores"))), k - 2 === lastDay,
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
-            + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
+            state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
         // (📎 a reference value: a short label in its narrow column, the topics it covers beside it, so nothing wraps a word a line)
         const isRef = !!v && v.indexOf(REFV) === 0, refList = isRef ? v.slice(REFV.length).replace(/^:\s*/, "") : "";
-        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${isRef ? "📎 Reference" : v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : f}</td></tr>`; })()).join("");
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${isRef ? "📎 Reference" : v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : isRef ? String(f).replace(/^📎 Additional Reference: not scored or counted( · )?/, "") : f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -1341,9 +1355,14 @@ function perTraineeHtml(T){
     const body = use.filter(x => x.id !== "trainees" && !last.includes(x.id) && !inGrades.includes(x.id)).map(own).join("") + tbl(kd, "bs-pt-s-kd") + tbl(grades, "bs-pt-s-edit") + tbl(intake, "bs-pt-s-intake")
       + use.filter(x => x.id === "trainees").map(own).join("")
       + last.map(id => use.filter(x => x.id === id).map(own).join("")).join("");
+    // (🧭 a jump bar to every section of the card, sticky as the trainer scrolls, so nothing has to be hunted for; and 📎 said
+    // once here, for every 📎 below)
+    const titles = [...body.matchAll(/<tr class="bs-pt-sec"><th colspan="3">([\s\S]*?)<\/th><\/tr>/g)].map(m => m[1]);
+    const jump = titles.length > 1 ? `<nav class="bs-pt-jump" aria-label="Sections of ${e(p.name)}'s card">${titles.map((t, k) => `<button type="button" onclick="(function(b){var s=b.closest('.bs-pt').querySelectorAll('tr.bs-pt-sec')[${k}];if(s)s.scrollIntoView({behavior:'smooth',block:'start'});})(this)">${t}</button>`).join("")}</nav>` : "";
+    const key = window.ftReference ? `<p class="bs-pt-key">📎 <b>Additional Reference</b>: shown so you can check it, not scored or counted (the end-of-shift check: ${e(REF_DAY_TOPICS.join(", "))}, and 🌱 PD&amp;P). Hover a 📎 Reference for what it covers.</p>` : "";
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
       <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
-      ${insightsHtml(p)}
+      ${jump}${key}${insightsHtml(p)}
       <div class="bs-pt-wrap">${body}
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
           : `<button type="button" class="btn btn-navy btn-sm bs-pt-fbb" onclick="FTBatchSheet.fbOpen('${e(p.id)}')">📝 Send Feedback to ${e(p.name)}</button>`) : ""}</div></div>`;
@@ -1396,7 +1415,7 @@ function outputsTable(){
     rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
       return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
-        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics()}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the average of the days' end-of-shift checks"), {refv: refTopics()}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
@@ -2718,6 +2737,20 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 /* (bold and bigger: the trainer reads the scorecards on a projector and across the room) */
 .bs-card .gs td{font-weight:700;color:#141A2E;} .bs-card .gs .gs-head th{font:800 15.5px Arial,sans-serif;color:#141A2E;} .bs-card .gs td.gs-name{font-weight:800;}
 .bs-card .gs .gs-group th{font-size:14.5px;} .bs-card .bs-h{font:800 21px Arial,sans-serif;} .bs-card .bs-note{font:600 14.5px Arial,sans-serif;color:#2E3450;}
+/* 🧭 a trainee's card: the jump bar (sticky), the 📎 key said once, a 📎 alone in a score cell, and nothing that spills over a column */
+.bs-pt-jump{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;margin:0 0 8px;background:#1E2340;border-radius:0 0 12px 12px;box-shadow:0 6px 14px -10px rgba(0,0,0,.6);}
+.bs-pt-jump button{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:4px 12px;font:700 13px Arial,sans-serif;cursor:pointer;}
+.bs-pt-jump button:hover,.bs-pt-jump button:focus-visible{background:#E9CC7E;border-color:#E9CC7E;color:#1E2340;outline:none;}
+.bs-pt-key{margin:0 0 8px;padding:7px 12px;border:1px solid #E3E6EE;border-left:4px solid #8EA2FF;border-radius:8px;background:#F7F8FB;font:600 13.5px Arial,sans-serif;color:#2E3450;}
+.bs-ref{display:inline-block;padding:1px 8px;border:1px solid #C9CFE6;border-radius:999px;background:#F2F4FA;font-size:13px;cursor:help;}
+.bs-pt-t td,.bs-pt-t th{overflow-wrap:anywhere;}
+.bs-pt-t tr.bs-pt-sec th{scroll-margin-top:64px;}
+.bs-day > summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 2px;list-style:none;}
+.bs-day > summary::-webkit-details-marker{display:none;}
+.bs-day > summary::before{content:"▸";color:#B5651F;font-weight:800;margin-right:2px;} .bs-day[open] > summary::before{content:"▾";}
+.bs-day-n{font:800 13px Arial,sans-serif;color:#1E2340;margin-right:4px;}
+.bs-dchip{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border:1px solid #DDE1EC;border-radius:999px;background:#fff;font:700 12.5px Arial,sans-serif;color:#2E3450;white-space:nowrap;}
+.bs-day[open] > summary{margin-bottom:6px;border-bottom:1px solid #E3E6EE;padding-bottom:6px;}
 /* 🏅 Scores: a navy-blue card (the Dashboard banner's navy, with its soft orange and blue glows) — the title, the row count and
    the note in white / light ink on it (AA), the table itself on white inside it so the grades read as before */
 html body #bs-scores.bs-sec{background:radial-gradient(520px 180px at 92% -40%,rgba(219,132,55,.30),transparent 62%),radial-gradient(360px 180px at -4% 140%,rgba(120,132,190,.26),transparent 62%),
