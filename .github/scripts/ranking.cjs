@@ -66,6 +66,7 @@ const failures = []; const fail = m => failures.push(m);
   for (const c of ['Typing & Spelling Tests (5/5)', 'EOD (5/5)', 'Professional Development & Progress (5/5) Role · Communication · Quality of output', 'Daily Compliance (5/5)', 'Drive Links Compliance (5/5)', '🏅 Scorecard overall (5/5) every grading system']) if (!conn.includes(c)) fail(`the report isn't connected to "${c}": ${JSON.stringify(conn)}`);
   // (📘 the TAM isn't a daily deliverable: no column for it)
   if (conn.some(c => /^TAM/.test(c))) fail(`the report has a TAM column: ${JSON.stringify(conn)}`);
+  // (no Spelling & Typing Tests column: every letter below is one to the left of before)
   // (the sheet's own arithmetic below is on the Week 1 columns alone: the six connected ones taken off again)
   for (let k = 0; k < 6; k++) { await page.evaluate(() => FTRanking.delCol(7)); await page.waitForTimeout(250); }   // (no Spelling & Typing notes column: one fewer)
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
@@ -99,12 +100,12 @@ const failures = []; const fail = m => failures.push(m);
   if ((await rhea.locator('.rk-avg').innerText()) !== '4.38') fail(`Rhea's final average is ${await rhea.locator('.rk-avg').innerText()} (4.38 expected: 17.5 ÷ 4)`);
   // the formula bar: a worked-out cell shows its formula; a score takes its note there
   await rhea.locator('.rk-avg').click();
-  if (!/^=IFERROR\(AVERAGE\(H\d+,J\d+,L\d+,M\d+\)/.test(await page.inputValue('#xlBar'))) fail(`the bar doesn't show the average's formula: ${await page.inputValue('#xlBar')}`);
+  if (!/^=IFERROR\(AVERAGE\(G\d+,I\d+,K\d+,L\d+\)/.test(await page.inputValue('#xlBar'))) fail(`the bar doesn't show the average's formula: ${await page.inputValue('#xlBar')}`);
   await inputs.nth(1).click(); await page.fill('#xlBar', 'Initial feedback implemented.'); await page.press('#xlBar', 'Enter'); await page.waitForTimeout(300);
   if (!(await rhea.locator('td.has-note').count())) fail('a score\'s note from the bar isn\'t marked on the cell');
   // Enter goes to the trainee below, as in Excel
   await inputs.nth(0).click(); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
-  if (await page.evaluate(() => (document.activeElement || {}).getAttribute && document.activeElement.getAttribute('data-ref')) !== 'C4') fail(`Enter didn't move to the cell below: ${await page.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-ref'))}`);
+  if (await page.evaluate(() => (document.activeElement || {}).getAttribute && document.activeElement.getAttribute('data-ref')) !== 'B4') fail(`Enter didn't move to the cell below: ${await page.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-ref'))}`);
   await page.fill('.xl tr.xl-row:has-text("Rhea Rank") textarea >> nth=0', 'Complete');
   await page.press('.xl tr.xl-row:has-text("Rhea Rank") textarea >> nth=0', 'Tab');
   await page.evaluate(id => { const r = [...document.querySelectorAll('.xl tr.xl-row')].find(t => /Sam Second/.test(t.innerText)); const ins = r.querySelectorAll('.xl-num');
@@ -118,7 +119,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.waitForTimeout(900);
   const saved = await get(`ranking:${BATCH}:w1`);
   const rr = saved && saved.rows && saved.rows[ids.Rhea];
-  if (!rr || Object.values(rr.cells).filter(c => c.raw).length !== 7 || !Object.values(rr.cells).some(c => c.note === 'Complete') || !Object.values(rr.cells).some(c => c.raw === '5' && c.note === 'Initial feedback implemented.')) fail(`the report wasn't saved: ${JSON.stringify(saved && saved.rows)}`);
+  if (!rr || Object.values(rr.cells).filter(c => c.raw).length !== 7 || rr.notes !== 'Complete' || !Object.values(rr.cells).some(c => c.raw === '5' && c.note === 'Initial feedback implemented.')) fail(`the report wasn't saved: ${JSON.stringify(saved && saved.rows)}`);
 
   // ⬇ Word: the facilitator's format, ranked
   const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRanking.download())]);
@@ -133,7 +134,7 @@ const failures = []; const fail = m => failures.push(m);
   if (xl.suggestedFilename() !== `${BATCH} RANKING REPORT WEEK 1.xlsx`) fail(`the Excel file is named ${xl.suggestedFilename()}`);
   const xb = fs.readFileSync(await xl.path()), xs = xb.toString('latin1');
   if (xb.readUInt32LE(0) !== 0x04034b50 || !xs.includes('xl/worksheets/sheet1.xml')) fail('the Excel file is not an .xlsx');
-  for (const t of ['<f>IF(E3=&quot;&quot;,&quot;&quot;,E3/40*5)</f>', '<f>IFERROR(AVERAGE(H3,J3,L3,M3),&quot;&quot;)</f>', 'RANK(N3,$N$3:$N$5)', 'fullCalcOnLoad="1"', 'state="frozen"', 'Notes on the scores'])
+  for (const t of ['<f>IF(D3=&quot;&quot;,&quot;&quot;,D3/40*5)</f>', '<f>IFERROR(AVERAGE(G3,I3,K3,L3),&quot;&quot;)</f>', 'RANK(M3,$M$3:$M$5)', 'fullCalcOnLoad="1"', 'state="frozen"', 'Notes on the scores'])
     if (!xs.includes(t)) fail(`the Excel file has no ${t}`);
   if (!(xs.indexOf('Rhea Rank') < xs.indexOf('Sam Second') && xs.indexOf('Sam Second') < xs.indexOf('Tom Unscored'))) fail('the Excel file isn\'t in rank order');
   // 📤 share: each trainee gets their own row (rankshare:<id>)
