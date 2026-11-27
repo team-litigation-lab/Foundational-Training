@@ -1460,11 +1460,11 @@ const LESSON_CARDS = {
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
       {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
-      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · LSH CaseWorX & Intake line", k: "watch", d: 8, s: "s1e"},
-      {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
+      {t: "CMS Demo and Mock Call", sub: "The live session · ☎ Practice Intake Calls: LSH CaseWorX & the Intake line", k: "watch", d: 8, s: "s1e"},
+      {t: "Demo Preparation", time: "PM", sub: "How it runs · then the SA tutorial video", k: "interactive", d: 8, s: "s3p"},
       // (Part 2 closes on the Intake Mock Calls Metrics: Day 9's metrics slide, moved to Day 8's deck as mcm by
       // build/day-decks.cjs MOVE; Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on it)
-      {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 8, s: "mcm"},
+      {t: "Demo & Intake Mock Calls Metrics", sub: "What your demo and your graded intake call are scored on", k: "interactive", d: 8, s: "mcm"},
       // (Part 3: the Transcription Activity; no Buffer Time)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       // (done on the Practice Lab's 🎧 Transcription Activity, not on the deck: build/day-decks.cjs takes Day 9's s3 off)
@@ -2658,6 +2658,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
+/* (Day 8's two scoresheets on one slide, side by side: the demo's and the Intake Mock Calls') */
+.ftdd-sheet .ftdd-mc2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;width:100%;} @media(max-width:1000px){.ftdd-sheet .ftdd-mc2{grid-template-columns:1fr;}}
 main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{opacity:0;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s. Opacity, not visibility: the slide's text stays readable to the page's own code meanwhile) */
 @keyframes ftddReveal{to{opacity:1;}}
 main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-ins .btn{font-size:21px !important;padding:14px 30px !important;border-radius:12px;box-shadow:0 6px 16px rgba(30,35,64,.25);}

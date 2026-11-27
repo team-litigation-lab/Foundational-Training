@@ -484,12 +484,12 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // the Intake Mock Calls Metrics close Part 2 (Day 8, mcm, after the demo's preparation; build/day-decks.cjs MOVE): the metrics
   // with no heading over the table, the Call Simulator and CMS Intake links beside them, and no case (the packet's case is the
   // Day 8 demo's); the mock calls' own slide is off the deck, and Part 3 (Day 9) opens on the Sample Transcription Guide
-  if (await page.evaluate(() => { const l = FTDayDecks.list(8).filter(s => !s.end && !s.placeholder); return l[l.length - 1].id !== 'mcm' || l[l.length - 2].id !== 's3p'; })) fail("Part 2 (Day 8) doesn't close on the Intake Mock Calls Metrics after the demo's preparation");
+  if (await page.evaluate(() => { const l = FTDayDecks.list(8).filter(s => !s.end && !s.placeholder); const i = id => l.findIndex(s => s.id === id); return l[l.length - 1].id !== 'mcm' || !(i('s1e') < i('s1g') && i('s1g') < i('s3p') && i('s3p') < i('s1v') && i('s1v') < i('mcm')); })) fail("Day 8's afternoon isn't instructions, Practice Intake Calls, the demo's preparation, the video, then both scoresheets");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's2'))) fail("the Intake Mock Calls Metrics are still on Day 9's deck");
   await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 'mcm'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
   if (!/Intake Mock Calls Metrics/.test(d9.h)) fail(`Part 2's metrics slide is "${d9.h}"`);
-  if (d9.score < 10 || /debrief/i.test(d9.text) || !/Call Sim: Intake Line/.test(d9.text) || (await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  if (d9.score < 10 || /debrief/i.test(d9.text) || /Before your turn/.test(d9.text) || !/Demo Metrics|Intake Packet/i.test(d9.text + d9.h) || (await page.$('.ftdd-sheet .ftis-mockcall')) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics with the practice links and the case: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3b'))) fail("Day 9's Intake Mock Calls slide is still on the deck");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
   // the packet's case is the Day 8 demo's: its preparation slide (s3p) carries the case box
