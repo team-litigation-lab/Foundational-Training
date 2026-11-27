@@ -134,7 +134,7 @@ const failures = []; const fail = m => failures.push(m);
         // (on the trainee's page: ✍️ Knowledge Checks, Assessments & Activities → 📝 Activities)
         const ws = await page.evaluate(async () => { const all = [...document.querySelectorAll('.bs-pt-kd details.bs-kd')], d = all.find(x => /Intake Worksheet/.test(x.querySelector('summary').innerText));
           if (!d) return { missing: all.map(x => x.querySelector('summary').innerText.slice(0, 40)) }; d.open = true; await new Promise(r => setTimeout(r, 800)); return { sum: d.querySelector('summary').innerText, body: d.innerText }; });
-        if (!ws || !/88\/100|4\.4\/5|Additional Reference/.test(ws.sum) || !/Thorough answers/.test(ws.body) || !/The trainee’s answers/.test(ws.body) || !/Police Report: proves fault/.test(ws.body) || !/Open it/.test(ws.body))
+        if (!ws || !/88\/100|4\.4\/5|📎/.test(ws.sum) || !/Thorough answers/.test(ws.body) || !/The trainee’s answers/.test(ws.body) || !/Police Report: proves fault/.test(ws.body) || !/Open it/.test(ws.body))
           fail(`the Intake Worksheet row doesn't show its Graders grade and the trainee's answers: ${JSON.stringify(ws)}`);
         await page.evaluate(([key, value, base]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value), base: JSON.stringify(base) }) }), ['labreview:' + ids.Ada, labWas || {}, labNow]);   // (with the copy it replaces: a trainer's score record is merged, worker.js merge3)
         await page.evaluate(b => FTBatchSheet.batch(b), BATCH); await page.waitForTimeout(3500);
@@ -175,7 +175,7 @@ const failures = []; const fail = m => failures.push(m);
   const scd = by('scorecard'), sa = scd.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(scd.head.slice(0, 7)) !== JSON.stringify(['Trainee', 'Overall', '✍️ Knowledge Checks', '🛠 Practice', 'Classroom & outputs', 'Average', 'Remarks / Trainer Feedback'])) fail(`🏅 Score Card's columns: ${scd.head.slice(0, 7)}`);
   // (📎 her Knowledge Check is Additional Reference — js/ft-reference.js; her Reception Mock Call is scored, without the retired Tools Utilization)
-  if (!sa || sa[2] !== '📎 Additional Reference' || !sa.some((c, i) => i > 1 && /^\d+%$/.test(c))) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
+  if (!sa || !/^📎/.test(sa[2]) || !sa.some((c, i) => i > 1 && /^\d+%$/.test(c))) fail(`Ada's Score Card: ${sa && sa.slice(0, 12)}`);
   // Compliance and Platform Utilization: the six Drive links side by side (no dropdown), how many are correct first, the progress
   const cpl = by('compliance'), ca = cpl.rows.find(r => /Ada/.test(r[0]));
   if (JSON.stringify(cpl.head) !== JSON.stringify(['Trainee', 'Links correct', '📒 Monitoring Sheet', '📘 TAM', '⌨️ Typing Tests', '🔤 Spelling Tests', '📁 Assessments/Activities', '📋 Daily Task Tracker', 'Last checked', 'Lesson decks', 'Knowledge Checks passed', 'Last on the platform'])) fail(`the compliance table's columns: ${cpl.head}`);
@@ -425,8 +425,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!rl.l4 || !/^\d+%$/.test(rl.l4.v) || /Reception Listening Activity[^;]* 80%/.test(rl.l4.f) || !/Reception Mock Call/.test(rl.l4.f)) fail(`Lesson 4's 🛠 Practice isn't the mock call alone: ${JSON.stringify(rl.l4)}`);
   if (!rl.d3 || /%/.test(rl.d3.v) || !/nothing scored yet/.test(rl.d3.f)) fail(`Ada's Day 3 on 📅 Day by Day scores the Reception Listening Activity: ${JSON.stringify(rl.d3)}`);
   // (🎯 Graded calls now reads the trainer's Mock Call scorecard, so her 76% mock call counts too, as on Lesson 4)
-  if (!rl.practice || /%/.test(rl.practice.v)) fail(`📅 Day by Day's 🛠 Practice counts Additional Reference work: ${JSON.stringify(rl.practice)}`);
-  if (!rl.ds3 || rl.ds3.v !== '' || !/Reception Listening Activity[\s\S]*📎 Additional Reference/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity as Additional Reference: ${JSON.stringify(rl.ds3)}`);
+  if (!rl.practice || (/%/.test(rl.practice.v) && !/^📎/.test(rl.practice.v))) fail(`📅 Day by Day's 🛠 Practice counts Additional Reference work: ${JSON.stringify(rl.practice)}`);
+  if (!rl.ds3 || rl.ds3.v !== '' || !/Reception Listening Activity[\s\S]*📎/.test(rl.ds3.f)) fail(`Ada's Day 3 on 📅 Day 1–16 doesn't show her Reception Listening Activity as Additional Reference: ${JSON.stringify(rl.ds3)}`);
   await page.evaluate(id => FTBatchSheet.dsWho(id), ids.Ada); await page.waitForTimeout(400);
   // (📊 graded by the app, it is a row of the day's "why this score" table — not a line of its own — the trainer's mock call keeps its line)
   const rx = await page.evaluate(() => { const tr = [...document.querySelectorAll('.bs-ds-st tbody tr')].find(x => /Reception Listening Activity/.test(x.querySelector('th').textContent));

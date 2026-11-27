@@ -268,7 +268,7 @@ async function workerChecks() {
   if (!/Last sent/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the page doesn\'t show when it was sent');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (📎 the calendar activity is Additional Reference — js/ft-reference.js: shown with its fields right, with no score)
-  if (!/Calendar checks[\s\S]*Attorney Calendar Management Activity[\s\S]*📎 Additional Reference/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the calendar activity as Additional Reference');
+  if (!/Calendar checks[\s\S]*Attorney Calendar Management Activity[\s\S]*📎 Not scored/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the calendar activity as Additional Reference');
 
   // two more trainees for the trainer's tab: one storing HTML and a forged score, one with a broken record
   const forged = { id: 'xss-test--' + BATCH.toLowerCase(), name: 'Xss <i>Test</i>', batch: BATCH, approved: true }, broken = { id: 'broken-rec--' + BATCH.toLowerCase(), name: 'Broken Record', batch: BATCH, approved: true };

@@ -14,7 +14,7 @@
    ============================================================ */
 (function(root){
 "use strict";
-const LABEL = "📎 Additional Reference";
+const LABEL = "📎 Not scored";
 // the trainer's scorecards the guide scores, by scorecard (not activity), so a renamed or added activity follows its scorecard
 const SCORED_RUBRICS = ["reception", "calendar", "intake", "intake-packet", "lor", "medlor", "medlor-recorded", "lv", "settlement"];
 // the assessments the guide scores (js/ft-assess.js): Common Terms Used, Auto Liability Insurance, Policy Disclosure

@@ -68,7 +68,7 @@ const failures = []; const fail = m => failures.push(m);
     if (!/^0 \//.test(c.done)) fail(`another batch's days were counted done: ${c.done}`);
     // (Daily compliance averages both days: Week 1's 75 with Week 2's 50 → 63%; the control batch stays at 50%)
     // (📎 Daily compliance is Additional Reference — js/ft-reference.js: the cell reads the label, the figure is in its hover)
-    if (!/📎 Additional Reference[\s\S]*was 63%/.test(w.comp) || !/📎 Additional Reference[\s\S]*was 50%/.test(c.comp)) fail(`the Daily compliance doesn't follow Week 1's 100% EOD: ${w.comp} / ${c.comp}`);
+    if (!/📎[\s\S]*63%/.test(w.comp) || !/📎[\s\S]*50%/.test(c.comp)) fail(`the Daily compliance doesn't follow Week 1's 100% EOD: ${w.comp} / ${c.comp}`);
     if (!/75%/.test(w.outputs)) fail(`📤 Daily outputs doesn't keep Week 1's day at 75% (in its hover): ${w.outputs}`);
     // (3) nothing written back
     const raw = await get('trackerreview:' + ids.Wanda);

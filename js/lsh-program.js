@@ -368,8 +368,8 @@ function ring(pct, why){
 }
 // (a source marked hidden has no card or column of its own: its items are shown on another's, js/ft-program.js)
 const shown = () => CFG.sources.filter(s => !s.hidden);
-const REF_LABEL = "📎 Additional Reference";
-const HOW = (CFG.overallReference ? "Only what the Training Guide grades is scored: each grading system’s score is the average of its scored items. Everything else is 📎 Additional Reference: shown with its feedback, with no score, counted nowhere — and there is no overall score." : "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same.") +
+const REF_LABEL = "📎 Not scored";
+const HOW = (CFG.overallReference ? "Only what the Training Guide grades is scored: each grading system’s score is the average of its scored items. Everything else is shown in grey with a 📎 (for reference): shown with its feedback, with no score, counted nowhere — and there is no overall score." : "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same.") +
   (shown().some(s => s.noOverall) ? ` (${shown().filter(s => s.noOverall).map(s => s.label).join(", ")}: shown, but not counted again in the overall, as its marks come from the other systems.)` : "");
 function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;

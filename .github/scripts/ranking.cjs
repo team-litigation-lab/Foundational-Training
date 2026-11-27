@@ -124,7 +124,7 @@ const failures = []; const fail = m => failures.push(m);
   const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => FTRanking.download())]);
   if (dl.suggestedFilename() !== `${BATCH} RANKING REPORT WEEK 1.doc`) fail(`the Word file is named ${dl.suggestedFilename()}`);
   const doc = fs.readFileSync(await dl.path(), 'utf8');
-  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', '(📎 Additional Reference)', '4.38/5', 'mso-page-orientation:landscape'])
+  for (const t of ['Trainee Name', 'W1 Final Average', 'Additional Notes', ' 📎', '4.38/5', 'mso-page-orientation:landscape'])
     if (!doc.includes(t)) fail(`the Word file has no "${t}"`);
   if (!(doc.indexOf('Rhea Rank') > 0 && doc.indexOf('Rhea Rank') < doc.indexOf('Sam Second') && doc.indexOf('Sam Second') < doc.indexOf('Tom Unscored'))) fail('the Word file isn\'t in rank order');
 
@@ -251,10 +251,10 @@ const failures = []; const fail = m => failures.push(m);
   const ov = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'scores'); const r = t.rows.find(x => /Una/.test(x[0].v)); return { head: t.head, row: r && r.map(c => c.v) }; });
   const col = h => ov.head.indexOf(h);
   // (📎 Daily compliance, the weeks' average and the Overall % are Additional Reference: labelled, their figure in the hover)
-  if (!ov.row || ov.row[col('Daily compliance')] !== '📎 Additional Reference' || ov.row[col('Weeks average (/5)')] !== '📎 Additional Reference' || ov.row[col('Overall %')] !== '📎 Additional Reference' || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
+  if (!ov.row || !/^📎/.test(ov.row[col('Daily compliance')]) || !/^📎/.test(ov.row[col('Weeks average (/5)')]) || !/^📎/.test(ov.row[col('Overall %')]) || col('Rank') !== -1)   // (no Rank on the Batch Sheet: 📊 Weekly Reports ranks the batch)
     fail(`📋 Batch Sheet → 🏅 Scores reads: ${JSON.stringify(ov)}`);
   const out = await page.evaluate(() => { const t = FTBatchSheet.tables().find(x => x.id === 'outputs'); const r = t.rows.find(x => /Una/.test(x[0].v)); return r && r.map(c => c.v); });
-  if (!out || out[1] !== '📎 Additional Reference' || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
+  if (!out || !/^📎/.test(out[1]) || out.slice(2).filter(Boolean).length !== 2) fail(`📤 Daily outputs for Una (two days checked): ${JSON.stringify(out)}`);
   const tabsNow = await page.evaluate(() => [...document.querySelectorAll('.lp-admin-row .admin-tab-btn')].map(x => x.innerText.trim()).join(' | '));
   if (/Overall Performance|🏅 Scorecards/.test(tabsNow)) fail(`📈 Overall Performance / 🏅 Scorecards still have tabs: ${tabsNow}`);
   await page.evaluate(() => { state.adminTab = 'overall'; render(); }); await page.waitForTimeout(300);

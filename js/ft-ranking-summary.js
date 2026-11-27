@@ -30,7 +30,7 @@ const clip = (v, n) => { const t = String(v == null ? "" : v).replace(/\s+/g, " 
 const avg = xs => { const v = xs.filter(x => typeof x === "number" && isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
 const r1 = v => v == null ? null : Math.round(v * 10) / 10;
 const COMP = [
-  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance (📎 Additional Reference)"], ["pdp", "🌱", "Professional Development & Progress (📎 Additional Reference)"], ["timely", "⏱", "Timely Submission (Time Management) (📎 Additional Reference)"],
+  ["attention", "🔎", "Attention to Detail"], ["compliance", "✅", "Compliance 📎"], ["pdp", "🌱", "Professional Development & Progress 📎"], ["timely", "⏱", "Timely Submission (Time Management) 📎"],
   ["communication", "💬", "Communication Proficiency"], ["english", "🔤", "English Proficiency"], ["call", "📞", "Call Handling"], ["tools", "🛠", "Tools Utilization"]];
 const S = {key: "", data: null, loading: false, busy: false, edit: false, err: ""};
 // (a week is scored from its first day on — Pacific time — with the work done so far: an initial score that grows as the days
