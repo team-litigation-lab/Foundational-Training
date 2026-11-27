@@ -96,31 +96,25 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4, on the metrics page, not a slide of their own; Calendaring's Day 5 no longer opens on them)
   if (mon5.id === 's1' || (D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
     fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 still has it as a slide: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
-  // (its Activity Items as ten cards, an item a card with its own on it (6's two travel blocks; 8's four parts of the trip,
-  // side by side, 8 on a slide of its own); every activity date marked for moving to the trainee's weeks)
-  const txt = sl(5, 's3'), its = ['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id));
-  const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = its.map(h => (h.match(/class="ftdd-cal-item[ "]/g) || []).length);
-  const cards = its.map(h => (h.match(/data-card="([^"]+)"/g) || []).map(x => x.slice(11, -1)).join(' ')).join(' | '), heads = (D[5].slides || []).filter(s => /^s3[ijkl]$/.test(s.id)).map(s => s.h);
-  const dated = its.join('').match(/<span class="ftdd-cal-date" data-cal-date="2026-07-\d\d">July \d\d, 2026<\/span>/g) || [];
+  // (its Activity Items are on the Practice Lab now, #/calsim/attorney-activity beside the simulator: no slides of their own;
+  // the Instructions slide is its two cards and links there beside the Main Portal's button)
+  const txt = sl(5, 's3'), ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length;
   if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || items.join() !== '4,3,1,2' || cards !== '1 2 3 4 | 5 6 7 | 8 | 9 10' || its.some(h => /data-calsim-activity|#\/calsim\/attorney-activity|ftsCalsim/.test(h))
-    || heads.join() !== ['Items 1–4', 'Items 5–7', 'Item 8', 'Items 9–10'].map(r => 'Attorney Calendar Management Activity: Activity ' + r).join()
-    || !/for travel to court\./.test(its[1]) || (its[2].match(/class="ftdd-cal-partbox"/g) || []).length !== 4 || !/➢ Return Travel to Seattle/.test(its[2])
-    || dated.length !== 12 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
-    fail(`Day 5's activity isn't its Instructions in two cards, then its ten cards (8 on a slide of its own) with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
+    || (D[5].slides || []).some(s => /^s3[ijkl]$/.test(s.id)) || !/onclick="goto\('calsim','attorney-activity'\)">🧪 Activity Items: Practice Lab</.test(txt))
+    fail(`Day 5's activity isn't its Instructions in two cards with the Practice Lab's Activity Items link, its item slides off: ${JSON.stringify({ ins, ids: (D[5].slides || []).map(s => s.id) })}`);
   if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || /Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, lost its drawn samples (Day 6\'s format), or still has the Calendar Activity Check tile (the activity\'s one link is on its Instructions slide)');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
   // (the samples and the time zone, s3b, come before the items, right after the Instructions; the sample's title names the
   // client, and its calendar colour is highlighted like the other parts an appointment must have right)
   const order5 = (D[5].slides || []).map(s => s.id).filter(x => /^s3/.test(x)).join();
-  if (order5 !== 's3,s3b,s3i,s3j,s3k,s3l') fail(`Day 5's samples and time zone aren't between the activity's Instructions and its items: ${order5}`);
+  if (order5 !== 's3,s3b') fail(`Day 5's samples and time zone don't follow the activity's Instructions: ${order5}`);
   if (!/<span class="ftdd-ev-mark">Deposition Meeting – Jane Doe<\/span>/.test(sl(5, 's3b')) || !/◀ Specific title, naming the person/.test(sl(5, 's3b'))
     || !/<span class="ftdd-ev-hlf ftdd-ev-f"><span class="ftdd-ev-dot"/.test(sl(5, 's3b'))) fail('Day 5\'s sample event doesn\'t name its client in the title, or its calendar colour isn\'t highlighted');
   // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
   // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
   // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Sample & Time Zone)
   const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">📅 Standard Training - Calendaring Activity</;
-  if (!portal.test(sl(5, 's3')) || [...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
+  if (!portal.test(sl(5, 's3')) || /ftsCalsim|#\/calsim\/attorney-activity|attorney-activity|goto\(\\?'calcheck/.test(sl(5, 's3b')))
     fail('Day 5\'s activity should link its calendar once, on the Instructions slide, and nowhere after');
   // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
   // (the mock calls' calendar, Standard Training - Mock Call, has no link on the deck)
@@ -325,23 +319,6 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(400);
   if (await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day) !== '5') fail('a trainee can\'t open Day 5\'s instructions');
-  // 📅 its activity's cards show the dates of the trainee's own weeks: a batch that started Mon Oct 26, 2026 (B102626) has its
-  // Day 5 that week, so its dates start on Mon Nov 2 (the anchor, saved once in their calsim record); a Zoom link's numbers
-  // are not a date. A trainer sees the dates of a batch starting this week, with no line under them saying so
-  const batch0 = await page.evaluate(() => state.traineeBatch);
-  await put('calsim:' + id, null);
-  const calAt = () => page.evaluate(() => { const ds = [...document.querySelectorAll('.ftdd-sheet [data-cal-date]')];
-    return { d1: (ds[0] || {}).textContent || '', hidden: ds.filter(x => getComputedStyle(x).visibility === 'hidden').length, n: ds.length, note: document.querySelectorAll('.ftdd-cal-note').length,
-      zoom: /zoom\.us\/deposition-meeting-02-04-25/.test((document.querySelector('.ftdd-sheet') || {}).innerText || ''), want: window.FTCalCore ? FTCalCore.act.longDate(FTCalCore.act.anchorNow()) : '' }; });
-  await page.evaluate(() => { state.traineeBatch = 'B102626'; FTDayDecks.open(5, FTDayDecks.at(5, 's3i')); }); await page.waitForTimeout(1500);
-  const calT = await calAt(), calRec = await get('calsim:' + id);
-  if (calT.d1 !== 'November 02, 2026' || calT.hidden || calT.n !== 4 || !calT.zoom || calT.note) fail(`a trainee in batch B102626 doesn't see Day 5's activity at their own dates: ${JSON.stringify(calT)}`);
-  // (the deck reads the calendar record, never writes it: js/ft-calendar.js keeps the anchor there)
-  if (calRec) fail(`the deck wrote the trainee's calendar record: ${JSON.stringify(calRec)}`);
-  await page.evaluate(() => { state.isAdmin = true; render(); }); await page.waitForTimeout(800);
-  const calA = await calAt();
-  if (!calA.want || calA.d1 !== calA.want || calA.note) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates (with no note line under it): ${JSON.stringify(calA)}`);
-  await page.evaluate(b => { state.isAdmin = false; state.traineeBatch = b; }, batch0);
   // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
