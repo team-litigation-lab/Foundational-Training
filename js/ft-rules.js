@@ -382,6 +382,8 @@ const SLIDES = [
       <p>Training is your chance to show what you can do, so give it your best every day. Your progress is reviewed each week, and those reviews help decide whether you continue on to your project.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure, how well you manage your time, the quality of your output and your progression.")}
+    ${rule("🧩 This Is Not Your Typical Training", "Not everything will be laid out for you. Your ability to adapt, think outside the box and stay resilient, while maintaining your composure, is part of what training tests.")}
+    ${rule("🌱 Keep an Open Mind", "Your past exposures can help, but keep in mind that we are building new skill sets here, so keep an open mind. If you have concerns, positive or negative, your trainers are the best people to talk to.")}
 `],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
