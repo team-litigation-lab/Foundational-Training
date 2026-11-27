@@ -2744,7 +2744,7 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-head .ftdd-ho-sub{margin:0 0 10px;font:60
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
-main.main-ftdd .ftdd-handouts .ftdd-ho-wait{margin:0;font-weight:800;font-size:1.05em;line-height:1.4;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-wait{margin:0;font-weight:800;font-size:1.35em;line-height:1.4;color:#fff !important;}   /* (white on the navy card: readable) */
 .ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li{color:#fff !important;font:600 20px/1.55 'Inter',sans-serif !important;margin:2px 0 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li::marker{color:#F4B77A !important;font-weight:800;}
@@ -2771,6 +2771,10 @@ main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:80
 /* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
 .ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
+/* (the topic's label over its videos — Day 8's 🏷 Intake Process — and each video's name under its preview: large and clear) */
+.ft-body .ftdd-topic{margin:14px 0 8px !important;padding:8px 20px !important;border-radius:10px !important;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;box-shadow:0 4px 12px rgba(30,35,64,.2);}
+.ft-body .ftdd-vcard .ftdd-tile-t, .ft-body .ftdd-vcard .ftdd-tile-t b{text-decoration:none !important;}
+.ft-body .ftdd-vcard .ftdd-tile-t b{display:block;text-align:center;font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;padding:4px 6px 0;}
 .ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
 .ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
 .ft-body p.ftdd-callout{padding:10px 14px 10px 40px;border-radius:12px;background:#FFF6EC;border-left:4px solid #DB8437;position:relative;}
