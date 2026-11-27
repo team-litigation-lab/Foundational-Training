@@ -384,7 +384,7 @@ const SLIDES = [
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure, how well you manage your time, the quality of your output and your progression.")}
     ${rule("🧩 This Is Not Your Typical Training", "Not everything will be laid out for you. Your ability to adapt, think outside the box and stay resilient, while maintaining your composure, is part of what training tests.")}
     ${rule("🌱 Keep an Open Mind", "Your past exposures can help, but keep in mind that we are building new skill sets here, so keep an open mind. If you have concerns, positive or negative, your trainers are the best people to talk to.")}
-    ${rule("🔄 Unlearn, and Live the Moment", "Be ready to unlearn: some habits from past jobs won't fit how we work here, so let them go. Live the moment: give each task, discussion and piece of feedback your full attention as it happens, not what came before or what comes next.")}
+    ${rule("🔄 Unlearn, and Live the Moment", "Be ready to unlearn: some habits from past jobs won't fit how we work here, so let them go. Live the moment: give each task, discussion and feedback your full focus as it happens, not what came before or what comes next.")}
 `],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
