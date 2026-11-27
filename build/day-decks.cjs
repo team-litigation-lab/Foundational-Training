@@ -1668,6 +1668,14 @@ function noKB(html){
   if(/ftis-packet|ftdd-step-n/.test(x.html)) throw new Error("Day 8's packet steps are no longer where the build takes them off the deck"); }
 // 🛠 Day 9's 3.1 Transcription Activity is done on the Practice Lab's 🎧 Transcription Activity card: off the deck
 { const a = (decks[9] || {slides: []}).slides, i = a.findIndex(y => y.id === "s3"); if(i < 0) throw new Error("Day 9 has no s3 to take off"); a.splice(i, 1); }
+// 🎧 Day 3's Reception Listening Activity: its five calls are on the Practice Lab's 🎧 Call Listening Log (its tab, with
+// each call's player and answers): their slide, s1d, is off the deck, and the Instructions slide's Next opens that tab
+// (js/ft-day-decks.js LAB_NEXT), whose ← Back to the deck returns to the slide after it
+{ const a = (decks[3] || {slides: []}).slides, i = a.findIndex(y => y.id === "s1d"), c = a.find(y => y.id === "s1c");
+  if(i < 0 || !c) throw new Error("Day 3 has no s1d (the 5 practice calls) to take off, or no s1c to keep");
+  // (the trainer's key, trainer-only, stays on the deck: on the Instructions slide)
+  if(!/data-slot="3:pi-calls"/.test(a[i].html)) throw new Error("Day 3's trainer key is no longer on the calls slide");
+  c.html += '<div class="trainer-slot" data-slot="3:pi-calls"></div>\n'; a.splice(i, 1); }
 // ☎ Day 8's afternoon in the order it runs: the live session's instructions, 🎧 Practice Intake Calls, the demo's preparation,
 // then the SA tutorial video, and last one slide with both scoresheets — the demo's metrics and the Intake Mock Calls' — side
 // by side (no "☎ Before your turn" links: the trainee has had the simulators since Practice Intake Calls)

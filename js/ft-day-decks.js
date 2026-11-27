@@ -1536,7 +1536,6 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-// (Day 3's Reception Listening Activity: the five calls' slide, s1d, goes on to the slide after it, not ✍️ Knowledge Check)
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
@@ -1555,7 +1554,10 @@ const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 // 🛠 a slide whose Next is its Practice Lab activity, where the activity's instructions sit beside its simulator (Day 5's
 // Sample & Time Zone, the Attorney Calendar Management Activity's last slide: its Activity Items beside the Calendar Simulator,
 // #/calsim/attorney-activity, whose ← Back to the slides returns here)
-const LAB_NEXT = {5: {s3b: {label: "Next: 🧪 The Activity Items in the 🛠 Practice Lab →", ok: () => typeof root.goto === "function", run: () => goto("calsim", "attorney-activity")}}};
+// (and Day 3's Reception Listening Activity: its Instructions slide's Next opens the activity's page, its five calls beside
+// its instructions, whose 📚 Back to the lesson returns to the slide after it: js/ft-listening.js fromDeck)
+const LAB_NEXT = {3: {s1c: {label: "Next: 🎧 The 5 practice calls in the 🛠 Practice Lab →", ok: () => !!(root.FTListen && FTListen.fromDeck), run: () => FTListen.fromDeck("recact")}},
+  5: {s3b: {label: "Next: 🧪 The Activity Items in the 🛠 Practice Lab →", ok: () => typeof root.goto === "function", run: () => goto("calsim", "attorney-activity")}}};
 const labOf = s => { const l = s && (LAB_NEXT[DD.day] || {})[s.id]; return l && l.ok() ? l : null; };
 function kcNext(s){
   const lab = labOf(s);

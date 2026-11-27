@@ -46,6 +46,7 @@ const SETS = [
   {id:"recact", icon:"📝", title:"Reception Listening Activity: answers", day:3, lesson:4, n:5, activity:true,
     titles:["Call 1: The Missing Email", "Call 2: Third Time Calling", "Call 3: Which Office?", "Call 4: Just Confirming", "Call 5: No Ride Tomorrow"],
     audio:[1, 2, 3, 4, 5].map(n => `/ft/day3/audio/pi-activity-${n}.mp3`),
+    secs:[166, 124, 104, 65, 137], va:"Oscar",   // (each call's length and VA: build/calls/pi-reception-activity.json)
     about:"Play each of the five Harbor & Pine practice calls, then log its 5 data points and its challenge: the obstacle, and how the VA handled it."}
 ];
 const setOf = id => SETS.find(s => s.id === id);
@@ -152,7 +153,7 @@ function recHtml(s, r, next, opt){
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
       ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
       ${opt.all ? "" : `<span>${open ? "▾" : "▸"}</span>`}</button>
-    ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
+    ${open ? `<div class="ln-form">${r.audio && !opt.noAudio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
         ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === val(f) ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
           : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(val(f))}</textarea>`
           : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(val(f))}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
@@ -160,11 +161,36 @@ function recHtml(s, r, next, opt){
 }
 // 📝 an activity's answer sheet: its progress, then a card per call with its player and its form (the page, and the
 // Day 3 deck's Answers slide, js/ft-day-decks.js)
-function actSheet(cur){
+// 🎧 the five recordings together, as on the deck's slide: a card each, its title, length and VA, and its player
+function actCalls(cur){
+  const set = setOf(cur.id) || {}, mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+  return `<div class="lnx-card lnx-calls"><p class="lnx-card-h">🎧 The 5 recordings</p><div class="lnx-calls-grid">${cur.recs.map((r, i) => {
+    const t = String(r.title).replace(/^Call \d+:\s*/, ""), sec = (set.secs || [])[i];
+    return `<div class="lnx-call"><p class="lnx-call-h"><span>${r.n}</span><b>${e(t)}</b>${sec ? `<small>${mmss(sec)}${set.va ? " · VA " + e(set.va) : ""}</small>` : ""}</p>
+      ${r.audio ? `<audio controls preload="metadata" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}</div>`; }).join("")}</div></div>`;
+}
+function actSheet(cur, noAudio){
   const k = countDone(R.rec, cur), next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
   return `<div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · ${cur.n} practice calls</b><p>Your trainer reads your answers.</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
-    ${cur.recs.map(r => recHtml(cur, r, next, {all: true})).join("")}`;
+    ${cur.recs.map(r => recHtml(cur, r, next, {all: true, noAudio})).join("")}`;
+}
+// 📋 the activity's instructions, in the deck's cards (Day 3's Reception Listening Activity slide, build/day-decks.cjs PI_HTML)
+function actIns(){
+  const step = (n, ic, t, body) => `<div class="lnx-step"><p class="lnx-step-h"><span>${n}</span>${ic} ${t}</p><p>${body}</p></div>`;
+  return `<div class="lnx-card"><p class="lnx-card-h">📋 Instructions</p>
+      <p class="lnx-lead">Listen to five fictional inbound calls to <b>Harbor &amp; Pine Injury Law</b>, a personal injury firm in Tampa, Florida. Each one shows a challenge front-desk staff often meet.</p>
+      <div class="lnx-steps">${step(1, "🎧", "Listen", "Play each call carefully. Pause, rewind and replay it as often as you need.")}${step(2, "🔍", "Analyze", "Identify the reception challenge and the caller's scenario.")}${step(3, "📝", "Extract", "Log the <b>5 data points</b> of each call in its form on the right.")}</div></div>
+    <div class="lnx-card"><p class="lnx-card-h">📋 The 5 data points of every call</p><ol class="lnx-pts">
+      <li><b>Caller</b>: their name, and who they are (client, potential client, provider, adjuster, family …)</li>
+      <li><b>Callback number</b>: with the extension or best time, if given</li>
+      <li><b>Verified?</b>: how the VA verified the caller (name, DOB, date of the accident), or why nothing could be shared</li>
+      <li><b>Reason for the call</b>: the case and what they need</li>
+      <li><b>Action taken</b>: who it went to, and how (message, transfer, callback)</li></ol></div>
+    <div class="lnx-card"><p class="lnx-card-h">💭 The call's challenge</p><div class="lnx-two">
+      <div><b>🚧 The Obstacle</b>What made the call difficult? (emotional distress, missing details, a language barrier, an aggressive caller, an urgent legal deadline)</div>
+      <div><b>🤝 The VA's Response</b>How did the receptionist handle it? (active listening, de-escalation, boundary setting, clarifying questions)</div></div></div>
+    <div class="lnx-card lnx-done"><p>Save each call as you go, then <b>📝 Submit for Grading</b>. Your trainer reads your answers.</p>${deckBack(true)}</div>`;
 }
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
@@ -177,10 +203,12 @@ function renderPage(){
   // 📝 the Reception Listening Activity's answers: a page of its own, its five calls only
   const pills = `<div class="ln-pills">${open.map(s => { const l = mine(setLive(s.id), state.traineeId), c = countDone(R.rec, l);
         return `<button class="ln-pill ${s.id === cur.id ? "on" : ""}" onclick="FTListen.set('${e(s.id)}')">${s.icon} ${e(s.activity ? "Reception Listening Activity" : s.title)} <em>${c}/${l.n}</em></button>`; }).join("")}</div>`;
-  if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Day ${cur.day}</p><h1>🎧 Call Listening Log</h1>
-      <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go, then 📝 Submit for Grading.</p>${pills}</div>
-    ${actSheet(cur)}
-    <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button></div>`;
+  if(cur.activity) return `<div class="lnx-top"><div><p class="lp-eyebrow">🛠 Practice Lab · Day ${cur.day}</p><h1>🎧 Reception Listening Activity</h1></div>${pills}</div>
+    <div class="lnx">
+      <aside class="lnx-ins">${actIns()}</aside>
+      <section class="lnx-work">${actCalls(cur)}${actSheet(cur, true)}
+        <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div></section>
+    </div>`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       ${pills}</div>
@@ -201,7 +229,7 @@ function renderLn(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   load(); loadSets();
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-ln">${R.set === "recact" && window.FTDayDecks ? `<a class="back-link" onclick="FTDayDecks.slide(3, 's1d')">&larr; Back to the 5 practice calls</a>` : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`}${renderPage()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-ln"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 }
 /* ---------- 📝 the activity's answer sheet in a pop-up, over the deck (Day 3's calls slide: build/day-decks.cjs PI_CALLS_HTML) ----------
@@ -308,11 +336,29 @@ async function submitPop(){
   // (the sheet painted again itself: the page's redraw doesn't always come round to it — FTListen.pop)
   POP.sending = false; try{ render(); }catch(err){} try{ paintPop(); }catch(err){}
 }
+// the way back to the deck the activity was opened from (FTListen.fromDeck)
+const LN_RET = "ftLnBack";
+try{ R.ret = JSON.parse(sessionStorage.getItem(LN_RET) || "null"); }catch(err){ R.ret = null; }
+const deckBack = small => window.FTDayDecks ? `<button class="btn ${small ? "btn-ghost btn-sm" : "btn-primary"}" type="button" onclick="FTListen.toDeck()">📚 Back to the lesson${R.ret && R.ret.h ? ": " + e(R.ret.h) : ""} →</button>` : "";
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,
   // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
+  // opened from a deck slide's Next (Day 3's Reception Listening Activity): the tab, then ← back to the deck on the slide
+  // after that one (kept for the tab, so a reload still goes back where the trainee left off)
+  fromDeck(sid){
+    const d = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state();
+    const i = (Number(d && d.i) || 0) + 1, nx = d && d.day != null && FTDayDecks.list ? (FTDayDecks.list(d.day) || [])[i] : null;
+    R.ret = d && d.day != null && state.view === "daydeck" ? {day: d.day, i, h: nx ? String(nx.h || "").replace(/^(AM|PM|Entire Day):\s*/, "") : ""} : null;
+    try{ if(R.ret) sessionStorage.setItem(LN_RET, JSON.stringify(R.ret)); else sessionStorage.removeItem(LN_RET); }catch(err){}
+    FTListen.open(sid);
+  },
+  toDeck(){ const r = R.ret; R.ret = null; try{ sessionStorage.removeItem(LN_RET); }catch(err){}
+    if(!window.FTDayDecks) return goto("simulators");
+    if(r) return FTDayDecks.open(r.day, r.i);
+    // (opened from the Practice Lab: Day 3's deck, on the slide after the activity's instructions)
+    const at = FTDayDecks.at ? FTDayDecks.at(3, "s1c") : -1; FTDayDecks.open(3, at >= 0 ? at + 1 : 0); },
   // 📝 the activity's answer sheet in a pop-up over the deck
   // (the sheet is painted again as soon as the trainee's log and the sets are in — not only through the page's redraw, which
   // a slide's own trouble could stop — and after 8 seconds still waiting it says so, with ↻ Try again)
@@ -432,6 +478,27 @@ window.FTListenAdmin = {
 ftAdminTab("listening", "🎧 Call Listening", adminHtml);
 
 (function(){ const st = document.createElement("style"); st.id = "ft-listening"; st.textContent = `
+main.main-ln:has(.lnx){max-width:none;}
+.lnx-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;} .lnx-top h1{margin:0;font:800 30px/1.15 'Poppins','Inter',sans-serif;color:#1E2340;}
+.lnx{display:grid;grid-template-columns:minmax(340px,36%) minmax(0,1fr);gap:16px;align-items:start;}
+.lnx-ins{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:12px;}
+.lnx-work{display:flex;flex-direction:column;gap:12px;min-width:0;}
+.lnx-card{flex-shrink:0;border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
+.lnx-card .lnx-card-h{margin:0 -16px 10px;padding:10px 16px;background:#1E2340;color:#fff;font:800 17px/1.3 'Poppins','Inter',sans-serif;border-bottom:3px solid #E8590C;}
+.lnx-card p, .lnx-card li, .lnx-two div{font-size:15.5px;line-height:1.5;color:#1E2340;}
+.lnx-lead{margin:0 0 10px;} .lnx-steps{display:grid;gap:8px;}
+.lnx-step{border-left:4px solid #E8590C;background:#FFF6EE;border-radius:8px;padding:8px 12px;} .lnx-step p{margin:0;}
+.lnx-step-h{font-weight:800;display:flex;align-items:center;gap:6px;} .lnx-step-h span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#E8590C;color:#fff;font-size:12px;}
+.lnx-pts{margin:0;padding-left:20px;display:grid;gap:4px;}
+.lnx-two{display:grid;gap:8px;} .lnx-two div{border-radius:8px;background:#F1F3FA;padding:8px 12px;} .lnx-two b{display:block;margin-bottom:2px;}
+.lnx-done{padding-top:12px;}
+.lnx-calls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.lnx-call{border:2px solid #343C66;border-radius:12px;overflow:hidden;background:#fff;}
+.lnx-card .lnx-call-h{margin:0;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;}
+.lnx-call-h span{display:inline-grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;background:#E8590C;color:#fff;font-weight:800;font-size:13px;}
+.lnx-call-h b{flex:1;font:800 15.5px/1.2 'Poppins','Inter',sans-serif;color:#fff;} .lnx-call-h small{color:#FFD7B5;font-weight:700;white-space:nowrap;}
+.lnx-call audio{display:block;width:calc(100% - 20px);margin:10px;} .lnx-done p{margin:0 0 8px;}
+@media (max-width:1000px){ .lnx{grid-template-columns:minmax(0,1fr);} .lnx-ins{position:static;max-height:none;} }
 main.main-ln{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
 .ln-hero h1{margin:0 0 4px;} .ln-hero p{margin:0;color:var(--ink-soft);max-width:none;}
@@ -449,7 +516,7 @@ main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk on
 .ln-form label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;font-weight:600;color:var(--ink-soft);} .ln-form label.w,.ln-form .w{grid-column:1/-1;}
 .ln-form input,.ln-form select,.ln-form textarea{box-sizing:border-box;width:100%;min-width:0;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;background:var(--card,#fff);color:var(--ink);}
 .ln-act{display:flex;gap:8px;}
-.ln-audio{width:100%;margin:2px 0 4px;} .ln-end{display:flex;justify-content:flex-end;}
+.ln-audio{width:100%;margin:2px 0 4px;} .ln-end{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
 .ln-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .ln-aedit{display:grid;grid-template-columns:2fr 1fr;gap:10px 12px;padding:12px 0;} .ln-aedit label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-soft);}
 .ln-aedit .w{grid-column:1/-1;} .ln-aedit input,.ln-aedit textarea{box-sizing:border-box;width:100%;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
