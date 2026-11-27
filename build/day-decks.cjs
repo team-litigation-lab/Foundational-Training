@@ -1668,6 +1668,19 @@ function noKB(html){
   if(/ftis-packet|ftdd-step-n/.test(x.html)) throw new Error("Day 8's packet steps are no longer where the build takes them off the deck"); }
 // 🛠 Day 9's 3.1 Transcription Activity is done on the Practice Lab's 🎧 Transcription Activity card: off the deck
 { const a = (decks[9] || {slides: []}).slides, i = a.findIndex(y => y.id === "s3"); if(i < 0) throw new Error("Day 9 has no s3 to take off"); a.splice(i, 1); }
+// ☎ Day 8's afternoon in the order it runs: the live session's instructions, 🎧 Practice Intake Calls, the demo's preparation,
+// then the SA tutorial video, and last one slide with both scoresheets — the demo's metrics and the Intake Mock Calls' — side
+// by side (no "☎ Before your turn" links: the trainee has had the simulators since Practice Intake Calls)
+{ const a = (decks[8] || {slides: []}).slides, at = id => a.findIndex(y => y.id === id);
+  ["s1e", "s1v", "s1g", "s3p", "mcm"].forEach(id => { if(at(id) < 0) throw new Error(`Day 8 has no ${id} to put in its afternoon order`); });
+  const take = id => a.splice(at(id), 1)[0], v = take("s1v"), g = take("s1g");
+  a.splice(at("s1e") + 1, 0, g); a.splice(at("s3p") + 1, 0, v);
+  const p = a[at("s3p")], m = a[at("mcm")], cut = p.html.indexOf('<div class="ftdd-pgbreak"></div>');
+  if(cut < 0 || !/Demo Metrics/.test(p.html.slice(cut))) throw new Error("Day 8's demo metrics are no longer where the build takes them to the metrics slide");
+  const demo = p.html.slice(cut).replace('<div class="ftdd-pgbreak"></div>', "").trim();
+  p.html = p.html.slice(0, cut);
+  m.h = "PM: Demo & Intake Mock Calls Metrics";
+  m.html = `<div class="ftdd-keep ftdd-mc2"><div class="ftdd-mc2-c">${demo}</div><div class="ftdd-mc2-c">\n<p data-nohead><b>Intake Mock Calls Metrics</b></p>\n</div></div>\n`; }
 // 📅 Day 5's Activity Items are on the Practice Lab now (#/calsim/attorney-activity: the instructions and items beside the
 // simulator): their four slides are off the deck. The Instructions slide has no button over its cards (the Main Portal's
 // is off): "Remember the RULES!" sits beside its 📝 Read & Do pill (data-bartitle), and the Sample & Time Zone slide,
