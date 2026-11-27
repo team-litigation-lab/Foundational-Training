@@ -340,6 +340,8 @@ function visual(html){
     if(!/Metrics$/i.test(txt) || p.closest(".trainer-slot")) return;
     const rb = dayRubric(txt);
     if(!rb) return;
+    // (🎧 the Transcription Activity isn't trainer facilitated: no scorecard on its slide, its heading gone too)
+    if(rb.key === "transcription"){ const sh = p.nextElementSibling; if(sh && sh.classList.contains("shots")) sh.remove(); p.remove(); return; }
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
     // (data-big: the slide is the metrics alone, so the scorecard is drawn large across it: Day 16's Before Your Demo)
@@ -743,7 +745,7 @@ function scoreBox(s, info, body){
   // metrics are there)
   if(Number(DD.day) === 9 || slidesOf((decks() || {})[DD.day] || {slides: []}).some(x => x.id === s.id + "p")) return "";
   const rb = dayRubric(h);
-  if(!rb) return "";
+  if(!rb || rb.key === "transcription") return "";   // (🎧 not trainer facilitated: no scorecard)
   const M = root.FTMetrics;
   // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
   return `<div class="ftdd-score">${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
@@ -1048,6 +1050,8 @@ function fitCrops(sheet){
 function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
+  // (a slide stays hidden until it has been dealt into its pages: no flash of all its documents at once, Day 7's blank forms)
+  setTimeout(() => sheets.forEach(x => x.setAttribute("data-fitted", "1")), 0);
   sheets.forEach((sheet, idx) => {
     sheet.style.paddingTop = "";   // (centerPage's room on top is taken off before the slide is measured anew)
     const pages = sheetPages(sheet);
@@ -1500,7 +1504,6 @@ const LESSON_CARDS = {
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
       // then Day 15's recorded demonstration, on Day 14's deck (build/day-decks.cjs MOVE; Day 15 has no day card: js/ft-day-locks.js PARTS)
       {t: "Before Your Recorded Demonstration: the Tutorial Video", time: "PM", sub: "Watch it again before you record", k: "watch", d: 14, s: "r15v"},
-      {t: "Gentle Reminders", time: "PM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 14, s: "r15g"},
       {t: "Demo Preparation", time: "PM", sub: "The rules for your recorded demonstration", k: "interactive", d: 14, s: "s1ep"},
       // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
@@ -2292,6 +2295,14 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 .ftdd-ribbon span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;background:linear-gradient(90deg,#343C66 0%,#46508A 50%,#343C66 100%);
   border-bottom:3px solid #DB8437;border-radius:6px;color:#fff;font:800 clamp(13px,1.1vw,17px)/1.25 'Poppins','Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:8px 24px;}
 .ftdd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+.ftdd-sheet p.ftdd-atlas{margin:12px 0 0;font:700 18px/1.4 'Inter',sans-serif;color:#1E2340;} .ftdd-sheet p.ftdd-atlas a{color:#1D4ED8;}
+.ftdd-sheet .ftdd-ncards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin:8px 0;text-align:left;}
+.ftdd-sheet .ftdd-ncard{border:2px solid #343C66;border-radius:12px;padding:10px 14px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+.ftdd-sheet .ftdd-ncard > b{display:block;margin:-10px -14px 8px;padding:8px 14px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;border-radius:10px 10px 0 0;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
+main.main-ftdd .ftdd-sheet .ftdd-ncard p{margin:4px 0;font-size:16px !important;line-height:1.4;}
+main.main-ftdd .ftdd-sheet .ftdd-ncard p.ftdd-nconv{padding:6px 10px;border:1.5px solid #343C66;border-radius:8px;background:#F4F6FB;font-weight:700;}
+main.main-ftdd .ftdd-sheet .ftdd-ncard p.ftdd-nnote{color:#7A4B00;}
+@media(max-width:1100px){ .ftdd-sheet .ftdd-ncards{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .ftdd-bar-t{display:inline-flex;align-items:center;margin-left:10px;padding:6px 16px;border-radius:8px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;font:800 17px/1.2 'Poppins','Inter',sans-serif;}   /* (a video's title beside the slide's Watch & Do pill) */
 .ftdd-pill{display:inline-flex;align-items:center;gap:8px;background:#ECEEF3;color:#262B45;border-radius:8px;padding:6px 16px;font:700 17px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;}
 .ftdd-n{font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;background:transparent;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 10px;white-space:nowrap;}
@@ -2637,6 +2648,9 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
+main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{visibility:hidden;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s) */
+@keyframes ftddReveal{to{visibility:visible;}}
+main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-ins .btn{font-size:21px !important;padding:14px 30px !important;border-radius:12px;box-shadow:0 6px 16px rgba(30,35,64,.25);}
 /* (its two links side by side: the Calendar Simulator here, then the activity on the Main Portal) */
 .ft-body .ftdd-calsim > .btn + .btn{margin-left:8px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
@@ -3043,10 +3057,10 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-noteup{margin:8px 0 4px !important;font:700
 .ft-body .ftdd-ev-when{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px;padding:7px;outline:2.5px solid #D93025;}
 .ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
 .ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
-.ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
+.ft-body .ftdd-ev-hl{background:#FFF4C7;padding:1px 4px;box-shadow:inset 0 -2px 0 #E8B931;}
 /* 🖍 the highlighter: what a trainee must do or get right (Day 5's Sample & Time Zone: the instruction, the sample's fields) */
-.ft-body mark.ftdd-hl{background:#FFF200;color:inherit;padding:1px 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
-.ft-body .ftdd-ev-hlf{background:#FFF200 !important;box-shadow:0 0 0 2px #FFF200;border-radius:3px;}
+.ft-body mark.ftdd-hl{background:#FFF4C7;box-shadow:inset 0 -2px 0 #E8B931;color:inherit;padding:1px 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.ft-body .ftdd-ev-hlf{background:#FFF4C7 !important;box-shadow:0 0 0 2px #F3D77A;border-radius:3px;}
 .ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
 .ft-body .ftdd-ev-sub{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
 .ft-body .ftdd-ev-box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid #444746;border-radius:3px;font-size:11px;color:#fff;margin-right:6px;}
@@ -3324,8 +3338,12 @@ main.main-ftdd .ftdd-sheet > .ftdd-keep:has(.ftdd-evl){align-self:stretch;width:
 main.main-ftdd .ftdd-sheet .ftdd-evl-title{width:100%;text-align:center;margin:2px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-evl-title b{display:block;font:800 26px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet .ftdd-evl-title span{display:block;font:800 22px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;color:#E8590C;}
-@media(max-width:1300px){ .ftdd-sheet .ftdd-evl{columns:3;} }
-@media(max-width:900px){ .ftdd-sheet .ftdd-evl{columns:1;} }
+/* (three columns, so each card is larger: 💵 Lost wages and 🧾 Bills and invoices sit under 🛡️ Insurance) */
+.ftdd-sheet .ftdd-evl{columns:3 !important;}
+.ftdd-sheet .ftdd-evl > .ftdd-evl-card:nth-child(3), .ftdd-sheet .ftdd-evl > .ftdd-evl-card:nth-child(6){break-before:column;}
+main.main-ftdd .ftdd-sheet .ftdd-evl{font-size:1.15em;}
+.ftdd-bar .ftdd-bar-t{white-space:normal;max-width:min(1100px,70vw);}
+@media(max-width:900px){ .ftdd-sheet .ftdd-evl{columns:1 !important;} .ftdd-sheet .ftdd-evl > .ftdd-evl-card{break-before:auto !important;} }
 .ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 19px/1.3 'Poppins','Inter',sans-serif;}
 .ftdd-sheet .ftdd-evl-ic{font-size:18px;}
