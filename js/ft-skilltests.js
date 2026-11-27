@@ -167,6 +167,16 @@ function complianceText(rec, from, to, since){
   if(!(rec.typing || []).length && !(rec.spelling || []).length && !(rec.shots || []).length) return "NO SUBMISSION";
   return [line("Spelling Test", sp, made.filter(x => x.s === "SP")), line("Typing Test", ty, made.filter(x => x.s !== "SP"))].join("\n");
 }
+// 📊 the same days in one line, for the Weekly Ranking: the overall compliance, the share of the tests due (Typing AM and
+// PM, Spelling, each training day) that were taken, made up included
+function complianceSummary(rec, from, to, since){
+  if(!(rec.typing || []).length && !(rec.spelling || []).length && !(rec.shots || []).length) return "NO SUBMISSION";
+  from = startOf(rec, from, since);
+  const today = dayKey(new Date()), days = trainingDays(from, to).filter(k => k < today), L = ledger(rec);
+  let done = 0; days.forEach(k => ["AM", "PM", "SP"].forEach(s => { if((L[k] || {})[s]) done++; }));
+  const need = days.length * 3;
+  return need ? `Overall compliance ${Math.round(done / need * 100)}% (${done} of ${need} tests)` : "No test due yet";
+}
 // (the tests taken on the platform and the 📷 screenshots in Drive whose score the platform read — worker.js checkShots — in date
 // order, the last n of each)
 function averages(rec, n){
@@ -416,7 +426,7 @@ window.FTSkills = {
     AD.busy = false; await loadAdmin(); render();
   },
   // for the 📊 Weekly Ranking (⤓ its Spelling & Typing column) and the checks
-  complianceText, missing, ledger, averages, compliance, withShots, passages: PASSAGES, words: WORDS, record: () => S.rec ? full() : null, run: () => S.run
+  complianceText, complianceSummary, missing, ledger, averages, compliance, withShots, passages: PASSAGES, words: WORDS, record: () => S.rec ? full() : null, run: () => S.run
 };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["skills"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {skills: "Typing & Spelling Tests"});
