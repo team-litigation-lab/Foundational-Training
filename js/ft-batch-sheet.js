@@ -1238,15 +1238,25 @@ function matrixOf(x){
 // (a day's parts in sections — ✅ Daily compliance, then each kind of scored work — with a section's header once, and a mock
 // call's or demo's scorecard criteria, each its own row under it)
 const critTone = v => v >= 4 ? "gs-hi" : v >= 3 ? "gs-mid" : "gs-lo";
-/* 📅 a day in 📤 Daily outputs on a trainee's card: one line — each activity's icon and score, at a glance — that opens to the
-   day's full table (and 🔎 What was read). The latest day opens by itself; the days before stay folded, so the card isn't
-   one long scroll and a trainer finds a day by its date. */
+/* 📅 a day in 📤 Daily outputs on a trainee's card: one line of chips that opens to the day's full table (and 🔎 What was
+   read). The latest day opens by itself; the days before stay folded, so the card isn't one long scroll.
+   The chips (the owner: "show only buttons and label those explicitly rather than icons"; no Done / Passed words):
+     • Daily compliance, once: the same six end-of-shift checks every day, so one chip with the day's figure; the checks
+       themselves are in the day's table;
+     • then the day's own work — its Knowledge Checks, assessments, activities, mock calls and demos — each named in words,
+       with its score where it has one. */
 const dayFold = (ps, open, extra) => {
-  const items = ps.filter(x => !x.header && x.name), ic = n => (String(stripTags(n)).match(/^\s*(\p{Extended_Pictographic}\uFE0F?)/u) || [, "•"])[1];
-  // (each check by name with its figure, the chips sharing the row's whole width)
-  const nm = n => String(stripTags(n)).replace(/^\s*\p{Extended_Pictographic}\uFE0F?\s*/u, "");
-  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}"><i>${e(ic(x.name))}</i><span>${e(nm(x.name))}</span><b>${e(refStrip(x.v))}</b></span>`).join("");
-  return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${items.length} activit${items.length === 1 ? "y" : "ies"}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
+  const items = ps.filter(x => !x.header && x.name);
+  const label = n => String(stripTags(n)).replace(/^[\s•·]*(\p{Extended_Pictographic}️?‍?)+\s*/u, "").trim();
+  const score = v => { const m = /(\d+(?:\.\d+)?)\s*(%|\/\s*5)/.exec(String(stripTags(v == null ? "" : v))); return m ? (m[2] === "%" ? Math.round(+m[1]) + "%" : m[1] + "/5") : ""; };
+  const isComp = x => /compliance/i.test(String(x.group || ""));
+  const comp = items.filter(isComp), own = items.filter(x => !isComp(x));
+  const cv = comp.map(x => parseFloat((/(\d+(?:\.\d+)?)\s*%/.exec(String(stripTags(x.v || ""))) || [])[1])).filter(n => isFinite(n));
+  const chip = (t, v, tip, cls) => `<span class="bs-dchip${cls ? " " + cls : ""}" title="${e(tip)}"><span>${e(t)}</span>${v ? `<b>${e(v)}</b>` : ""}</span>`;
+  const chips = (comp.length ? chip("Daily compliance", cv.length ? Math.round(cv.reduce((s, n) => s + n, 0) / cv.length) + "%" : "",
+      comp.map(x => `${label(x.name)}: ${refStrip(x.v)}`).join(" · "), "bs-dchip-comp") : "")
+    + own.map(x => chip(label(x.name), score(x.v), `${label(x.name)}: ${stripTags(x.v || "")}`, x.tone || "")).join("");
+  return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${own.length + (comp.length ? 1 : 0)}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
 };
 // (a value shown without its "• 📎 Additional Reference ·" prefix: the card's 📎 key says it once, so a chip or a cell reads
 // "Graded", "Passed", "Done" or its figure, not the same words over and over)
@@ -2777,10 +2787,10 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-day > summary::before{content:"▸";color:#B5651F;font-weight:800;margin-right:2px;} .bs-day[open] > summary::before{content:"▾";}
 .bs-day-n{flex:0 0 auto;align-self:center;font:800 15px Arial,sans-serif;color:#1E2340;margin-right:4px;}
 .bs-dchip{flex:1 1 150px;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1.5px solid #D2D7E6;border-radius:10px;background:#fff;font:700 15px/1.25 Arial,sans-serif;color:#1E2340;min-width:0;}
-.bs-dchip i{font-style:normal;font-size:18px;flex:0 0 auto;}
 .bs-dchip span{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bs-dchip b{flex:0 0 auto;font:900 15px Arial,sans-serif;background:#F2F4FA;border-radius:999px;padding:2px 9px;white-space:nowrap;}
 .bs-dchip.gs-na b{font-weight:700;color:#5B6178;}
+.bs-dchip.bs-dchip-comp{background:#F3F5FB;border-color:#1E2340;}
 .bs-day[open] > summary{margin-bottom:6px;border-bottom:1px solid #E3E6EE;padding-bottom:6px;}
 /* 🏅 Scores: a navy-blue card (the Dashboard banner's navy, with its soft orange and blue glows) — the title, the row count and
    the note in white / light ink on it (AA), the table itself on white inside it so the grades read as before */
