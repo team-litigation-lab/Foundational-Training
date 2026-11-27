@@ -129,6 +129,8 @@ ${both(``)}{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(18
   box-shadow:0 14px 28px -16px rgba(30,35,64,.45),0 3px 8px rgba(30,35,64,.10) !important;}
 ${both(` .module-head`)}{background:#F7F8FB !important;padding:8px 10px !important;border-bottom:1px solid #E3E6EE !important;}
 ${both(` .mh-day`)}{display:none !important;}
+/* (the line over the title stays only for a lesson's best graded call, 📞 90%: js/ft-simulators.js) */
+${both(` .mh-day:has(.fts-call-tag)`)}{display:block !important;text-align:center;font:800 12.5px/1.2 Arial,sans-serif;color:#9A4A0C !important;margin:0 0 5px;}
 ${both(` .mh-title`)}{display:flex !important;align-items:center;justify-content:center;text-align:center;border:2px solid #1E2340 !important;border-radius:8px !important;
   background:#F7F8FB !important;color:#1E2340 !important;-webkit-text-fill-color:#1E2340;padding:4px 10px !important;font-weight:800 !important;font-size:17px !important;line-height:1.2 !important;
   min-height:2.4em;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;}
@@ -138,7 +140,9 @@ ${L} .ftseg{display:flex !important;gap:0 !important;background:#142352 !importa
 ${L} .mc-grid > *{width:100% !important;}
 ${L} .ftseg-b,${L} .ftseg-b:not(.locked):not(.tlocked):not(.done){flex:1 1 0;border-radius:0 !important;margin:0 !important;padding:9px 6px !important;
   background:#142352 !important;color:#fff !important;-webkit-text-fill-color:#fff;box-shadow:none !important;border:0 !important;
-  font-weight:800 !important;font-size:14px !important;line-height:1.2 !important;letter-spacing:.08em !important;text-transform:uppercase;}
+  font-weight:800 !important;font-size:15px !important;line-height:1.2 !important;letter-spacing:.06em !important;font-variant-caps:all-small-caps;}
+/* (small capitals, not text-transform: the buttons look all-caps but keep their words — "Start", "Part 1" — for the page's own
+   checks and for a screen reader) */
 ${L} .ftseg-b.ftseg-b + .ftseg-b.ftseg-b:not(.x1):not(.x2):not(.x3){border-left:1px solid rgba(255,255,255,.32) !important;}
 ${L} .ftseg-b:not(.locked):not(.tlocked):hover,${L} .ftseg-b:not(.locked):not(.tlocked):focus-visible{background:#DB8437 !important;color:#142352 !important;-webkit-text-fill-color:#142352;}
 ${L} .ftseg-b.done{background:#1F7A45 !important;}
