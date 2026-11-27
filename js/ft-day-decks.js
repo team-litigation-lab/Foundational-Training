@@ -132,6 +132,8 @@ function go(step){
   const d = decks() && decks()[DD.day]; if(!d) return;
   const n = slidesOf(d).length;
   // a long slide is read in pages: turn those first, then move to the next slide
+  // (its pages are counted again first: a count taken while the slide was still loading can be short)
+  if(Math.abs(step) === 1 && document.querySelector("main.main-ftdd .ftdd-sheet")) fitSheets();
   if(Math.abs(step) === 1 && (DD.pages || 1) > 1){
     const p = DD.page + step;
     if(p >= 0 && p < DD.pages){ DD.page = p; fitSheets(); if(root.FTDeckMotion) FTDeckMotion.page(step); return; }
