@@ -773,7 +773,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(deckTitle(DD.day, info, d))}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => m[1]).concat(lift.titles).map(t => `<span class="ftdd-bar-t">${t}</span>`).join("")}`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => m[1]).concat(lift.titles).map(t => `<span class="ftdd-bar-t${String(t).length > 70 ? " ftdd-bar-t-long" : ""}">${t}</span>`).join("")}`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
         ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
@@ -3357,6 +3357,8 @@ main.main-ftdd .ftdd-sheet .ftdd-evl-title span{display:block;font:800 22px/1.2 
 .ftdd-sheet .ftdd-evl > .ftdd-evl-card:nth-child(3), .ftdd-sheet .ftdd-evl > .ftdd-evl-card:nth-child(6){break-before:column;}
 main.main-ftdd .ftdd-sheet .ftdd-evl{font-size:1.15em;}
 .ftdd-bar .ftdd-bar-t{white-space:normal;max-width:min(1100px,70vw);}
+/* (a long one, a sentence (Day 7's checklist: "Review this in preparation …"), stays on one line: smaller, as wide as the bar allows) */
+.ftdd-bar .ftdd-bar-t.ftdd-bar-t-long{white-space:nowrap;max-width:none;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:clamp(12px,1.05vw,16px);}
 @media(max-width:900px){ .ftdd-sheet .ftdd-evl{columns:1 !important;} .ftdd-sheet .ftdd-evl > .ftdd-evl-card{break-before:auto !important;} }
 .ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 19px/1.3 'Poppins','Inter',sans-serif;}
