@@ -44,9 +44,11 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText, all: document.querySelector('main').textContent }));
     if (/Your law firm|My firm & rules/.test(lab.text)) fail('the Practice Lab still shows the 🏛 Your law firm banner');
-    // Four Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
-    // 🧰 Drafting Tools' LOR Drafting Activity — and PI Process Flow isn't either: Day 3 is a discussion.
-    if (lab.sessions !== 4) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 4)`);
+    // Three Practice Sessions: Reception, Calendaring and Intake. Claims is no longer one of them — the Claims Specialist work
+    // is the 🧰 Drafting Tools' LOR Drafting Activity — nor PI Process Flow (Day 3 is a discussion), nor 🩺 Medical Records (not
+    // in the curriculum: Day 14's MedLOR is its process guide, drill and demo; the session itself still opens, below)
+    const sids = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => c.dataset.sid).sort().join());
+    if (lab.sessions !== 3 || sids !== 'calendaring,intake,reception') fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected the 3 of the curriculum): ${sids}`);
     if (/PI Process Flow: your case/.test(lab.text)) fail('PI Process Flow is still a Practice Session');
     if (/All simulators|📅 Calendaring (Simulators|Sims)\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
     if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
