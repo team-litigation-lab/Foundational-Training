@@ -228,7 +228,11 @@ const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-ca
     <p class="fts-note">${note}</p><div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="${onclick}">${btn}</button></div></div>`;
 const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
 function labItems(){
-  const out = [], push = (html, meta) => out.push(...mark(html, meta));
+  // (off the Practice Lab, not in the curriculum or not the trainee's to do here: the 🩺 Medical Records practice session
+  // (Day 14's MedLOR is the 🩺 MedLOR + HIPAA Drafting card), the trainer's Intake Mock Call card, and the Intake Worksheet's
+  // trainer card (the worksheet is answered on the 📦 Intake Packet & Intake Documents card). The trainer still scores them.)
+  const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet)\b/;
+  const out = [], push = (html, meta) => out.push(...mark(html, meta).filter(x => !OFF.test(x.html)));
   const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
   if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
@@ -293,7 +297,7 @@ function renderSimulators(){
   // is under each day the Training Guide works it on, js/ft-day-activities.js; on a later day it says it continues)
   const byDay = {};
   items.forEach(x => { if(!x.days.length){ any.push(x); return; } const first = Math.min(...x.days);
-    x.days.forEach(d => { (byDay[d] = byDay[d] || []).push(d === first ? x : Object.assign({}, x, {cont: first, html: contRow(x, first)})); }); });
+    (byDay[first] = byDay[first] || []).push(x); });   // (under its first day only: no "continues today, from Day N" row on the days after)
   const COUNT = window.FTDays ? FTDays.COUNT : 16, upto = seesAll() ? COUNT : Math.min(COUNT, reachedDay());
   for(let d = 1; d <= upto; d++) byDay[d] = byDay[d] || [];
   // (a day with no Practice Lab work, Days 1–2's lesson decks and classroom, has no section and no chip)
