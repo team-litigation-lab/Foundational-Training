@@ -143,7 +143,7 @@ function make(cfg){
     if(state.view !== cfg.view) return __render.apply(this, arguments);
     if(!state.traineeId){ state.view = "dashboard"; return __render.apply(this, arguments); }
     const app = document.getElementById("app");
-    app.innerHTML = renderTopbar() + `<main class="main-cw"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
+    app.innerHTML = renderTopbar() + `<main class="main-cw"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>${renderPage()}</main>` + renderFooter();
     try{ afterRender(); }catch(err){}
   };
   window[G] = {

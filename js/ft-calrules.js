@@ -196,7 +196,7 @@ window.render = function(){
   if(document.getElementById("crScn")) R.draft = readForm();   // keep what's typed across a re-render
   load();
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-cr"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-cr"><a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
 window.FTCalRules = {

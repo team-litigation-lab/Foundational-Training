@@ -319,7 +319,7 @@ function reviewHtml(rv){
   return `<div class="fss-rv"><b>🧑‍🏫 Your trainer’s review</b>${tScore(rv) != null ? `<span class="fss-pill ${tScore(rv) >= PASS ? "ok" : "mid"}">${tScore(rv)}% · final</span>` : ""}${has(rv.comment) ? `<p>${e(rv.comment)}</p>` : ""}</div>`;
 }
 function renderSession(){
-  const back = `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
+  const back = `<a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>`;
   const s = sessionById(S.cur);
   if(!s){ return `${back}<div class="card fss-card" style="padding:24px;">Pick a session in the Practice Lab.</div>`; }
   const preview = !isTrainee();

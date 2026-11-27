@@ -141,12 +141,14 @@ const drillStatus = sid => { const runs = (((R("drills:") || {}).runs) || []).fi
 /* ---------- 📅 the calendaring cards: one per day, its steps in order ---------- */
 const CAL_CARDS = [
   {kicker: "Day 5 · Calendar Management", title: "🗓 Attorney Calendar Management Activity",
-   note: "Manage the attorney’s Google Calendar in Pacific Time, check every event you entered, then book next week’s calendar under the attorney’s rules. Three steps, in this order:",
+   note: "Manage the attorney’s Google Calendar in Pacific Time, then check every event you entered. Two steps, in this order:",
    steps: [
      {id: "calactivity", t: "Do the activity", n: "The ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes.",
-      b: [["Open the activity", "goto('calsim','attorney-activity')"], ["📅 Standard Training - Calendar Management Activity ↗", "window.ftsCalsim ? ftsCalsim('activity') : 0", "Opens on the Main Portal’s Google Calendar Sim, in its own tab"]]},
+      b: [["Open the activity", "goto('calsim','attorney-activity')"]]},
      {id: "calcheck", t: "Check your calendar on the ✅ Calendar Activity Check", n: "Enter what each event holds: every field is checked against the activity, then submit it.", b: [["Check my calendar", "goto('calcheck')"]]},
-     {id: "calweek", t: "Book next week’s calendar: 📅 Standard Training - Calendaring Activity", n: "The Standard Training - Calendaring Activity: the tasks booked on the attorney’s calendar for next week.", b: [["Open the calendar", "goto('calweek')"]]}]},
+     // (the curriculum has two calendaring pieces: this activity, and the Calendar Management Mock Call done live with the trainer.
+     // No 3rd step: the Standard Training - Calendaring Activity (next week's calendar) and the Booking Rule Check are off the Practice Lab)
+   ]}
 ];
 // Day 6's Booking Rule Check, folded into its Practice Session's card (📅 Standard Training - Appointment Setting Mock
 // Calls, session "calendaring"): after each mock call, the booking is recorded and checked against the scheduling rules
@@ -231,12 +233,15 @@ function labItems(){
   // (off the Practice Lab, not in the curriculum or not the trainee's to do here: the 🩺 Medical Records practice session
   // (Day 14's MedLOR is the 🩺 MedLOR + HIPAA Drafting card), the trainer's Intake Mock Call and LV Request Demo cards, and the Intake Worksheet's
   // trainer card (the worksheet is answered on the 📦 Intake Packet & Intake Documents card). The trainer still scores them.)
-  const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet|LV \(Lien Verification\) Request Demo)\b/;
+  const OFF = /data-sid="(?:records|reception|intake)"|<h3>(Intake Mock Call with the trainer|Intake Worksheet|LV \(Lien Verification\) Request Demo)\b/;
   const out = [], push = (html, meta) => out.push(...mark(html, meta).filter(x => !OFF.test(x.html)));
   const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
   // (no 🧑‍🏫 With your trainer cards: the live mock calls and demos are done with the trainer, who records and scores them in
   // Trainer Inputs and Graders; the Practice Lab is the trainee's own activities)
-  if(window.FTSessions) push(foldRules(FTSessions.cards()));
+  // (🟢 one Practice Session card: 📅 Standard Training - Appointment Setting Mock Calls, its route to the Call Sim and the Google
+  // Calendar Sim, with its Booking Rule Check folded in. The Reception and Intake mock calls are done live with the trainer,
+  // who scores them: no card; their pages still open from a slide or a link)
+  if(window.FTSessions) push(foldRules(FTSessions.cards()));   // (Reception's and Intake's cards are taken off by OFF, below)
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
   // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
   // Google Calendar Simulator, each recorded on the Booking Rule Check). Each step keeps its own page and its own state.
@@ -248,14 +253,8 @@ function labItems(){
   // 📦 Day 8's Intake Packet activity (its steps, done here rather than on the deck: js/ft-intake.js #/intakepacket)
   push(miniCard("Day 8 · Intake Training", "📦 Intake Packet &amp; Intake Documents", "Download and rename your assigned packet, extract and rename its documents, answer the Intake Worksheet here, then update #16 of your Monitoring Sheet.", "Open the activity", "goto('intakepacket')"),
     {days: [8], type: "tool", key: "intakepacket"});
-  // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
-  if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
-    push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready." + VLF, "Open the guide", `FTGuide.open('${g.id}')`),
-      {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting", key: "guide:" + g.id}));
-  // (only the drills the curriculum lists: no 🗂 Answer files drill)
-  if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX && x.id !== "answers").forEach(x =>
-    push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions." + VLF, "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
-      {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
+  // (no 📘 Process Guide or 🏷 Naming & Reporting Drill cards: they only helped the trainees prepare their demos, not activities of
+  // the curriculum; their pages still open from a link: #/guide, #/drills)
   if(typeof window.ftListenCards === "function") push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
   // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
   // deck, so here too, where the activity is done
