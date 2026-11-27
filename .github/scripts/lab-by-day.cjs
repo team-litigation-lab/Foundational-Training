@@ -35,10 +35,12 @@ const failures = []; const fail = m => failures.push(m);
   const nums = lab.days.map(d => Number(d.replace('fts-day-', ''))).filter(Boolean);
   if (!nums.length) fail('the Practice Lab has no day sections');
   if (nums.some((n, i) => i && n <= nums[i - 1])) fail(`the days are not in order: ${nums.join(', ')}`);
-  [3, 4, 6, 7, 8, 9].forEach(d => { if (!nums.includes(d)) fail(`the Practice Lab has no Day ${d}`); });
+  [3, 6, 7, 8, 9].forEach(d => { if (!nums.includes(d)) fail(`the Practice Lab has no Day ${d}`); });
+  // (one 🟢 Practice Session card, the Appointment Setting Mock Calls; Reception's and Intake's are done live with the trainer,
+  // so Day 4, only its mock calls, has no section)
+  if (nums.includes(4) || await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => c.dataset.sid).join()) !== 'calendaring') fail('the Practice Lab\'s Practice Session cards should be the Appointment Setting Mock Calls alone (and no Day 4 section)');
   const day = n => (lab.cards.find(x => x.day === 'fts-day-' + n) || { cards: [] });
   const find = (n, re) => day(n).cards.find(c => re.test(c.h));
-  if (!find(4, /Reception Mock Calls/)) fail('Reception Mock Calls is not under Day 4');
   // (Day 6's calendar work — its day since #649 — is one card, 🗓 Attorney Calendar Management Activity, the Calendar Activity Check its step 2)
   const cal6 = find(6, /Attorney Calendar Management Activity/);
   if (!cal6) fail('the Attorney Calendar Management Activity is not under Day 6');
@@ -50,8 +52,6 @@ const failures = []; const fail = m => failures.push(m);
   if (!tr || tr.st !== 'done' || !/Review/.test(tr.btn)) fail(`Day 9's submitted Transcription Activity isn't ✓ Done: ${JSON.stringify(tr)}`);
   const lorDrill = find(12, /Drill: LORs/);
   if (!lorDrill || lorDrill.st !== 'live') fail(`a drill round under 70% should be in progress, not done: ${JSON.stringify(lorDrill)}`);
-  const s4 = find(4, /Reception Mock Calls/);
-  if (s4 && s4.st === 'done') fail('a session never started shows ✓ Done');
 
   // the filter: ✓ Done shows only the done cards, To do none of them
   await page.evaluate(() => ftsFilter('done')); await page.waitForTimeout(300);

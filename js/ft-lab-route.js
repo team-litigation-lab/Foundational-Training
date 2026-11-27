@@ -24,7 +24,7 @@
     [/FTListen\.(?:open|pop)\('([\w-]+)'\)/, m => "listening:" + m[1]],
     [/goto\('listening'\)/, () => "listening"],
     [/ftsCalsim\('activity'\)|goto\('calsim'|goto\('calcheck'\)|goto\('calweek'\)/, () => "calendar"],
-    [/goto\('calrules'\)/, () => "session:calendaring"],
+    [/goto\('calrules'\)/, () => "calrules"],
     [/goto\('transcribe'\)/, () => "transcribe"],
     [/FTSessions\.open\('([\w-]+)'\)/, m => "session:" + m[1]],
     [/FTDrills\.start\('([\w-]+)'\)/, m => "drills:" + m[1]],
