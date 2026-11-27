@@ -106,3 +106,53 @@ html body main.main-dash .dash-main .card.card.fdr-notice{background:linear-grad
 html body main.main-dash .dash-main .card.card.fdr-notice span{color:#3F4560 !important;}
 `; document.head.appendChild(st);
 })();
+/* ============================================================
+   🗂 The lesson cards in the EA/PA course's design (the owner: "this lesson card design applied here, minus the Day 1-10
+   words"). Loaded after everything above, so it wins over the Academy Index pills for the lesson (.ftli) and LSH Atlas
+   (.ftkb) cards:
+     • a thick frame, navy along the top fading to orange at the bottom, on a white card;
+     • the title in a navy-outlined box on a pale band; the "Day N" line is gone;
+     • the emblem on white;
+     • Start / Part 1·2·3 as one navy band across the card's full width, white capitals, thin lines between the parts;
+     • ▶ Video (or the two videos) in a light row under it.
+   Done parts stay green and locked ones grey, so a trainee still sees where they are.
+   ============================================================ */
+(function(){
+  if(typeof document === "undefined") return;
+  const C = "html body main.main-dash .dash-main .module-card.module-card.module-card.module-card";
+  const L = C + ".ftli", K = C + ".ftkb";
+  // (a rule for both the lesson cards and LSH Atlas: each selector written out for both, so the part after it reaches both)
+  const both = sel => `${L}${sel},${K}${sel}`;
+  const st = document.createElement("style"); st.id = "ft-dash-eapa-cards"; st.textContent = `
+${both(``)}{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#1E2340 0%,#2c3360 40%,#B8692C 82%,#DB8437 100%) border-box !important;
+  border:6px solid transparent !important;border-radius:18px !important;overflow:hidden;display:flex !important;flex-direction:column;
+  box-shadow:0 14px 28px -16px rgba(30,35,64,.45),0 3px 8px rgba(30,35,64,.10) !important;}
+${both(` .module-head`)}{background:#F7F8FB !important;padding:8px 10px !important;border-bottom:1px solid #E3E6EE !important;}
+${both(` .mh-day`)}{display:none !important;}
+${both(` .mh-title`)}{display:flex !important;align-items:center;justify-content:center;text-align:center;border:2px solid #1E2340 !important;border-radius:8px !important;
+  background:#F7F8FB !important;color:#1E2340 !important;-webkit-text-fill-color:#1E2340;padding:4px 10px !important;font-weight:800 !important;font-size:17px !important;line-height:1.2 !important;
+  min-height:2.4em;white-space:normal !important;overflow:visible !important;text-overflow:clip !important;}
+${both(` .module-body`)}{background:#fff !important;flex:1 1 auto;display:flex;align-items:center;justify-content:center;}
+${L} .mc-grid{padding:0 !important;gap:0 !important;margin:auto 0 0 !important;background:#F7F8FB !important;display:block !important;}
+${L} .ftseg{display:flex !important;gap:0 !important;background:#142352 !important;margin:0 !important;border:0 !important;border-radius:0 !important;width:100% !important;box-sizing:border-box;padding:0 !important;box-shadow:none !important;}
+${L} .mc-grid > *{width:100% !important;}
+${L} .ftseg-b,${L} .ftseg-b:not(.locked):not(.tlocked):not(.done){flex:1 1 0;border-radius:0 !important;margin:0 !important;padding:9px 6px !important;
+  background:#142352 !important;color:#fff !important;-webkit-text-fill-color:#fff;box-shadow:none !important;border:0 !important;
+  font-weight:800 !important;font-size:14px !important;line-height:1.2 !important;letter-spacing:.08em !important;text-transform:uppercase;}
+${L} .ftseg-b.ftseg-b + .ftseg-b.ftseg-b:not(.x1):not(.x2):not(.x3){border-left:1px solid rgba(255,255,255,.32) !important;}
+${L} .ftseg-b:not(.locked):not(.tlocked):hover,${L} .ftseg-b:not(.locked):not(.tlocked):focus-visible{background:#DB8437 !important;color:#142352 !important;-webkit-text-fill-color:#142352;}
+${L} .ftseg-b.done{background:#1F7A45 !important;}
+${L} .ftseg-b.locked,${L} .ftseg-b.tlocked{background:#E7E9F0 !important;color:#3F4560 !important;-webkit-text-fill-color:#3F4560;}
+${L} .ftseg-b.now:not(.locked):not(.tlocked){box-shadow:inset 0 -3px 0 #DB8437 !important;}
+${L} .mc-grid > button.module-finish-btn,${L} .mc-grid > .ftli-vids{display:flex !important;width:100% !important;margin:0 !important;}
+${L} .mc-grid > button.module-finish-btn,${L} .mc-grid > .ftli-vids > button{flex:1 1 0;justify-content:center;background:#F7F8FB !important;border:0 !important;border-radius:0 !important;
+  color:#1E2340 !important;font-weight:700 !important;font-size:13px !important;padding:7px 8px !important;margin:0 !important;box-shadow:none !important;}
+${L} .mc-grid > .ftli-vids > button + button{border-left:1px solid #E3E6EE !important;}
+${L} .mc-grid > button.module-finish-btn:hover,${L} .mc-grid > .ftli-vids > button:hover{background:#EEF0F6 !important;}
+@media (max-height:900px){
+  ${L} .ftseg-b,${L} .ftseg-b:not(.locked):not(.tlocked):not(.done){padding:6px 4px !important;font-size:12.5px !important;}
+  ${L} .mc-grid > button.module-finish-btn,${L} .mc-grid > .ftli-vids > button{padding:4px 6px !important;font-size:12px !important;}
+  ${both(` .mh-title`)}{min-height:0;padding:3px 8px !important;}
+}
+`; document.head.appendChild(st);
+})();
