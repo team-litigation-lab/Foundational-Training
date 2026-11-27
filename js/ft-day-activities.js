@@ -47,12 +47,10 @@
 (function(root){
 "use strict";
 
-// On every training day: the typing test twice (morning and before the end of shift) and the
-// spelling test once (Day 1 sets them up; Day 8 restates them). Listed once here, added to
-// every day by DAILY below rather than repeated sixteen times.
+// On every training day. (The daily Typing and Spelling Tests aren't listed day after day: Day 1 sets them up, and keeping
+// them up is the trainee's own habit, a recurring task they are expected to handle unreminded. The end-of-shift check still
+// counts them in Daily compliance.)
 const DAILY = [
-  {t:"Typing Test (morning and before the end of the shift)", kind:"Skill test", at:"tool", id:"skills"},
-  {t:"Spelling Test (once a day)", kind:"Skill test", at:"tool", id:"skills"},
   {t:"Free Communication Upskill (1–1½ hrs)", kind:"Upskill", at:"room"}
 ];
 
