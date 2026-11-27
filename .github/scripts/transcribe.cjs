@@ -34,7 +34,7 @@ const failures = []; const fail = m => failures.push(m);
   // Day 9's deck: the interview recordings open the activity (not a video with "What I learned"), the sample is a document
   await page.evaluate(() => FTDayDecks.open(9)); await page.waitForTimeout(1500);
   const deck = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); const t = document.querySelectorAll('.k-transcribe');
-    if (t.length) return { n: t.length, learn: document.querySelectorAll('.ftdd-learn').length, sample: [...document.querySelectorAll('.ftdd-tile')].some(x => /Sample Minutes/.test(x.textContent) && x.classList.contains('k-file')) }; } return null; });
+    if (t.length) return { n: t.length, learn: document.querySelectorAll('.ftdd-learn').length, sample: [...document.querySelectorAll('.ftdd-tile')].some(x => /Sample Minutes/.test(x.innerText) && x.classList.contains('k-file')) }; } return null; });
   if (!deck || deck.n !== 2) fail(`Day 9's deck doesn't open the two recordings in the Transcription Activity: ${JSON.stringify(deck)}`);
   else {
     if (deck.learn) fail('Day 9\'s transcription slide offers "📝 What I learned" on a recording');
