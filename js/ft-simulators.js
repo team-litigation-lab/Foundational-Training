@@ -253,14 +253,8 @@ function labItems(){
   // 📦 Day 8's Intake Packet activity (its steps, done here rather than on the deck: js/ft-intake.js #/intakepacket)
   push(miniCard("Day 8 · Intake Training", "📦 Intake Packet &amp; Intake Documents", "Download and rename your assigned packet, extract and rename its documents, answer the Intake Worksheet here, then update #16 of your Monitoring Sheet.", "Open the activity", "goto('intakepacket')"),
     {days: [8], type: "tool", key: "intakepacket"});
-  // 📘 a Process Guide per demo day, and 🏷 a Naming & Reporting drill per demo day
-  if(window.FTGuide) FTGuide.list.filter(g => g.day <= DAYMAX).forEach(g =>
-    push(miniCard(`Day ${g.day} · before the recorded demo`, `📘 Process Guide: ${esc(g.title)}`, "Watch the tutorial and build the guide you’ll follow in your demo, on a page that works like Word. Submit it when it’s ready." + VLF, "Open the guide", `FTGuide.open('${g.id}')`),
-      {days: [g.day], status: isTrainee() ? guideStatus(g.id) : "todo", type: "drafting", key: "guide:" + g.id}));
-  // (only the drills the curriculum lists: no 🗂 Answer files drill)
-  if(window.FTDrills) FTDrills.sets.filter(x => x.day <= DAYMAX && x.id !== "answers").forEach(x =>
-    push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions." + VLF, "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
-      {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
+  // (no 📘 Process Guide or 🏷 Naming & Reporting Drill cards: they only helped the trainees prepare their demos, not activities of
+  // the curriculum; their pages still open from a link: #/guide, #/drills)
   if(typeof window.ftListenCards === "function") push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
   // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
   // deck, so here too, where the activity is done

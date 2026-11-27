@@ -46,12 +46,10 @@ const failures = []; const fail = m => failures.push(m);
   if (!cal6) fail('the Attorney Calendar Management Activity is not under Day 6');
   else if (!(await page.evaluate(() => [...document.querySelectorAll('#fts-day-6 .fts-calstep button')].some(b => /goto\('calcheck'\)/.test(b.getAttribute('onclick') || ''))))) fail('the Calendar Activity Check is not a step of Day 6\'s card');
   if (!find(3, /Reception calls/)) fail('the Reception Call Listening set is not under Day 3');
-  const g = find(8, /Process Guide/), dr = find(8, /Drill: Intake Packet/), tr = find(9, /Transcription Activity/);
-  if (!g || g.st !== 'done' || !/Review/.test(g.btn)) fail(`Day 8's submitted Process Guide isn't ✓ Done with 👁 Review: ${JSON.stringify(g)}`);
-  if (!dr || dr.st !== 'done') fail(`Day 8's finished drill isn't ✓ Done: ${JSON.stringify(dr)}`);
+  // (no Process Guide or drill cards: demo aids, off the Practice Lab; the Transcription Activity still shows its hand-in)
+  const tr = find(9, /Transcription Activity/);
+  if (lab.cards.some(x => x.cards.some(c => /Process Guide|Naming &(amp;)? Reporting Drill/.test(c.h)))) fail('a Process Guide or drill card is still on the Practice Lab');
   if (!tr || tr.st !== 'done' || !/Review/.test(tr.btn)) fail(`Day 9's submitted Transcription Activity isn't ✓ Done: ${JSON.stringify(tr)}`);
-  const lorDrill = find(12, /Drill: LORs/);
-  if (!lorDrill || lorDrill.st !== 'live') fail(`a drill round under 70% should be in progress, not done: ${JSON.stringify(lorDrill)}`);
 
   // the filter: ✓ Done shows only the done cards, To do none of them
   await page.evaluate(() => ftsFilter('done')); await page.waitForTimeout(300);
