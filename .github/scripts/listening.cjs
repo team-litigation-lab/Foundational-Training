@@ -83,7 +83,7 @@ async function workerChecks() {
   if (await page.evaluate(() => document.querySelector('.ln-count').innerText) !== '1 of 5 logged') fail('a full log doesn\'t count');
   rec = await get('listening:' + id);
   if (!rec.logs.reception[N].better || !rec.logs.reception[N].at) fail(`the full log wasn't saved: ${JSON.stringify(rec.logs.reception[N])}`);
-  if (!(await page.evaluate(() => FTListen.done(FTListen.state().rec.logs.reception[N])))) fail('the page doesn\'t count the full log as done');
+  if (!(await page.evaluate(n => FTListen.done(FTListen.state().rec.logs.reception[n]), N))) fail('the page doesn\'t count the full log as done');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   // (🎧 Call Listening counts on the Score Card: one of the trainee's five logged is 20%)
   { const mt = await page.evaluate(() => document.querySelector('main').innerText);

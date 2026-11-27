@@ -433,9 +433,9 @@ const failures = []; const fail = m => failures.push(m);
   }
   await page.evaluate(id => FTBatchSheet.grWho(id), ids.Ada); await page.waitForTimeout(400);
   const gd = await page.evaluate(() => [...document.querySelectorAll('#bs-scores .bs-day')].map(b => ({ h: b.querySelector('.bs-day-h').innerText, t: b.innerText })));
-  // (📎 🎧 Call Listening is Additional Reference: its block shows the activity, with no score)
-  if (!gd.some(b => /Call Listening/.test(b.h) && !/\d\.\d\/5|\d+%/.test(b.h) && /Reception Listening Activity/.test(b.t)))
-   fail(`🔎 Grades in detail: 🎧 Call Listening isn't Additional Reference with the activity: ${gd.map(b => b.h).join(' | ')}`);
+  // (🎧 Call Listening counts now: its block is scored, the graded activity in it)
+  if (!gd.some(b => /Call Listening/.test(b.h) && /\d\.\d\/5|\d+%/.test(b.h) && /Reception Listening Activity/.test(b.t)))
+   fail(`🔎 Grades in detail: 🎧 Call Listening isn't scored with the activity: ${gd.map(b => b.h).join(' | ')}`);
   const elsewhere = gd.filter(b => !/Call Listening/.test(b.h) && /Reception Listening/.test(b.t)).map(b => b.h);
   if (elsewhere.length) fail(`the Reception Listening Activity also counts under ${elsewhere.join(', ')}`);
   // (no ✍️ Process Questions table: the Score Card's ✍️ Knowledge Checks carries those scores)
