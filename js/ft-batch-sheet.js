@@ -923,7 +923,9 @@ function foldRender(id){
 // today, as the platform's days run (Pacific time, js/ft-tracker-rules.js TZ), for the trainer's date fields
 const ptToday = () => { try{ return new Intl.DateTimeFormat("en-CA", {timeZone: (window.FTTrackerRules || {}).TZ || "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date()); }catch(err){ return new Date().toISOString().slice(0, 10); } };
 const isWeekdayIso = iso => { const d = new Date(iso + "T12:00:00Z").getUTCDay(); return d >= 1 && d <= 5; };
+// (⏪ Backtrack · ↺ Knowledge Check retry · ✍ EOD by hand · 📘 TAM: off the Batch Sheet, the owner asked it gone)
 function trainerToolsHtml(){
+  return "";
   if(!adminOn() || meOn() || !B.data) return "";
   const ppl = people(); if(!ppl.length) return "";
   const id = B.tt && ppl.some(p => p.id === B.tt) ? B.tt : (ptCur(ppl) || ppl[0]).id, R = B.data.rec[id] || {}, rv = (R.src || {})["trackerreview:"] || {};
