@@ -2773,7 +2773,7 @@ main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:80
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
 /* (the topic's label over its videos — Day 8's 🏷 Intake Process — and each video's name under its preview: large and clear) */
 .ft-body .ftdd-topic{margin:14px 0 8px !important;padding:8px 20px !important;border-radius:10px !important;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;box-shadow:0 4px 12px rgba(30,35,64,.2);}
-.ft-body .ftdd-vcard .ftdd-tile-t, .ft-body .ftdd-vcard .ftdd-tile-t b{text-decoration:none !important;}
+.ft-body .ftdd-vcard a.ftdd-tile, .ft-body .ftdd-vcard .ftdd-tile-t, .ft-body .ftdd-vcard .ftdd-tile-t b{text-decoration:none !important;}
 .ft-body .ftdd-vcard .ftdd-tile-t b{display:block;text-align:center;font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;padding:4px 6px 0;}
 .ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
 .ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
