@@ -155,7 +155,7 @@ async function readData(quiet, ppl, key){
   try{
     const P = window.LSH_PROGRAM || {}, S = (P.sources || []).filter(s => s.key), shared = P.shared || [];
     // (process:<id>: the Knowledge Checks' graded answers, each answer's feedback and the summary, for the scores' context)
-    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:", "assess:"];
+    const own = ["progress:", "skills:", "simresults:", "transcribe:", "lor:", "daycheck:", "drive:", "feedback:", "process:", "assess:", "actsub:"];
     // (🔁 first the scores given on the simulators — the Google Calendar Simulator's scorecard, Ring Channel's graded calls —
     // onto the mock call scorecards nobody scored here, worker.js syncSimScores: so the sheet shows them as soon as it's
     // opened or 🔄 refreshed, not only after the nightly check. Trainers only; 40 trainees a call; a failure only skips it)
@@ -190,7 +190,7 @@ async function readData(quiet, ppl, key){
           const comp = window.ftPdp ? ftPdp.withWeek(days, rvT, n) : days.length ? Math.round(days.reduce((a, v) => a + v, 0) / days.length) : null, sco = ws && ws.overall != null ? ws.overall : null;
           const both = [sco, comp].filter(v => typeof v === "number");
           wk = {n, range, score: sco, comp, days: days.length, pdp, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null}; } }catch(err){ wk = null; }
-      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, src: sc, score, wk};
+      rec[p.id] = {data, savedAt: snap && snap.savedAt, skills: at(1) || {}, sims: at(2) || {}, transcribe: at(3), lor: at(4), daycheck: at(5) || {items: {}}, drive: at(6), feedback: at(7), process: at(8) || {sets: {}}, assess: at(9) || {docs: {}}, actsub: at(10) || {items: {}}, src: sc, score, wk};
     });
     const reps = rks.map(k => { const r = V.get(k); return r && Array.isArray(r.cols) ? r : null; });
     if(B.dataKey !== key){ return; }   // (another read started since: that one's result is kept)
@@ -1682,7 +1682,11 @@ function autoDone(R, d, it, p){
     if(res === "Redo") return {done: false, how: "Trainer: Redo" + (a.score != null ? ` (${a.score}%, off the scorecards)` : "")};
     return {done: res !== "Not yet", how: `Trainer: ${res === "Not yet" ? "recorded" : res}${a.score != null ? ` · ${a.score}%` : ""}`}; }
   // 📝 done once submitted for grading; until then the trainer's tick still counts (the worksheet, handed in on Drive)
-  if(it.assess){ const g = assessOf(R, it); return g && g.at ? {done: true, how: `Submitted for grading ${g.when || when(g.at)}`} : null; }
+  // (📦 Day 8's Intake Worksheet, answered on the platform: handed in once submitted there — actsub:<id>.items.intakews — though
+  // the trainer grades it later, on 📦 Intake Packets)
+  if(it.assess){ const g = assessOf(R, it); if(g && g.at) return {done: true, how: `Submitted for grading ${g.when || when(g.at)}`};
+    const sub = it.assess === "intakews" ? ((R.actsub || {}).items || {}).intakews : null;
+    return sub && sub.submittedAt ? {done: true, how: `Handed in ${when(sub.submittedAt)} · waiting for the trainer's grade`} : null; }
   if(it.at === "drive"){ const g = gradeByName(R, it); return g ? {done: true, how: `Graded ${g.pct}%`} : null; }
   if(it.at !== "tool") return null;
   switch(it.id){
@@ -1695,7 +1699,10 @@ function autoDone(R, d, it, p){
         : answered ? "Answered but not submitted yet: the trainee still has to press 📝 Submit for Grading" : "Knowledge Check not started yet"}; }
     case "skills": { const k = R.skills || {}, n = (k.typing || []).length + (k.spelling || []).length; return {done: n > 0, how: n ? `${n} test${n === 1 ? "" : "s"} taken` : "No test yet"}; }
     case "transcribe": { const r = ((R.transcribe || {}).r) || {}, ok = Object.values(r).some(x => x && x.submittedAt); return {done: ok, how: ok ? "Transcription submitted" : "Not submitted yet"}; }
-    case "lor": return {done: nonEmpty(R.lor), how: nonEmpty(R.lor) ? "Letters drafted" : "Not started yet"};
+    // (📄 the LOR Drafting Activity is done on the Training Portal's drafting tool, js/ft-lor.js lshOpenPortalDrafting: its result
+    // comes back in simresults:<id> — "Drafting — LOR", as the Practice Lab card reads it; lor:<id>, the old on-platform drafts)
+    case "lor": { const b = (((R.sims || {}).best) || {})["Drafting — LOR"], ok = !!b || nonEmpty(R.lor);
+      return {done: ok, how: b ? `Drafted on the Training Portal · best ${Number(b.score)}%` : ok ? "Letters drafted" : "Not started yet"}; }
     case "drills": case "listening": case "calcheck": case "calrules": case "calweek": case "calsim": case "callsim":
       { const v = src[(it.id === "callsim" ? "callsim" : it.id) + ":"]; return {done: nonEmpty(v), how: nonEmpty(v) ? "Done on the platform" : "Not done on the platform yet"}; }
     case "calactivity": { const v = src["calcheck:"]; return {done: nonEmpty(v), how: nonEmpty(v) ? "Checked on the Calendar Activity Check" : "Not checked yet"}; }

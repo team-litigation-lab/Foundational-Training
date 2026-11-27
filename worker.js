@@ -877,6 +877,9 @@ async function traineeWrite(env, tok, key, value) {
       const cur = out.items[aid] || {};
       const next = Object.assign({}, cur);
       if (typeof v.answer === "string") next.answer = v.answer.slice(0, 20000);
+      // (📝 Day 8's Intake Worksheet answered on the platform, js/ft-intake.js submitSheet: one answer per intake document — kept,
+      // or the trainer's 📋 Batch Sheet and the trainee's own page would never see what was handed in)
+      if (Array.isArray(v.answers)) next.answers = v.answers.slice(0, 40).map((a) => String(a == null ? "" : a).slice(0, 1500));
       if ("file" in v) next.file = v.file && typeof v.file === "object" ? { name: String(v.file.name || "").slice(0, 200), type: String(v.file.type || "").slice(0, 100), size: Number(v.file.size) || 0 } : null;
       if (v.submittedAt && v.submittedAt !== cur.submittedAt) {
         next.submittedAt = String(v.submittedAt).slice(0, 40);
