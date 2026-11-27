@@ -228,21 +228,23 @@ const miniCard = (kicker, title, note, btn, onclick) => `<div class="card fts-ca
     <p class="fts-note">${note}</p><div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="${onclick}">${btn}</button></div></div>`;
 const dayOpen = d => reached([d]) && (!window.FTDayLocks || FTDayLocks.labOpen([d]));
 function labItems(){
-  const out = [], push = (html, meta) => out.push(...mark(html, meta));
+  // (off the Practice Lab, not in the curriculum or not the trainee's to do here: the 🩺 Medical Records practice session
+  // (Day 14's MedLOR is the 🩺 MedLOR + HIPAA Drafting card), the trainer's Intake Mock Call and LV Request Demo cards, and the Intake Worksheet's
+  // trainer card (the worksheet is answered on the 📦 Intake Packet & Intake Documents card). The trainer still scores them.)
+  const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet|LV \(Lien Verification\) Request Demo)\b/;
+  const out = [], push = (html, meta) => out.push(...mark(html, meta).filter(x => !OFF.test(x.html)));
   const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
-  if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
+  // (no 🧑‍🏫 With your trainer cards: the live mock calls and demos are done with the trainer, who records and scores them in
+  // Trainer Inputs and Graders; the Practice Lab is the trainee's own activities)
+  if(window.FTSessions) push(foldRules(FTSessions.cards()));
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
   // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
   // Google Calendar Simulator, each recorded on the Booking Rule Check). Each step keeps its own page and its own state.
   CAL_CARDS.forEach(c => { const html = calCard(c); if(html) push(html.h, {days: html.days, status: html.status, type: "calendar", key: "calendar", kicker: `${window.FTDays ? FTDays.label(html.days) : "Day 6"} · Calendar Management`}); });
   tool("ftTranscribeCard", "transcribe", "drafting"); tool("ftLorCard", "lor", "drafting");
   const DAYMAX = window.FTDays ? FTDays.COUNT : 16;
-  // the MedLOR + HIPAA packet (Day 14) and the Lien Balance Verification (Day 16): the same Portal tool, on their own day
-  [["medlor", "🩺 MedLOR + HIPAA Drafting", "Draft the MedLOR with Unsworn COR and merge it with the client’s signed HIPAA into one PDF, on the Training Portal. Checked when you upload it.", "Open the MedLOR"],
-   ["lienbv", "🧾 Lien Balance Verification Drafting", "Draft the Lien Balance Verification request letter on the Training Portal, in the firm’s own template. Checked when you upload it.", "Open the Lien BV"]].forEach(([id, t, n, b]) => {
-    const days = window.FTDays ? FTDays.forTool(id) : [];
-    if(typeof window.lshOpenPortalDrafting === "function" && listed(id)) push(miniCard(`${FTDays.label(days)} · Provider Communication Training`, t, n, b, `lshOpenPortalDrafting('${id}')`), {days, key: id, status: isTrainee() ? TOOL_STATUS[id]() : "todo", type: "drafting"});
-  });
+  // (no 🩺 MedLOR + HIPAA Drafting or 🧾 Lien Balance Verification Drafting cards: not curriculum activities, only practice
+  // the trainees were told of to help them with their demos. The LOR Drafting Activity, Day 11's, is the curriculum's)
   // 📦 Day 8's Intake Packet activity (its steps, done here rather than on the deck: js/ft-intake.js #/intakepacket)
   push(miniCard("Day 8 · Intake Training", "📦 Intake Packet &amp; Intake Documents", "Download and rename your assigned packet, extract and rename its documents, answer the Intake Worksheet here, then update #16 of your Monitoring Sheet.", "Open the activity", "goto('intakepacket')"),
     {days: [8], type: "tool", key: "intakepacket"});
@@ -293,7 +295,7 @@ function renderSimulators(){
   // is under each day the Training Guide works it on, js/ft-day-activities.js; on a later day it says it continues)
   const byDay = {};
   items.forEach(x => { if(!x.days.length){ any.push(x); return; } const first = Math.min(...x.days);
-    x.days.forEach(d => { (byDay[d] = byDay[d] || []).push(d === first ? x : Object.assign({}, x, {cont: first, html: contRow(x, first)})); }); });
+    (byDay[first] = byDay[first] || []).push(x); });   // (under its first day only: no "continues today, from Day N" row on the days after)
   const COUNT = window.FTDays ? FTDays.COUNT : 16, upto = seesAll() ? COUNT : Math.min(COUNT, reachedDay());
   for(let d = 1; d <= upto; d++) byDay[d] = byDay[d] || [];
   // (a day with no Practice Lab work, Days 1–2's lesson decks and classroom, has no section and no chip)
@@ -311,23 +313,21 @@ function renderSimulators(){
     const info = window.FTDays ? FTDays.of(d) : null, lp = lessonPart(d);
     // a day fully done folds away (its cards stay one click off, for review); the trainer's choice of open/closed is kept
     const open = flt !== "all" || (d in state.ftsDayOpen ? state.ftsDayOpen[d] : !complete || d === last);
-    return `<details class="fts-group fts-day ${complete ? "fts-day-done" : ""}" id="fts-day-${d}" ${open ? "open" : ""} ontoggle="ftsDayToggle(${d}, this.open)">
-      <summary><span class="fts-day-n">Day ${d}</span>${lp ? `<span class="fts-day-lp"><b>${esc(lp.title)}</b>${lp.part ? `<i>${esc(lp.part)}</i>` : ""}</span>` : `<span class="fts-day-role">${info ? esc(info.role) : ""}</span>`}
-        ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : `<span class="fts-day-count">${list.length ? `${list.length} item${list.length === 1 ? "" : "s"}` : "Classroom day"}</span>`}</summary>
-      ${shown.some(x => x.cont) ? `<div class="fts-conts">${shown.filter(x => x.cont).map(x => x.html).join("")}</div>` : ""}
-      ${shown.some(x => !x.cont) ? `<div class="fts-grid">${shown.filter(x => !x.cont).map(x => x.html).join("")}</div>` : ""}</details>`;
+    // (a row a day: its label on the left (the day, its lesson card and Part, how much is done), its cards on the right,
+    // every card the same size with its button at the bottom; nothing folds away: what is left is the trainee's own work)
+    return `<section class="fts-group fts-day fts-row ${complete ? "fts-day-done" : ""}" id="fts-day-${d}">
+      <header class="fts-row-h"><span class="fts-day-n">Day ${d}</span>${lp ? `<span class="fts-day-lp"><b>${esc(lp.title)}</b>${lp.part ? `<i>${esc(lp.part)}</i>` : ""}</span>` : `<span class="fts-day-role">${info ? esc(info.role) : ""}</span>`}
+        ${isTrainee() && c.length ? `<span class="fts-day-count ${complete ? "ok" : ""}">${complete ? "✓ All done" : `${dn} of ${c.length} done`}</span>` : ""}</header>
+      <div class="fts-grid">${shown.map(x => x.html).join("")}</div></section>`;
   };
-  const chips = days.map(d => { const c = byDay[d].filter(counted).filter(own), dn = c.filter(x => x.status === "done").length;
-    return `<a class="fts-jump ${isTrainee() && c.length && dn === c.length ? "ok" : ""}" onclick="ftsJump(${d})">Day ${d}${isTrainee() && c.length ? ` <small>${dn === c.length ? "✓" : dn + "/" + c.length}</small>` : ""}</a>`; }).join("");
   const anyShown = any.filter(pass);
   const more = !seesAll() ? `<p class="fts-sub fts-more">🔒 An activity opens when its day's training is unlocked.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
-      <p>Your live practice, day by day. Each training day lists its Practice Sessions, activities, drafting tools, Call Listening and the work you do with your trainer. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
-    <div class="fts-bar card">
+      <p>Your live practice, day by day. Each training day lists the activities you do on the platform: Practice Sessions, Call Listening, the calendar, drafting, Process Guides and drills. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
+    ${!isTrainee() ? "" : `<div class="fts-bar card">
       ${isTrainee() && all.length ? `<div class="fts-prog"><b>${doneN} of ${all.length} done</b><span class="fts-prog-bar"><i style="width:${Math.round(doneN / all.length * 100)}%"></i></span></div>` : ""}
       ${isTrainee() ? `<div class="fts-filter" role="group" aria-label="Show">${[["all", "All"], ["todo", "To do"], ["done", "✓ Done"]].map(([k, l]) => `<button type="button" class="btn btn-sm ${flt === k ? "btn-navy" : "btn-ghost"}" onclick="ftsFilter('${k}')">${l}</button>`).join("")}</div>` : ""}
-      ${days.length ? `<nav class="fts-jumps" aria-label="Jump to a day">${chips}${anyShown.length ? `<a class="fts-jump" onclick="ftsJump(0)">Any day</a>` : ""}</nav>` : ""}
-    </div>
+    </div>`}
     ${days.map(section).join("") || (flt !== "all" ? `<p class="fts-sub">${flt === "done" ? "Nothing marked done yet." : "Everything open so far is done. 🎉"}</p>` : "")}
     ${anyShown.length ? `<details class="fts-group fts-day" id="fts-day-0" open><summary><span class="fts-day-n">Any day</span><span class="fts-day-role">Practice and reference, whenever you like</span></summary>
       <div class="fts-grid">${anyShown.map(x => x.html).join("")}</div></details>` : ""}
@@ -457,7 +457,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 main.main-sims{max-width:1320px;padding:16px 20px 40px;}
 main.main-sims .fts-hero{margin-bottom:10px;} main.main-sims .fts-hero h1{font-size:24px;margin:0 0 4px;}
 main.main-sims .fts-hero p{margin:0;font-size:14px;max-width:900px;}
-.fts-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;margin:0 0 14px;position:sticky;top:var(--fts-bar-top,0px);z-index:5;}
+.fts-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;margin:0 0 14px;}   /* (no day chips: the days are rows one under the other) */
 .fts-prog{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--navy);}
 .fts-prog-bar{display:inline-block;width:140px;height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;} .fts-prog-bar i{display:block;height:100%;background:#16a34a;border-radius:99px;}
 .fts-filter{display:flex;gap:6px;}

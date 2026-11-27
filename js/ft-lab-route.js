@@ -134,6 +134,15 @@ main.main-sims .fts-day-count.ok{background:#1F7A45 !important;}
 main.main-sims .fts-day[open] > .fts-grid{padding:16px 20px 20px !important;}
 .fts-day-none{margin:0;padding:14px 20px 16px;font-size:15px;font-weight:600;color:#3F4560;}
 main.main-sims .fts-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr)) !important;gap:16px !important;}
+/* 📐 a row a day: its label on the left, its cards on the right, all the same size, the button at the bottom */
+main.main-sims .fts-row{display:grid !important;grid-template-columns:240px minmax(0,1fr);align-items:stretch;}
+main.main-sims .fts-row-h{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:16px 18px;background:linear-gradient(160deg,#1F2440 0%,#2B3158 60%,#353C68 100%);color:#fff;}
+main.main-sims .fts-row-h .fts-day-lp{flex-direction:column;align-items:flex-start;gap:6px;}
+main.main-sims .fts-row-h .fts-day-count{align-self:flex-start;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:800;}
+main.main-sims .fts-row > .fts-grid{padding:16px 18px !important;grid-template-columns:repeat(auto-fill,minmax(280px,1fr)) !important;align-items:stretch;}
+main.main-sims .fts-row .fts-card{display:flex !important;flex-direction:column;min-height:230px;}
+main.main-sims .fts-row .fts-card .fts-tool-act, main.main-sims .fts-row .fts-card .fss-act{margin-top:auto !important;padding-top:10px;}
+@media (max-width:900px){ main.main-sims .fts-row{grid-template-columns:minmax(0,1fr);} }
 /* the cards in the LSH frame */
 main.main-sims .fts-card{border:4px solid transparent !important;border-radius:16px !important;
   background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#2A3050 0%,#3A4168 35%,#B98E66 80%,#C9A27A 100%) border-box !important;
