@@ -331,6 +331,13 @@ const refTable = (rows, was) => `<div class="bs-reft-h">📎 Daily compliance ·
   rows.map(r => { const x = typeof r === "string" ? {name: r} : r;
     return `<tr><td class="bs-parts-n">${e(x.name)}</td><td class="bs-parts-v"><b class="bs-sbox">${x.avg == null ? "—" : e(pct(x.avg))}</b></td><td class="bs-parts-v">${x.n ? e(x.n) : "—"}</td><td class="bs-parts-v">${x.last == null ? "—" : `<b class="bs-sbox">${e(pct(x.last))}</b>${x.lastD ? ` <small>${e(x.lastD)}</small>` : ""}`}</td></tr>`; }).join("")}${
   was ? `<tr class="bs-reft-was"><td class="bs-parts-n">All checks</td><td class="bs-parts-v"><b class="bs-sbox">${e(was)}</b></td><td></td><td></td></tr>` : ""}</tbody></table>`;
+// (🏷 a score button's pop-up on the trainee's card: its figure large, what it is made of as a list, and whether it counts —
+// in place of the browser's small tooltip)
+const kPop = (l, v, f) => { const t = String(f), nc = /not scored or counted/i.test(t), body = t.replace(/\s*[·—-]?\s*not scored or counted\.?\s*$/i, "");
+  const m = /^(📎\s*[^:]+):\s*(.+)$/u.exec(body), parts = m ? m[2].split(/\s+·\s+|\s+\+\s+/) : [];
+  return `<span class="bs-pt-pop" role="tooltip"><span class="bs-pt-pop-h"><span>${e(l)}</span><b>${e(v)}</b></span>${
+    parts.length > 1 ? `<span class="bs-pt-pop-l">${m ? "Made of" : ""}</span><ul>${parts.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : `<span class="bs-pt-pop-p">${e(body)}</span>`}${
+    nc ? `<span class="bs-pt-pop-n">📎 For reference: shown so you can track it, not scored or counted</span>` : ""}</span>`; };
 const refCell = (c, why) => { const x = c && c.v !== "" && c.v != null && !/^📎/.test(stripTags(c.v)) ? stripTags(c.v) : "—";
   return {v: `📎 ${x}`, f: `${why ? why + ": " : ""}not scored or counted`, cls: "gs-num gs-ref"}; };
 // (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
@@ -1397,7 +1404,7 @@ function perTraineeHtml(T){
     const jump = titles.length > 1 ? `<nav class="bs-pt-jump" aria-label="Sections of ${e(p.name)}'s card">${titles.map((t, k) => `<button type="button" onclick="(function(b){var s=b.closest('.bs-pt').querySelectorAll('tr.bs-pt-sec')[${k}];if(s)s.scrollIntoView({behavior:'smooth',block:'start'});})(this)">${t}</button>`).join("")}</nav>` : "";
     const key = window.ftReference ? `<p class="bs-pt-key">📎 Grey figures are for reference: shown so you can check them, not scored or counted.</p>` : "";
     return `<div class="bs-pt" id="bs-pt-${e(p.id)}">
-      <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` title="${e(f)}"` : ""}>${e(l)} <b>${e(v)}</b></span>`).join("")}</div>
+      <div class="bs-pt-h"><b>${e(p.name)}</b>${p.status && p.status !== "Approved" ? ` <i>${e(p.status)}</i>` : ""}${head.map(([l, v, t, f]) => `<span class="bs-pt-k ${e(t)}"${f ? ` tabindex="0" aria-label="${e(l + " " + v + ": " + f)}"` : ""}><span class="bs-pt-kl">${e(l)}</span> <b>${e(v)}</b>${f ? kPop(l, v, f) : ""}</span>`).join("")}</div>
       ${jump}${key}${insightsHtml(p)}
       <div class="bs-pt-wrap">${body}
         ${window.FTFeedback && typeof FTFeedback.inline === "function" ? (B.fbWho === p.id ? `<div class="bs-pt-fb">${FTFeedback.inline(p.id, B.batch)}<button type="button" class="btn btn-ghost btn-sm" onclick="FTBatchSheet.fbOpen('')">Close 📝 Send Feedback</button></div>`
@@ -2887,7 +2894,24 @@ html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35)
 .bs-pt-k.gs-hi{background:#E6F4EA;border-color:#1E8E3E;} .bs-pt-k.gs-hi b{color:#0B5D1E !important;}
 .bs-pt-k.gs-mid{background:#FFF4E0;border-color:#E8A400;} .bs-pt-k.gs-mid b{color:#7A4B00 !important;}
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
-.bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
+.bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:24px !important;color:#27418F !important;font-weight:900;}
+/* 🏷 the score buttons: the score large, the label small over it; their pop-up in the elite look (navy, gold rule) */
+.bs-pt-h{overflow:visible !important;position:relative;z-index:5;} .bs-pt{overflow:visible !important;}
+.bs-pt-k{position:relative;flex-direction:column;align-items:center !important;gap:2px !important;padding:8px 18px !important;border-radius:14px !important;min-width:150px;cursor:default;box-shadow:0 4px 12px rgba(10,14,40,.18);transition:transform .12s ease, box-shadow .12s ease;}
+.bs-pt-k .bs-pt-kl{font:800 13.5px Arial,sans-serif;letter-spacing:.02em;color:#5B6478;}
+.bs-pt-k b{font-size:28px !important;line-height:1.05;font-weight:900;}
+.bs-pt-k[tabindex]{cursor:help;} .bs-pt-k[tabindex]:hover, .bs-pt-k[tabindex]:focus{transform:translateY(-2px);box-shadow:0 10px 22px rgba(10,14,40,.28);outline:none;}
+.bs-pt-pop{position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%, 6px);width:max-content;min-width:300px;max-width:440px;padding:16px 18px 14px;border-radius:16px;background:linear-gradient(160deg,#1B2452,#27418F);border:1px solid rgba(240,192,138,.6);border-top:4px solid #F0C08A;box-shadow:0 22px 48px rgba(10,14,40,.45);color:#fff;text-align:left;font:600 15.5px/1.45 Arial,sans-serif;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s ease, transform .15s ease;z-index:50;}
+.bs-pt-pop::before{content:"";position:absolute;top:-11px;left:50%;margin-left:-8px;border:8px solid transparent;border-bottom-color:#F0C08A;border-top:0;}
+.bs-pt-k:hover .bs-pt-pop, .bs-pt-k:focus .bs-pt-pop{opacity:1;visibility:visible;transform:translate(-50%, 0);}
+.bs-pt-pop-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.18);}
+.bs-pt-pop-h span{font:800 13px Arial,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#F0C08A;}
+.bs-pt-pop-h b{font-size:34px !important;color:#fff !important;font-weight:900;}
+.bs-pt-pop-l{display:block;font:800 12px Arial,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:6px;}
+.bs-pt-pop ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}
+.bs-pt-pop li{padding:6px 10px;border-radius:9px;background:rgba(255,255,255,.1);font-size:14.5px;}
+.bs-pt-pop-p{display:block;}
+.bs-pt-pop-n{display:block;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);font-size:13.5px;color:#F0C08A;}   /* 📎 a short label; the topics it covers on a hover (title) */
 .bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:12.5px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;vertical-align:middle;padding:6px 3px !important;overflow:hidden;overflow-wrap:anywhere;}   /* (📎 Reference: inside its narrow column at any width) */
 .gs-ref, .bs-sbox.gs-ref{color:#8A90A6 !important;font-weight:700;}   /* 📎 a reference figure: grey, not counted */
 .bs-reft-h{font:800 14.5px Arial,sans-serif;color:#1E2340;margin:0 0 6px;} .bs-pt .bs-parts.bs-reft{width:100%;min-width:300px;max-width:100%;} .bs-reft .bs-parts-n{width:auto;white-space:nowrap;} .bs-reft .bs-parts-v{width:84px;text-align:center;} .bs-pt .bs-reft th{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;} .bs-reft tr.bs-reft-was td{background:#F4F6FB;font-weight:800;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
