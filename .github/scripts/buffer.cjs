@@ -110,7 +110,8 @@ async function workerChecks() {
     await open(t, 8, 'mcm');
     const m9 = await t.evaluate(() => { const s = document.querySelector('main.main-ftdd .ftdd-sheet'); return { panel: !!s.querySelector('.ftbf'), metrics: !!s.querySelector('.ftdd-score .ftms-tbl'), cas: !!s.querySelector('.ftis-mockcall'),
       sim: !!s.querySelector('a[href*="call.html"][href*="track=intake"]'), cms: !!s.querySelector('a[href*="program=intake"]') }; });
-    if (m9.panel || !m9.metrics || m9.cas || !m9.sim || !m9.cms) fail(`Part 2's metrics slide isn't the metrics with the two practice links beside them (and no case): ${JSON.stringify(m9)}`);
+    // (no "☎ Before your turn" links: the simulators are on Practice Intake Calls, earlier the same afternoon)
+    if (m9.panel || !m9.metrics || m9.cas || m9.sim || m9.cms) fail(`Part 2's metrics slide isn't the two scoresheets alone (no practice links, no case): ${JSON.stringify(m9)}`);
 
     // ☎ Day 4's Reception mock calls: no "Mock Calls Ongoing" box; the trainee reads the slide's metrics, read only
     await open(t, 4, 's3');
