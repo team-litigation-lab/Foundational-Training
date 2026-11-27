@@ -5953,7 +5953,6 @@ function renderTopbar(){
         <div class="nav">
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
-          <button type="button" class="nav-glossary" onclick="window.open('/glossary.html','_blank','noopener')" title="Legal Glossary: about 700 US legal terms and Latin phrases, searchable">📖 Glossary</button>
           ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
         </div>
       </div>
@@ -7392,7 +7391,9 @@ function render(){
   afterRender();
 }
 function renderFooter(){
-  return `<div class="footer-note">LSH Legal VA Foundational Track &middot; Internal Training Portal &middot; <span id="saveStatus">${saveStatusText()}</span> &middot; <span class="build-tag">build ${typeof APP_BUILD!=="undefined"?APP_BUILD:""}</span></div>`;
+  // (the footer is the copyright alone, js/lsh-footer.js: the course's name, the save status and the build stay in the page,
+  // hidden, for what reads them)
+  return `<div class="footer-note"><span id="saveStatus" hidden>${saveStatusText()}</span><span class="build-tag" hidden>build ${typeof APP_BUILD!=="undefined"?APP_BUILD:""}</span></div>`;
 }
 
 /* ============================================================
