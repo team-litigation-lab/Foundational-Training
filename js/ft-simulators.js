@@ -234,7 +234,9 @@ function labItems(){
   const OFF = /data-sid="records"|<h3>(Intake Mock Call with the trainer|Intake Worksheet|LV \(Lien Verification\) Request Demo)\b/;
   const out = [], push = (html, meta) => out.push(...mark(html, meta).filter(x => !OFF.test(x.html)));
   const tool = (fn, id, type) => typeof window[fn] === "function" && listed(id) ? push(window[fn](), {days: window.FTDays ? FTDays.forTool(id) : [], status: isTrainee() && TOOL_STATUS[id] ? TOOL_STATUS[id]() : "todo", type, key: id}) : 0;
-  if(window.FTSessions){ push(foldRules(FTSessions.cards())); push(FTSessions.trainerCards()); }
+  // (no 🧑‍🏫 With your trainer cards: the live mock calls and demos are done with the trainer, who records and scores them in
+  // Trainer Inputs and Graders; the Practice Lab is the trainee's own activities)
+  if(window.FTSessions) push(foldRules(FTSessions.cards()));
   // 📅 the two calendaring activities, one card each day: Day 5's Attorney Calendar Management Activity (the activity on
   // the simulator, its ✅ check, next week's calendar) and Day 6's Calendar Management Mock Calls (the bookings on the
   // Google Calendar Simulator, each recorded on the Booking Rule Check). Each step keeps its own page and its own state.
