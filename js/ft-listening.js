@@ -166,6 +166,23 @@ function actSheet(cur){
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
     ${cur.recs.map(r => recHtml(cur, r, next, {all: true})).join("")}`;
 }
+// 📋 the activity's instructions, in the deck's cards (Day 3's Reception Listening Activity slide, build/day-decks.cjs PI_HTML)
+function actIns(){
+  const step = (n, ic, t, body) => `<div class="lnx-step"><p class="lnx-step-h"><span>${n}</span>${ic} ${t}</p><p>${body}</p></div>`;
+  return `<div class="lnx-card"><p class="lnx-card-h">📋 Instructions</p>
+      <p class="lnx-lead">Listen to five fictional inbound calls to <b>Harbor &amp; Pine Injury Law</b>, a personal injury firm in Tampa, Florida. Each one shows a challenge front-desk staff often meet.</p>
+      <div class="lnx-steps">${step(1, "🎧", "Listen", "Play each call carefully. Pause, rewind and replay it as often as you need.")}${step(2, "🔍", "Analyze", "Identify the reception challenge and the caller's scenario.")}${step(3, "📝", "Extract", "Log the <b>5 data points</b> of each call in its form on the right.")}</div></div>
+    <div class="lnx-card"><p class="lnx-card-h">📋 The 5 data points of every call</p><ol class="lnx-pts">
+      <li><b>Caller</b>: their name, and who they are (client, potential client, provider, adjuster, family …)</li>
+      <li><b>Callback number</b>: with the extension or best time, if given</li>
+      <li><b>Verified?</b>: how the VA verified the caller (name, DOB, date of the accident), or why nothing could be shared</li>
+      <li><b>Reason for the call</b>: the case and what they need</li>
+      <li><b>Action taken</b>: who it went to, and how (message, transfer, callback)</li></ol></div>
+    <div class="lnx-card"><p class="lnx-card-h">💭 The call's challenge</p><div class="lnx-two">
+      <div><b>🚧 The Obstacle</b>What made the call difficult? (emotional distress, missing details, a language barrier, an aggressive caller, an urgent legal deadline)</div>
+      <div><b>🤝 The VA's Response</b>How did the receptionist handle it? (active listening, de-escalation, boundary setting, clarifying questions)</div></div></div>
+    <div class="lnx-card lnx-done"><p>Save each call as you go, then <b>📝 Submit for Grading</b>. Your trainer reads your answers.</p>${deckBack(true)}</div>`;
+}
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   // a set opens with its day: 🔓 once the trainer has opened the day (js/ft-day-locks.js); a trainee catches up on any set opened
@@ -177,10 +194,12 @@ function renderPage(){
   // 📝 the Reception Listening Activity's answers: a page of its own, its five calls only
   const pills = `<div class="ln-pills">${open.map(s => { const l = mine(setLive(s.id), state.traineeId), c = countDone(R.rec, l);
         return `<button class="ln-pill ${s.id === cur.id ? "on" : ""}" onclick="FTListen.set('${e(s.id)}')">${s.icon} ${e(s.activity ? "Reception Listening Activity" : s.title)} <em>${c}/${l.n}</em></button>`; }).join("")}</div>`;
-  if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Day ${cur.day}</p><h1>🎧 Call Listening Log</h1>
-      <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go, then 📝 Submit for Grading.</p>${pills}</div>
-    ${actSheet(cur)}
-    <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div>`;
+  if(cur.activity) return `<div class="lnx-top"><div><p class="lp-eyebrow">🛠 Practice Lab · Day ${cur.day}</p><h1>🎧 Reception Listening Activity</h1></div>${pills}</div>
+    <div class="lnx">
+      <aside class="lnx-ins">${actIns()}</aside>
+      <section class="lnx-work">${actSheet(cur)}
+        <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div></section>
+    </div>`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       ${pills}</div>
@@ -311,7 +330,7 @@ async function submitPop(){
 // the way back to the deck the activity was opened from (FTListen.fromDeck)
 const LN_RET = "ftLnBack";
 try{ R.ret = JSON.parse(sessionStorage.getItem(LN_RET) || "null"); }catch(err){ R.ret = null; }
-const deckBack = () => R.ret && window.FTDayDecks ? `<button class="btn btn-primary" type="button" onclick="FTListen.toDeck()">Back to the deck${R.ret.h ? ": " + e(R.ret.h) : ""} →</button>` : "";
+const deckBack = small => window.FTDayDecks ? `<button class="btn ${small ? "btn-ghost btn-sm" : "btn-primary"}" type="button" onclick="FTListen.toDeck()">📚 Back to the lesson${R.ret && R.ret.h ? ": " + e(R.ret.h) : ""} →</button>` : "";
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,
   // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
@@ -326,7 +345,11 @@ window.FTListen = {
     try{ if(R.ret) sessionStorage.setItem(LN_RET, JSON.stringify(R.ret)); else sessionStorage.removeItem(LN_RET); }catch(err){}
     FTListen.open(sid);
   },
-  toDeck(){ const r = R.ret; R.ret = null; try{ sessionStorage.removeItem(LN_RET); }catch(err){} if(r && window.FTDayDecks) FTDayDecks.open(r.day, r.i); else goto("simulators"); },
+  toDeck(){ const r = R.ret; R.ret = null; try{ sessionStorage.removeItem(LN_RET); }catch(err){}
+    if(!window.FTDayDecks) return goto("simulators");
+    if(r) return FTDayDecks.open(r.day, r.i);
+    // (opened from the Practice Lab: Day 3's deck, on the slide after the activity's instructions)
+    const at = FTDayDecks.at ? FTDayDecks.at(3, "s1c") : -1; FTDayDecks.open(3, at >= 0 ? at + 1 : 0); },
   // 📝 the activity's answer sheet in a pop-up over the deck
   // (the sheet is painted again as soon as the trainee's log and the sets are in — not only through the page's redraw, which
   // a slide's own trouble could stop — and after 8 seconds still waiting it says so, with ↻ Try again)
@@ -446,6 +469,21 @@ window.FTListenAdmin = {
 ftAdminTab("listening", "🎧 Call Listening", adminHtml);
 
 (function(){ const st = document.createElement("style"); st.id = "ft-listening"; st.textContent = `
+main.main-ln:has(.lnx){max-width:none;}
+.lnx-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;} .lnx-top h1{margin:0;font:800 30px/1.15 'Poppins','Inter',sans-serif;color:#1E2340;}
+.lnx{display:grid;grid-template-columns:minmax(340px,36%) minmax(0,1fr);gap:16px;align-items:start;}
+.lnx-ins{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:12px;}
+.lnx-work{display:flex;flex-direction:column;gap:12px;min-width:0;}
+.lnx-card{flex-shrink:0;border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
+.lnx-card .lnx-card-h{margin:0 -16px 10px;padding:10px 16px;background:#1E2340;color:#fff;font:800 17px/1.3 'Poppins','Inter',sans-serif;border-bottom:3px solid #E8590C;}
+.lnx-card p, .lnx-card li, .lnx-two div{font-size:15.5px;line-height:1.5;color:#1E2340;}
+.lnx-lead{margin:0 0 10px;} .lnx-steps{display:grid;gap:8px;}
+.lnx-step{border-left:4px solid #E8590C;background:#FFF6EE;border-radius:8px;padding:8px 12px;} .lnx-step p{margin:0;}
+.lnx-step-h{font-weight:800;display:flex;align-items:center;gap:6px;} .lnx-step-h span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#E8590C;color:#fff;font-size:12px;}
+.lnx-pts{margin:0;padding-left:20px;display:grid;gap:4px;}
+.lnx-two{display:grid;gap:8px;} .lnx-two div{border-radius:8px;background:#F1F3FA;padding:8px 12px;} .lnx-two b{display:block;margin-bottom:2px;}
+.lnx-done{padding-top:12px;} .lnx-done p{margin:0 0 8px;}
+@media (max-width:1000px){ .lnx{grid-template-columns:minmax(0,1fr);} .lnx-ins{position:static;max-height:none;} }
 main.main-ln{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
 .ln-hero h1{margin:0 0 4px;} .ln-hero p{margin:0;color:var(--ink-soft);max-width:none;}
