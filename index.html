@@ -5084,7 +5084,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
    is dropped as the page opens, which reads as signed out */
 function tokenRunOut(t){ const p = String(t||"").split("."); return p.length===4 && !(Number(p[2]) > Date.now()); }
 state.authToken = (()=>{ try{ const t = localStorage.getItem("lsh_auth_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_auth_token"); }catch(e){} return ""; })();
-state.adminToken = (()=>{ try{ const t = localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); }catch(e){} return ""; })();
+state.adminToken = (()=>{ try{ const t = localStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_admin_token")||sessionStorage.getItem("lsh_tab_admin_token")||""; if(t && !tokenRunOut(t)) return t; localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_tab_admin_token"); }catch(e){} return ""; })();
 /* an open page renews its tokens (worker.js /api/auth/refresh) every ten minutes and as the tab comes back into view: each
    fresh token runs 8 hours, so a session in use never runs out, and it ends only 8 hours after the last page was closed (or
    the computer slept). A token that ran out meanwhile (a laptop asleep overnight with the tab open) is not renewed: the page
@@ -5109,7 +5109,10 @@ function authHeaders(){
   return Object.assign({"Content-Type":"application/json"}, t ? {"Authorization":"Bearer "+t} : {});
 }
 function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setItem("lsh_auth_token", t) : localStorage.removeItem("lsh_auth_token"); }catch(e){} }
-function setAdminToken(t){ state.adminToken = t||""; try{ if(t){ localStorage.setItem("lsh_admin_token", t); sessionStorage.removeItem("lsh_admin_token"); } else { localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); } }catch(e){} }
+/* (the tab an admin signed in on keeps its own copy, sessionStorage lsh_tab_admin_token, and remembers it is an admin's: a trainee signed in on
+   another tab of this browser takes the shared copy, and this tab's refresh still opens as the admin, not as that trainee) */
+function setAdminToken(t){ state.adminToken = t||""; try{ if(t){ localStorage.setItem("lsh_admin_token", t); sessionStorage.removeItem("lsh_admin_token"); sessionStorage.setItem("lsh_tab_admin_token", t); sessionStorage.setItem("lsh_tab_admin", "1"); } else { localStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_admin_token"); sessionStorage.removeItem("lsh_tab_admin_token"); sessionStorage.removeItem("lsh_tab_admin"); } }catch(e){} }
+function tabIsAdmin(){ try{ return sessionStorage.getItem("lsh_tab_admin") === "1"; }catch(e){ return false; } }
 // General rule: a trainee sign-in is never an admin session. A leftover admin token in this browser
 // (a trainer who signed in on the same machine, an earlier test) used to leave 🏅 Scorecards, 👁 Switch
 // View and 🛡 Admin in a trainee's top bar. Whenever a trainee is signed in, the admin session is dropped.
@@ -8123,7 +8126,10 @@ window.applyUpdate = applyUpdate;
   startUpdateChecks();
   await loadAll();
   if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees and admins come in from the LSH Training Portal
-  if(state.traineeId) dropAdminSession();   // a trainee session wins: no admin bar, no admin pages
+  // a trainee session wins (no admin bar, no admin pages), except on a tab an admin signed in on: a trainee signed in on
+  // another tab of this browser shares the trainee's id, and this tab's refresh stays the admin's (not that trainee's, nor
+  // the sign-in page when their session can't be renewed here)
+  if(state.traineeId){ if(tabIsAdmin() && state.adminToken) state.traineeId = ""; else dropAdminSession(); }
   if(state.adminToken && (await authStatus())) state.isAdmin = true;
   // 👁 trainee view (Switch View, or the Portal's trainee view) stays on through a reload of this tab
   if(state.isAdmin){ try{ if(sessionStorage.getItem("lsh_admin_preview") === "1"){ state.isAdmin = false; state.adminPreview = true; } }catch(e){} }
