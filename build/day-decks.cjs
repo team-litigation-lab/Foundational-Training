@@ -1082,15 +1082,25 @@ const PDOC_DIR = "/ft/day7/forms";
 // (note: a line under the name saying what the document is for, a 📌 callout)
 // (with a note: the note beside the document's first page, as large as the slide allows; its other pages open from it — a
 // click on the page steps through all of them in the page viewer, js/ft-day-decks.js — not laid out on the slide)
+// (each page's own size on its <img>, read from the .webp: the slide keeps its room for a page before the picture has
+// loaded, so it is dealt into the same pages whether the pictures are in yet or not, and never shows them all at once first)
+const webpSize = file => { try{ const b = require("fs").readFileSync(file); if(b.toString("ascii", 0, 4) !== "RIFF" || b.toString("ascii", 8, 12) !== "WEBP") return null;
+  const k = b.toString("ascii", 12, 16);
+  if(k === "VP8X") return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+  if(k === "VP8L"){ const x = b.readUInt32LE(21); return [1 + (x & 0x3FFF), 1 + ((x >>> 14) & 0x3FFF)]; }
+  if(k === "VP8 ") return [b.readUInt16LE(26) & 0x3FFF, b.readUInt16LE(28) & 0x3FFF];
+  }catch(e){} return null; };
+const pgSize = (dir, slug, i) => { const wh = webpSize(require("path").join(__dirname, "..", String(dir).replace(/^\//, ""), `${slug}-${i + 1}.webp`));
+  return wh ? ` width="${wh[0]}" height="${wh[1]}"` : ""; };
 const pdocHtml = ([slug, title, n, dir = PDOC_DIR, note], big) => note && big !== true
   ? `<div class="ftdd-pdoc ftdd-pdoc-side" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div><div class="ftdd-pdoc-row">` +
     `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p><div class="ftdd-pdoc-pages">${Array.from({length: n}, (_, i) =>
     `<a class="ftdd-pdoc-pg${i ? " ftdd-pdoc-hid" : ""}" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
-    `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy">${i ? "" : `<span>🔍 Click to open ${n > 1 ? `all ${n} pages` : "it"}</span>`}</a>`).join("")}</div></div></div>\n`
+    `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}"${pgSize(dir, slug, i)} loading="lazy">${i ? "" : `<span>🔍 Click to open ${n > 1 ? `all ${n} pages` : "it"}</span>`}</a>`).join("")}</div></div></div>\n`
   : `<div class="ftdd-pdoc${big === true || big === "bar" ? " ftdd-pdoc-big" : ""}${big === "bar" ? " ftdd-pdoc-barred" : ""}" data-pages="${n}"${big === "bar" ? ` data-bartitle="📄 ${title}"` : ""}><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
   (note ? `<p class="ftdd-callout ftdd-pdoc-note">📌 ${note}</p>` : "") +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
-  `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+  `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}"${pgSize(dir, slug, i)} loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
 // Day 8's naming convention reference (Topic 2, between steps 3 and 4): its name beside the slide's Watch & Do pill
 // ("bar": data-bartitle, js/ft-day-decks.js), its six pages in one row, each as large as the row allows
 const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)", 6, "/ft/day8/docs"];
