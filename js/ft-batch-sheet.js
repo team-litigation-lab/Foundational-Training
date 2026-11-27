@@ -1245,14 +1245,18 @@ const dayFold = (ps, open, extra) => {
   const items = ps.filter(x => !x.header && x.name), ic = n => (String(stripTags(n)).match(/^\s*(\p{Extended_Pictographic}\uFE0F?)/u) || [, "•"])[1];
   // (each check by name with its figure, the chips sharing the row's whole width)
   const nm = n => String(stripTags(n)).replace(/^\s*\p{Extended_Pictographic}\uFE0F?\s*/u, "");
-  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}"><i>${e(ic(x.name))}</i><span>${e(nm(x.name))}</span><b>${e(stripTags(x.v))}</b></span>`).join("");
+  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}"><i>${e(ic(x.name))}</i><span>${e(nm(x.name))}</span><b>${e(refStrip(x.v))}</b></span>`).join("");
   return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${items.length} activit${items.length === 1 ? "y" : "ies"}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
 };
+// (a value shown without its "• 📎 Additional Reference ·" prefix: the card's 📎 key says it once, so a chip or a cell reads
+// "Graded", "Passed", "Done" or its figure, not the same words over and over)
+const refStrip = v => { const t = String(stripTags(v == null ? "" : v)), r = t.replace(/^\s*[•·]?\s*📎\s*(Additional Reference)?\s*[·:—–-]?\s*/u, "").trim();
+  return r || (t !== r ? "Not scored" : t); };
 const partsTable = ps => { let g0 = null;
   return `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => {
     const head = x.group && x.group !== g0 ? `<tr class="bs-parts-g${x.header || /compliance/i.test(x.group) ? " bs-parts-top" : ""}"><th colspan="3">${e(x.group)}${x.groupV ? ` <span class="bs-parts-gv">${e(x.groupV)}</span>` : ""}</th></tr>` : ""; if(x.group) g0 = x.group;
     if(x.header) return head;
-    return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
+    return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(refStrip(x.v))}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
       // (📋 its criteria in a table of their own under the activity's name, so they don't read as more compliance items)
       + (Array.isArray(x.crit) && x.crit.length ? `<tr class="bs-parts-cw"><td colspan="3"><table class="bs-crit"><thead><tr><th colspan="3" class="bs-crit-h">📋 ${e(stripTags(x.name).replace(/^[\s📋]+/u, ""))} — criterion by criterion</th></tr><tr><th>Criterion</th><th>Score</th><th>Why</th></tr></thead><tbody>${
         x.crit.map(c => `<tr><td class="bs-crit-n">${e(c.n)}</td><td class="bs-crit-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td>${e(c.fb || "")}</td></tr>`).join("")}</tbody></table></td></tr>` : ""); }).join("")}</tbody></table>`; };
