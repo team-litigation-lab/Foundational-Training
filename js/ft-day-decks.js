@@ -763,7 +763,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(deckTitle(DD.day, info, d))}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${(m => m ? `<span class="ftdd-bar-t">🎬 ${m[1]}</span>` : "")(/data-bartitle="([^"]+)"/.exec(body || ""))}`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
         ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
@@ -2289,6 +2289,7 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 .ftdd-ribbon span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;background:linear-gradient(90deg,#343C66 0%,#46508A 50%,#343C66 100%);
   border-bottom:3px solid #DB8437;border-radius:6px;color:#fff;font:800 clamp(13px,1.1vw,17px)/1.25 'Poppins','Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:8px 24px;}
 .ftdd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+.ftdd-bar-t{display:inline-flex;align-items:center;margin-left:10px;padding:6px 16px;border-radius:8px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;font:800 17px/1.2 'Poppins','Inter',sans-serif;}   /* (a video's title beside the slide's Watch & Do pill) */
 .ftdd-pill{display:inline-flex;align-items:center;gap:8px;background:#ECEEF3;color:#262B45;border-radius:8px;padding:6px 16px;font:700 17px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;}
 .ftdd-n{font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;background:transparent;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 10px;white-space:nowrap;}
 /* the content: a white sheet */

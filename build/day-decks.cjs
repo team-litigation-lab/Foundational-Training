@@ -1227,12 +1227,12 @@ const ROWS = {
       // (the naming convention and its reference are on Topic 2's slide, between its steps 3 and 4: TRIM[8].s1; the additional
       // intake documents are a slide of their own)
       {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]], fix: [
-        // (no 🏷 topic label: the slide's ribbon names the topic) the video named for its cases, played on the left and large,
-        // with its instruction beside it (ftdd-vside)
+        // (no 🏷 topic label: the slide's ribbon names the topic) the video, full width with no title bar of its own: its title
+        // sits beside the slide's 🎬 Watch & Do pill (data-bartitle, js/ft-day-decks.js), and no "Watch this video…" line
         ["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>\n", ""],
         x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
           if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
-          return x.replace(re, '<div class="ftdd-vside">\n$2The Intake Packet and the Intake Documents (MVA Cases)$3\n$1\n</div>\n'); }]},
+          return x.replace(re, (m, line, a0, rest) => a0.replace('<a class="viewer-link"', '<a class="viewer-link" data-bare data-bartitle="The Intake Packet and the Intake Documents (MVA Cases)"') + "The Intake Packet and the Intake Documents (MVA Cases)" + rest + "\n"); }]},
       {id: "s1c", h: "AM: Other Intake Documents", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]],
         // (the day file's page break before the documents was Topic 2's: here they open the slide)
         fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},
