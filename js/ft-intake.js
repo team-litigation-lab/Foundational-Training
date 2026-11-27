@@ -81,7 +81,7 @@ function consultHtml(d){
    their own packet as soon as it is assigned, with its download and their own Assessments/Activities folder
    (📁 My Drive links, drive:<id>.folder) to save it in. */
 const PFOLDER = "https://drive.google.com/drive/folders/1JbAieyhJ6XVsRvNXMUUtVfRwY_0KNymT?usp=sharing";   // the Redacted Intake Packets
-const DFOLDER = "https://drive.google.com/drive/folders/1fC8iixgMEVV3cDrtU0sFa0N325uVB4mb?usp=drive_link"; // the Additional Intake Documents
+const DFOLDER = "https://drive.google.com/drive/folders/1RW_VV4gb6nVni5I-A1MjNwifRMh0T8o0"; // the Additional Intake Documents
 const NPACK = 20;   // Intake Packets 1–20 (their clients and Drive links are set in Admin → 📦 Intake Packets)
 const DOCS = ["Client Communication Disclosure", "Signature Certificate", "CM Notes", "Police Report", "TAR/Traffic Accident Report",
   "TAR/Traffic Accident Report with Labels", "Traffic Ticket (accomplished)", "Traffic Ticket with Labels.1", "Traffic Ticket with Labels.2",
@@ -288,10 +288,27 @@ function docsHtml(el){
 // Each shows the trainee's own link, else the trainer's, else the platform's own copy (LOCAL_DOCS); one with none of these
 // says so and offers the folder.
 const LOCAL_DOCS = {13: "ft/day7/forms/conflict-waiver.html"};
+// (📄 each document's own file in the shared Additional Intake Documents folder, DFOLDER — anyone with the link can view —
+// so every card opens in the deck before any trainer or trainee has linked one; DOCS' order)
+const DEF_DOCS = [
+  "https://drive.google.com/file/d/10aIF54LADKywOu4qeqG5vrCSeMit8W55/view",
+  "https://drive.google.com/file/d/17CipYJmpOwOi-BvkxMNGMxxNdpmt8UBg/view",
+  "https://drive.google.com/file/d/14hJajKzFZ4suaIwYEy1k3XTZgzuqUxqT/view",
+  "https://drive.google.com/file/d/1Rx33QSzOoICYUOlXIeYSBtC7XIyQfr3i/view",
+  "https://drive.google.com/file/d/1KG1gc-Jen7qUBzfj7fkIGKSIx-Jla-AC/view",
+  "https://drive.google.com/file/d/1dZltOb2ORfNZmT8GKNSrYbjI8YbIahXe/view",
+  "https://drive.google.com/file/d/1Er2XQ5qK6eyZ3w6Nq1-AmnRzgDS7VHy7/view",
+  "https://drive.google.com/file/d/1wl9R66HpaCCrAta4uidrheIohMRbylcm/view",
+  "https://drive.google.com/file/d/1YOv1zquWULF4LoSgW4ipX1fpKSNvwiBF/view",
+  "https://drive.google.com/file/d/1xSlyOhmGSKAlBatAvGfqGuRmRFL4uo0A/view",
+  "https://drive.google.com/file/d/1n1RdbltTnsXixbO8arcaXc7VDIJJnC6y/view",
+  "https://drive.google.com/file/d/10a-R6oEYCaBwm4w3DtqTx-9xOw5xShqw/view",
+  "https://drive.google.com/file/d/1ZtYTeIHXeru1EI6bpDQu-XdZ8Qq3yVuL/view",
+  "https://drive.google.com/file/d/1OxwOqgnPnzIbrzjkMstdxL52MUSBIJvi/view"];
 function docViewHtml(own, links, folder){
   // (📄 the documents as cards on the slide, each its number, name and preview: a click pops it up in the viewer, in the
   // platform; one with no link yet opens the folder)
-  const urlOf = j => String(own[j] || "").trim() || String(links[j] || "").trim();
+  const urlOf = j => String(own[j] || "").trim() || String(links[j] || "").trim() || DEF_DOCS[j] || "";
   return `<div class="ftis-dg">${DOCS.map((t, j) => { const u = urlOf(j), loc = !u && LOCAL_DOCS[j] ? "/" + LOCAL_DOCS[j] : "", src = u ? embed(u) : loc;
     return `<button type="button" class="ftis-dg-c${src ? "" : " is-none"}" data-title="${e(t)}" data-url="${e(u || loc)}" onclick="${src ? "FTIntake.view(this)" : `window.open('${e(folder)}', '_blank', 'noopener')`}" title="${src ? "Open " + e(t) : e(t) + ": not linked yet, opens the folder"}">
       <span class="ftis-dg-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-dg-ic">📄</span>`}<span class="ftis-dg-n">${j + 1}</span></span>
