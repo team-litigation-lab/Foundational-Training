@@ -480,8 +480,8 @@ const ASSESSMENTS = {2: [
   // (Day 11's, answered on the platform: js/ft-assess.js)
   7: [{t: "Policy Disclosure, Claim & Liability Evaluation", id: "policy-disclosure"}]};
   // (no Breakout Session worksheets: the curriculum's breakouts are the digital handouts only, with no assessment)
-/* 📄 Day 8's Intake Worksheet, on the Intake lesson's Knowledge Check (the owner: "embed this in Knowledge Check so trainees
-   won't miss it; right now its scores are not assessed and the document just ignored even if answered"). Always on the page,
+/* 📄 Day 8's Intake Worksheet, on the Intake lesson's Knowledge Check, so trainees don't miss it and a completed one is
+   never left unseen and ungraded (it was only a link on Day 8's slide). Always on the page,
    not only when a slide's link opened it: the worksheet itself to read, ✏️ Make my editable copy, and 📤 the link of the
    completed one submitted here (js/ft-intake.js paints .ftis-sheet / .ftis-wsub: actsub:<id>.items.intakews, the same
    submission the Day 8 slide takes). Its grade — the trainer's, against the Training Guide's Answer Sheets, on the trainee's
