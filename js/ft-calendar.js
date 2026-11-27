@@ -929,6 +929,7 @@ async function submit(){
   S.saved = "saving"; paintSave(); repaint();
   const ok = await saveRec(); S.saved = ok === "big" ? "big" : ok === false ? "fail" : "ok"; paintSave();
   toast(ai.error ? "Submitted. The AI check wasn’t available; your trainer will review it." : "AI feedback is ready below. Your trainer will go through it with you.");
+  if(window.ftActivityDone) ftActivityDone();   // (after its feedback: then back to the lesson, when a deck sent the trainee here)
 }
 function runReview(){
   const s = scn();
