@@ -68,6 +68,13 @@ var pending = null;     // the trainee the Portal vouched for, until their regis
 var notice = "";
 var secretMissing = false;   // single sign-on is on but this Worker has no PORTAL_SSO_SECRET: nobody can be signed in
 
+// 🧾 why the admin was last signed out on this device (index.html signOutWhy), under the sign-in: so a sign-out nobody
+// asked for says what caused it
+function lastSignOut(){
+  try{ var w = JSON.parse(localStorage.getItem("lsh_signout_why") || "null"); if(!w || !w.why) return "";
+    var at = new Date(w.at); return '<p style="margin:8px 0 0;font-size:12px;opacity:.75">Last signed out' + (isNaN(at) ? "" : " " + esc(at.toLocaleString())) + ": " + esc(w.why) + "</p>"; }
+  catch(e){ return ""; }
+}
 function esc(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
 window.portalGate = {
@@ -171,6 +178,7 @@ window.portalGate = {
       +   '<div class="pane on" data-p="admin">'
       +     (msg ? '<p class="err">'+esc(msg)+'</p>' : '')
       +     '<p>Administrators sign in with the admin password. Trainees are signed in automatically when they open this training from the LSH Training Portal.</p>'
+      +     lastSignOut()
       +     (secretMissing ? '<p class="err">This program isn\'t connected to the LSH Training Portal yet: set PORTAL_SSO_SECRET on its Worker, to the same value as the Portal\'s. Until then no trainee can be signed in.</p>' : '')
       +     '<div id="gate-aerr" class="err" style="display:none;margin:0 0 10px;font-size:12px"></div>'
       +     '<label for="gate-apass">Admin password</label><input id="gate-apass" type="password" autocomplete="off" onkeydown="if(event.key===\'Enter\')portalGate.admin()">'
