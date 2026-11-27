@@ -306,7 +306,7 @@ window.render = function(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   // (opened from a deck, FTTranscribe.fromDeck: back to that deck, on the slide after the one it was opened from)
   // (opened from a deck: its way back is under Submit, backToDeck, and nothing at the top)
-  const back = T.ret ? "" : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
+  const back = T.ret ? "" : `<a class="back-link" onclick="FTLabRoute.home()">&larr; Back to the lesson</a>`;
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-tr">${back}${renderTrainee()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}

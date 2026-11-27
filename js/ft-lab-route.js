@@ -46,7 +46,7 @@
       goto("simulators");
     },
     back(){ const f = state.ftLabFrom; state.ftLabFrom = null; state.ftLabFocus = null;
-      if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto("dashboard"); },
+      if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else LR.home(); },
     clear(){ state.ftLabFrom = null; render(); },
     // ✅ an activity handed in (its own submit, below): when the trainee came from a deck, a bar says so and takes them back
     // to the slide they left after 3 seconds (📍 Stay here keeps them on the activity; Back now goes at once)
@@ -62,9 +62,10 @@
       LR.f = f;
       if(from) LR.t = setTimeout(() => LR.home(), 3000);
     },
+    // 📚 back to the lesson: the slide the trainee came from, else the deck slide last open, else the lessons
     home(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove();
       if(state.ftLabFrom) return LR.back();
-      const f = LR.f; LR.f = null;
+      const f = LR.f || (window.FTDayDecks && FTDayDecks.lastAt ? FTDayDecks.lastAt() : null); LR.f = null;
       if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto("modules"); },
     stay(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); },
     keyOf
@@ -72,19 +73,20 @@
 
   window.ftActivityDone = () => { try{ LR.done(); }catch(e){} };
 
-  // 🔀 a deck's activity button → the Practice Lab (capture: before the button's own onclick runs)
+  // 🔀 a deck's activity button opens the activity itself (the Practice Lab is off the platform), and the slide it was
+  // pressed on is kept: the activity's ← Back to the lesson, and its hand-in (FTLabRoute.done), come back to it
   document.addEventListener("click", ev => {
     if(state.view !== "daydeck") return;
     const b = ev.target.closest && ev.target.closest("[onclick]"); if(!b || !b.closest("main.main-ftdd")) return;
-    const key = keyOf(b.getAttribute("onclick")); if(key === null) return;
-    ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-    const here = deckPlace();
-    LR.go(here ? here.day : null, key, here);
+    if(keyOf(b.getAttribute("onclick")) === null) return;
+    const here = deckPlace(); if(here) state.ftLabFrom = here;
   }, true);
 
   // the Practice Lab: the bar back to the lesson, and the activity's card lit up and in view
   const __render = window.render;
   window.render = function(){
+    // 🛠 the Practice Lab is off the platform: its route (an old link, a bookmark, #/simulators) goes back to the lesson
+    if(state.view === "simulators"){ state.view = "modules"; setTimeout(() => LR.home(), 0); }
     // (the way back to a slide holds while the trainee is in the lab and its activities; going to the Dashboard ends it)
     if(state.view === "dashboard" || state.view === "modules") state.ftLabFrom = null;
     const out = __render.apply(this, arguments);
