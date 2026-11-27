@@ -43,7 +43,6 @@ const begun = r => !!(r && r[0] && ptNow() >= r[0]);
 const SUMV = 3;
 // 🔄 a summary drafted an hour or more ago, of a week whose scores can still come in: the week itself and the two days after it
 // (the last day's end-of-shift check, a mock call scored the next morning) — so it follows the daily scorecards by itself
-const ptOf = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return String(v || "").slice(0, 10); } };
 const plusDays = (iso, n) => { const t = Date.parse(`${iso}T12:00:00Z`); return isFinite(t) ? new Date(t + n * 864e5).toISOString().slice(0, 10) : ""; };
 const FRESH = 60 * 60 * 1000;
 // (🤖 a week with no summary yet is tried again after 10 minutes — not once a session — so one that failed or was cut short is never left unsummarized)
@@ -379,7 +378,7 @@ details.rks-card[open] .rks-mini{display:none;} .rks-rk{font-weight:800;color:#D
 .rks-how-ok{color:#1E6B40;}
 .rks-head-acts{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;}
 .rks-head-acts .btn-ghost{background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.45) !important;color:#fff !important;}
-.rks-head-acts .btn-navy{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;} .rks-head-acts select{font-weight:800;}
+.rks-head-acts .btn-navy{background:var(--gold-btn) !important;border-color:#e0a43a !important;color:var(--gold-btn-ink) !important;} .rks-head-acts select{font-weight:800;}
 .rks-bar-acts select{font-weight:700;} .rks-bar-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;} .rks-bar-acts .rks-note{color:#5F6368;font-size:13px;}`;
 
 // ⏳ a week that hasn't begun: every trainee at 0.0 for now (grey, "Not started") — no week carries another's scores

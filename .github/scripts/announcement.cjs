@@ -1,6 +1,6 @@
 // 📢 The announcement ticker (js/ft-announcement.js): this platform's own, for the Foundational trainees only (Admin → 📢
-//   Announcements; the Main Portal's broadcast isn't shown or edited here), read through /api/announcement, shown under the
-//   top bar for a trainee and a trainer, as text (never HTML), with no clock or time zone; hidden when there is none.
+//   Announcements; the Main Portal's broadcast isn't shown or edited here), read through /api/announcement, no longer shown in a
+//   bar under the top bar (the trainer asked for it gone); the editor and each lesson card's announcement stay.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/announcement.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
@@ -22,38 +22,18 @@ const failures = []; const fail = m => failures.push(m);
   try {
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
     await signIn(page, 'Ann', 'Ticker', 'B110226');
-    await page.evaluate(() => { goto('dashboard'); });
-    await page.waitForFunction(() => /Mock calls start/.test((document.querySelector('.ft-ann [data-ft-ann-text]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
-    const t = await page.evaluate(() => { const b = document.querySelector('.ft-ann'), r = b && b.getBoundingClientRect(), top = document.querySelector('.topbar');
-      return { shown: !!b && !b.hidden && r.height > 0, text: b ? b.querySelector('[data-ft-ann-text]').textContent : '', imgs: b ? b.querySelectorAll('img').length : -1,
-        under: !!(b && top && b.getBoundingClientRect().top >= top.getBoundingClientRect().bottom - 2), clock: b ? !!b.querySelector('[data-ft-ann-clock], .ft-ann-clock, select') : true, xss: window.__xss || 0 }; });
-    if (!t.shown || !/Mock calls start at 9:00 AM PHT/.test(t.text)) fail(`the trainee doesn't see the announcement: ${JSON.stringify(t)}`);
-    if (t.imgs || t.xss) fail('the announcement was drawn as HTML');
-    if (/PORTAL BROADCAST/.test(t.text)) fail('the Main Portal\'s broadcast is on this platform\'s ticker');
-    if (!t.under) fail('the ticker isn\'t under the top bar');
-    if (method !== 'POST') fail(`the page asks for the announcement with ${method}, not POST (the Worker's /api/ routes are POST only)`);
-    if (t.clock) fail('the ticker still has the clock or its time zone picker (taken off at the trainer\'s request)');
-    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, clip: { x: 0, y: 0, width: 1500, height: 220 } });
-    // (a trainer sees it too)
+    await page.evaluate(() => { goto('dashboard'); }); await page.waitForTimeout(800);
+    // 🚫 no bar under the top bar, for a trainee, a trainer or on a Day deck (the trainer asked for it gone)
+    if (await page.$('.ft-ann')) fail('the announcement bar is still under the top bar (trainee)');
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(800);
-    if (!(await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return !!b && !b.hidden && /Mock calls/.test(b.textContent); }))) fail('a trainer doesn\'t see the announcement');
-    // (the same on every page, a Day deck included, as the trainer asked)
-    await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(1); }).catch(() => {});
-    if (await page.evaluate(() => state.view === 'daydeck' && !/Mock calls/.test((document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || ''))) fail('the ticker on a Day deck isn\'t the same announcement as on the other pages');
-    // 📢 this platform's own and each lesson's: the platform's, then the trainee's lesson's, the same on every page;
-    // on the lesson's card too
-    own = { platform: { text: 'Mock calls moved to 2 PM' }, lessons: { 1: { text: 'Bring your headset for VA Essentials' } } };
+    if (await page.$('.ft-ann')) fail('the announcement bar is still under the top bar (trainer)');
+    await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(1); }).catch(() => {}); await page.waitForTimeout(500);
+    if (await page.$('.ft-ann')) fail('the announcement bar is still on a Day deck');
+    // (each lesson's own announcement stays on its card, as text)
+    own = { platform: { text: 'Mock calls moved to 2 PM' }, lessons: { 1: { text: 'Bring your headset <img src=x onerror="window.__xss=1">' } } };
     await page.evaluate(async () => { await FTAnnouncement.reload(); goto('dashboard'); }); await page.waitForTimeout(600);
-    { const t = await page.evaluate(() => (document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || '');
-      if (!/Mock calls moved to 2 PM/.test(t) || /PORTAL BROADCAST/.test(t)) fail(`the ticker isn't the platform's own announcement: ${t}`); }
-    await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(600);
-    { const t = await page.evaluate(() => (document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || '');
-      if (!/Mock calls moved to 2 PM/.test(t) || !/Bring your headset for VA Essentials/.test(t)) fail(`on Day 1's deck the ticker isn't the same as elsewhere (the platform's, then the lesson's): ${t}`); }
-    { await page.evaluate(() => goto('dashboard')); await page.waitForTimeout(500);
-      const t = await page.evaluate(() => (document.querySelector('.ft-ann:not([hidden]) [data-ft-ann-text]') || {}).textContent || '');
-      if (!/Mock calls moved to 2 PM/.test(t) || !/Bring your headset for VA Essentials/.test(t)) fail(`the Dashboard's ticker isn't the same as the deck's: ${t}`); }
     { const c = await page.evaluate(() => typeof FTAnnouncement.lessonHtml === 'function' ? FTAnnouncement.lessonHtml(1) : '');
-      if (!/Bring your headset/.test(c) || /hidden/.test(c)) fail(`the lesson's card doesn't carry its announcement: ${c}`); }
+      if (!/Bring your headset/.test(c) || /hidden/.test(c) || /<img/.test(c)) fail(`the lesson's card doesn't carry its announcement as text: ${c}`); }
     // 📝 the editor: a trainer's Admin → 📢 Announcements saves settings:announcements
     await page.unroute('**/api/announcement');
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.adminTab = 'announcements'; goto('admin'); }); await page.waitForTimeout(1500);
@@ -68,25 +48,8 @@ const failures = []; const fail = m => failures.push(m);
     await page.unroute('**/api/portal-announcement');
     { const r = await page.evaluate(async () => (await (await fetch('/api/announcement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()));
       if (!r.own || !r.own.platform || r.own.platform.text !== 'Typing test at 9 AM' || !r.own.lessons || !r.own.lessons['1'] || r.own.lessons['1'].text !== 'Headsets on') fail(`the editor's announcements weren't saved and served: ${JSON.stringify(r)}`); }
-    own = null; await page.route('**/api/announcement', r => { method = r.request().method(); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, text, own }) }); });
-    // (none of its own: no ticker, even with a Portal broadcast)
-    await page.evaluate(() => FTAnnouncement.reload()); await page.waitForTimeout(400);
-    // (a trainer keeps the bar, with ✏️ Edit, so an announcement can be added from any page; in 👁 Trainee view it's gone)
-    { const tr = await page.evaluate(() => { const b = document.querySelector('.ft-ann'); return { shown: !!b && !b.hidden, edit: !!document.querySelector('.ft-ann-edit'), text: (document.querySelector('[data-ft-ann-text]') || {}).textContent || '' }; });
-      if (!tr.shown || !tr.edit || !/No announcement yet/.test(tr.text)) fail('a trainer with no announcement doesn\'t get the bar with ✏️ Edit: ' + JSON.stringify(tr)); }
-    await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); }); await page.waitForTimeout(500);
-    await page.click('.ft-ann-edit'); await page.waitForTimeout(1200);
-    if (!(await page.evaluate(() => state.view === 'admin' && state.adminTab === 'announcements' && !!document.querySelector('.ann-ed')))) fail('✏️ Edit on the bar doesn\'t open the announcement editor');
-    if (!(await page.evaluate(() => document.activeElement && document.activeElement.matches('textarea[data-ann="platform"]')))) fail('✏️ Edit doesn\'t put the cursor in the platform\'s announcement');
-    // (✏️ Edit called while in 👁 Trainee view: back to the trainer's view, on the editor)
-    await page.evaluate(() => { state.adminTab = 'batchsheet'; goto('admin'); setAdminViewMode('trainee'); }); await page.waitForTimeout(500);
-    await page.evaluate(() => FTAnnouncement.edit()); await page.waitForTimeout(1200);
-    if (!(await page.evaluate(() => state.isAdmin && !state.adminPreview && state.adminTab === 'announcements' && !!document.querySelector('.ann-ed')))) fail('✏️ Edit from 👁 Trainee view doesn\'t open the editor');
-    await page.evaluate(() => { state.adminPreview = true; render(); FTAnnouncement.reload(); }); await page.waitForTimeout(400);
-    if (!(await page.evaluate(() => [...document.querySelectorAll('.ft-ann')].every(b => b.hidden)))) fail('an empty announcement still shows the ticker');
-    await page.evaluate(() => { state.adminPreview = false; render(); });
   } catch (e) { fail(e.stack || String(e)); }
   await browser.close();
   if (failures.length) { console.error('Announcement test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Announcement test passed (this platform\'s own announcement under the top bar for a trainee and a trainer, as text, with no clock; hidden when there is none).');
+  console.log('Announcement test passed (no bar under the top bar; the lesson card\'s announcement as text; the editor saves this platform\'s own).');
 })();

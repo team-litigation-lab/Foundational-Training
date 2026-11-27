@@ -1,8 +1,8 @@
 /* ============================================================
    📢 ANNOUNCEMENT TICKER — this platform's own, for the Foundational trainees only: a trainer sets it in Admin → 📢
    Announcements (one for the whole platform and one per lesson; the Main Portal's broadcast isn't shown or edited here),
-   and every page shows it in a bar under the top bar (no clock: the trainer had it taken off).
-   Read through worker.js /api/announcement (its "own"), again every 5 minutes; filled in place, so nothing
+   and every page shows it in a bar under the top bar, with the live clock and its time zone, as the Training Directory
+   does. Read through worker.js /api/announcement (its "own"), again every 5 minutes; filled in place, so nothing
    re-renders for it.
    Loaded last: it wraps renderTopbar as every page has drawn it.
    ============================================================ */
@@ -19,7 +19,10 @@ function shown(){
 }
 // (a trainer — not in 👁 Trainee view — always sees the bar, with ✏️ Edit, so an announcement can be added from any page)
 const isTrainer = () => typeof state !== "undefined" && !!state.isAdmin && !state.adminPreview;
+const TZS = [["Asia/Manila", "Manila (PHT)"], ["UTC", "UTC"], ["America/New_York", "New York (ET)"], ["America/Los_Angeles", "Los Angeles (PT)"]];
 const esc_ = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const tz = () => { try{ const v = localStorage.getItem("ft_ann_tz"); if(TZS.some(([z]) => z === v)) return v; }catch(e){} return "Asia/Manila"; };
+const clock = () => { try{ return new Intl.DateTimeFormat("en-US", {year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: tz(), hour12: true}).format(new Date()); }catch(e){ return ""; } };
 function fill(){
   const t = shown() || (isTrainer() ? "No announcement yet. Press ✏️ Edit to add one." : "");
   document.querySelectorAll("[data-ft-ann-text]").forEach(el => { if(el.textContent !== t) el.textContent = t; });
@@ -40,10 +43,13 @@ function bar(){
   return `<div class="ft-ann no-print" data-ft-ann${t ? "" : " hidden"}><div class="ft-ann-in">
     <div class="ft-ann-tick"><span class="ft-ann-tag">Announcement</span><div class="ft-ann-view"><div class="ft-ann-track"><span data-ft-ann-text>${esc_(t)}</span></div></div></div>
     ${typeof state !== "undefined" && state.isAdmin && !state.adminPreview ? `<button type="button" class="ft-ann-edit" title="Edit this platform's and each lesson's announcement" data-ft-ann-edit>✏️ Edit</button>` : ""}
+    <div class="ft-ann-clock"><span data-ft-ann-clock>${esc_(clock())}</span><select aria-label="Time zone" onchange="FTAnnouncement.tz(this.value)">${TZS.map(([z, l]) => `<option value="${z}"${z === tz() ? " selected" : ""}>${l}</option>`).join("")}</select></div>
   </div></div>`;
 }
-const __top = window.renderTopbar;
-if(typeof __top === "function") window.renderTopbar = function(){ return __top.apply(this, arguments) + bar(); };
+// (🚫 the bar under the top bar is gone, as the trainer asked: Admin → 📢 Announcements and each lesson card's announcement stay;
+//  bar() is kept for FTAnnouncement.bar, but no page draws it)
+load();
+setInterval(() => { const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); }, 1000);
 setInterval(() => { A.at = 0; load(); }, 5 * 60 * 1000);
 /* 📝 Admin → 📢 Announcements: this platform's own announcement and each lesson's (settings:announcements, read back through
    worker.js /api/announcement), for the Foundational trainees only: standalone, the Main Portal's broadcast is the Portal's own. */
@@ -91,6 +97,7 @@ if(typeof ftAdminTab === "function") ftAdminTab("announcements", "📢 Announcem
 const lessonHtml = l => { const x = lessonText(l); return `<div class="ftlc-ann" data-ft-ann-lesson="${esc_(l)}"${x ? "" : " hidden"}><b>📢 Announcement</b> <span>${esc_(x)}</span></div>`; };
 window.FTAnnouncement = {
   save, lessonHtml, edit,
+  tz(v){ try{ localStorage.setItem("ft_ann_tz", v); }catch(e){} const t = clock(); document.querySelectorAll("[data-ft-ann-clock]").forEach(el => { el.textContent = t; }); },
   text: () => A.text, reload(){ A.at = 0; return load(); }
 };
 
@@ -109,6 +116,9 @@ window.FTAnnouncement = {
 .ft-ann-view:hover .ft-ann-track{animation-play-state:paused;}
 @keyframes ft-ann-scroll{from{transform:translateX(0);}to{transform:translateX(-100%);}}
 .ft-ann-edit{flex:none;margin:0 10px;padding:3px 10px;border:1px solid rgba(253,186,116,.6);border-radius:999px;background:rgba(253,186,116,.12);color:#fdba74;font:700 11.5px Arial,sans-serif;cursor:pointer;white-space:nowrap;}.ft-ann-edit:hover{background:rgba(253,186,116,.25);}
+.ft-ann-clock{display:flex;align-items:center;gap:6px;color:#cbd5e1;font:600 11.5px Arial,sans-serif;white-space:nowrap;}
+.ft-ann-clock select{border:none;background:none;font:inherit;font-weight:700;color:#fdba74;cursor:pointer;}
+.ft-ann-clock select option{color:#0b1733;}
 @media (max-width:640px){.ft-ann-in{padding:7px 16px;gap:8px 14px;}}
 @media (prefers-reduced-motion:reduce){.ft-ann-tag::before{animation:none;}.ft-ann-track{animation:none;padding-left:0;}}
 @media print{.ft-ann{display:none;}}

@@ -506,9 +506,9 @@ function trainerCtx(a, title){
   const byS = crit.slice().sort((x, y) => Number(y.s) - Number(x.s));
   const best = byS.filter(c => Number(c.s) >= 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
   const low = byS.slice().reverse().filter(c => Number(c.s) < 4).slice(0, 3).map(c => `${c.n} (${c.s}/5)${c.fb ? ": " + clip(c.fb, 160) : ""}`);
-  const why = [crit.length ? `The trainer scored ${crit.length} criteria on the ${rb.title} rubric: weighted average ${a.rubric.avg != null ? Number(a.rubric.avg).toFixed(2) : "–"}/5${pct_ != null ? ` = ${pct_}%` : ""}` : pct_ != null ? `The trainer's score: ${pct_}%` : "",
-    res !== "Not yet" ? `Result: ${res}${redo ? " (off the scorecards until it is done again)" : ""}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean).join(". ");
-  return {name: title, pct: redo ? null : pct_, status: res === "Not yet" ? "" : res, why, best: best.length ? best : (!crit.length && res === "Passed" ? ["Passed with the trainer"] : []),
+  const whys = [crit.length ? `The trainer scored ${crit.length} criteria on the ${rb.title} rubric: weighted average ${a.rubric.avg != null ? Number(a.rubric.avg).toFixed(2) : "–"}/5${pct_ != null ? ` = ${pct_}%` : ""}` : pct_ != null ? `The trainer's score: ${pct_}%` : "",
+    res !== "Not yet" ? `Result: ${res}${redo ? " (off the scorecards until it is done again)" : ""}` : "", a.comment ? clip(a.comment, 300) : ""].filter(Boolean), why = whys.join(". ");
+  return {name: title, pct: redo ? null : pct_, status: res === "Not yet" ? "" : res, why, whys, best: best.length ? best : (!crit.length && res === "Passed" ? ["Passed with the trainer"] : []),
     improve: low.length ? low : redo ? ["The trainer asked for a redo" + (a.comment ? ": " + clip(a.comment, 200) : "")] : [], by: "🧑‍🏫 Trainer",
     // (each criterion of its scorecard, for the day's table: its own row under the mock call or demo)
     crit: crit.map(c => ({n: c.n, s: Number(c.s), fb: c.fb}))};
@@ -526,7 +526,17 @@ function kcCtx(R, p, l){
   const why = [`${sc}%${t != null ? " (the trainer's final score)" : ""}, ${sc >= 70 ? "passed" : "not passed yet: 70% passes"}${(x.kcAttempts || (g && g.attempts)) ? `, ${x.kcAttempts || g.attempts} attempt${(x.kcAttempts || g.attempts) === 1 ? "" : "s"}` : ""}`,
     items.length ? `${items.length} answers graded: ${items.reduce((a, q) => a + (Number(q.score) || 0), 0)}/${items.length * 10}` : "",
     last && last.summary ? clip(last.summary, 600) : "", rv.comment ? "Trainer: " + clip(rv.comment, 600) : ""].filter(Boolean).join(". ");
-  return {name: `✍️ Knowledge Check: ${lessonName(l)}`, pct: sc, status: sc >= 70 ? "Passed" : "Not yet", why, best, improve: low, by: "✍️ Graded"};
+  // (📊 the "why this score" table's cells: from the same saved grading — a Knowledge Check is graded by the app)
+  const tries = x.kcAttempts || (g && g.attempts) || 0, missed = low.map(q => "Answer " + q.replace(/^Answer (\S+).*$/, "$1"));
+  const tb = {pass: 70, sub: `Knowledge Check · ${t != null ? "the trainer's final score" : tries ? `best of ${tries} attempt${tries === 1 ? "" : "s"}` : "graded"}`,
+    whys: [t != null ? `The trainer's final score: ${sc}%${g && typeof g.best === "number" ? ` (the grading gave ${g.best}%)` : ""}.` : `${tries > 1 ? `The best of ${tries} attempts` : "Graded"}: ${sc}%.`,
+      items.length ? `${items.length} answers graded: ${items.reduce((a, q) => a + (Number(q.score) || 0), 0)} of ${items.length * 10} points.` : "",
+      last && last.summary ? "The grading: " + clip(last.summary, 600) : "", rv.comment ? "Trainer: " + clip(rv.comment, 600) : "",
+      ].filter(Boolean), passLine: sc >= 70 ? "70% passes: this passes." : "Below the 70% pass mark.",
+    great: items.length ? best : sc >= 70 ? [`Passed at ${sc}%.`] : [],
+    wrong: items.length ? low : sc < 100 ? [`${100 - sc}% of the points were lost. Which answers were marked down wasn't recorded for this attempt.`] : [],
+    better: sc >= 100 || (items.length && !low.length) ? [] : [`Re-read the ${lessonName(l)} slides on ${missed.length ? "the questions marked down (" + missed.join(", ") + "), with each answer's feedback" : "the points missed"}.`]};
+  return {name: `✍️ Knowledge Check: ${lessonName(l)}`, pct: sc, status: sc >= 70 ? "Passed" : "Not yet", why, best, improve: low, by: "✍️ Graded", auto: true, tb};
 }
 // 📝 an activity answered on the platform and graded by its 📝 Submit for Grading (the day item's assess: Day 3's Reception
 // Listening Activity): its points, each call it got fully right, and each answer the grading marked down, with its note
@@ -541,7 +551,16 @@ function assessCtx(R, it){
   const improve = its.filter(([, x]) => !x.ok && !x.pending).slice(0, 4).map(([k, x]) => `${nm(k)}${x.pts > 0 ? " (partly right)" : ""}${x.note ? ": " + clip(x.note, 200) : ""}`);
   const graded = `${g.score} of ${g.max} points (${auto != null ? auto + "%" : "—"}), graded ${g.when || day(g.at)}${left ? `; ${left} answer${left === 1 ? "" : "s"} left for the trainer to grade` : ""}`;
   const why = o ? `Trainer's score ${sc}% (the grading gave ${graded})${o.note ? ": " + clip(o.note, 300) : ""}` : graded;
-  return {name: it.t, pct: sc, status: o ? "Trainer's score" : "Graded", why, best, improve, by: o ? "🧑‍🏫 Trainer" : "📝 Answer Sheet"};
+  // (📊 graded by its 📝 Submit for Grading, the trainer's score not over it, nor graded by hand — Day 8's Intake Worksheet,
+  // by: "trainer" —: a row of the "why this score" table, every call fully right and every answer marked down)
+  const isAuto = !o && g.by !== "trainer", downs = its.filter(([, x]) => !x.ok && !x.pending);
+  const tb = isAuto ? {pass: 60, sub: "Activity · 📝 Submit for Grading",
+    whys: [`${g.score} of ${g.max} points (${auto != null ? auto + "%" : "—"}), graded ${g.when || day(g.at)}.`, left ? `${left} answer${left === 1 ? "" : "s"} left for the trainer to grade.` : "",
+      calls.length ? `${calls.length} call${calls.length === 1 ? "" : "s"} graded, ${calls.filter(n => its.every(([k, x]) => callOf(k) !== n || x.ok)).length} fully right.` : ""].filter(Boolean),
+    great: calls.filter(n => its.every(([k, x]) => callOf(k) !== n || x.ok)).map(n => `${nm("c" + n)}: every answer right`),
+    wrong: downs.map(([k, x]) => `${nm(k)}${x.pts > 0 ? " (partly right)" : ""}${x.note ? ": " + clip(x.note, 200) : ""}`),
+    better: downs.length ? [`Listen to ${[...new Set(downs.map(([k]) => callOf(k)).filter(Boolean))].map(n => nm("c" + n)).join(", ") || "the calls"} again and compare each answer marked down with the grading's note.`] : []} : null;
+  return Object.assign({name: it.t, pct: sc, status: o ? "Trainer's score" : "Graded", why, best, improve, by: o ? "🧑‍🏫 Trainer" : "📝 Answer Sheet"}, isAuto ? {auto: true, tb} : {});
 }
 // (a deliverable the guide lists on several days — a lesson's Knowledge Check, a Practice Session, a mock call — is scored
 // once, on the last day that lists it; the days before say where its score is)
@@ -590,6 +609,22 @@ function weekNow(p){
   const both = [score, W0.comp].filter(v => typeof v === "number");
   return Object.assign({}, W0, {score, scored: pcts.length, overall: both.length ? Math.round(both.reduce((a, v) => a + v, 0) / both.length) : null});
 }
+// 📊 an assessment answered on the platform and graded by its 📝 Submit for Grading (js/ft-assess.js), for the "why this score"
+// table: its points and each item the grading marked down, with its note (trackerreview:<id>.assess[doc], assessRows); one with
+// no item-level grading saved is explained from its score, and says so
+function driveTb(p, it, g){
+  let x = null; try{ x = assessRows(p).find(a => normName(a.title) === normName(it.t)) || null; }catch(err){}
+  const G = x && x.g, its = x ? x.items.filter(q => q.ok != null || q.pending) : [], down = its.filter(q => q.ok === false), wait = its.filter(q => q.pending);
+  const qn = q => clip(`${q.part ? q.part + " · " : ""}${q.q}`, 140);
+  return {pass: 60, sub: "Assessment · 📝 Submit for Grading",
+    whys: [G && G.score != null ? `${G.score} of ${G.max} points = ${g.pct}%${G.when ? ", graded " + G.when : ""}.` : `${g.pct}%: ${g.how}.`,
+      its.length ? `${its.length - down.length - wait.length} of ${its.length} items right.` : "", wait.length ? `${wait.length} item${wait.length === 1 ? "" : "s"} left for the trainer to grade.` : "",
+      ].filter(Boolean), passLine: g.pct >= 60 ? "60% passes: this passes." : "Below the 60% pass mark.",
+    great: its.length ? (its.length - down.length - wait.length ? [`${its.length - down.length - wait.length} item${its.length - down.length - wait.length === 1 ? "" : "s"} answered right.`] : []) : g.pct >= 60 ? [`Passed at ${g.pct}%.`] : [],
+    wrong: its.length ? down.map(q => `${qn(q)}${q.pts > 0 ? " (partly right)" : ""}${q.note ? ": " + clip(q.note, 200) : ""}`)
+      : g.pct < 100 ? [`${100 - g.pct}% of the points were lost. Which items were marked down wasn't recorded with this score.`] : [],
+    better: g.pct >= 100 ? [] : [down.length ? "Go back over the items marked down in the lesson's material, using each one's note." : "Go back over the lesson's material on the points missed."]};
+}
 function dayDeliverables(p, d){
   const R = B.data.rec[p.id] || {}; R.src = R.src || {};
   const out = [], acts = (((R.src["labreview:"] || {}).acts) || {}), list = dayStatus(p, d), L = lastDayOf();
@@ -608,26 +643,34 @@ function dayDeliverables(p, d){
     if(it.at === "trainer" && !acts[it.id]){ const g = autoTr(R, it); if(g){
       const res = typeof window.ftResult === "function" ? window.ftResult({score: g.pct, redo: false}) : g.pct >= 60 ? "Passed" : "Failed";
       const c = trainerCtx({score: g.pct, status: res, rubric: {key: g.key || "transcription", scores: g.scores || [], feedback: g.feedback || [], avg: g.avg}, comment: g.summary || ""}, it.t);
-      push(Object.assign(c, {by: "🤖 Scored automatically", why: String(c.why || "").replace(/The trainer scored/, "Scored automatically on")})); return; } }
+      // (📊 scored by the app, not the trainer: a row of the "why this score" table, criterion by criterion)
+      const cr = c.crit || [], line = x_ => `${x_.n} (${x_.s}/5)${x_.fb ? ": " + clip(x_.fb, 200) : ""}`, lo = cr.filter(x_ => x_.s < 4);
+      const tb = {pass: 60, sub: "Scored automatically · its rubric", whys: (c.whys || []).map(w => String(w).replace(/The trainer scored/, "Scored automatically on") + "."),
+        great: cr.filter(x_ => x_.s >= 4).map(line), wrong: lo.map(line),
+        better: lo.length ? [`Bring ${lo.map(x_ => x_.n).join(", ")} up to 4/5 or more on the next recording.`] : []};
+      push(Object.assign(c, {by: "🤖 Scored automatically", why: String(c.why || "").replace(/The trainer scored/, "Scored automatically on"), auto: true, tb})); return; } }
     // (Day 6's Calendar Management Mock Calls practice isn't on the scores: the scored call is the Calendar Management Mock
     // Call with the trainer)
     // (🟢 no Practice Session is on the scores: they are practice; only graded work is — Day 6's Calendar Management Mock
     // Calls practice included, its scored call being the Calendar Management Mock Call with the trainer)
     if(it.at === "session") return;
     if(it.assess){ const c = assessCtx(R, it); if(c){ push(c); return; } }
-    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}); return; } }
+    if(it.at === "drive"){ const g = gradeByName(R, it); if(g){ push(Object.assign({name: it.t, pct: g.pct, status: "Graded", why: g.how, best: [], improve: [], by: "📝 Graded"}, g.edited ? {} : {auto: true, tb: driveTb(p, it, g)})); return; } }
     if(it.at === "tool" && it.id === "process"){ const ls = d.lessons || [], here_ = ls.filter(l => !later("kc|" + l));
       const cs = here_.map(l => kcCtx(R, p, l)).filter(Boolean); if(cs.length){ push(...cs); return; }
       if(ls.length && !here_.length) return;
       // (answered, its Knowledge Check not graded yet: "Submitted", not "Not yet")
       const D_ = dayDate(d.day), ptd = v => { try{ return window.FTTrackerRules ? FTTrackerRules.ptDate(new Date(v)) : String(v).slice(0, 10); }catch(err){ return ""; } };
       const subm = Object.entries(((R.process || {}).sets) || {}).filter(([, s_]) => s_ && s_.submittedAt && ptd(s_.submittedAt) === D_);
-      if(subm.length){ push({name: it.t, pct: null, status: "Submitted", why: `Answer sheet submitted ${subm.map(([, s_]) => new Date(s_.submittedAt).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})).join(", ")} · the Knowledge Check isn't graded yet`, best: [], improve: [], by: ""}); return; } }
+      if(subm.length){ push({name: it.t, pct: null, status: "Submitted", why: `Answer sheet submitted ${subm.map(([, s_]) => new Date(s_.submittedAt).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})).join(", ")} · the Knowledge Check isn't graded yet`, best: [], improve: [], by: "", auto: true}); return; } }
     // (only what can carry a grade is listed while it has none — a mock call or demo, a Practice Session, an answer sheet, an
     // assessment, the Process Questions; a reading, a breakout's handouts, the fillable forms, the call listening and the idle
     // time's material aren't graded, so they aren't on the scores)
     if(!(it.at === "trainer" || it.at === "drive" || it.assess || (it.at === "tool" && it.id === "process"))) return;
-    push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: ""});
+    // (📊 still to be graded by the app — a Knowledge Check, an assessment or answer sheet — on the "why this score" table;
+    // what the trainer grades by hand — a mock call or demo, Day 8's Intake Worksheet — keeps its own line)
+    push({name: it.t, pct: null, status: x.done ? "Done" : "Not yet", why: x.auto ? x.auto.how : x.manual ? "Ticked done by the trainer" : "Not done yet", best: [], improve: [], by: "",
+      auto: it.at !== "trainer" && it.assess !== "intakews"});
   });
   // 📒 the day's Monitoring Sheet update, graded on Submit (js/ft-buffer.js ACTS[…].submit, trackerreview:<id>.items)
   const ACTS = (window.FTBuffer && FTBuffer.ACTS) || {}, items = ((R.src["trackerreview:"] || {}).items) || {};
@@ -637,7 +680,12 @@ function dayDeliverables(p, d){
     const r = items[key]; if(!r) return; const g = r.result || {};
     out.push({group: "📒 Monitoring Sheet items", name: `📒 Monitoring Sheet items #${(a.submit.items || []).join(", #")}`, pct: window.ftReference ? null : num100(g.score), status: (window.ftReference ? REFV + " · " : "") + (r.onTime ? "On time" : "Late"),
       why: [g.score != null ? `${num100(g.score)}% from the review of the entries` : "Submitted", r.onTime ? "on time (before 5:00 PM ET)" : "late (after 5:00 PM ET)", g.context ? clip(g.context, 260) : ""].filter(Boolean).join(", ").replace(/, ([^,]*)$/, ". $1"),
-      best: (g.items || []).filter(x => x.found).slice(0, 3).map(x => `#${x.n} ${x.title || ""} is in`), improve: [...(g.redFlags || []), ...(g.improve || [])].slice(0, 4).map(x => clip(x, 200)), by: "📒 Reviewed"});
+      best: (g.items || []).filter(x => x.found).slice(0, 3).map(x => `#${x.n} ${x.title || ""} is in`), improve: [...(g.redFlags || []), ...(g.improve || [])].slice(0, 4).map(x => clip(x, 200)), by: "📒 Reviewed",
+      // (📊 reviewed by the app on 📤 Submit: a row of the "why this score" table — its red flags what was wrong, its "to improve" what could be better)
+      auto: true, tb: {pass: 60, sub: "Monitoring Sheet update · reviewed on 📤 Submit",
+        whys: [g.score != null ? `${num100(g.score)}% from the review of the entries.` : "Submitted; not reviewed yet.", r.onTime ? "Submitted on time (before 5:00 PM ET)." : "Submitted late (after 5:00 PM ET).", g.context ? clip(g.context, 400) : ""].filter(Boolean),
+        great: (g.items || []).filter(x => x.found).map(x => `#${x.n} ${x.title || ""} is in`), wrong: (g.redFlags || []).length ? g.redFlags.map(x => clip(x, 300)) : (g.items || []).filter(x => x.found === false).map(x => `#${x.n} ${x.title || ""} is missing`),
+        better: (g.improve || []).map(x => clip(x, 300))}});
   });
   // 💬 the trainer's day-by-day feedback on the day's lesson (sent only: a draft is the trainer's own)
   const fb = (((R.feedback || {}).days) || {});
@@ -658,14 +706,34 @@ function dayScoresTable(){
             parts: xs.map(x => ({name: x.name, group: x.group || "", crit: x.crit || null, v: x.pct != null ? x.pct + "%" : x.status || "—", tone: x.pct != null ? tone(x.pct) : /Done|Passed|On time/.test(x.status) ? "gs-hi" : /Not yet|Late/.test(x.status) ? "gs-lo" : "", text: x.why || ""}))}; }));
     })};
 }
+/* 📊 "WHY THIS SCORE", a table: on a trainee's day in 📅 Day 1–16: Detailed Scores, the Knowledge Checks and the other work graded
+   by the app (an assessment or answer sheet's 📝 Submit for Grading, a transcription scored automatically, a Monitoring Sheet
+   update reviewed on 📤 Submit), a row each — the score against its pass mark, why it scored that way, what was done great,
+   what was wrong and what could have been done better — from what the grading saved (x.tb). What the trainer scores by hand
+   (a mock call or demo, Day 8's Intake Worksheet, a score the trainer set, the trainer's day-by-day feedback) keeps its own
+   line under it, as before. */
+function whyTableHtml(xs){
+  const cell = (ys, none) => (ys = (ys || []).filter(Boolean)).length ? `<ul>${ys.map(y => `<li>${e(y)}</li>`).join("")}</ul>` : `<i>${none}</i>`;
+  const tint = (v, pass) => v >= 85 ? "hi" : v >= pass ? "mid" : "lo";
+  return `<div class="bs-ds-sw"><table class="bs-ds-st"><thead><tr><th>Activity</th><th>Score</th><th>🧾 Why this score</th><th>⭐ What you did great</th><th>❌ What was wrong</th><th>💡 What could have been done better</th></tr></thead>
+    <tbody>${xs.map(x => { const tb = x.tb || {}, sc = typeof x.pct === "number" && isFinite(x.pct), graded = sc || !!x.tb;
+      const sub = tb.sub || x.by || String(x.group || "").replace(/^[^A-Za-z]+/, "");
+      return `<tr><th scope="row"><b>${e(stripTags(x.name))}</b>${sub ? `<small>${e(sub)}</small>` : ""}</th>
+        <td class="bs-ds-sc"><span class="bs-ds-pill${sc ? " bs-ds-" + tint(x.pct, tb.pass || 70) : ""}">${sc ? Math.round(x.pct) + "%" : e(x.status || "—")}</span></td>
+        <td class="bs-ds-w">${cell((tb.whys || [x.why]).concat(tb.passLine && sc ? [tb.passLine] : []), "—")}</td>
+        <td class="bs-ds-g">${cell(tb.great, graded ? "Nothing noted." : "—")}</td>
+        <td class="bs-ds-b">${cell(tb.wrong, graded ? (sc && x.pct >= 100 ? "Nothing — full marks." : "Nothing noted.") : "—")}</td>
+        <td class="bs-ds-n">${cell(tb.better, graded ? "Keep the same approach." : "—")}</td></tr>`; }).join("")}</tbody></table></div>`;
+}
 function dayScoresHtml(){
   const ppl = people(); if(!ppl.length || !B.data) return "";
   const id = meOn() ? ppl[0].id : (B.ds && ppl.some(p => p.id === B.ds) ? B.ds : ppl[0].id), p = ppl.find(x => x.id === id), D = dayList();
   const li = (h, xs, cls) => xs.length ? `<div class="bs-ctx ${cls}"><b>${h}</b><ul>${xs.map(x => `<li>${e(x)}</li>`).join("")}</ul></div>` : "";
   return `<div class="bs-ck bs-ds">${meOn() ? `<h4>🔎 My days in detail</h4>` : `<label class="bs-ck-who">🔎 Detailed scores for <select onchange="FTBatchSheet.dsWho(this.value)">${ppl.map(x => `<option value="${e(x.id)}" ${x.id === id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label>`}
-    <div class="bs-ds-days">${D.map(d => { const xs = dayDeliverables(p, d), a = dayAvg(xs);
+    <div class="bs-ds-days">${D.map(d => { const xs = dayDeliverables(p, d), a = dayAvg(xs), autos = xs.filter(x => x.auto), first = xs.findIndex(x => x.auto);
       return `<details class="bs-ds-day"${a != null ? " open" : ""}><summary><b>Day ${d.day}</b> <span>${e(d.role)}</span><em class="${tone(a)}">${a != null ? pct(a) : `${xs.filter(x => /Done|Passed/.test(x.status) || x.pct != null).length}/${xs.length} done`}</em></summary>
-        ${xs.map(x => { const rich = x.pct != null || x.best.length || x.improve.length || x.by;
+        ${xs.map((x, i) => { if(x.auto) return i === first ? whyTableHtml(autos) : "";
+          const rich = x.pct != null || x.best.length || x.improve.length || x.by;
           return `<div class="bs-ds-it${rich ? " is-rich" : ""}"><div class="bs-ds-h"><span>${e(x.name)}</span>${x.by ? `<small>${e(x.by)}</small>` : ""}<b class="${tone(x.pct)}">${x.pct != null ? x.pct + "%" : e(x.status || "—")}</b></div>
             ${rich ? `<div class="bs-ctx bs-why"><b>🧾 Why this score</b><p>${e(x.why || "—")}</p></div>${li("⭐ What they did best", x.best, "bs-best")}${li("🔧 What needs to be improved", x.improve, "bs-imp")}
               ${!x.best.length && !x.improve.length && x.pct != null ? `<p class="bs-ctx-none">No criterion-level notes were recorded for this score.</p>` : ""}` : `<p class="bs-ctx-none">${e(x.why || "")}</p>`}</div>`; }).join("")}</details>`; }).join("")}</div></div>`;
@@ -1209,7 +1277,7 @@ function perTraineeHtml(T){
     const head = W ? [[`Overall · Week ${W.n}`, W.overall, `The average of this week's Scorecard and Daily compliance (${md_(W.range[0])}–${md_(W.range[1])})`],
         [`Scorecard · Week ${W.n}`, W.score, `The average of every score this week so far (${md_(W.range[0])}–${md_(W.range[1])}): ${W.scored || 0} scored item${W.scored === 1 ? "" : "s"} from the days' scored work (mock calls, demos, Knowledge Checks, answer sheets, assessments); it starts again each week`],
         [`Daily compliance · Week ${W.n}`, W.comp, `The average of this week's ${W.days} day${W.days === 1 ? "" : "s"} checked${W.pdp ? ` and its 🌱 Professional Development & Progress (${W.pdp.avg5.toFixed(1)}/5 = ${W.pdp.pct}%, counted as one more entry beside the days)` : " (🌱 Professional Development & Progress not scored yet this week: not counted)"}`]]
-        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, /^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`, "", `${REFV}: not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
+        .map(([l, v, f]) => window.ftReference && !/^Scorecard/.test(l) ? [l, "📎 Reference", "bs-pt-ref", `${/^Daily/.test(l) ? refTopics(null, ["🌱 PD&P"]) : `${REFV}: Scorecard + Daily compliance`} — not scored or counted`] : [l, v == null ? "—" : v + "%", wtone(v), f]).filter(([, v]) => v)
       : [["Overall", "Overall %"], ["Scorecard", "Scorecard overall"], ["Daily compliance", "Daily compliance"]].map(([l, h]) => [l, val(h), toneOf(cellOf(h)), stripTags(cellOf(h).f)]).filter(([, v]) => v);
     // a table's rows for this trainee (keep: which measures, by heading; all of them when not given), without its heading
     const rowsOf = (x, keep) => { const r = x && rowFor(x, p, i, ppl.length); if(!r) return "";
@@ -1239,7 +1307,9 @@ function perTraineeHtml(T){
             // (🔎 a trainer: what the system reads in the trainee's Task Tracker and Monitoring Sheet for the day, worker.js /api/drive/read-check)
             + (state.isAdmin && !meOn() ? `<button type="button" class="btn btn-ghost btn-sm bs-readchk" onclick="FTBatchSheet.readCheck('${e(p.id)}','${e(x.dates[k - 2])}')">🔎 What was read for this day: Task Tracker, Monitoring Sheet, EOD, Process Questions</button>` : "")
           : Array.isArray(c.parts) && c.parts.length ? partsTable(c.parts) : e(stripTags(c.f) === v ? "" : stripTags(c.f));
-        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${v ? e(v) : "—"}</td><td class="bs-pt-f">${f}</td></tr>`; })()).join("");
+        // (📎 a reference value: a short label in its narrow column, the topics it covers beside it, so nothing wraps a word a line)
+        const isRef = !!v && v.indexOf(REFV) === 0, refList = isRef ? v.slice(REFV.length).replace(/^:\s*/, "") : "";
+        return wkHead + `<tr class="${hide.trim()}"><td class="bs-pt-m">${e(stripTags(h))}</td><td class="bs-pt-v ${e(toneOf(c))}${isRef ? " bs-pt-vref" : ""}" title="${e(stripTags(h) + ": " + (v || "—") + (stripTags(c.f) && stripTags(c.f) !== v ? " — " + stripTags(c.f) : ""))}">${isRef ? "📎 Reference" : v ? e(v) : "—"}</td><td class="bs-pt-f">${isRef && refList && !f ? `<span class="bs-pt-refl">${e(refList)}</span>` : f}</td></tr>`; })()).join("");
       const grid = M ? `<tr><td colspan="3" class="bs-pt-mxw"><table class="bs-pt-mx"><thead><tr><th></th>${M.sub.map(h => `<th>${e(stripTags(h))}</th>`).join("")}</tr></thead><tbody>
           ${M.groups.map(g => `<tr><th>${e(g.label)}</th>${g.cols.map(k => { const c = r[k] || {}, v = stripTags(c.v); return `<td class="bs-pt-v ${e(toneOf(c))}" title="${e(stripTags(c.f))}">${v ? e(v) : "—"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></td></tr>` : "";
       return lines + grid; };
@@ -1587,7 +1657,7 @@ const gradePct = g => g && g.score != null && !(window.ftStaleGrade && ftStaleGr
 const normName = t => String(t || "").replace(/^[^A-Za-z0-9]+/, "").replace(/[–—-]+/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
 function gradeByName(R, it){
   const sc = R.score; if(!sc || !Array.isArray(sc.rows)) return null; const want = normName(it.t);
-  for(const r of sc.rows) for(const x of (r.items || [])) if(typeof x.pct === "number" && isFinite(x.pct) && normName(stripTags(x.name)) === want) return {pct: Math.round(x.pct), how: stripTags(x.note || "Graded")};
+  for(const r of sc.rows) for(const x of (r.items || [])) if(typeof x.pct === "number" && isFinite(x.pct) && normName(stripTags(x.name)) === want) return {pct: Math.round(x.pct), how: stripTags(x.note || "Graded"), edited: !!x.overridden};
   return null;
 }
 function scoreOf(R, d, it, p){
@@ -2596,7 +2666,7 @@ window.ftBanner = function(title, batch, right, controls, opts){
 .bs-wkswitch button.on{background:#1E2340;color:#fff;} .bs-ovtools{margin:0 0 8px;}
 .ft-banner-ctl{flex-basis:100%;margin-top:6px;} .bs-ctl .gs-top{background:transparent !important;padding:0 !important;margin:0 !important;}
 .bs-ctl .bs-batchmenu label{color:#fff !important;} .bs-ctl .bs-at{color:#E8ECF7 !important;}
-.bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:#DB8437 !important;border-color:#DB8437 !important;color:#fff !important;}
+.bs-ctl .gs-menu button{border-color:#fff !important;} .bs-ctl .gs-menu button.bs-upd-all{background:var(--gold-btn) !important;border-color:#e0a43a !important;color:var(--gold-btn-ink) !important;}
 .ft-banner-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .ft-banner-right span{font:800 13px Arial,sans-serif;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ft-banner-right span.warn{background:#fef3c7;border-color:#fef3c7;color:#78350f;}
@@ -2742,6 +2812,8 @@ html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35)
 .bs-pt-k.gs-hi{background:#E6F4EA;border-color:#1E8E3E;} .bs-pt-k.gs-hi b{color:#0B5D1E !important;}
 .bs-pt-k.gs-mid{background:#FFF4E0;border-color:#E8A400;} .bs-pt-k.gs-mid b{color:#7A4B00 !important;}
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
+.bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
+.bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:14px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
@@ -2777,6 +2849,18 @@ html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35)
 .bs-ds-h span{font-weight:700;color:#202124;} .bs-ds-h small{color:#5F6368;} .bs-ds-h b{margin-left:auto;padding:1px 8px;border-radius:9px;white-space:nowrap;}
 .bs-ctx{margin:4px 0 0;padding:5px 9px;border-radius:6px;} .bs-ctx b{font-size:12.5px;} .bs-ctx p{margin:2px 0 0;} .bs-ctx ul{margin:2px 0 0;padding-left:18px;}
 .bs-why{background:#F1F3F4;} .bs-best{background:#E6F4EA;} .bs-imp{background:#FEF7E0;} .bs-ctx-none{margin:3px 0 0;color:#5F6368;font-size:12.5px;}
+.bs-ds-sw{overflow-x:auto;border:1px solid #E1E5EE;border-radius:10px;background:#fff;margin:6px 12px 8px 28px;}
+.bs-ds-st{width:100%;min-width:980px;border-collapse:collapse;font:13px/1.42 Arial,sans-serif;color:#262B45;}
+.bs-ds-st thead th{background:#262B45 !important;color:#fff !important;font:700 12.5px Arial,sans-serif;text-align:left;padding:8px 10px;border-bottom:2px solid #DB8437;white-space:nowrap;}
+.bs-ds-st td,.bs-ds-st tbody th{padding:8px 10px;border-top:1px solid #E6E9F1;vertical-align:top;text-align:left;}
+.bs-ds-st tbody th{width:190px;font-weight:600;background:#fff !important;border-bottom:0 !important;box-shadow:none !important;color:#1B1E2E !important;text-transform:none !important;letter-spacing:0 !important;font-size:13px !important;position:static !important;}
+.bs-ds-st tbody th b{color:#0f2148;} .bs-ds-st tbody th small{display:block;font-size:12px;color:#4A5070 !important;font-weight:600;margin-top:2px;}
+.bs-ds-st td,.bs-ds-st li,.bs-ds-st i{font-size:13px !important;line-height:1.42;}
+.bs-ds-st td.bs-ds-sc{width:104px;text-align:center;}
+.bs-ds-st ul{margin:0;padding-left:16px;} .bs-ds-st li+li{margin-top:3px;} .bs-ds-st i{color:#5A6078;}
+.bs-ds-st td.bs-ds-w{background:#F7F8FC;} .bs-ds-st td.bs-ds-g{background:#F1F9F3;} .bs-ds-st td.bs-ds-b{background:#FDF3F0;} .bs-ds-st td.bs-ds-n{background:#F2F4FB;}
+.bs-ds-pill{display:inline-block;min-width:44px;padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px !important;background:#EEF0F5;color:#3C4043;white-space:normal;word-break:normal;overflow-wrap:normal;}
+.bs-ds-pill.bs-ds-hi{background:#E6F4EA;color:#137333;} .bs-ds-pill.bs-ds-mid{background:#FEF7E0;color:#8A5A00;} .bs-ds-pill.bs-ds-lo{background:#FCE8E6;color:#B3261E;}
 .bs-rank{padding-top:6px;}
 .bs-ck-who{font:700 15px Arial,sans-serif;display:inline-flex;align-items:center;gap:8px;} .bs-ck-who select{font:700 15px Arial,sans-serif;padding:5px 8px;border:1px solid #C4C7C5;border-radius:4px;}
 .bs-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:8px;}
