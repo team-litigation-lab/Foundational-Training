@@ -1047,7 +1047,16 @@ function fitCrops(sheet){
     Object.assign(f.style, {width: Math.round(w / k) + "px", height: fh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
 }
+// 📊 the Common Terms sheet's tabs (Personal Injury, Business Law …) go up beside the slide's pill, so the table is taller
+function liftTermTabs(){
+  if(document.fullscreenElement || document.webkitFullscreenElement) return;   // (⛶ the sheet on its own keeps its tabs)
+  document.querySelectorAll("main.main-ftdd .ftdd-deck").forEach(deck => {
+    const t = deck.querySelector(".ftdd-sheet .ftdd-terms-tabs"), bar = deck.querySelector(".ftdd-bar"); if(!t || !bar) return;
+    bar.querySelectorAll(".ftdd-terms-tabs").forEach(x => x.remove());
+    const pill = bar.querySelector(".ftdd-pill"); pill ? pill.after(t) : bar.prepend(t); });
+}
 function fitSheets(){
+  liftTermTabs();
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
   // (a slide stays hidden until it has been dealt into its pages: no flash of all its documents at once, Day 7's blank forms)
@@ -2160,7 +2169,7 @@ root.FTDayDecks = {open, go, next: nextKC,
     if(on){ (doc.exitFullscreen || doc.webkitExitFullscreen || (() => {})).call(doc); return; }
     const req = em.requestFullscreen || em.webkitRequestFullscreen; if(req) req.call(em);
   },
-  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, assessDoc, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); liftTermTabs(); }, toKC, toAssess, assessDoc, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   // 🧑‍🏫 the facilitator's notes drawer shown or hidden (the slide keeps its page: its size is unchanged by the drawer)
   notes(){ DD.notes = !DD.notes; setPref("notes", DD.notes); render(); },
   notesPaint: () => { if(state.view === "daydeck") paintNotes(); },
@@ -3107,6 +3116,10 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid #D9DCE8;background:#F4F5FA;}
 .ft-body .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:600 13px/1.3 'Inter',sans-serif;cursor:pointer;}
 .ft-body .ftdd-terms-tabs button.on{background:#1E2340;border-color:#1E2340;color:#fff;}
+.ftdd-bar .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-left:10px;}
+.ftdd-bar .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:5px 14px;font:700 14px/1.3 'Inter',sans-serif;cursor:pointer;}
+.ftdd-bar .ftdd-terms-tabs button.on{background:#E8590C;border-color:#E8590C;color:#fff;}
+.ftdd-bar .ftdd-terms-tabs .ftdd-terms-fs{background:#1E2340;border-color:#1E2340;color:#fff;}
 .ft-body .ftdd-terms-tabs .ftdd-terms-fs{margin-left:auto;background:#1E2340;border-color:#1E2340;color:#fff;}
 .ft-body .ftdd-embed.ftdd-embed-terms:fullscreen{height:100vh;border:0;border-radius:0;}
 .ft-body .ftdd-embed.ftdd-embed-terms:-webkit-full-screen{height:100vh;border:0;border-radius:0;}
