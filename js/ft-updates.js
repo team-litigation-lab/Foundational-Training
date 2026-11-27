@@ -47,7 +47,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-body .naming{background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;color:var(--navy);margin:8px 0;overflow-wrap:anywhere;}
 .ft-body .naming div + div{margin-top:4px;}
 .ft-body hr.stars{border:none;text-align:center;margin:16px 0;color:var(--ink-soft);letter-spacing:.3em;}
-.ft-body hr.stars::after{content:"***************";}
+.ft-body hr.stars{display:none !important;}   /* (no row of asterisks: the owner asked them gone) */
 .ft-body .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:10px 0;}
 .ft-body .shots figure{margin:0;}
 .ft-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
@@ -102,7 +102,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ftc-body{font-size:15px;line-height:1.6;}
 .ftc-body a{color:var(--orange-deep);overflow-wrap:anywhere;}
 .ftc-body h3{font-size:17px;color:var(--navy);margin:18px 0 8px;} .ftc-body h4, .ftc-body h5{color:var(--navy);margin:14px 0 6px;}
-.ftc-body hr.stars{border:none;text-align:center;margin:14px 0;color:var(--ink-soft);letter-spacing:.3em;} .ftc-body hr.stars::after{content:"***************";}
+.ftc-body hr.stars{border:none;text-align:center;margin:14px 0;color:var(--ink-soft);letter-spacing:.3em;} .ftc-body hr.stars{display:none !important;}
 .ftc-body .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:10px 0;}
 .ftc-body .shots figure{margin:0;} .ftc-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
 .ftc-body .shots img{max-width:100%;max-height:100%;object-fit:contain;} .ftc-body .shots figcaption{font-size:13px;color:var(--ink-soft);text-align:center;}
@@ -131,8 +131,10 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 /* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
 .dash-layout > .dash-side{order:1;}
+/* (the footer: the copyright alone) */
+body.one-screen #app > .footer-note::before{content:var(--lsh-copyright) !important;}
 /* the band's tiles (Program complete, Lessons finished, Ranking, Batch Sheet, Tests today …): a blue-to-gold gradient grid */
-body .dash-side .dash-side-inner > .card{background:linear-gradient(135deg,#1B2452 0%,#27418F 58%,#B8862B 100%) !important;border:1px solid rgba(240,192,138,.55) !important;box-shadow:0 6px 16px rgba(10,14,40,.28) !important;}
+body .dash-side .dash-side-inner > .card{background:linear-gradient(135deg,#1B2452 0%,#2A4594 55%,#C9A227 88%,#E8C766 100%) !important;border:1px solid rgba(240,192,138,.55) !important;box-shadow:0 6px 16px rgba(10,14,40,.28) !important;}
 body .dash-side .dash-side-inner > .card:hover{border-color:#F0C08A !important;}
 .topics-modal-list .tm-pages{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-left:6px;white-space:nowrap;}
 .ft-od-day b{display:block;color:var(--navy);font-weight:800;}

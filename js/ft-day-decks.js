@@ -356,10 +356,9 @@ function visual(html){
   // 4. "*** Free Communication Upskill for 1 or 1 ½ hours" is the facilitator's own timing note, not an instruction
   root.querySelectorAll("p").forEach(p => { if(/^\*+\s*Free Communication Upskill/i.test(p.textContent.trim())) p.remove(); });
   // a row of asterisks is the guide's own divider: draw it as one rather than as a line of punctuation
-  root.querySelectorAll("p").forEach(p => {
-    if(!/^[\*\s·]{5,}$/.test(p.textContent.trim())) return;
-    const hr = document.createElement("hr"); hr.className = "ftdd-rule"; p.replaceWith(hr);
-  });
+  // (a row of asterisks is dropped: the owner asked them gone from every deck)
+  root.querySelectorAll("p").forEach(p => { if(/^[\*\s·]{5,}$/.test(p.textContent.trim())) p.remove(); });
+  root.querySelectorAll("hr.stars").forEach(x => x.remove());
   // 5. the guide's long guideline runs (Day 6's calendar mock calls: the minimum information, the scenarios, the
   //    scheduling rules, the additional notes) come through as a wall of headings. Each section becomes a card set,
   //    so a trainee can see the scenarios and the rules as separate things rather than one block of text.
@@ -647,7 +646,7 @@ function handoutsSlide(h){
   const cards = h.items.map(([t, u], i) => `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts">
-    <div class="ftdd-ho-head"><h2>Breakout Session</h2><p class="ftdd-ho-sub">${e((h.solo ? "Individual Activity" : "Group Activity") + (h.when ? " · " + h.when : "") + " · the digital handouts")}</p></div>
+    <div class="ftdd-ho-head"><h2>Breakout Session</h2></div>
     <div class="ftdd-ho-body">
       <!-- (how a breakout runs is the trainer's call, case by case: the slide says to wait for their instructions) -->
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><p class="ftdd-ho-wait">Wait for your trainer's instructions.</p>
