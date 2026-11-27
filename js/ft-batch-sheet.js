@@ -2191,6 +2191,11 @@ window.FTBatchSheet = {
     const id = el && el.getAttribute("data-ws"), box = el && el.querySelector("[data-ws-ans]"); if(!id || !box) return;
     B.ws = B.ws || {};
     if(!B.ws[id]){ try{ const r = await authFetch("/api/intake/worksheet", {id}); B.ws[id] = await r.json().catch(() => ({})); }catch(err){ B.ws[id] = {error: "offline"}; } }
+    // (📝 answered on the platform: the answers themselves, document by document)
+    if(!B.wsP || !B.wsP[id]){ B.wsP = B.wsP || {}; try{ const v = await sharedGet("actsub:" + id); B.wsP[id] = ((v && v.items) || {}).intakews || {}; }catch(err){ B.wsP[id] = {}; } }
+    const pw = B.wsP[id];
+    if(pw && Array.isArray(pw.answers) && window.FTIntake && FTIntake.wsRows){ box.innerHTML = `<div class="bs-ctx bs-best"><b>📝 The trainee’s answers</b>${pw.submittedAt ? ` <small>submitted ${e(when(pw.submittedAt))}</small>` : ""}
+      <table class="bs-parts"><thead><tr><th>Intake document</th><th>Content and purpose</th></tr></thead><tbody>${FTIntake.wsRows().map((t, i) => `<tr><td class="bs-parts-n">${e(t)}</td><td>${pw.answers[i] ? e(pw.answers[i]).replace(/\n/g, "<br>") : "<span class=\"bs-ctx-none\">(unanswered)</span>"}</td></tr>`).join("")}</tbody></table></div>`; return; }
     const w = B.ws[id] || {}, open = w.link ? ` <a href="${e(w.link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>` : "";
     if(w.error){ delete B.ws[id]; box.innerHTML = `<p class="bs-kd-none">Couldn’t open it just now. Close and open this row to try again.</p>`; return; }
     box.innerHTML = !w.link ? `<p class="bs-kd-none">No Intake Worksheet yet: no link submitted on Day 8’s Intake Documents slide, and none found in their Assessments/Activities folder.</p>`

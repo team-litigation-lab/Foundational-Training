@@ -102,7 +102,7 @@ function loadK(force){
   const id = isTrainee() ? state.traineeId : null;
   if(!force && K.set && K.id === id && Date.now() - K.at < 120000) return Promise.resolve();
   K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null, id ? sharedGet("actsub:" + id) : null, id ? sharedGet("intakecheck:" + id) : null, id ? sharedGet("labreview:" + id) : null])
-    .then(([v, a, d, w, ck, lr]) => { K.demoDone = !!(lr && lr.acts && lr.acts["intake-packet-demo"] && (lr.acts["intake-packet-demo"].rubric || lr.acts["intake-packet-demo"].score != null)); K.check = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; K.sub = w && w.items && w.items[WS] && w.items[WS].answer ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
+    .then(([v, a, d, w, ck, lr]) => { K.demoDone = !!(lr && lr.acts && lr.acts["intake-packet-demo"] && (lr.acts["intake-packet-demo"].rubric || lr.acts["intake-packet-demo"].score != null)); K.check = ck && typeof ck === "object" && Array.isArray(ck.rules) ? ck : null; K.sub = w && w.items && w.items[WS] && (w.items[WS].answer || Array.isArray(w.items[WS].answers)) ? w.items[WS] : null; K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
       K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now();
       // (the trainee's own links to the additional intake documents: drive:<id>.intakeDocs, theirs to write)
       K.docs = d && Array.isArray(d.intakeDocs) ? d.intakeDocs.map(x => String(x || "")) : [];
@@ -248,8 +248,9 @@ function checkHtml(ck, mini){
     <ul>${ck.rules.map(r => `<li class="${r.pass === null ? "pend" : r.pass ? "ok" : "miss"}">${r.pass === null ? "⏳" : r.pass ? "✓" : "✗"} <b>${e(r.label)}</b>${r.detail ? ` <span>${e(r.detail)}</span>` : ""}</li>`).join("")}</ul>
     ${ck.feedback ? `<p class="ftis-ck-fb">🧑‍🏫 ${e(ck.feedback)}</p>` : ""}</div>`;
 }
-// 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
+// 📝 the Intake Worksheet is answered on the platform itself (wsubHtml): no copy to make in Google Drive
 function sheetHtml(el){
+  return "";
   const u = el.getAttribute("data-href") || "", copy = copyUrl(u);
   // (the trainer sees the trainee's folder button too, inactive: each trainee links their own folder)
   const folder = isTrainee() ? folderBtn() : `<button type="button" class="btn btn-ghost btn-sm" disabled title="Each trainee links their own folder here">📁 Link my Assessments/Activities folder</button>`;
@@ -259,15 +260,25 @@ function sheetHtml(el){
 // 📤 the completed worksheet's link: the trainee copies it from Google Drive into the box and submits it (actsub:<id>, which
 // the trainee writes and worker.js merges); the trainer sees each trainee's link in Admin → 📦 Intake Packets
 const wsLink = u => /^https:\/\/(docs|drive)\.google\.com\//.test(String(u || "").trim());
+// 📝 the Worksheet for Intake Documents, on the platform: the guide's READ ME, then each intake document's name with a box to
+// describe its content and its purpose; 📤 Submit keeps the answers (actsub:<id>.items.intakews: {answers, answer, submittedAt})
+// for the trainer, who reads them on the trainee's 📋 Batch Sheet card and grades them there. A draft is kept on this device.
+const WS_ROWS = ["Client’s Info Sheet", "DMV", "Conflict of Interest Waiver", "Consent for Disclosure of Information", "ISO Claims Search", "Internet and Surveillance Ack", "Limited POA", "MVA Questionnaire", "Attorney’s Lien", "PD Claim", "HIPAA", "General Release", "Unsigned/Signed Medicare Form (Not a Medicare Recipient)", "Signed Contingency Fee Agreement", "HITECH", "1P DL Client’s Complete Name", "Client Communication Disclosure", "Signature Certificate Client’s Complete Name", "Insurance vs Lien Disclaimer", "Affidavit of Communication"];
+const wsDraftKey = () => "ft_ws_draft_" + (state.traineeId || "");
+function wsVals(){ let d = null; try{ d = JSON.parse(localStorage.getItem(wsDraftKey()) || "null"); }catch(e){}
+  const sub = (K.sub && Array.isArray(K.sub.answers)) ? K.sub.answers : [];
+  return WS_ROWS.map((t, i) => d && typeof d[i] === "string" ? d[i] : sub[i] || ""); }
 function wsubHtml(){
   const when = K.sub && K.sub.submittedAt ? new Date(K.sub.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : "";
-  const head = `<p class="ftis-ws-h">📤 Copy the link of your completed Intake Worksheet here, then submit</p>`;
-  if(!isTrainee()) return head + `<div class="ftis-ws-row"><input type="url" disabled placeholder="https://docs.google.com/document/d/…"><button type="button" class="btn btn-navy btn-sm" disabled>📤 Submit</button></div>
-    <p class="ftis-pk-note">Each trainee submits their own link: you see them in Admin → 📦 Intake Packets.</p>`;
-  return head + `<div class="ftis-ws-row"><input type="url" id="ftisWs" placeholder="https://docs.google.com/document/d/…" value="${e(K.sub ? K.sub.answer : "")}" aria-label="The link of your completed Intake Worksheet">
-    <button type="button" class="btn btn-navy btn-sm" onclick="FTIntake.submitSheet(this)">📤 ${K.sub ? "Submit again" : "Submit"}</button></div>
-    ${K.sub ? `<p class="ftis-ws-ok">✓ Submitted ${e(when)}: <a href="${e(K.sub.answer)}" target="_blank" rel="noopener noreferrer">your worksheet ↗</a></p>`
-      : `<p class="ftis-pk-note">In Google Drive: Share → General access “Anyone with the link” → Copy link, then paste it here.</p>`}`;
+  const v = wsVals(), me = isTrainee();
+  return `<div class="ftis-wsf"><p class="ftis-wsf-h">📝 Worksheet for Intake Documents</p>
+    <p class="ftis-wsf-lead"><b>READ ME FIRST!</b> Intake is the process in the Personal Injury Workflow where we have officially taken a case from our leads as a legally represented case of VLF. In this activity you get to know the common Intake Documents we use in the firm and their specific functions. For each document below, describe its content and its purpose, from your initial understanding of the documents given to you to study.</p>
+    <table class="ftis-wsf-t"><thead><tr><th>Name of the Intake document</th><th>Describe the content of this document and its purpose</th></tr></thead><tbody>
+    ${WS_ROWS.map((t, i) => `<tr><td>INTAKE - ${e(t)} (VA’s first name)</td><td><textarea rows="2" data-ws="${i}" ${me ? `oninput="FTIntake.wsDraft()"` : "disabled"} placeholder="${me ? "Its content and its purpose" : "Each trainee answers their own"}">${e(v[i])}</textarea></td></tr>`).join("")}
+    </tbody></table>
+    <p class="ftis-pk-note">The Intake Documents are not limited to these: you may receive pictures, identification cards, insurance documents, medical certificates, referral letters, acknowledgements and correspondence too.</p>
+    <div class="ftis-ws-row">${me ? `<button type="button" class="btn btn-navy" onclick="FTIntake.submitSheet(this)">📤 ${K.sub ? "Submit again" : "Submit my worksheet"}</button>` : `<button type="button" class="btn btn-navy" disabled>📤 Submit my worksheet</button>`}
+      ${K.sub ? `<span class="ftis-ws-ok">✓ Submitted ${e(when)}: your trainer grades it.</span>` : ""}</div></div>`;
 }
 // 📄 the additional intake documents, each in the slide: a click shows it bigger in the viewer. Each trainee enters each
 // document's own Drive link from the Additional Intake Documents folder (✏️ My document links, saved in drive:<id>.intakeDocs);
@@ -599,19 +610,47 @@ window.FTIntake = {
   },
   view(b){ if(typeof lvOpen === "function") lvOpen({kind: "doc", title: b.getAttribute("data-title"), url: b.getAttribute("data-url")}); },
   // 📤 the completed worksheet's link (wsubHtml): a Google Docs or Drive link, saved with the time it was sent
+  wsRows(){ return WS_ROWS.map(t => `INTAKE - ${t}`); },
+  wsDraft(){ const v = WS_ROWS.map((t, i) => { const x = document.querySelector(`.ftis-wsf textarea[data-ws="${i}"]`); return x ? x.value : ""; });
+    try{ localStorage.setItem(wsDraftKey(), JSON.stringify(v)); }catch(e){} },
   async submitSheet(b){
-    const box = document.getElementById("ftisWs"), u = String((box || {}).value || "").trim();
-    if(!wsLink(u)){ toast("Paste the Google Drive link of your worksheet: it starts with https://docs.google.com/ or https://drive.google.com/"); if(box) box.focus(); return; }
+    const v = WS_ROWS.map((t, i) => { const x = document.querySelector(`.ftis-wsf textarea[data-ws="${i}"]`); return String((x || {}).value || "").trim().slice(0, 1500); });
+    const left = v.filter(x => !x).length;
+    if(left && !confirm(`${left} document${left === 1 ? " has" : "s have"} no answer yet. Submit anyway?`)) return;
     const at = new Date().toISOString();
     b.disabled = true;
-    const ok = await sharedSet("actsub:" + state.traineeId, {items: {[WS]: {answer: u, submittedAt: at}}});
+    const ok = await sharedSet("actsub:" + state.traineeId, {items: {[WS]: {answers: v, answer: "platform", submittedAt: at}}});
     b.disabled = false;
     if(ok === false){ toast("Couldn’t submit. Check your connection and try again."); return; }
-    K.sub = {answer: u, submittedAt: at}; paint(); toast("✓ Submitted — your trainer sees your worksheet.");
+    K.sub = {answers: v, answer: "platform", submittedAt: at}; try{ localStorage.removeItem(wsDraftKey()); }catch(e){}
+    paint(); toast("✓ Submitted — your trainer sees your worksheet.");
   },
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }
 };
 
+/* 🛠 📦 the Intake Packet activity on the Practice Lab (#/intakepacket): Day 8's steps, done here rather than on the deck —
+   the assigned packet to download and rename, the documents to extract and rename, the Intake Worksheet answered on the
+   platform, and item #16 of the Monitoring Sheet. The 📦 packet box and the worksheet are the same as everywhere (paint). */
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["intakepacket"]);
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {intakepacket: "Intake Packet"});
+const __ipRender = window.render;
+window.render = function(){
+  if(state.view !== "intakepacket") return __ipRender.apply(this, arguments);
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __ipRender.apply(this, arguments); }
+  const step = (n, body, cls) => `<div class="ftdd-step${cls ? " " + cls : ""}"><span class="ftdd-step-n">${n}</span><div class="ftdd-step-t">${body}</div></div>`;
+  const mon = `<a href="#/monitoring" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
+  document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ip ft-body"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>
+    <div class="ip-hero"><p class="lp-eyebrow">Day 8 · Intake Training</p><h1>📦 Intake Packet &amp; Intake Documents</h1>
+      <p>Your assigned packet, step by step: download it, extract and rename its documents, answer the worksheet, then update your Monitoring Sheet.</p></div>
+    <div class="card ip-steps">
+      ${step(1, `Download your assigned Intake Packet and rename it by adding your name to its filename: <b>INTAKE - Packet (VA’s Name)</b>. Create a subfolder under your <b>Assessments/Activities</b> folder and name it after your assigned client. Upload all the extracted intake documents ALONG with the renamed assigned Intake Packet there.<div class="ftis-packet"></div>`)}
+      ${step(2, "Extract each document from the Intake Packet and rename it properly using the standard naming convention (Day 8’s 📄 Document Naming Convention).")}
+      ${step(3, `Answer the worksheet for intake documents, here on the platform.<div class="ftis-wsub"></div>`)}
+      ${step(4, `Update #16 (Intake Documents) in your ${mon}.`, "ftdd-step-check")}
+    </div></main>` + (typeof renderFooter === "function" ? renderFooter() : "");
+  try{ afterRender(); }catch(err){}
+  try{ loadK(); paint(); }catch(err){}
+};
 (function(){ const s = document.createElement("style"); s.id = "ft-intake"; s.textContent = `
 .ftis-calls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0;}
 .ftis-consult{margin:8px 0;}
@@ -653,6 +692,19 @@ window.FTIntake = {
 .ftis-pk-steps{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.55;} .ftis-pk-steps li{margin-bottom:4px;}
 .ftis-name{background:#262B45;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;}
 .ftis-pk-note{margin:0;font-size:12.5px;color:#5B6178;}
+main.main-ip{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
+.ip-hero h1{margin:0 0 4px;} .ip-hero p{margin:0;color:var(--ink-soft);}
+.ip-steps{padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+.ip-steps .ftdd-step{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:2px solid #343C66;border-radius:12px;background:#fff;}
+.ip-steps .ftdd-step-n{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:#E8590C;color:#fff;font:800 16px/32px 'Inter',sans-serif;text-align:center;}
+.ip-steps .ftdd-step-t{flex:1;font-size:16.5px;line-height:1.5;font-weight:600;}
+.ip-steps .ftdd-step-check{background:#EEF7F1;}
+.ftis-wsf-h{margin:0 0 6px;font:800 19px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;}
+.ftis-wsf-lead{margin:0 0 10px;font-size:15px;line-height:1.5;color:#2B2F45;}
+.ftis-wsf-t{width:100%;border-collapse:collapse;margin:6px 0 8px;font-size:15px;}
+.ftis-wsf-t th{background:#1E2340;color:#fff;text-align:left;padding:8px 10px;font:800 14px/1.3 'Inter',sans-serif;}
+.ftis-wsf-t td{border:1px solid #D7DBE6;padding:6px 8px;vertical-align:top;} .ftis-wsf-t td:first-child{width:38%;font-weight:700;color:#1E2340;}
+.ftis-wsf-t textarea{width:100%;box-sizing:border-box;min-height:44px;resize:vertical;font:inherit;padding:6px 8px;border:1.5px solid #C9CEE0;border-radius:8px;}
 .ftis-wsub{margin:8px 0;padding:12px 14px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#fff;text-align:left;}
 .ftis-ws-h{margin:0 0 8px;font-weight:800;color:#141A3C;} .ftis-ws-row{display:flex;gap:8px;align-items:center;}
 .ftis-ws-row input{flex:1;min-width:0;padding:9px 12px;border:1.5px solid #9AA0AB;border-radius:8px;font:600 15px/1.3 'Inter',sans-serif;color:#0B0D1A;}
