@@ -41,18 +41,13 @@ const failures = []; const fail = (m) => failures.push(m);
     // 3. the landing page and the Practice Lab
     const land = await page.evaluate(() => { goto('dashboard'); return [...document.querySelectorAll('.fts-banner')].length; });
     if (land) fail(`the landing page still has ${land} Simulators / Blueprint card(s)`);
-    await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
-    const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText, all: document.querySelector('main').textContent }));
-    if (/Your law firm|My firm & rules/.test(lab.text)) fail('the Practice Lab still shows the 🏛 Your law firm banner');
-    // One Practice Session card: 📅 Standard Training - Appointment Setting Mock Calls (its route to the Call Sim and the Google
-    // Calendar Sim). The Reception and Intake mock calls are done live with the trainer: no card; the sessions still open (below)
-    const sids = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => c.dataset.sid).sort().join());
-    if (sids !== 'calendaring') fail(`the Practice Lab's Practice Session cards should be the Appointment Setting Mock Calls alone: ${sids}`);
-    if (/PI Process Flow: your case/.test(lab.text)) fail('PI Process Flow is still a Practice Session');
-    if (/All simulators|📅 Calendaring (Simulators|Sims)\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
-    if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
-    if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
-    // (the card keeps its template list; the compact Lab hides it on screen, so it's read from the card's text)
+    // (no Practice Lab: the Practice Lab is off the platform; each activity opens from its lesson's slide. The drafting tool's
+    // card is still drawn the same way, read here on its own)
+    await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1500);
+    if (await page.evaluate(() => state.view) === 'simulators') fail('#/simulators still opens a Practice Lab');
+    const lab = await page.evaluate(() => { const d = document.createElement('div'); d.innerHTML = typeof ftLorCard === 'function' ? ftLorCard() : ''; document.body.appendChild(d); d.id = 'lorcard-probe';
+      return { text: d.innerText, all: d.textContent }; });
+    if (!/LOR Drafting Activity/.test(lab.text)) fail('the LOR Drafting Activity card is gone');
     if (!/Templates in this tool/i.test(lab.all)) fail('the drafting tool\'s card does not list the templates it carries');
     if (!/LOR Drafting for 1P/.test(lab.all) || !/Drafting for 3P/.test(lab.all)) fail('the drafting tool\'s card does not name its two templates');
     // A firm is no longer assigned: the trainee has one from their first page load, so no session waits.
@@ -66,13 +61,13 @@ const failures = []; const fail = (m) => failures.push(m);
     // and that the link is signed so the trainee lands on it already logged in.
     const DRAFTING = 'https://cm-training-activity.pages.dev/simulators/drafting.html';
     const opener = await page.evaluate(() => {
-      // the Drafting Tools card, not the Practice Session cards that share the class
-      const card = [...document.querySelectorAll('.fts-card')].find(c => /LOR Drafting Activity/.test(c.innerText));
-      const btn = card && card.querySelector('.fts-tool-act button');
+      // the drafting tool's card (drawn on its own above: no Practice Lab)
+      const card = document.getElementById('lorcard-probe');
+      const btn = card && (card.querySelector('.fts-tool-act button') || card.querySelector('button'));
       return { exists: typeof window.lshOpenPortalDrafting === 'function', found: !!card,
                card: btn ? (btn.getAttribute('onclick') || '') : '' };
     });
-    if (!opener.found) fail('the Practice Lab has no LOR Drafting Activity card');
+    if (!opener.found) fail('the LOR Drafting Activity card could not be drawn');
     if (!opener.exists) fail('js/ft-lor.js does not expose the opener for the Portal\'s Drafting tool');
     if (!/lshOpenPortalDrafting/.test(opener.card || '')) fail(`the Drafting Tools card does not open the Portal's tool: ${opener.card}`);
 

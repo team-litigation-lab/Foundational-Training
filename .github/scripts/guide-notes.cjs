@@ -54,9 +54,6 @@ const failures = []; const fail = m => failures.push(m);
   if (/"learn"/.test(pages)) fail('🎬 Video Notes is still in the menu');
 
   /* ---------- 📘 Process Guide ---------- */
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);
-  // (no Practice Lab card: the guides only helped the trainees prepare their demos; the page still opens, below)
-  if (/Process Guide/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the 📘 Process Guides still have a Practice Lab card');
   const d14 = await page.evaluate(() => (FTDays.of(14).items || []).find(x => x.id === 'guide'));
   if (!d14 || d14.at !== 'tool') fail('Day 14 has no 📘 Process Guide step');
   await page.evaluate(() => FTGuide.open('medlor')); await page.waitForTimeout(1500);

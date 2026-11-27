@@ -53,15 +53,13 @@ async function workerChecks() {
   if (await page.evaluate(() => (FTDays.of(11).items || []).some(x => x.at === 'tool' && x.id === 'listening'))) fail('Day 11 still has a Call Listening step (it has no listening activity)');
   if (steps.some(x => !x)) fail(`not every Call Listening day points to the log: ${JSON.stringify(steps)}`);
 
-  // the Practice Lab: the three Call Listening sets, in day order (this platform locks no lesson)
-  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });   // the trainer has opened the lessons (the Practice Lab goes by the day)
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
-  const cards = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(s => s.innerText).filter(t => /Call Listening/.test(t)).join('\n'));
-  ['Reception calls', 'Intake calls', 'Provider communication calls'].forEach(t => { if (!cards.includes(t)) fail(`the Practice Lab has no Call Listening card for ${t}`); });
-  if (cards.includes('Insurance communication calls')) fail('the Practice Lab still has a Call Listening card for Insurance communication calls (Day 11 has no listening activity)');
-
-  await page.click('text=Open the log'); await page.waitForTimeout(1000);
-  if (await page.evaluate(() => state.view) !== 'listening') fail('the card doesn\'t open #/listening');
+  // the Call Listening Log: the three Call Listening sets, in day order, as its tabs (no Practice Lab: it opens from its day's slide)
+  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });
+  await page.evaluate(() => FTListen.open('reception')); await page.waitForTimeout(1200);
+  const cards = await page.evaluate(() => (document.querySelector('.ln-pills') || {}).innerText || '');
+  ['Reception calls', 'Intake calls', 'Provider communication calls'].forEach(t => { if (!cards.includes(t)) fail(`the Call Listening Log has no tab for ${t}`); });
+  if (cards.includes('Insurance communication calls')) fail('the Call Listening Log still has Insurance communication calls (Day 11 has no listening activity)');
+  if (await page.evaluate(() => state.view) !== 'listening') fail('#/listening doesn\'t open');
   // (🎲 each trainee logs their own five of the set's ten, chosen by the platform from their id)
   if (await page.$$eval('.ln-rec', x => x.length) !== 5) fail('the reception set doesn\'t show the trainee\'s five recordings');
   const N = await page.evaluate(() => /^ln_reception_(\d+)_/.exec(document.querySelector('.ln-rec select').id)[1]);
