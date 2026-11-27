@@ -46,6 +46,7 @@ const SETS = [
   {id:"recact", icon:"📝", title:"Reception Listening Activity: answers", day:3, lesson:4, n:5, activity:true,
     titles:["Call 1: The Missing Email", "Call 2: Third Time Calling", "Call 3: Which Office?", "Call 4: Just Confirming", "Call 5: No Ride Tomorrow"],
     audio:[1, 2, 3, 4, 5].map(n => `/ft/day3/audio/pi-activity-${n}.mp3`),
+    secs:[166, 124, 104, 65, 137], va:"Oscar",   // (each call's length and VA: build/calls/pi-reception-activity.json)
     about:"Play each of the five Harbor & Pine practice calls, then log its 5 data points and its challenge: the obstacle, and how the VA handled it."}
 ];
 const setOf = id => SETS.find(s => s.id === id);
@@ -152,7 +153,7 @@ function recHtml(s, r, next, opt){
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
       ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
       ${opt.all ? "" : `<span>${open ? "▾" : "▸"}</span>`}</button>
-    ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
+    ${open ? `<div class="ln-form">${r.audio && !opt.noAudio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
         ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === val(f) ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
           : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(val(f))}</textarea>`
           : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(val(f))}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
@@ -160,11 +161,19 @@ function recHtml(s, r, next, opt){
 }
 // 📝 an activity's answer sheet: its progress, then a card per call with its player and its form (the page, and the
 // Day 3 deck's Answers slide, js/ft-day-decks.js)
-function actSheet(cur){
+// 🎧 the five recordings together, as on the deck's slide: a card each, its title, length and VA, and its player
+function actCalls(cur){
+  const set = setOf(cur.id) || {}, mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+  return `<div class="lnx-card lnx-calls"><p class="lnx-card-h">🎧 The 5 recordings</p><div class="lnx-calls-grid">${cur.recs.map((r, i) => {
+    const t = String(r.title).replace(/^Call \d+:\s*/, ""), sec = (set.secs || [])[i];
+    return `<div class="lnx-call"><p class="lnx-call-h"><span>${r.n}</span><b>${e(t)}</b>${sec ? `<small>${mmss(sec)}${set.va ? " · VA " + e(set.va) : ""}</small>` : ""}</p>
+      ${r.audio ? `<audio controls preload="metadata" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}</div>`; }).join("")}</div></div>`;
+}
+function actSheet(cur, noAudio){
   const k = countDone(R.rec, cur), next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
   return `<div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · ${cur.n} practice calls</b><p>Your trainer reads your answers.</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
-    ${cur.recs.map(r => recHtml(cur, r, next, {all: true})).join("")}`;
+    ${cur.recs.map(r => recHtml(cur, r, next, {all: true, noAudio})).join("")}`;
 }
 // 📋 the activity's instructions, in the deck's cards (Day 3's Reception Listening Activity slide, build/day-decks.cjs PI_HTML)
 function actIns(){
@@ -197,7 +206,7 @@ function renderPage(){
   if(cur.activity) return `<div class="lnx-top"><div><p class="lp-eyebrow">🛠 Practice Lab · Day ${cur.day}</p><h1>🎧 Reception Listening Activity</h1></div>${pills}</div>
     <div class="lnx">
       <aside class="lnx-ins">${actIns()}</aside>
-      <section class="lnx-work">${actSheet(cur)}
+      <section class="lnx-work">${actCalls(cur)}${actSheet(cur, true)}
         <div class="ln-end"><button class="btn btn-navy" onclick="FTListen.pop('recact')">📝 Submit for Grading</button>${deckBack()}</div></section>
     </div>`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
@@ -482,7 +491,13 @@ main.main-ln:has(.lnx){max-width:none;}
 .lnx-step-h{font-weight:800;display:flex;align-items:center;gap:6px;} .lnx-step-h span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#E8590C;color:#fff;font-size:12px;}
 .lnx-pts{margin:0;padding-left:20px;display:grid;gap:4px;}
 .lnx-two{display:grid;gap:8px;} .lnx-two div{border-radius:8px;background:#F1F3FA;padding:8px 12px;} .lnx-two b{display:block;margin-bottom:2px;}
-.lnx-done{padding-top:12px;} .lnx-done p{margin:0 0 8px;}
+.lnx-done{padding-top:12px;}
+.lnx-calls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.lnx-call{border:2px solid #343C66;border-radius:12px;overflow:hidden;background:#fff;}
+.lnx-card .lnx-call-h{margin:0;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;}
+.lnx-call-h span{display:inline-grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;background:#E8590C;color:#fff;font-weight:800;font-size:13px;}
+.lnx-call-h b{flex:1;font:800 15.5px/1.2 'Poppins','Inter',sans-serif;color:#fff;} .lnx-call-h small{color:#FFD7B5;font-weight:700;white-space:nowrap;}
+.lnx-call audio{display:block;width:calc(100% - 20px);margin:10px;} .lnx-done p{margin:0 0 8px;}
 @media (max-width:1000px){ .lnx{grid-template-columns:minmax(0,1fr);} .lnx-ins{position:static;max-height:none;} }
 main.main-ln{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
 main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
