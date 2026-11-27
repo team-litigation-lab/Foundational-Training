@@ -93,9 +93,9 @@ const failures = []; const fail = m => failures.push(m);
   const inputs = rhea.locator('.xl-num');
   for (let i = 0; i < scores.length; i++) { await inputs.nth(i).fill(scores[i]); await inputs.nth(i).press('Tab'); await page.waitForTimeout(80); }
   const marks = await rhea.locator('.rk-mark').allInnerTexts();
-  // (📎 the Monitoring Sheet, Tracker and PI Reading Task columns are Additional Reference — js/ft-reference.js: kept, no mark,
-  // left out of the average; Rhea's average is her four scored marks, (5 + 4 + 4 + 4.5) ÷ 4)
-  if (marks.join(' ') !== ' 5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
+  // (📎 the Monitoring Sheet, Tracker and PI Reading Task columns are references — js/ft-reference.js: their figure shown in
+  // grey with a 📎, left out of the average; Rhea's average is her four scored marks, (5 + 4 + 4 + 4.5) ÷ 4)
+  if (!/^📎 \d/.test(marks[0]) || marks.slice(1).join(' ') !== '5.00 4.00 4.00') fail(`Rhea's points weren't turned into marks out of 5: ${JSON.stringify(marks)}`);
   if ((await rhea.locator('.rk-avg').innerText()) !== '4.38') fail(`Rhea's final average is ${await rhea.locator('.rk-avg').innerText()} (4.38 expected: 17.5 ÷ 4)`);
   // the formula bar: a worked-out cell shows its formula; a score takes its note there
   await rhea.locator('.rk-avg').click();

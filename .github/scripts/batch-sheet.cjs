@@ -632,11 +632,11 @@ const failures = []; const fail = m => failures.push(m);
     // (📒 the Monitoring Sheet is listed every day: on a day the slides don't ask for an update it reads "Not expected today", greyed)
     if (oc.acts.map(a => a.k).join() !== 'tracker,monitor,tests,outputs,eod') fail(`Ada's day doesn't list her activities: ${oc.acts.map(a => a.k)}`);
     if (by('monitor').box !== '—' || !/Not expected today/.test(by('monitor').say)) fail(`the Monitoring Sheet's box (not expected on a day the slides don't ask): ${JSON.stringify(by('monitor'))}`);
-    if (by('tracker').box !== '📎' || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
-    if (by('tests').box !== '📎' || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
+    if (!/^📎/.test(by('tracker').box) || !/Next time: every open task has its Daily Note/i.test(by('tracker').say) || !/TRAINER-NOTE/.test(by('tracker').say)) fail(`the Task Tracker's box and comment: ${JSON.stringify(by('tracker'))}`);
+    if (!/^📎/.test(by('tests').box) || !/afternoon typing test/.test(by('tests').say)) fail(`the tests' box and comment: ${JSON.stringify(by('tests'))}`);
     // (📤 nothing handed in, so only the instructions' half counts: a low box, never a row of its own — its two halves under it,
     // each out of 5, the instructions missed listed)
-    if (by('outputs').box !== '📎' || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
+    if (!/^📎/.test(by('outputs').box) || !/Remember to submit your output links/.test(by('outputs').say) || !/Common Terms Used/.test(by('outputs').say)) fail(`the outputs' box and comment: ${JSON.stringify(by('outputs'))}`);
     if (!(by('outputs').crit || []).some(t => /Handed in & graded work \(half of this score\) 0\/5/.test(t)) || !(by('outputs').crit || []).some(t => /Following instructions \(half of this score\) [\d.]+\/5 .*(You followed \d+ of \d+|Excellent)/.test(t))) fail(`the Day's outputs doesn't show its instructions half: ${JSON.stringify(by('outputs').crit)}`);
     const long = oc.acts.filter(a => (a.say.match(/[.!?…](\s|$)/g) || []).length > 2);
     if (long.length) fail(`an activity's comment is longer than two sentences: ${long.map(a => a.say).join(' / ')}`);
