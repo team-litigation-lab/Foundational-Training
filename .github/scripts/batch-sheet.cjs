@@ -108,8 +108,8 @@ const failures = []; const fail = m => failures.push(m);
   { const pt = await page.evaluate(id => { const d = document.getElementById('bs-pt-' + id); if (!d) return null;
       return { n: document.querySelectorAll('.bs-pt').length, head: (d.querySelector('.bs-pt-h') || {}).innerText || '', secs: [...d.querySelectorAll('.bs-pt-sec th')].map(x => x.innerText), text: d.innerText }; }, ids.Ada);
     if (!pt || pt.n !== 1 || !/Ada Active/.test(pt.head) || !/Overall/.test(pt.head)) fail(`📄 Ada's page doesn't open from the trainee dropdown: ${JSON.stringify(pt && { n: pt.n, head: pt.head })}`);
-    if (pt && !pt.secs.some(x => /Daily outputs/.test(x))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
-    // (no 🏅 Grades table: every grade is in 📤 Daily outputs & 📅 Day scores and in ✍️ Knowledge Checks, Assessments &
+    if (pt && !pt.secs.some(x => /Daily Outputs & 📅 Day Scores/.test(x))) fail(`Ada's table doesn't hold every table of the sheet: ${pt && pt.secs}`);
+    // (no 🏅 Grades table: every grade is in 📤 Daily Outputs & 📅 Day Scores and in ✍️ Knowledge Checks, Assessments &
     // Activities; a trainer's own score goes in ✎ Edit a score), and no separate 🏅 Scores, 🛠 Practice Lab, 🔎 Every grade,
     // 📚 Lessons or day-by-day sections repeating the same grades
     if (pt && pt.secs.some(x => /^(🏅 Grades|🏅 Scores|🏅 Score Card|🛠 Practice Lab|🔎 Every grade|📚 Lessons)$/.test(x.trim()) || /Lessons & Knowledge Checks, day by day/i.test(x))) fail(`Ada's grades are still in sections of their own: ${pt.secs}`);
