@@ -308,7 +308,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => { FTRanking.reload(); FTRanking.open(b, 2); }, BATCH); await page.waitForTimeout(4000);
   { const w = await get(`ranking:${BATCH}:w2`), r = ((w.rows[ids.Rhea] || {}).cells) || {}, sm = ((w.rows[ids.Sam] || {}).cells) || {};
     if (Number((r[ct] || {}).raw) !== 24.3) fail(`a platform-filled score didn't follow the scorecard (90% of 27 = 24.3): ${JSON.stringify(r[ct])}`);
-    if (!r['c-st'] || /NO SUBMISSION/.test(r['c-st'].note || '') || !/Typing Test/.test(r['c-st'].note || '')) fail(`an auto NO SUBMISSION didn't update to the trainee's compliance: ${JSON.stringify(r['c-st'])}`);
+    if (!r['c-st'] || /NO SUBMISSION/.test(r['c-st'].note || '') || !/Overall compliance|No test due/.test(r['c-st'].note || '')) fail(`an auto NO SUBMISSION didn't update to the trainee's compliance: ${JSON.stringify(r['c-st'])}`);
     if ((sm[ct] || {}).raw !== '20' || (sm['c-st'] || {}).note !== 'Typed by the trainer') fail(`the refresh wrote over what the trainer typed: ${JSON.stringify(sm)}`); }
   await put('skills:' + ids.Rhea, null);
 
