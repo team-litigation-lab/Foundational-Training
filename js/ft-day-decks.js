@@ -649,10 +649,8 @@ function handoutsSlide(h){
   return `<div class="ftdd-handouts">
     <div class="ftdd-ho-head"><h2>Breakout Session</h2><p class="ftdd-ho-sub">${e((h.solo ? "Individual Activity" : "Group Activity") + (h.when ? " · " + h.when : "") + " · the digital handouts")}</p></div>
     <div class="ftdd-ho-body">
-      <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
-        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li>"
-        : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
-        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li>`}</ol>
+      <!-- (how a breakout runs is the trainer's call, case by case: the slide says to wait for their instructions) -->
+      <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><p class="ftdd-ho-wait">Wait for your trainer's instructions.</p>
         </div>
       <div class="ftdd-ho-list">${cards}${worksheetBtn(DD.day)}</div>
     </div></div>`;
@@ -2747,7 +2745,8 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-head .ftdd-ho-sub{margin:0 0 10px;font:60
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
-main.main-ftdd .ftdd-handouts .ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-wait{margin:0;font-weight:800;font-size:1.05em;line-height:1.4;}
+.ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li{color:#fff !important;font:600 20px/1.55 'Inter',sans-serif !important;margin:2px 0 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li::marker{color:#F4B77A !important;font-weight:800;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-list{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;}

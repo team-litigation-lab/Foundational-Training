@@ -315,9 +315,22 @@ const REF_DAY_TOPICS = ["📋 Task Tracker", "📒 Monitoring Sheet", "🧪 Typi
 const refTopics = (list, plus) => `${REFV}: ` + (list && list.length ? list : REF_DAY_TOPICS).concat(plus || []).join(" · ");
 // (📎 the end-of-shift check's Additional Reference on a trainee's page: a heading line, then a little table — one row per
 // check, the last its old figure — in the look of a day's parts table; the CSV keeps the plain text of the cell's f)
-const refTable = (rows, was) => `<div class="bs-reft-h">${e(REFV)} — not scored or counted</div><table class="bs-parts bs-reft"><thead><tr><th>The end-of-shift check</th><th>Score</th></tr></thead><tbody>${
-  rows.map(r => `<tr><td class="bs-parts-n">${e(r)}</td><td class="bs-parts-v"><b class="bs-sbox" title="${e(REFV)}: not scored or counted">📎</b></td></tr>`).join("")}${
-  was ? `<tr class="bs-reft-was"><td class="bs-parts-n">Was</td><td class="bs-parts-v"><b class="bs-sbox">${e(was)}</b></td></tr>` : ""}</tbody></table>`;
+// (each end-of-shift check's figures for a trainee: its average over the days it was checked, how many, and the latest)
+function refFigures(p, dates, c){
+  const by = {}, order = [];
+  dates.forEach(d => { const x = c[d]; if(!x || x.day1 || x.open) return;
+    dayActs(B.data.rec[p.id] || {}, d).forEach(a => { const k = `${a.icon} ${a.label}`;
+      if(!by[k]){ by[k] = {name: k, vs: [], last: null, lastD: ""}; order.push(k); }
+      if(!a.na && a.pct != null){ by[k].vs.push(a.pct); by[k].last = a.pct; by[k].lastD = `${+d.slice(5, 7)}/${+d.slice(8)}`; } }); });
+  const rows = order.map(k => { const r = by[k]; return {name: r.name, avg: r.vs.length ? r.vs.reduce((s, v) => s + v, 0) / r.vs.length : null, n: r.vs.length, last: r.last, lastD: r.lastD}; });
+  return rows.length ? rows : REF_DAY_TOPICS;
+}
+// (📎 the Average row's table: each end-of-shift check with its own figures across the row — its average over the days
+// checked, how many days, and the latest day's — shown, not behind a 📎 to hover; not scored or counted)
+const refTable = (rows, was) => `<div class="bs-reft-h">${e(REFV)} — not scored or counted</div><table class="bs-parts bs-reft"><thead><tr><th>The end-of-shift check</th><th>Average</th><th>Days checked</th><th>Latest day</th></tr></thead><tbody>${
+  rows.map(r => { const x = typeof r === "string" ? {name: r} : r;
+    return `<tr><td class="bs-parts-n">${e(x.name)}</td><td class="bs-parts-v"><b class="bs-sbox">${x.avg == null ? "—" : e(pct(x.avg))}</b></td><td class="bs-parts-v">${x.n ? e(x.n) : "—"}</td><td class="bs-parts-v">${x.last == null ? "—" : `<b class="bs-sbox">${e(pct(x.last))}</b>${x.lastD ? ` <small>${e(x.lastD)}</small>` : ""}`}</td></tr>`; }).join("")}${
+  was ? `<tr class="bs-reft-was"><td class="bs-parts-n">All checks</td><td class="bs-parts-v"><b class="bs-sbox">${e(was)}</b></td><td></td><td></td></tr>` : ""}</tbody></table>`;
 const refCell = (c, why) => ({v: REFV, f: `${REFV}: not scored or counted${why ? " · " + why : ""}${c && c.v !== "" && c.v != null && c.v !== REFV ? ` (was ${c.v})` : ""}`, cls: "gs-txt"});
 // (🏅 Scores: the per-source averages of reference sources, the Scorecard overall, Daily compliance, the weeks' average and the
 // Overall % are Additional Reference; 📈 Overall Performance the same, with no rank — it has nothing scored left to rank by)
@@ -1225,19 +1238,35 @@ function matrixOf(x){
 // (a day's parts in sections — ✅ Daily compliance, then each kind of scored work — with a section's header once, and a mock
 // call's or demo's scorecard criteria, each its own row under it)
 const critTone = v => v >= 4 ? "gs-hi" : v >= 3 ? "gs-mid" : "gs-lo";
-/* 📅 a day in 📤 Daily outputs on a trainee's card: one line — each activity's icon and score, at a glance — that opens to the
-   day's full table (and 🔎 What was read). The latest day opens by itself; the days before stay folded, so the card isn't
-   one long scroll and a trainer finds a day by its date. */
+/* 📅 a day in 📤 Daily outputs on a trainee's card: one line of chips that opens to the day's full table (and 🔎 What was
+   read). The latest day opens by itself; the days before stay folded, so the card isn't one long scroll.
+   The chips (the owner: "show only buttons and label those explicitly rather than icons"; no Done / Passed words):
+     • Daily compliance, once: the same six end-of-shift checks every day, so one chip with the day's figure; the checks
+       themselves are in the day's table;
+     • then the day's own work — its Knowledge Checks, assessments, activities, mock calls and demos — each named in words,
+       with its score where it has one. */
 const dayFold = (ps, open, extra) => {
-  const items = ps.filter(x => !x.header && x.name), ic = n => (String(stripTags(n)).match(/^\s*(\p{Extended_Pictographic}\uFE0F?)/u) || [, "•"])[1];
-  const chips = items.map(x => `<span class="bs-dchip ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v))}">${e(ic(x.name))} ${e(stripTags(x.v))}</span>`).join("");
-  return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${items.length} activit${items.length === 1 ? "y" : "ies"}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
+  const items = ps.filter(x => !x.header && x.name);
+  const label = n => String(stripTags(n)).replace(/^[\s•·]*(\p{Extended_Pictographic}️?‍?)+\s*/u, "").trim();
+  const score = v => { const m = /(\d+(?:\.\d+)?)\s*(%|\/\s*5)/.exec(String(stripTags(v == null ? "" : v))); return m ? (m[2] === "%" ? Math.round(+m[1]) + "%" : m[1] + "/5") : ""; };
+  const isComp = x => /compliance/i.test(String(x.group || ""));
+  const comp = items.filter(isComp), own = items.filter(x => !isComp(x));
+  const cv = comp.map(x => parseFloat((/(\d+(?:\.\d+)?)\s*%/.exec(String(stripTags(x.v || ""))) || [])[1])).filter(n => isFinite(n));
+  const chip = (t, v, tip, cls) => `<span class="bs-dchip${cls ? " " + cls : ""}" title="${e(tip)}"><span>${e(t)}</span>${v ? `<b>${e(v)}</b>` : ""}</span>`;
+  const chips = (comp.length ? chip("Daily compliance", cv.length ? Math.round(cv.reduce((s, n) => s + n, 0) / cv.length) + "%" : "",
+      comp.map(x => `${label(x.name)}: ${refStrip(x.v)}`).join(" · "), "bs-dchip-comp") : "")
+    + own.map(x => chip(label(x.name), score(x.v), `${label(x.name)}: ${stripTags(x.v || "")}`, x.tone || "")).join("");
+  return `<details class="bs-day"${open ? " open" : ""}><summary><span class="bs-day-n">${own.length + (comp.length ? 1 : 0)}</span>${chips}</summary>${partsTable(ps)}${extra || ""}</details>`;
 };
+// (a value shown without its "• 📎 Additional Reference ·" prefix: the card's 📎 key says it once, so a chip or a cell reads
+// "Graded", "Passed", "Done" or its figure, not the same words over and over)
+const refStrip = v => { const t = String(stripTags(v == null ? "" : v)), r = t.replace(/^\s*[•·]?\s*📎\s*(Additional Reference)?\s*[·:—–-]?\s*/u, "").trim();
+  return r || (t !== r ? "Not scored" : t); };
 const partsTable = ps => { let g0 = null;
   return `<table class="bs-parts"><thead><tr><th>Activity / assessment</th><th>Score</th><th>Details</th></tr></thead><tbody>${ps.map(x => {
     const head = x.group && x.group !== g0 ? `<tr class="bs-parts-g${x.header || /compliance/i.test(x.group) ? " bs-parts-top" : ""}"><th colspan="3">${e(x.group)}${x.groupV ? ` <span class="bs-parts-gv">${e(x.groupV)}</span>` : ""}</th></tr>` : ""; if(x.group) g0 = x.group;
     if(x.header) return head;
-    return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(x.v)}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
+    return head + `<tr><td class="bs-parts-n">${e(stripTags(x.name))}</td><td class="bs-parts-v"><b class="bs-sbox ${e(x.tone || "")}" title="${e(stripTags(x.name) + ": " + stripTags(x.v) + (x.text ? " — " + stripTags(x.text) : ""))}">${e(refStrip(x.v))}</b></td><td class="bs-parts-t">${e(stripTags(x.text))}</td></tr>`
       // (📋 its criteria in a table of their own under the activity's name, so they don't read as more compliance items)
       + (Array.isArray(x.crit) && x.crit.length ? `<tr class="bs-parts-cw"><td colspan="3"><table class="bs-crit"><thead><tr><th colspan="3" class="bs-crit-h">📋 ${e(stripTags(x.name).replace(/^[\s📋]+/u, ""))} — criterion by criterion</th></tr><tr><th>Criterion</th><th>Score</th><th>Why</th></tr></thead><tbody>${
         x.crit.map(c => `<tr><td class="bs-crit-n">${e(c.n)}</td><td class="bs-crit-v"><b class="bs-sbox ${critTone(c.s)}">${e(c.s)}/5</b></td><td>${e(c.fb || "")}</td></tr>`).join("")}</tbody></table></td></tr>` : ""); }).join("")}</tbody></table>`; };
@@ -1421,7 +1450,7 @@ function outputsTable(){
     rowCls: ppl.map(p => rowOpen(p.id) ? "" : "bs-orow-f"),
     rows: ppl.map(p => { const c = comp(p), vs = dates.map(d => c[d] && typeof c[d].pct === "number" ? c[d].pct : null), a = avgOf(vs), open = rowOpen(p.id);
       return [{v: p.name, f: p.name, cls: "gs-name bs-oname", html: `<button type="button" class="bs-ofold-btn bs-oname-btn" onclick="event.stopPropagation();FTBatchSheet.ofRow('${e(p.id)}')" title="${open ? "Fold" : "Open"} ${e(p.name)}'s days">${caret(open, p.name + "'s days")} ${e(p.name)}</button>`},
-        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics(), refRows: REF_DAY_TOPICS, refWas: pct(a)}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
+        window.ftReference ? Object.assign(refCell({v: pct(a)}, "the end-of-shift check: " + REF_DAY_TOPICS.join(", ")), {refv: refTopics(), refRows: refFigures(p, dates, c), refWas: pct(a)}) : {v: pct(a), f: a == null ? "No day checked yet" : `The average of the days = ${pct(a)}`, cls: "gs-num gs-calc gs-bold " + tone(a)}]
         .concat(dates.map((d, i) => { const x = c[d]; if(!x) return {v: "", f: `${md(d)}: not checked`, cls: "gs-num" + (dayShut(d) ? " bs-ocol-f" : "")};
           // each activity: a little box with its score, and the trainee's performance on it in two sentences at most
           // (📎 Daily compliance is Additional Reference: each box shows 📎, its figure only in the hover)
@@ -1430,7 +1459,7 @@ function outputsTable(){
             f: `${md(d)} = ${pct(vs[i])} · ${acts.map(a => `${a.label} ${a.pct == null ? "—" : a.pct + "%"}: ${a.text}${a.more ? " [" + a.more + "]" : ""}`).join(" · ")}`,
             // (folded day: its score alone; folded trainee: the day's score and each activity's little box; open: everything)
             refv: window.ftReference ? refTopics(acts.filter(a => !a.na).map(a => `${a.icon} ${a.label}`)) : undefined,
-            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : window.ftReference ? "📎" : a.pct == null ? "—" : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : window.ftReference ? "" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
+            parts: acts.map(a => ({group: "✅ Daily compliance", name: `${a.icon} ${a.label}`, v: a.na ? a.naV || "Not counted" : a.pct == null ? "—" : window.ftReference ? pct(a.pct) : Math.round(a.pct) + "%", tone: a.na ? "gs-na" : window.ftReference ? "" : tone(a.pct), text: a.text, crit: a.crit || undefined})),
             cls: "bs-ocell" + (dayShut(d) ? " bs-ocol-f" : !open ? " bs-ocell-f" : ""),
             html: dayShut(d) ? `<div class="bs-oday">${box(vs[i])}</div>`
               : !open ? `<div class="bs-oday">${box(vs[i])}<span>${x.day1 ? "Day 1 · not counted" : x.open ? "today · not final" : "the day"}</span></div><div class="bs-omini">${acts.map(a => `<span title="${e(a.label)}: ${e(a.text)}">${a.icon}${box(a.pct)}</span>`).join("")}</div>`
@@ -2753,11 +2782,15 @@ body.bs-wide .ftis-admin{padding-left:12px !important;padding-right:12px !import
 .bs-ref{display:inline-block;padding:1px 8px;border:1px solid #C9CFE6;border-radius:999px;background:#F2F4FA;font-size:13px;cursor:help;}
 .bs-pt-t td,.bs-pt-t th{overflow-wrap:anywhere;}
 .bs-pt-t tr.bs-pt-sec th{scroll-margin-top:64px;}
-.bs-day > summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 2px;list-style:none;}
+.bs-day > summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;padding:6px 2px;list-style:none;}
 .bs-day > summary::-webkit-details-marker{display:none;}
 .bs-day > summary::before{content:"▸";color:#B5651F;font-weight:800;margin-right:2px;} .bs-day[open] > summary::before{content:"▾";}
-.bs-day-n{font:800 13px Arial,sans-serif;color:#1E2340;margin-right:4px;}
-.bs-dchip{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border:1px solid #DDE1EC;border-radius:999px;background:#fff;font:700 12.5px Arial,sans-serif;color:#2E3450;white-space:nowrap;}
+.bs-day-n{flex:0 0 auto;align-self:center;font:800 15px Arial,sans-serif;color:#1E2340;margin-right:4px;}
+.bs-dchip{flex:1 1 150px;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1.5px solid #D2D7E6;border-radius:10px;background:#fff;font:700 15px/1.25 Arial,sans-serif;color:#1E2340;min-width:0;}
+.bs-dchip span{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bs-dchip b{flex:0 0 auto;font:900 15px Arial,sans-serif;background:#F2F4FA;border-radius:999px;padding:2px 9px;white-space:nowrap;}
+.bs-dchip.gs-na b{font-weight:700;color:#5B6178;}
+.bs-dchip.bs-dchip-comp{background:#F3F5FB;border-color:#1E2340;}
 .bs-day[open] > summary{margin-bottom:6px;border-bottom:1px solid #E3E6EE;padding-bottom:6px;}
 /* 🏅 Scores: a navy-blue card (the Dashboard banner's navy, with its soft orange and blue glows) — the title, the row count and
    the note in white / light ink on it (AA), the table itself on white inside it so the grades read as before */
@@ -2855,7 +2888,7 @@ html body #bs-scores .bs-wrap{background:#fff;border-color:rgba(255,255,255,.35)
 .bs-pt-k.gs-lo{background:#FDE8E8;border-color:#D93025;} .bs-pt-k.gs-lo b{color:#A50E0E !important;}
 .bs-pt-k.bs-pt-ref{background:#F4F6FB;border-style:dashed;} .bs-pt-k.bs-pt-ref b{font-size:15px !important;color:#5B6478 !important;font-weight:800;}   /* 📎 a short label; the topics it covers on a hover (title) */
 .bs-pt-t .bs-pt-v.bs-pt-vref{white-space:normal !important;font-size:12.5px !important;line-height:1.25;color:#5B6478;background:#F4F6FB;text-align:center;vertical-align:middle;padding:6px 3px !important;overflow:hidden;overflow-wrap:anywhere;}   /* (📎 Reference: inside its narrow column at any width) */
-.bs-reft-h{font:800 14.5px Arial,sans-serif;color:#1E2340;margin:0 0 6px;} .bs-pt .bs-parts.bs-reft{width:auto;min-width:300px;max-width:100%;} .bs-reft .bs-parts-n{width:auto;white-space:nowrap;} .bs-reft .bs-parts-v{width:84px;text-align:center;} .bs-pt .bs-reft th{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;} .bs-reft tr.bs-reft-was td{background:#F4F6FB;font-weight:800;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
+.bs-reft-h{font:800 14.5px Arial,sans-serif;color:#1E2340;margin:0 0 6px;} .bs-pt .bs-parts.bs-reft{width:100%;min-width:300px;max-width:100%;} .bs-reft .bs-parts-n{width:auto;white-space:nowrap;} .bs-reft .bs-parts-v{width:84px;text-align:center;} .bs-pt .bs-reft th{white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;} .bs-reft tr.bs-reft-was td{background:#F4F6FB;font-weight:800;} .bs-pt-refl{display:block;font-size:14.5px;color:#5B6478;font-weight:700;}
 .bs-pt-mxw{padding:0 !important;border:0 !important;} .bs-pt-mx{border-collapse:collapse;width:auto;max-width:100%;font:15px Arial,sans-serif;margin:6px 0;}   /* (the Score Card grid: compact) */
 .bs-pt-mx th,.bs-pt-mx td{border:1px solid #E6E9F1;padding:8px 10px;text-align:left;} .bs-pt-mx thead th{background:#F1F3F8;color:#1E2340;font-weight:700;}
 .bs-pt-mx th{word-break:normal;overflow-wrap:normal;white-space:normal;} .bs-pt-mx tbody th{font-weight:700;color:#1E2340;width:auto;white-space:nowrap;padding:5px 10px !important;font-size:14.5px;} .bs-pt-mx td.bs-pt-v{width:auto;min-width:64px;text-align:center;cursor:help;font-size:15.5px !important;padding:5px 8px !important;} .bs-pt-mx thead th{min-width:64px;text-align:center;font-size:13.5px;padding:5px 8px !important;}
