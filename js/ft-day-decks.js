@@ -763,7 +763,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(deckTitle(DD.day, info, d))}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${[...String(body || "").matchAll(/data-bartitle="([^"]+)"/g)].map(m => `<span class="ftdd-bar-t">${m[1]}</span>`).join("")}`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
         ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
@@ -2289,6 +2289,7 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 .ftdd-ribbon span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;background:linear-gradient(90deg,#343C66 0%,#46508A 50%,#343C66 100%);
   border-bottom:3px solid #DB8437;border-radius:6px;color:#fff;font:800 clamp(13px,1.1vw,17px)/1.25 'Poppins','Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:8px 24px;}
 .ftdd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+.ftdd-bar-t{display:inline-flex;align-items:center;margin-left:10px;padding:6px 16px;border-radius:8px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;font:800 17px/1.2 'Poppins','Inter',sans-serif;}   /* (a video's title beside the slide's Watch & Do pill) */
 .ftdd-pill{display:inline-flex;align-items:center;gap:8px;background:#ECEEF3;color:#262B45;border-radius:8px;padding:6px 16px;font:700 17px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;}
 .ftdd-n{font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;background:transparent;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 10px;white-space:nowrap;}
 /* the content: a white sheet */
@@ -2744,7 +2745,7 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-head .ftdd-ho-sub{margin:0 0 10px;font:60
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
-main.main-ftdd .ftdd-handouts .ftdd-ho-wait{margin:0;font-weight:800;font-size:1.05em;line-height:1.4;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-wait{margin:0;font-weight:800;font-size:1.35em;line-height:1.4;color:#fff !important;}   /* (white on the navy card: readable) */
 .ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li{color:#fff !important;font:600 20px/1.55 'Inter',sans-serif !important;margin:2px 0 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li::marker{color:#F4B77A !important;font-weight:800;}
@@ -2771,6 +2772,10 @@ main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:80
 /* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
 .ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
+/* (the topic's label over its videos — Day 8's 🏷 Intake Process — and each video's name under its preview: large and clear) */
+.ft-body .ftdd-topic{margin:14px 0 8px !important;padding:8px 20px !important;border-radius:10px !important;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;box-shadow:0 4px 12px rgba(30,35,64,.2);}
+.ft-body .ftdd-vcard a.ftdd-tile, .ft-body .ftdd-vcard .ftdd-tile-t, .ft-body .ftdd-vcard .ftdd-tile-t b{text-decoration:none !important;}
+.ft-body .ftdd-vcard .ftdd-tile-t b{display:block;text-align:center;font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;padding:4px 6px 0;}
 .ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
 .ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
 .ft-body p.ftdd-callout{padding:10px 14px 10px 40px;border-radius:12px;background:#FFF6EC;border-left:4px solid #DB8437;position:relative;}
@@ -3328,6 +3333,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:
    bigger on a click (the Sample SOP's zoom, below) */
 .ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-barred > .ftdd-pdoc-h{display:none;}   /* (its name is in the slide's bar: data-bartitle) */
 main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pdoc p.ftdd-pdoc-note{max-width:1100px;margin:10px auto 4px;text-align:left;font-size:20px;}
 /* (the 💡/📌 yellow callouts: big, bold and dark enough to read from across the room) */
