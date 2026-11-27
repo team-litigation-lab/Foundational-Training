@@ -880,8 +880,8 @@ function centerPage(sheet){
   // (Day 3's CRM/CMS Training Videos starts at the top: its "Choose one video" band leads the slide)
   if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || sheet.querySelector(":scope > .ftdd-pick-note") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
   const shown = [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none");
-  // (and Day 4's mock call preparation opens at the top: its lead, the tools' band and their buttons)
-  if(!shown.length || shown.some(k => k.classList.contains("ftdd-mock-warm"))) return;
+  // (Day 4's mock call preparation is centred too: its lead, the tools' band and their buttons in the middle of the slide)
+  if(!shown.length) return;
   const st = getComputedStyle(sheet), pt = parseFloat(st.paddingTop) || 0, pb = parseFloat(st.paddingBottom) || 0;
   const top = Math.min(...shown.map(k => k.getBoundingClientRect().top - (parseFloat(getComputedStyle(k).marginTop) || 0)));
   const bottom = Math.max(...shown.map(k => k.getBoundingClientRect().bottom + (parseFloat(getComputedStyle(k).marginBottom) || 0)));
@@ -1552,7 +1552,14 @@ const ASSESS_NEXT = {2: {
   // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
 };
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
+// 🛠 a slide whose Next is its Practice Lab activity, where the activity's instructions sit beside its simulator (Day 5's
+// Sample & Time Zone, the Attorney Calendar Management Activity's last slide: its Activity Items beside the Calendar Simulator,
+// #/calsim/attorney-activity, whose ← Back to the slides returns here)
+const LAB_NEXT = {5: {s3b: {label: "Next: 🧪 The Activity Items in the 🛠 Practice Lab →", ok: () => typeof root.goto === "function", run: () => goto("calsim", "attorney-activity")}}};
+const labOf = s => { const l = s && (LAB_NEXT[DD.day] || {})[s.id]; return l && l.ok() ? l : null; };
 function kcNext(s){
+  const lab = labOf(s);
+  if(lab) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(lab.label)}</button>`;
   const a = asOf(s);
   if(a && root.FTProcess) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
   const k = kcOf(s); if(!k || !root.FTProcess) return "";
@@ -1590,7 +1597,7 @@ function wireReaders(){
   const left = unread(kcOf(s));
   go.disabled = left.length > 0;
   // (on its last page, the button names where it goes: the reading's questions, or the slide's assessment)
-  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (labOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
 }
 // 👩‍🏫 the presenter at the foot of the side panel (Activity decks and Know Your Tools), as on the lesson slides
@@ -1625,8 +1632,8 @@ function deckNextUp(){
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
-  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s);
-  if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s), lab = labOf(s);
+  if(lab) lab.run(); else if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
@@ -2385,7 +2392,7 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;c
 .ftdd-tools-ic{flex:0 0 22px;text-align:center;font-size:16px;}
 .ftdd-tool{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0;}
 .ftdd-tool-shot{display:block;aspect-ratio:16/10;border:1px solid #E3E6EE;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(38,43,69,.14);background:#F6F7FA;}
-.ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:top center;}   /* every screenshot in the same 16:10 frame, from its top */
+.ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:contain;object-position:center;}   /* every screenshot in the same 16:10 frame, whole (none cropped) */
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt h3{margin:0 0 8px !important;font:800 22px/1.2 'Poppins','Inter',sans-serif !important;color:#fff !important;letter-spacing:0;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p{margin:0 0 8px;font-size:15px;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:700 18px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
@@ -2660,6 +2667,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ft-body .ftdd-calsim{margin:0 0 12px;}
 /* (Day 8's two scoresheets on one slide, side by side: the demo's and the Intake Mock Calls') */
 .ftdd-sheet .ftdd-mc2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;width:100%;} @media(max-width:1000px){.ftdd-sheet .ftdd-mc2{grid-template-columns:1fr;}}
+/* (Day 14's sample process guide on one slide: steps 1–4 beside step 5 and its screenshot) */
+.ftdd-sheet .ftdd-pg1{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start;width:100%;text-align:left;} .ftdd-sheet .ftdd-pg1 .shots figure{margin:6px 0 0 !important;} @media(max-width:1000px){.ftdd-sheet .ftdd-pg1{grid-template-columns:1fr;}}
 main.main-ftdd .ftdd-sheet:not([data-fitted]) > *{opacity:0;animation:ftddReveal 0s linear .9s forwards;}   /* (until fitSheets has dealt its pages; shown anyway after .9s. Opacity, not visibility: the slide's text stays readable to the page's own code meanwhile) */
 @keyframes ftddReveal{to{opacity:1;}}
 main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-ins .btn{font-size:21px !important;padding:14px 30px !important;border-radius:12px;box-shadow:0 6px 16px rgba(30,35,64,.25);}
@@ -2672,6 +2681,9 @@ main.main-ftdd .ftdd-sheet .ftdd-calsim-ins{margin:0 0 14px;text-align:center;} 
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (and a point bigger than the other cards, header included: the slide has no button over them) */
+.ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-size:18.5px !important;} .ftdd-sheet .ftdd-cards2-b .ftdd-card4 > p.ftdd-card4-h{font-size:19.5px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-calsim-lab{margin:12px 0 0;text-align:center;} main.main-ftdd .ftdd-sheet .ftdd-calsim-lab .btn{font-size:19px !important;padding:12px 26px !important;border-radius:12px;}
 /* (Day 10's sample documents: a tile each, four to a row, white on navy with an orange edge; each opens in a new tab) */
 .ft-body .ftdd-doctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin:8px 0 4px;}
 .ft-body a.ftdd-doctile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#1E2340;border-left:5px solid #E8590C;color:#fff !important;text-decoration:none !important;box-shadow:0 3px 10px rgba(30,35,64,.2);}
@@ -3133,11 +3145,12 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
 .ft-body table.ftdd-terms a{color:#1A56C4;}
 /* 🌳 the decision trees (Day 3's Frontline Management, build/day-decks.cjs TREES): two to a row */
-/* Day 2's Softphones video, its Action (📒 Monitoring Sheet) and Note at its lower right (build/day-decks.cjs TRIM[2].s4) */
-.ft-body .ftdd-soft{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,30%);gap:16px;align-items:end;margin:4px 0 12px;}
+/* Day 2's Softphones video, its Action (📒 Monitoring Sheet) and Note beside it, centred (build/day-decks.cjs TRIM[2].s4) */
+.ft-body .ftdd-soft{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,30%);gap:16px;align-items:center;margin:4px 0 12px;}
 .ft-body .ftdd-soft-side{display:flex;flex-direction:column;gap:10px;}
 .ft-body .ftdd-soft-side > p{margin:0;}
-.ft-body .ftdd-soft .ftdd-mon-btn{margin-top:6px;}
+.ft-body .ftdd-soft-side > p:first-child{text-align:center;}   /* (Day 2: the Action and its Monitoring Sheet button centred beside the video) */
+.ft-body .ftdd-soft-side .ftdd-mon-btn{display:table;margin:8px auto 0;}
 @media(max-width:900px){ .ft-body .ftdd-soft{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 12px;}
 @media(max-width:900px){ .ft-body .ftdt-grid{grid-template-columns:minmax(0,1fr);} }
