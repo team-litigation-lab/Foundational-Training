@@ -240,14 +240,11 @@ function labItems(){
     push(miniCard(`Day ${x.day} · ${x.day === 1 ? "naming your answer files" : "before the demo"}`, `🏷 Naming &amp; Reporting Drill: ${esc(x.title)}`, x.day === 1 ? "How your assessment and activity answer files are named, checked against the trainers’ convention on made-up examples." : "File names, Notes and Tasks entries, email subjects and fax addresses for this demo, checked against the guide’s conventions.", "Open the drills", `goto('drills'); window.FTDrills && FTDrills.start('${x.id}')`),
       {days: [x.day], status: isTrainee() ? drillStatus(x.id) : "todo", type: "drafting", key: "drills:" + x.id}));
   if(typeof window.ftListenCards === "function" && toolOn("listening")) push(ftListenCards(isTrainee() ? R("listening:") : null), {type: "listening", key: "listening"});
-  // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet) and ✉️ Day 11's Insurance
-  // Email Sim: in the curriculum and the decks, so here too, where the activity is done
+  // 🎧 Day 3's Reception Listening Activity (5 practice calls with challenges, its 📝 Answer Sheet): in the curriculum and the
+  // deck, so here too, where the activity is done
   if(window.FTListen && FTListen.pop && dayOpen(3))
     push(miniCard("Day 3 · Reception Training", "🎧 Reception Listening Activity: 5 practice calls", "Five calls with their challenges: listen, then answer the Answer Sheet and 📝 Submit for Grading.", "Open the activity", "FTListen.open('reception'); FTListen.pop('recact')"),
       {days: [3], type: "listening", key: "recact"});
-  if(window.FTClaimsMail && dayOpen(11))
-    push(miniCard("Day 11 · Insurance Communication Training", "✉️ Insurance Email Sim", "Three cases: send the LOR, request the Dec Pages and claim information, and get the claim number from the adjuster.", "Open the Email Sim", "goto('claimsmail')"),
-      {days: [11], type: "tool", key: "claimsmail"});
   return out;
 }
 // 📚 a day's lesson card and Part, as the Dashboard shows them (js/ft-day-decks.js LESSON_CARDS, js/ft-day-locks.js PARTS/CARD_TITLES)
