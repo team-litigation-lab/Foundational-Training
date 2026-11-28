@@ -150,9 +150,12 @@ async function refOf(r, a){
   let html = "";
   try{
     if(a.id === "intake-worksheet"){
+      // (answered on the platform — Day 8's 📦 Intake Packet page, step 3: answers[] — or, before that, a Google Doc's link)
       const sub = (((await sharedGet("actsub:" + r.id)) || {}).items || {}).intakews, link = sub && /^https?:\/\//.test(String(sub.answer || "")) ? String(sub.answer) : "";
-      html = link ? `📝 <b>Their Intake Worksheet</b> · submitted ${e(sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "")} · <a href="${e(link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>`
-        : `📝 No Intake Worksheet link submitted yet (the trainee submits it on Day 8’s Intake Documents slide). Grade it from their Assessments/Activities folder.`;
+      const ans = sub && Array.isArray(sub.answers) ? sub.answers : null, at = e(sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "");
+      html = ans ? `📝 <b>Their Intake Worksheet</b>, answered on the platform · submitted ${at} · ${ans.filter(x => String(x || "").trim()).length} of ${ans.length} documents answered · <details><summary>Read their answers</summary>${(window.FTIntake && FTIntake.wsRows ? FTIntake.wsRows() : ans.map((x, i) => "Document " + (i + 1))).map((t, i) => `<p><b>${e(t)}</b><br>${ans[i] ? e(ans[i]) : "<i>(unanswered)</i>"}</p>`).join("")}</details>`
+        : link ? `📝 <b>Their Intake Worksheet</b> · submitted ${at} · <a href="${e(link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>`
+        : `📝 No Intake Worksheet submitted yet (the trainee answers it on the platform: Day 8’s 📦 Intake Packet page, step 3).`;
     } else if(a.id === "lor-drafting"){
       const sub = (((await sharedGet("actsub:" + r.id)) || {}).items || {}).lor, ls = ((sub && sub.answers) || []).map(String).filter(u => /^https?:\/\//.test(u));
       html = ls.length ? `📤 <b>Their LORs</b> · submitted ${e(sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "")} · ${ls.map((u, i) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${i ? "3P LOR with Affidavit" : "1P LOR"} ↗</a>`).join(" · ")}`

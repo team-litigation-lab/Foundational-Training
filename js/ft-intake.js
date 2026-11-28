@@ -378,7 +378,7 @@ function adminHtml(){
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
   const set = Object.keys(pk).filter(n => pk[n] && (pk[n].client || pk[n].url)).length, given = rows.filter(r => AD.assign[r.id]).length;
   // (fits on one screen: the trainees side by side in three columns, and the packets' clients and links in three columns)
-  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Each trainee sees their packet on Day 8’s slide (<b>Your Assigned Packet</b>) with its 🎬 demo case, from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">packets folder ↗</a>. Their work on it: their <a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a> page.</p></div>
+  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Each trainee sees their packet on Day 8’s 📦 Intake Packet page (<b>Your Assigned Packet</b>, where they link it from their Drive) with its 🎬 demo case, from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">packets folder ↗</a>. Their work on it: their <a href="#" onclick="state.adminTab = 'batchsheet'; render(); return false;">📋 Batch Sheet</a> page.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
     <h4>Assign the packets <small class="ftis-count">${given} of ${rows.length} assigned</small></h4>
     ${rows.length ? `<div class="ftis-assign">${rows.map(r => `<div class="ftis-acell"><b title="${e(r.name)}${r.batch ? " · " + e(r.batch) : ""}">${e(r.name)}${AD.batch ? "" : `<span class="fss-muted"> ${e(r.batch)}</span>`}</b>
@@ -430,7 +430,7 @@ function cardHtml(id){
   const checking = (AD.checking || {})[id];
   return head
     + row("📦 Packet", n ? `Packet ${n}` : "—", n ? `${pk.client ? e(pk.client) + " · " : ""}assigned in 📦 Intake Packets` : `Not assigned yet: <a href="#" onclick="state.adminTab = 'intake'; render(); return false;">📦 Intake Packets</a>`)
-    + row("🔗 Their packet", pkU ? `<a href="${e(pkU)}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : "—", pkU ? (fU ? `<a href="${e(fU)}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : "No client subfolder linked") : "Not linked yet: the trainee links it on Day 8’s slide")
+    + row("🔗 Their packet", pkU ? `<a href="${e(pkU)}" target="_blank" rel="noopener noreferrer">📦 Open ↗</a>` : "—", pkU ? (fU ? `<a href="${e(fU)}" target="_blank" rel="noopener noreferrer">📁 Subfolder ↗</a>` : "No client subfolder linked") : "Not linked yet: the trainee links it from their Drive on Day 8’s 📦 Intake Packet page (step 1: 🔗 Your corrected packet and 📁 Your client subfolder)")
     + row("🔎 Accuracy &amp; completeness", ck ? `${ck.pct}%` : "—",
       // (🔎 Check beside "rule by rule", on the same line: inside the summary, its click kept from opening or closing the rubric)
       (() => { const btn = pkU ? ` <button type="button" class="btn btn-ghost btn-sm" style="margin-left:8px;vertical-align:middle;" ${checking ? "disabled" : ""} onclick="event.preventDefault();event.stopPropagation();FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : "";
