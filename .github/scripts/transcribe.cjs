@@ -24,10 +24,7 @@ const failures = []; const fail = m => failures.push(m);
   await put('transcribe:' + id, null);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 
-  // the card in 🧰 Drafting Tools, and Day 9's step
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
-  const lab = await page.evaluate(() => document.querySelector('main').innerText);
-  if (!/Transcription Activity/.test(lab)) fail('the Practice Lab has no 🎧 Transcription Activity card');
+  // Day 9's step (no Practice Lab: the activity opens from Day 9's card row, #/transcribe)
   const d9 = await page.evaluate(() => (FTDays.of(9).items || []).find(x => /Transcription/.test(x.t)));
   if (!d9 || d9.at !== 'tool' || d9.id !== 'transcribe') fail(`Day 9's transcription step doesn't point at the tool: ${JSON.stringify(d9)}`);
 

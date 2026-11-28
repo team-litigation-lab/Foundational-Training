@@ -64,8 +64,9 @@
     },
     // 📚 back to the lesson: the slide the trainee came from, else the deck slide last open, else the lessons
     home(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove();
+      const kept = LR.f; LR.f = null;   // (the hand-in's slide is used once, then forgotten)
       if(state.ftLabFrom) return LR.back();
-      const f = LR.f || (window.FTDayDecks && FTDayDecks.lastAt ? FTDayDecks.lastAt() : null); LR.f = null;
+      const f = kept || (window.FTDayDecks && FTDayDecks.lastAt ? FTDayDecks.lastAt() : null);
       if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto("modules"); },
     stay(){ clearTimeout(LR.t); const b = document.getElementById("ftlr-done"); if(b) b.remove(); },
     keyOf

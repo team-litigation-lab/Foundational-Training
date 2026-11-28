@@ -189,7 +189,7 @@ async function workerChecks() {
   });
   pure.out.forEach(fail);
 
-  // (the Calendar Activity Check opens from its day, Day 6, and #/calcheck; the Practice Lab's card has no Main Portal button)
+  // (no Practice Lab: the Calendar Activity Check opens from its day, Day 6, and #/calcheck)
   if (!(await page.evaluate(() => (FTDays.of(6).items || []).some(x => x.at === 'tool' && x.id === 'calcheck')))) fail('Day 6 doesn\'t point to the Calendar Activity Check');
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
   const deck = await page.evaluate(() => ({ bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length, tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));

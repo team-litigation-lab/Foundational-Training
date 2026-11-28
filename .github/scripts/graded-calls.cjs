@@ -37,9 +37,9 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/86%|4\.3\/5/.test(dash.stat) || !/2 \/ 3 lessons/i.test(dash.stat))   // (⭐ in points: 86% = 4.3/5)
     fail(`the Modules stat row's graded calls: "${dash.stat}" (expected 86%, 2 / 3 lessons)`);
     if (!/📞 90%/.test(dash.l4) || !/📞 82%/.test(dash.l5) || /📞/.test(dash.l6)) fail(`the lesson cards' graded calls: ${JSON.stringify(dash)}`);
-    await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
     // the Practice Sessions' cards for the three mock-call lessons (js/ft-sessions.js): each shows its lesson's best graded call
-    const cards = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => ({ h: c.querySelector('h3').innerText, g: (c.querySelector('.fts-graded') || {}).innerText || '' })));
+    // (drawn on their own: the Practice Lab is off the platform)
+    const cards = await page.evaluate(() => { const d = document.createElement('div'); d.innerHTML = FTSessions.cards(); return [...d.querySelectorAll('.fss-card')].map(c => ({ h: c.querySelector('h3').innerText, g: (c.querySelector('.fts-graded') || {}).innerText || '' })); });
     const by = (t) => cards.find(c => c.h.indexOf(t) >= 0) || {};
     if (!/best 90% · 1 call\b/.test(by('Reception Mock Calls').g) || !/best 82% · 2 calls/.test(by('Standard Training - Appointment Setting Mock Calls').g) || !/No graded call yet/.test(by('Intake Mock Calls').g)) fail(`the sessions' graded calls: ${JSON.stringify(cards)}`);
     // their tools: the Call Simulator's graded calls (mode=graded) and practice calls on the session's line, opened from the Portal
