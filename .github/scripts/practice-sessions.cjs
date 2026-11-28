@@ -71,8 +71,8 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!opener.exists) fail('js/ft-lor.js does not expose the opener for the Portal\'s Drafting tool');
     if (!/lshOpenPortalDrafting/.test(opener.card || '')) fail(`the Drafting Tools card does not open the Portal's tool: ${opener.card}`);
 
-    // The route: #/lor hands the trainee to the Portal instead of drafting here, and leaves the
-    // dashboard behind it. The opener is stubbed so the test isn't navigated off the course.
+    // The route: #/lor hands the trainee to the Portal instead of drafting here, and keeps the
+    // lesson behind it (js/ft-lab-route.js), not the dashboard. The opener is stubbed so the test isn't navigated off the course.
     const routed = await page.evaluate(() => {
       const real = window.lshOpenPortalDrafting;
       let called = 0;
@@ -81,7 +81,7 @@ const failures = []; const fail = (m) => failures.push(m);
       return { called, view: state.view };
     });
     if (!routed.called) fail('#/lor does not open the Portal\'s Drafting tool');
-    if (routed.view !== 'dashboard') fail(`#/lor should leave the dashboard behind it, not ${routed.view}`);
+    if (!['modules', 'daydeck'].includes(routed.view)) fail(`#/lor should keep the lesson behind it, not ${routed.view}`);
 
     // The address it opens, signed: js/lsh-tool-links.js puts a ticket on any Portal /simulators/ link.
     // js/lsh-tool-links.js signs a Portal /simulators/ link for a signed-in trainee only (an admin's
@@ -256,7 +256,7 @@ const failures = []; const fail = (m) => failures.push(m);
         return { called, view: state.view };
     });
     if (!lorView.called) fail("Trainee view can't open the LOR Drafting Activity: it does not open the Portal's tool");
-    if (lorView.view !== 'dashboard') fail(`Trainee view: #/lor should leave the dashboard behind it, not '${lorView.view}'`);
+    if (!['modules', 'daydeck'].includes(lorView.view)) fail(`Trainee view: #/lor should keep the lesson behind it, not '${lorView.view}'`);
     // Each module is its own Process Questions page now: goto('process') alone opens the index (a row per
     // module, no boxes yet), and opening one unlocked module (every module is unlocked in preview) shows
     // its own boxes to type in.

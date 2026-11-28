@@ -1701,8 +1701,13 @@ function autoDone(R, d, it, p){
     case "transcribe": { const r = ((R.transcribe || {}).r) || {}, ok = Object.values(r).some(x => x && x.submittedAt); return {done: ok, how: ok ? "Transcription submitted" : "Not submitted yet"}; }
     // (📄 the LOR Drafting Activity is done on the Training Portal's drafting tool, js/ft-lor.js lshOpenPortalDrafting: its result
     // comes back in simresults:<id> — "Drafting — LOR", as the Practice Lab card reads it; lor:<id>, the old on-platform drafts)
-    case "lor": { const b = (((R.sims || {}).best) || {})["Drafting — LOR"], ok = !!b || nonEmpty(R.lor);
-      return {done: ok, how: b ? `Drafted on the Training Portal · best ${Number(b.score)}%` : ok ? "Letters drafted" : "Not started yet"}; }
+    // (📤 now: the letters edited on the trainee's computer and their Drive links handed in on the slide, actsub:<id>.items.lor,
+    // scored by the trainer on 🧑‍🏫 Graders — labreview .acts["lor-drafting"])
+    case "lor": { const sub = ((R.actsub || {}).items || {}).lor, a = ((((R.src || {})["labreview:"] || {}).acts) || {})["lor-drafting"];
+      if(a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo) return {done: true, how: `Scored by the trainer · ${a.score}%`};
+      if(sub && sub.submittedAt) return {done: true, how: `LORs handed in ${when(sub.submittedAt)} · waiting for the trainer's score`};
+      const b = (((R.sims || {}).best) || {})["Drafting — LOR"], ok = !!b || nonEmpty(R.lor);
+      return {done: ok, how: b ? `Drafted on the Training Portal · best ${Number(b.score)}%` : ok ? "Letters drafted" : "Not handed in yet"}; }
     case "drills": case "listening": case "calcheck": case "calrules": case "calweek": case "calsim": case "callsim":
       { const v = src[(it.id === "callsim" ? "callsim" : it.id) + ":"]; return {done: nonEmpty(v), how: nonEmpty(v) ? "Done on the platform" : "Not done on the platform yet"}; }
     case "calactivity": { const v = src["calcheck:"]; return {done: nonEmpty(v), how: nonEmpty(v) ? "Checked on the Calendar Activity Check" : "Not checked yet"}; }
@@ -1755,6 +1760,9 @@ function scoreOf(R, d, it, p){
     if(a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo) return {pct: numOr(a.score), how: `trainer's score on 🧑‍🏫 Graders${a.source === "portal" ? " (from the Portal's Calendaring Activity)" : ""}${a.date ? ", " + a.date : ""}`};
     const ci = typeof window.ftCalCheckItems === "function" ? (ftCalCheckItems({rec: {"calcheck:": src["calcheck:"]}}) || [])[0] : null;
     return ci && typeof ci.pct === "number" ? {pct: ci.pct, how: `the Calendar Activity Check: ${ci.note || ""}`} : null; }
+  // (📤 Day 11's LOR Drafting Activity: the trainer's score on 🧑‍🏫 Graders, from the letters handed in on Drive)
+  if(it.id === "lor"){ const a = (((src["labreview:"] || {}).acts) || {})["lor-drafting"];
+    return a && a.score != null && a.score !== "" && a.status !== "Redo" && !a.redo ? {pct: numOr(a.score), how: `trainer's score on 🧑‍🏫 Graders${a.date ? ", " + a.date : ""}`} : null; }
   if(it.id === "process"){ if(REF) return null;
     const rv = src["kcreview:"] || {}, xs = [];
     (d.lessons || []).forEach(l => { const x = dp[l] || {}, t = numOr(((rv.lessons || {})[l] || {}).score), g = t != null ? t : typeof x.score === "number" ? x.score : null;

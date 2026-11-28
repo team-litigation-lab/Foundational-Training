@@ -384,11 +384,14 @@ const DEFAULT_ACTS = [
   // trainer scores it here, theirs counts instead (js/ft-program.js). Day 8's Intake Worksheet is a Google Doc whose link the
   // trainee submits on the slide (actsub:<id>.items.intakews), which had no score anywhere.
   {id:"atty-calendar-activity", title:"Attorney Calendar Management Activity (Day 5)", lesson:5, kind:"Assessment"},
-  {id:"intake-worksheet", title:"Intake Worksheet (Day 8)", lesson:6, kind:"Assessment"}
+  {id:"intake-worksheet", title:"Intake Worksheet (Day 8)", lesson:6, kind:"Assessment"},
+  // (Day 11's LOR Drafting Activity: the 1P and 3P letters edited on the trainee's computer, uploaded to Drive, their links
+  // handed in on the slide — actsub:<id>.items.lor, js/ft-lor.js — and scored here)
+  {id:"lor-drafting", title:"LOR Drafting Activity (Day 11)", lesson:7, kind:"Assessment"}
 ];
 const T = {acts:null};
 // (an activity added after a trainer saved their own list joins it, unless that list already has one for its scorecard)
-const ADDED_ACTS = ["medlor-recorded-demo", "atty-calendar-activity", "intake-worksheet"];
+const ADDED_ACTS = ["medlor-recorded-demo", "atty-calendar-activity", "intake-worksheet", "lor-drafting"];
 const withAdded = list => !list ? DEFAULT_ACTS : list.concat(DEFAULT_ACTS.filter(d => ADDED_ACTS.includes(d.id) && !list.some(a => a.id === d.id || (d.id === "medlor-recorded-demo" && a.rubric && a.rubric === "medlor-recorded"))));
 const acts = () => withAdded(T.acts);
 // (the Result: Passed or Failed by the score, 3/5 passes — js/ft-rubrics.js ftResult; the trainer's own choice is only a

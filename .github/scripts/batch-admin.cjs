@@ -116,9 +116,10 @@ async function workerChecks() {
     if (!/B103026.*current/.test(sel)) fail(`the sheet didn't open on the current batch: ${sel}`);
     const groups = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup')].map(g => g.label));
     if (groups.join() !== '📞 Mock calls,🖥 Demos,📝 Assessments') fail(`the Activity list isn't grouped into mock calls, demos and assessments: ${groups}`);
-    // 📝 the Assessments: Day 5's Attorney Calendar Management Activity and Day 8's Intake Worksheet, graded here too
+    // 📝 the Assessments: Day 5's Attorney Calendar Management Activity, Day 8's Intake Worksheet and Day 11's LOR Drafting
+    // Activity (the letters handed in on Drive), graded here too
     const assess = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup[label="📝 Assessments"] option')].map(o => o.value));
-    if (assess.join() !== 'atty-calendar-activity,intake-worksheet') fail(`the Assessments aren't the two worksheet activities: ${assess}`);
+    if (assess.join() !== 'atty-calendar-activity,intake-worksheet,lor-drafting') fail(`the Assessments aren't the three handed-in activities: ${assess}`);
     // 🔎 the search: part of an activity's or a trainee's name opens it; the Intake Worksheet shows the link the trainee submitted
     await put('actsub:cara-lim--b103026', { items: { intakews: { answer: 'https://docs.google.com/document/d/CARA-WS/edit', submittedAt: '2026-11-05T10:00:00Z' } } });
     if (!(await page.$('.fms-search input[type=search]'))) fail('no 🔎 search on 🧑‍🏫 Graders');
@@ -146,6 +147,17 @@ async function workerChecks() {
     // (and a search with no match says so, leaving the sheet as it is)
     await page.fill('.fms-search input', 'zzz nobody'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(300);
     if ((await page.evaluate(() => document.querySelector('.fms-act').value)) !== 'intake-worksheet') fail('a search with no match changed the sheet');
+    // 📤 Day 11's LOR Drafting Activity: the scoresheet shows the two Drive links the trainee handed in, and its score is on the Score Card
+    await put('actsub:cara-lim--b103026', { items: { intakews: { answer: 'https://docs.google.com/document/d/CARA-WS/edit', submittedAt: '2026-11-05T10:00:00Z' },
+      lor: { answers: ['https://docs.google.com/document/d/CARA-1P/edit', 'https://docs.google.com/document/d/CARA-3P/edit'], answer: 'https://docs.google.com/document/d/CARA-1P/edit', submittedAt: '2026-11-12T10:00:00Z' } } });
+    await page.evaluate(() => { FTMockScores.find('LOR Drafting Activity'); FTMockScores.find('Cara Lim'); });
+    await page.waitForFunction(() => /Their LORs/.test((document.querySelector('[data-ms-ref]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+    { const l = await page.evaluate(() => ({ act: document.querySelector('.fms-act').value, links: [...document.querySelectorAll('[data-ms-ref] a')].map(a => a.href) }));
+      if (l.act !== 'lor-drafting' || !l.links.some(u => /CARA-1P/.test(u)) || !l.links.some(u => /CARA-3P/.test(u))) fail(`the LOR Drafting Activity's scoresheet doesn't show Cara's two LOR links: ${JSON.stringify(l)}`); }
+    await page.fill('.fms-foot input[data-score]', '90'); await page.click('[data-ms-save]'); await page.waitForTimeout(1500);
+    { const lr = (((await get('labreview:cara-lim--b103026')) || {}).acts || {})['lor-drafting'] || {};
+      const card = await page.evaluate(async () => window.ftTrainerItems({ rec: { 'labreview:': await sharedGet('labreview:cara-lim--b103026') }, shared: {} }).find(x => x.ref === 'act:lor-drafting'));
+      if (lr.score !== 90 || !card || card.pct !== 90) fail(`Cara's LOR Drafting score isn't saved or isn't on her Score Card: ${JSON.stringify({ lr, card })}`); }
     // (back to the Reception Mock Call and Ana, where the rest of this test grades)
     await page.evaluate(() => { FTMockScores.find('Reception Mock Call'); FTMockScores.find('Ana Cruz'); });
     await page.waitForFunction(() => !!document.querySelector('.fms-sheet .fms-tbl tbody tr input[type=number]'), null, { timeout: 10000 });

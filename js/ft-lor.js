@@ -153,10 +153,11 @@ if(typeof window.ftAdminTab === "function") ftAdminTab("lorassign", "📄 Assign
 const __render = window.render;
 window.render = function(){
   if(state.view !== "lor") return __render.apply(this, arguments);
-  // An old link or bookmark: open the shared tool on the Portal rather than drafting here, and
-  // leave the dashboard behind it.
+  // Open the shared tool on the Portal rather than drafting here, and keep the trainee on the lesson behind it
+  // (the deck slide they came from, else the slide last open: js/ft-lab-route.js), not the dashboard.
   window.lshOpenPortalDrafting();
-  state.view = "dashboard";
+  if(window.FTLabRoute){ state.view = "modules"; setTimeout(() => FTLabRoute.home(), 0); }
+  else state.view = "dashboard";
   return __render.apply(this, arguments);
 };
 // 🧰 Drafting Tools in the Practice Lab, where the Claims Specialist session used to be. A tool, not a
@@ -185,4 +186,55 @@ window.ftLorCard = function(){
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
 
+
+/* ---------- 📤 THE LORs HANDED IN (Day 11's slide, .ftlor-hand — build/day-decks.cjs puts it under "Saving the File") ----------
+   The LOR Drafting Activity is done the way the training runs it: the trainee downloads the 1P and 3P templates from the LOR
+   Drafting tool, edits them on their computer, uploads them to their Assessments/Activities folder in Google Drive, then pastes
+   each letter's Drive link here and submits. Kept in actsub:<id>.items.lor = {answers: [1P link, 3P link], answer: the 1P
+   link, submittedAt} (worker.js keeps a trainee's own hand-ins). The trainer opens them and scores the activity on 🧑‍🏫 Graders
+   → 📝 Assessments (LOR Drafting Activity), and that score is the one on the Score Card (labreview:<id>.acts["lor-drafting"]). */
+const H = {id: null, sub: null, loading: false};
+const driveLink = u => /^https:\/\/(docs|drive)\.google\.com\//.test(String(u || "").trim());
+function handLoad(){
+  const id = state.traineeId; if(!isTrainee() || H.loading || H.id === id) return;
+  H.loading = true;
+  sharedGet("actsub:" + id).then(v => { H.sub = (((v || {}).items) || {}).lor || null; }).catch(() => {})
+    .finally(() => { H.id = id; H.loading = false; handPaint(true); });
+}
+function handHtml(){
+  const me = isTrainee(), sub = me && H.id === state.traineeId ? H.sub : null, a = (sub && sub.answers) || [];
+  const when = sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : "";
+  const row = (k, label, v) => `<label class="ftlor-hl"><b>${label}</b><input type="url" data-lor="${k}" ${me ? "" : "disabled"} placeholder="${me ? "https://docs.google.com/document/d/…" : "Each trainee pastes their own link"}" value="${e(v || "")}"></label>`;
+  return `<p class="ftlor-hh">📤 Hand in your LORs</p>
+    <p class="ftlor-hn">Download the template, edit it on your computer, then upload your finished letter to your <b>Assessments/Activities folder</b> in Google Drive. Paste each letter’s Drive link here and submit: your trainer opens them and scores your LORs.</p>
+    ${row(0, "1P LOR", a[0])}${row(1, "3P LOR with Affidavit", a[1])}
+    <div class="ftlor-hr"><button type="button" class="btn btn-navy" ${me ? `onclick="FTLorHand.submit(this)"` : "disabled"}>📤 ${sub ? "Submit again" : "Submit my LORs"}</button>
+      ${sub ? `<span class="ftlor-ok">✓ Submitted ${e(when)}: your trainer scores it.</span>` : ""}</div>`;
+}
+function handPaint(all){
+  document.querySelectorAll(".ftlor-hand").forEach(el => { if(!all && el.getAttribute("data-on")) return; el.setAttribute("data-on", "1"); el.innerHTML = handHtml(); });
+  if(document.querySelector(".ftlor-hand")) handLoad();
+}
+let hq = false;
+new MutationObserver(() => { if(hq || !document.querySelector(".ftlor-hand:not([data-on])")) return; hq = true; requestAnimationFrame(() => { hq = false; handPaint(false); }); })
+  .observe(document.documentElement, {childList: true, subtree: true});
+window.FTLorHand = {
+  async submit(b){
+    const v = [0, 1].map(k => String((document.querySelector(`.ftlor-hand input[data-lor="${k}"]`) || {}).value || "").trim());
+    if(!v[0] || !v[1]){ toast("Paste the Drive links of both letters: the 1P LOR and the 3P LOR with Affidavit."); return; }
+    if(!v.every(driveLink)){ toast("Paste each letter’s Google Drive link (https://docs.google.com/… or https://drive.google.com/…)."); return; }
+    const at = new Date().toISOString(); b.disabled = true;
+    const ok = await sharedSet("actsub:" + state.traineeId, {items: {lor: {answers: v, answer: v[0], submittedAt: at}}});
+    b.disabled = false;
+    if(ok === false){ toast("Couldn’t submit. Check your connection and try again."); return; }
+    H.sub = {answers: v, answer: v[0], submittedAt: at}; H.id = state.traineeId; handPaint(true);
+    toast("✓ Submitted — your trainer sees your LORs."); if(window.ftActivityDone) ftActivityDone();
+  },
+  html: handHtml
+};
+(function(){ const st = document.createElement("style"); st.id = "ft-lor-hand"; st.textContent = `
+.ftlor-hand{margin:10px 0 4px;padding:12px 14px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#fff;text-align:left;}
+.ftlor-hh{margin:0 0 4px !important;font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftlor-hn{margin:0 0 8px !important;font-size:15px;line-height:1.45;color:#2E3450;}
+.ftlor-hl{display:flex;flex-direction:column;gap:3px;margin:0 0 8px;font-size:15px;color:#1E2340;} .ftlor-hl input{padding:8px 10px;border:1.5px solid #AEB6C6;border-radius:8px;font-size:15px;}
+.ftlor-hr{display:flex;flex-wrap:wrap;align-items:center;gap:10px;} .ftlor-ok{font-weight:800;color:#1F7A45;font-size:15px;}`; document.head.appendChild(st); })();
 })();

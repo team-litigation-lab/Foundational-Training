@@ -900,11 +900,16 @@ const LOR_GUIDE = () => {
     return {h: a.h, lis};
   });
   if(p3.some(b => !p1.find(a => a.h === b.h))) throw new Error("Activity 2's LOR instructions have a step Activity 1's don't: lay them out anew");
-  // (the templates are in the platform's LOR Drafting tool, not the training GC: the first card opens it)
+  // (the templates are in the platform's LOR Drafting tool, not the training GC: the first card opens it, to download them; the
+  // letters are edited on the trainee's computer, uploaded to their Drive folder, and handed in on the last card: js/ft-lor.js
+  // .ftlor-hand, the Drive links the trainer scores on 🧑‍🏫 Graders → 📝 Assessments)
   const use = cards.find(c => c.h === "Use the Template");
   if(!use || use.lis.join("") !== "<li>Open the LOR template provided in the training GC.</li>") throw new Error("The LOR guidelines' Use the Template step has changed: point it at the LOR Drafting tool anew");
-  use.lis = ["<li>Open the 1P or 3P LOR template in the platform’s LOR Drafting tool.</li>"];
-  use.post = `<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div>`;
+  use.lis = ["<li>Download the 1P and 3P LOR templates from the platform’s LOR Drafting tool, then edit them on your computer.</li>"];
+  use.post = `<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool to download the templates →</button></div>`;
+  const save = cards.find(c => c.h === "Saving the File");
+  if(!save) throw new Error("The LOR guidelines no longer have a Saving the File step: put the LORs' hand-in (.ftlor-hand) anew");
+  save.post = `<div class="ftlor-hand"></div>`;
   // (four cards to a page, so they read at full size: LOR_HALF, where the slide turns its page, build ROWS[11])
   const card = (c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`;
   return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' + cards.slice(0, 4).map(card).join("") + "</div>\n" + LOR_HALF +

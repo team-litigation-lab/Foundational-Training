@@ -21,7 +21,7 @@ const SCORED_RUBRICS = ["reception", "calendar", "intake", "intake-packet", "lor
 const SCORED_ASSESS = ["14sz5f3HTQKmryc7Upvlc6qua008rPnmw", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", "policy-disclosure", "intakews"];
 // (and, as the training team asked, two activities the trainer grades with no scorecard: Day 5's Attorney Calendar Management
 // Activity — the Portal's Calendaring Activity score, wired into 🧑‍🏫 Graders — and Day 8's Intake Worksheet)
-const SCORED_ACTS = ["atty-calendar-activity", "intake-worksheet"];
+const SCORED_ACTS = ["atty-calendar-activity", "intake-worksheet", "lor-drafting"];   // (and Day 11's LOR Drafting Activity, handed in on Drive)
 const RUB = () => root.FT_RUBRICS || null;
 const actsList = () => (root.FTSessions && typeof FTSessions.acts === "function" ? FTSessions.acts() : null) || [];
 function actScored(a){
