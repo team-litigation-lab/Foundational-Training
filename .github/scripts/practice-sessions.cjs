@@ -241,7 +241,8 @@ const failures = []; const fail = (m) => failures.push(m);
         if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
     });
     // My Firm (js/ft-firms.js) is still reachable, just not from its own top bar button any more
-    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'My Firm']]) {
+    // (no Practice Lab: #/simulators goes back to the lesson, js/ft-lab-route.js)
+    for (const [view, what] of [['process', 'the Knowledge Check'], ['firm', 'My Firm']]) {
         const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
         if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
     }
