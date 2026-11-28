@@ -33,7 +33,7 @@ const failures = []; const fail = m => failures.push(m);
     await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3b'))); await page.waitForTimeout(1000);
     for (let i = 0; i < 4 && (await page.evaluate(() => state.view)) === 'daydeck'; i++) { await page.evaluate(() => FTDayDecks.next()); await page.waitForTimeout(700); }
     w = await at();
-    if (w.view !== 'calsim') fail(`Day 5's Next should open the Activity Items beside the calendar (#/calsim): ${JSON.stringify(w)}`);
+    if (w.view !== 'calactivity') fail(`Day 5's Next should open the activity's own page, its items beside the calendar (#/calactivity): ${JSON.stringify(w)}`);
     await page.evaluate(() => ftActivityDone()); await page.waitForTimeout(300);
     const doneBar = await page.evaluate(() => (document.getElementById('ftlr-done') || {}).innerText || '');
     if (!/Submitted/.test(doneBar) || !/Back to my lesson/.test(doneBar)) fail(`a hand-in shows no "Submitted · Back to my lesson" bar: ${doneBar}`);
@@ -42,7 +42,7 @@ const failures = []; const fail = m => failures.push(m);
     if (w.view !== 'daydeck' || w.day !== 5) fail(`after the hand-in the trainee isn't back on Day 5's deck: ${JSON.stringify(w)}`);
 
     // 3. every activity's way back: "← Back to the lesson", to the slide last open
-    for (const v of ['listening', 'transcribe', 'calcheck', 'calrules', 'calweek', 'drills', 'intakepacket', 'guide']) {
+    for (const v of ['listening', 'transcribe', 'calcheck', 'calrules', 'calweek', 'drills', 'intakepacket', 'guide', 'calactivity']) {
       await page.evaluate(() => FTDayDecks.open(9, 1)); await page.waitForTimeout(600);
       await page.evaluate(v => goto(v), v); await page.waitForTimeout(1200);
       const r = await page.evaluate(() => ({ view: state.view, practiceLab: /Back to the Practice Lab|🛠 Practice Lab/.test(document.body.innerText), back: !!document.querySelector('[onclick*="FTLabRoute.home"], [onclick*="FTListen.toDeck"], [onclick*="FTTranscribe.toDeck"]') }));
