@@ -168,10 +168,11 @@ function kindOf(s, html){
   // 📎 a slide the trainee keeps for reference rather than works through (REFERENCE)
   if((REFERENCE[DD.day] || []).includes(s.id)) return {ic: "📎", label: "Additional Reference"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
-  if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
+  // (🧑‍🏫 every demo and mock call is done with the trainer: Trainer Facilitated, on the slide's pill and the card's row)
+  if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
-  if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
-  if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
+  if(/mock call/i.test(h)) return {ic: "🧑‍🏫", label: "Trainer Facilitated"};
+  if(/demo/i.test(h)) return {ic: "🧑‍🏫", label: "Trainer Facilitated"};
   // a shadowing session is part of the day's Classroom Activity; a homework that names Shadowing Etiquette stays Homework
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   // (Day 3's Frontline Management: its decision trees and SOP are to listen and do by, not a discussion)
@@ -1367,7 +1368,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    ============================================================ */
 // the pills a row carries, as the card names its kind
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
-  watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
+  watch: "Watch & Do", assessment: "Assessment", mock: "Trainer Facilitated", demo: "Trainer Facilitated", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer", reference: "Additional Reference"};
 // (where a lesson's file goes; a lesson handed in on the platform names its own: its card's submit)
 const SUBMIT = "Assessments › Activities subfolder";
@@ -1395,7 +1396,7 @@ const LESSON_CARDS = {
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
       {t: boTitle(2), time: "PM", sub: boSub(2), k: "watch", run: "ftVideoOrAsk(2)"},
       // (a classroom activity, not homework: before the day's ✍️ Process Questions)
-      {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "classroom", d: 2, s: "s4"}],
+      {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "watch", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
       "Upload both assessments to your Assessments/Activities subfolder"],
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
@@ -1419,7 +1420,7 @@ const LESSON_CARDS = {
       // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       // (the optional Listening Activity is off Reception Part 1)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "reference", d: 3, s: "s2"},
+      {t: "CRM/CMS Training Videos", sub: "Captora, Clio Grow, Clio, Filevine, Smart Advocate · choose one now, the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Sim, LSH CommX and LSH CaseWorX · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
@@ -1432,7 +1433,7 @@ const LESSON_CARDS = {
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The sample and the time zone · then its instructions and ten items beside the Calendaring Activity simulator, and your score", k: "interactive", d: 5, s: "s3b"},
-      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
+      {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "mock", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
@@ -1458,15 +1459,15 @@ const LESSON_CARDS = {
       // (Part 2: Intake Video, Intake Documents Video with the naming convention in its steps, Other Intake Documents,
       // Instructions, CMS Demo and Mock Call, then the PM demo’s preparation; the demo itself has no slide, build/day-decks.cjs PREP_OFF)
       {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "watch", d: 8, s: "s1b"},
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
       {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
       {t: "CMS Demo and Mock Call", sub: "The live session · ☎ Practice Intake Calls: LSH CaseWorX & the Intake line", k: "watch", d: 8, s: "s1e"},
-      {t: "Demo Preparation", time: "PM", sub: "How it runs · then the SA tutorial video", k: "interactive", d: 8, s: "s3p"},
+      {t: "Demo Preparation", time: "PM", sub: "How it runs · then the SA tutorial video", k: "demo", d: 8, s: "s3p"},
       // (Part 2 closes on the Intake Mock Calls Metrics: Day 9's metrics slide, moved to Day 8's deck as mcm by
       // build/day-decks.cjs MOVE; Day 9's Intake Mock Calls slide is off the deck: the case and the practice links are on it)
-      {t: "Demo & Intake Mock Calls Metrics", sub: "What your demo and your graded intake call are scored on", k: "interactive", d: 8, s: "mcm"},
+      {t: "Demo & Intake Mock Calls Metrics", sub: "What your demo and your graded intake call are scored on", k: "demo", d: 8, s: "mcm"},
       // (Part 3: the Transcription Activity; no Buffer Time)
       {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       // (done on the Practice Lab's 🎧 Transcription Activity, not on the deck: build/day-decks.cjs takes Day 9's s3 off)
@@ -1495,7 +1496,7 @@ const LESSON_CARDS = {
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names · e-mail your LORs to your trainers", k: "read", d: 12, s: "s1b"},
-      {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
+      {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "demo", d: 12, s: "s1dp"},
       // (Day 12's Recorded Demonstration panel and Recorded Shadowing video are off the deck: build/day-decks.cjs SKIP[12])
       ],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
@@ -1516,13 +1517,13 @@ const LESSON_CARDS = {
       {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
       // then Day 15's recorded demonstration, on Day 14's deck (build/day-decks.cjs MOVE; Day 15 has no day card: js/ft-day-locks.js PARTS)
       {t: "Before Your Recorded Demonstration: the Tutorial Video", time: "PM", sub: "Watch it again before you record", k: "watch", d: 14, s: "r15v"},
-      {t: "Demo Preparation", time: "PM", sub: "The rules for your recorded demonstration", k: "interactive", d: 14, s: "s1ep"},
+      {t: "Demo Preparation", time: "PM", sub: "The rules for your recorded demonstration", k: "demo", d: 14, s: "s1ep"},
       // (Day 14's Recorded Demonstration panel and Shadowing Session are off the deck: build/day-decks.cjs PREP_OFF, SKIP),
       // (no shadowing: Day 15's Shadowing Session is off the training, build/day-decks.cjs SKIP)
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · how the demo is scored", k: "demo", d: 16, s: "s2b"},
-      {t: "Demo Preparation", time: "PM", sub: "Watch the recorded demos while you wait for your turn", k: "reference", d: 16, s: "s2p"},
+      {t: "Demo Preparation", time: "PM", sub: "Watch the recorded demos while you wait for your turn", k: "demo", d: 16, s: "s2p"},
       // (after the LV demo, as the guide's Day 17: an additional reference, build/day-decks.cjs INSERT[16])
       {t: "Saving Medical Bills & Records", sub: "The step-by-step slides, a sample demo, the naming conventions and reports", k: "reference", d: 16, s: "s3m"},
       // (Day 14's MedLOR tutorial video: build/day-decks.cjs MOVE)
@@ -3557,6 +3558,10 @@ main.main-ftdd .ftdd-sheet .ftdd-score-big table.ftms-tbl:not(:has(th:nth-child(
 /* (Day 9's metrics with the practice links beside them) */
 main.main-ftdd .ftdd-sheet > .ftdd-keep.ftdd-mcside{align-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;align-items:start;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) td{font-size:16px;padding:5px 10px;}
+/* (the two scorecards side by side, Day 8's Demo & Intake Mock Calls Metrics: compact rows, so the taller card fits without
+   the slide shrinking both — the text reads big) */
+main.main-ftdd .ftdd-sheet .ftdd-mc2 .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))){max-width:none;}
+main.main-ftdd .ftdd-sheet .ftdd-mc2 .ftdd-score table.ftms-tbl:not(:has(th:nth-child(3))) :is(td, th){padding:3px 14px !important;line-height:1.2 !important;font-size:20px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-r > p{font-size:26px !important;font-weight:800 !important;margin:0 0 8px !important;text-align:left !important;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-links{flex-direction:column;align-items:stretch;margin:0 0 12px;}
 main.main-ftdd .ftdd-sheet .ftdd-mcside-links a.btn{font-size:24px;padding:18px 22px;border-radius:12px;}   /* (big: the slide is drawn smaller to fit the metrics beside them) */
