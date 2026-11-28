@@ -69,8 +69,10 @@ const failures = []; const fail = m => failures.push(m);
   if (conn.some(c => /Professional Development/.test(c))) fail(`the table has a Professional Development & Progress column: ${JSON.stringify(conn)}`);
   if (conn.some(c => /^TAM/.test(c))) fail(`the report has a TAM column: ${JSON.stringify(conn)}`);
   // (no Spelling & Typing Tests column: every letter below is one to the left of before)
-  // (the sheet's own arithmetic below is on the Week 1 columns alone: the five connected ones taken off again)
-  for (let k = 0; k < 5; k++) { await page.evaluate(() => FTRanking.delCol(7)); await page.waitForTimeout(250); }   // (no Spelling & Typing notes column: one fewer)
+  // (🧑‍🏫 and Week 1's own scored activity not already a column — Day 5's Attorney Calendar Management Activity — is one)
+  if (!conn.some(c => /^Attorney Calendar Management Activity \(Day 5\)/.test(c))) fail(`Week 1 doesn't score its own Attorney Calendar Management Activity: ${JSON.stringify(conn)}`);
+  // (the sheet's own arithmetic below is on the Week 1 columns alone: the connected ones, after the template's seven, taken off again)
+  for (let k = 0; k < 12 && (await page.$$eval('.xl-head th', t => t.length)) > 17; k++) { await page.evaluate(() => FTRanking.delCol(7)); await page.waitForTimeout(250); }
   await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
   const heads = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
   const want = ['2', 'Trainee Name', 'Monitoring Sheet (5/5)', 'Tracker (5/5)', 'PI Reading Task (40/40)', 'PI Reading Task ÷ 5', 'Ass: Common Terms (27/27)', 'Ass: Common Terms ÷ 5',
@@ -185,11 +187,14 @@ const failures = []; const fail = m => failures.push(m);
   // (his only scored mark is the Reception Mock Calls' 4.14: the rest are Additional Reference)
   if ((await rowOf('Sam Second').locator('.rk-avg').innerText()) !== '4.14') fail(`Sam's average after the fill is ${await rowOf('Sam Second').locator('.rk-avg').innerText()} (4.14 expected)`);
 
-  // Week 2 starts from Week 1's columns, with no scores
+  // Week 2 starts from Week 1's columns, with no scores — less Week 1's own activities, never typed into (PI Reading Task, the
+  // assessments, Reception Mock Calls), and with Week 2's scored activities (🧑‍🏫 Graders) as its columns
   await page.evaluate(() => FTRanking.week(2)); await page.waitForTimeout(1200);
   await page.evaluate(() => FTRanking.start('last')); await page.waitForTimeout(800);
   const h2 = await page.$$eval('.xl-head th', t => t.map(x => x.innerText.replace(/\s+/g, ' ').trim()));
-  if (h2.length !== want.length + 5 || !h2.includes('W2 Final Average') || !h2.includes('Drive Links Compliance (5/5)')) fail(`Week 2 didn't start from Week 1's columns: ${JSON.stringify(h2)}`);
+  if (!h2.includes('W2 Final Average') || !h2.includes('Drive Links Compliance (5/5)') || !h2.includes('Monitoring Sheet (5/5)') || !h2.includes('Tracker (5/5)')) fail(`Week 2 didn't start from Week 1's columns: ${JSON.stringify(h2)}`);
+  if (h2.some(c => /^(PI Reading Task|Ass: Common Terms|Ass: Auto Liability|RC: Data Extraction|Reception Mock Calls)/.test(c))) fail(`Week 2 kept Week 1's activity columns: ${JSON.stringify(h2)}`);
+  if (!h2.some(c => /^Intake Mock Call with the trainer/.test(c))) fail(`Week 2 doesn't score its own activities (the Intake Mock Call): ${JSON.stringify(h2)}`);
   if (await page.$$eval('.xl .xl-num', t => t.filter(x => x.value).length)) fail('Week 2 came with Week 1\'s scores');
 
   // ⤓ Fill, this week only: Tom's day checks have the Tracker at 100% on a Week 1 day and 40% on a Week 2 day; Week 2's Tracker
