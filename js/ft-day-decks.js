@@ -1431,7 +1431,7 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
+      {t: "Attorney Calendar Management Activity", sub: "The sample and the time zone · then its instructions and ten items beside the Calendaring Activity simulator, and your score", k: "interactive", d: 5, s: "s3b"},
       {t: "Calendaring Mock Calls", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
@@ -1448,7 +1448,7 @@ const LESSON_CARDS = {
       // no instructions) ends it. (No shadowing: Day 7's Scheduled Shadowing is off the training)
       {t: boTitle(7), sub: boSub(7), k: "watch", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Knowledge Check", sub: "Process Questions · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(6)", day: 7},
-      {t: "Common Insurance Providers", sub: "The eight carriers", k: "interactive", d: 7, s: "insurance"},
+      {t: "Common Insurance Providers", sub: "The eight carriers", k: "read", d: 7, s: "insurance"},
       {t: "Checklist", sub: "Claim documents & evidence", k: "read", d: 7, s: "forms", lead: false},
       {t: "Blank Forms", sub: "The five blank PI intake forms", k: "read", d: 7, s: "formsb", lead: false},
       {t: "Recording: Mock Intake", sub: "Played on the slide", k: "watch", d: 7, s: "formsc"},

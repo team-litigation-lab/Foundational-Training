@@ -1703,6 +1703,9 @@ const CAL_ACTIVITY = {ins: "", items: []};
   if(!ins.test(s3.html) || !/<div class="ftdd-cards2 ftdd-cards2-b">/.test(s3.html) || !s3b) throw new Error("Day 5's Instructions slide has no Calendaring Activity button or cards, or no Sample & Time Zone slide");
   CAL_ACTIVITY.ins = (s3.html.match(/<div class="ftdd-cards2 ftdd-cards2-b">[\s\S]*?<\/div>\n<\/div>\n<\/div>\n|<div class="ftdd-cards2 ftdd-cards2-b">[\s\S]*$/) || [""])[0];
   s3.html = s3.html.replace(ins, "").replace('<div class="ftdd-cards2 ftdd-cards2-b">', '<div class="ftdd-cards2 ftdd-cards2-b" data-bartitle="Remember the RULES!">');
+  // (the Instructions slide itself is off the deck: its cards are on the activity's own page, js/ft-calactivity.js, beside the
+  // calendar; Day 5's activity is its Sample & Time Zone slide, whose Next opens that page)
+  a.splice(a.indexOf(s3), 1);
   s3b.html += '<div class="ftdd-calsim ftdd-calsim-lab"><button type="button" class="btn btn-navy" title="The instructions and the ten Activity Items beside the Calendar Simulator" onclick="goto(\'calactivity\')">🗓 Open the Activity Items &amp; the calendar</button></div>\n'; }
 // 🎬 Day 6's Calendar Management Training Videos on one slide: its five videos as cards side by side (data-card, as Day 3's
 // CRM/CMS videos: each one's preview, played bigger in the pop-up viewer), the two Loom references among them, and its
