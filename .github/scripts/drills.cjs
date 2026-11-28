@@ -58,14 +58,11 @@ const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
 
   // the Practice Lab card and the demo days
   await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });   // the trainer has opened the lessons (the Practice Lab goes by the day)
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
-  // (no Practice Lab card: the drills only helped the trainees prepare their demos; the page still opens, below)
-  if (await page.$('text=Open the drills')) fail('the 🏷 Naming & Reporting Drills still have a Practice Lab card');
   const steps = await page.evaluate(() => [8, 12, 14, 16].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'drills')));
   if (steps.some(x => !x)) fail(`not every demo day has its drill step: ${JSON.stringify(steps)}`);
 
   // a round of MedLOR: one wrong answer
-  await page.click('text=Open the drills'); await page.waitForTimeout(800);
+  await page.evaluate(() => goto('drills')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDrills.start('medlor')); await page.waitForTimeout(300);
   let ans0 = '';
   for (let i = 0; i < 10; i++) {

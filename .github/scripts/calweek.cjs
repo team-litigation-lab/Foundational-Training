@@ -138,17 +138,6 @@ async function workerChecks({ perfect, practice }) {
   await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
 
-  // the Practice Lab: one calendaring activity, 🗓 Attorney Calendar Management Activity (do it, then check it), and the
-  // Appointment Setting Mock Calls' session; the Calendaring Activity (next week's calendar) isn't a step of either
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(600);
-  const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.textContent.trim()));
-  const cals = lab.filter(t => /Calendar|Calendaring/.test(t) && !/Appointment Setting/.test(t));
-  if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Appointment Setting Mock Calls aren't on the Practice Lab: ${JSON.stringify(lab)}`);
-  const weekStep = await page.evaluate(() => [...document.querySelectorAll('.fts-card button')].some(b => /goto\('calweek'\)/.test(b.getAttribute('onclick') || '')));
-  if (cals.length !== 1 || !/Attorney Calendar Management Activity/.test(cals[0]) || weekStep) fail(`the Practice Lab should have one calendaring activity, with no next-week step: ${JSON.stringify(cals)}`);
-  // (only scored work on the Practice Lab: the unscored 🧪 Calendar Practice (VA Practice Only) isn't there)
-  if (lab.some(t => /VA Practice Only/.test(t))) fail(`the unscored VA Practice Only card is on the Practice Lab: ${JSON.stringify(lab)}`);
-
   // the page opens on this week, from the server's clock
   await page.evaluate(() => goto('calweek')); await page.waitForTimeout(1200);
   const v = await page.evaluate(() => ({ h: (document.querySelector('.cw-hero h1') || {}).textContent, bar: (document.querySelector('.cw-bar b') || {}).textContent, cur: FTCalWeek.state().data && FTCalWeek.state().data.current.label, cols: document.querySelectorAll('.cw-col').length, links: [...document.querySelectorAll('.cw-links button, .cw-links a')].map(b => b.textContent) }));

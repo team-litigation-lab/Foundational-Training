@@ -189,14 +189,7 @@ async function workerChecks() {
   });
   pure.out.forEach(fail);
 
-  // the Practice Lab card and Day 5 (the activity's Sample & Time Zone slide, s3b, shown before its items, has no tile: the Check is the day card's stop)
-  await page.evaluate(() => { state.ftOpenDays = { all: [1], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
-  // (🔒 every activity is listed from the start, locked until its day's training is unlocked: its button does nothing)
-  if (await page.evaluate(() => [...document.querySelectorAll('.fts-card button')].some(b => /Check my calendar/.test(b.textContent) && !b.disabled && !b.closest('.fts-locked'))))
-    fail('the Calendar Activity Check is open on the Practice Lab before its day');
-  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
-  if (!(await page.$('text=Check my calendar'))) fail('the Practice Lab has no 📅 Calendar Activity Check card');
-  if (!(await page.$('.fts-card button[onclick*="ftsCalsim(\'activity\')"]'))) fail('the Practice Lab\'s Attorney Calendar Management Activity card has no link to the Portal\'s Standard Training - Calendar Management Activity track');
+  // (no Practice Lab: the Calendar Activity Check opens from its day, Day 6, and #/calcheck)
   if (!(await page.evaluate(() => (FTDays.of(6).items || []).some(x => x.at === 'tool' && x.id === 'calcheck')))) fail('Day 6 doesn\'t point to the Calendar Activity Check');
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
   const deck = await page.evaluate(() => ({ bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length, tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
