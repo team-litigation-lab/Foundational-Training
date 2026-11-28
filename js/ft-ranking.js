@@ -88,6 +88,8 @@ function mark(col, cell){
 }
 function rowOf(id){ const d = R.data; d.rows[id] = d.rows[id] || {cells: {}, notes: ""}; d.rows[id].cells = d.rows[id].cells || {}; return d.rows[id]; }
 function average(id){
+  // (none while the report is being read again: FTRanking.reload)
+  if(!R.data) return null;
   const r = (R.data.rows || {})[id]; if(!r) return null;
   const ms = R.data.cols.map(c => mark(c, (r.cells || {})[c.id])).filter(m => m != null);
   return ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : null;
@@ -859,6 +861,7 @@ window.FTRanking = {
   sort(){ R.sort = R.sort === "rank" ? "name" : "rank"; render(); },
   // 📤 each trainee gets their own row of this week (rankshare:<id>, which only they and the trainers read)
   async share(btn){
+    if(!R.data){ toast("The report is still loading. Try again in a moment."); return; }
     if(R.data && R.data.auto && !R.data.auto.approved){ toast("Approve the drafted report first (✓ Approve the report)."); return; }
     const list = ranked(), of = list.filter(x => x.rank).length;
     if(!of){ toast("Score the trainees first."); return; }
