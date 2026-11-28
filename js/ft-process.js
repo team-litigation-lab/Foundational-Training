@@ -484,7 +484,7 @@ const ASSESSMENTS = {2: [
    never left unseen and ungraded (it was only a link on Day 8's slide). Always on the page,
    not only when a slide's link opened it: the worksheet itself to read, ✏️ Make my editable copy, and 📤 the link of the
    completed one submitted here (js/ft-intake.js paints .ftis-sheet / .ftis-wsub: actsub:<id>.items.intakews, the same
-   submission the Day 8 slide takes). Its grade — the trainer's, against the Training Guide's Answer Sheets, on the trainee's
+   submission the Day 8 slide takes). Its grade — the trainer's, on the trainee's understanding and critical thinking (no answer sheet), on the trainee's
    📋 Batch Sheet card (trackerreview:<id>.assess.intakews) — shows here as soon as it's in, so a submitted worksheet is never
    left unseen. */
 const KC_WORKSHEETS = {6: {t: "Worksheet for Intake Documents (Day 8)", key: "intakews",
@@ -502,7 +502,7 @@ function worksheetCard(lesson){
   const g = WSG.id === state.traineeId ? WSG.g[w.key] : null, pct = g && isFinite(Number(g.pct)) ? Math.round(Number(g.pct)) : null;
   const grade = state.isAdmin ? `<p class="fp-ws-g">Trainers grade it on the trainee's 📋 Batch Sheet card (📦 Intake Packet → 📝 Intake Worksheet).</p>`
     : pct != null ? `<p class="fp-ws-g ok">✓ Graded: <b>${pct}%</b>${g.comment ? ` · “${e(g.comment)}”` : ""}</p>`
-    : `<p class="fp-ws-g">Graded by your trainer against the Answer Sheets once you submit it. Your score shows here.</p>`;
+    : `<p class="fp-ws-g">Your trainer grades your understanding and critical thinking, according to the intake documents, once you submit it. Your score shows here.</p>`;
   return `<div class="card fp-set fp-assess fp-ws"><div class="fp-head"><b>📄 ${e(w.t)}</b><span class="fp-count">Part of this Knowledge Check: answer it here, then submit</span></div>
     <div class="fp-body">
       <div class="ftis-wsub"></div>
