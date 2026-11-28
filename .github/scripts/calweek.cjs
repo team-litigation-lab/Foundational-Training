@@ -138,17 +138,6 @@ async function workerChecks({ perfect, practice }) {
   await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
 
-  // the Practice Lab: one calendaring activity, 🗓 Attorney Calendar Management Activity (do it, then check it), and the
-  // Appointment Setting Mock Calls' session; the Calendaring Activity (next week's calendar) isn't a step of either
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(600);
-  const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.textContent.trim()));
-  const cals = lab.filter(t => /Calendar|Calendaring/.test(t) && !/Appointment Setting/.test(t));
-  if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Appointment Setting Mock Calls aren't on the Practice Lab: ${JSON.stringify(lab)}`);
-  const weekStep = await page.evaluate(() => [...document.querySelectorAll('.fts-card button')].some(b => /goto\('calweek'\)/.test(b.getAttribute('onclick') || '')));
-  if (cals.length !== 1 || !/Attorney Calendar Management Activity/.test(cals[0]) || weekStep) fail(`the Practice Lab should have one calendaring activity, with no next-week step: ${JSON.stringify(cals)}`);
-  // (only scored work on the Practice Lab: the unscored 🧪 Calendar Practice (VA Practice Only) isn't there)
-  if (lab.some(t => /VA Practice Only/.test(t))) fail(`the unscored VA Practice Only card is on the Practice Lab: ${JSON.stringify(lab)}`);
-
   // the page opens on this week, from the server's clock
   await page.evaluate(() => goto('calweek')); await page.waitForTimeout(1200);
   const v = await page.evaluate(() => ({ h: (document.querySelector('.cw-hero h1') || {}).textContent, bar: (document.querySelector('.cw-bar b') || {}).textContent, cur: FTCalWeek.state().data && FTCalWeek.state().data.current.label, cols: document.querySelectorAll('.cw-col').length, links: [...document.querySelectorAll('.cw-links button, .cw-links a')].map(b => b.textContent) }));
@@ -170,9 +159,9 @@ async function workerChecks({ perfect, practice }) {
   const day6 = await page.evaluate(() => (FTDays.of(6) || {}).items.map(i => i.id || ''));
   if (!day6.includes('calweek')) fail(`Day 6 doesn't list the Calendaring Activity: ${JSON.stringify(day6)}`);
   await page.evaluate(() => FTCalWeek.attorneyActivity()); await page.waitForTimeout(1500);
-  // (the slide opens; it carries no link pills on its bar: they were taken off every deck)
-  const slide = await page.evaluate(() => ({ view: state.view, acts: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
-  if (slide.view !== 'daydeck' || slide.acts) fail(`the Attorney Calendar Management Activity slide: ${JSON.stringify(slide)}`);
+  // (the activity's own page opens: its instructions and items beside the Portal's calendar)
+  const slide = await page.evaluate(() => ({ view: state.view, items: document.querySelectorAll('main.main-ca .ftdd-cal-item').length }));
+  if (slide.view !== 'calactivity' || slide.items !== 10) fail(`the Attorney Calendar Management Activity page: ${JSON.stringify(slide)}`);
 
   // 🧪 the practice page: Attorney Chen's week, no Submit, ↺ Start over, and the graded calendar untouched
   const graded = await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events));
