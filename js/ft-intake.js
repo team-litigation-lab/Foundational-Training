@@ -635,7 +635,8 @@ window.FTIntake = {
     b.disabled = false;
     if(ok === false){ toast("Couldn’t submit. Check your connection and try again."); return; }
     K.sub = {answers: v, answer: "platform", submittedAt: at}; try{ localStorage.removeItem(wsDraftKey()); }catch(e){}
-    paint(); toast("✓ Submitted — your trainer sees your worksheet."); if(window.ftActivityDone) ftActivityDone();
+    // (on Day 8's deck the trainee is already on their lesson: no "back to my lesson" bar there)
+    paint(); toast("✓ Submitted — your trainer sees your worksheet."); if(window.ftActivityDone && state.view !== "daydeck") ftActivityDone();
   },
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }
 };

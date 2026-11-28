@@ -1671,6 +1671,11 @@ function noKB(html){
     /<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span><div class="ftdd-step-t">Update #16[^<]*<\/div><\/div>\n?/];
   cut.forEach(re => { x.html = x.html.replace(re, ""); });
   if(/ftis-packet|ftdd-step-n/.test(x.html)) throw new Error("Day 8's packet steps are no longer where the build takes them off the deck"); }
+// 📝 Day 8's Worksheet for Intake Documents, on the deck as its own activity slide, after the intake documents it asks about
+// (s1b, s1c): the trainee answers each document's content and purpose and submits it there (js/ft-intake.js .ftis-wsub:
+// actsub:<id>.items.intakews), and the trainer grades it on 🧑‍🏫 Graders → 📝 Assessments and the 📋 Batch Sheet
+{ const a = (decks[8] || {slides: []}).slides, i = a.findIndex(y => y.id === "s1c"); if(i < 0) throw new Error("Day 8 has no s1c to put the Intake Worksheet after");
+  a.splice(i + 1, 0, {id: "ws", h: "AM: Activity: Worksheet for Intake Documents", html: '<div class="ftis-wsub"></div>\n'}); }
 // 🛠 Day 9's 3.1 Transcription Activity is done on the Practice Lab's 🎧 Transcription Activity card: off the deck
 { const a = (decks[9] || {slides: []}).slides, i = a.findIndex(y => y.id === "s3"); if(i < 0) throw new Error("Day 9 has no s3 to take off"); a.splice(i, 1); }
 // 🎧 Day 3's Reception Listening Activity: its five calls are on the Practice Lab's 🎧 Call Listening Log (its tab, with
