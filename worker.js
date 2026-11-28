@@ -3684,9 +3684,11 @@ export default {
         return json({ ok: true, date: D, done: out });
       }
       if (path === "/api/sim-scores/sync") {
-        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        // (a trainer: any trainees'; ⚡ a trainee: their own, as they come back from the Portal's simulator — js/ft-calactivity.js
+        // asks while the activity's page is open, so its score is on their page and Score Card at once)
+        if (tok.role !== "a" && tok.role !== "t") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
-        const ids = (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40), out = {};
+        const ids = tok.role === "a" ? (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 40) : [String(tok.id || "")].filter(Boolean), out = {};
         for (const id of ids) { try { out[id] = await syncSimScores(env, id); } catch (e) { out[id] = []; } }
         return json({ ok: true, filled: out });
       }

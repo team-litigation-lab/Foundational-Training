@@ -1237,11 +1237,13 @@ function calAnchor(){
   // (a record that couldn't be read is never written over: its dates are the batch's, unsaved)
   const get = typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet;
   CA.loading = get("calsim:" + id).then(rec => A.anchorOfRecord(rec) || A.anchorForBatch(batch) || A.anchorNow(), () => A.anchorForBatch(batch) || A.anchorNow())
-    .then(a => { if(CA.id !== who) return; CA.anchor = a; CA.loading = null; if(state.view === "daydeck" && document.querySelector("main.main-ftdd [data-cal-date]")){ calDates(); fitSheets(); } });
+    .then(a => { if(CA.id !== who) return; CA.anchor = a; CA.loading = null; if(state.view === "daydeck" && document.querySelector("main.main-ftdd [data-cal-date]")){ calDates(); fitSheets(); }
+      if(state.view === "calactivity"){ const el = document.querySelector("main.main-ca"); if(el) calDates(el); } });
   return null;
 }
-function calDates(){
-  const spans = document.querySelectorAll("main.main-ftdd [data-cal-date]"); if(!spans.length) return;
+function calDates(scope){
+  // (scope: another page's element with the activity's items, js/ft-calactivity.js; else the deck on screen)
+  const spans = scope ? scope.querySelectorAll("[data-cal-date]") : document.querySelectorAll("main.main-ftdd [data-cal-date]"); if(!spans.length) return;
   const A = root.FTCalCore && FTCalCore.act; if(!A) return;
   const a = calAnchor(), k = a ? A.weeksOf(a) : 0;
   spans.forEach(x => { x.classList.toggle("ftdd-cal-wait", !a); if(a) x.textContent = A.longDate(A.shiftIso(x.getAttribute("data-cal-date"), k)); });
@@ -1557,7 +1559,7 @@ const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 // (and Day 3's Reception Listening Activity: its Instructions slide's Next opens the activity's page, its five calls beside
 // its instructions, whose 📚 Back to the lesson returns to the slide after it: js/ft-listening.js fromDeck)
 const LAB_NEXT = {3: {s1c: {label: "Next: 🎧 The 5 practice calls in the 🛠 Practice Lab →", ok: () => !!(root.FTListen && FTListen.fromDeck), run: () => FTListen.fromDeck("recact")}},
-  5: {s3b: {label: "Next: 🧪 The Activity Items in the 🛠 Practice Lab →", ok: () => typeof root.goto === "function", run: () => goto("calsim", "attorney-activity")}}};
+  5: {s3b: {label: "Next: 🗓 The Activity Items & the calendar →", ok: () => typeof root.goto === "function", run: () => goto("calactivity")}}};
 const labOf = s => { const l = s && (LAB_NEXT[DD.day] || {})[s.id]; return l && l.ok() ? l : null; };
 function kcNext(s){
   const lab = labOf(s);
@@ -2150,7 +2152,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC, lastAt,   // (lastAt: the deck slide last open, the way back to the lesson after an activity)
+root.FTDayDecks = {open, go, next: nextKC, lastAt, calDates,   // (lastAt: the deck slide last open, the way back to the lesson after an activity)
   // (the scale every day's card starts from: Day 1's card fitted to the given slide box, or to the slide on screen; for the
   // Day decks test)
   cardScale(box){ box = box || document.querySelector("main.main-ftdd .ftdd-onnavy.ftdd-lcslide"); return box ? cardScale(box) : null; },
