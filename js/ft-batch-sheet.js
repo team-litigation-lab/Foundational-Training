@@ -2704,11 +2704,22 @@ window.render = function(){
   try{ document.body.classList.toggle("bs-wide", on() || (state.view === "admin" && (state.adminTab === "graders" || state.adminTab === "intake"))); }catch(err){}
   B.keepKey = key;
   if(!same) B.keepY = key ? window.scrollY : 0;
-  else if(y && Math.abs(window.scrollY - y) > 2){ window.scrollTo(0, y); requestAnimationFrame(() => { if(B.keepKey === key && B.data && Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }); }
+  else if(y && Math.abs(window.scrollY - y) > 2) keepPlace(key, y);
   return out;
 };
+// (back to where the trainer was: at once, then again as the content that loads after the redraw makes the page tall enough,
+// for up to 3 s — unless the trainer scrolls meanwhile)
+function keepPlace(key, y){
+  const t0 = Date.now(), go = () => { if(B.keepKey !== key || userScrolled(t0)) return; if(Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+    if(Math.abs(window.scrollY - y) > 2 && Date.now() - t0 < 3000) setTimeout(go, 120); };
+  go(); requestAnimationFrame(go);
+}
+// (a scroll the trainer made — the wheel, a touch, the keys, the scrollbar — not the browser pulling the page up while a redraw
+// left it short for a moment: only the trainer's own scrolls are remembered)
+const userScrolled = since => (B.userAt || 0) > since;
+["wheel", "touchmove", "keydown", "mousedown"].forEach(ev => window.addEventListener(ev, () => { B.userAt = Date.now(); }, {passive: true, capture: true}));
 // (where the page is: remembered while the sheet is on screen — not while it's being redrawn or still loading)
-window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.data || (meOn() && B.me)) && on()) B.keepY = window.scrollY; }catch(err){} }, {passive: true});
+window.addEventListener("scroll", () => { try{ if(!B.drawing && B.keepKey && (B.data || (meOn() && B.me)) && on() && Date.now() - (B.userAt || 0) < 1500) B.keepY = window.scrollY; }catch(err){} }, {passive: true});
 
 // 🟦 the dark page banner (the Weekly Progress Report's look): Legal Support Help · Legal VA Foundational Track, the page's
 // name, and Batch · Week · its dates under it; js/ft-batch-admin.js (🧑‍🏫 Graders) draws it too
