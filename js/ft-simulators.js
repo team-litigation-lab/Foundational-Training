@@ -64,6 +64,7 @@ function addWho(q){
 }
 // The Portal's Calendaring Simulators (the Google Calendar Simulator): their own tab, with the trainee's name and batch.
 function portalHref(page){ return PORTAL + page + "?" + addWho(new URLSearchParams({program:"FT"})); }
+window.ftsPortalHref = portalHref;   // (the activity's own page opens the Portal's calendar beside it: js/ft-calactivity.js)
 // The orientation slide's "Open the Practice Lab" and the day map's daily step: the tests themselves.
 window.ftsGotoSkills = function(){ goto("skills"); };
 
@@ -144,7 +145,7 @@ const CAL_CARDS = [
    note: "Manage the attorney’s Google Calendar in Pacific Time, then check every event you entered. Two steps, in this order:",
    steps: [
      {id: "calactivity", t: "Do the activity", n: "The ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes.",
-      b: [["Open the activity", "goto('calsim','attorney-activity')"]]},
+      b: [["Open the activity", "goto('calactivity')"]]},
      {id: "calcheck", t: "Check your calendar on the ✅ Calendar Activity Check", n: "Enter what each event holds: every field is checked against the activity, then submit it.", b: [["Check my calendar", "goto('calcheck')"]]},
      // (the curriculum has two calendaring pieces: this activity, and the Calendar Management Mock Call done live with the trainer.
      // No 3rd step: the Standard Training - Calendaring Activity (next week's calendar) and the Booking Rule Check are off the Practice Lab)

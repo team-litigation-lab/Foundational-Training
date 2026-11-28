@@ -96,25 +96,27 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4, on the metrics page, not a slide of their own; Calendaring's Day 5 no longer opens on them)
   if (mon5.id === 's1' || (D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
     fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 still has it as a slide: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
-  // (its Activity Items are on the Practice Lab now, #/calsim/attorney-activity beside the simulator: no slides of their own;
-  // the Instructions slide is its two cards and links there beside the Main Portal's button)
-  const txt = sl(5, 's3'), ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length;
-  if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || (D[5].slides || []).some(s => /^s3[ijkl]$/.test(s.id)) || !/data-bartitle="Remember the RULES!"/.test(txt) || /ftdd-calsim-ins|ftsCalsim/.test(txt)
-    || !/class="ftdd-calsim ftdd-calsim-lab"><button[^>]*onclick="goto\('calsim','attorney-activity'\)">🧪 Activity Items: Practice Lab</.test(sl(5, 's3b')))
-    fail(`Day 5's activity isn't its Instructions in two cards under "Remember the RULES!" (no Portal button), its item slides off and the Practice Lab's Activity Items link ending the Sample & Time Zone slide: ${JSON.stringify({ ins, ids: (D[5].slides || []).map(s => s.id) })}`);
+  // (its Instructions and Activity Items are on the activity's own page, js/ft-calactivity.js, beside the calendar: no slides of
+  // their own; the build keeps them for it, FT_CAL_ACTIVITY, and the Sample & Time Zone slide opens it)
+  const CA = ctx.window.FT_CAL_ACTIVITY || { ins: '', items: [] }, txt = CA.ins, ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length;
+  const caItems = (CA.items || []).join('');
+  if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
+    || (caItems.match(/class="ftdd-cal-item[ "]/g) || []).length !== 10 || (caItems.match(/data-cal-date="2026-07-\d\d"/g) || []).length !== 12
+    || (D[5].slides || []).some(s => /^s3[ijkl]?$/.test(s.id))
+    || !/onclick="goto\('calactivity'\)">🗓 Open the Activity Items &amp; the calendar</.test(sl(5, 's3b')))
+    fail(`Day 5's activity isn't its Sample & Time Zone slide opening its page (the instructions in two cards and the ten dated items kept for it, no Instructions or item slides): ${JSON.stringify({ ins, items: (caItems.match(/class="ftdd-cal-item[ "]/g) || []).length, ids: (D[5].slides || []).map(s => s.id) })}`);
   if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || /Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, lost its drawn samples (Day 6\'s format), or still has the Calendar Activity Check tile (the activity\'s one link is on its Instructions slide)');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
   // (the samples and the time zone, s3b, come before the items, right after the Instructions; the sample's title names the
   // client, and its calendar colour is highlighted like the other parts an appointment must have right)
   const order5 = (D[5].slides || []).map(s => s.id).filter(x => /^s3/.test(x)).join();
-  if (order5 !== 's3,s3b') fail(`Day 5's samples and time zone don't follow the activity's Instructions: ${order5}`);
+  if (order5 !== 's3b') fail(`Day 5's activity should be its Sample & Time Zone slide alone: ${order5}`);
   if (!/<span class="ftdd-ev-mark">Deposition Meeting – Jane Doe<\/span>/.test(sl(5, 's3b')) || !/◀ Specific title, naming the person/.test(sl(5, 's3b'))
     || !/<span class="ftdd-ev-hlf ftdd-ev-f"><span class="ftdd-ev-dot"/.test(sl(5, 's3b'))) fail('Day 5\'s sample event doesn\'t name its client in the title, or its calendar colour isn\'t highlighted');
   // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
   // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
   // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Sample & Time Zone)
-  if ([sl(5, 's3'), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
+  if (/ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(sl(5, 's3b')))
     fail('Day 5\'s activity still links the Main Portal\'s calendar or the Check on its slides (its one link is the Practice Lab\'s Activity Items)');
   // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
   // (the mock calls' calendar, Standard Training - Mock Call, has no link on the deck)
