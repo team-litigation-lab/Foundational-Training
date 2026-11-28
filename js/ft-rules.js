@@ -388,7 +388,7 @@ const SLIDES = [
     ${rule("🔄 Unlearn, and Live the Moment", "Be ready to unlearn: some habits from past jobs won't fit how we work here, so let them go. Live the moment: give each task, discussion and feedback your full focus as it happens, not what came before or what comes next.")}
     ${rule("👔 Be Professional, Always", "You are working in the legal industry, alongside experts and for paying clients. The quality of the work you hand in today shows how professionally you handle things, so treat every task as client work.")}
     <div class="ftr-rule ftr-values"><b>🫱 Respect, and the Right Channel</b><span>Treat everyone with respect. When you have a concern, bring it to your trainers or the proper channel, not to people who can only make it worse. Live by our 9 Core Values:</span>
-      <div class="ftr-vals"><i>Integrity &amp; Loyalty Through Compliance</i><i>Accountability</i><i>Ownership &amp; Follow-Through</i><i>Taking Initiative &amp; Proactive Problem-Solving</i><i>Adaptability &amp; Flexibility</i><i>Excellence in Detail &amp; Quality</i><i>Transparent &amp; Proactive Communication</i><i>Results-Driven Time Management</i><i>Growth Mindset &amp; Continuous Improvement</i></div></div>
+      <button type="button" class="ftr-vals-btn" onclick="ftrValues()">🫱 Our 9 Core Values</button></div>
     </div>
 `],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
@@ -816,6 +816,20 @@ body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-colum
 .ftr-lesson b{font-size:16px;color:var(--navy);} .ftr-lesson span{font-size:14px;color:var(--ink-soft);}
 .ftr-why2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;align-items:stretch;}
 .ftr-vals{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+/* 🫱 the 9 Core Values: a button on the rule, the values in a pop-up in the LSH elite design, big and bold */
+.ftr-vals-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:9px 16px;border-radius:12px;border:0;background:#1E2340;color:#fff;font:800 15px/1.2 'Poppins','Inter',sans-serif;cursor:pointer;box-shadow:0 6px 14px -6px rgba(30,35,64,.6);border-left:5px solid #E8590C;}
+.ftr-vals-btn:hover, .ftr-vals-btn:focus-visible{background:#2C335C;outline:3px solid #FFB27A;}
+#ftr-vals-pop{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(12,14,30,.62);backdrop-filter:blur(3px);}
+#ftr-vals-pop .ftv-in{width:min(1100px,100%);max-height:calc(100vh - 48px);overflow:auto;border-radius:22px;background:#fff;box-shadow:0 30px 70px -20px rgba(0,0,0,.6);border:4px solid transparent;
+  background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#2A3050 0%,#3A4168 35%,#B98E66 80%,#C9A27A 100%) border-box;}
+#ftr-vals-pop .ftv-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 26px;background:linear-gradient(135deg,#1F2440 0%,#2B3158 60%,#353C68 100%);color:#fff;border-bottom:4px solid #E8590C;}
+#ftr-vals-pop .ftv-h h2{margin:0;font:900 28px/1.2 'Poppins','Inter',sans-serif;color:#fff;} #ftr-vals-pop .ftv-h small{display:block;color:#E9CC7E;font:700 15px/1.3 'Inter',sans-serif;margin-top:4px;}
+#ftr-vals-pop .ftv-x{border:0;background:rgba(255,255,255,.14);color:#fff;font-size:20px;width:40px;height:40px;border-radius:50%;cursor:pointer;}
+#ftr-vals-pop .ftv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:24px 26px 28px;}
+#ftr-vals-pop .ftv-card{display:flex;align-items:center;gap:14px;padding:18px 18px;border-radius:16px;background:#F6F7FB;border:2px solid #E3E6F0;border-left:6px solid #E8590C;}
+#ftr-vals-pop .ftv-n{flex:0 0 46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#1E2340;color:#E9CC7E;font:900 22px/1 'Poppins','Inter',sans-serif;}
+#ftr-vals-pop .ftv-t{font:800 21px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;}
+@media (max-width:900px){ #ftr-vals-pop .ftv-grid{grid-template-columns:minmax(0,1fr);} #ftr-vals-pop .ftv-t{font-size:19px;} }
 .ftr-vals i{font-style:normal;font-weight:700;font-size:12.5px;line-height:1.25;color:#1E2340;background:#fff;border:1px solid #E9C9C3;border-radius:999px;padding:2px 8px;}
 @media (max-width:1100px){ .ftr-why2{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .ftr-why2 .ftr-rule{margin:0 !important;}
@@ -875,3 +889,19 @@ body.ft-orient #lessonSlideWrap .ftr-why2 .ftr-rule b{font-size:clamp(16px,1.6vw
 @media (max-width:520px){ .ftr-todo{flex-wrap:wrap;} .ftr-todo .btn{margin-left:38px;} }
 `; document.head.appendChild(s); })();
 })();
+
+/* 🫱 the 9 Core Values pop-up (the Setting Expectations rule's button): ✕, Esc or a click outside closes it */
+window.ftrValues = function(){
+  const V = ["Integrity & Loyalty Through Compliance", "Accountability", "Ownership & Follow-Through", "Taking Initiative & Proactive Problem-Solving",
+    "Adaptability & Flexibility", "Excellence in Detail & Quality", "Transparent & Proactive Communication", "Results-Driven Time Management", "Growth Mindset & Continuous Improvement"];
+  const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const old = document.getElementById("ftr-vals-pop"); if(old) old.remove();
+  const p = document.createElement("div"); p.id = "ftr-vals-pop"; p.setAttribute("role", "dialog"); p.setAttribute("aria-modal", "true"); p.setAttribute("aria-label", "Our 9 Core Values");
+  p.innerHTML = `<div class="ftv-in"><div class="ftv-h"><div><h2>🫱 Our 9 Core Values</h2><small>Live by them, every day of training and beyond</small></div><button type="button" class="ftv-x" aria-label="Close">✕</button></div>
+    <div class="ftv-grid">${V.map((v, i) => `<div class="ftv-card"><span class="ftv-n">${i + 1}</span><span class="ftv-t">${esc(v)}</span></div>`).join("")}</div></div>`;
+  const close = () => { p.remove(); document.removeEventListener("keydown", key); };
+  const key = e => { if(e.key === "Escape") close(); };
+  p.addEventListener("click", e => { if(e.target === p || e.target.closest(".ftv-x")) close(); });
+  document.addEventListener("keydown", key);
+  document.body.appendChild(p); p.querySelector(".ftv-x").focus();
+};
