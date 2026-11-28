@@ -196,15 +196,12 @@ async function workerChecks() {
   if (deck.bar) fail('Day 5\'s Attorney Calendar Management Activity slide still has link pills on its bar');
   // (the activity's one link is on its Instructions slide: its Sample & Time Zone slide has no tiles)
   if (deck.tile || deck.portal) fail('Day 5\'s Sample & Time Zone slide still has the Check\'s or the Portal\'s tile');
-  // the Instructions slide has no button over its cards ("Remember the RULES!" beside its pill); the activity's link is
-  // its Sample & Time Zone slide's 🧪 Activity Items: Practice Lab (and the Main Portal's calendar is still ftsCalsim('activity'))
-  await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
-  const ins = await page.evaluate(() => ({ portal: !!document.querySelector('.ftdd-calsim-ins'), rules: [...document.querySelectorAll('.ftdd-bar .ftdd-bar-t')].some(x => /Remember the RULES!/.test(x.textContent)), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
-  if (ins.portal || !ins.rules || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should have "Remember the RULES!" beside its pill and no Portal button (and no link pills): ${JSON.stringify(ins)}`);
+  // (no Instructions slide: its cards are on the activity's own page, #/calactivity, which the Sample & Time Zone slide opens)
+  if (await page.evaluate(() => FTDayDecks.at(5, 's3')) >= 0 && await page.evaluate(() => FTDayDecks.list(5).some(x => x.id === 's3'))) fail('Day 5 still has its Instructions slide');
   const opened = await page.evaluate(() => { let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; return u; });
   if (!/\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(opened)) fail(`the activity's link should open its own calendar: ${opened}`);
   // the Calendaring Simulator opened from a slide: ← Back to the slides returns to that slide (not the Simulators page)
-  { const from = await page.evaluate(() => { FTDayDecks.open(5, FTDayDecks.at(5, 's3')); const d = FTDayDecks.state(); return { day: d.day, i: d.i }; }); await page.waitForTimeout(800);
+  { const from = await page.evaluate(() => { FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); const d = FTDayDecks.state(); return { day: d.day, i: d.i }; }); await page.waitForTimeout(800);
     await page.evaluate(() => goto('calsim', 'attorney-activity')); await page.waitForTimeout(1500);
     if (process.env.SHOTS) await page.screenshot({ path: require('path').join(process.env.SHOTS, 'ft-calsim.png') });
     const back = await page.$('button:has-text("← Back to the slides")');

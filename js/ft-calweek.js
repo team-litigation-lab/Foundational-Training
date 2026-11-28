@@ -158,7 +158,8 @@ function make(cfg){
       try{ R.data = await call("reset"); R.edit = null; toast("↺ Your practice calendar is clear."); }catch(err){ toast("Couldn’t start over: " + (err.message || err)); }
       R.saving = false; render(); },
     reload: () => load(true),
-    attorneyActivity(){ if(window.FTDayDecks && FTDayDecks.slide) FTDayDecks.slide(5, "s3", "modules"); else window.open(ATTORNEY_ACTIVITY, "_blank", "noopener"); },
+    // (the activity's own page, its instructions and items beside the Portal's calendar: js/ft-calactivity.js)
+    attorneyActivity(){ if(window.FTCalActivity) goto("calactivity"); else window.open(ATTORNEY_ACTIVITY, "_blank", "noopener"); },
     state: () => R, now, api: call
   };
   window[cfg.card] = () => `<div class="card fts-card"><div class="fts-kicker">${e(cfg.kicker)}</div><h3>${cfg.icon} ${e(W.title)}</h3>
