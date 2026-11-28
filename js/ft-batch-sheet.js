@@ -2213,7 +2213,7 @@ window.FTBatchSheet = {
       <table class="bs-parts"><thead><tr><th>Intake document</th><th>Content and purpose</th></tr></thead><tbody>${FTIntake.wsRows().map((t, i) => `<tr><td class="bs-parts-n">${e(t)}</td><td>${pw.answers[i] ? e(pw.answers[i]).replace(/\n/g, "<br>") : "<span class=\"bs-ctx-none\">(unanswered)</span>"}</td></tr>`).join("")}</tbody></table></div>`; return; }
     const w = B.ws[id] || {}, open = w.link ? ` <a href="${e(w.link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>` : "";
     if(w.error){ delete B.ws[id]; box.innerHTML = `<p class="bs-kd-none">Couldn’t open it just now. Close and open this row to try again.</p>`; return; }
-    box.innerHTML = !w.link ? `<p class="bs-kd-none">No Intake Worksheet yet: not answered on Day 8’s 📦 Intake Packet page (step 3), and none found in their Assessments/Activities folder.</p>`
+    box.innerHTML = !w.link ? `<p class="bs-kd-none">No Intake Worksheet yet: not answered on the Intake lesson’s ✍️ Knowledge Check, and none found in their Assessments/Activities folder.</p>`
       : w.text ? `<div class="bs-ctx bs-best"><b>📝 The trainee’s answers</b>${w.submittedAt ? ` <small>submitted ${e(when(w.submittedAt))}</small>` : w.found ? ` <small>found in their Assessments/Activities folder</small>` : ""}${open}<pre class="bs-ws-text">${e(w.text)}</pre></div>`
       : `<p class="bs-kd-none">${w.why === "not-a-doc" ? "Their worksheet isn’t a Google Doc (a Word file or a folder), so its answers can’t be shown here:" : "Their worksheet couldn’t be read (it isn’t shared with the platform):"}${open}</p>`;
   },
