@@ -42,9 +42,8 @@ const TEMPLATES = {
    added, at the end (a 🤖 drafted report has its Daily Compliance second, autoDraft). */
 // (📘 the TAM isn't a daily deliverable: it is graded only for a shadowing activity, when a trainer asks)
 // (📏 Following Instructions is no longer a column of its own: it is half of each day's outputs, in the Daily Compliance —
-// its place taken by 🌱 Professional Development & Progress, the trainer's weekly score: PDP_COL)
+// and 🌱 Professional Development & Progress, the trainer's weekly score, is a section of its own under the table: pdpHtml)
 const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["tests", "Typing & Spelling Tests"], ["eod", "EOD"]];
-const PDP_COL = ["Professional Development & Progress", "Role · Communication · Quality of output"];
 // (a column made before: its Monitoring Sheet and Tracker now follow the day's checks too)
 const DAY_OF = {"drive:Monitoring Sheet": "day:monitor", "drive:Tracker": "day:tracker"};
 // (a TAM column a trainer typed scores in stays, as a column of their own — only the platform's TAM column goes)
@@ -53,14 +52,14 @@ function connectAll(cols){ cols = cols.slice();
   cols.forEach(c => { if(c.type === "score" && DAY_OF[c.src]){ c.src = DAY_OF[c.src]; c.period = "week"; } });
   // (a TAM column added before the TAM stopped being a daily part goes again)
   cols = cols.filter(c => c.src !== "day:tam" || typedIn(c)).map(c => c.src === "day:tam" ? Object.assign(c, {src: ""}) : c);
-  // (a Following Instructions column from before becomes 🌱 Professional Development & Progress, where it was)
-  cols.forEach(c => { if(c.src === "day:instructions") Object.assign(c, {src: "pdp", label: PDP_COL[0], sub: PDP_COL[1], period: "week"}); });
+  // (🌱 Professional Development & Progress is not a column of the table: it is its own section under it, pdpHtml — a column
+  // of it from before goes, and a Following Instructions column from before with it)
+  cols = cols.filter(c => c.src !== "pdp" && c.src !== "day:instructions" && !(c.type === "score" && !c.src && /professional development/i.test(c.label || "")));
   const out = cols.slice(), has = src => out.some(c => c.src === src);
   let n = 0;
   // 📅 each of the day's deliverables, its own column: the week's average of that part of the end-of-shift check
   // (worker.js dailyCompliance parts: the Monitoring Sheet, the Task Tracker, the TAM, the Typing & Spelling Tests, the EOD)
   DAY_PARTS.forEach(([k, label]) => { if(!has("day:" + k)){ out.push(COL(label, "", 5, "day:" + k, "week")); n++; } });
-  if(!has("pdp")){ out.push(COL(PDP_COL[0], PDP_COL[1], 5, "pdp", "week")); n++; }
   if(!has("compliance")){ out.push(COL("Daily Compliance", "", 5, "compliance", "week")); n++; }
   if(!has("links")){ out.push(COL("Drive Links Compliance", "", 5, "links")); n++; }
   if(!has("overall")){ out.push(COL("🏅 Scorecard overall", "every grading system", 5, "overall")); n++; }
@@ -207,7 +206,7 @@ function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall && !s.hidden).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs with the instructions, EOD; and the week's 🌱 PD&P)"], ["pdp", "🌱 Professional Development & Progress (the trainer's weekly score)"], ["links", "🔗 Drive links compliance (🔗 Drive Links → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["calls:Reception", "🎯 Call Sim · Reception"], ["calls:Calendar", "🎯 Call Sim · Calendar"], ["calls:Intake", "🎯 Call Sim · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs with the instructions, EOD; and the week's 🌱 PD&P)"], ["links", "🔗 Drive links compliance (🔗 Drive Links → ✅ Compliance: links correct of six)"], ["overall", "🏅 Scorecard overall (every grading system, averaged)"], ["day:monitor", "📅 Monitoring Sheet (the day's checks)"], ["day:tracker", "📅 Daily Task Tracker (the day's checks)"], ["day:tests", "📅 Typing & Spelling Tests (the day's three)"], ["day:eod", "📅 EOD email (the day's check)"], ["calls:Reception", "🎯 Call Sim · Reception"], ["calls:Calendar", "🎯 Call Sim · Calendar"], ["calls:Intake", "🎯 Call Sim · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -690,8 +689,32 @@ function renderRanking(){
         <button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
     ${R.data.sharedAt ? `<p class="rk-shared">📤 Shared with the trainees ${e(new Date(R.data.sharedAt).toLocaleString())}: each sees their own row on 📬 My Feedback and 🏅 My Performance. Changes since then reach them when you share again.</p>` : ""}
-    ${autoBanner()}${R.explain ? explainHtml() : ""}${R.edit ? columnsEditor() : ""}${grid()}
+    ${autoBanner()}${R.explain ? explainHtml() : ""}${R.edit ? columnsEditor() : ""}${grid()}${pdpHtml()}
     <p class="sc-how">Type a score in its cell (Tab or → to the next, Enter or ↓ to the trainee below). A score out of its points gets its mark out of 5 in the grey ÷ 5 column beside it; a column out of 5 is already a mark. The grey cells are worked out (select one to see its formula in the bar): the final average is the average of the row’s marks (empty cells don’t count) and the rank follows it. A score’s note goes in the bar above the sheet (a red corner marks it). ⬇ Excel keeps the formulas; ⬇ Word is the facilitator’s report layout, ranked.</p></div>`;
+}
+
+/* ---------- 🌱 PROFESSIONAL DEVELOPMENT & PROGRESS, its own section under the table ----------
+   The trainer's weekly score of each trainee (📋 Batch Sheet → the trainee's page → 📤 Daily outputs, under the week; worker.js
+   /api/pdp/set → trackerreview:<id>.pdp[<week>]): Competency in taking on a role, Communication and Quality of output, each
+   out of 5. Kept apart from the ranking table (no column, not in the final average or the rank), shown here for the week. */
+const PD = {key: "", rvs: null, loading: false};
+function pdpLoad(key, ppl){
+  if(PD.loading) return; PD.loading = true;
+  sharedGetMany(ppl.map(p => "trackerreview:" + p.id)).then(v => { PD.key = key; PD.rvs = {}; ppl.forEach((p, i) => { PD.rvs[p.id] = v[i] || {}; }); })
+    .catch(() => { PD.key = key; PD.rvs = {}; }).finally(() => { PD.loading = false; rerender(); });
+}
+function pdpHtml(){
+  const P = window.ftPdp, ppl = people(); if(!P || !ppl.length) return "";
+  const key = R.key + "|" + ppl.map(p => p.id).join(",");
+  if(PD.key !== key){ pdpLoad(key, ppl); return `<div class="rk-pdp"><h3>🌱 Professional Development &amp; Progress · Week ${R.week}</h3><p class="sc-about">Loading…</p></div>`; }
+  const rows = ppl.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))).map(p => {
+    const x = P.of(PD.rvs[p.id], R.week);
+    return `<tr><td class="rk-pdp-n">${e(p.name || p.id)}</td>${x ? P.CRIT.map(([c]) => `<td>${e(x[c])}/5</td>`).join("") + `<td><b>${x.avg5.toFixed(1)}/5</b></td><td class="rk-pdp-note">${e(x.note || "")}</td>`
+      : `<td colspan="5" class="rk-pdp-none">Not scored yet</td>`}</tr>`; }).join("");
+  const n = ppl.filter(p => P.of(PD.rvs[p.id], R.week)).length;
+  return `<div class="rk-pdp"><h3>🌱 Professional Development &amp; Progress · Week ${R.week} <small>${n} of ${ppl.length} scored</small></h3>
+    <p class="sc-about">The trainer’s weekly score of each trainee, kept apart from the ranking table (not in the final average or the rank). Score it on 📋 Batch Sheet → the trainee’s page → 📤 Daily outputs, under Week ${R.week}.</p>
+    <table class="rk-pdp-t"><thead><tr><th>Trainee</th>${P.CRIT.map(([, n]) => `<th>${e(n)}</th>`).join("")}<th>Score</th><th>Trainer’s note</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 /* ---------- 🤖 the week's report, drafted by itself ----------
@@ -908,6 +931,9 @@ ftAdminTab("ranking", "📊 Weekly Ranking", () => { setTimeout(() => toRanking(
 .rk-col{display:grid;grid-template-columns:150px minmax(140px,1.4fr) minmax(140px,1fr) 110px minmax(150px,1fr) auto;gap:6px;align-items:center;margin-bottom:6px;}
 .rk-col input,.rk-col select{padding:5px 8px;border:1px solid #D5DAE5;border-radius:7px;font:inherit;font-size:13px;min-width:0;}
 .rk-max{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-soft);}
+.rk-pdp{margin-top:18px;} .rk-pdp h3{margin:0 0 4px;color:#1E2340;} .rk-pdp h3 small{font-weight:600;color:#5A6080;font-size:14px;margin-left:6px;}
+.rk-pdp-t{border-collapse:collapse;width:100%;font-size:15px;} .rk-pdp-t th{background:#1E2340;color:#fff;text-align:left;padding:8px 10px;font-weight:800;}
+.rk-pdp-t td{border-bottom:1px solid #E1E5EE;padding:8px 10px;color:#1E2340;font-weight:600;} .rk-pdp-n{font-weight:800 !important;} .rk-pdp-none{color:#8A90A6 !important;font-style:italic;} .rk-pdp-note{font-weight:500 !important;}
 .rk-src{display:flex;flex-direction:column;gap:4px;} .rk-src select{width:100%;}
 .rk-max input{width:64px;}
 .rk-col-ad{display:flex;gap:4px;}
