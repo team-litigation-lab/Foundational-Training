@@ -459,10 +459,11 @@ function writeAssign(id, patch){
   return run;
 }
 window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
-// 📝 the trainer's grade on the Intake Worksheet, against the Training Guide's Day 8 Answer Sheets: a score out of 100 and a
+// 📝 the trainer's grade on the Intake Worksheet — no answer sheet: the trainee's understanding and critical thinking, judged
+// against the intake documents themselves — a score out of 100 and a
 // comment, kept with the other graded activities (trackerreview:<id>.assess.intakews), so it is on the trainee's 🏅 Score Card
 // (📄 Intake Worksheet, js/ft-drive.js), their Day 8 line and the 📝 Activities in detail
-const WS_KEYS = [["Answer Sheet 1", "https://drive.google.com/file/d/1er1uyBoPJGlp2ijBdKn_n_CReu1rzyQz/view"], ["Answer Sheet 2", "https://drive.google.com/file/d/13-XjW0CP9vuj1itHrfE0gSsRpQ4fuzUB/view"]];
+const WS_HOW = "No answer sheet: grade the trainee’s understanding and critical thinking, according to the intake documents — does each answer say what the document contains and why the firm uses it?";
 // (the trainee's answers, each intake document with what they wrote, folded under the grade)
 function wsAnswersHtml(ws){
   const a = ws.answers || [], n = a.filter(x => String(x || "").trim()).length;
@@ -474,7 +475,7 @@ function wsGradeHtml(id, g){
   return `<div class="ftis-wsg" data-wsg="${e(id)}"><label>Grade <input type="number" min="0" max="100" step="1" data-wss value="${g ? e(String(g.score)) : ""}" style="width:64px"> / 100</label>
     <input type="text" data-wsc placeholder="Comment for the trainee" value="${g ? e(g.comment || "") : ""}" style="min-width:220px">
     <button type="button" class="btn btn-ghost btn-sm" onclick="FTIntakeAdmin.gradeWs('${e(id)}', this)">💾 Save grade</button>
-    <small>Grade against the guide’s ${WS_KEYS.map(([t, u]) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${e(t)} ↗</a>`).join(" · ")}${g ? ` · graded ${e(g.when || "")}` : ""}</small></div> `;
+    <small>${e(WS_HOW)}${g ? ` · graded ${e(g.when || "")}` : ""}</small></div> `;
 }
 window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
