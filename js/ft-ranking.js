@@ -760,6 +760,43 @@ async function finishDraft(key){
     if(R.key === key && N && N !== D && N.auto && !N.auto.approved && N.auto.state !== "done") setTimeout(() => { if(R.key === key) finishDraft(key); }, 0);
   }
 }
+/* 🔄 EVERY BATCH'S WEEKLY PROGRESS, LOGGED BY ITSELF — new batches too, with no one opening their report first
+   While a trainer has the platform open (any page but the reports themselves, so what they're looking at never changes under
+   them), 20 s after it opens and then every 30 minutes: each active batch, each of its weeks that has begun — a week with no
+   report has it drafted (autoDraft: the columns, the scores filled from the platform, each trainee's notes), a week with one has
+   its platform-filled scores filled again (never over a score a trainer typed). One batch-week at a time, quietly. */
+const REPORT_TABS = ["ranking", "batchsheet", "weeklyreports"];
+const onReports = () => state.view === "admin" && REPORT_TABS.includes(state.adminTab);
+async function sweep(){
+  if(R.sweeping || typeof state === "undefined" || !state.isAdmin || state.adminPreview || state.traineeId || onReports()) return;
+  R.sweeping = true;
+  const keep = {batch: R.batch, week: R.week, key: R.key, data: R.data, weekSet: R.weekSet, auto: R.auto, edit: R.edit};
+  let stopped = false;
+  try{
+    if(!R.people) await loadPeople();
+    for(const b of batches()){
+      R.batch = b; R.week = 1; R.key = ""; R.data = null;
+      const upTo = Math.min(6, Math.max(1, Number(weekNow()) || 1));
+      for(let w = 1; w <= upTo; w++){
+        if(onReports()){ stopped = true; return; }
+        R.week = w; R.key = ""; R.data = null;
+        await loadWeek();
+        if(onReports()){ stopped = true; return; }
+        if(!R.data){ if(weekOver() || weekBegun()){ R.auto = null; await autoDraft(); } }
+        else if(R.data.auto && !R.data.auto.approved && R.data.auto.state !== "done") await finishDraft(R.key);
+        else await fillFromPortal(true);
+      }
+    }
+  }catch(err){}
+  finally{
+    // (the trainer's own place back as it was; one who opened the reports meanwhile gets them read afresh)
+    if(stopped || onReports()){ R.key = ""; R.data = null; R.batch = keep.batch; R.week = keep.week; R.weekSet = keep.weekSet; setTimeout(rerender, 0); }
+    else Object.assign(R, keep);
+    R.sweeping = false;
+  }
+}
+setTimeout(() => { try{ sweep(); }catch(err){} }, 20000);
+setInterval(() => { try{ sweep(); }catch(err){} }, 30 * 60 * 1000);
 const autoBanner = () => {
   const a = R.data && R.data.auto; if(!a) return "";
   if(a.approved) return `<p class="rk-shared">🤖 Drafted automatically ${e(new Date(a.at).toLocaleString())} · ✓ approved ${e(new Date(a.approvedAt).toLocaleString())}.</p>`;
@@ -819,6 +856,8 @@ window.FTRanking = {
     if(!R.explain) return; R.explain.loading = false; R.explain.loaded = id; R.explain.ev = {rv: (b => { const r = window.ftW1Override ? ftW1Override.comp(v[0] || {}, b) : (v[0] || {}); return window.ftDay1 ? ftDay1.comp(r, b) : r; })((people().find(p => p.id === id) || {}).batch || R.batch), dv: v[1] || {}, sk: v[2] || {}}; rerender(); },
   // (📑 the management summary, js/ft-ranking-summary.js: the week on screen, its trainees and dates, and a redraw)
   ctx(){ return {batch: R.batch, week: R.week, people: people(), range: weekRange(), rerender}; },
+  // (🔄 every batch's weekly reports brought up to date now, as the background pass does)
+  sweep(){ return sweep(); },
   fold(k){ const f = foldSet(); if(f.has(k)) f.delete(k); else f.add(k); saveFolds(); rerender(); },
   foldAll(){ const f = foldSet(), sc = sheetCols();
     if(sc.some(folded)) f.clear(); else sc.forEach(s => { if(["raw", "notes", "addl"].includes(s.k)) f.add(fk(s)); });
