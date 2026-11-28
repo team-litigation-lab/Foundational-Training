@@ -436,7 +436,12 @@ function cardHtml(id){
       (() => { const btn = pkU ? ` <button type="button" class="btn btn-ghost btn-sm" style="margin-left:8px;vertical-align:middle;" ${checking ? "disabled" : ""} onclick="event.preventDefault();event.stopPropagation();FTIntakeAdmin.check('${e(id)}')">${checking ? "Checking…" : "🔎 Check"}</button>` : "";
         return ck ? `<details><summary>The Saving Intake Packet rubric, rule by rule${btn}</summary>${checkHtml(ck, true)}</details>` : "Not checked" + btn; })(), ck ? pctCls(ck.pct) : "")
     // (no 🎬 Demo case row: the trainer runs the demo's case from Ring Channel's Scenario Picker)
-    + row("📝 Intake Worksheet", (ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—") + (x.g ? ` <b>${e(String(x.g.pct))}%</b>` : ""), wsGradeHtml(id, x.g) + (ws && wsLink(ws.answer) ? (ws.found || !ws.submittedAt ? "Found in their Assessments/Activities folder" : `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}`) : "Not submitted: none on the slide or in their Assessments/Activities folder"));
+    // (📝 the worksheet is answered on the platform — Day 8's deck, "Activity: Worksheet for Intake Documents", or the Intake
+    // Knowledge Check: answers[] — and read here, under the grade; a Google Doc's link from before still opens)
+    + row("📝 Intake Worksheet", (ws && Array.isArray(ws.answers) ? "📝 Answered on the platform" : ws && wsLink(ws.answer) ? `<a href="${e(ws.answer)}" target="_blank" rel="noopener noreferrer">📝 Open ↗</a>` : "—") + (x.g ? ` <b>${e(String(x.g.pct))}%</b>` : ""),
+      wsGradeHtml(id, x.g) + (ws && Array.isArray(ws.answers) ? wsAnswersHtml(ws)
+        : ws && wsLink(ws.answer) ? (ws.found || !ws.submittedAt ? "Found in their Assessments/Activities folder" : `Submitted ${e(new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}))}`)
+        : "Not submitted yet: the trainee answers it on Day 8’s deck (Activity: Worksheet for Intake Documents)"));
 }
 // a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
 // so the packet and the demo case never overwrite each other, whoever changed the other one and however quickly
@@ -458,6 +463,13 @@ window.addEventListener("ft-roster-changed", () => { AD.rows = null; });
 // comment, kept with the other graded activities (trackerreview:<id>.assess.intakews), so it is on the trainee's 🏅 Score Card
 // (📄 Intake Worksheet, js/ft-drive.js), their Day 8 line and the 📝 Activities in detail
 const WS_KEYS = [["Answer Sheet 1", "https://drive.google.com/file/d/1er1uyBoPJGlp2ijBdKn_n_CReu1rzyQz/view"], ["Answer Sheet 2", "https://drive.google.com/file/d/13-XjW0CP9vuj1itHrfE0gSsRpQ4fuzUB/view"]];
+// (the trainee's answers, each intake document with what they wrote, folded under the grade)
+function wsAnswersHtml(ws){
+  const a = ws.answers || [], n = a.filter(x => String(x || "").trim()).length;
+  const when = ws.submittedAt ? new Date(ws.submittedAt).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : "";
+  return `<details class="ftis-wsa"><summary>Submitted ${e(when)} · ${n} of ${WS_ROWS.length} documents answered · <b>Read their answers</b></summary>
+    <table class="ftis-wsf-t"><thead><tr><th>Intake document</th><th>Their answer: its content and purpose</th></tr></thead><tbody>${WS_ROWS.map((t, i) => `<tr><td>INTAKE - ${e(t)}</td><td>${a[i] && String(a[i]).trim() ? e(a[i]).replace(/\n/g, "<br>") : "<i style=\"color:#8A90A6\">(unanswered)</i>"}</td></tr>`).join("")}</tbody></table></details>`;
+}
 function wsGradeHtml(id, g){
   return `<div class="ftis-wsg" data-wsg="${e(id)}"><label>Grade <input type="number" min="0" max="100" step="1" data-wss value="${g ? e(String(g.score)) : ""}" style="width:64px"> / 100</label>
     <input type="text" data-wsc placeholder="Comment for the trainee" value="${g ? e(g.comment || "") : ""}" style="min-width:220px">
@@ -705,6 +717,7 @@ main.main-ip{max-width:1500px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .ftis-wsf-t th{background:#1E2340;color:#fff;text-align:left;padding:8px 10px;font:800 14px/1.3 'Inter',sans-serif;}
 .ftis-wsf-t td{border:1px solid #D7DBE6;padding:6px 8px;vertical-align:top;} .ftis-wsf-t td:first-child{width:38%;font-weight:700;color:#1E2340;}
 .ftis-wsf-t textarea{width:100%;box-sizing:border-box;min-height:44px;resize:vertical;font:inherit;padding:6px 8px;border:1.5px solid #C9CEE0;border-radius:8px;}
+.ftis-wsa{margin-top:6px;} .ftis-wsa > summary{cursor:pointer;font-weight:700;color:#1E2340;} .ftis-wsa > summary b{text-decoration:underline;}
 .ftis-wsub{margin:8px 0;padding:12px 14px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#fff;text-align:left;}
 .ftis-ws-h{margin:0 0 8px;font-weight:800;color:#141A3C;} .ftis-ws-row{display:flex;gap:8px;align-items:center;}
 .ftis-ws-row input{flex:1;min-width:0;padding:9px 12px;border:1.5px solid #9AA0AB;border-radius:8px;font:600 15px/1.3 'Inter',sans-serif;color:#0B0D1A;}
