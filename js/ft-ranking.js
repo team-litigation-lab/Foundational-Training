@@ -48,6 +48,32 @@ const DAY_PARTS = [["monitor", "Monitoring Sheet"], ["tracker", "Tracker"], ["te
 const DAY_OF = {"drive:Monitoring Sheet": "day:monitor", "drive:Tracker": "day:tracker"};
 // (a TAM column a trainer typed scores in stays, as a column of their own — only the platform's TAM column goes)
 const typedIn = c => !!(R.data && Object.values(R.data.rows || {}).some(r => { const x = ((r || {}).cells || {})[c.id]; return x && !x.auto && (num(x.raw) != null || String(x.note || "").trim()); }));
+// 🧑‍🏫 the week's own scored activities (🧑‍🏫 Graders: the mock calls, the demos and the assessments), each a column of that
+// week's report, filled from its scorecard whenever it is scored ("Whole training": an activity is done once); a column a
+// report took over from an earlier week — its activity on another week's days, never typed into — goes
+const ACT_DAY = {"atty-calendar-activity": 5, "intake-worksheet": 8, "lor-drafting": 11};
+const SRC_DAY = {"kc:reading task": 1, "drive:common terms": 2, "drive:auto liability": 2};
+const LABEL_DAY = [[/data extraction/i, 1]];
+// (training day n's week for this batch: the nth weekday from its first day, then index.html ftWeeks)
+function dayWeek(n){
+  const s0 = typeof batchStartDate === "function" ? batchStartDate(R.batch) : ""; if(!s0 || !window.ftWeeks || !(n > 0)) return null;
+  let t = Date.parse(`${s0}T12:00:00Z`), k = 0;
+  for(let i = 0; i < 60; i++, t += 864e5){ const wd = new Date(t).getUTCDay(); if(wd >= 1 && wd <= 5 && ++k >= n) return ftWeeks.now(R.batch, new Date(t).toISOString().slice(0, 10)); }
+  return null;
+}
+const actDay = a => ACT_DAY[a.id] || Math.min(...((window.FTDays && FTDays.forAct(a.id)) || []).concat([Infinity]));
+function gradedActs(){
+  const all = window.FTSessions && typeof FTSessions.acts === "function" ? FTSessions.acts() || [] : [];
+  return all.filter(a => a && a.title && !(window.ftReference && !ftReference.actScored(a)));
+}
+// (the day a column's activity is on, when it is known)
+function colDay(c){
+  const src = String(c.src || "").toLowerCase();
+  if(/^trainer:/.test(src)){ const w = src.slice(8).trim(); const a = gradedActs().find(x => x.title.toLowerCase().includes(w)); const d = a ? actDay(a) : Infinity; return isFinite(d) ? d : null; }
+  if(SRC_DAY[src]) return SRC_DAY[src];
+  if(!src){ const m = LABEL_DAY.find(([re]) => re.test(c.label || "")); return m ? m[1] : null; }
+  return null;
+}
 function connectAll(cols){ cols = cols.slice();
   cols.forEach(c => { if(c.type === "score" && DAY_OF[c.src]){ c.src = DAY_OF[c.src]; c.period = "week"; } });
   // (a TAM column added before the TAM stopped being a daily part goes again)
@@ -60,6 +86,14 @@ function connectAll(cols){ cols = cols.slice();
   // 📅 each of the day's deliverables, its own column: the week's average of that part of the end-of-shift check
   // (worker.js dailyCompliance parts: the Monitoring Sheet, the Task Tracker, the TAM, the Typing & Spelling Tests, the EOD)
   DAY_PARTS.forEach(([k, label]) => { if(!has("day:" + k)){ out.push(COL(label, "", 5, "day:" + k, "week")); n++; } });
+  // 🧑‍🏫 this week's scored activities, each its column; an earlier week's activity column, never typed into, off this week's
+  if(R.batch && R.week){
+    for(let i = out.length - 1; i >= 0; i--){ const c = out[i]; if(c.type !== "score" || typedIn(c)) continue; const d = colDay(c); const w = d ? dayWeek(d) : null;
+      if(w && w !== Number(R.week)){ out.splice(i, 1); n++; } }
+    gradedActs().forEach(a => { const d = actDay(a); if(!isFinite(d) || dayWeek(d) !== Number(R.week)) return;
+      const t = a.title.toLowerCase(); if(out.some(c => /^trainer:/i.test(c.src || "") && t.includes(String(c.src).slice(8).trim().toLowerCase()))) return;
+      out.push(COL(a.title, "", 5, "trainer:" + a.title, "all")); n++; });
+  }
   if(!has("compliance")){ out.push(COL("Daily Compliance", "", 5, "compliance", "week")); n++; }
   if(!has("links")){ out.push(COL("Drive Links Compliance", "", 5, "links")); n++; }
   if(!has("overall")){ out.push(COL("🏅 Scorecard overall", "every grading system", 5, "overall")); n++; }
