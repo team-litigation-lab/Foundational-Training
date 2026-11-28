@@ -73,7 +73,7 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
 // links to them), the "F/E" reminders on a page of their own; and the evaluation's slide is one block, without the guide's
 // opening line and with no LOR screenshot
 const lor = D[11] && D[11].slides.filter(s => /LOR Drafting Activity/.test(s.h));
-if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p class="ftdd-card4-h">\d\. /g) || []).length !== 8 || !/goto\('lor'\)/.test(lor[0].html)
+if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p class="ftdd-card4-h">\d\. /g) || []).length !== 8 || !/goto\('lor'\)/.test(lor[0].html) || !/class="ftlor-hand"/.test(lor[0].html) || !/Download the 1P and 3P LOR templates/.test(lor[0].html)
   || !/ftdd-pgbreak[^]*Additional Reminders/.test(lor[0].html) || /Objective|1aRMbhtBTZ3wxDDo5Ww1sERL5frjdNNHw|Before saving your LOR|training GC/.test(lor[0].html)
   || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't one slide of cards with the LOR Drafting tool: ${JSON.stringify((lor || []).map(s => s.id))}`);

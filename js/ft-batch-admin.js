@@ -153,6 +153,10 @@ async function refOf(r, a){
       const sub = (((await sharedGet("actsub:" + r.id)) || {}).items || {}).intakews, link = sub && /^https?:\/\//.test(String(sub.answer || "")) ? String(sub.answer) : "";
       html = link ? `📝 <b>Their Intake Worksheet</b> · submitted ${e(sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "")} · <a href="${e(link)}" target="_blank" rel="noopener noreferrer">Open it ↗</a>`
         : `📝 No Intake Worksheet link submitted yet (the trainee submits it on Day 8’s Intake Documents slide). Grade it from their Assessments/Activities folder.`;
+    } else if(a.id === "lor-drafting"){
+      const sub = (((await sharedGet("actsub:" + r.id)) || {}).items || {}).lor, ls = ((sub && sub.answers) || []).map(String).filter(u => /^https?:\/\//.test(u));
+      html = ls.length ? `📤 <b>Their LORs</b> · submitted ${e(sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "")} · ${ls.map((u, i) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${i ? "3P LOR with Affidavit" : "1P LOR"} ↗</a>`).join(" · ")}`
+        : `📤 No LOR links submitted yet (the trainee hands them in on Day 11’s LOR Drafting Activity slide). Grade them from their Assessments/Activities folder.`;
     } else if(a.id === "atty-calendar-activity"){
       const it = typeof window.ftCalCheckItems === "function" ? (window.ftCalCheckItems({rec: {"calcheck:": await sharedGet("calcheck:" + r.id)}}) || [])[0] : null;
       html = it ? `📅 <b>Automatic check</b> · ${it.pct == null ? "—" : e(it.pct) + "%"} · ${e(it.note || "")} · your score here replaces it on the Score Card`
