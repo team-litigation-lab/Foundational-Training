@@ -169,6 +169,8 @@ function kindOf(s, html){
   if((REFERENCE[DD.day] || []).includes(s.id)) return {ic: "📎", label: "Additional Reference"};
   // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
   // (🧑‍🏫 every demo and mock call is done with the trainer: Trainer Facilitated, on the slide's pill and the card's row)
+  // (📝 Day 8's Worksheet for Intake Documents, answered and submitted on its slide)
+  if(/class="ftis-wsub"/.test(html)) return {ic: "🧩", label: "Interactive activity"};
   if(/Trainer Facilitated Demo|data-slot="8:dd-demo"/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "🧑‍🏫", label: "Trainer Facilitated"};
@@ -910,7 +912,8 @@ function sheetPages(sheet){
   sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
-  if(kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
+  // (and Day 8's Intake Worksheet, a form to fill in: it scrolls on its slide at full size, never shrunk or paged)
+  if(kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit") || sheet.querySelector(":scope > .ftis-wsub")) return [kids];
   const room = sheet.clientHeight, read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
   const mid = sheet.classList.contains("ftdd-d615");
   if(mid && room && zoomToFit(sheet, MID_FIT)) return [kids];
@@ -1085,7 +1088,7 @@ function fitSheets(){
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
     const mid = sheet.classList.contains("ftdd-d615");
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, mid ? 0.5 : read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
+    if(!sheet.classList.contains("ftdd-sheet-edit") && !sheet.querySelector(":scope > .ftis-wsub") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, mid ? 0.5 : read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
     else if(!sheet.classList.contains("ftdd-sheet-edit")) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
@@ -1461,6 +1464,7 @@ const LESSON_CARDS = {
       {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
       {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "watch", d: 8, s: "s1b"},
       {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
+      {t: "Worksheet for Intake Documents", sub: "Each document’s content and purpose · submit it on the slide", k: "interactive", d: 8, s: "ws"},
       {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
       {t: "CMS Demo and Mock Call", sub: "The live session · ☎ Practice Intake Calls: LSH CaseWorX & the Intake line", k: "watch", d: 8, s: "s1e"},
@@ -3439,6 +3443,15 @@ main.main-ftdd .ftdd-sheet .ftdd-vside > p{font-size:22px !important;font-weight
 @media(max-width:900px){ .ftdd-sheet .ftdd-vside{grid-template-columns:minmax(0,1fr);} }
 /* a slide's numbered steps: the slide's width, their text from the left edge (Day 8's Topic 2) */
 main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(.ftdd-step, .ftis-wsub){align-self:stretch;}
+/* 📝 Day 8's Worksheet for Intake Documents on its own slide (build/day-decks.cjs "ws"): the sheet scrolls inside the slide, so
+   every document and 📤 Submit are in reach, at full size; its column heads white on navy */
+main.main-ftdd .ftdd-sheet:has(> .ftis-wsub){overflow-y:auto !important;}
+main.main-ftdd .ftdd-sheet > .ftis-wsub{margin:0 !important;zoom:1 !important;}
+main.main-ftdd .ftdd-sheet .ftis-wsf-h{font-size:22px !important;} main.main-ftdd .ftdd-sheet .ftis-wsf-lead{font-size:17px !important;line-height:1.5 !important;font-weight:500 !important;}
+main.main-ftdd .ftdd-sheet .ftis-wsf-t th{background:#1E2340 !important;color:#fff !important;font:800 16px/1.3 'Inter',sans-serif !important;padding:9px 12px !important;position:sticky;top:0;z-index:1;}
+main.main-ftdd .ftdd-sheet .ftis-wsf-t td{font-size:16.5px !important;line-height:1.35 !important;padding:8px 10px !important;}
+main.main-ftdd .ftdd-sheet .ftis-wsf-t textarea{font-size:16px !important;min-height:52px;}
+main.main-ftdd .ftdd-sheet .ftis-ws-row .btn{font-size:17px !important;padding:11px 18px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{text-align:left;}
 /* a link drawn as a button keeps the button's look: Days 6–15's link colour and underline are for links in the text
    (Day 8's ✏️ Make my editable copy had blue underlined type on its navy) */
