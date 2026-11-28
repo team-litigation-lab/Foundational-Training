@@ -120,11 +120,12 @@ async function workerChecks() {
     // Activity (the letters handed in on Drive), graded here too
     const assess = await page.evaluate(() => [...document.querySelectorAll('.fms-act optgroup[label="📝 Assessments"] option')].map(o => o.value));
     if (assess.join() !== 'atty-calendar-activity,intake-worksheet,lor-drafting') fail(`the Assessments aren't the three handed-in activities: ${assess}`);
-    // 🔎 the search: part of an activity's or a trainee's name opens it; the Intake Worksheet shows the link the trainee submitted
+    // 🔎 finding a sheet (FTMockScores.find): part of an activity's or a trainee's name opens it; the Intake Worksheet shows the link the trainee submitted
     await put('actsub:cara-lim--b103026', { items: { intakews: { answer: 'https://docs.google.com/document/d/CARA-WS/edit', submittedAt: '2026-11-05T10:00:00Z' } } });
-    if (!(await page.$('.fms-search input[type=search]'))) fail('no 🔎 search on 🧑‍🏫 Graders');
-    await page.fill('.fms-search input', 'intake work'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(400);
-    await page.fill('.fms-search input', 'cara'); await page.press('.fms-search input', 'Enter');
+    // (no 🔎 search box: the Activity and Trainee lists already pick both — FTMockScores.find stays, for the links that open a sheet)
+    if (await page.$('.fms-search')) fail('the 🔎 search box is still on 🧑‍🏫 Graders, beside the Activity and Trainee lists it repeats');
+    await page.evaluate(q => FTMockScores.find(q), 'intake work'); await page.waitForTimeout(400);
+    await page.evaluate(q => FTMockScores.find(q), 'cara');
     await page.waitForFunction(() => /Open it/.test((document.querySelector('[data-ms-ref]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
     const found = await page.evaluate(() => ({ act: document.querySelector('.fms-act').value, va: (document.querySelector('.fms-sheet') || {}).getAttribute('data-va'),
       ref: (document.querySelector('[data-ms-ref] a') || {}).href || '' }));
@@ -137,7 +138,7 @@ async function workerChecks() {
     const onCard = await page.evaluate(async () => window.ftTrainerItems({ rec: { 'labreview:': await sharedGet('labreview:cara-lim--b103026') }, shared: {} }).find(x => x.ref === 'act:intake-worksheet'));
     if (!onCard || onCard.pct !== 85) fail(`the graded Intake Worksheet isn't on Cara's Score Card: ${JSON.stringify(onCard)}`);
     // 📊 every trainee's score for the activity, at once: an activity searched for opens the table; a name opens that trainee
-    await page.fill('.fms-search input', 'intake worksheet'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(500);
+    await page.evaluate(q => FTMockScores.find(q), 'intake worksheet'); await page.waitForTimeout(500);
     const tbl = await page.evaluate(() => ({ open: !!(document.querySelector('.fms-all') || {}).open, rows: [...document.querySelectorAll('.fms-all-tbl tbody tr')].map(r => [...r.cells].map(c => c.innerText.trim())) }));
     const caraRow = tbl.rows.find(r => /^Cara Lim/.test(r[0]));
     if (!tbl.open || tbl.rows.length !== 3 || !caraRow || caraRow[1] !== 'Passed' || !/^85%/.test(caraRow[2]) || !tbl.rows.some(r => /^Ana Cruz/.test(r[0]) && r[2] === '—')) fail(`the all-trainees table for the Intake Worksheet isn't right: ${JSON.stringify(tbl)}`);
@@ -145,7 +146,7 @@ async function workerChecks() {
     { const w = await page.evaluate(() => (document.querySelector('.fms-sheet') || {}).getAttribute('data-va'));
       if (w !== 'ana-cruz--b103026') fail(`a name in the all-trainees table didn't open their scoresheet: ${w}`); }
     // (and a search with no match says so, leaving the sheet as it is)
-    await page.fill('.fms-search input', 'zzz nobody'); await page.press('.fms-search input', 'Enter'); await page.waitForTimeout(300);
+    await page.evaluate(q => FTMockScores.find(q), 'zzz nobody'); await page.waitForTimeout(300);
     if ((await page.evaluate(() => document.querySelector('.fms-act').value)) !== 'intake-worksheet') fail('a search with no match changed the sheet');
     // 📤 Day 11's LOR Drafting Activity: the scoresheet shows the two Drive links the trainee handed in, and its score is on the Score Card
     await put('actsub:cara-lim--b103026', { items: { intakews: { answer: 'https://docs.google.com/document/d/CARA-WS/edit', submittedAt: '2026-11-05T10:00:00Z' },
